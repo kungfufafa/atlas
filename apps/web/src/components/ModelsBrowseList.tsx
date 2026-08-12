@@ -69,7 +69,7 @@ export function ModelsBrowseList({
       result = result.filter((row) => !row.deprecated);
     }
     if (provider) {
-      result = result.filter((row) => row.nakamaProvider === provider);
+      result = result.filter((row) => row.atlasProvider === provider);
     }
     const query = deferredSearch.trim().toLowerCase();
     if (query) {
@@ -234,7 +234,7 @@ function VirtualModelList({
         {visibleRows.map((row, offset) => (
           <ModelRowButton
             alreadyConfigured={isProviderTypeAlreadyConfigured(
-              row.nakamaProvider,
+              row.atlasProvider,
               configuredTypes
             )}
             key={`${row.providerId}-${row.modelId}`}
@@ -274,7 +274,7 @@ function ModelRowButton({
           : "cursor-not-allowed opacity-50"
       )}
       disabled={!selectable}
-      onClick={() => onSelect(row.nakamaProvider, row.modelId, row)}
+      onClick={() => onSelect(row.atlasProvider, row.modelId, row)}
       style={style}
       title={
         alreadyConfigured

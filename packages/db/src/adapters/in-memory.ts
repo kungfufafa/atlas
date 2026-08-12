@@ -1,5 +1,5 @@
-import { getUserMessageText, type MessageContentPart } from "@nakama/core";
-import { LOCAL_CLIENT_USER_ID } from "@nakama/core/local-auth";
+import { getUserMessageText, type MessageContentPart } from "@atlas/core";
+import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
 import { LLM_USAGE_STATS_ID } from "../constants";
 import type {
   DatabaseAdapter,

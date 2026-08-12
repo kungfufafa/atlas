@@ -50,9 +50,7 @@ export function resolveServerUrl(
   env: Record<string, string | undefined> = process.env
 ): string {
   return normalizeBaseUrl(
-    env.nakama_SERVER_URL?.trim() ||
-      readRuntimeServerUrl() ||
-      DEFAULT_SERVER_URL
+    env.atlas_SERVER_URL?.trim() || readRuntimeServerUrl() || DEFAULT_SERVER_URL
   );
 }
 
@@ -61,7 +59,7 @@ export function resolveWebPublicUrl(
   env: Record<string, string | undefined> = process.env
 ): string | undefined {
   const configured =
-    env.NAKAMA_WEB_PUBLIC_URL?.trim() || env.NAKAMA_PUBLIC_URL?.trim();
+    env.ATLAS_WEB_PUBLIC_URL?.trim() || env.NAKAMA_PUBLIC_URL?.trim();
   if (configured) {
     return normalizeBaseUrl(configured);
   }

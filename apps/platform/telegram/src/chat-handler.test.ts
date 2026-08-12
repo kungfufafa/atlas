@@ -7,7 +7,7 @@ import {
   test,
 } from "bun:test";
 import path from "node:path";
-import type { ChatMessage } from "@nakama/core/contract";
+import type { ChatMessage } from "@atlas/core/contract";
 import {
   UNSUPPORTED_DOCUMENT_TYPES_REPLY,
   UNSUPPORTED_MEDIA_REPLY,
@@ -63,7 +63,7 @@ describe("createChatHandler group chats", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -102,7 +102,7 @@ describe("createChatHandler group chats", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -151,7 +151,7 @@ describe("createChatHandler group chats", () => {
         }
       );
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -208,7 +208,7 @@ describe("createChatHandler group chats", () => {
         ],
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -266,7 +266,7 @@ describe("createChatHandler group chats", () => {
         ],
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -323,7 +323,7 @@ describe("createChatHandler group chats", () => {
         providerConfigured: true,
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -376,7 +376,7 @@ describe("createChatHandler group chats", () => {
         ],
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -420,7 +420,7 @@ describe("createChatHandler group chats", () => {
         },
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -467,7 +467,7 @@ describe("createChatHandler group chats", () => {
         streaming: true,
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -542,7 +542,7 @@ describe("createChatHandler group chats", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -584,7 +584,7 @@ describe("createChatHandler group chats", () => {
       await authStore.reload();
       const { client } = createMockClient({ orgs: createMultiTestOrgs() });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -623,7 +623,7 @@ describe("createChatHandler security", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -656,7 +656,7 @@ describe("createChatHandler security", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -693,7 +693,7 @@ describe("createChatHandler security", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -731,7 +731,7 @@ describe("createChatHandler security", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -750,7 +750,7 @@ describe("createChatHandler security", () => {
       await handleMessage(pairAttempt.ctx);
 
       expect(pairAttempt.replies).toEqual([
-        "Linked successfully. You can chat with Nakama now.",
+        "Linked successfully. You can chat with Atlas now.",
       ]);
       expect(authStore.isAuthorized(1001)).toBe(true);
       expect(authStore.getConfig()?.handshakeCode).toBeNull();
@@ -785,7 +785,7 @@ describe("createChatHandler security", () => {
         }
       );
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -826,7 +826,7 @@ describe("createChatHandler security", () => {
       await authStore.reload();
       const { client } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -867,7 +867,7 @@ describe("createChatHandler security", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -903,7 +903,7 @@ describe("createChatHandler security", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -942,7 +942,7 @@ describe("createChatHandler security", () => {
         streaming: true,
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -995,7 +995,7 @@ describe("createChatHandler security", () => {
       await authStore.reload();
       const { client } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1049,7 +1049,7 @@ describe("createChatHandler security", () => {
         streaming: true,
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1105,7 +1105,7 @@ describe("createChatHandler security", () => {
         streaming: true,
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1152,7 +1152,7 @@ describe("createChatHandler security", () => {
         streaming: true,
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1225,7 +1225,7 @@ describe("createChatHandler security", () => {
         streaming: true,
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1288,7 +1288,7 @@ describe("createChatHandler security", () => {
         streaming: true,
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1332,7 +1332,7 @@ describe("createChatHandler security", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1368,7 +1368,7 @@ describe("createChatHandler security", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1381,7 +1381,7 @@ describe("createChatHandler security", () => {
       });
 
       const { ctx, replies } = createMessageContext({
-        text: "/start@NakamaBot",
+        text: "/start@AtlasBot",
         userId: 4242,
       });
 
@@ -1403,7 +1403,7 @@ describe("createChatHandler security", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1440,7 +1440,7 @@ describe("bridge API integration", () => {
       await authStore.reload();
       const { client, calls, orgIds } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1475,7 +1475,7 @@ describe("bridge API integration", () => {
       await authStore.reload();
       const { client } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1513,7 +1513,7 @@ describe("bridge API integration", () => {
         orgs: createMultiTestOrgs(),
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1550,7 +1550,7 @@ describe("bridge API integration", () => {
         orgs: createMultiTestOrgs(),
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1592,7 +1592,7 @@ describe("bridge API integration", () => {
         ],
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1632,7 +1632,7 @@ describe("bridge API integration", () => {
         ],
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1674,7 +1674,7 @@ describe("bridge API integration", () => {
         }
       );
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1722,7 +1722,7 @@ describe("bridge API integration", () => {
         },
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1773,7 +1773,7 @@ describe("bridge API integration", () => {
         },
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1850,7 +1850,7 @@ describe("createChatHandler document attachments", () => {
       await authStore.reload();
       const { client, calls, getLastStreamInput } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1898,7 +1898,7 @@ describe("createChatHandler document attachments", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1942,7 +1942,7 @@ describe("createChatHandler document attachments", () => {
       );
       const { client, calls, getLastStreamInput } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -1987,7 +1987,7 @@ describe("createChatHandler document attachments", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -2033,7 +2033,7 @@ describe("createChatHandler artifact delivery", () => {
         {
           arguments: {
             content: metaJson,
-            path: "artifacts/report.md.nakama-meta.json",
+            path: "artifacts/report.md.atlas-meta.json",
           },
           id: "tool_2",
           name: "write_file",
@@ -2043,7 +2043,7 @@ describe("createChatHandler artifact delivery", () => {
     {
       content: JSON.stringify({
         bytesWritten: 8,
-        path: "/home/.nakama/orgs/org/profiles/default/artifacts/report.md",
+        path: "/home/.atlas/orgs/org/profiles/default/artifacts/report.md",
       }),
       name: "write_file",
       role: "tool",
@@ -2052,7 +2052,7 @@ describe("createChatHandler artifact delivery", () => {
     {
       content: JSON.stringify({
         bytesWritten: metaJson.length,
-        path: "/home/.nakama/orgs/org/profiles/default/artifacts/report.md.nakama-meta.json",
+        path: "/home/.atlas/orgs/org/profiles/default/artifacts/report.md.atlas-meta.json",
       }),
       name: "write_file",
       role: "tool",
@@ -2074,7 +2074,7 @@ describe("createChatHandler artifact delivery", () => {
         messages: artifactMessages,
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       await sessionStore.load();
       sessionStore.set("4242", {
@@ -2134,7 +2134,7 @@ describe("createChatHandler artifact delivery", () => {
           {
             content: JSON.stringify({
               bytesWritten: 5,
-              path: "/home/.nakama/orgs/org/profiles/default/artifacts/draft.md",
+              path: "/home/.atlas/orgs/org/profiles/default/artifacts/draft.md",
             }),
             name: "write_file",
             role: "tool",
@@ -2143,7 +2143,7 @@ describe("createChatHandler artifact delivery", () => {
         ],
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       await sessionStore.load();
       sessionStore.set("4242", {
@@ -2184,7 +2184,7 @@ describe("createChatHandler artifact delivery", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "telegram", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
       await sessionStore.load();
       sessionStore.set("4242", {

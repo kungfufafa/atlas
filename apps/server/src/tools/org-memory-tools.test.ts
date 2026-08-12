@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { ToolContext } from "@nakama/core";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+import type { ToolContext } from "@atlas/core";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { OrgMemoryService } from "../services/org-memory-service";
 import { createOrgMemoryTools } from "./org-memory-tools";
 

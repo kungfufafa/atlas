@@ -15,8 +15,8 @@ function createApp() {
 describe("web public url settings", () => {
   test("org admin can read and persist the public web URL", async () => {
     const configDir = await mkdtemp(join(tmpdir(), "nakama-web-public-url-"));
-    const previousConfigDir = process.env.NAKAMA_CONFIG_DIR;
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     try {
       const { app, databaseAdapter } = createApp();
@@ -63,9 +63,9 @@ describe("web public url settings", () => {
       expect(afterSave.webPublicUrl).toBe("https://app.example.com/setup");
     } finally {
       if (previousConfigDir === undefined) {
-        delete process.env.NAKAMA_CONFIG_DIR;
+        delete process.env.ATLAS_CONFIG_DIR;
       } else {
-        process.env.NAKAMA_CONFIG_DIR = previousConfigDir;
+        process.env.ATLAS_CONFIG_DIR = previousConfigDir;
       }
       await rm(configDir, { force: true, recursive: true });
     }

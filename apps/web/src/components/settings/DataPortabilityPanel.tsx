@@ -1,4 +1,4 @@
-import type { DataImportPreviewResponse } from "@nakama/core/contract";
+import type { DataImportPreviewResponse } from "@atlas/core/contract";
 import { Alert02Icon, Download04Icon, Upload04Icon } from "hugeicons-react";
 import type { SVGProps } from "react";
 import { useRef, useState } from "react";

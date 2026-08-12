@@ -6,7 +6,7 @@ import {
   LocalAuthTokenManagedExternallyError,
   loadLocalAuthToken,
   verifyLocalAuthToken,
-} from "@nakama/core/local-auth";
+} from "@atlas/core/local-auth";
 import {
   formatRotateTokenError,
   isRotateTokenCommand,
@@ -22,7 +22,7 @@ describe("rotate-token command", () => {
 
   test("runRotateToken rotates the on-disk token", async () => {
     const configDir = await mkdtemp(join(tmpdir(), "nakama-cli-rotate-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     try {
       const original = await loadLocalAuthToken();
@@ -47,7 +47,7 @@ describe("rotate-token command", () => {
       });
       expect(logs.some((line) => line.includes(rotated!))).toBe(true);
     } finally {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
       await rm(configDir, { force: true, recursive: true });
     }
   });

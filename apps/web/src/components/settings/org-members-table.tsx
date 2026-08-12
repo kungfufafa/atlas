@@ -1,4 +1,4 @@
-import type { OrgMemberSummary, OrgRole } from "@nakama/core/contract";
+import type { OrgMemberSummary, OrgRole } from "@atlas/core/contract";
 import { Delete02Icon, Edit03Icon } from "hugeicons-react";
 import { OrgMemberRoleSelect } from "@/components/settings/org-member-role-select";
 import { Button } from "@/components/ui/button";

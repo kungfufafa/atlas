@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { ChatCompletionResult, ProviderClient } from "@nakama/core";
+import type { ChatCompletionResult, ProviderClient } from "@atlas/core";
 import { createAgentHarness } from "./index";
 
 function providerReturning(

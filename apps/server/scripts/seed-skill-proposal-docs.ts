@@ -2,12 +2,12 @@
  * Seeds a demo org with one pending skill proposal.
  * Used by docs/website/scripts/capture-self-improving-skills-screenshots.sh — run while the server is stopped.
  */
-import { getUserConfigDir } from "@nakama/core";
-import { createDatabase } from "@nakama/db";
+import { getUserConfigDir } from "@atlas/core";
+import { createDatabase } from "@atlas/db";
 import { SkillProposalService } from "../src/services/skill-proposal-service";
 import { SkillsService } from "../src/services/skills-service";
 
-const configDir = process.env.NAKAMA_CONFIG_DIR?.trim() || getUserConfigDir();
+const configDir = process.env.ATLAS_CONFIG_DIR?.trim() || getUserConfigDir();
 const database = await createDatabase("file:data/sqlite/nakama.sqlite", {
   baseDir: configDir,
 });

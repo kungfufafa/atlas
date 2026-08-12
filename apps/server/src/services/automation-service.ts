@@ -6,22 +6,22 @@ import type {
   CreateAutomationRequest,
   StoredAutomation,
   UpdateAutomationRequest,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
+  AtlasApiError,
   computeAutomationNextRunAt,
   createId,
   DEFAULT_TIMEZONE,
   isAutomationRunUnread,
   isWorkerSchedulable,
-  NakamaApiError,
   normalizeAutomationDelivery,
   resolveScheduleTimezone,
   summarizeAutomationUnreadCounts,
   validateAutomationDelivery,
   validateAutomationInput,
-} from "@nakama/core";
-import { canAccessSuperBotProfile } from "@nakama/core/profiles";
-import { type DatabaseAdapter, DatabaseAutomationStore } from "@nakama/db";
+} from "@atlas/core";
+import { canAccessSuperBotProfile } from "@atlas/core/profiles";
+import { type DatabaseAdapter, DatabaseAutomationStore } from "@atlas/db";
 
 /** Caller role context used to gate access to admin-only profiles (e.g. Super Bot). */
 export type ProfileAccess = Parameters<typeof canAccessSuperBotProfile>[0];
@@ -361,7 +361,7 @@ export class AutomationService {
       const profile = await this.db.getProfileForOrg(trimmed, orgId);
       if (profile) {
         if (profile.isSuper && access && !canAccessSuperBotProfile(access)) {
-          throw new NakamaApiError(
+          throw new AtlasApiError(
             "Super Bot is only available to org admins.",
             403
           );

@@ -12,11 +12,11 @@
     "allowSyntheticDefaultImports": true,
     "types": ["bun"],
     "paths": {
-      "@nakama/agent": ["./packages/agent/src/index.ts"],
-      "@nakama/client": ["./packages/client/src/index.ts"],
-      "@nakama/core": ["./packages/core/src/index.ts"],
-      "@nakama/core/*": ["./packages/core/src/*"],
-      "@nakama/db": ["./packages/db/src/index.ts"]
+      "@atlas/agent": ["./packages/agent/src/index.ts"],
+      "@atlas/client": ["./packages/client/src/index.ts"],
+      "@atlas/core": ["./packages/core/src/index.ts"],
+      "@atlas/core/*": ["./packages/core/src/*"],
+      "@atlas/db": ["./packages/db/src/index.ts"]
     }
   }
 }

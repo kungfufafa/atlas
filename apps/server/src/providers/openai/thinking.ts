@@ -1,4 +1,4 @@
-import { type CustomModelEntry, findCustomModel } from "@nakama/core";
+import { type CustomModelEntry, findCustomModel } from "@atlas/core";
 import { getModelById } from "../models";
 
 /** OpenAI ids known not to accept the `reasoning` request parameter. */

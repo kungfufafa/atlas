@@ -1,6 +1,6 @@
+import { ATLAS_API_VERSION, isComposioConfiguredAsync } from "@atlas/core";
+import type { UpdateWebPublicUrlRequest } from "@atlas/core/contract";
 import { createRoute, z } from "@hono/zod-openapi";
-import { isComposioConfiguredAsync, NAKAMA_API_VERSION } from "@nakama/core";
-import type { UpdateWebPublicUrlRequest } from "@nakama/core/contract";
 import {
   getWebPublicUrlSettings,
   persistWebPublicUrl,
@@ -16,7 +16,7 @@ const DOCS_HTML = `<!doctype html>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Nakama API</title>
+    <title>Atlas API</title>
   </head>
   <body>
     <div id="app"></div>
@@ -174,7 +174,7 @@ export function registerSystemRoutes(
     const composioConfigured = await isComposioConfiguredAsync();
     return c.json(
       {
-        apiVersion: NAKAMA_API_VERSION,
+        apiVersion: ATLAS_API_VERSION,
         composioAvailable: false,
         composioConfigured,
         ok: true,

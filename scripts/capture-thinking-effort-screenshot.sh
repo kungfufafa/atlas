@@ -24,7 +24,7 @@ trap cleanup EXIT
 
 mkdir -p "$TEMP_CONFIG" "$(dirname "$OUTPUT")"
 
-NAKAMA_CONFIG_DIR="$TEMP_CONFIG" NAKAMA_PORT="$PORT" \
+ATLAS_CONFIG_DIR="$TEMP_CONFIG" ATLAS_PORT="$PORT" \
   bun run "$ROOT/apps/server/src/index.ts" > /tmp/nakama-thinking-effort-server.log 2>&1 &
 SERVER_PID=$!
 

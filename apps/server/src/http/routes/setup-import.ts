@@ -1,16 +1,16 @@
-import { createRoute, z } from "@hono/zod-openapi";
 import {
+  AtlasApiError,
   type DataImportPreviewResponse,
-  NakamaApiError,
   type PreviewDataImportRequest,
   type RestoreDataImportRequest,
   type SetupRestoreDataImportResponse,
-} from "@nakama/core";
-import type { DatabaseAdapter } from "@nakama/db";
+} from "@atlas/core";
+import type { DatabaseAdapter } from "@atlas/db";
+import { createRoute, z } from "@hono/zod-openapi";
 import {
   decodeArchiveRequestData,
-  previewNakamaDataImport,
-  restoreNakamaDataImport,
+  previewAtlasDataImport,
+  restoreAtlasDataImport,
 } from "../../services/data-portability";
 import type { ServerOptions } from "../context";
 import { errorResponse, json, readJson } from "../shared";
@@ -73,7 +73,7 @@ export function registerSetupImportRoutes(
           description: "Error",
         },
       },
-      summary: "Preview Nakama data import during first-time setup",
+      summary: "Preview Atlas data import during first-time setup",
       tags: ["Auth"],
     })
   );
@@ -107,7 +107,7 @@ export function registerSetupImportRoutes(
           description: "Error",
         },
       },
-      summary: "Restore Nakama data import during first-time setup",
+      summary: "Restore Atlas data import during first-time setup",
       tags: ["Auth"],
     })
   );
@@ -126,7 +126,7 @@ export function registerSetupImportRoutes(
     const body = await readJson<PreviewDataImportRequest>(c.req.raw);
 
     try {
-      const preview = await previewNakamaDataImport(
+      const preview = await previewAtlasDataImport(
         decodeArchiveRequestData(body.data)
       );
       return json<DataImportPreviewResponse>(preview);
@@ -150,7 +150,7 @@ export function registerSetupImportRoutes(
 
     let restore;
     try {
-      restore = await restoreNakamaDataImport(
+      restore = await restoreAtlasDataImport(
         decodeArchiveRequestData(body.data),
         {
           confirm: body.confirm,
@@ -182,7 +182,7 @@ async function assertSetupImportAllowed(
 ): Promise<void> {
   const humanUserCount = await databaseAdapter.countHumanUsers();
   if (humanUserCount > 0) {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       "Setup import is only available before the first admin account is created.",
       409
     );
@@ -190,7 +190,7 @@ async function assertSetupImportAllowed(
 }
 
 function setupImportErrorResponse(error: unknown): Response {
-  if (error instanceof NakamaApiError) {
+  if (error instanceof AtlasApiError) {
     return errorResponse(error.message, error.status);
   }
 

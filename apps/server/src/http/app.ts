@@ -1,5 +1,5 @@
+import { AtlasApiError, formatServerError } from "@atlas/core";
 import { OpenAPIHono } from "@hono/zod-openapi";
-import { formatServerError, NakamaApiError } from "@nakama/core";
 import { tryServeStaticWeb } from "../static-web";
 import { createAuthMiddleware } from "./auth-middleware";
 import type { ServerOptions } from "./context";
@@ -39,7 +39,7 @@ export function createHonoApp(options: ServerOptions) {
   const app: HonoApp = new OpenAPIHono();
 
   app.onError((err) => {
-    if (err instanceof NakamaApiError) {
+    if (err instanceof AtlasApiError) {
       return errorResponse(
         err.message,
         err.status,

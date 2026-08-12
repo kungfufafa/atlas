@@ -1,4 +1,4 @@
-import type { SoulFileStatus, SoulStackFiles } from "@nakama/core/contract";
+import type { SoulFileStatus, SoulStackFiles } from "@atlas/core/contract";
 import { File01Icon, Folder01Icon } from "hugeicons-react";
 import { Button } from "@/components/ui/button";
 import {

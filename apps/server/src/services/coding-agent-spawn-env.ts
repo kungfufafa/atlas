@@ -1,5 +1,5 @@
-import type { ProviderName, UserConfig } from "@nakama/core";
-import type { StoredCodingAgentHarnessKind } from "@nakama/db";
+import type { ProviderName, UserConfig } from "@atlas/core";
+import type { StoredCodingAgentHarnessKind } from "@atlas/db";
 import {
   createHarnessConfigDir,
   writeCodexConfigToml,
@@ -118,7 +118,7 @@ export const CODING_AGENT_CREDENTIAL_ENV_KEYS = [
 ] as const;
 
 /**
- * Maps a Nakama provider type to the pi CLI provider name.
+ * Maps a Atlas provider type to the pi CLI provider name.
  * pi has its own provider system with named providers (see `pi --list-models`).
  *
  * When the base URL is the default for the provider type, we use the built-in
@@ -147,7 +147,7 @@ const PI_DEFAULT_BASE_URLS: Partial<Record<ProviderName, string>> = {
   openrouter: "https://openrouter.ai/api/v1",
 };
 
-export function mapNakamaProviderToPi(
+export function mapAtlasProviderToPi(
   providerType: ProviderName,
   baseUrl?: string | null
 ): string | null {
@@ -157,14 +157,14 @@ export function mapNakamaProviderToPi(
   }
 
   // For providers with a non-default base URL (proxy/gateway), use the custom
-  // "nakama" provider entry from models.json instead of the built-in provider.
+  // "atlas" provider entry from models.json instead of the built-in provider.
   if (baseUrl) {
     const defaultUrl = PI_DEFAULT_BASE_URLS[providerType];
     if (
       defaultUrl &&
       baseUrl.replace(/\/+$/, "") !== defaultUrl.replace(/\/+$/, "")
     ) {
-      return "nakama";
+      return "atlas";
     }
   }
 
@@ -270,7 +270,7 @@ export async function buildSpawnEnvForHarness(
   routing: CodingAgentProviderRouting,
   providerType: ProviderName = "openai"
 ): Promise<CodingAgentSpawnEnvResult> {
-  // Cursor Agent uses host Cursor auth — never merge Nakama provider credentials.
+  // Cursor Agent uses host Cursor auth — never merge Atlas provider credentials.
   if (kind === "cursor_agent") {
     return { env: {} };
   }

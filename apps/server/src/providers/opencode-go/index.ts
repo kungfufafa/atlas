@@ -3,7 +3,7 @@ import type {
   GenerateTextInput,
   ProviderClient,
   StreamChatHandlers,
-} from "@nakama/core";
+} from "@atlas/core";
 import { createAnthropicProvider } from "../anthropic";
 import { createOpenAIProvider } from "../openai";
 

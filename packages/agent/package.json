@@ -1,5 +1,5 @@
 {
-  "name": "@nakama/agent",
+  "name": "@atlas/agent",
   "private": true,
   "type": "module",
   "exports": {
@@ -10,6 +10,6 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@nakama/core": "workspace:*"
+    "@atlas/core": "workspace:*"
   }
 }

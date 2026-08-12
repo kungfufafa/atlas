@@ -1,5 +1,5 @@
 {
-  "name": "@nakama/web",
+  "name": "@atlas/web",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,14 +10,14 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@atlas/client": "workspace:*",
+    "@atlas/core": "workspace:*",
     "@base-ui/react": "^1.5.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
-    "@nakama/client": "workspace:*",
-    "@nakama/core": "workspace:*",
     "@streamdown/cjk": "^1.0.3",
     "@streamdown/code": "^1.1.1",
     "@streamdown/math": "^1.0.2",

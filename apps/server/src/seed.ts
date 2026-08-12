@@ -1,12 +1,12 @@
 import {
+  AtlasApiError,
   createProviderInstanceId,
   loadUserConfig,
-  NakamaApiError,
   type ProviderInstance,
   saveUserConfig,
   type UserConfig,
-} from "@nakama/core";
-import type { DatabaseAdapter } from "@nakama/db";
+} from "@atlas/core";
+import type { DatabaseAdapter } from "@atlas/db";
 import type { AuthService } from "./services/auth-service";
 import type { OrgService } from "./services/org-service";
 
@@ -87,7 +87,7 @@ export async function runFirstBootSeed(
       },
     });
   } catch (error) {
-    if (error instanceof NakamaApiError) {
+    if (error instanceof AtlasApiError) {
       throw new Error(`First-boot seed failed: ${error.message}`);
     }
     throw error;

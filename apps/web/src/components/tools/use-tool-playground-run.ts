@@ -1,4 +1,4 @@
-import type { ToolDetail } from "@nakama/core/contract";
+import type { ToolDetail } from "@atlas/core/contract";
 import { useState } from "react";
 import { useAppNavigation } from "@/hooks/use-app-navigation";
 import { client, formatError } from "@/lib/client";

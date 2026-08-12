@@ -1,4 +1,3 @@
-import { createRoute, z } from "@hono/zod-openapi";
 import type {
   AssignSkillRequest,
   CreateSkillRequest,
@@ -7,7 +6,8 @@ import type {
   ProfileResponse,
   SkillResponse,
   SyncSkillsResponse,
-} from "@nakama/core";
+} from "@atlas/core";
+import { createRoute, z } from "@hono/zod-openapi";
 import type { ServerOptions } from "../context";
 import {
   requireActiveOrgIdFromContext,

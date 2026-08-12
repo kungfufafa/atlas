@@ -3,7 +3,7 @@ import {
   type ProviderClient,
   replaceImagePartsWithDescriptions,
   resolveMessagesForNonVisionProvider,
-} from "@nakama/core";
+} from "@atlas/core";
 import { createAgentHarness } from "./index";
 
 const tinyPngBase64 =

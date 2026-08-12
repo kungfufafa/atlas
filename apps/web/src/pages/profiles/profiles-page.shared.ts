@@ -1,4 +1,4 @@
-import type { ProfileSummary } from "@nakama/core/contract";
+import type { ProfileSummary } from "@atlas/core/contract";
 
 export const sectionClass = "rounded-md border border-border bg-card";
 export const profilePanelHeaderClass =

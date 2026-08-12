@@ -1,4 +1,4 @@
-import type { ProviderInstanceSummary } from "@nakama/core/contract";
+import type { ProviderInstanceSummary } from "@atlas/core/contract";
 import { ViewIcon, ViewOffIcon } from "hugeicons-react";
 import type { ReactNode } from "react";
 import { CustomProviderFields } from "@/components/CustomProviderFields";

@@ -1,15 +1,15 @@
 ---
 title: "MCP Servers"
-description: "Connect external MCP servers to Nakama profiles and expose new tools safely."
+description: "Connect external MCP servers to Atlas profiles and expose new tools safely."
 ---
 
-An **MCP server** is an external tool provider. Nakama acts as an **MCP client**: it connects to servers you register, caches their tools, and exposes them in chat like [builtin tools](/builtin-tools).
+An **MCP server** is an external tool provider. Atlas acts as an **MCP client**: it connects to servers you register, caches their tools, and exposes them in chat like [builtin tools](/builtin-tools).
 
 - Register a server once (platform admin)
 - Assign it to profiles that need it
 - Tools appear at chat time, namespaced as `{serverName}__{toolName}`
 
-Use MCP when you need product-specific or internal capabilities — databases, SaaS APIs, local binaries — without writing custom Nakama code. For capabilities every profile should have by default, use a builtin tool or [bundled skill](/skills) instead.
+Use MCP when you need product-specific or internal capabilities — databases, SaaS APIs, local binaries — without writing custom Atlas code. For capabilities every profile should have by default, use a builtin tool or [bundled skill](/skills) instead.
 
 ## Transports
 
@@ -18,7 +18,7 @@ Use MCP when you need product-specific or internal capabilities — databases, S
 | `http` | Remote endpoint (SaaS MCP, shared service) | `url`, optional `headers` |
 | `stdio` | Local command (`npx` package, binary) | `command`, optional `args`, `env` |
 
-**HTTP** — Nakama opens a streamable HTTP connection and reuses it across turns.
+**HTTP** — Atlas opens a streamable HTTP connection and reuses it across turns.
 
 ```json
 {
@@ -27,7 +27,7 @@ Use MCP when you need product-specific or internal capabilities — databases, S
 }
 ```
 
-**stdio** — Nakama spawns one process **per profile**, with cwd set to that profile's soul directory (`~/.nakama/orgs/{orgId}/profiles/{profileId}/`). HTTP servers share one connection across profiles.
+**stdio** — Atlas spawns one process **per profile**, with cwd set to that profile's soul directory (`~/.atlas/orgs/{orgId}/profiles/{profileId}/`). HTTP servers share one connection across profiles.
 
 ```json
 {
@@ -41,7 +41,7 @@ Use MCP when you need product-specific or internal capabilities — databases, S
 
 MCP tools are namespaced as `{serverName}__{toolName}` to avoid collisions with builtins and other servers (e.g. `github__read_file`). Invalid characters become `_`; duplicates get a numeric suffix.
 
-Nakama **caches** the tool list at connect time — it is not re-fetched on every chat turn.
+Atlas **caches** the tool list at connect time — it is not re-fetched on every chat turn.
 
 | State | Meaning |
 |-------|---------|
@@ -51,7 +51,7 @@ Nakama **caches** the tool list at connect time — it is not re-fetched on ever
 
 - **Connect** — opens the client, fetches and caches tools
 - **Sync** — refreshes the cache from an existing connection (after the server adds/removes tools)
-- **Startup** — Nakama auto-reconnects every **enabled** server; failures log a warning and set status to `error`
+- **Startup** — Atlas auto-reconnects every **enabled** server; failures log a warning and set status to `error`
 
 ## Setup
 
@@ -71,7 +71,7 @@ Platform admins manage servers at **Agent → System → MCP** and assign them o
 
 ### Example: Exa web search
 
-Nakama ships a preinstalled **exa** server (`https://mcp.exa.ai/mcp`) with `web_search_exa` and `web_fetch_exa`. The shared free tier can rate-limit; add your own [Exa API key](https://dashboard.exa.ai/api-keys) under **Headers**:
+Atlas ships a preinstalled **exa** server (`https://mcp.exa.ai/mcp`) with `web_search_exa` and `web_fetch_exa`. The shared free tier can rate-limit; add your own [Exa API key](https://dashboard.exa.ai/api-keys) under **Headers**:
 
 - **Key:** `x-api-key`
 - **Value:** your API key
@@ -140,6 +140,6 @@ MCP management is platform-admin only (same as profiles, builtins, and skills).
 
 ## Related
 
-- [Builtin tools](/builtin-tools) — tools that ship with Nakama
+- [Builtin tools](/builtin-tools) — tools that ship with Atlas
 - [Profiles](/profiles) — designing bots and tool access
 - [Multi-tenancy](/multi-tenancy) — org roles and admin boundaries

@@ -1,7 +1,10 @@
 {
-  "name": "@nakama/cli",
+  "name": "@atlas/cli",
   "private": true,
   "type": "module",
+  "bin": {
+    "atlas": "./src/index.ts"
+  },
   "scripts": {
     "build": "bun build ./src/index.ts --outdir dist --target bun",
     "dev": "bun run src/index.ts",
@@ -9,8 +12,8 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@crosscopy/clipboard": "^0.3.6",
-    "@nakama/client": "workspace:*",
-    "@nakama/core": "workspace:*"
+    "@atlas/client": "workspace:*",
+    "@atlas/core": "workspace:*",
+    "@crosscopy/clipboard": "^0.3.6"
   }
 }

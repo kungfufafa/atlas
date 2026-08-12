@@ -3,7 +3,7 @@
  *
  * Uses MSW to record once / replay forever (any host MSW can match).
  *
- * Record (needs OPENAI key in ~/.nakama config, or OPENAI_API_KEY):
+ * Record (needs OPENAI key in ~/.atlas config, or OPENAI_API_KEY):
  *   LLM_VCR_MODE=record bun test src/tools/ask-user-question-tool.llm.test.ts
  *
  * Replay (default when cassette exists; CI-safe):
@@ -14,8 +14,8 @@ import {
   loadUserConfig,
   type ProviderInstance,
   toLlmToolDefinition,
-} from "@nakama/core";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+} from "@atlas/core";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { createProviderForInstance } from "../providers/create";
 import { AgentQuestionnaireState } from "../services/agent-questionnaire-state";
 import {

@@ -1,6 +1,6 @@
 import { expect } from "bun:test";
-import type { OrgRole } from "@nakama/core";
-import type { DatabaseAdapter } from "@nakama/db";
+import type { OrgRole } from "@atlas/core";
+import type { DatabaseAdapter } from "@atlas/db";
 import { AuthService } from "../services/auth-service";
 import {
   buildSetupAuthBody,

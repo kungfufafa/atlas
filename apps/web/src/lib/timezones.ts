@@ -1,7 +1,7 @@
 import type {
   ListTimezonesResponse,
   TimezoneCatalogEntry,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 
 export function getBrowserTimezone(): string {
   try {

@@ -76,7 +76,7 @@ function relativePathFromCompletedTool(message: ChatListItem): string | null {
 
   const relativePath = toArtifactsRelativePath(result.path);
 
-  if (!relativePath || relativePath.includes(".nakama-meta")) {
+  if (!relativePath || relativePath.includes(".atlas-meta")) {
     return null;
   }
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { ProviderClient } from "@nakama/core";
+import type { ProviderClient } from "@atlas/core";
 import { wrapProviderForNonVision } from "./non-vision-wrap";
 
 describe("wrapProviderForNonVision", () => {

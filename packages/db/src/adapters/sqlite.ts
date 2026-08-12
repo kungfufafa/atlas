@@ -1,7 +1,7 @@
 import { Database } from "bun:sqlite";
-import type { AgentQuestionnaire, ChatMessage } from "@nakama/core";
-import { getUserMessageText } from "@nakama/core";
-import { LOCAL_CLIENT_USER_ID } from "@nakama/core/local-auth";
+import type { AgentQuestionnaire, ChatMessage } from "@atlas/core";
+import { getUserMessageText } from "@atlas/core";
+import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
 import { LLM_USAGE_STATS_ID, WORKSPACE_SETTINGS_ID } from "../constants";
 import { ensureDatabaseDirectory, resolveDatabasePath } from "../database-url";
 import { migrateDatabase } from "../migrate";

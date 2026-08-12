@@ -10,7 +10,7 @@
  * If the cassette is missing and no API key is available, the test is skipped.
  */
 import { expect, test } from "bun:test";
-import { loadUserConfig } from "@nakama/core";
+import { loadUserConfig } from "@atlas/core";
 import { readApiKeyForInstance } from "../providers/create";
 import {
   cassetteFilePath,

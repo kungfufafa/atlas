@@ -1,4 +1,4 @@
-import type { ToolCall, ToolContext, ToolDefinition } from "@nakama/core";
+import type { ToolCall, ToolContext, ToolDefinition } from "@atlas/core";
 
 export function findTool(
   tools: ToolDefinition[],

@@ -4,8 +4,8 @@ import type {
   GenerateChatInput,
   ProviderClient,
   ToolDefinition,
-} from "@nakama/core";
-import { webSearchTool } from "@nakama/core";
+} from "@atlas/core";
+import { webSearchTool } from "@atlas/core";
 import { createAgentHarness } from "./index";
 
 function createCapturingProvider(

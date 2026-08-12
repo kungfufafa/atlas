@@ -1,10 +1,10 @@
-import type { ProviderName } from "@nakama/core";
+import type { ProviderName } from "@atlas/core";
 import {
   type CustomModelEntry,
   findCustomModel,
   validateCustomModels,
-} from "@nakama/core";
-import type { ProviderModelOption as ContractProviderModelOption } from "@nakama/core/contract";
+} from "@atlas/core";
+import type { ProviderModelOption as ContractProviderModelOption } from "@atlas/core/contract";
 import {
   resolveCerebrasDefaultModel,
   resolveCompatibleDefaultModel,

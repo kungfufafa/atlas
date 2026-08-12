@@ -1,6 +1,6 @@
+import type { ImageAttachment } from "@atlas/core";
+import { validateImageAttachments } from "@atlas/core";
 import { getImageBinary, hasImage } from "@crosscopy/clipboard";
-import type { ImageAttachment } from "@nakama/core";
-import { validateImageAttachments } from "@nakama/core";
 
 export function isClipboardImagePasteSupported(): boolean {
   return true;

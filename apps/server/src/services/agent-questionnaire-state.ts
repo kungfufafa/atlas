@@ -1,5 +1,5 @@
-import type { AgentQuestionnaire } from "@nakama/core";
-import type { DatabaseAdapter } from "@nakama/db";
+import type { AgentQuestionnaire } from "@atlas/core";
+import type { DatabaseAdapter } from "@atlas/db";
 
 const MAX_QUESTIONS = 5;
 const MAX_CHOICES = 5;

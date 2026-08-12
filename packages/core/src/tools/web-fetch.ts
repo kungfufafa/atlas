@@ -304,7 +304,7 @@ async function fetchWithRedirects(
       headers: {
         accept: "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.5",
         "user-agent":
-          "nakama-web_fetch/1.0 (+https://github.com/ahmadrosid/nakama)",
+          "nakama-web_fetch/1.0 (+https://github.com/kungfufafa/atlas)",
       },
       redirect: "manual",
       signal,

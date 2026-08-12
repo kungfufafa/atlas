@@ -1,4 +1,4 @@
-import { NakamaApiError } from "@nakama/core/api-error";
+import { AtlasApiError } from "@atlas/core/api-error";
 import type {
   AgentChannel,
   CreateProfileRequest,
@@ -7,7 +7,7 @@ import type {
   SoulStackFiles,
   UpdateProfileRequest,
   UserContextStatusResponse,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import {
   useInfiniteQuery,
   useMutation,
@@ -29,7 +29,7 @@ async function fetchUserContext(
   try {
     return await client.getUserContext({ includeContent });
   } catch (error) {
-    if (error instanceof NakamaApiError && error.status === 404) {
+    if (error instanceof AtlasApiError && error.status === 404) {
       return EMPTY_USER_CONTEXT;
     }
 

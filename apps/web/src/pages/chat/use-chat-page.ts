@@ -1,4 +1,4 @@
-import type { RemoteChatSession } from "@nakama/client";
+import type { RemoteChatSession } from "@atlas/client";
 import type {
   AgentChannel,
   AgentQuestionAnswer,
@@ -7,7 +7,7 @@ import type {
   ChatContextUsage,
   ProfileSummary,
   ThinkingEffort,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import type { FileUIPart } from "ai";
 import { nanoid } from "nanoid";
 import {

@@ -1,5 +1,5 @@
-import type { ImageAttachment } from "@nakama/core/contract";
-import { parseDataUrl } from "@nakama/core/message-content";
+import type { ImageAttachment } from "@atlas/core/contract";
+import { parseDataUrl } from "@atlas/core/message-content";
 
 export function fileToImageAttachment(
   file: File

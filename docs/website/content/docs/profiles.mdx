@@ -1,9 +1,9 @@
 ---
 title: "Profiles"
-description: "See how Nakama profiles define bot behavior, soul files, memory, tools, and model selection."
+description: "See how Atlas profiles define bot behavior, soul files, memory, tools, and model selection."
 ---
 
-A **profile** is an agent definition Nakama runs for a session.
+A **profile** is an agent definition Atlas runs for a session.
 
 It answers one practical question: **which agent should respond, and what is its role?**
 
@@ -11,9 +11,9 @@ Profiles belong to an **organization**. Switching orgs in the dashboard shows on
 
 ## Default profile per organization
 
-Nakama does **not** share one global `default` bot across every org.
+Atlas does **not** share one global `default` bot across every org.
 
-When an organization is created — including the first org at install — Nakama automatically:
+When an organization is created — including the first org at install — Atlas automatically:
 
 1. Creates one **default profile** for that org (`isDefault: true`)
 2. Assigns the standard builtin tool set (web search, file tools, email, and the rest)
@@ -27,7 +27,7 @@ That profile is named **Default Bot** and gets a unique id (not a fixed string l
 | Super bot | Not auto-created; platform admin may add a profile with `isSuper: true` if needed |
 | Additional orgs | Each gets its own default profile and isolated on-disk data |
 
-If a session or channel config omits a profile id — or names one that does not exist in the active org — Nakama falls back to that org's default profile.
+If a session or channel config omits a profile id — or names one that does not exist in the active org — Atlas falls back to that org's default profile.
 
 ### New custom profiles
 
@@ -59,7 +59,7 @@ One profile should map to one clear purpose. Create another profile when you nee
 
 ## How profiles affect replies
 
-When a chat runs with a profile, Nakama builds the agent context in this order:
+When a chat runs with a profile, Atlas builds the agent context in this order:
 
 1. Start with the profile's `systemPrompt`
 2. If soul files exist, compose them into the main system prompt
@@ -87,7 +87,7 @@ Profiles support two layers of instruction:
 Soul files, avatars, knowledge-base documents, artifacts, and profile-scoped skills all live under an org-scoped path:
 
 ```text
-~/.nakama/orgs/{orgId}/profiles/{profileId}/
+~/.atlas/orgs/{orgId}/profiles/{profileId}/
 ```
 
 Supported soul files:
@@ -104,18 +104,18 @@ Archived memory lives alongside soul files at `memory-archive/` (monthly `.md` f
 Profile-scoped skills are stored at:
 
 ```text
-~/.nakama/orgs/{orgId}/profiles/{profileId}/skills/
+~/.atlas/orgs/{orgId}/profiles/{profileId}/skills/
 ```
 
 Artifacts are files your agent creates and saves for you (reports, documents, generated text). They are stored at:
 
 ```text
-~/.nakama/orgs/{orgId}/profiles/{profileId}/artifacts/
+~/.atlas/orgs/{orgId}/profiles/{profileId}/artifacts/
 ```
 
 If you want richer personality and clearer long-term behavior, use soul files. If you only need a quick setup, the stored `systemPrompt` may be enough.
 
-Platform-admin data exports include these org/profile workspaces as part of the full Nakama data-root ZIP.
+Platform-admin data exports include these org/profile workspaces as part of the full Atlas data-root ZIP.
 Restoring an export replaces the local data root after preview and confirmation; it is not a per-profile merge.
 
 ### Default Bot soul stack
@@ -137,7 +137,7 @@ Each profile can optionally select its own model.
 Profiles keep their own context on disk under the org-scoped profile directory:
 
 - **Knowledge base** documents for searchable reference material
-- **Inherited knowledge sources** for shared product references, such as the Nakama documentation
+- **Inherited knowledge sources** for shared product references, such as the Atlas documentation
 - **`MEMORY.md`** for active facts and continuity the agent should remember across sessions
 - **`memory-archive/`** for facts moved out of active memory without deleting them
 - **Artifacts** — files your agent creates and saves for you (reports, documents, generated text)
@@ -161,13 +161,13 @@ Org memory has separate limits: **8192 bytes** for the live file and **2048 byte
 
 This data is isolated per org and per profile. Two orgs never read or write the same directory, even if profile ids happen to match.
 
-Each profile also sees the default Nakama documentation source in the Knowledge tab:
+Each profile also sees the default Atlas documentation source in the Knowledge tab:
 
 ```text
-https://ahmadrosid.github.io/nakama/llms.txt
+https://kungfufafa.github.io/atlas/llms.txt
 ```
 
-When a user asks about Nakama setup, profiles, tools, orgs, integrations, API, or troubleshooting, the agent should `web_fetch` that index first, then `web_fetch` the matching `.md` page (for example `telegram.md` for Telegram setup). Do not use `knowledge_base_search` for inherited documentation — that tool only searches uploaded files.
+When a user asks about Atlas setup, profiles, tools, orgs, integrations, API, or troubleshooting, the agent should `web_fetch` that index first, then `web_fetch` the matching `.md` page (for example `telegram.md` for Telegram setup). Do not use `knowledge_base_search` for inherited documentation — that tool only searches uploaded files.
 
 ## Multi-tenant behavior
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { SkillProposalService } from "../../services/skill-proposal-service";
 import { SkillSuggestionService } from "../../services/skill-suggestion-service";
 import { SkillsService } from "../../services/skills-service";

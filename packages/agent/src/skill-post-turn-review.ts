@@ -3,7 +3,7 @@ import {
   type ChatMessage,
   getUserMessageText,
   type ProviderClient,
-} from "@nakama/core";
+} from "@atlas/core";
 
 const TURN_SNIPPET_MAX = 4000;
 const TOOL_RESULT_MAX = 400;

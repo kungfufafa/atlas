@@ -1,4 +1,4 @@
-import type { ToolSummary } from "@nakama/core/contract";
+import type { ToolSummary } from "@atlas/core/contract";
 import {
   type ChangeEvent,
   type FormEvent,

@@ -1,64 +1,64 @@
-export const SITE_NAME = "Nakama";
+export const SITE_NAME = "Atlas";
 export const SITE_TAGLINE = "AI agents that work with your team.";
 export const SITE_DESCRIPTION =
-  "Nakama is AI agents that work with your team — self-hosted or on managed hosting at getnakama.cloud, multi-tenant, and open source.";
+  "Atlas is AI agents that work with your team — self-hosted or on managed hosting at getnakama.cloud, multi-tenant, and open source.";
 export const SITE_URL =
-  process.env.NAKAMA_DOCS_SITE_URL ?? "https://ahmadrosid.github.io/nakama";
+  process.env.ATLAS_DOCS_SITE_URL ?? "https://kungfufafa.github.io/atlas";
 export const AUTHOR_NAME = "Ahmad Rosid";
-export const AUTHOR_ROLE = "Creator and maintainer of Nakama";
+export const AUTHOR_ROLE = "Creator and maintainer of Atlas";
 export const OG_IMAGE_URL = `${SITE_URL}/nakama-demo.png`;
 
 export const pageDescriptions: Record<string, string> = {
   "agent-browser.md":
-    "Drive interactive, login-walled websites from Nakama chat or automations with the agent-browser skill and bash.",
+    "Drive interactive, login-walled websites from Atlas chat or automations with the agent-browser skill and bash.",
   "agent-prompt.md":
-    "Understand how Nakama builds the final system prompt from soul files, tools, bundled system skills, and runtime context.",
+    "Understand how Atlas builds the final system prompt from soul files, tools, bundled system skills, and runtime context.",
   "backup-restore.md":
-    "Export and restore your Nakama data root with dashboard ZIP backup.",
+    "Export and restore your Atlas data root with dashboard ZIP backup.",
   "builtin-tools.md":
-    "Review the builtin tools that Nakama profiles can use, how access is controlled, and how memory, artifact, and document workflows use file tools plus bundled skills.",
+    "Review the builtin tools that Atlas profiles can use, how access is controlled, and how memory, artifact, and document workflows use file tools plus bundled skills.",
   "cli.md":
-    "Use Nakama from the terminal — interactive chat, slash commands, and coding-agent launch.",
+    "Use Atlas from the terminal — interactive chat, slash commands, and coding-agent launch.",
   "coding-agent.md":
-    "Launch Codex, Claude Code, or OpenCode from Nakama chat or the CLI, with optional provider passthrough from your Nakama LLM provider.",
+    "Launch Codex, Claude Code, or OpenCode from Atlas chat or the CLI, with optional provider passthrough from your Atlas LLM provider.",
   "composio.md":
     "Connect SaaS apps through Composio with org-scoped OAuth and profile toolkit assignment.",
   "discord.md":
-    "Set up Nakama as a Discord bot with pairing, slash commands, and server behavior.",
+    "Set up Atlas as a Discord bot with pairing, slash commands, and server behavior.",
   "docker.md":
-    "Run Nakama in a single Docker container with persistent data volumes.",
+    "Run Atlas in a single Docker container with persistent data volumes.",
   "docs/index.md":
-    "Documentation hub for Nakama — quickstart, deployment, concepts, channels, and reference.",
+    "Documentation hub for Atlas — quickstart, deployment, concepts, channels, and reference.",
   "first-time-setup.md":
-    "Complete Nakama setup wizard: admin account, organization, provider, and profiles.",
+    "Complete Atlas setup wizard: admin account, organization, provider, and profiles.",
   "getting-started.md":
-    "Redirects to Quickstart — install Nakama and complete first-time setup.",
+    "Redirects to Quickstart — install Atlas and complete first-time setup.",
   "index.md":
-    "Nakama is AI agents that work with your team — with profiles, tools, channels, multi-tenant workspaces, and managed hosting at getnakama.cloud.",
+    "Atlas is AI agents that work with your team — with profiles, tools, channels, multi-tenant workspaces, and managed hosting at getnakama.cloud.",
   "integrations.md":
     "See which dashboard integration sections manage channels, coding-agent harnesses, Composio, and related deployment settings.",
   "mcp.md":
-    "Connect external MCP servers to Nakama profiles and expose new tools safely.",
+    "Connect external MCP servers to Atlas profiles and expose new tools safely.",
   "multi-tenancy.md":
-    "Learn how organizations, roles, and tenant isolation work in Nakama.",
+    "Learn how organizations, roles, and tenant isolation work in Atlas.",
   "org-memory.md":
     "Shared, admin-curated facts for an organization — injected into every profile prompt and distinct from per-profile MEMORY.md.",
   "overview.md":
-    "Understand the Nakama mental model: organizations, profiles, tools, channels, and deployment options including managed hosting.",
+    "Understand the Atlas mental model: organizations, profiles, tools, channels, and deployment options including managed hosting.",
   "profiles.md":
-    "See how Nakama profiles define bot behavior, soul files, memory, tools, and model selection.",
+    "See how Atlas profiles define bot behavior, soul files, memory, tools, and model selection.",
   "providers.md":
-    "Configure LLM providers, API keys, and models in Nakama Settings.",
+    "Configure LLM providers, API keys, and models in Atlas Settings.",
   "quickstart.md":
-    "Install Nakama with Bun, Docker, or managed hosting and send your first chat message.",
+    "Install Atlas with Bun, Docker, or managed hosting and send your first chat message.",
   "self-improving-skills.md":
     "Let agents save successful workflows as reusable skills, with optional org-admin approval before changes go live.",
   "skills.md":
-    "Learn how reusable skills extend Nakama profiles, including bundled memory, artifact, automation, and skill-authoring workflows.",
+    "Learn how reusable skills extend Atlas profiles, including bundled memory, artifact, automation, and skill-authoring workflows.",
   "telegram.md":
-    "Set up Nakama as a Telegram bot with pairing, commands, and group behavior.",
+    "Set up Atlas as a Telegram bot with pairing, commands, and group behavior.",
   "whatsapp.md":
-    "Set up Nakama on WhatsApp with linking, commands, and troubleshooting.",
+    "Set up Atlas on WhatsApp with linking, commands, and troubleshooting.",
 };
 
 export const pageTitles: Record<string, string> = {
@@ -74,7 +74,7 @@ export const pageTitles: Record<string, string> = {
   "docs/index.md": "Documentation",
   "first-time-setup.md": "First-time setup",
   "getting-started.md": "Getting Started",
-  "index.md": "Nakama",
+  "index.md": "Atlas",
   "integrations.md": "Integrations",
   "mcp.md": "MCP Servers",
   "multi-tenancy.md": "How Multi-tenancy Works",
@@ -199,12 +199,12 @@ export function buildLlmsTxt(pages: string[]) {
     {
       page: "docker.md",
       topics:
-        "Docker, docker run, container, production deploy, docker-build-run, NAKAMA_CONFIG_DIR volume",
+        "Docker, docker run, container, production deploy, docker-build-run, ATLAS_CONFIG_DIR volume",
     },
     {
       page: "backup-restore.md",
       topics:
-        "backup, restore, export zip, import zip, data root, NAKAMA_CONFIG_DIR",
+        "backup, restore, export zip, import zip, data root, ATLAS_CONFIG_DIR",
     },
     {
       page: "first-time-setup.md",
@@ -246,7 +246,7 @@ export function buildLlmsTxt(pages: string[]) {
     {
       page: "overview.md",
       topics:
-        "what is Nakama, mental model, organizations, profiles, tools, channels, managed hosting, deployment options",
+        "what is Atlas, mental model, organizations, profiles, tools, channels, managed hosting, deployment options",
     },
     {
       page: "multi-tenancy.md",
@@ -365,12 +365,12 @@ export function buildLlmsTxt(pages: string[]) {
     "",
     `Maintainer: ${AUTHOR_NAME} (${AUTHOR_ROLE})`,
     `Website: ${SITE_URL}/`,
-    "Repository: https://github.com/ahmadrosid/nakama",
+    "Repository: https://github.com/kungfufafa/atlas",
     "",
     "## For AI agents",
     "",
-    "This file is the entry point for Nakama product documentation.",
-    "When a user asks about Nakama setup, behavior, integrations, or troubleshooting:",
+    "This file is the entry point for Atlas product documentation.",
+    "When a user asks about Atlas setup, behavior, integrations, or troubleshooting:",
     `1. You are reading the index now, or fetch ${SITE_URL}/llms.txt if you do not have it yet.`,
     '2. Pick the best page from "Topic routing" or "Docs" below.',
     `3. web_fetch the matching .md page (for example ${SITE_URL}/telegram.md).`,

@@ -1,4 +1,4 @@
-import { NakamaApiError, readApiErrorMessage } from "@nakama/core/api-error";
+import { AtlasApiError, readApiErrorMessage } from "@atlas/core/api-error";
 import type {
   AddOrgMemberRequest,
   AddOrgMemberResponse,
@@ -177,9 +177,9 @@ import type {
   WebPublicUrlSettingsResponse,
   WhatsAppSettingsResponse,
   WorkerLogsResponse,
-} from "@nakama/core/contract";
-import { loadLocalAuthToken } from "@nakama/core/local-auth";
-import { resolveServerUrl } from "@nakama/core/runtime";
+} from "@atlas/core/contract";
+import { loadLocalAuthToken } from "@atlas/core/local-auth";
+import { resolveServerUrl } from "@atlas/core/runtime";
 import { readBrowserOrigin, readCookie } from "./browser";
 import {
   normalizeStreamHandlers,
@@ -189,9 +189,9 @@ import {
   retryWhileTurnIsStopping,
 } from "./stream";
 import type {
+  AtlasClientOptions,
   BinaryBufferSource,
   FetchCredentials,
-  NakamaClientOptions,
   RemoteChatSession,
   SendMessageArg,
   SendStreamOptions,
@@ -199,7 +199,7 @@ import type {
   StreamHandlers,
 } from "./types";
 
-export class NakamaClient {
+export class AtlasClient {
   readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
   private readonly credentials: FetchCredentials;
@@ -207,7 +207,7 @@ export class NakamaClient {
   private authToken: string | null;
   private orgId: string | null;
 
-  constructor(options: NakamaClientOptions = {}) {
+  constructor(options: AtlasClientOptions = {}) {
     this.baseUrl = (options.baseUrl ?? resolveServerUrl()).replace(/\/$/, "");
     const fetchFn = options.fetch ?? fetch;
     this.fetchImpl = ((input, init) => fetchFn(input, init)) as typeof fetch;
@@ -2254,9 +2254,9 @@ export class NakamaClient {
 async function createApiError(
   response: Response,
   path: string
-): Promise<NakamaApiError> {
+): Promise<AtlasApiError> {
   const message = await readApiErrorMessage(response);
-  return new NakamaApiError(message, response.status, path);
+  return new AtlasApiError(message, response.status, path);
 }
 
 function isMutatingMethod(method: string): boolean {

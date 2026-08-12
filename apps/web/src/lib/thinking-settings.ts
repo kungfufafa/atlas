@@ -1,4 +1,4 @@
-import type { ThinkingEffort, ThinkingSettings } from "@nakama/core/contract";
+import type { ThinkingEffort, ThinkingSettings } from "@atlas/core/contract";
 
 export const DEFAULT_THINKING_EFFORT: ThinkingEffort = "medium";
 

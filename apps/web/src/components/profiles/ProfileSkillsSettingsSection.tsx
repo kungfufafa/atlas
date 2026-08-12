@@ -1,4 +1,4 @@
-import type { ProfileDetail } from "@nakama/core/contract";
+import type { ProfileDetail } from "@atlas/core/contract";
 import { ProfileSkillsPostTurnReviewField } from "@/components/profiles/ProfileSkillsPostTurnReviewField";
 import { ProfileSkillsWriteApprovalField } from "@/components/profiles/ProfileSkillsWriteApprovalField";
 import { useAuth } from "@/context/use-auth";

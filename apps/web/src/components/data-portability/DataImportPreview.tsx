@@ -1,4 +1,4 @@
-import type { DataImportPreviewResponse } from "@nakama/core/contract";
+import type { DataImportPreviewResponse } from "@atlas/core/contract";
 import { Alert02Icon, Archive01Icon, Rotate02Icon } from "hugeicons-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";

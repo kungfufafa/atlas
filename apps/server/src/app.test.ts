@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { createHonoApp } from "./http/app";
 import { buildSetupAuthBody, withOrgId } from "./http/test-org-helpers";
 import {
@@ -15,19 +15,19 @@ import { AuthService } from "./services/auth-service";
 import { OrgService } from "./services/org-service";
 
 const TEST_DIST_DIR = join(import.meta.dir, "__test_dist__");
-const originalConfigDir = process.env.NAKAMA_CONFIG_DIR;
+const originalConfigDir = process.env.ATLAS_CONFIG_DIR;
 let testConfigDir = "";
 
 beforeAll(() => {
   testConfigDir = mkdtempSync(join(tmpdir(), "nakama-app-test-"));
-  process.env.NAKAMA_CONFIG_DIR = testConfigDir;
+  process.env.ATLAS_CONFIG_DIR = testConfigDir;
 });
 
 afterAll(() => {
   if (originalConfigDir === undefined) {
-    delete process.env.NAKAMA_CONFIG_DIR;
+    delete process.env.ATLAS_CONFIG_DIR;
   } else {
-    process.env.NAKAMA_CONFIG_DIR = originalConfigDir;
+    process.env.ATLAS_CONFIG_DIR = originalConfigDir;
   }
 
   if (testConfigDir) {

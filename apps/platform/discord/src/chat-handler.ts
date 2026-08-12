@@ -1,18 +1,18 @@
-import type { NakamaClient, RemoteChatSession } from "@nakama/client";
-import { isAttachOnlyCommand } from "@nakama/core";
-import { hasActiveAgentQuestionnaire } from "@nakama/core/agent-questionnaire";
+import type { AtlasClient, RemoteChatSession } from "@atlas/client";
+import { isAttachOnlyCommand } from "@atlas/core";
+import { hasActiveAgentQuestionnaire } from "@atlas/core/agent-questionnaire";
 import {
   type ChannelOrgStore,
   findOrgBySelectionInput,
   formatOrgSelectionPrompt,
   formatOrgSwitchConfirmation,
   prepareChannelOrgContext,
-} from "@nakama/core/channel-org";
+} from "@atlas/core/channel-org";
 import type {
   AgentQuestionnaire,
   SendMessageInput,
-} from "@nakama/core/contract";
-import { addDiscordAllowedUserId } from "@nakama/core/discord-config";
+} from "@atlas/core/contract";
+import { addDiscordAllowedUserId } from "@atlas/core/discord-config";
 import {
   filterProfilesForChatAccess,
   formatProfileSelectionPrompt,
@@ -22,7 +22,7 @@ import {
   pickProfileForOrg,
   resolveProfileInput,
   resolveProfileInScopes,
-} from "@nakama/core/profiles";
+} from "@atlas/core/profiles";
 import type {
   ChatInputCommandInteraction,
   Message,
@@ -94,20 +94,20 @@ const LINK_IN_PRIVATE_REPLY =
   "Link your account in a private DM with this bot first.";
 
 const PAIRING_PROMPT =
-  "Welcome to Nakama.\n\n" +
+  "Welcome to Atlas.\n\n" +
   "Paste your pairing code from Integrations → Discord in the web dashboard. " +
   "You only need to do this once.";
 
 const NO_CODE_PROMPT =
   "This bot is not linked yet.\n\n" +
-  "Open Nakama Integrations → Discord, save your bot token, and copy the pairing code. " +
+  "Open Atlas Integrations → Discord, save your bot token, and copy the pairing code. " +
   "Then send that code here in a DM.";
 
 const ALLOW_NOT_AUTHORIZED = "You are not authorized to use this command.";
 
 export interface ChatHandlerDeps {
   authStore: DiscordAuthStore;
-  client: NakamaClient;
+  client: AtlasClient;
   config: DiscordBridgeConfig;
   getBotInfo?: () => DiscordBotInfo | undefined;
   orgStore: ChannelOrgStore;
@@ -1146,7 +1146,7 @@ function deriveThreadName(messageText: string): string {
   const cleaned = messageText.replace(/\s+/g, " ").trim();
 
   if (!cleaned) {
-    return "Nakama chat";
+    return "Atlas chat";
   }
 
   // Discord thread names are capped at 100 characters.

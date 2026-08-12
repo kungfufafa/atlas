@@ -7,7 +7,7 @@ import {
   type ProviderName,
   readEnvValue,
   type UserConfig,
-} from "@nakama/core";
+} from "@atlas/core";
 import { resolveDefaultModelForInstance } from "../services/provider-instance-helpers";
 import { createAnthropicProvider } from "./anthropic";
 import { createCerebrasProvider } from "./cerebras";

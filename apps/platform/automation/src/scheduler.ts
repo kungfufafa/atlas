@@ -1,10 +1,10 @@
-import type { NakamaClient } from "@nakama/client";
+import type { AtlasClient } from "@atlas/client";
 import {
   AutomationScheduler,
   type AutomationSchedulerDelegate,
   type AutomationSchedulerStatus,
-} from "@nakama/core/automation-scheduler";
-import type { AutomationSchedule } from "@nakama/core/contract";
+} from "@atlas/core/automation-scheduler";
+import type { AutomationSchedule } from "@atlas/core/contract";
 
 export interface AutomationWorkerSchedulerDelegate
   extends AutomationSchedulerDelegate {}
@@ -14,7 +14,7 @@ export class AutomationWorkerScheduler {
   private pollTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(
-    private readonly client: NakamaClient,
+    private readonly client: AtlasClient,
     private readonly onStatusChange?: (
       status: AutomationSchedulerStatus
     ) => void

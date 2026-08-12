@@ -1,4 +1,4 @@
-import type { SkillSuggestion } from "@nakama/core/contract";
+import type { SkillSuggestion } from "@atlas/core/contract";
 
 /** Prefer YAML frontmatter description; fall back to a short body excerpt. */
 export function skillSuggestionPreview(suggestion: SkillSuggestion): {

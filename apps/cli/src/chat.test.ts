@@ -3,7 +3,7 @@ import type {
   HealthResponse,
   ModelsResponse,
   ProfileSummary,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
   formatErrorLines,
   formatStatusLines,

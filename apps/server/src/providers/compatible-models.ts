@@ -1,9 +1,9 @@
-import type { ProviderInstance, ProviderName } from "@nakama/core";
+import type { ProviderInstance, ProviderName } from "@atlas/core";
 import {
   type CustomModelEntry,
   findCustomModel,
   normalizeBaseUrl,
-} from "@nakama/core";
+} from "@atlas/core";
 import OpenAI from "openai";
 import type { ProviderModelOption } from "./models";
 import { AVAILABLE_MODELS } from "./models";

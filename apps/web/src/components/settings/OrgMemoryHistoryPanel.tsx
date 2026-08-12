@@ -1,4 +1,4 @@
-import type { OrgMemoryChangeLogEntry } from "@nakama/core/contract";
+import type { OrgMemoryChangeLogEntry } from "@atlas/core/contract";
 import { EyeIcon, RotateLeft01Icon, TimelineIcon } from "hugeicons-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";

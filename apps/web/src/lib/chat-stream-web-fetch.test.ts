@@ -45,15 +45,15 @@ describe("chat-stream-web-fetch", () => {
 
   test("parseExaWebFetchTextResult handles markdown crawl blocks", () => {
     const text = [
-      "# Nakama Docs",
-      "URL: https://ahmadrosid.github.io/nakama/getting-started.md",
+      "# Atlas Docs",
+      "URL: https://kungfufafa.github.io/atlas/getting-started.md",
       "Published: 2026-01-01",
-      "Author: Nakama",
+      "Author: Atlas",
       "",
       "Getting started content…",
       "",
       "# Telegram",
-      "URL: https://ahmadrosid.github.io/nakama/telegram.md",
+      "URL: https://kungfufafa.github.io/atlas/telegram.md",
       "",
       "Telegram setup content…",
     ].join("\n");
@@ -62,8 +62,8 @@ describe("chat-stream-web-fetch", () => {
 
     expect(sources).toHaveLength(2);
     expect(sources[0]).toMatchObject({
-      href: "https://ahmadrosid.github.io/nakama/getting-started.md",
-      title: "Nakama Docs",
+      href: "https://kungfufafa.github.io/atlas/getting-started.md",
+      title: "Atlas Docs",
     });
     expect(sources[1]?.title).toBe("Telegram");
   });

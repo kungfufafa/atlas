@@ -1,5 +1,5 @@
 {
-  "name": "@nakama/server",
+  "name": "@atlas/server",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,14 +10,14 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.1",
+    "@atlas/agent": "workspace:*",
+    "@atlas/core": "workspace:*",
+    "@atlas/db": "workspace:*",
     "@composio/core": "^0.14.1",
     "@countrystatecity/timezones": "^1.0.5",
     "@google/genai": "^2.7.0",
     "@hono/zod-openapi": "^1.4.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@nakama/agent": "workspace:*",
-    "@nakama/core": "workspace:*",
-    "@nakama/db": "workspace:*",
     "@openrouter/sdk": "^0.12.79",
     "bcryptjs": "^3.0.3",
     "croner": "^10.0.1",

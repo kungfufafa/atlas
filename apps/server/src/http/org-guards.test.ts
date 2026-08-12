@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { NakamaApiError } from "@nakama/core";
+import { AtlasApiError } from "@atlas/core";
 import {
   requireNotViewer,
   requireOrgAdmin,
@@ -23,8 +23,8 @@ describe("org guards", () => {
   });
 
   test("requireOrgAdmin rejects members and viewers", () => {
-    expect(() => requireOrgAdmin(auth("member"))).toThrow(NakamaApiError);
-    expect(() => requireOrgAdmin(auth("viewer"))).toThrow(NakamaApiError);
+    expect(() => requireOrgAdmin(auth("member"))).toThrow(AtlasApiError);
+    expect(() => requireOrgAdmin(auth("viewer"))).toThrow(AtlasApiError);
     try {
       requireOrgAdmin(auth("member"));
     } catch (error) {

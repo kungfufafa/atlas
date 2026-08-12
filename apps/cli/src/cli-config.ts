@@ -3,7 +3,7 @@ import {
   getUserConfigDir,
   readTextOrNull,
   writePrivateTextFile,
-} from "@nakama/core";
+} from "@atlas/core";
 
 export function getCliConfigPath(): string {
   return join(getUserConfigDir(), "cli.ini");
@@ -70,7 +70,7 @@ async function readCliConfigValues(): Promise<Record<string, string>> {
 }
 
 async function writeCliConfig(values: Record<string, string>): Promise<void> {
-  const lines = ["# Nakama CLI"];
+  const lines = ["# Atlas CLI"];
 
   if (values.org_id?.trim()) {
     lines.push(`org_id=${values.org_id.trim()}`);

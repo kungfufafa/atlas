@@ -1,4 +1,4 @@
-import type { ProviderInstance } from "@nakama/core";
+import type { ProviderInstance } from "@atlas/core";
 import type { CodingAgentProviderRouting } from "./coding-agent-provider-routing";
 
 export function inactiveRouting(): CodingAgentProviderRouting {

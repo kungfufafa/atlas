@@ -1,6 +1,6 @@
 ---
 title: "Builtin Tools"
-description: "Review the builtin tools that Nakama profiles can use, how access is controlled, and how memory, artifact, and document workflows use file tools plus bundled skills."
+description: "Review the builtin tools that Atlas profiles can use, how access is controlled, and how memory, artifact, and document workflows use file tools plus bundled skills."
 ---
 
 Builtin tools are the actions a profile is allowed to take.
@@ -28,7 +28,7 @@ Give each profile the minimum tool set it needs.
 
 ## Parallel execution
 
-When the model requests multiple tool calls in one turn, Nakama can run them concurrently — but only when **every** call in the batch is marked `parallelSafe`.
+When the model requests multiple tool calls in one turn, Atlas can run them concurrently — but only when **every** call in the batch is marked `parallelSafe`.
 
 | Parallel-safe builtins | Sequential (default) |
 |------------------------|----------------------|
@@ -36,13 +36,13 @@ When the model requests multiple tool calls in one turn, Nakama can run them con
 
 If a turn mixes parallel-safe and sequential tools — for example `read_file` and `bash` together — the whole turn runs sequentially.
 
-Custom JavaScript tools under `~/.nakama/tools/` default to sequential. Export `parallelSafe = true` from the module to opt in.
+Custom JavaScript tools under `~/.atlas/tools/` default to sequential. Export `parallelSafe = true` from the module to opt in.
 
 Parallel execution speeds up multi-file research and lets a parent agent delegate several independent `sub_agent` tasks at once. See [`sub_agent`](#sub_agent) below.
 
 ## Default assignments
 
-Nakama includes these builtins:
+Atlas includes these builtins:
 
 | Tool | `default` / `super_bot` | New custom profiles | Notes |
 |------|-------------------------|---------------------|-------|
@@ -88,7 +88,7 @@ Active `MEMORY.md` has a **4096-byte** soft limit. Default and super-bot profile
 
 Artifacts are files your agent creates and saves for you — reports, summaries, generated text, Word documents, and other outputs you can preview or download later from the dashboard Artifacts tab or from web chat.
 
-They are not a separate builtin. Agents use `write_file` or `write_docx` with the `save-artifact` bundled skill under `artifacts/`. The skill also documents writing a `{filename}.nakama-meta.json` sidecar so the Artifacts tab shows MIME types and timestamps.
+They are not a separate builtin. Agents use `write_file` or `write_docx` with the `save-artifact` bundled skill under `artifacts/`. The skill also documents writing a `{filename}.atlas-meta.json` sidecar so the Artifacts tab shows MIME types and timestamps.
 
 On web chat, `write_file` and `write_docx` saves under `artifacts/` appear as attachment chips on the assistant message. Click a chip to open a resizable preview panel with copy, download, and fullscreen:
 
@@ -122,7 +122,7 @@ Write text to a file in the profile workspace.
 
 **Returns:** `{ path, bytesWritten }`
 
-**Scope:** `~/.nakama/orgs/{orgId}/profiles/{profileId}/` and `~/.nakama/tools/` (custom JS modules)
+**Scope:** `~/.atlas/orgs/{orgId}/profiles/{profileId}/` and `~/.atlas/tools/` (custom JS modules)
 
 **Restrictions:** Rejects `.docx` and `.doc` paths — a `.docx` is a ZIP archive, not UTF-8 text. Use `write_docx` instead.
 
@@ -140,7 +140,7 @@ Create a real Microsoft Word (`.docx`) document from Markdown content. Headings,
 
 **Returns:** `{ path, bytesWritten }`
 
-**Scope:** Profile workspace only. Under `artifacts/`, existing files are not silently overwritten — Nakama picks a unique filename instead.
+**Scope:** Profile workspace only. Under `artifacts/`, existing files are not silently overwritten — Atlas picks a unique filename instead.
 
 **Availability:** When assigned to the profile. Assigned to system profiles (`default`, `super_bot`) by default; assign manually to custom profiles when needed.
 
@@ -169,7 +169,7 @@ Edit an existing text file in the profile workspace using exact replacements.
 | `edits` | array | Yes | One or more `{ oldText, newText }` replacements |
 | `cwd` | string | No | Base directory within workspace |
 
-Each `oldText` must be present once and edits must not overlap. Nakama applies all edits against the original file, then writes the result atomically after validation.
+Each `oldText` must be present once and edits must not overlap. Atlas applies all edits against the original file, then writes the result atomically after validation.
 
 **Returns:** `{ path, replacements, bytesWritten, fuzzyMatches }`
 
@@ -208,13 +208,13 @@ Search text in files under the profile workspace.
 
 **Returns:** `{ query, root, matches, matchCount, truncated }`
 
-**Scope:** `~/.nakama/orgs/{orgId}/profiles/{profileId}/` only. Requires `rg` (ripgrep) on PATH.
+**Scope:** `~/.atlas/orgs/{orgId}/profiles/{profileId}/` only. Requires `rg` (ripgrep) on PATH.
 
 **Availability:** When assigned to the profile.
 
 ### `knowledge_base_search`
 
-Search uploaded knowledge base documents for relevant facts. The Knowledge tab can also show inherited URL sources, such as the Nakama documentation index at `llms.txt`; use `web_fetch` on that index and on specific `.md` pages — not `knowledge_base_search`.
+Search uploaded knowledge base documents for relevant facts. The Knowledge tab can also show inherited URL sources, such as the Atlas documentation index at `llms.txt`; use `web_fetch` on that index and on specific `.md` pages — not `knowledge_base_search`.
 
 | Parameter | Type | Required | Notes |
 |-----------|------|----------|-------|
@@ -225,7 +225,7 @@ Search uploaded knowledge base documents for relevant facts. The Knowledge tab c
 
 **Returns:** `{ query, root, matches, matchCount, truncated }` — empty matches when no ready document matches the filter.
 
-**Scope:** Extracted text files stored under `~/.nakama/orgs/{orgId}/profiles/{profileId}/knowledge-base/`.
+**Scope:** Extracted text files stored under `~/.atlas/orgs/{orgId}/profiles/{profileId}/knowledge-base/`.
 
 **Availability:** When assigned **and** at least one uploaded document has `status: "ready"`. Inherited URL sources do not require `knowledge_base_search`; they require `web_fetch` or `web_search`.
 
@@ -274,7 +274,7 @@ List, read, search, and send email through the deployment mailbox configured in 
 
 **Returns:** Structured JSON with `messages`, `message`, or `sent` — or `{ error: "..." }` on failure. Send body max 256 KB.
 
-**Availability:** When assigned **and** the `[email]` section in `~/.nakama/config.ini` is complete. Omitted at runtime when incomplete (`omitUnavailableBuiltinTools`).
+**Availability:** When assigned **and** the `[email]` section in `~/.atlas/config.ini` is complete. Omitted at runtime when incomplete (`omitUnavailableBuiltinTools`).
 
 ### `extract_document_text`
 
@@ -300,19 +300,19 @@ Run a one-off shell command in the profile workspace and return stdout, stderr, 
 | `cwd` | string | No | Working directory within the profile workspace |
 | `timeoutMs` | number | No | Default 30000, max 1800000 (30 minutes) |
 | `env` | object | No | Extra env vars merged at spawn time (string values) |
-| `codingAgent` | boolean | No | When true, Nakama merges coding-agent spawn env for a command that starts with a known harness binary |
+| `codingAgent` | boolean | No | When true, Atlas merges coding-agent spawn env for a command that starts with a known harness binary |
 
 **Returns:** `{ exitCode, stdout, stderr, timedOut }`
 
-**Coding-agent spawn env:** When the command starts with a known harness binary (`codex`, `claude`, `opencode`, `pi`, or `agent`), or when `codingAgent: true` is set with such a command, Nakama merges provider passthrough env vars on the server before spawn. `codingAgent: true` without a known binary fails closed. See [Coding agent — Provider passthrough](/coding-agent#provider-passthrough). Optional `env` keys are merged on top (credential keys cannot override passthrough).
+**Coding-agent spawn env:** When the command starts with a known harness binary (`codex`, `claude`, `opencode`, `pi`, or `agent`), or when `codingAgent: true` is set with such a command, Atlas merges provider passthrough env vars on the server before spawn. `codingAgent: true` without a known binary fails closed. See [Coding agent — Provider passthrough](/coding-agent#provider-passthrough). Optional `env` keys are merged on top (credential keys cannot override passthrough).
 
-**Scope:** Profile workspace only. Do not use `bash` to create persistent tools or `.sh` wrappers — register JavaScript tools under `~/.nakama/tools/` instead.
+**Scope:** Profile workspace only. Do not use `bash` to create persistent tools or `.sh` wrappers — register JavaScript tools under `~/.atlas/tools/` instead.
 
 **Availability:** When assigned to the profile. Super Bot receives `bash` by default. Required for the [coding agent](/coding-agent) workflow and the opt-in [agent-browser](/agent-browser) skill.
 
 ### `sub_agent`
 
-Run a focused **same-profile** sub-agent for delegated work (research, review, planning, debugging). The parent receives a structured result to summarize for the user. This is a Nakama-native in-process agent loop — **not** the external coding-agent path (`bash` + `coding-agent`).
+Run a focused **same-profile** sub-agent for delegated work (research, review, planning, debugging). The parent receives a structured result to summarize for the user. This is a Atlas-native in-process agent loop — **not** the external coding-agent path (`bash` + `coding-agent`).
 
 While a sub-agent runs, the chat UI shows a dedicated row with the task title and a **live status label** (for example "Reading SOUL.md", "Searching web · …", "Writing answer…"). When the run completes, the row shows the summary with an expandable full output.
 
@@ -362,7 +362,7 @@ Return the organization's current live org memory content (pinned facts).
 
 ### Email
 
-The `email` tool uses a deployment-global mailbox. Required keys in `~/.nakama/config.ini` under `[email]`:
+The `email` tool uses a deployment-global mailbox. Required keys in `~/.atlas/config.ini` under `[email]`:
 
 - `imap_host`, `smtp_host`
 - `username`, `password`
@@ -377,11 +377,11 @@ Requires an OpenAI or Anthropic provider with a configured API key.
 
 ### Knowledge base
 
-Upload documents via the profile dashboard or API. Search only indexes extracted text from documents with `status: "ready"`. Upload path: `~/.nakama/orgs/{orgId}/profiles/{profileId}/knowledge-base/`.
+Upload documents via the profile dashboard or API. Search only indexes extracted text from documents with `status: "ready"`. Upload path: `~/.atlas/orgs/{orgId}/profiles/{profileId}/knowledge-base/`.
 
 ### Data portability
 
-Platform admins can export and import the whole local Nakama data root from **Settings** in the dashboard.
+Platform admins can export and import the whole local Atlas data root from **Settings** in the dashboard.
 Use **Export ZIP** to download a backup.
 Exports are `.zip` backups and should be handled as sensitive files because they can include local auth, provider configuration, custom tools, skills, profile workspaces, and a local SQLite database.
 
@@ -392,8 +392,8 @@ Confirmed restore replaces the current local data root; selective merge, schedul
 
 File tools (`read_file`, `write_file`, `edit_file`, `delete_file`) are scoped to:
 
-- **Profile workspace:** `~/.nakama/orgs/{orgId}/profiles/{profileId}/` (soul files, knowledge base, `artifacts/`, etc.)
-- **Custom tools directory:** `~/.nakama/tools/` (follows `NAKAMA_CONFIG_DIR` if set)
+- **Profile workspace:** `~/.atlas/orgs/{orgId}/profiles/{profileId}/` (soul files, knowledge base, `artifacts/`, etc.)
+- **Custom tools directory:** `~/.atlas/tools/` (follows `ATLAS_CONFIG_DIR` if set)
 
 Agents save artifact files under `artifacts/` via the `save-artifact` bundled skill and `write_file`, not a dedicated builtin.
 

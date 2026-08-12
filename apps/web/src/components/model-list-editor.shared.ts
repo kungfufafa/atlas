@@ -1,4 +1,4 @@
-import type { CustomModelEntry } from "@nakama/core/contract";
+import type { CustomModelEntry } from "@atlas/core/contract";
 import type { ModelListRow } from "@/components/ModelListEditor";
 
 export function normalizeModelListRows(

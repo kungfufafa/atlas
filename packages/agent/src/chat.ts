@@ -11,7 +11,7 @@ import type {
   ToolCall,
   ToolContext,
   ToolDefinition,
-} from "@nakama/core";
+} from "@atlas/core";
 
 export interface AgentRequest {
   channel: AgentChannel;
@@ -33,7 +33,7 @@ import {
   normalizeUserContent,
   partitionTools,
   toLlmToolDefinitions,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
   buildChatSystemPrompt,
   UNTRUSTED_DOCUMENT_GUIDANCE,

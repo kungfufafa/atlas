@@ -19,17 +19,17 @@ let configDir: string;
 let previousConfigDir: string | undefined;
 
 beforeEach(async () => {
-  previousConfigDir = process.env.NAKAMA_CONFIG_DIR;
+  previousConfigDir = process.env.ATLAS_CONFIG_DIR;
   configDir = await mkdtemp(path.join(tmpdir(), "nakama-artifacts-"));
-  process.env.NAKAMA_CONFIG_DIR = configDir;
+  process.env.ATLAS_CONFIG_DIR = configDir;
   await mkdir(getProfileArtifactsDir(ORG_ID, PROFILE_ID), { recursive: true });
 });
 
 afterEach(async () => {
   if (previousConfigDir === undefined) {
-    delete process.env.NAKAMA_CONFIG_DIR;
+    delete process.env.ATLAS_CONFIG_DIR;
   } else {
-    process.env.NAKAMA_CONFIG_DIR = previousConfigDir;
+    process.env.ATLAS_CONFIG_DIR = previousConfigDir;
   }
 
   await rm(configDir, { force: true, recursive: true });
@@ -63,7 +63,7 @@ test("serves a markdown artifact without a sidecar as text/markdown", async () =
 test("prefers the sidecar mime type when present", async () => {
   await writeArtifact("page.html", "<p>hi</p>");
   await writeArtifact(
-    "page.html.nakama-meta.json",
+    "page.html.atlas-meta.json",
     JSON.stringify({
       mimeType: "text/html",
       savedAt: "2026-01-01T00:00:00.000Z",

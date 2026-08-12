@@ -78,12 +78,12 @@ export type AgentChannel =
   | "task"
   | "subagent";
 
-export const NAKAMA_API_VERSION = 1;
+export const ATLAS_API_VERSION = 1;
 
 export interface HealthResponse {
-  apiVersion: typeof NAKAMA_API_VERSION;
+  apiVersion: typeof ATLAS_API_VERSION;
   /**
-   * Whether Nakama can reach the Composio API with the saved key.
+   * Whether Atlas can reach the Composio API with the saved key.
    * Probed only on `GET /v1/system/status` (`server.composioAvailable`).
    * `GET /health` always returns `false` so liveness stays local and fast.
    */
@@ -207,7 +207,7 @@ export interface DataExportSkippedItem {
 }
 
 export interface DataExportManifest {
-  apiVersion: typeof NAKAMA_API_VERSION;
+  apiVersion: typeof ATLAS_API_VERSION;
   createdAt: string;
   fileCount: number;
   kind: "nakama-export";
@@ -271,7 +271,7 @@ export interface UpdateWebPublicUrlRequest {
 }
 
 export interface WebPublicUrlSettingsResponse {
-  /** Set when NAKAMA_WEB_PUBLIC_URL / NAKAMA_PUBLIC_URL overrides the saved value. */
+  /** Set when ATLAS_WEB_PUBLIC_URL / NAKAMA_PUBLIC_URL overrides the saved value. */
   envOverride: string | null;
   webPublicUrl: string | null;
 }
@@ -1900,7 +1900,7 @@ export interface ToolContext {
   /** Aborts when the caller cancels the turn. Long-running tools should stop their work on it. */
   signal?: AbortSignal;
   userId?: string;
-  /** Profile workspace root (~/.nakama/orgs/{orgId}/profiles/{profileId}/). */
+  /** Profile workspace root (~/.atlas/orgs/{orgId}/profiles/{profileId}/). */
   workspaceRoot?: string;
 }
 
@@ -1970,7 +1970,7 @@ export interface ListComposioToolkitsResponse {
   catalogError: string | null;
   /** @deprecated Use composioReachable. */
   composioAvailable: boolean;
-  /** Nakama can reach the Composio API with the saved key. */
+  /** Atlas can reach the Composio API with the saved key. */
   composioReachable: boolean;
   /** A Composio project API key is saved on this server. */
   configured: boolean;

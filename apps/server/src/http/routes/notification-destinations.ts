@@ -5,8 +5,8 @@ import type {
   NotificationDestinationWithSecret,
   RegenerateNotificationDestinationKeyResponse,
   UpdateNotificationDestinationRequest,
-} from "@nakama/core";
-import { NakamaApiError } from "@nakama/core";
+} from "@atlas/core";
+import { AtlasApiError } from "@atlas/core";
 import { NotificationDestinationService } from "../../services/notification-destination-service";
 import type { ServerOptions } from "../context";
 import { requireOrgAdminFromContext } from "../org-guards";
@@ -40,7 +40,7 @@ export function registerNotificationDestinationRoutes(
         await service.create(auth.activeOrgId!, body)
       );
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
       return errorResponse(
@@ -65,7 +65,7 @@ export function registerNotificationDestinationRoutes(
         )
       );
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
       return errorResponse(
@@ -88,7 +88,7 @@ export function registerNotificationDestinationRoutes(
           )
         );
       } catch (error) {
-        if (error instanceof NakamaApiError) {
+        if (error instanceof AtlasApiError) {
           return errorResponse(error.message, error.status);
         }
         return errorResponse(
@@ -106,7 +106,7 @@ export function registerNotificationDestinationRoutes(
       await service.delete(auth.activeOrgId!, c.req.param("destinationId"));
       return new Response(null, { status: 204 });
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
       return errorResponse(

@@ -1,15 +1,15 @@
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type {
   CachedMcpToolSummary,
   McpHttpConfig,
   McpStdioConfig,
   McpTransport,
-} from "@nakama/core";
-import { getProfileSoulDir } from "@nakama/core";
-import type { CachedMcpTool, StoredMcpServerRecord } from "@nakama/db";
+} from "@atlas/core";
+import { getProfileSoulDir } from "@atlas/core";
+import type { CachedMcpTool, StoredMcpServerRecord } from "@atlas/db";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 
 interface ConnectedMcpClient {
   client: Client;

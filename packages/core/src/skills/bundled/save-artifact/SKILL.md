@@ -17,7 +17,7 @@ Use this skill to save **durable deliverables** the user may revisit later.
 
 ## Metadata sidecar
 
-After writing the artifact file, write a JSON sidecar at `artifacts/{filename}.nakama-meta.json` so the dashboard shows the correct MIME type and timestamp.
+After writing the artifact file, write a JSON sidecar at `artifacts/{filename}.atlas-meta.json` so the dashboard shows the correct MIME type and timestamp.
 
 Example for `artifacts/report.md`:
 
@@ -37,7 +37,7 @@ Example for `artifacts/report.md`:
 
 1. Choose a short, descriptive filename under `artifacts/` (use subdirectories when grouping related files, e.g. `artifacts/weekly/report.md`).
 2. `write_file` the artifact content to `artifacts/{filename}`. If that name already exists, a date suffix is added automatically (e.g. `report-2026-07-14.md`).
-3. `write_file` the metadata sidecar to `artifacts/{filename}.nakama-meta.json` using the same base filename from step 2.
+3. `write_file` the metadata sidecar to `artifacts/{filename}.atlas-meta.json` using the same base filename from step 2.
 4. Confirm both paths in your reply so the user knows where to find the file. On web chat, saved artifacts also appear as attachment chips on the assistant message (with preview) in addition to the profile **Artifacts** tab.
 
 ## MIME type guidance

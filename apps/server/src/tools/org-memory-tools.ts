@@ -3,7 +3,7 @@ import {
   type OrgRole,
   type ToolContext,
   type ToolDefinition,
-} from "@nakama/core";
+} from "@atlas/core";
 import type { OrgMemoryService } from "../services/org-memory-service";
 
 function requireOrgId(context: ToolContext): string {

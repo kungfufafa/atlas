@@ -1,14 +1,14 @@
 import {
   generateSkillPostTurnReview,
   type SkillPostTurnReviewOutcome,
-} from "@nakama/agent";
+} from "@atlas/agent";
 import {
   type ChatMessage,
   extractLatestTurnMessages,
   resolveSkillPostTurnReviewEnabled,
   type UserConfig,
-} from "@nakama/core";
-import type { DatabaseAdapter } from "@nakama/db";
+} from "@atlas/core";
+import type { DatabaseAdapter } from "@atlas/db";
 import { createProviderForInstance } from "../providers/create";
 import { resolveProfileProviderSelection } from "./provider-instance-helpers";
 

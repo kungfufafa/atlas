@@ -16,8 +16,8 @@ import type {
   ProviderName,
   StreamChatHandlers,
   ToolCall,
-} from "@nakama/core";
-import { toAnthropicUserContent, WEB_SEARCH_TOOL_NAME } from "@nakama/core";
+} from "@atlas/core";
+import { toAnthropicUserContent, WEB_SEARCH_TOOL_NAME } from "@atlas/core";
 import {
   buildTokenUsage,
   normalizeThinkingEffort,

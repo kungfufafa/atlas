@@ -1,4 +1,3 @@
-import { createRoute, z } from "@hono/zod-openapi";
 import type {
   AssignToolRequest,
   CreateToolRequest,
@@ -10,7 +9,8 @@ import type {
   SuggestToolParamsResponse,
   ToolResponse,
   ToolSourceResponse,
-} from "@nakama/core";
+} from "@atlas/core";
+import { createRoute, z } from "@hono/zod-openapi";
 import type { ServerOptions } from "../context";
 import {
   requireActiveOrgIdFromContext,

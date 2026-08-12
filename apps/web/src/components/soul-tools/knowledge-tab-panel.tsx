@@ -1,7 +1,7 @@
 import type {
   KnowledgeBaseDocument,
   KnowledgeBaseSource,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import {
   Delete02Icon,
   File01Icon,

@@ -1,4 +1,4 @@
-import { inferArtifactMimeType } from "@nakama/core/artifact-mime";
+import { inferArtifactMimeType } from "@atlas/core/artifact-mime";
 import type { ChatListItem } from "@/lib/chat-history";
 
 export {
@@ -15,9 +15,9 @@ export {
   LEGACY_DOC_UNSUPPORTED_MESSAGE,
   looksLikeUtf8Text,
   resolveArtifactMimeType,
-} from "@nakama/core/artifact-mime";
+} from "@atlas/core/artifact-mime";
 
-const ARTIFACT_META_SUFFIX = ".nakama-meta.json";
+const ARTIFACT_META_SUFFIX = ".atlas-meta.json";
 const ARTIFACTS_SEGMENT = "/artifacts/";
 const ARTIFACTS_PREFIX = "artifacts/";
 const ARTIFACT_PATH_IN_TEXT =
@@ -117,7 +117,7 @@ function isUnderArtifactsDir(resolvedPath: string): boolean {
 function isArtifactMetaRelativePath(relativePath: string): boolean {
   return (
     relativePath.endsWith(ARTIFACT_META_SUFFIX) ||
-    relativePath.includes(".nakama-meta")
+    relativePath.includes(".atlas-meta")
   );
 }
 
@@ -125,7 +125,7 @@ function isArtifactMetaResolvedPath(resolvedPath: string): boolean {
   return (
     isUnderArtifactsDir(resolvedPath) &&
     (resolvedPath.endsWith(ARTIFACT_META_SUFFIX) ||
-      resolvedPath.includes(".nakama-meta"))
+      resolvedPath.includes(".atlas-meta"))
   );
 }
 
@@ -140,7 +140,7 @@ export function isArtifactMetaSidecarTool(message: ChatListItem): boolean {
 
   if (
     inputPath &&
-    (inputPath.includes(".nakama-meta") ||
+    (inputPath.includes(".atlas-meta") ||
       inputPath.endsWith(ARTIFACT_META_SUFFIX))
   ) {
     return true;
@@ -153,7 +153,7 @@ export function isArtifactMetaSidecarTool(message: ChatListItem): boolean {
 
   if (typeof result?.path === "string") {
     return (
-      result.path.includes(".nakama-meta") ||
+      result.path.includes(".atlas-meta") ||
       result.path.endsWith(ARTIFACT_META_SUFFIX)
     );
   }
@@ -363,7 +363,7 @@ export function extractArtifactPathsFromText(content: string): string[] {
 
 /**
  * Extract artifact chips from an assistant turn's tool messages and text.
- * Prefers content + `.nakama-meta.json` sidecar pairs; falls back to content-only
+ * Prefers content + `.atlas-meta.json` sidecar pairs; falls back to content-only
  * writes under artifacts/ and `artifacts/...` mentions in assistant text.
  */
 export function extractTurnArtifacts(

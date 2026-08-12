@@ -2,20 +2,20 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import type { StoredToolRecord } from "@nakama/db";
+import type { StoredToolRecord } from "@atlas/db";
 import {
   loadJavascriptTool,
   resolveJavascriptModulePath,
 } from "./javascript-tool-loader";
 
-const originalConfigDir = process.env.NAKAMA_CONFIG_DIR;
+const originalConfigDir = process.env.ATLAS_CONFIG_DIR;
 
 async function setupToolsDir(): Promise<{
   configDir: string;
   toolsDir: string;
 }> {
   const configDir = await mkdtemp(path.join(os.tmpdir(), "nakama-config-"));
-  process.env.NAKAMA_CONFIG_DIR = configDir;
+  process.env.ATLAS_CONFIG_DIR = configDir;
   const toolsDir = path.join(configDir, "tools");
   await mkdir(toolsDir, { recursive: true });
   return { configDir, toolsDir };
@@ -26,9 +26,9 @@ describe("javascript tool loader", () => {
 
   afterEach(async () => {
     if (originalConfigDir === undefined) {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
     } else {
-      process.env.NAKAMA_CONFIG_DIR = originalConfigDir;
+      process.env.ATLAS_CONFIG_DIR = originalConfigDir;
     }
 
     if (configDir) {
@@ -142,9 +142,9 @@ describe("tool resolver", () => {
 
   afterEach(async () => {
     if (originalConfigDir === undefined) {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
     } else {
-      process.env.NAKAMA_CONFIG_DIR = originalConfigDir;
+      process.env.ATLAS_CONFIG_DIR = originalConfigDir;
     }
 
     if (configDir) {

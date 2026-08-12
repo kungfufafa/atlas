@@ -1,9 +1,9 @@
-import { createClient } from "@nakama/client";
+import { createClient } from "@atlas/client";
 import {
   ensureServerRunning,
   stopSpawnedServer,
-} from "@nakama/core/ensure-server";
-import { loadLocalAuthToken } from "@nakama/core/local-auth";
+} from "@atlas/core/ensure-server";
+import { loadLocalAuthToken } from "@atlas/core/local-auth";
 import { runChat } from "./chat";
 import { parseCliOrgArgs, resolveCliOrgId } from "./org";
 import { parseCliProfileArgs } from "./profile";
@@ -57,10 +57,10 @@ async function resolveTheme(): Promise<Theme> {
   if (explicit) {
     return explicit;
   }
-  if (process.env.NAKAMA_THEME === "light") {
+  if (process.env.ATLAS_THEME === "light") {
     return "light";
   }
-  if (process.env.NAKAMA_THEME === "dark") {
+  if (process.env.ATLAS_THEME === "dark") {
     return "dark";
   }
   const detected = await detectTheme();

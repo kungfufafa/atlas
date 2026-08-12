@@ -5,10 +5,10 @@ import path from "node:path";
 import {
   createInMemoryDatabaseAdapter,
   ensureBuiltinToolDefinitions,
-} from "@nakama/db";
+} from "@atlas/db";
 import { ProfileService } from "./profile-service";
 
-const originalConfigDir = process.env.NAKAMA_CONFIG_DIR;
+const originalConfigDir = process.env.ATLAS_CONFIG_DIR;
 
 const tinyPngBase64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
@@ -20,9 +20,9 @@ describe("profile service createTool", () => {
 
   afterEach(async () => {
     if (originalConfigDir === undefined) {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
     } else {
-      process.env.NAKAMA_CONFIG_DIR = originalConfigDir;
+      process.env.ATLAS_CONFIG_DIR = originalConfigDir;
     }
 
     if (tempConfigDir) {
@@ -35,7 +35,7 @@ describe("profile service createTool", () => {
     tempConfigDir = await mkdtemp(
       path.join(os.tmpdir(), "nakama-profile-tool-")
     );
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
     const toolsDir = path.join(tempConfigDir, "tools");
     await mkdir(toolsDir, { recursive: true });
 
@@ -76,7 +76,7 @@ describe("profile service avatar", () => {
   let tempConfigDir = "";
 
   afterEach(async () => {
-    process.env.NAKAMA_CONFIG_DIR = originalConfigDir;
+    process.env.ATLAS_CONFIG_DIR = originalConfigDir;
 
     if (tempConfigDir) {
       await rm(tempConfigDir, { force: true, recursive: true });
@@ -88,7 +88,7 @@ describe("profile service avatar", () => {
     tempConfigDir = await mkdtemp(
       path.join(os.tmpdir(), "nakama-profile-avatar-")
     );
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const service = new ProfileService(createInMemoryDatabaseAdapter());
     const created = await service.createProfile(ORG_ID, { name: "Avatar Bot" });
@@ -122,7 +122,7 @@ describe("profile service createProfile", () => {
   let tempConfigDir = "";
 
   afterEach(async () => {
-    process.env.NAKAMA_CONFIG_DIR = originalConfigDir;
+    process.env.ATLAS_CONFIG_DIR = originalConfigDir;
 
     if (tempConfigDir) {
       await rm(tempConfigDir, { force: true, recursive: true });
@@ -134,7 +134,7 @@ describe("profile service createProfile", () => {
     tempConfigDir = await mkdtemp(
       path.join(os.tmpdir(), "nakama-profile-soul-")
     );
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const service = new ProfileService(createInMemoryDatabaseAdapter());
     const created = await service.createProfile(ORG_ID, { name: "Soul Bot" });
@@ -157,7 +157,7 @@ describe("profile service createProfile", () => {
     tempConfigDir = await mkdtemp(
       path.join(os.tmpdir(), "nakama-profile-default-tools-")
     );
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const db = createInMemoryDatabaseAdapter();
     await ensureBuiltinToolDefinitions(db);
@@ -182,7 +182,7 @@ describe("profile service createProfile", () => {
     tempConfigDir = await mkdtemp(
       path.join(os.tmpdir(), "nakama-profile-default-skills-")
     );
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const db = createInMemoryDatabaseAdapter();
     const now = new Date().toISOString();
@@ -211,7 +211,7 @@ describe("profile service createProfile", () => {
     tempConfigDir = await mkdtemp(
       path.join(os.tmpdir(), "nakama-profile-missing-tools-")
     );
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const db = createInMemoryDatabaseAdapter();
 
@@ -228,7 +228,7 @@ describe("profile service createProfile", () => {
     tempConfigDir = await mkdtemp(
       path.join(os.tmpdir(), "nakama-profile-generated-soul-")
     );
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const service = new ProfileService(createInMemoryDatabaseAdapter());
     const created = await service.createProfile(ORG_ID, {
@@ -265,7 +265,7 @@ describe("profile service createProfile", () => {
     tempConfigDir = await mkdtemp(
       path.join(os.tmpdir(), "nakama-profile-bad-soul-")
     );
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const service = new ProfileService(createInMemoryDatabaseAdapter());
 
@@ -283,7 +283,7 @@ describe("profile service createProfile", () => {
     tempConfigDir = await mkdtemp(
       path.join(os.tmpdir(), "nakama-profile-model-")
     );
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const service = new ProfileService(createInMemoryDatabaseAdapter());
 
@@ -305,7 +305,7 @@ describe("profile service createProfile", () => {
     tempConfigDir = await mkdtemp(
       path.join(os.tmpdir(), "nakama-profile-slug-id-")
     );
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const service = new ProfileService(createInMemoryDatabaseAdapter());
     const created = await service.createProfile(ORG_ID, {
@@ -319,7 +319,7 @@ describe("profile service createProfile", () => {
     tempConfigDir = await mkdtemp(
       path.join(os.tmpdir(), "nakama-profile-custom-id-")
     );
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const service = new ProfileService(createInMemoryDatabaseAdapter());
     const created = await service.createProfile(ORG_ID, {
@@ -334,7 +334,7 @@ describe("profile service createProfile", () => {
     tempConfigDir = await mkdtemp(
       path.join(os.tmpdir(), "nakama-profile-duplicate-id-")
     );
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const service = new ProfileService(createInMemoryDatabaseAdapter());
 
@@ -357,15 +357,15 @@ describe("profile service createProfile", () => {
 describe("profile service assignSkill", () => {
   let tempConfigDir = "";
   const originalPath = process.env.PATH ?? "";
-  const originalDisableFixPath = process.env.NAKAMA_DISABLE_FIX_PATH;
+  const originalDisableFixPath = process.env.ATLAS_DISABLE_FIX_PATH;
 
   afterEach(async () => {
-    process.env.NAKAMA_CONFIG_DIR = originalConfigDir;
+    process.env.ATLAS_CONFIG_DIR = originalConfigDir;
     process.env.PATH = originalPath;
     if (originalDisableFixPath === undefined) {
-      delete process.env.NAKAMA_DISABLE_FIX_PATH;
+      delete process.env.ATLAS_DISABLE_FIX_PATH;
     } else {
-      process.env.NAKAMA_DISABLE_FIX_PATH = originalDisableFixPath;
+      process.env.ATLAS_DISABLE_FIX_PATH = originalDisableFixPath;
     }
 
     if (tempConfigDir) {
@@ -378,9 +378,9 @@ describe("profile service assignSkill", () => {
     tempConfigDir = await mkdtemp(
       path.join(os.tmpdir(), "nakama-profile-assign-skill-")
     );
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
     process.env.PATH = tempConfigDir;
-    process.env.NAKAMA_DISABLE_FIX_PATH = "1";
+    process.env.ATLAS_DISABLE_FIX_PATH = "1";
 
     const db = createInMemoryDatabaseAdapter();
     await ensureBuiltinToolDefinitions(db);
@@ -417,7 +417,7 @@ describe("profile service knowledge base", () => {
   let tempConfigDir = "";
 
   afterEach(async () => {
-    process.env.NAKAMA_CONFIG_DIR = originalConfigDir;
+    process.env.ATLAS_CONFIG_DIR = originalConfigDir;
 
     if (tempConfigDir) {
       await rm(tempConfigDir, { force: true, recursive: true });
@@ -427,7 +427,7 @@ describe("profile service knowledge base", () => {
 
   test("uploads, lists, and deletes knowledge base documents", async () => {
     tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "nakama-profile-kb-"));
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const service = new ProfileService(createInMemoryDatabaseAdapter());
     const created = await service.createProfile(ORG_ID, { name: "KB Bot" });
@@ -463,7 +463,7 @@ describe("profile service knowledge base", () => {
 
   test("readKnowledgeBaseDocument returns preview text and download bytes", async () => {
     tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "nakama-profile-kb-"));
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const service = new ProfileService(createInMemoryDatabaseAdapter());
     const created = await service.createProfile(ORG_ID, { name: "KB Bot" });
@@ -498,7 +498,7 @@ describe("profile service knowledge base", () => {
 
   test("readKnowledgeBaseDocument throws for unknown document", async () => {
     tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "nakama-profile-kb-"));
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const service = new ProfileService(createInMemoryDatabaseAdapter());
     const created = await service.createProfile(ORG_ID, { name: "KB Bot" });

@@ -1,4 +1,4 @@
-import type { CustomModelEntry } from "@nakama/core/contract";
+import type { CustomModelEntry } from "@atlas/core/contract";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import type { CapabilityBrowseRow } from "@/components/model-browse-utils";
 import { client } from "@/lib/client";

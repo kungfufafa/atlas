@@ -1,10 +1,10 @@
-import { NakamaApiError } from "@nakama/core";
+import { AtlasApiError } from "@atlas/core";
 import type {
   ArtifactShareStatusResponse,
   PublishArtifactShareRequest,
   PublishArtifactShareResponse,
   RevokeArtifactShareResponse,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import { ArtifactShareService } from "../../services/artifact-share-service";
 import { resolveRequestClientOrigin } from "../../services/composio-callback-url";
 import type { ServerOptions } from "../context";
@@ -120,7 +120,7 @@ export function registerArtifactShareRoutes(
         },
       });
     } catch (error) {
-      if (error instanceof NakamaApiError && error.status === 404) {
+      if (error instanceof AtlasApiError && error.status === 404) {
         return json({ error: "Not found" }, 404);
       }
 

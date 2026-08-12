@@ -1,4 +1,4 @@
-import { type CustomModelEntry, normalizeBaseUrl } from "@nakama/core";
+import { type CustomModelEntry, normalizeBaseUrl } from "@atlas/core";
 import { fetchRemoteOpenAIModels } from "../compatible-models";
 
 interface OllamaTagsResponse {

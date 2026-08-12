@@ -1,6 +1,6 @@
 ---
 title: "Quickstart"
-description: "Try the live demo, or install Nakama with Bun, Docker, or managed hosting and send your first chat message."
+description: "Try the live demo, or install Atlas with Bun, Docker, or managed hosting and send your first chat message."
 ---
 
 ## Before you start
@@ -23,7 +23,7 @@ The demo is shared and reset periodically — use it to click around the dashboa
 
 ### Option 2: Managed hosting
 
-If you do not want to run your own server, use [Nakama Cloud](https://getnakama.cloud/). Sign up, create an instance, and open your dedicated URL (for example `acme.getnakama.cloud`). The first 24 hours are free with no credit card required.
+If you do not want to run your own server, use [Atlas Cloud](https://getnakama.cloud/). Sign up, create an instance, and open your dedicated URL (for example `acme.getnakama.cloud`). The first 24 hours are free with no credit card required.
 
 Complete the setup wizard in the browser and you are live. Skip to [First-time setup](/first-time-setup).
 
@@ -32,8 +32,8 @@ Complete the setup wizard in the browser and you are live. Skip to [First-time s
 For a single-container deployment:
 
 ```bash
-docker pull ghcr.io/ahmadrosid/nakama:latest
-docker run -d -p 4310:4310 -v nakama-data:/nakama/data --name nakama ghcr.io/ahmadrosid/nakama:latest
+docker pull ghcr.io/kungfufafa/atlas:latest
+docker run -d -p 4310:4310 -v atlas-data:/nakama/data --name nakama ghcr.io/kungfufafa/atlas:latest
 ```
 
 Open `http://localhost:4310`. See [Docker](/docker) for build-from-source, volumes, and production notes.
@@ -43,7 +43,7 @@ Open `http://localhost:4310`. See [Docker](/docker) for build-from-source, volum
 Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/ahmadrosid/nakama.git
+git clone https://github.com/kungfufafa/atlas.git
 cd nakama
 bun install
 bun run dev:web
@@ -61,11 +61,11 @@ If you only want the API server:
 bun run dev:server
 ```
 
-On first run, Nakama asks for your provider and API key if they are not configured yet. Settings are saved in `~/.nakama/config.ini`.
+On first run, Atlas asks for your provider and API key if they are not configured yet. Settings are saved in `~/.atlas/config.ini`.
 
 ## First-time setup
 
-After Nakama is running:
+After Atlas is running:
 
 1. Open the dashboard
 2. Create the first admin account and first organization
@@ -88,11 +88,11 @@ Use the web dashboard, [CLI](/cli), Telegram, WhatsApp, or Discord:
 
 ### Understand the mental model
 
-Most of Nakama fits four ideas: organization, profile, tool access, and channel. See [Overview](/overview).
+Most of Atlas fits four ideas: organization, profile, tool access, and channel. See [Overview](/overview).
 
 ## Next steps
 
-- [Overview](/overview) — what Nakama is and how to think about it
+- [Overview](/overview) — what Atlas is and how to think about it
 - [Providers](/providers) — LLM API keys and model setup
 - [Profiles](/profiles) — how to define each bot
 - [Multi-tenancy](/multi-tenancy) — orgs, members, and roles

@@ -7,8 +7,8 @@ import type {
   LlmToolDefinition,
   ProviderClient,
   StreamChatHandlers,
-} from "@nakama/core";
-import { estimateUserContentTokens } from "@nakama/core";
+} from "@atlas/core";
+import { estimateUserContentTokens } from "@atlas/core";
 import type { LlmUsageTracker } from "../services/llm-usage-tracker";
 
 function estimateTokens(text: string): number {

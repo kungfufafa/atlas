@@ -42,7 +42,7 @@ mkdir -p "$SCREENSHOT_DIR" "$TEMP_CONFIG"
 # its daemon + logs by PM2_HOME, so this keeps the captured logs isolated.
 export PM2_HOME="$TEMP_CONFIG/pm2"
 
-NAKAMA_CONFIG_DIR="$TEMP_CONFIG" NAKAMA_PORT="$PORT" \
+ATLAS_CONFIG_DIR="$TEMP_CONFIG" ATLAS_PORT="$PORT" \
   bun run "$ROOT/apps/server/src/index.ts" > /tmp/nakama-docs-telegram-screenshot-server.log 2>&1 &
 SERVER_PID=$!
 

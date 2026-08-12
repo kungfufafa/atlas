@@ -1,4 +1,4 @@
-import type { CachedMcpToolSummary, McpTransport } from "@nakama/core/contract";
+import type { CachedMcpToolSummary, McpTransport } from "@atlas/core/contract";
 import { CodeIcon } from "hugeicons-react";
 import { McpToolList } from "@/components/soul-tools/McpToolList";
 import {

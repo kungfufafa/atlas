@@ -1,6 +1,6 @@
-import { createRoute, z } from "@hono/zod-openapi";
 import {
   type AgentBrowserStatusResponse,
+  AtlasApiError,
   type ComposioSettingsResponse,
   type ConfigureProviderRequest,
   type ConfigureProviderResponse,
@@ -16,7 +16,6 @@ import {
   type ListProvidersResponse,
   type ListTimezonesResponse,
   type ModelsResponse,
-  NakamaApiError,
   resetWhatsAppSessionForReconnect,
   type SendEmailTestRequest,
   type SendEmailTestResponse,
@@ -40,7 +39,8 @@ import {
   type UpdateWhatsAppSettingsRequest,
   type VisionSettingsResponse,
   type WhatsAppSettingsResponse,
-} from "@nakama/core";
+} from "@atlas/core";
+import { createRoute, z } from "@hono/zod-openapi";
 import { installAgentBrowser } from "../../services/agent-browser-service";
 import {
   getExternalModelCatalog,
@@ -1211,7 +1211,7 @@ export function registerModelRoutes(
     try {
       return json<VisionSettingsResponse>(await agent.setVisionSettings(body));
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
 
@@ -1236,7 +1236,7 @@ export function registerModelRoutes(
         await agent.setTranscriptionSettings(body)
       );
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
 
@@ -1252,7 +1252,7 @@ export function registerModelRoutes(
     try {
       return json<TranscribeAudioResponse>(await agent.transcribeAudio(body));
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
 
@@ -1277,7 +1277,7 @@ export function registerModelRoutes(
         await agent.setImageGenerationSettings(body)
       );
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
 
@@ -1293,7 +1293,7 @@ export function registerModelRoutes(
     try {
       return json<GenerateImageResponse>(await agent.generateImage(body));
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
 
@@ -1314,7 +1314,7 @@ export function registerModelRoutes(
     try {
       return json<EmailSettingsResponse>(await agent.setEmailSettings(body));
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
       const message = error instanceof Error ? error.message : String(error);
@@ -1333,7 +1333,7 @@ export function registerModelRoutes(
         await agent.sendEmailTest(body.to?.trim() || auth.user.email)
       );
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
       const message = error instanceof Error ? error.message : String(error);
@@ -1386,7 +1386,7 @@ export function registerModelRoutes(
         await agent.setTelegramSettings(body)
       );
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
       const message = error instanceof Error ? error.message : String(error);
@@ -1420,7 +1420,7 @@ export function registerModelRoutes(
         await agent.setDiscordSettings(body)
       );
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
       const message = error instanceof Error ? error.message : String(error);
@@ -1454,7 +1454,7 @@ export function registerModelRoutes(
         await agent.setComposioSettings(body)
       );
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
       const message = error instanceof Error ? error.message : String(error);
@@ -1475,7 +1475,7 @@ export function registerModelRoutes(
         await agent.setWhatsAppSettings(body)
       );
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
 

@@ -3,14 +3,14 @@ import type {
   CreateProviderRequest,
   OllamaHostMode,
   ProviderModelOption,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import {
   OLLAMA_CLOUD_DEFAULT_BASE_URL,
   OLLAMA_LOCAL_DEFAULT_BASE_URL,
   ollamaRequiresApiKey,
-} from "@nakama/core/ollama-provider-config";
-import { formatConfiguredProviderLabel } from "@nakama/core/provider-label";
-import type { UserProviderName } from "@nakama/core/provider-resolution";
+} from "@atlas/core/ollama-provider-config";
+import { formatConfiguredProviderLabel } from "@atlas/core/provider-label";
+import type { UserProviderName } from "@atlas/core/provider-resolution";
 
 export type SelectedProvider = UserProviderName;
 

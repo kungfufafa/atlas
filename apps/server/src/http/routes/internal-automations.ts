@@ -1,4 +1,4 @@
-import { type AutomationSchedule, isWorkerSchedulable } from "@nakama/core";
+import { type AutomationSchedule, isWorkerSchedulable } from "@atlas/core";
 import type { ServerOptions } from "../context";
 import { errorResponse, json } from "../shared";
 import type { HonoApp } from "../types";

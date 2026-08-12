@@ -1,4 +1,4 @@
-import type { NakamaClient, RemoteChatSession } from "@nakama/client";
+import type { AtlasClient, RemoteChatSession } from "@atlas/client";
 import {
   extractPairedTurnArtifacts,
   formatArtifactShareFooter,
@@ -6,7 +6,7 @@ import {
   isAttachIntent,
   mintDeliverableArtifacts,
   pushDeliverableArtifact,
-} from "@nakama/core";
+} from "@atlas/core";
 import type { Context } from "grammy";
 import type { TelegramRichMessenger } from "./rich-message";
 import { sendTelegramArtifactDocument } from "./send-artifact-document";
@@ -14,7 +14,7 @@ import type { SessionStore } from "./session-store";
 
 export async function maybeSendRequestedTelegramArtifactAttachment(input: {
   ctx: Context;
-  client: NakamaClient;
+  client: AtlasClient;
   conversationKey: string;
   profileId: string;
   /** Raw user text before group-context prefixing. */
@@ -48,7 +48,7 @@ export async function maybeSendRequestedTelegramArtifactAttachment(input: {
 }
 
 export async function deliverTelegramTurnArtifactShares(input: {
-  client: NakamaClient;
+  client: AtlasClient;
   session: RemoteChatSession;
   conversationKey: string;
   profileId: string;

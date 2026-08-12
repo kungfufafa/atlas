@@ -1,15 +1,15 @@
-import { createRoute, z } from "@hono/zod-openapi";
 import type {
   DataImportPreviewResponse,
   PreviewDataImportRequest,
   RestoreDataImportRequest,
   RestoreDataImportResponse,
-} from "@nakama/core";
+} from "@atlas/core";
+import { createRoute, z } from "@hono/zod-openapi";
 import {
-  createNakamaDataExport,
+  createAtlasDataExport,
   decodeArchiveRequestData,
-  previewNakamaDataImport,
-  restoreNakamaDataImport,
+  previewAtlasDataImport,
+  restoreAtlasDataImport,
 } from "../../services/data-portability";
 import type { ServerOptions } from "../context";
 import { requirePlatformAdminFromContext } from "../org-guards";
@@ -55,7 +55,7 @@ export function registerDataPortabilityRoutes(
               schema: z.string().openapi({ format: "binary", type: "string" }),
             },
           },
-          description: "Nakama data export ZIP",
+          description: "Atlas data export ZIP",
         },
         403: {
           content: { "application/json": { schema: errorSchema } },
@@ -66,7 +66,7 @@ export function registerDataPortabilityRoutes(
           description: "Error",
         },
       },
-      summary: "Export Nakama data",
+      summary: "Export Atlas data",
       tags: ["Platform"],
     })
   );
@@ -100,7 +100,7 @@ export function registerDataPortabilityRoutes(
           description: "Error",
         },
       },
-      summary: "Preview Nakama data import",
+      summary: "Preview Atlas data import",
       tags: ["Platform"],
     })
   );
@@ -134,14 +134,14 @@ export function registerDataPortabilityRoutes(
           description: "Error",
         },
       },
-      summary: "Restore Nakama data import",
+      summary: "Restore Atlas data import",
       tags: ["Platform"],
     })
   );
 
   app.get("/v1/platform/data/export", async (c) => {
     requirePlatformAdminFromContext(c);
-    const result = await createNakamaDataExport();
+    const result = await createAtlasDataExport();
     return new Response(result.data, {
       headers: {
         "Content-Disposition": `attachment; filename="${result.filename}"`,
@@ -155,7 +155,7 @@ export function registerDataPortabilityRoutes(
     const body = await readJson<PreviewDataImportRequest>(c.req.raw);
 
     try {
-      const preview = await previewNakamaDataImport(
+      const preview = await previewAtlasDataImport(
         decodeArchiveRequestData(body.data)
       );
       return json<DataImportPreviewResponse>(preview);
@@ -170,7 +170,7 @@ export function registerDataPortabilityRoutes(
 
     let restore;
     try {
-      restore = await restoreNakamaDataImport(
+      restore = await restoreAtlasDataImport(
         decodeArchiveRequestData(body.data),
         {
           confirm: body.confirm,

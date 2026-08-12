@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="/Users/ahmadrosid/github.com/ahmadrosid/nakama"
+ROOT="/Users/ahmadrosid/github.com/kungfufafa/atlas"
 OUTPUT="$ROOT/assets/nakama_demo.png"
 TEMP_CONFIG="/tmp/nakama-demo-screenshot-$$"
 COOKIE_JAR="/tmp/nakama-demo-cookies-$$.txt"
@@ -30,9 +30,9 @@ trap cleanup EXIT
 mkdir -p "$TEMP_CONFIG"
 
 echo "Building latest web UI..."
-bun run --filter @nakama/web build
+bun run --filter @atlas/web build
 
-NAKAMA_CONFIG_DIR="$TEMP_CONFIG" NAKAMA_PORT="$PORT" \
+ATLAS_CONFIG_DIR="$TEMP_CONFIG" ATLAS_PORT="$PORT" \
   bun run "$ROOT/apps/server/src/index.ts" > /tmp/nakama-demo-server.log 2>&1 &
 SERVER_PID=$!
 

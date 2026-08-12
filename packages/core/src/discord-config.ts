@@ -234,7 +234,7 @@ async function writeDiscordConfigFile(
   config: DiscordConfigFile
 ): Promise<void> {
   const lines = [
-    "# Nakama Discord bridge",
+    "# Atlas Discord bridge",
     `bot_token=${config.botToken}`,
     `profile_id=${config.profileId}`,
     ...(config.handshakeCode ? [`handshake_code=${config.handshakeCode}`] : []),
@@ -412,7 +412,7 @@ export async function verifyAndPairDiscordUser(
   if (!expected) {
     return {
       message:
-        "No pairing code is active. Open Nakama Integrations → Discord and generate a new code.",
+        "No pairing code is active. Open Atlas Integrations → Discord and generate a new code.",
       ok: false,
     };
   }
@@ -437,7 +437,7 @@ export async function verifyAndPairDiscordUser(
   });
 
   return {
-    message: "Linked successfully. You can chat with Nakama now.",
+    message: "Linked successfully. You can chat with Atlas now.",
     ok: true,
   };
 }
@@ -465,7 +465,7 @@ export function resolveDiscordConfigFromSources(options: {
     handshakeCode: file?.handshakeCode ?? null,
     pairedUserIds: file?.pairedUserIds ?? [],
     profileId:
-      env.nakama_DISCORD_PROFILE_ID?.trim() ||
+      env.atlas_DISCORD_PROFILE_ID?.trim() ||
       file?.profileId?.trim() ||
       DEFAULT_DISCORD_PROFILE_ID,
   };

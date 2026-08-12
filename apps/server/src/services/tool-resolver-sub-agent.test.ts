@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { SUB_AGENT_TOOL_ID } from "@nakama/core/tools/protected";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+import { SUB_AGENT_TOOL_ID } from "@atlas/core/tools/protected";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { createSubAgentTool } from "../tools/sub-agent-tool";
 import { registerSubAgentTool, resolveToolsFromStorage } from "./tool-resolver";
 

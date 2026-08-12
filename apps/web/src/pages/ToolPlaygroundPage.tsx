@@ -1,4 +1,4 @@
-import type { ToolDetail } from "@nakama/core/contract";
+import type { ToolDetail } from "@atlas/core/contract";
 import { ArrowLeft01Icon } from "hugeicons-react";
 import { type ReactNode, useState } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";

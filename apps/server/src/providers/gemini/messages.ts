@@ -1,11 +1,11 @@
+import type { ChatMessage } from "@atlas/core";
+import { resolveUserContentForProvider } from "@atlas/core";
 import {
   type Content,
   createPartFromFunctionResponse,
   createPartFromText,
   type Part,
 } from "@google/genai";
-import type { ChatMessage } from "@nakama/core";
-import { resolveUserContentForProvider } from "@nakama/core";
 import { readRecord } from "../shared";
 
 export async function toGeminiContents(
@@ -50,7 +50,7 @@ export async function toGeminiContents(
 }
 
 async function toGeminiUserParts(
-  content: string | import("@nakama/core").MessageContentPart[]
+  content: string | import("@atlas/core").MessageContentPart[]
 ): Promise<Part[]> {
   const resolved = await resolveUserContentForProvider(content, "gemini");
 
@@ -134,7 +134,7 @@ export function parseGeminiFunctionCalls(
   functionCalls:
     | Array<{ id?: string; name?: string; args?: Record<string, unknown> }>
     | undefined
-): import("@nakama/core").ToolCall[] {
+): import("@atlas/core").ToolCall[] {
   if (!functionCalls?.length) {
     return [];
   }

@@ -3,7 +3,7 @@ import {
   normalizeAutomationDelivery,
   type ToolContext,
   type ToolDefinition,
-} from "@nakama/core";
+} from "@atlas/core";
 import type { AutomationRunner } from "../services/automation-runner";
 import type { AutomationService } from "../services/automation-service";
 

@@ -1,8 +1,8 @@
-import type { SkillSummary } from "@nakama/core/contract";
+import type { SkillSummary } from "@atlas/core/contract";
 import {
   BUNDLED_SKILL_NAMES,
   RUNTIME_ONLY_BUNDLED_SKILL_NAMES,
-} from "@nakama/core/skills/bundled-names";
+} from "@atlas/core/skills/bundled-names";
 import {
   Add01Icon,
   CheckmarkCircle01Icon,

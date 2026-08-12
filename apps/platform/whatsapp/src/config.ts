@@ -3,7 +3,7 @@ import {
   getWhatsAppConfigPath,
   loadWhatsAppConfigFile,
   resolveWhatsAppConfigFromSources,
-} from "@nakama/core/whatsapp-config";
+} from "@atlas/core/whatsapp-config";
 
 export interface WhatsAppBridgeConfig {
   phoneNumber: string;

@@ -1,9 +1,9 @@
 import {
+  AtlasApiError,
   findProviderInstance,
-  NakamaApiError,
   normalizeBaseUrl,
   type UserConfig,
-} from "@nakama/core";
+} from "@atlas/core";
 import { modelSupportsTranscription } from "../providers/models";
 import {
   decodeStoredModelSelection,
@@ -25,7 +25,7 @@ export function resolveTranscriptionProviderSelection(
   const decoded = decodeStoredModelSelection(transcriptionModel);
 
   if (!decoded || decoded.providerId === "__unknown__") {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       "Configured audio transcription model is invalid. Update it in Settings.",
       400
     );
@@ -37,14 +37,14 @@ export function resolveTranscriptionProviderSelection(
   );
 
   if (!instance) {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       "Configured audio transcription provider is missing. Update it in Settings.",
       400
     );
   }
 
   if (instance.type !== "openai") {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       "Audio transcription requires an OpenAI provider. Update it in Settings.",
       400
     );
@@ -53,7 +53,7 @@ export function resolveTranscriptionProviderSelection(
   const modelId = decoded.modelId.trim();
 
   if (!modelSupportsTranscription(modelId, instance.type)) {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       `Configured audio transcription model "${modelId}" is not supported.`,
       400
     );
@@ -89,7 +89,7 @@ export async function transcribeAudioWithOpenAI(
 
   if (!response.ok) {
     const body = await response.text();
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       `Audio transcription failed (${response.status}): ${body}`,
       502
     );
@@ -99,7 +99,7 @@ export async function transcribeAudioWithOpenAI(
   const text = payload.text?.trim();
 
   if (!text) {
-    throw new NakamaApiError("Audio transcription returned empty text.", 502);
+    throw new AtlasApiError("Audio transcription returned empty text.", 502);
   }
 
   return text;

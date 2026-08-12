@@ -2,7 +2,7 @@ import type {
   ProviderInstanceSummary,
   ProviderModelOption,
   UpdateProviderRequest,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import { useMemo, useState } from "react";
 import { isCatalogShortlistProvider } from "@/components/catalog-provider-model-fields.shared";
 import type { ModelListRow } from "@/components/ModelListEditor";

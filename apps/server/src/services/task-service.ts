@@ -4,10 +4,10 @@ import type {
   TaskRunRecord,
   TaskStatus,
   UpdateTaskRequest,
-} from "@nakama/core";
-import { createId, NakamaApiError } from "@nakama/core";
-import { canAccessSuperBotProfile } from "@nakama/core/profiles";
-import type { DatabaseAdapter, StoredTaskRecord } from "@nakama/db";
+} from "@atlas/core";
+import { AtlasApiError, createId } from "@atlas/core";
+import { canAccessSuperBotProfile } from "@atlas/core/profiles";
+import type { DatabaseAdapter, StoredTaskRecord } from "@atlas/db";
 import type { TaskRunner } from "./task-runner";
 import { isValidTaskStatus, validateTaskInput } from "./task-validate";
 
@@ -234,7 +234,7 @@ export class TaskService {
       const profile = await this.db.getProfileForOrg(trimmed, orgId);
       if (profile) {
         if (profile.isSuper && access && !canAccessSuperBotProfile(access)) {
-          throw new NakamaApiError(
+          throw new AtlasApiError(
             "Super Bot is only available to org admins.",
             403
           );

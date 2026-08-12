@@ -1,4 +1,4 @@
-import type { AgentTodo } from "@nakama/core/contract";
+import type { AgentTodo } from "@atlas/core/contract";
 import { renderTelegramTodoStatus } from "./format";
 import type { TelegramRichMessenger } from "./rich-message";
 

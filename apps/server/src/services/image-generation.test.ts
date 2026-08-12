@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { NakamaApiError, type UserConfig } from "@nakama/core";
+import { AtlasApiError, type UserConfig } from "@atlas/core";
 import {
   createInMemoryDatabaseAdapter,
   WORKSPACE_SETTINGS_ID,
-} from "@nakama/db";
+} from "@atlas/db";
 import { IMAGE_GENERATION_SELECTION } from "../providers/models";
 import { estimateUsageCostUsd } from "../providers/pricing";
 import { withMswCassette } from "../testing/llm-msw-cassette";
@@ -53,7 +53,7 @@ describe("resolveImageGenerationSelection", () => {
       resolveImageGenerationSelection(
         openaiConfig({ imageModel: "openai::dall-e-3" })
       )
-    ).toThrow(NakamaApiError);
+    ).toThrow(AtlasApiError);
   });
 
   test("fails when OpenAI API key is missing", () => {
@@ -73,7 +73,7 @@ describe("resolveImageGenerationSelection", () => {
         }),
         {}
       )
-    ).toThrow(NakamaApiError);
+    ).toThrow(AtlasApiError);
   });
 });
 
@@ -81,7 +81,7 @@ describe("normalizeImageGenerationSize / token helpers", () => {
   test("defaults size and rejects unknown sizes", () => {
     expect(normalizeImageGenerationSize(undefined)).toBe("1024x1024");
     expect(() => normalizeImageGenerationSize("512x512")).toThrow(
-      NakamaApiError
+      AtlasApiError
     );
   });
 
@@ -108,7 +108,7 @@ describe("generateImageWithOpenAI", () => {
   test("rejects empty prompt before fetch", async () => {
     await expect(
       generateImageWithOpenAI({ apiKey: "test-key", prompt: "  " })
-    ).rejects.toThrow(NakamaApiError);
+    ).rejects.toThrow(AtlasApiError);
   });
 
   test("rejects non-gpt-image-2 model before fetch", async () => {
@@ -118,7 +118,7 @@ describe("generateImageWithOpenAI", () => {
         model: "dall-e-3",
         prompt: "a cat",
       })
-    ).rejects.toThrow(NakamaApiError);
+    ).rejects.toThrow(AtlasApiError);
   });
 });
 
@@ -165,7 +165,7 @@ describe("AgentService image generation settings", () => {
 
     await expect(
       service.setImageGenerationSettings({ model: "openai::dall-e-3" })
-    ).rejects.toThrow(NakamaApiError);
+    ).rejects.toThrow(AtlasApiError);
 
     expect(await db.getWorkspaceSettings()).toMatchObject({
       imageModel: IMAGE_GENERATION_SELECTION,

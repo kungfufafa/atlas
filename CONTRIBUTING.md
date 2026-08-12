@@ -1,6 +1,6 @@
-# Contributing to Nakama
+# Contributing to Atlas
 
-Nakama is a multi-tenant Bun + TypeScript platform for running AI agent teams (orgs, profiles, tools, channels). This guide is for people changing the codebase.
+Atlas is a multi-tenant Bun + TypeScript platform for running AI agent teams (orgs, profiles, tools, channels). This guide is for people changing the codebase.
 
 - [README.md](./README.md) — product overview and quick start
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — system design
@@ -16,7 +16,7 @@ Nakama is a multi-tenant Bun + TypeScript platform for running AI agent teams (o
 ## Setup
 
 ```bash
-git clone https://github.com/ahmadrosid/nakama.git
+git clone https://github.com/kungfufafa/atlas.git
 cd nakama
 bun install
 ```

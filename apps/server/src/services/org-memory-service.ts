@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import {
+  AtlasApiError,
   appendOrgMemoryHistory,
   applyApprovedOrgMemoryBullet,
   composeOrgMemorySummary,
@@ -10,22 +11,21 @@ import {
   getOrgMemoryFilePath,
   getOrgMemoryHistoryEntry,
   listOrgMemoryHistory,
-  NakamaApiError,
   normalizeOrgMemoryDedupKey,
   ORG_MEMORY_PREAMBLE,
   type OrgMemoryChangeAction,
   type OrgMemoryChangeLogEntry,
   parseOrgMemoryContent,
   rebuildOrgMemoryContent,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
   pathExists,
   readDirectoryEntries,
   readText,
   readTextIfExists,
   writePrivateTextFile,
-} from "@nakama/core/fs";
-import type { DatabaseAdapter, StoredOrgMemoryProposal } from "@nakama/db";
+} from "@atlas/core/fs";
+import type { DatabaseAdapter, StoredOrgMemoryProposal } from "@atlas/db";
 
 const SUMMARY_BYTE_CAP = 2048;
 const MAX_PROPOSAL_BULLET_LENGTH = 500;
@@ -122,7 +122,7 @@ export class OrgMemoryService {
   ): Promise<void> {
     const trimmed = content.trim();
     if (Buffer.byteLength(trimmed, "utf8") > SUMMARY_BYTE_CAP * 4) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         "Org memory content exceeds the size limit.",
         400
       );
@@ -155,7 +155,7 @@ export class OrgMemoryService {
       this.options.configDir
     );
     if (!record) {
-      throw new NakamaApiError("Org memory history revision not found.", 404);
+      throw new AtlasApiError("Org memory history revision not found.", 404);
     }
 
     const { content, ...change } = record;
@@ -173,7 +173,7 @@ export class OrgMemoryService {
       this.options.configDir
     );
     if (!record) {
-      throw new NakamaApiError("Org memory history revision not found.", 404);
+      throw new AtlasApiError("Org memory history revision not found.", 404);
     }
 
     await this.commitMemory(orgId, record.content, {
@@ -192,7 +192,7 @@ export class OrgMemoryService {
       this.options.configDir
     );
     if (history.length < 2) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         "No previous org memory revision to restore.",
         404
       );
@@ -304,7 +304,7 @@ export class OrgMemoryService {
       (existing) => existing.trim() === text
     );
     if (index === -1) {
-      throw new NakamaApiError("Pinned fact not found.", 404);
+      throw new AtlasApiError("Pinned fact not found.", 404);
     }
     parsed.pinned.splice(index, 1);
     await this.commitMemory(
@@ -330,7 +330,7 @@ export class OrgMemoryService {
       entries.map((e) => e.trim().replace(/^-\s+/, "").trim()).filter(Boolean)
     );
     if (targets.size === 0) {
-      throw new NakamaApiError("No memory entries provided.", 400);
+      throw new AtlasApiError("No memory entries provided.", 400);
     }
 
     const content = await this.getMemory(orgId);
@@ -352,13 +352,13 @@ export class OrgMemoryService {
       }
     }
     if (unmatched.length > 0) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         `Memory entries not found: ${unmatched.join(", ")}`,
         404
       );
     }
     if (archived.length === 0) {
-      throw new NakamaApiError("No matching memory entries found.", 404);
+      throw new AtlasApiError("No matching memory entries found.", 404);
     }
 
     const archivedAt = options.archivedAt ?? new Date();
@@ -426,7 +426,7 @@ export class OrgMemoryService {
       proposalId
     );
     if (!proposal) {
-      throw new NakamaApiError("Org memory proposal not found.", 404);
+      throw new AtlasApiError("Org memory proposal not found.", 404);
     }
     return proposal;
   }
@@ -514,7 +514,7 @@ export class OrgMemoryService {
     }
 
     if (proposal.status !== "pending") {
-      throw new NakamaApiError("Only pending proposals can be approved.", 400);
+      throw new AtlasApiError("Only pending proposals can be approved.", 400);
     }
 
     const pin = options.pin ?? false;
@@ -575,7 +575,7 @@ export class OrgMemoryService {
     }
 
     if (proposal.status !== "pending") {
-      throw new NakamaApiError("Only pending proposals can be rejected.", 400);
+      throw new AtlasApiError("Only pending proposals can be rejected.", 400);
     }
 
     const reviewedAt = new Date().toISOString();
@@ -679,7 +679,7 @@ export class OrgMemoryService {
   private normalizeBullet(bullet: string): string {
     const text = bullet.trim().replace(/^-\s+/, "").trim();
     if (text.length === 0) {
-      throw new NakamaApiError("Memory bullet must not be empty.", 400);
+      throw new AtlasApiError("Memory bullet must not be empty.", 400);
     }
     return text;
   }
@@ -687,19 +687,19 @@ export class OrgMemoryService {
   private normalizeProposalBullet(bullet: string): string {
     const text = this.normalizeBullet(bullet);
     if (text.length > MAX_PROPOSAL_BULLET_LENGTH) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         `Memory bullet exceeds the ${MAX_PROPOSAL_BULLET_LENGTH} character limit.`,
         400
       );
     }
     if (text.includes("\n\n")) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         "Memory bullet must not contain multiple blank lines.",
         400
       );
     }
     if (/^##\s/m.test(text)) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         "Memory bullet must not contain markdown headings.",
         400
       );
@@ -709,7 +709,7 @@ export class OrgMemoryService {
 
   private requireDatabase(): DatabaseAdapter {
     if (!this.database) {
-      throw new NakamaApiError("Org memory proposals are not configured.", 500);
+      throw new AtlasApiError("Org memory proposals are not configured.", 500);
     }
     return this.database;
   }

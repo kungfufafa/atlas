@@ -1,6 +1,6 @@
 ---
 title: "Skills"
-description: "Learn how reusable skills extend Nakama profiles, including bundled memory, artifact, automation, and skill-authoring workflows."
+description: "Learn how reusable skills extend Atlas profiles, including bundled memory, artifact, automation, and skill-authoring workflows."
 ---
 
 A **skill** is a reusable instruction bundle you assign to a profile.
@@ -45,7 +45,7 @@ A profile can have many skills, and the same global skill can be assigned to mor
 Global skills live in the shared skill library:
 
 ```text
-~/.nakama/agent/skills/
+~/.atlas/agent/skills/
 ```
 
 These are useful when the same workflow should be reusable across multiple profiles.
@@ -55,7 +55,7 @@ These are useful when the same workflow should be reusable across multiple profi
 Profile-scoped skills live inside one org/profile workspace:
 
 ```text
-~/.nakama/orgs/{orgId}/profiles/{profileId}/skills/
+~/.atlas/orgs/{orgId}/profiles/{profileId}/skills/
 ```
 
 These are useful when the workflow only makes sense for one specific bot.
@@ -109,9 +109,9 @@ This is useful when the workflow needs both:
 
 ## How skills are used at runtime
 
-When a profile starts a chat, Nakama appends the assigned skills catalog to the agent prompt.
+When a profile starts a chat, Atlas appends the assigned skills catalog to the agent prompt.
 
-On each user turn, Nakama can also attach matched skill context for the current message.
+On each user turn, Atlas can also attach matched skill context for the current message.
 
 That means skills are not a separate bot. They are extra behavior layers attached to a profile.
 
@@ -134,7 +134,7 @@ Selecting a skill inserts an explicit invocation like:
 
 The composer highlights the selected skill, but the message still sends as plain text so it works with the normal skill matcher.
 
-Nakama also ships bundled skills for system workflows. The `create-profile` bundled skill is assigned only to Super Bot, so profile-authoring instructions load when Super Bot is asked to create a profile without adding those instructions to ordinary profile prompts. That skill runs a confirm-first factory: draft soul files in chat, wait for explicit confirmation, then create.
+Atlas also ships bundled skills for system workflows. The `create-profile` bundled skill is assigned only to Super Bot, so profile-authoring instructions load when Super Bot is asked to create a profile without adding those instructions to ordinary profile prompts. That skill runs a confirm-first factory: draft soul files in chat, wait for explicit confirmation, then create.
 
 For more detail, see [Agent prompts](/agent-prompt).
 
@@ -178,7 +178,7 @@ Org admins can enable **skill write approval** under **System â†’ Organization â
 
 - **Memory write path:** read or create `MEMORY.md`, append a dated `- bullet` under the user's timezone date, keep the `# Memory Log` preamble, stay under 4096 bytes
 - **Archive path:** copy exact bullets to `memory-archive/YYYY-MM.md`, then remove them from `MEMORY.md`
-- **Artifact path:** save the file the agent produced with `write_file` or `write_docx` under `artifacts/{filename}`, then write `{filename}.nakama-meta.json` with MIME metadata for the dashboard. Use `write_file` for text, Markdown, HTML, JSON, and code; use `write_docx` when the user wants a real Word document.
+- **Artifact path:** save the file the agent produced with `write_file` or `write_docx` under `artifacts/{filename}`, then write `{filename}.atlas-meta.json` with MIME metadata for the dashboard. Use `write_file` for text, Markdown, HTML, JSON, and code; use `write_docx` when the user wants a real Word document.
 
 These skills use `include-body-on-match: true`, so the full procedure loads when the user's message matches the skill description. The chat wrapper also mentions memory skills when `read_file` and `edit_file` are available, and `save-artifact` when `write_file` is available.
 
@@ -194,14 +194,14 @@ The `agent-browser` bundled skill teaches agents to drive interactive browsers t
 
 ## Sync behavior
 
-Nakama discovers skills from disk and syncs them into the database.
+Atlas discovers skills from disk and syncs them into the database.
 
 This is why there is a skills sync step:
 
 - Files on disk are the source material
 - The database stores discovered metadata for the dashboard and API
 
-If you add or change skill folders manually, run skill sync so Nakama refreshes what it knows.
+If you add or change skill folders manually, run skill sync so Atlas refreshes what it knows.
 
 ## Permissions
 

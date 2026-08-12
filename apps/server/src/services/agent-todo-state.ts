@@ -3,8 +3,8 @@ import {
   type AgentTodoStatus,
   finalizeAgentTodosIfComplete,
   hasActiveAgentTodos,
-} from "@nakama/core";
-import type { DatabaseAdapter } from "@nakama/db";
+} from "@atlas/core";
+import type { DatabaseAdapter } from "@atlas/db";
 
 const MAX_TODOS = 20;
 

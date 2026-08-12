@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import type { NakamaClient } from "@nakama/client";
+import type { AtlasClient } from "@atlas/client";
 import type {
   AutomationSchedule,
   AutomationSchedulerStatus,
-} from "@nakama/core";
+} from "@atlas/core";
 import { AutomationWorkerScheduler } from "./scheduler";
 
 function createMockClient(
@@ -12,13 +12,13 @@ function createMockClient(
     runAutomationInternal: (id: string) => Promise<void>;
     getTimezone: () => Promise<string>;
   }> = {}
-): NakamaClient {
+): AtlasClient {
   return {
     getTimezone: async () => "UTC",
     listAutomationSchedules: async () => [],
     runAutomationInternal: async () => {},
     ...overrides,
-  } as unknown as NakamaClient;
+  } as unknown as AtlasClient;
 }
 
 describe("AutomationWorkerScheduler", () => {

@@ -3,13 +3,13 @@ import {
   type ToolContext,
   type ToolDefinition,
   type UserConfig,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
   isEmailConfigComplete,
   loadEmailConfig,
-} from "@nakama/core/email-config";
-import { emailTool } from "@nakama/core/tools/email";
-import type { DatabaseAdapter, StoredToolRecord } from "@nakama/db";
+} from "@atlas/core/email-config";
+import { emailTool } from "@atlas/core/tools/email";
+import type { DatabaseAdapter, StoredToolRecord } from "@atlas/db";
 import { bashTool, runBash } from "../tools/bash";
 import { enrichCodingAgentBashInput } from "./coding-agent-bash-env";
 import { loadJavascriptTool } from "./javascript-tool-loader";

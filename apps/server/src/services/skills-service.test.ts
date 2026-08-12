@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ensureBundledSkillFiles } from "@nakama/core";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+import { ensureBundledSkillFiles } from "@atlas/core";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { SkillsService } from "./skills-service";
 
 const ORG_ID = "org_test";
@@ -22,7 +22,7 @@ describe("SkillsService", () => {
 
   beforeEach(async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-skills-test-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     const weatherDir = join(configDir, "agent", "skills", "weather");
     await mkdir(weatherDir, { recursive: true });
@@ -31,7 +31,7 @@ describe("SkillsService", () => {
   });
 
   afterEach(() => {
-    delete process.env.NAKAMA_CONFIG_DIR;
+    delete process.env.ATLAS_CONFIG_DIR;
   });
 
   test("discovers global skills and syncs them to the database", async () => {

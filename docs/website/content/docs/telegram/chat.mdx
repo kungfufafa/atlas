@@ -1,6 +1,6 @@
 ---
 title: "Chat behavior & commands"
-description: "How the Nakama Telegram bot behaves in private chats, groups, and topics — plus the commands and message types it supports."
+description: "How the Atlas Telegram bot behaves in private chats, groups, and topics — plus the commands and message types it supports."
 ---
 
 Once the bridge is running and your account is paired, here is how the bot behaves and what you can send it.
@@ -11,15 +11,15 @@ Private chat is the simplest mode.
 
 Once paired or allowlisted:
 
-- normal messages go to the Nakama agent
+- normal messages go to the Atlas agent
 - the bot keeps a Telegram chat session
 - Telegram commands work immediately
 
-If an unlinked user opens the bot, Nakama asks for the pairing code instead of sending the message to the agent.
+If an unlinked user opens the bot, Atlas asks for the pairing code instead of sending the message to the agent.
 
 ## Group chat behavior
 
-Nakama supports Telegram groups, but it is intentionally conservative about when it replies.
+Atlas supports Telegram groups, but it is intentionally conservative about when it replies.
 
 In a group, the bot responds only when the message is:
 
@@ -31,7 +31,7 @@ This keeps group chats usable without making the bot noisy.
 
 ### Group topics and profiles
 
-In Telegram supergroup topics, each topic can use its own Nakama profile.
+In Telegram supergroup topics, each topic can use its own Atlas profile.
 
 - `/profile` inside a topic changes only that topic
 - new topics use the default Telegram profile until you switch them
@@ -56,7 +56,7 @@ These commands are available in Telegram:
 
 ## Supported message types
 
-Telegram can send more than plain text into Nakama.
+Telegram can send more than plain text into Atlas.
 
 Supported inputs include:
 
@@ -65,11 +65,11 @@ Supported inputs include:
 - voice notes and audio messages
 - supported documents such as `pdf`, `docx`, `txt`, and `csv`
 
-Small supported documents are downloaded and forwarded into the Nakama chat flow. Voice notes and audio messages are first transcribed with the configured OpenAI audio transcription model. Unsupported media gets a friendly rejection message instead of silently failing.
+Small supported documents are downloaded and forwarded into the Atlas chat flow. Voice notes and audio messages are first transcribed with the configured OpenAI audio transcription model. Unsupported media gets a friendly rejection message instead of silently failing.
 
 ## Rich Markdown replies
 
-Agents can reply in normal Markdown-style text. Nakama converts a safe subset into Telegram rich formatting.
+Agents can reply in normal Markdown-style text. Atlas converts a safe subset into Telegram rich formatting.
 
 Supported formatting includes:
 
@@ -81,17 +81,17 @@ Supported formatting includes:
 - headings
 - simple links
 
-If Telegram rejects the rich rendering, Nakama falls back to plain text.
+If Telegram rejects the rich rendering, Atlas falls back to plain text.
 
 ## Saved artifacts and share links
 
-When your agent saves a file for you with the `save-artifact` skill (content file plus `.nakama-meta.json` sidecar in the same turn), Nakama posts a **Publish-style share link** after the reply in Telegram chat.
+When your agent saves a file for you with the `save-artifact` skill (content file plus `.atlas-meta.json` sidecar in the same turn), Atlas posts a **Publish-style share link** after the reply in Telegram chat.
 
-- The link uses the same unguessable `/s/{token}` URLs as dashboard Publish — no Nakama login required to open it.
+- The link uses the same unguessable `/s/{token}` URLs as dashboard Publish — no Atlas login required to open it.
 - Anyone who can read the Telegram message can open the link until the share is revoked from the web app.
-- Set **Web Public URL** in Nakama settings (or `NAKAMA_WEB_PUBLIC_URL`) so channel footers include absolute links.
+- Set **Web Public URL** in Atlas settings (or `ATLAS_WEB_PUBLIC_URL`) so channel footers include absolute links.
 
-To receive the file itself in Telegram, ask in plain language — for example, “send the file” or “attach it”. Nakama sends a native Telegram document when the file is within Telegram’s size limit. If the file is too large, use the share link instead.
+To receive the file itself in Telegram, ask in plain language — for example, “send the file” or “attach it”. Atlas sends a native Telegram document when the file is within Telegram’s size limit. If the file is too large, use the share link instead.
 
 Unpaired saves (content without a sidecar in the same turn) do not produce share links or attachments.
 

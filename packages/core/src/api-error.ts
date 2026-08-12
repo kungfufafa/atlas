@@ -1,6 +1,6 @@
 import type { ProfileRef } from "./contract";
 
-export class NakamaApiError extends Error {
+export class AtlasApiError extends Error {
   readonly status: number;
   readonly path?: string;
   readonly profiles?: ProfileRef[];
@@ -12,7 +12,7 @@ export class NakamaApiError extends Error {
     profiles?: ProfileRef[]
   ) {
     super(message);
-    this.name = "NakamaApiError";
+    this.name = "AtlasApiError";
     this.status = status;
     this.path = path;
     this.profiles = profiles;
@@ -74,10 +74,10 @@ export function fallbackApiErrorMessage(status: number): string {
     case 502:
     case 503:
     case 504:
-      return "The Nakama server is unavailable. Make sure it is running.";
+      return "The Atlas server is unavailable. Make sure it is running.";
     default:
       if (status >= 500) {
-        return "The server encountered an error. Try again or restart the Nakama server.";
+        return "The server encountered an error. Try again or restart the Atlas server.";
       }
 
       return `Request failed (${status}).`;
@@ -85,17 +85,17 @@ export function fallbackApiErrorMessage(status: number): string {
 }
 
 export function formatClientError(error: unknown): string {
-  if (error instanceof NakamaApiError) {
+  if (error instanceof AtlasApiError) {
     return error.message;
   }
 
   if (error instanceof Error) {
     if (isNetworkError(error)) {
-      return "Could not reach the Nakama server. Make sure it is running.";
+      return "Could not reach the Atlas server. Make sure it is running.";
     }
 
     if (isStreamDisconnectError(error)) {
-      return "The connection closed before the agent finished. Restart the Nakama server, then try again. Long automations can take a minute or more.";
+      return "The connection closed before the agent finished. Restart the Atlas server, then try again. Long automations can take a minute or more.";
     }
 
     const message = error.message.trim();

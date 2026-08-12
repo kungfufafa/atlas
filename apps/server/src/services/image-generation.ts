@@ -1,9 +1,9 @@
 import {
+  AtlasApiError,
   findProviderInstance,
-  NakamaApiError,
   type ProviderInstance,
   type UserConfig,
-} from "@nakama/core";
+} from "@atlas/core";
 import { readApiKeyForInstance } from "../providers/create";
 import {
   IMAGE_GENERATION_MODEL_ID,
@@ -106,7 +106,7 @@ export function normalizeImageGenerationSize(
     return trimmed as ImageGenerationSize;
   }
 
-  throw new NakamaApiError(
+  throw new AtlasApiError(
     `Unsupported image size "${trimmed}". Allowed: ${IMAGE_GENERATION_SIZES.join(", ")}.`,
     400
   );
@@ -123,7 +123,7 @@ export function resolveImageGenerationSelection(
   }
 
   if (!isAllowedImageGenerationSelection(imageModel)) {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       "Configured image generation model is invalid. Update it in Settings.",
       400
     );
@@ -144,14 +144,14 @@ export function resolveImageGenerationSelection(
   const instance = preferred ?? openaiInstances[0] ?? null;
 
   if (!instance || instance.type !== "openai") {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       "Image generation requires an OpenAI provider. Add one in Settings.",
       400
     );
   }
 
   if (!modelSupportsImageGeneration(IMAGE_GENERATION_MODEL_ID, instance.type)) {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       `Configured image generation model "${IMAGE_GENERATION_MODEL_ID}" is not supported.`,
       400
     );
@@ -160,7 +160,7 @@ export function resolveImageGenerationSelection(
   const apiKey = readApiKeyForInstance(instance, env)?.trim();
 
   if (!apiKey) {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       "OpenAI API key is missing. Configure an OpenAI provider or set OPENAI_API_KEY.",
       400
     );
@@ -180,13 +180,13 @@ export async function generateImageWithOpenAI(
   const prompt = input.prompt?.trim();
 
   if (!prompt) {
-    throw new NakamaApiError("Image prompt is required.", 400);
+    throw new AtlasApiError("Image prompt is required.", 400);
   }
 
   const model = (input.model?.trim() || IMAGE_GENERATION_MODEL_ID) as string;
 
   if (model !== IMAGE_GENERATION_MODEL_ID) {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       `Image generation model "${model}" is not supported.`,
       400
     );
@@ -196,7 +196,7 @@ export async function generateImageWithOpenAI(
   const apiKey = input.apiKey?.trim();
 
   if (!apiKey) {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       "OpenAI API key is missing. Configure an OpenAI provider or set OPENAI_API_KEY.",
       400
     );
@@ -220,7 +220,7 @@ export async function generateImageWithOpenAI(
 
   if (!response.ok) {
     const body = await response.text();
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       `Image generation failed (${response.status}): ${body}`,
       502
     );
@@ -236,7 +236,7 @@ export async function generateImageWithOpenAI(
   const b64 = first?.b64_json?.trim();
 
   if (!b64) {
-    throw new NakamaApiError("Image generation returned no image data.", 502);
+    throw new AtlasApiError("Image generation returned no image data.", 502);
   }
 
   let bytes: Uint8Array;
@@ -244,17 +244,14 @@ export async function generateImageWithOpenAI(
   try {
     bytes = Uint8Array.from(Buffer.from(b64, "base64"));
   } catch {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       "Image generation returned invalid base64 data.",
       502
     );
   }
 
   if (bytes.length === 0) {
-    throw new NakamaApiError(
-      "Image generation returned empty image data.",
-      502
-    );
+    throw new AtlasApiError("Image generation returned empty image data.", 502);
   }
 
   const mediaType =

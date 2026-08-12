@@ -54,7 +54,7 @@ export const knowledgeBaseSearchTool: ToolDefinition<
   KnowledgeBaseSearchOutput
 > = {
   description:
-    "Search uploaded knowledge base documents for relevant facts. Does not search inherited URL sources such as Nakama documentation — use web_fetch on llms.txt and specific .md pages for product docs.",
+    "Search uploaded knowledge base documents for relevant facts. Does not search inherited URL sources such as Atlas documentation — use web_fetch on llms.txt and specific .md pages for product docs.",
   name: "knowledge_base_search",
   parallelSafe: true,
   parameters: jsonSchemaFromZod(knowledgeBaseSearchInputSchema),

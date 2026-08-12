@@ -1,7 +1,7 @@
 import type {
   DiscordWorkerStatus,
   SystemStatusResponse,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { client } from "@/lib/client";
 import { queryKeys } from "@/lib/query-keys";

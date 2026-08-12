@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { ChatMessage, ProviderClient } from "@nakama/core";
+import type { ChatMessage, ProviderClient } from "@atlas/core";
 import {
   buildSessionTitlePrompt,
   generateSessionTitleFromMessages,

@@ -54,12 +54,12 @@ export async function writeChannelIniConfig(
   channel: "telegram" | "discord",
   config: ChannelIniConfig
 ): Promise<void> {
-  const dir = path.join(homeDir, ".nakama", channel);
+  const dir = path.join(homeDir, ".atlas", channel);
   await mkdir(dir, { recursive: true });
 
   const label = channel === "telegram" ? "Telegram" : "Discord";
   const lines = [
-    `# Nakama ${label} bridge`,
+    `# Atlas ${label} bridge`,
     `bot_token=${config.botToken}`,
     `profile_id=${config.profileId ?? "default"}`,
   ];
@@ -202,7 +202,7 @@ export function describeSharedChannelConfigTests<TId extends string | number>(
           const result = await tc.verifyAndPair("aa bb cc dd", tc.sampleId);
 
           expect(result).toEqual({
-            message: "Linked successfully. You can chat with Nakama now.",
+            message: "Linked successfully. You can chat with Atlas now.",
             ok: true,
           });
 

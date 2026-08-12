@@ -1,8 +1,8 @@
 import { chmod, mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { ProviderName } from "@nakama/core";
-import type { StoredCodingAgentHarnessKind } from "@nakama/db";
+import type { ProviderName } from "@atlas/core";
+import type { StoredCodingAgentHarnessKind } from "@atlas/db";
 import type { CodingAgentProviderRouting } from "./coding-agent-provider-routing";
 import { formatModelForHarness } from "./coding-agent-spawn-env";
 
@@ -44,15 +44,15 @@ export async function writeCodexConfigToml(
   const contents = [
     'model_provider = "nakama"',
     "",
-    "[model_providers.nakama]",
-    'name = "Nakama"',
+    "[model_providers.atlas]",
+    'name = "Atlas"',
     `base_url = "${baseUrl}"`,
     `wire_api = "responses"`,
     "",
-    "[model_providers.nakama.env]",
+    "[model_providers.atlas.env]",
     `OPENAI_API_KEY = "${apiKey.replace(/"/g, '\\"')}"`,
     "",
-    "[profiles.nakama]",
+    "[profiles.atlas]",
     'model_provider = "nakama"',
     `model = "${model.replace(/"/g, '\\"')}"`,
     "",
@@ -115,7 +115,7 @@ function resolveOpenCodeProviderKey(providerType: ProviderName): string {
 }
 
 /**
- * Maps a Nakama provider type to the pi CLI built-in provider ID.
+ * Maps a Atlas provider type to the pi CLI built-in provider ID.
  * pi has named providers (e.g. "openai", "anthropic", "openrouter") with
  * hardcoded base URLs. We override their baseUrl + apiKey via models.json.
  */
@@ -175,7 +175,7 @@ function isDefaultBaseUrl(
 }
 
 /**
- * Writes a models.json that routes pi requests through the Nakama-configured
+ * Writes a models.json that routes pi requests through the Atlas-configured
  * provider.
  *
  * Strategy:
@@ -210,14 +210,14 @@ export async function writePiModelsJson(
       baseUrl,
     };
   } else {
-    // Custom base URL (proxy/gateway): create a standalone "nakama" provider
+    // Custom base URL (proxy/gateway): create a standalone "atlas" provider
     // with the OpenAI Chat Completions API, which is universally supported.
     const model = formatModelForHarness(
       "pi",
       providerType,
       routing.model ?? "gpt-4o"
     );
-    providers["nakama"] = {
+    providers["atlas"] = {
       api: "openai-completions",
       apiKey,
       baseUrl,
@@ -231,7 +231,7 @@ export async function writePiModelsJson(
           reasoning: false,
         },
       ],
-      name: "Nakama",
+      name: "Atlas",
     };
   }
 

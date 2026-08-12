@@ -1,7 +1,7 @@
 import type {
   CreateMcpServerRequest,
   McpServerSummary,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import { McpImportConfigDialog } from "@/components/soul-tools/mcp-tab/mcp-import-config-dialog";
 import { McpServerDialogForm } from "@/components/soul-tools/mcp-tab/mcp-server-dialog-form";
 import { useMcpServerDialogState } from "@/components/soul-tools/mcp-tab/use-mcp-server-dialog-state";

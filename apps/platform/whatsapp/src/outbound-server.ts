@@ -1,7 +1,7 @@
 import {
   loadWhatsAppConfigFile,
   resolveWhatsAppOutboundPort,
-} from "@nakama/core";
+} from "@atlas/core";
 
 export interface WhatsAppOutboundSendHandle {
   sendMessage: (jid: string, content: { text: string }) => Promise<unknown>;

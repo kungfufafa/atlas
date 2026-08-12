@@ -21,16 +21,16 @@ afterEach(async () => {
 async function withConfigDir<T>(run: () => Promise<T>): Promise<T> {
   const dir = await mkdtemp(join(tmpdir(), "nakama-worker-desired-"));
   configDirs.push(dir);
-  const previous = process.env.NAKAMA_CONFIG_DIR;
-  process.env.NAKAMA_CONFIG_DIR = dir;
+  const previous = process.env.ATLAS_CONFIG_DIR;
+  process.env.ATLAS_CONFIG_DIR = dir;
 
   try {
     return await run();
   } finally {
     if (previous === undefined) {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
     } else {
-      process.env.NAKAMA_CONFIG_DIR = previous;
+      process.env.ATLAS_CONFIG_DIR = previous;
     }
   }
 }
@@ -129,7 +129,7 @@ describe("worker desired state persistence", () => {
 
   test("loads existing file from disk", async () => {
     await withConfigDir(async () => {
-      const runtimeDir = join(process.env.NAKAMA_CONFIG_DIR!, "runtime");
+      const runtimeDir = join(process.env.ATLAS_CONFIG_DIR!, "runtime");
       await mkdir(runtimeDir, { recursive: true });
       await writeFile(
         join(runtimeDir, "worker-desired-state.json"),

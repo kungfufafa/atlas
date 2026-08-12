@@ -1,4 +1,4 @@
-import type { UpdateWhatsAppSettingsRequest } from "@nakama/core/contract";
+import type { UpdateWhatsAppSettingsRequest } from "@atlas/core/contract";
 import {
   queryOptions,
   useMutation,

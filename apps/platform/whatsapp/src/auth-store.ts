@@ -1,9 +1,9 @@
-import type { WhatsAppConfigFile } from "@nakama/core/whatsapp-config";
+import type { WhatsAppConfigFile } from "@atlas/core/whatsapp-config";
 import {
   isWhatsAppUserAuthorized,
   loadWhatsAppConfigFile,
   verifyAndPairWhatsAppUser,
-} from "@nakama/core/whatsapp-config";
+} from "@atlas/core/whatsapp-config";
 
 export class WhatsAppAuthStore {
   private config: WhatsAppConfigFile | null = null;

@@ -1,4 +1,4 @@
-import type { CustomModelEntry } from "@nakama/core/contract";
+import type { CustomModelEntry } from "@atlas/core/contract";
 import { Add01Icon, Delete02Icon } from "hugeicons-react";
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";

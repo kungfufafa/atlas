@@ -3,7 +3,7 @@ import type {
   ChatCompletionResult,
   ChatMessage,
   ProviderClient,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
   buildCompactionPrompt,
   compactHistory,

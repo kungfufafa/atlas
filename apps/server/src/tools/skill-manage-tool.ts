@@ -2,8 +2,8 @@ import {
   parseRawProfileSkillContent,
   type ToolContext,
   type ToolDefinition,
-} from "@nakama/core";
-import type { SkillProposalAction } from "@nakama/db";
+} from "@atlas/core";
+import type { SkillProposalAction } from "@atlas/db";
 import type { SkillProposalService } from "../services/skill-proposal-service";
 import type { SkillsService } from "../services/skills-service";
 

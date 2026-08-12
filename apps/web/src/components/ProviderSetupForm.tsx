@@ -1,5 +1,5 @@
-import type { CreateProviderResponse } from "@nakama/core/contract";
-import { ollamaRequiresApiKey } from "@nakama/core/ollama-provider-config";
+import type { CreateProviderResponse } from "@atlas/core/contract";
+import { ollamaRequiresApiKey } from "@atlas/core/ollama-provider-config";
 import { ViewIcon, ViewOffIcon } from "hugeicons-react";
 import { useState } from "react";
 import { BrowsableModelFields } from "@/components/BrowsableModelFields";

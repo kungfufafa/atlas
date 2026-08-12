@@ -5,7 +5,7 @@ import {
   type ProviderClient,
   type ProviderInstance,
   resolveOllamaHostMode,
-} from "@nakama/core";
+} from "@atlas/core";
 import { compatibleModelSupportsThinking } from "../compatible-models";
 import { createOpenAICompatibleProvider } from "../openai-compatible";
 

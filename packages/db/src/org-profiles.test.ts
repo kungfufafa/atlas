@@ -3,7 +3,7 @@ import {
   BASH_TOOL_ID,
   BUILTIN_TOOL_IDS,
   GENERATE_IMAGE_TOOL_ID,
-} from "@nakama/core/tools/protected";
+} from "@atlas/core/tools/protected";
 import { createInMemoryDatabaseAdapter } from "./adapters/in-memory";
 import {
   ensureBundledSkillsAssigned,

@@ -1,4 +1,4 @@
-import { formatAgentQuestionnaireAnswersMessage } from "@nakama/core/agent-questionnaire";
+import { formatAgentQuestionnaireAnswersMessage } from "@atlas/core/agent-questionnaire";
 import { PromptInputProvider } from "@/components/ai-elements/prompt-input";
 import { ArtifactStreamingPanelBridge } from "@/components/chat/artifact-streaming-panel-bridge";
 import { ChatComposer } from "@/components/chat/chat-composer";

@@ -1,5 +1,5 @@
-import type { OrgRole, SetupAuthRequest } from "@nakama/core";
-import type { DatabaseAdapter } from "@nakama/db";
+import type { OrgRole, SetupAuthRequest } from "@atlas/core";
+import type { DatabaseAdapter } from "@atlas/db";
 import type { AuthService } from "../../services/auth-service";
 
 export const TEST_ORG_ID = "org_test";

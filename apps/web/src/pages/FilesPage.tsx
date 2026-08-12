@@ -1,4 +1,4 @@
-import type { ArtifactFile } from "@nakama/core/contract";
+import type { ArtifactFile } from "@atlas/core/contract";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {

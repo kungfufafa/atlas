@@ -1,23 +1,23 @@
 import crypto from "node:crypto";
 import {
+  AtlasApiError,
   buildArtifactSharePath,
   deleteArtifactShareSnapshot,
   generateArtifactShareToken,
   isBrowserExecutableArtifactMimeType,
-  NakamaApiError,
   readArtifactFile,
   readArtifactShareSnapshot,
   resolveArtifactMimeType,
   resolveWebPublicUrl,
   writeArtifactShareSnapshot,
-} from "@nakama/core";
+} from "@atlas/core";
 import type {
   ArtifactShareStatusResponse,
   PublicArtifactShareResponse,
   PublishArtifactShareResponse,
   RevokeArtifactShareResponse,
-} from "@nakama/core/contract";
-import type { DatabaseAdapter, StoredArtifactShareRecord } from "@nakama/db";
+} from "@atlas/core/contract";
+import type { DatabaseAdapter, StoredArtifactShareRecord } from "@atlas/db";
 import type { AuthService } from "./auth-service";
 import {
   isLoopbackComposioCallbackBaseUrl,
@@ -69,7 +69,7 @@ export class ArtifactShareService {
 
     const sourcePath = input.sourcePath.trim();
     if (!sourcePath) {
-      throw new NakamaApiError("path is required.", 400);
+      throw new AtlasApiError("path is required.", 400);
     }
 
     const artifact = await readArtifactFile({
@@ -216,7 +216,7 @@ export class ArtifactShareService {
     );
 
     if (!share || share.revokedAt) {
-      throw new NakamaApiError("Not found", 404);
+      throw new AtlasApiError("Not found", 404);
     }
 
     const revoked = await this.db.revokeArtifactShare(
@@ -236,7 +236,7 @@ export class ArtifactShareService {
   }> {
     const trimmed = token.trim();
     if (!trimmed) {
-      throw new NakamaApiError("Not found", 404);
+      throw new AtlasApiError("Not found", 404);
     }
 
     const share = await this.db.getArtifactShareByTokenHash(
@@ -244,7 +244,7 @@ export class ArtifactShareService {
     );
 
     if (!share) {
-      throw new NakamaApiError("Not found", 404);
+      throw new AtlasApiError("Not found", 404);
     }
 
     const bytes = await readArtifactShareSnapshot(share.storagePath);
@@ -270,7 +270,7 @@ export class ArtifactShareService {
   ): Promise<void> {
     const profile = await this.profileService.getProfile(orgId, profileId);
     if (!profile) {
-      throw new NakamaApiError("Not found", 404);
+      throw new AtlasApiError("Not found", 404);
     }
   }
 }

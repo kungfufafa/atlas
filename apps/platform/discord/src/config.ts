@@ -3,7 +3,7 @@ import {
   getDiscordConfigPath,
   loadDiscordConfigFile,
   resolveDiscordConfigFromSources,
-} from "@nakama/core/discord-config";
+} from "@atlas/core/discord-config";
 
 export interface DiscordBridgeConfig {
   botToken: string;

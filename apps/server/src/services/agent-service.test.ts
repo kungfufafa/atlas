@@ -2,13 +2,13 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { ensureBundledSkillFiles } from "@nakama/core";
-import type { StoredProfileRecord } from "@nakama/db";
+import { ensureBundledSkillFiles } from "@atlas/core";
+import type { StoredProfileRecord } from "@atlas/db";
 import {
   createInMemoryDatabaseAdapter,
   createSqliteDatabase,
   WORKSPACE_SETTINGS_ID,
-} from "@nakama/db";
+} from "@atlas/db";
 import { AgentService } from "./agent-service";
 import { SkillsService } from "./skills-service";
 
@@ -307,7 +307,7 @@ describe("AgentService transcription settings", () => {
 
 describe("AgentService coding delegation context", () => {
   const originalPath = process.env.PATH ?? "";
-  const originalDisableFixPath = process.env.NAKAMA_DISABLE_FIX_PATH;
+  const originalDisableFixPath = process.env.ATLAS_DISABLE_FIX_PATH;
   let tempBinDir = "";
 
   beforeEach(async () => {
@@ -315,15 +315,15 @@ describe("AgentService coding delegation context", () => {
       path.join(tmpdir(), "nakama-agent-delegation-bin-")
     );
     process.env.PATH = tempBinDir;
-    process.env.NAKAMA_DISABLE_FIX_PATH = "1";
+    process.env.ATLAS_DISABLE_FIX_PATH = "1";
   });
 
   afterEach(async () => {
     process.env.PATH = originalPath;
     if (originalDisableFixPath === undefined) {
-      delete process.env.NAKAMA_DISABLE_FIX_PATH;
+      delete process.env.ATLAS_DISABLE_FIX_PATH;
     } else {
-      process.env.NAKAMA_DISABLE_FIX_PATH = originalDisableFixPath;
+      process.env.ATLAS_DISABLE_FIX_PATH = originalDisableFixPath;
     }
     if (tempBinDir) {
       await rm(tempBinDir, { force: true, recursive: true });
@@ -460,11 +460,11 @@ describe("AgentService skill_manage injection", () => {
     configDir = await mkdtemp(
       path.join(tmpdir(), "nakama-skill-manage-inject-")
     );
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
   });
 
   afterEach(async () => {
-    delete process.env.NAKAMA_CONFIG_DIR;
+    delete process.env.ATLAS_CONFIG_DIR;
     if (configDir) {
       await rm(configDir, { force: true, recursive: true });
       configDir = "";

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Capture System → Organization skill write approval UI for docs.
-# Prerequisite: bun run --filter @nakama/web build
+# Prerequisite: bun run --filter @atlas/web build
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
@@ -32,7 +32,7 @@ stop_server() {
 
 start_server() {
   stop_server
-  NAKAMA_CONFIG_DIR="$TEMP_CONFIG" NAKAMA_PORT="$PORT" \
+  ATLAS_CONFIG_DIR="$TEMP_CONFIG" ATLAS_PORT="$PORT" \
     bun run "$ROOT/apps/server/src/index.ts" > /tmp/nakama-docs-skills-screenshot-server.log 2>&1 &
   SERVER_PID=$!
 
@@ -83,7 +83,7 @@ curl -sf -b "$COOKIE_JAR" -X PATCH "${BASE_URL}/v1/orgs/${ORG_ID}" \
   -d '{"skillsWriteApproval": true}' >/dev/null
 
 stop_server
-(cd "$ROOT/apps/server" && NAKAMA_CONFIG_DIR="$TEMP_CONFIG" bun run scripts/seed-skill-proposal-docs.ts)
+(cd "$ROOT/apps/server" && ATLAS_CONFIG_DIR="$TEMP_CONFIG" bun run scripts/seed-skill-proposal-docs.ts)
 start_server
 
 $AB --session "$SESSION" close --all 2>/dev/null || true

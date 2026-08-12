@@ -1,4 +1,4 @@
-import type { SessionSummary } from "@nakama/core/contract";
+import type { SessionSummary } from "@atlas/core/contract";
 
 export function formatSessionTitle(session: SessionSummary): string {
   return session.title?.trim() || "Untitled chat";

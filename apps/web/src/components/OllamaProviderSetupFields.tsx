@@ -1,8 +1,8 @@
-import type { OllamaHostMode } from "@nakama/core/contract";
+import type { OllamaHostMode } from "@atlas/core/contract";
 import {
   OLLAMA_CLOUD_DEFAULT_BASE_URL,
   OLLAMA_LOCAL_DEFAULT_BASE_URL,
-} from "@nakama/core/ollama-provider-config";
+} from "@atlas/core/ollama-provider-config";
 import { FormField } from "@/components/ui/form-field";
 import { InputGroup, InputGroupInput } from "@/components/ui/input-group";
 import {

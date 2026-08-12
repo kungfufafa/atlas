@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { OrgRole } from "@nakama/core";
+import type { OrgRole } from "@atlas/core";
 import type { AuthService } from "../../services/auth-service";
 import { setupTestConfigDir } from "../../test-config-dir";
 import { createMinimalHonoApp } from "../test-app-helpers";

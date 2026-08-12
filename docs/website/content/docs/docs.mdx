@@ -1,9 +1,11 @@
 ---
 title: "Documentation"
-description: "Documentation hub for Nakama — quickstart, deployment, concepts, channels, and reference."
+description: "Documentation hub for Atlas — quickstart, deployment, concepts, channels, and reference."
 ---
 
-Nakama is a multi-tenant platform for teams of AI agents. Each profile is a bot with its own role, soul, tools, and memory — exposed through the web dashboard, CLI, Telegram, WhatsApp, or Discord from one deployment.
+Atlas is a multi-tenant platform for teams of AI agents. Each profile is a bot with its own role, soul, tools, and memory — exposed through the web dashboard, CLI, Telegram, WhatsApp, or Discord from one deployment.
+
+> **Fork & Attribution Notice**: Atlas is a rebranded fork of [Nakama](https://github.com/ahmadrosid/nakama), originally created by [ahmadrosid](https://github.com/ahmadrosid).
 
 ## Quick start
 
@@ -19,11 +21,11 @@ Pick the fastest path for you:
 # Sign up at https://getnakama.cloud/ and open your instance URL
 
 # Docker — single container
-docker pull ghcr.io/ahmadrosid/nakama:latest
-docker run -d -p 4310:4310 -v nakama-data:/nakama/data --name nakama ghcr.io/ahmadrosid/nakama:latest
+docker pull ghcr.io/kungfufafa/atlas:latest
+docker run -d -p 4310:4310 -v atlas-data:/atlas/data --name atlas ghcr.io/kungfufafa/atlas:latest
 
 # Local development — from source
-git clone https://github.com/ahmadrosid/nakama.git && cd nakama
+git clone https://github.com/kungfufafa/atlas.git && cd atlas
 bun install && bun run dev:web
 ```
 
@@ -42,7 +44,7 @@ Then open the dashboard, complete the setup wizard, and send your first message.
 - [Docker](/docker) — production-style single-container deployment
 - [Live demo](https://demo.getnakama.cloud) — shared instance (`demo@getnakama.cloud` / `demo1234`)
 - [Managed hosting](https://getnakama.cloud/) — sign up and open your dedicated URL
-- [Backup and restore](/backup-restore) — export and restore your Nakama data root
+- [Backup and restore](/backup-restore) — export and restore your Atlas data root
 
 ## Concepts
 
@@ -50,7 +52,7 @@ Then open the dashboard, complete the setup wizard, and send your first message.
 - [Org memory](/org-memory) — shared, admin-curated facts for the whole organization
 - [Self-improving skills](/self-improving-skills) — agents save workflows as skills; optional admin approval
 - [Profiles](/profiles) — soul files, memory, tools, and model selection
-- [Agent prompts](/agent-prompt) — how Nakama builds the system prompt each turn
+- [Agent prompts](/agent-prompt) — how Atlas builds the system prompt each turn
 
 ## Channels
 
@@ -73,9 +75,10 @@ Then open the dashboard, complete the setup wizard, and send your first message.
 ## Community
 
 - [Contributing](/contributing) — run from source, test, and open a pull request
-- [GitHub repository](https://github.com/ahmadrosid/nakama) — source code and issues
+- [GitHub repository](https://github.com/kungfufafa/atlas) — source code and issues
 
 ## Reference
 
 - [llms.txt](/llms.txt) — documentation index for AI agents and tooling
-- [GitHub repository](https://github.com/ahmadrosid/nakama) — source code and issues
+- [GitHub repository](https://github.com/kungfufafa/atlas) — source code and issues
+

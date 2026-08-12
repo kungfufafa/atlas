@@ -2,7 +2,7 @@ import type {
   ProfileSummary,
   SoulFileStatus,
   SoulStackFiles,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import {
   ArrowRight01Icon,
   CheckmarkCircle01Icon,
@@ -202,7 +202,7 @@ export function SoulTabShell({
           <div className="mb-4">
             <h2 className="type-section-title">Profiles</h2>
             <p className="type-body mt-1 text-xs">
-              Each profile has its own soul stack under ~/.nakama/profiles/.
+              Each profile has its own soul stack under ~/.atlas/profiles/.
             </p>
           </div>
 

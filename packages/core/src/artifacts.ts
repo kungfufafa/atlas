@@ -17,7 +17,7 @@ import { pathExists } from "./fs";
 import { getProfileArtifactsDir } from "./soul/resolve";
 import { guardFilePath } from "./tools/paths";
 
-const ARTIFACT_META_SUFFIX = ".nakama-meta.json";
+const ARTIFACT_META_SUFFIX = ".atlas-meta.json";
 
 const artifactMetaSchema = z.object({
   mimeType: z.string().trim().min(1),

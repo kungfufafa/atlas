@@ -1,4 +1,4 @@
-import { getWhatsAppConfigDir } from "@nakama/core/whatsapp-config";
+import { getWhatsAppConfigDir } from "@atlas/core/whatsapp-config";
 import {
   DisconnectReason,
   extractMessageContent,
@@ -50,7 +50,7 @@ export async function createWhatsAppSocket(
 
       socket = makeWASocket({
         auth: state,
-        browser: ["Nakama", "Chrome", "4.0.0"] as [string, string, string],
+        browser: ["Atlas", "Chrome", "4.0.0"] as [string, string, string],
         connectTimeoutMs: 30_000,
         logger: baileysLogger,
         markOnlineOnConnect: false,

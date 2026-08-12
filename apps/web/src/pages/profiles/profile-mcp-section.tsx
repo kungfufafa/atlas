@@ -1,4 +1,4 @@
-import type { McpServerSummary, ProfileDetail } from "@nakama/core/contract";
+import type { McpServerSummary, ProfileDetail } from "@atlas/core/contract";
 import { Add01Icon, Delete02Icon } from "hugeicons-react";
 import { McpServerAssignPicker } from "@/components/McpServerAssignPicker";
 import { Button } from "@/components/ui/button";

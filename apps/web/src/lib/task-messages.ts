@@ -1,5 +1,5 @@
-import { NakamaApiError } from "@nakama/core/api-error";
-import type { ChatMessage, TaskMessagesResponse } from "@nakama/core/contract";
+import { AtlasApiError } from "@atlas/core/api-error";
+import type { ChatMessage, TaskMessagesResponse } from "@atlas/core/contract";
 import { client } from "@/lib/client";
 
 export async function loadTaskMessages(
@@ -20,7 +20,7 @@ export async function loadTaskMessages(
       sessionId: result.sessionId || fallback.sessionId,
     };
   } catch (error) {
-    if (error instanceof NakamaApiError && error.status === 404) {
+    if (error instanceof AtlasApiError && error.status === 404) {
       return buildTaskMessagesFromRuns(taskId);
     }
 

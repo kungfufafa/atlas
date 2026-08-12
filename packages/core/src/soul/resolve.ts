@@ -3,7 +3,7 @@ import { getUserConfigDir } from "../user-config";
 import { getSoulStatus, loadSoulStack } from "./load";
 import type { LoadedSoulStack, SoulStatus } from "./types";
 
-/** Per-profile soul stack: ~/.nakama/orgs/{orgId}/profiles/{profileId}/ */
+/** Per-profile soul stack: ~/.atlas/orgs/{orgId}/profiles/{profileId}/ */
 export function getProfileSoulDir(orgId: string, profileId: string): string {
   return join(getUserConfigDir(), "orgs", orgId, "profiles", profileId);
 }
@@ -19,7 +19,7 @@ export function getArtifactSharesDir(orgId: string): string {
   return join(getUserConfigDir(), "orgs", orgId, "artifact-shares");
 }
 
-/** Org-level memory dir: ~/.nakama/orgs/{orgId}/ (sibling of the profile dirs). */
+/** Org-level memory dir: ~/.atlas/orgs/{orgId}/ (sibling of the profile dirs). */
 export function getOrgMemoryDir(
   orgId: string,
   configDir = getUserConfigDir()
@@ -27,7 +27,7 @@ export function getOrgMemoryDir(
   return join(configDir, "orgs", orgId);
 }
 
-/** Live org memory file: ~/.nakama/orgs/{orgId}/MEMORY.md */
+/** Live org memory file: ~/.atlas/orgs/{orgId}/MEMORY.md */
 export function getOrgMemoryFilePath(
   orgId: string,
   configDir?: string
@@ -35,7 +35,7 @@ export function getOrgMemoryFilePath(
   return join(getOrgMemoryDir(orgId, configDir), "MEMORY.md");
 }
 
-/** Org memory archive dir: ~/.nakama/orgs/{orgId}/memory-archive/ */
+/** Org memory archive dir: ~/.atlas/orgs/{orgId}/memory-archive/ */
 export function getOrgMemoryArchiveDir(
   orgId: string,
   configDir?: string
@@ -43,7 +43,7 @@ export function getOrgMemoryArchiveDir(
   return join(getOrgMemoryDir(orgId, configDir), "memory-archive");
 }
 
-/** Org memory change history dir: ~/.nakama/orgs/{orgId}/memory-history/ */
+/** Org memory change history dir: ~/.atlas/orgs/{orgId}/memory-history/ */
 export function getOrgMemoryHistoryDir(
   orgId: string,
   configDir?: string
@@ -51,7 +51,7 @@ export function getOrgMemoryHistoryDir(
   return join(getOrgMemoryDir(orgId, configDir), "memory-history");
 }
 
-/** Org memory archive file for a given year-month: ~/.nakama/orgs/{orgId}/memory-archive/YYYY-MM.md */
+/** Org memory archive file for a given year-month: ~/.atlas/orgs/{orgId}/memory-archive/YYYY-MM.md */
 export function getOrgMemoryArchiveFilePath(
   orgId: string,
   yearMonth: string,

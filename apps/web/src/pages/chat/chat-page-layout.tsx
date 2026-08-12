@@ -1,4 +1,4 @@
-import type { ProfileSummary } from "@nakama/core/contract";
+import type { ProfileSummary } from "@atlas/core/contract";
 import { ChatProfileSwitcher } from "@/components/chat/chat-profile-switcher";
 import { useChatAttachmentPanel } from "@/context/use-chat-attachment-panel";
 import { cn } from "@/lib/utils";

@@ -7,7 +7,7 @@ import {
   getUserConfigPath,
   isProviderConfigured,
   loadUserConfig,
-} from "@nakama/core";
+} from "@atlas/core";
 import { ensureProviderConfigured } from "./setup";
 
 describe("isProviderConfigured", () => {
@@ -37,8 +37,8 @@ describe("isProviderConfigured", () => {
 describe("ensureProviderConfigured", () => {
   let configDir = "";
   const envKeys = [
-    "NAKAMA_CONFIG_DIR",
-    "NAKAMA_PROVIDER",
+    "ATLAS_CONFIG_DIR",
+    "ATLAS_PROVIDER",
     "OPENAI_API_KEY",
     "ANTHROPIC_API_KEY",
     "OPENROUTER_API_KEY",
@@ -73,8 +73,8 @@ describe("ensureProviderConfigured", () => {
   test("bootstraps provider config from env vars when config.ini is missing", async () => {
     snapshotEnv();
     configDir = await mkdtemp(join(tmpdir(), "nakama-setup-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
-    process.env.NAKAMA_PROVIDER = "openai";
+    process.env.ATLAS_CONFIG_DIR = configDir;
+    process.env.ATLAS_PROVIDER = "openai";
     process.env.OPENAI_API_KEY = "sk-test";
 
     const { provider, userConfig } = await ensureProviderConfigured();

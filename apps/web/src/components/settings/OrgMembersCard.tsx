@@ -1,4 +1,4 @@
-import type { OrgMemberSummary, OrgRole } from "@nakama/core/contract";
+import type { OrgMemberSummary, OrgRole } from "@atlas/core/contract";
 import { useReducer } from "react";
 import {
   type OrgMemberAddCredentials,

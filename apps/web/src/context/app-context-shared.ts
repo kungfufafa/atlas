@@ -5,7 +5,7 @@ import type {
   CreateProviderResponse,
   HealthResponse,
   ModelsResponse,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import { createContext } from "react";
 
 export interface AppContextValue {

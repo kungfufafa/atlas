@@ -6,12 +6,12 @@ import type {
   LlmToolDefinition,
   StreamChatHandlers,
   ToolCall,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
   isMessageContentPartArray,
   toOpenAIResponsesUserContent,
   WEB_SEARCH_TOOL_NAME,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
   buildTokenUsage,
   normalizeThinkingEffort,

@@ -4,7 +4,7 @@ import {
   type ProviderClient,
   parseOrgMemoryContent,
   rebuildOrgMemoryContent,
-} from "@nakama/core";
+} from "@atlas/core";
 
 const ORG_MEMORY_MERGE_SYSTEM = [
   "You maintain an organization's shared MEMORY.md file.",

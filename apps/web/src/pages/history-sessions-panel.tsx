@@ -1,4 +1,4 @@
-import type { ProfileSummary, SessionSummary } from "@nakama/core/contract";
+import type { ProfileSummary, SessionSummary } from "@atlas/core/contract";
 import {
   Cancel01Icon,
   Delete02Icon,

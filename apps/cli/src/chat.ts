@@ -1,8 +1,8 @@
 import type {
-  NakamaClient,
+  AtlasClient,
   RemoteChatSession,
   StreamHandlers,
-} from "@nakama/client";
+} from "@atlas/client";
 import {
   type AgentChannel,
   formatClientError,
@@ -14,7 +14,7 @@ import {
   type SendMessageInput,
   type SoulStatusResponse,
   type UserContextStatusResponse,
-} from "@nakama/core";
+} from "@atlas/core";
 import { saveCliProfileId } from "./cli-config";
 import {
   effectiveModelState,
@@ -46,7 +46,7 @@ const HELP_TEXT = `${formatSlashCommands()}\n\n@/path/to/image.png [message]   a
 
 interface RunChatOptions {
   channel: AgentChannel;
-  client: NakamaClient;
+  client: AtlasClient;
   offline?: boolean;
   profileId?: CliProfileOptions["profileId"];
   signal?: AbortSignal;
@@ -1049,7 +1049,7 @@ async function runBlockingChat(context: ChatContext): Promise<void> {
 }
 
 async function printCurrentModel(
-  client: NakamaClient,
+  client: AtlasClient,
   write: (text: string) => void = (text) => console.log(text),
   profile: ProfileSummary | null = null,
   cachedModels: ModelsResponse | null = null
@@ -1098,7 +1098,7 @@ export function formatStatusLines(
 }
 
 async function printStatus(
-  client: NakamaClient,
+  client: AtlasClient,
   write: (text: string) => void,
   profile: ProfileSummary | null,
   cachedModels: ModelsResponse | null
@@ -1114,7 +1114,7 @@ async function printStatus(
 }
 
 async function printModels(
-  client: NakamaClient,
+  client: AtlasClient,
   write: (text: string) => void = (text) => console.log(text),
   profile: ProfileSummary | null = null,
   cachedModels: ModelsResponse | null = null

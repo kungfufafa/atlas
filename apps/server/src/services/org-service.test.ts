@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { getProfileSoulDir, NakamaApiError } from "@nakama/core";
-import { LOCAL_CLIENT_USER_ID } from "@nakama/core/local-auth";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+import { AtlasApiError, getProfileSoulDir } from "@atlas/core";
+import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { setupTestConfigDir } from "../test-config-dir";
 import { AuthService } from "./auth-service";
 import { OrgService } from "./org-service";
@@ -357,7 +357,7 @@ describe("OrgService", () => {
 
     await expect(
       orgService.createOrganization({ name: "   ", slug: "acme" })
-    ).rejects.toBeInstanceOf(NakamaApiError);
+    ).rejects.toBeInstanceOf(AtlasApiError);
   });
 
   test("lists, updates, and removes members", async () => {

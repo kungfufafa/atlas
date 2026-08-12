@@ -1,14 +1,14 @@
-import {
-  type GenerateContentConfig,
-  ThinkingLevel,
-  type Tool,
-} from "@google/genai";
 import type {
   GenerateChatInput,
   LlmToolDefinition,
   ProviderChatOptions,
   ThinkingEffort,
-} from "@nakama/core";
+} from "@atlas/core";
+import {
+  type GenerateContentConfig,
+  ThinkingLevel,
+  type Tool,
+} from "@google/genai";
 import { normalizeThinkingEffort } from "../shared";
 
 export function buildGeminiGenerateConfig(options: {

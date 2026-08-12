@@ -1,4 +1,4 @@
-import type { ToolSummary } from "@nakama/core/contract";
+import type { ToolSummary } from "@atlas/core/contract";
 import { Cancel01Icon } from "hugeicons-react";
 import type { ChangeEvent, ReactNode, RefObject } from "react";
 import { Button } from "@/components/ui/button";

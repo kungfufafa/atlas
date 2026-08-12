@@ -1,5 +1,5 @@
-import type { AgentBrowserInstallEvent } from "@nakama/core";
-import { formatServerError } from "@nakama/core";
+import type { AgentBrowserInstallEvent } from "@atlas/core";
+import { formatServerError } from "@atlas/core";
 
 const INSTALL_STREAM_TIMEOUT_MS = 120_000;
 

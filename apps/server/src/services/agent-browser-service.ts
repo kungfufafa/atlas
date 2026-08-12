@@ -1,4 +1,4 @@
-import type { AgentBrowserStatusResponse } from "@nakama/core";
+import type { AgentBrowserStatusResponse } from "@atlas/core";
 import {
   ensureBunGlobalInstallDirs,
   ensureProcessPath,

@@ -139,9 +139,9 @@ describe("saveWhatsAppConfig", () => {
         phone_number: first!.phoneNumber,
         profile_id: first!.profileId,
       };
-      const dir = path.join(tempHome, ".nakama", "whatsapp");
+      const dir = path.join(tempHome, ".atlas", "whatsapp");
       const lines = [
-        "# Nakama WhatsApp bridge",
+        "# Atlas WhatsApp bridge",
         ...Object.entries(configWithJid).map(([k, v]) => `${k}=${v}`),
         "",
       ];
@@ -172,7 +172,7 @@ describe("resetWhatsAppSessionForReconnect", () => {
         phoneNumber: "+1234567890",
         profileId: "profile_custom",
       });
-      const dir = path.join(tempHome, ".nakama", "whatsapp");
+      const dir = path.join(tempHome, ".atlas", "whatsapp");
       const authDir = path.join(dir, "auth");
       await mkdir(authDir, { recursive: true });
       await writeFile(path.join(authDir, "creds.json"), "{}", "utf8");
@@ -188,7 +188,7 @@ describe("resetWhatsAppSessionForReconnect", () => {
       await writeFile(
         path.join(dir, "config.ini"),
         [
-          "# Nakama WhatsApp bridge",
+          "# Atlas WhatsApp bridge",
           ...Object.entries(configWithJid).map(([k, v]) => `${k}=${v}`),
           "",
         ].join("\n"),
@@ -328,11 +328,11 @@ describe("syncWhatsAppOwnerPairing", () => {
     await withTempHomedir("nakama-core-wa-sync-", async (tempHome) => {
       await saveWhatsAppConfig({ phoneNumber: "+6281379292556" });
 
-      const dir = path.join(tempHome, ".nakama", "whatsapp");
+      const dir = path.join(tempHome, ".atlas", "whatsapp");
       await writeFile(
         path.join(dir, "config.ini"),
         [
-          "# Nakama WhatsApp bridge",
+          "# Atlas WhatsApp bridge",
           "phone_number=+6281379292556",
           "profile_id=default",
           "pairing_code=ABCD1234",
@@ -356,12 +356,12 @@ describe("syncWhatsAppOwnerPairing", () => {
 
   test("preserves an existing paired LID during owner sync", async () => {
     await withTempHomedir("nakama-core-wa-sync-", async (tempHome) => {
-      const dir = path.join(tempHome, ".nakama", "whatsapp");
+      const dir = path.join(tempHome, ".atlas", "whatsapp");
       await mkdir(dir, { recursive: true });
       await writeFile(
         path.join(dir, "config.ini"),
         [
-          "# Nakama WhatsApp bridge",
+          "# Atlas WhatsApp bridge",
           "phone_number=6281379292556",
           "profile_id=default",
           "paired_jid=6281379292556@s.whatsapp.net",

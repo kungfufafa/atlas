@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { AgentChatSession } from "@nakama/agent";
+import type { AgentChatSession } from "@atlas/agent";
 import { sessionTurnRegistry } from "../../services/session-turn-registry";
 import { streamMessage, streamTurnSubscribe } from "../shared";
 

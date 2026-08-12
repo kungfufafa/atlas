@@ -18,10 +18,10 @@ const ORG_ID = "org_test";
 
 describe("knowledge base store", () => {
   let tempConfigDir = "";
-  const previousConfigDir = process.env.NAKAMA_CONFIG_DIR;
+  const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
 
   afterEach(async () => {
-    process.env.NAKAMA_CONFIG_DIR = previousConfigDir;
+    process.env.ATLAS_CONFIG_DIR = previousConfigDir;
 
     if (tempConfigDir) {
       await rm(tempConfigDir, { force: true, recursive: true });
@@ -31,7 +31,7 @@ describe("knowledge base store", () => {
 
   async function setupProfile(profileId: string): Promise<void> {
     tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "nakama-kb-store-"));
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
     await import("node:fs/promises").then(({ mkdir }) =>
       mkdir(path.join(tempConfigDir, "orgs", ORG_ID, "profiles", profileId), {
         recursive: true,

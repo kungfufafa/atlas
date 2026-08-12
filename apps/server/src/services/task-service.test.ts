@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { TaskRunner } from "./task-runner";
 import { TaskService } from "./task-service";
 

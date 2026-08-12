@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { ORG_MEMORY_PREAMBLE, type ProviderClient } from "@nakama/core";
+import { ORG_MEMORY_PREAMBLE, type ProviderClient } from "@atlas/core";
 import {
   mergeOrgMemoryWithApprovedBullet,
   mergeOrgMemoryWithApprovedBulletFallback,

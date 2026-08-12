@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { ProfileSummary } from "@nakama/core/contract";
+import type { ProfileSummary } from "@atlas/core/contract";
 import { resolveSuperBotChatProfileId } from "@/lib/profiles";
 
 function profile(

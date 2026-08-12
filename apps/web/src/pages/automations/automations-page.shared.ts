@@ -2,7 +2,7 @@ import type {
   AutomationRunRecord,
   AutomationTrigger,
   StoredAutomation,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 
 export const sectionClass = "rounded-md border border-border bg-card";
 

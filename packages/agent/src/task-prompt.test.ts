@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { ProviderClient } from "@nakama/core";
-import { normalizeTaskPrompt } from "@nakama/core";
+import type { ProviderClient } from "@atlas/core";
+import { normalizeTaskPrompt } from "@atlas/core";
 import {
   buildTaskPromptUserPrompt,
   draftTaskPromptFromFields,

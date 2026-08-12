@@ -1,20 +1,20 @@
-import { createClient } from "@nakama/client";
+import { createClient } from "@atlas/client";
 import {
   ChannelOrgStore,
   getChannelOrgSelectionPath,
-} from "@nakama/core/channel-org";
+} from "@atlas/core/channel-org";
 import {
   ensureServerRunning,
   stopSpawnedServer,
-} from "@nakama/core/ensure-server";
-import { loadLocalAuthToken } from "@nakama/core/local-auth";
-import { resolveWebPublicUrl } from "@nakama/core/runtime";
+} from "@atlas/core/ensure-server";
+import { loadLocalAuthToken } from "@atlas/core/local-auth";
+import { resolveWebPublicUrl } from "@atlas/core/runtime";
 import {
   clearTelegramWorkerHeartbeat,
   isHeartbeatAlive,
   readTelegramWorkerHeartbeat,
   writeTelegramWorkerHeartbeat,
-} from "@nakama/core/telegram-worker";
+} from "@atlas/core/telegram-worker";
 import { TelegramAuthStore } from "./auth-store";
 import { createBot } from "./bot";
 import { loadConfig } from "./config";
@@ -42,7 +42,7 @@ try {
     isHeartbeatAlive(existingHeartbeat)
   ) {
     console.error(
-      `Another Nakama Telegram bridge is already running (pid ${existingHeartbeat.pid}). ` +
+      `Another Atlas Telegram bridge is already running (pid ${existingHeartbeat.pid}). ` +
         "Stop the existing bridge worker or disable it in the dashboard before starting a new one."
     );
     process.exit(1);
@@ -71,7 +71,7 @@ try {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(
-      `Nakama API authentication failed: ${message}\n` +
+      `Atlas API authentication failed: ${message}\n` +
         "Restart the server so it can provision the local client user:\n" +
         "  bun run dev:server"
     );
@@ -94,7 +94,7 @@ try {
     sessionStore,
   });
 
-  console.log("Nakama Telegram bridge running (long polling).");
+  console.log("Atlas Telegram bridge running (long polling).");
   console.log(`Server: ${serverUrl}`);
   console.log(`Profile: ${config.profileId}`);
   const authConfig = authStore.getConfig();

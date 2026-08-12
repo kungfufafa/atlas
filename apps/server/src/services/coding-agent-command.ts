@@ -1,7 +1,7 @@
-import type { StoredCodingAgentHarnessKind } from "@nakama/db";
+import type { StoredCodingAgentHarnessKind } from "@atlas/db";
 import {
   formatModelForHarness,
-  mapNakamaProviderToPi,
+  mapAtlasProviderToPi,
   redactSpawnEnvForPrompt,
   resolveCodingAgentSpawnBundle,
 } from "./coding-agent-spawn-env";
@@ -97,7 +97,7 @@ export async function buildCodingAgentCommandTemplate(
   taskPrompt: string,
   cwd: string,
   options: {
-    userConfig?: import("@nakama/core").UserConfig | null;
+    userConfig?: import("@atlas/core").UserConfig | null;
     profileModel?: string | null;
   } = {}
 ): Promise<CodingAgentCommandTemplate> {
@@ -168,10 +168,10 @@ export async function buildCodingAgentCommandTemplate(
         "--yolo",
       ].join(" "),
       notes: [
-        "Cursor Agent uses host Cursor authentication — Nakama does not inject provider credentials.",
+        "Cursor Agent uses host Cursor authentication — Atlas does not inject provider credentials.",
         "Before coding: ensure the target repo exists in the profile workspace; git clone it there if missing.",
         "Set bash cwd to the repo directory and keep argv0 as `agent` (do not prefix with cd && — codingAgent requires the harness binary first).",
-        "Prefer --output-format text for a short final answer. If stream-json is used, Nakama summarizes it and saves the full log under artifacts/coding-agent-runs/.",
+        "Prefer --output-format text for a short final answer. If stream-json is used, Atlas summarizes it and saves the full log under artifacts/coding-agent-runs/.",
         "Use --yolo so unattended background runs do not block on permission prompts.",
         "After the run: summarize the returned stdout for the user. If unclear, verify with git status / git diff --stat in the repo (full raw log path is included when present).",
       ],
@@ -180,7 +180,7 @@ export async function buildCodingAgentCommandTemplate(
 
   if (harness.kind === "pi") {
     const piProvider = routing.providerType
-      ? mapNakamaProviderToPi(routing.providerType, routing.baseUrl)
+      ? mapAtlasProviderToPi(routing.providerType, routing.baseUrl)
       : null;
     const piModel = routing.model
       ? formatModelForHarness(
@@ -206,7 +206,7 @@ export async function buildCodingAgentCommandTemplate(
       command: commandParts.join(" "),
       notes: [
         "pi runs in non-interactive print mode with -p <prompt>.",
-        "Provider and model are passed via --provider and --model flags from Nakama provider routing.",
+        "Provider and model are passed via --provider and --model flags from Atlas provider routing.",
         "Run from the profile workspace cwd unless the user specifies another path inside it.",
       ],
     };
@@ -238,8 +238,8 @@ export function formatCodingAgentCommandContext(
     "# Coding Agent Harness",
     `Selected backend: ${template.harnessName} (${template.backend}).`,
     template.backend === "cursor_agent"
-      ? "Run via the `bash` tool with cwd set to the repo checkout and codingAgent: true (or argv0 `agent`). Cursor uses host auth — Nakama does not merge provider credentials. Do not use `cd … && agent`."
-      : "Run the coding agent via the `bash` tool. Set `codingAgent: true` so Nakama merges spawn env for this harness, or rely on auto-detection when the command starts with the harness binary.",
+      ? "Run via the `bash` tool with cwd set to the repo checkout and codingAgent: true (or argv0 `agent`). Cursor uses host auth — Atlas does not merge provider credentials. Do not use `cd … && agent`."
+      : "Run the coding agent via the `bash` tool. Set `codingAgent: true` so Atlas merges spawn env for this harness, or rely on auto-detection when the command starts with the harness binary.",
     "",
     "```bash",
     template.command,
@@ -249,7 +249,7 @@ export function formatCodingAgentCommandContext(
   if (Object.keys(template.spawnEnv).length > 0) {
     lines.push(
       "",
-      "When Nakama provider passthrough is active, these env vars are merged at spawn time:",
+      "When Atlas provider passthrough is active, these env vars are merged at spawn time:",
       "",
       "```json",
       JSON.stringify(redactSpawnEnvForPrompt(template.spawnEnv), null, 2),

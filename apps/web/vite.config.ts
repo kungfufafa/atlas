@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
-const serverUrl = process.env.nakama_SERVER_URL ?? "http://127.0.0.1:4310";
+const serverUrl = process.env.ATLAS_SERVER_URL ?? "http://127.0.0.1:4310";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -15,12 +15,12 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(root, "src"),
-      "@nakama/core/local-auth": path.resolve(
+      "@atlas/core/local-auth": path.resolve(
         root,
         "src/shims/core-local-auth.ts"
       ),
-      "@nakama/core/runtime": path.resolve(root, "src/shims/core-runtime.ts"),
-      "@nakama/core/thinking-content": path.resolve(
+      "@atlas/core/runtime": path.resolve(root, "src/shims/core-runtime.ts"),
+      "@atlas/core/thinking-content": path.resolve(
         root,
         "../../packages/core/src/thinking-content.ts"
       ),

@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { nanoid } from "@nakama/core";
-import { PREINSTALLED_MCP_SERVER_IDS } from "@nakama/core/mcp/preinstalled";
+import { nanoid } from "@atlas/core";
+import { PREINSTALLED_MCP_SERVER_IDS } from "@atlas/core/mcp/preinstalled";
 import {
   createInMemoryDatabaseAdapter,
   ensurePreinstalledMcpServers,
-} from "@nakama/db";
+} from "@atlas/db";
 import { McpClientManager } from "./mcp-client-manager";
 import { McpService } from "./mcp-service";
 

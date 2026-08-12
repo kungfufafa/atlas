@@ -6,7 +6,7 @@ import {
   createId,
   normalizeAutomationDelivery,
   type ToolDefinition,
-} from "@nakama/core";
+} from "@atlas/core";
 
 interface GeneratedAutomationPayload {
   delivery?: unknown;

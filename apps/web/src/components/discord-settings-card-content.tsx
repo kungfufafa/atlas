@@ -1,4 +1,4 @@
-import type { ProfileSummary } from "@nakama/core/contract";
+import type { ProfileSummary } from "@atlas/core/contract";
 import { ViewIcon, ViewOffIcon } from "hugeicons-react";
 import { SettingsRow } from "@/components/discord-settings-card.shared";
 import {

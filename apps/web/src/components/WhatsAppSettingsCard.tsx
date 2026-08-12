@@ -1,4 +1,4 @@
-import type { UpdateWhatsAppSettingsRequest } from "@nakama/core/contract";
+import type { UpdateWhatsAppSettingsRequest } from "@atlas/core/contract";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { SETTINGS_CARD_LOADING_SKELETON } from "@/components/integration-settings.shared";

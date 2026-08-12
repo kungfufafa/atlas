@@ -1,5 +1,5 @@
-import type { ProfileSummary, StoredTask } from "@nakama/core/contract";
-import { normalizeTaskPrompt } from "@nakama/core/normalize-task-prompt";
+import type { ProfileSummary, StoredTask } from "@atlas/core/contract";
+import { normalizeTaskPrompt } from "@atlas/core/normalize-task-prompt";
 import { Delete02Icon, PlayIcon, SparklesIcon } from "hugeicons-react";
 import { useReducer } from "react";
 import { ProfileAvatar } from "@/components/ProfileAvatar";

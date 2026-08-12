@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { saveComposioConfig } from "@nakama/core";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+import { saveComposioConfig } from "@atlas/core";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { AgentService } from "../../services/agent-service";
 import { AuthService } from "../../services/auth-service";
 import type { ComposioApiClient } from "../../services/composio-api-client";
@@ -44,7 +44,7 @@ function createMockClient(): ComposioApiClient {
 
 async function createApp() {
   const configDir = await mkdtemp(join(tmpdir(), "nakama-composio-route-"));
-  process.env.NAKAMA_CONFIG_DIR = configDir;
+  process.env.ATLAS_CONFIG_DIR = configDir;
   await saveComposioConfig({ apiKey: TEST_API_KEY });
 
   const databaseAdapter = createInMemoryDatabaseAdapter();

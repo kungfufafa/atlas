@@ -1,4 +1,4 @@
-import type { SessionSummary } from "@nakama/core/contract";
+import type { SessionSummary } from "@atlas/core/contract";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

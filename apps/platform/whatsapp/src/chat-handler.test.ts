@@ -77,7 +77,7 @@ describe("createChatHandler", () => {
         ],
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "whatsapp", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -138,7 +138,7 @@ describe("createChatHandler", () => {
         ],
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "whatsapp", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -199,7 +199,7 @@ describe("createChatHandler", () => {
         ],
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "whatsapp", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -265,7 +265,7 @@ describe("createChatHandler", () => {
         ],
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "whatsapp", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -325,7 +325,7 @@ describe("createChatHandler", () => {
         ],
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "whatsapp", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -361,7 +361,7 @@ describe("createChatHandler", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "whatsapp", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -395,7 +395,7 @@ describe("createChatHandler", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "whatsapp", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -429,7 +429,7 @@ describe("createChatHandler", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "whatsapp", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -465,7 +465,7 @@ describe("createChatHandler", () => {
         streaming: true,
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "whatsapp", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -507,7 +507,7 @@ describe("createChatHandler", () => {
       await authStore.reload();
       const { client } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "whatsapp", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -540,7 +540,7 @@ describe("createChatHandler", () => {
       await authStore.reload();
       const { client, calls } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "whatsapp", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -590,7 +590,7 @@ describe("createChatHandler", () => {
         ],
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "whatsapp", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -626,7 +626,7 @@ describe("bridge API integration", () => {
       await authStore.reload();
       const { client, calls, orgIds } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "whatsapp", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -662,7 +662,7 @@ describe("bridge API integration", () => {
       await authStore.reload();
       const { client } = createMockClient();
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "whatsapp", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -698,7 +698,7 @@ describe("bridge API integration", () => {
         orgs: createMultiTestOrgs(),
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "whatsapp", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
@@ -735,7 +735,7 @@ describe("bridge API integration", () => {
         orgs: createMultiTestOrgs(),
       });
       const sessionStore = new SessionStore(
-        path.join(homeDir, ".nakama", "whatsapp", "chat-sessions.json")
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
       );
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();

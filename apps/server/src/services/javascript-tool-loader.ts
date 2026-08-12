@@ -1,12 +1,12 @@
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import type { JsonSchema, ToolContext, ToolDefinition } from "@nakama/core";
+import type { JsonSchema, ToolContext, ToolDefinition } from "@atlas/core";
 import {
   getCustomToolsDir,
   pathExists,
   permissiveObjectSchema,
-} from "@nakama/core";
-import type { StoredToolRecord } from "@nakama/db";
+} from "@atlas/core";
+import type { StoredToolRecord } from "@atlas/db";
 
 const moduleCache = new Map<string, JavascriptToolModule>();
 

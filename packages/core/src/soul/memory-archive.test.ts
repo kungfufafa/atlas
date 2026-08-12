@@ -12,7 +12,7 @@ import {
 import { getMemoryArchiveFilePath } from "./memory-paths";
 
 const PROFILE = { orgId: "org_test", profileId: "profile_test" };
-const originalConfigDir = process.env.NAKAMA_CONFIG_DIR;
+const originalConfigDir = process.env.ATLAS_CONFIG_DIR;
 
 describe("memory archive", () => {
   let tempDir = "";
@@ -23,9 +23,9 @@ describe("memory archive", () => {
       tempDir = "";
     }
     if (originalConfigDir === undefined) {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
     } else {
-      process.env.NAKAMA_CONFIG_DIR = originalConfigDir;
+      process.env.ATLAS_CONFIG_DIR = originalConfigDir;
     }
   });
 
@@ -40,7 +40,7 @@ describe("memory archive", () => {
     );
     await mkdir(soulDir, { recursive: true });
     await writeFile(path.join(soulDir, "MEMORY.md"), content, "utf8");
-    process.env.NAKAMA_CONFIG_DIR = tempDir;
+    process.env.ATLAS_CONFIG_DIR = tempDir;
     return soulDir;
   }
 

@@ -1,6 +1,6 @@
 ---
 title: "First-time setup"
-description: "Complete Nakama setup wizard: admin account, organization, provider, and profiles."
+description: "Complete Atlas setup wizard: admin account, organization, provider, and profiles."
 ---
 
 ## Open the dashboard
@@ -13,7 +13,7 @@ Where you open the dashboard depends on how you deployed:
 | [Docker](/docker) | `http://localhost:4310` |
 | Local development | `http://localhost:3003` (web dev server proxies to the API) |
 
-On a fresh install, Nakama redirects you to the setup wizard automatically.
+On a fresh install, Atlas redirects you to the setup wizard automatically.
 
 Managed or Docker installs can skip the wizard by setting `NAKAMA_SEED_ADMIN_EMAIL`, `NAKAMA_SEED_ADMIN_NAME`, and `NAKAMA_SEED_ADMIN_PASSWORD` before first boot. See [Docker → First-boot seed](/docker#first-boot-seed-optional).
 
@@ -27,15 +27,15 @@ Fill in your name, email, and password, then click **Continue**.
 
 ### Restore from backup instead
 
-If you are moving to a new machine or reinstalling, you can skip creating a new admin account and restore a previous Nakama export ZIP on this step.
+If you are moving to a new machine or reinstalling, you can skip creating a new admin account and restore a previous Atlas export ZIP on this step.
 
 1. Click **Upload backup ZIP**
 2. Choose your `.zip` backup and review the preview
 3. Click **Restore ZIP** to replace the local data root
-4. Restart Nakama so it picks up the restored database
+4. Restart Atlas so it picks up the restored database
 5. Sign in with the account from your backup
 
-If provider setup was already complete in the backup, Nakama opens chat after sign-in. Otherwise the setup wizard continues from the provider step.
+If provider setup was already complete in the backup, Atlas opens chat after sign-in. Otherwise the setup wizard continues from the provider step.
 
 See [Backup and restore](/backup-restore) for what is included in export ZIPs and when to use dashboard import after setup is complete.
 
@@ -61,7 +61,7 @@ The wizard can ask for optional context about you and how you prefer agents to r
 
 ## Send your first message
 
-After the provider step, Nakama opens chat with the default profile. Send a test message — you should get a reply within a few seconds.
+After the provider step, Atlas opens chat with the default profile. Send a test message — you should get a reply within a few seconds.
 
 If chat fails, reopen **Settings → LLM providers** and confirm the API key and profile model selection.
 

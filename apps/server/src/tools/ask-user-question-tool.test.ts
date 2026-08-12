@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { toLlmToolDefinition } from "@nakama/core";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+import { toLlmToolDefinition } from "@atlas/core";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { estimateToolToken } from "../providers/usage-tracking";
 import { AgentQuestionnaireState } from "../services/agent-questionnaire-state";
 import { createAskUserQuestionTools } from "./ask-user-question-tool";

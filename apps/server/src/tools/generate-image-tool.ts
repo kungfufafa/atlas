@@ -1,15 +1,15 @@
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
+  AtlasApiError,
   getProfileSoulDir,
   MAX_IMAGE_BYTES,
-  NakamaApiError,
   pathExists,
   type ToolContext,
   type ToolDefinition,
   type UserConfig,
-} from "@nakama/core";
-import type { DatabaseAdapter } from "@nakama/db";
+} from "@atlas/core";
+import type { DatabaseAdapter } from "@atlas/db";
 import { createAttachmentSaver } from "../services/attachment-service";
 import {
   generateImageWithOpenAI,
@@ -21,7 +21,7 @@ import {
 
 export const GENERATE_IMAGE_TOOL_NAME = "generate_image";
 
-const ARTIFACT_META_SUFFIX = ".nakama-meta.json";
+const ARTIFACT_META_SUFFIX = ".atlas-meta.json";
 const DEFAULT_FILENAME = "generated-image.png";
 
 export interface GenerateImageToolInput {
@@ -313,7 +313,7 @@ function readString(input: unknown, key: string): string | null {
 }
 
 function errorMessage(error: unknown): string {
-  if (error instanceof NakamaApiError) {
+  if (error instanceof AtlasApiError) {
     return error.message;
   }
   if (error instanceof Error && error.message.trim()) {

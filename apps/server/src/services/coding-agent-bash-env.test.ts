@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { ProviderInstance } from "@nakama/core";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+import type { ProviderInstance } from "@atlas/core";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { enrichCodingAgentBashInput } from "./coding-agent-bash-env";
 
 const anthropicProvider: ProviderInstance = {

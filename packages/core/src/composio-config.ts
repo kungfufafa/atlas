@@ -89,7 +89,7 @@ async function writeComposioConfigFile(
   config: ComposioConfigFile
 ): Promise<void> {
   const lines = [
-    "# Nakama Composio integration",
+    "# Atlas Composio integration",
     `api_key=${config.apiKey}`,
     "",
   ];

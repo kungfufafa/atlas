@@ -211,13 +211,13 @@ export function validateTimezone(
 }
 
 export function getUserConfigDir(): string {
-  const override = process.env.NAKAMA_CONFIG_DIR?.trim();
+  const override = process.env.ATLAS_CONFIG_DIR?.trim();
 
   if (override) {
     return override;
   }
 
-  return join(homedir(), ".nakama");
+  return join(homedir(), ".atlas");
 }
 
 export function getUserConfigPath(): string {
@@ -659,7 +659,7 @@ function buildConfigIniLines(
   patch: Record<string, string | undefined> = {}
 ): string[] {
   const mergedGlobal = { ...global, ...patch };
-  const lines = ["# Nakama user config"];
+  const lines = ["# Atlas user config"];
 
   if (mergedGlobal.default_provider_id !== undefined) {
     lines.push(

@@ -1,6 +1,8 @@
-# nakama — Agent Context
+# atlas — Agent Context
 
 Agent platform built to work with your team — not replace them. Multi-tenant monorepo; orgs are flat tenants, each profile has a **soul** (identity, style, instructions, memory).
+
+> **Fork Notice**: Atlas is a rebranded fork of [Nakama](https://github.com/ahmadrosid/nakama) by [ahmadrosid](https://github.com/ahmadrosid).
 
 ## Dev
 
@@ -28,7 +30,7 @@ Use `agent-browser` cli to do browser automation, screenshot etc. Run the docker
 
 ## Documentation (`docs/website`)
 
-User-facing docs live in `docs/website/content/docs/` (MDX). **Audience is people who use Nakama** — org admins, operators, and chat users — not contributors implementing the product.
+User-facing docs live in `docs/website/content/docs/` (MDX). **Audience is people who use Atlas** — org admins, operators, and chat users — not contributors implementing the product.
 
 When writing or updating docs, prioritize:
 
@@ -41,14 +43,14 @@ Keep contributor detail out of user docs unless it directly helps usage (e.g. en
 Match existing pages: task-oriented headings, tables for roles/options, screenshots under `docs/website/public/screenshots/` (`![alt](/screenshots/foo.png)`), capture scripts in `docs/website/scripts/capture-*.sh`. Cross-link related concepts (e.g. skills ↔ org memory) instead of duplicating internals.
 
 
-One container: API + web + platform workers. Data at `/nakama/data` (`NAKAMA_CONFIG_DIR`). Dashboard: http://localhost:4310
+One container: API + web + platform workers. Data at `/atlas/data` (`ATLAS_CONFIG_DIR`). Dashboard: http://localhost:4310
 
 ```bash
 # Prebuilt
-docker pull ghcr.io/ahmadrosid/nakama:latest
-docker run -d -p 4310:4310 -v nakama-data:/nakama/data --name nakama ghcr.io/ahmadrosid/nakama:latest
+docker pull ghcr.io/kungfufafa/atlas:latest
+docker run -d -p 4310:4310 -v atlas-data:/atlas/data --name atlas ghcr.io/kungfufafa/atlas:latest
 
-# Build from source and run (uses buildx; default linux/amd64 -t nakama)
+# Build from source and run (uses buildx; default linux/amd64 -t atlas)
 ./scripts/docker-build-run.sh
 
 # Fresh start (removes container, volume, image)
@@ -67,7 +69,7 @@ Orgs isolate profiles, sessions, automations, tasks, tools, MCP, skills, usage (
 | Org member | Chat, agents, automations/tasks |
 | Org viewer | Read chat only — no agent invoke / mutations |
 
-**Org context:** every authed call except `/v1/auth/*` and `/v1/platform/*` needs `X-Org-Id` (`@nakama/client`) or `active_org_id` cookie (`POST /v1/auth/active-org`). Middleware: `org-middleware.ts`; guards: `org-guards.ts`.
+**Org context:** every authed call except `/v1/auth/*` and `/v1/platform/*` needs `X-Org-Id` (`@atlas/client`) or `active_org_id` cookie (`POST /v1/auth/active-org`). Middleware: `org-middleware.ts`; guards: `org-guards.ts`.
 
 **Onboard:** setup → `POST /v1/auth/setup`; more orgs → platform admin; invite → `/v1/orgs/{orgId}/invites` + `POST /v1/auth/accept-invite`; switch → `OrgSwitcher.tsx` / `client.setActiveOrg()`.
 
@@ -95,7 +97,7 @@ Merged in `agent-service` `resolveProfileSystemPrompt` → `generateReply` (`pro
 
 ## Soul (`packages/core/src/soul/`)
 
-Path: `~/.nakama/orgs/{orgId}/profiles/{profileId}/` (`getProfileSoulDir`). Load: `loadSoulStack()`; inject: `composeSoulSystemPrompt()`.
+Path: `~/.atlas/orgs/{orgId}/profiles/{profileId}/` (`getProfileSoulDir`). Load: `loadSoulStack()`; inject: `composeSoulSystemPrompt()`.
 
 | File | Role |
 |---|---|
@@ -124,18 +126,18 @@ Path: `~/.nakama/orgs/{orgId}/profiles/{profileId}/` (`getProfileSoulDir`). Load
 
 ## Tool execution & workspace
 
-Path bugs (tool resolves under repo instead of `~/.nakama`) → start here. Override root: `NAKAMA_CONFIG_DIR`.
+Path bugs (tool resolves under repo instead of `~/.atlas`) → start here. Override root: `ATLAS_CONFIG_DIR`.
 
 | Path | Purpose |
 |---|---|
-| `~/.nakama/orgs/{orgId}/profiles/{profileId}/` | Profile workspace — `getProfileSoulDir()` |
-| `~/.nakama/tools/*.js` | Custom JS tools — `getCustomToolsDir()` |
+| `~/.atlas/orgs/{orgId}/profiles/{profileId}/` | Profile workspace — `getProfileSoulDir()` |
+| `~/.atlas/tools/*.js` | Custom JS tools — `getCustomToolsDir()` |
 
 Always build context with `buildToolExecutionContext()` (`packages/core/src/tools/context.ts`) so `workspaceRoot` = soul dir. Custom JS tools must use `context.workspaceRoot`, **not** `process.cwd()`.
 
 | | Built-in | Custom JS |
 |---|---|---|
-| Code | `packages/core/src/tools/`, `apps/server/src/tools/` | `~/.nakama/tools/*.js` |
+| Code | `packages/core/src/tools/`, `apps/server/src/tools/` | `~/.atlas/tools/*.js` |
 | Workspace | `getProfileSoulDir` inside handler | `context.workspaceRoot` |
 | Loader | builtins map | `javascript-tool-loader.ts` |
 
@@ -151,7 +153,7 @@ Always build context with `buildToolExecutionContext()` (`packages/core/src/tool
 | Playground | `POST /v1/tools/:toolId/run` → `runToolPlayground()` (`resolvePlaygroundProfileId`) |
 | Param suggest | `POST /v1/tools/:toolId/params/suggest` |
 
-**Debug:** (1) check path resolution in `~/.nakama/tools/`, (2) confirm `buildToolExecutionContext` + real `profileId`, (3) monorepo-root paths ⇒ missing `workspaceRoot`, (4) put test files in the assigned profile workspace. Super Bot authoring rules: `SUPER_BOT_SYSTEM_PROMPT` in `packages/db/src/constants.ts`.
+**Debug:** (1) check path resolution in `~/.atlas/tools/`, (2) confirm `buildToolExecutionContext` + real `profileId`, (3) monorepo-root paths ⇒ missing `workspaceRoot`, (4) put test files in the assigned profile workspace. Super Bot authoring rules: `SUPER_BOT_SYSTEM_PROMPT` in `packages/db/src/constants.ts`.
 
 **Playground UI:** `/system/playground/:toolId` — `ToolPlaygroundPage.tsx`, `ToolPlaygroundPanel.tsx`; admin-only via `canUseToolPlayground()`.
 

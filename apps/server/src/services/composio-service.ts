@@ -1,4 +1,5 @@
 import {
+  AtlasApiError,
   type ComposioCatalogToolkitSummary,
   type ComposioConnectResponse,
   type ComposioToolkitSummary,
@@ -9,22 +10,21 @@ import {
   type ListComposioToolkitsResponse,
   type ListProfileComposioToolkitsResponse,
   loadComposioConfigFile,
-  NakamaApiError,
   nanoid,
   normalizeEnableComposioToolkitRequest,
   normalizeUpdateProfileComposioToolkitsRequest,
   type ProfileComposioToolkitAssignment,
   resolveComposioApiKey,
   type UpdateProfileComposioToolkitsRequest,
-} from "@nakama/core";
-import { LOCAL_CLIENT_USER_ID } from "@nakama/core/local-auth";
+} from "@atlas/core";
+import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
 import type {
   DatabaseAdapter,
   StoredComposioToolkitRecord,
   StoredComposioUserConnectionRecord,
   StoredProfileComposioToolkitRecord,
   StoredProfileRecord,
-} from "@nakama/db";
+} from "@atlas/db";
 import type { AuthService } from "./auth-service";
 import {
   type ComposioApiClient,
@@ -210,18 +210,18 @@ export class ComposioService {
   async validateConfiguration(apiKey?: string): Promise<void> {
     const resolvedKey = apiKey?.trim() || (await this.resolveApiKey());
     if (!resolvedKey) {
-      throw new NakamaApiError("Composio API key is required.", 400);
+      throw new AtlasApiError("Composio API key is required.", 400);
     }
 
     const client = createComposioApiClient(resolvedKey);
     if (!client) {
-      throw new NakamaApiError("Composio API key is required.", 400);
+      throw new AtlasApiError("Composio API key is required.", 400);
     }
 
     try {
       await client.listCatalogToolkits({ limit: 1 });
     } catch (error) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         error instanceof Error
           ? error.message
           : "Failed to validate Composio API key.",
@@ -385,7 +385,7 @@ export class ComposioService {
     const orgToolkit = await this.getOwnedToolkitBySlug(orgId, toolkitSlug);
 
     if (orgToolkit.status !== "enabled") {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         "An org admin must enable this toolkit before you can connect.",
         400
       );
@@ -450,7 +450,7 @@ export class ComposioService {
         Buffer.from(state, "base64url").toString("utf8")
       ) as ComposioOAuthStatePayload;
     } catch {
-      throw new NakamaApiError("Invalid OAuth state.", 400);
+      throw new AtlasApiError("Invalid OAuth state.", 400);
     }
 
     const orgToolkit = await this.getOwnedToolkit(
@@ -467,14 +467,14 @@ export class ComposioService {
       connection.userId !== payload.userId ||
       connection.toolkitId !== payload.toolkitId
     ) {
-      throw new NakamaApiError("Invalid OAuth state.", 400);
+      throw new AtlasApiError("Invalid OAuth state.", 400);
     }
 
     if (
       !connection.oauthStateHash ||
       this.authService.hashToken(payload.nonce) !== connection.oauthStateHash
     ) {
-      throw new NakamaApiError("Invalid OAuth state.", 400);
+      throw new AtlasApiError("Invalid OAuth state.", 400);
     }
 
     const connectedAccountId =
@@ -547,10 +547,7 @@ export class ComposioService {
     );
 
     if (!connection || connection.status !== "connected") {
-      throw new NakamaApiError(
-        "Connect the toolkit before syncing tools.",
-        400
-      );
+      throw new AtlasApiError("Connect the toolkit before syncing tools.", 400);
     }
 
     try {
@@ -651,7 +648,7 @@ export class ComposioService {
       const toolkit = toolkitById.get(assignment.toolkitId);
 
       if (!toolkit || toolkit.orgId !== orgId) {
-        throw new NakamaApiError(
+        throw new AtlasApiError(
           "Composio toolkit not found for this organization.",
           404
         );
@@ -911,7 +908,7 @@ export class ComposioService {
     const apiClient = await this.getApiClient();
 
     if (!apiClient) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         "Composio is not configured on this deployment.",
         503
       );
@@ -926,7 +923,7 @@ export class ComposioService {
   ): Promise<StoredComposioToolkitRecord> {
     const record = await this.databaseAdapter.getComposioToolkit(toolkitId);
     if (!record || record.orgId !== orgId) {
-      throw new NakamaApiError("Composio toolkit not found.", 404);
+      throw new AtlasApiError("Composio toolkit not found.", 404);
     }
 
     return record;
@@ -941,7 +938,7 @@ export class ComposioService {
       toolkitSlug
     );
     if (!record) {
-      throw new NakamaApiError("Composio toolkit not found.", 404);
+      throw new AtlasApiError("Composio toolkit not found.", 404);
     }
 
     return record;
@@ -949,7 +946,7 @@ export class ComposioService {
 
   private assertProfileOrg(profile: StoredProfileRecord, orgId: string): void {
     if (profile.orgId !== orgId) {
-      throw new NakamaApiError("Profile not found for this organization.", 404);
+      throw new AtlasApiError("Profile not found for this organization.", 404);
     }
   }
 }

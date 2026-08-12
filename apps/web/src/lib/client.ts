@@ -1,5 +1,5 @@
-import { createClient } from "@nakama/client";
-import { formatClientError } from "@nakama/core/api-error";
+import { createClient } from "@atlas/client";
+import { formatClientError } from "@atlas/core/api-error";
 
 export const client = createClient({ baseUrl: "" });
 

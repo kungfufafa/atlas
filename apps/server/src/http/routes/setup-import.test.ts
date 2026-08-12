@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { getUserConfigDir } from "@nakama/core";
+import { getUserConfigDir } from "@atlas/core";
 import {
-  createNakamaDataExport,
-  previewNakamaDataImport,
+  createAtlasDataExport,
+  previewAtlasDataImport,
 } from "../../services/data-portability";
 import { setupTestConfigDir } from "../../test-config-dir";
 import { createMinimalHonoApp } from "../test-app-helpers";
@@ -26,7 +26,7 @@ describe("setup import routes", () => {
     const { app } = createApp();
     await writeFile(join(getUserConfigDir(), "config.ini"), "original");
     const archive = (
-      await createNakamaDataExport({ rootDir: getUserConfigDir() })
+      await createAtlasDataExport({ rootDir: getUserConfigDir() })
     ).data;
     await writeFile(join(getUserConfigDir(), "config.ini"), "changed");
 
@@ -83,7 +83,7 @@ describe("setup import routes", () => {
 
     await writeFile(join(getUserConfigDir(), "config.ini"), "original");
     const archive = (
-      await createNakamaDataExport({ rootDir: getUserConfigDir() })
+      await createAtlasDataExport({ rootDir: getUserConfigDir() })
     ).data;
     await writeFile(join(getUserConfigDir(), "config.ini"), "changed");
 
@@ -119,7 +119,7 @@ describe("setup import routes", () => {
 
     await writeFile(join(getUserConfigDir(), "config.ini"), "original");
     const archive = (
-      await createNakamaDataExport({ rootDir: getUserConfigDir() })
+      await createAtlasDataExport({ rootDir: getUserConfigDir() })
     ).data;
 
     const restoreResponse = await app.fetch(
@@ -146,7 +146,7 @@ describe("setup import routes", () => {
     const { app, authService, databaseAdapter } = createApp();
     await loginPlatformAdminSession(app, authService, databaseAdapter);
     const archive = (
-      await createNakamaDataExport({ rootDir: getUserConfigDir() })
+      await createAtlasDataExport({ rootDir: getUserConfigDir() })
     ).data;
 
     const previewResponse = await app.fetch(
@@ -191,9 +191,9 @@ describe("setup import routes", () => {
     const { app } = createApp();
     await writeFile(join(getUserConfigDir(), "config.ini"), "provider=openai");
     const archive = (
-      await createNakamaDataExport({ rootDir: getUserConfigDir() })
+      await createAtlasDataExport({ rootDir: getUserConfigDir() })
     ).data;
-    const preview = await previewNakamaDataImport(archive, {
+    const preview = await previewAtlasDataImport(archive, {
       rootDir: getUserConfigDir(),
     });
 

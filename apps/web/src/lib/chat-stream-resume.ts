@@ -1,4 +1,4 @@
-import type { StreamHandlers } from "@nakama/client";
+import type { StreamHandlers } from "@atlas/client";
 import { nanoid } from "nanoid";
 import type { ChatListItem } from "@/lib/chat-history";
 import { client } from "@/lib/client";

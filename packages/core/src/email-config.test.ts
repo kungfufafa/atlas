@@ -28,7 +28,7 @@ describe("email config", () => {
       configDir = "";
     }
 
-    delete process.env.NAKAMA_CONFIG_DIR;
+    delete process.env.ATLAS_CONFIG_DIR;
   });
 
   test("formats from header with optional display name", () => {
@@ -51,7 +51,7 @@ describe("email config", () => {
 
   test("round-trips email settings without exposing password publicly", async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-email-config-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     const saved = await saveEmailConfig({
       from: "user@example.com",
@@ -82,7 +82,7 @@ describe("email config", () => {
 
   test("keeps existing password when update omits it", async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-email-config-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     await saveEmailConfig({
       from: "user@example.com",
@@ -103,7 +103,7 @@ describe("email config", () => {
 
   test("keeps existing password when update sends redacted placeholder", async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-email-config-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     await saveEmailConfig({
       from: "user@example.com",
@@ -142,7 +142,7 @@ describe("email config", () => {
 
   test("saveUserConfig preserves email section", async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-email-config-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     await saveEmailConfig({
       from: "user@example.com",

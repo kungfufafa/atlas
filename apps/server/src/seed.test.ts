@@ -7,8 +7,8 @@ import {
   isProviderConfigured,
   loadUserConfig,
   saveUserConfig,
-} from "@nakama/core";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+} from "@atlas/core";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { createMinimalHonoApp } from "./http/test-app-helpers";
 import { createProviderFromSources } from "./providers";
 import { runFirstBootSeed } from "./seed";
@@ -20,7 +20,7 @@ const SEED_ENV_KEYS = [
   "NAKAMA_SEED_ADMIN_NAME",
   "NAKAMA_SEED_ADMIN_PASSWORD",
   "NAKAMA_SEED_ORG_NAME",
-  "NAKAMA_CONFIG_DIR",
+  "ATLAS_CONFIG_DIR",
 ] as const;
 
 describe("runFirstBootSeed", () => {
@@ -54,7 +54,7 @@ describe("runFirstBootSeed", () => {
   async function withFreshConfigDir(): Promise<void> {
     snapshotEnv();
     configDir = await mkdtemp(join(tmpdir(), "nakama-seed-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
   }
 
   function createServices() {

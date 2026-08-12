@@ -10,12 +10,12 @@ import { runKnowledgeBaseSearch } from "./knowledge-base-search";
 
 describe("knowledge_base_search tool", () => {
   let tempConfigDir = "";
-  const previousConfigDir = process.env.NAKAMA_CONFIG_DIR;
+  const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
   const orgId = "org_test";
   const profileId = "profile_kb_search";
 
   afterEach(async () => {
-    process.env.NAKAMA_CONFIG_DIR = previousConfigDir;
+    process.env.ATLAS_CONFIG_DIR = previousConfigDir;
 
     if (tempConfigDir) {
       await rm(tempConfigDir, { force: true, recursive: true });
@@ -28,7 +28,7 @@ describe("knowledge_base_search tool", () => {
     body: string
   ): Promise<void> {
     tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "nakama-kb-search-"));
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const profileDir = path.join(
       tempConfigDir,

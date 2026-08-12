@@ -80,7 +80,7 @@ function fileExtension(filename: string): string {
   return basename.slice(dotIndex + 1).toLowerCase();
 }
 
-/** Best-effort MIME type for an artifact that has no `.nakama-meta.json` sidecar. */
+/** Best-effort MIME type for an artifact that has no `.atlas-meta.json` sidecar. */
 export function inferArtifactMimeType(filename: string): string {
   return MIME_TYPE_BY_EXTENSION[fileExtension(filename)] ?? UNKNOWN_MIME_TYPE;
 }

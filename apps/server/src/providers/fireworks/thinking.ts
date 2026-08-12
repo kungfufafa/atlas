@@ -1,4 +1,4 @@
-import { type CustomModelEntry, findCustomModel } from "@nakama/core";
+import { type CustomModelEntry, findCustomModel } from "@atlas/core";
 
 export function fireworksModelSupportsThinking(
   model: string,

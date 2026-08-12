@@ -1,5 +1,5 @@
-import type { ProviderClient } from "@nakama/core";
-import { normalizeTaskPrompt } from "@nakama/core";
+import type { ProviderClient } from "@atlas/core";
+import { normalizeTaskPrompt } from "@atlas/core";
 
 export interface DraftTaskPromptInput {
   description?: string;
@@ -7,7 +7,7 @@ export interface DraftTaskPromptInput {
 }
 
 const TASK_PROMPT_SYSTEM = [
-  "You write agent prompts for Nakama task runs.",
+  "You write agent prompts for Atlas task runs.",
   "Given a task title and optional board description, produce a single plain-text prompt the agent will execute.",
   "",
   "Rules:",
@@ -18,7 +18,7 @@ const TASK_PROMPT_SYSTEM = [
   "- Use clear imperative instructions",
   "- Be specific about deliverables and format when helpful",
   "- Keep it concise (roughly 2–6 sentences)",
-  "- Do not mention Nakama, profiles, or the board UI",
+  "- Do not mention Atlas, profiles, or the board UI",
 ].join("\n");
 
 export function buildTaskPromptUserPrompt(

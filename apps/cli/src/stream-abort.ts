@@ -2,7 +2,7 @@ import type {
   RemoteChatSession,
   SendMessageArg,
   StreamHandlers,
-} from "@nakama/client";
+} from "@atlas/client";
 
 export function isAbortError(error: unknown): boolean {
   return (

@@ -1,9 +1,9 @@
 import {
+  AtlasApiError,
   generateTemporaryPassword,
   getProfileSoulDir,
   initSoulDirectory,
-  NakamaApiError,
-} from "@nakama/core";
+} from "@atlas/core";
 import type {
   AcceptOrgInviteRequest,
   AddOrgMemberResponse,
@@ -21,21 +21,21 @@ import type {
   UpdateOrganizationRequest,
   UpdateOrgMemberRequest,
   UserOrgSummary,
-} from "@nakama/core/contract";
-import { LOCAL_CLIENT_USER_ID } from "@nakama/core/local-auth";
+} from "@atlas/core/contract";
+import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
 import type {
   DatabaseAdapter,
   StoredOrganizationRecord,
   StoredOrgInviteRecord,
   StoredUserRecord,
-} from "@nakama/db";
+} from "@atlas/db";
 import {
   ensureLocalClientAccess,
   ORG_INVITE_EXPIRY_DAYS,
   ORG_ROLES,
   seedOrgDefaultProfile,
   seedOrgSuperBotProfile,
-} from "@nakama/db";
+} from "@atlas/db";
 import type { AuthService } from "./auth-service";
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -59,12 +59,12 @@ export class OrgService {
   ): Promise<OrganizationSummary> {
     const org = await this.databaseAdapter.getOrganizationById(orgId);
     if (!org) {
-      throw new NakamaApiError("Not found", 404);
+      throw new AtlasApiError("Not found", 404);
     }
 
     const name = request.name === undefined ? org.name : request.name.trim();
     if (request.name !== undefined && !name) {
-      throw new NakamaApiError("Organization name is required.", 400);
+      throw new AtlasApiError("Organization name is required.", 400);
     }
 
     const now = new Date().toISOString();
@@ -180,7 +180,7 @@ export class OrgService {
     );
 
     if (!membership) {
-      throw new NakamaApiError("Not found", 404);
+      throw new AtlasApiError("Not found", 404);
     }
 
     if (input.sessionId) {
@@ -227,7 +227,7 @@ export class OrgService {
   ): Promise<AuthUserResponse> {
     const user = await this.databaseAdapter.getUserById(userId);
     if (!user) {
-      throw new NakamaApiError("Authentication required", 401);
+      throw new AtlasApiError("Authentication required", 401);
     }
 
     const now = new Date().toISOString();
@@ -244,13 +244,13 @@ export class OrgService {
     if (input.email !== undefined) {
       email = normalizeEmail(input.email);
       if (!EMAIL_PATTERN.test(email)) {
-        throw new NakamaApiError("A valid email address is required.", 400);
+        throw new AtlasApiError("A valid email address is required.", 400);
       }
 
       if (email !== user.email) {
         const existing = await this.databaseAdapter.getUserByEmail(email);
         if (existing && existing.id !== user.id) {
-          throw new NakamaApiError(
+          throw new AtlasApiError(
             "An account with that email already exists.",
             409
           );
@@ -288,7 +288,7 @@ export class OrgService {
   }): Promise<AddOrgMemberResponse> {
     const org = await this.databaseAdapter.getOrganizationById(input.orgId);
     if (!org) {
-      throw new NakamaApiError("Not found", 404);
+      throw new AtlasApiError("Not found", 404);
     }
 
     const name = input.name.trim();
@@ -296,15 +296,15 @@ export class OrgService {
     const phone = normalizeOptionalPhone(input.phone);
 
     if (!name) {
-      throw new NakamaApiError("Member name is required.", 400);
+      throw new AtlasApiError("Member name is required.", 400);
     }
 
     if (!EMAIL_PATTERN.test(email)) {
-      throw new NakamaApiError("A valid email address is required.", 400);
+      throw new AtlasApiError("A valid email address is required.", 400);
     }
 
     if (!ORG_ROLES.includes(input.role)) {
-      throw new NakamaApiError("Invalid org role.", 400);
+      throw new AtlasApiError("Invalid org role.", 400);
     }
 
     const now = new Date().toISOString();
@@ -316,7 +316,7 @@ export class OrgService {
         existingUser.id
       );
       if (member) {
-        throw new NakamaApiError(
+        throw new AtlasApiError(
           "User is already a member of this organization.",
           409
         );
@@ -379,11 +379,11 @@ export class OrgService {
     const phone = normalizeOptionalPhone(input.admin.phone);
 
     if (!name) {
-      throw new NakamaApiError("Admin name is required.", 400);
+      throw new AtlasApiError("Admin name is required.", 400);
     }
 
     if (!EMAIL_PATTERN.test(email)) {
-      throw new NakamaApiError("A valid email address is required.", 400);
+      throw new AtlasApiError("A valid email address is required.", 400);
     }
 
     const now = new Date().toISOString();
@@ -412,7 +412,7 @@ export class OrgService {
   async listMembers(orgId: string): Promise<ListOrgMembersResponse> {
     const org = await this.databaseAdapter.getOrganizationById(orgId);
     if (!org) {
-      throw new NakamaApiError("Not found", 404);
+      throw new AtlasApiError("Not found", 404);
     }
 
     const records = await this.databaseAdapter.listOrgMembers(orgId);
@@ -439,7 +439,7 @@ export class OrgService {
 
     const deleted = await this.databaseAdapter.deleteOrgMember(orgId, userId);
     if (!deleted) {
-      throw new NakamaApiError("Not found", 404);
+      throw new AtlasApiError("Not found", 404);
     }
   }
 
@@ -450,7 +450,7 @@ export class OrgService {
   ): Promise<OrgMemberResponse> {
     const nextRole = input.role;
     if (nextRole !== undefined && !ORG_ROLES.includes(nextRole)) {
-      throw new NakamaApiError("Invalid org role.", 400);
+      throw new AtlasApiError("Invalid org role.", 400);
     }
 
     const member = await this.assertCanChangeAdminMembership(
@@ -460,7 +460,7 @@ export class OrgService {
     );
     const user = await this.databaseAdapter.getUserById(userId);
     if (!user) {
-      throw new NakamaApiError("Not found", 404);
+      throw new AtlasApiError("Not found", 404);
     }
 
     const now = new Date().toISOString();
@@ -508,16 +508,16 @@ export class OrgService {
   }): Promise<OrgInviteCreatedResponse> {
     const org = await this.databaseAdapter.getOrganizationById(input.orgId);
     if (!org) {
-      throw new NakamaApiError("Not found", 404);
+      throw new AtlasApiError("Not found", 404);
     }
 
     const email = normalizeEmail(input.email);
     if (!EMAIL_PATTERN.test(email)) {
-      throw new NakamaApiError("A valid email address is required.", 400);
+      throw new AtlasApiError("A valid email address is required.", 400);
     }
 
     if (!ORG_ROLES.includes(input.role)) {
-      throw new NakamaApiError("Invalid org role.", 400);
+      throw new AtlasApiError("Invalid org role.", 400);
     }
 
     const existingUser = await this.databaseAdapter.getUserByEmail(email);
@@ -527,7 +527,7 @@ export class OrgService {
         existingUser.id
       );
       if (member) {
-        throw new NakamaApiError(
+        throw new AtlasApiError(
           "User is already a member of this organization.",
           409
         );
@@ -539,7 +539,7 @@ export class OrgService {
       email
     );
     if (pendingInvite) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         "An invite is already pending for this email.",
         409
       );
@@ -577,24 +577,21 @@ export class OrgService {
   }> {
     const token = request.token?.trim();
     if (!token) {
-      throw new NakamaApiError("Invite token is required.", 400);
+      throw new AtlasApiError("Invite token is required.", 400);
     }
 
     const invite = await this.databaseAdapter.getOrgInviteByTokenHash(
       this.authService.hashToken(token)
     );
     if (!invite) {
-      throw new NakamaApiError("Not found", 404);
+      throw new AtlasApiError("Not found", 404);
     }
 
     assertInviteUsable(invite);
 
     const password = request.password?.trim();
     if (!password) {
-      throw new NakamaApiError(
-        "Password is required to accept an invite.",
-        400
-      );
+      throw new AtlasApiError("Password is required to accept an invite.", 400);
     }
 
     assertNewPassword(password);
@@ -608,7 +605,7 @@ export class OrgService {
         user.passwordHash
       );
       if (!valid) {
-        throw new NakamaApiError("Invalid credentials", 401);
+        throw new AtlasApiError("Invalid credentials", 401);
       }
     } else {
       user = {
@@ -626,7 +623,7 @@ export class OrgService {
       user.id
     );
     if (existingMember) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         "User is already a member of this organization.",
         409
       );
@@ -654,7 +651,7 @@ export class OrgService {
   }): Promise<void> {
     const user = await this.databaseAdapter.getUserById(input.userId);
     if (!user) {
-      throw new NakamaApiError("Authentication required", 401);
+      throw new AtlasApiError("Authentication required", 401);
     }
 
     const currentPassword = input.currentPassword.trim();
@@ -666,7 +663,7 @@ export class OrgService {
       user.passwordHash
     );
     if (!valid) {
-      throw new NakamaApiError("Current password is incorrect.", 401);
+      throw new AtlasApiError("Current password is incorrect.", 401);
     }
 
     const now = new Date().toISOString();
@@ -689,7 +686,7 @@ export class OrgService {
   }> {
     const member = await this.databaseAdapter.getOrgMember(orgId, userId);
     if (!member) {
-      throw new NakamaApiError("Not found", 404);
+      throw new AtlasApiError("Not found", 404);
     }
 
     if (member.role !== "admin") {
@@ -703,14 +700,11 @@ export class OrgService {
     }
 
     if (nextRole !== undefined && nextRole !== "admin") {
-      throw new NakamaApiError(
-        "Cannot change role of the last org admin.",
-        409
-      );
+      throw new AtlasApiError("Cannot change role of the last org admin.", 409);
     }
 
     if (nextRole === undefined) {
-      throw new NakamaApiError("Cannot remove the last org admin.", 409);
+      throw new AtlasApiError("Cannot remove the last org admin.", 409);
     }
 
     return member;
@@ -723,11 +717,11 @@ export class OrgService {
     const slug = request.slug.trim().toLowerCase();
 
     if (!name) {
-      throw new NakamaApiError("Organization name is required.", 400);
+      throw new AtlasApiError("Organization name is required.", 400);
     }
 
     if (!(slug && SLUG_PATTERN.test(slug))) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         "Organization slug must use lowercase letters, numbers, and hyphens.",
         400
       );
@@ -737,12 +731,12 @@ export class OrgService {
       request.admin &&
       !(request.admin.name.trim() && request.admin.email.trim())
     ) {
-      throw new NakamaApiError("Admin name and email are required.", 400);
+      throw new AtlasApiError("Admin name and email are required.", 400);
     }
 
     const existing = await this.databaseAdapter.getOrganizationBySlug(slug);
     if (existing) {
-      throw new NakamaApiError("Organization slug already exists.", 409);
+      throw new AtlasApiError("Organization slug already exists.", 409);
     }
 
     const now = new Date().toISOString();
@@ -788,7 +782,7 @@ function normalizeOptionalPhone(
   }
 
   if (!PHONE_PATTERN.test(trimmed)) {
-    throw new NakamaApiError("Enter a valid phone number.", 400);
+    throw new AtlasApiError("Enter a valid phone number.", 400);
   }
 
   return trimmed;
@@ -805,21 +799,21 @@ function generateInviteToken(): string {
 
 function assertInviteUsable(invite: StoredOrgInviteRecord): void {
   if (invite.acceptedAt) {
-    throw new NakamaApiError("Invite has already been accepted.", 400);
+    throw new AtlasApiError("Invite has already been accepted.", 400);
   }
 
   if (invite.revokedAt) {
-    throw new NakamaApiError("Invite is no longer valid.", 400);
+    throw new AtlasApiError("Invite is no longer valid.", 400);
   }
 
   if (new Date(invite.expiresAt).getTime() <= Date.now()) {
-    throw new NakamaApiError("Invite has expired.", 400);
+    throw new AtlasApiError("Invite has expired.", 400);
   }
 }
 
 function assertNewPassword(password: string): void {
   if (password.length < 8) {
-    throw new NakamaApiError("Password must be at least 8 characters.", 400);
+    throw new AtlasApiError("Password must be at least 8 characters.", 400);
   }
 }
 

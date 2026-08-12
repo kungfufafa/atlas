@@ -43,8 +43,8 @@ describe("composio-config", () => {
 
   test("saveComposioConfig writes config.ini", async () => {
     const configDir = await mkdtemp(join(tmpdir(), "nakama-composio-config-"));
-    const previous = process.env.NAKAMA_CONFIG_DIR;
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    const previous = process.env.ATLAS_CONFIG_DIR;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     try {
       const saved = await saveComposioConfig({ apiKey: "ck_test_secret" });
@@ -61,9 +61,9 @@ describe("composio-config", () => {
       expect((await loadComposioSettingsPublic()).configured).toBe(true);
     } finally {
       if (previous === undefined) {
-        delete process.env.NAKAMA_CONFIG_DIR;
+        delete process.env.ATLAS_CONFIG_DIR;
       } else {
-        process.env.NAKAMA_CONFIG_DIR = previous;
+        process.env.ATLAS_CONFIG_DIR = previous;
       }
     }
   });

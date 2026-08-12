@@ -1,4 +1,4 @@
-import type { ProviderModelOption } from "@nakama/core/contract";
+import type { ProviderModelOption } from "@atlas/core/contract";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import type { CatalogShortlistProvider } from "@/components/catalog-provider-model-fields.shared";

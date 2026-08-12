@@ -1,5 +1,5 @@
-import type { ImageAttachment } from "@nakama/core/contract";
-import { MAX_IMAGE_BYTES } from "@nakama/core/message-content";
+import type { ImageAttachment } from "@atlas/core/contract";
+import { MAX_IMAGE_BYTES } from "@atlas/core/message-content";
 import type { Context } from "grammy";
 import {
   downloadTelegramFile,

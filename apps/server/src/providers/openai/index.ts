@@ -11,12 +11,12 @@ import type {
   ProviderName,
   StreamChatHandlers,
   ToolCall,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
   messagesIncludeUserDocuments,
   messagesIncludeUserImages,
   toOpenAIChatUserContent,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
   buildChatCompletionResult,
   extractOpenAITokenUsage,

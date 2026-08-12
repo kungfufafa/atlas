@@ -1,7 +1,7 @@
 import type {
   SendEmailTestRequest,
   UpdateEmailSettingsRequest,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import {
   queryOptions,
   useMutation,

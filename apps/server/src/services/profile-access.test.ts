@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { NakamaApiError } from "@nakama/core";
+import { AtlasApiError } from "@atlas/core";
 import {
   createInMemoryDatabaseAdapter,
   seedOrgDefaultProfile,
   seedOrgSuperBotProfile,
-} from "@nakama/db";
+} from "@atlas/db";
 import { AutomationService } from "./automation-service";
 import { TaskService } from "./task-service";
 
@@ -44,7 +44,7 @@ describe("profile access: binding an automation/task to Super Bot is admin-only"
       orgRole: "member",
     });
 
-    await expect(attempt).rejects.toBeInstanceOf(NakamaApiError);
+    await expect(attempt).rejects.toBeInstanceOf(AtlasApiError);
     await expect(attempt).rejects.toMatchObject({ status: 403 });
   });
 
@@ -74,7 +74,7 @@ describe("profile access: binding an automation/task to Super Bot is admin-only"
       orgRole: "member",
     });
 
-    await expect(attempt).rejects.toBeInstanceOf(NakamaApiError);
+    await expect(attempt).rejects.toBeInstanceOf(AtlasApiError);
     await expect(attempt).rejects.toMatchObject({ status: 403 });
   });
 

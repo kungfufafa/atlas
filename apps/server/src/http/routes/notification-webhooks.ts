@@ -1,5 +1,5 @@
-import type { NotificationWebhookRequest } from "@nakama/core";
-import { NakamaApiError } from "@nakama/core";
+import type { NotificationWebhookRequest } from "@atlas/core";
+import { AtlasApiError } from "@atlas/core";
 import { NotificationWebhookService } from "../../services/notification-webhook-service";
 import type { ServerOptions } from "../context";
 import { errorResponse, readJson } from "../shared";
@@ -21,7 +21,7 @@ export function registerNotificationWebhookRoutes(
       await service.deliver(c.req.param("destinationId"), apiKey, body);
       return new Response(null, { status: 204 });
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
       return errorResponse(

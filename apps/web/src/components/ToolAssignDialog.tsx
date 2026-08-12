@@ -1,4 +1,4 @@
-import type { ToolSummary } from "@nakama/core/contract";
+import type { ToolSummary } from "@atlas/core/contract";
 import { Add01Icon } from "hugeicons-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";

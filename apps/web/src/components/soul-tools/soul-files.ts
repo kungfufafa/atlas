@@ -1,4 +1,4 @@
-import type { SoulStackFiles } from "@nakama/core/contract";
+import type { SoulStackFiles } from "@atlas/core/contract";
 
 export const SOUL_FILES = [
   {

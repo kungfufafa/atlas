@@ -11,14 +11,14 @@ import type {
   ProfileRef,
   TestMcpServerResponse,
   UpdateMcpServerRequest,
-} from "@nakama/core";
-import { createId, NakamaApiError } from "@nakama/core";
-import { isPreinstalledMcpServerId } from "@nakama/core/mcp/preinstalled";
+} from "@atlas/core";
+import { AtlasApiError, createId } from "@atlas/core";
+import { isPreinstalledMcpServerId } from "@atlas/core/mcp/preinstalled";
 import type {
   DatabaseAdapter,
   StoredMcpServerRecord,
   StoredProfileRecord,
-} from "@nakama/db";
+} from "@atlas/db";
 import {
   type McpClientManager,
   toCachedMcpToolSummaries,
@@ -165,7 +165,7 @@ export class McpService {
 
     if (profiles.length > 0) {
       const profileRefs = toProfileRefs(profiles);
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         formatMcpServerInUseMessage(profileRefs),
         409,
         undefined,

@@ -1,5 +1,5 @@
 {
-  "name": "@nakama/automation",
+  "name": "@atlas/automation",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,7 +9,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@nakama/client": "workspace:*",
-    "@nakama/core": "workspace:*"
+    "@atlas/client": "workspace:*",
+    "@atlas/core": "workspace:*"
   }
 }

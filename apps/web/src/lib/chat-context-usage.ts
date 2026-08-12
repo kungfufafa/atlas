@@ -1,4 +1,4 @@
-import type { ChatContextUsage } from "@nakama/core/contract";
+import type { ChatContextUsage } from "@atlas/core/contract";
 
 export type { ChatContextUsage };
 

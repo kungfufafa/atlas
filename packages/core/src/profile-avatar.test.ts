@@ -10,7 +10,7 @@ import {
   saveProfileAvatar,
 } from "./profile-avatar";
 
-const originalConfigDir = process.env.NAKAMA_CONFIG_DIR;
+const originalConfigDir = process.env.ATLAS_CONFIG_DIR;
 const ORG_ID = "org_test";
 
 const tinyPngBase64 =
@@ -20,7 +20,7 @@ describe("profile avatar", () => {
   let tempConfigDir = "";
 
   afterEach(async () => {
-    process.env.NAKAMA_CONFIG_DIR = originalConfigDir;
+    process.env.ATLAS_CONFIG_DIR = originalConfigDir;
 
     if (tempConfigDir) {
       await rm(tempConfigDir, { force: true, recursive: true });
@@ -30,7 +30,7 @@ describe("profile avatar", () => {
 
   test("saves, reads, and deletes avatar files", async () => {
     tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "nakama-avatar-"));
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const profileId = "profile_test";
 
@@ -58,7 +58,7 @@ describe("profile avatar", () => {
 
   test("replaces an existing avatar on upload", async () => {
     tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "nakama-avatar-"));
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const profileId = "profile_test";
 

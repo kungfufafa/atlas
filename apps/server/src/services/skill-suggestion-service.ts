@@ -1,24 +1,24 @@
 import {
+  AtlasApiError,
   detectOrgMemoryInjectionWarnings,
   isGlobalSkillSourcePath,
   isPathWithinProfileSkillsDir,
-  NakamaApiError,
   parseRawProfileSkillContent,
   resolveSkillWriteApprovalRequired,
-} from "@nakama/core";
+} from "@atlas/core";
 import type {
   ApplySkillSuggestionOutcome,
   SkillSuggestion,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import {
   assertNotBundledSkillName,
   assertValidSkillName,
-} from "@nakama/core/skills/write";
+} from "@atlas/core/skills/write";
 import type {
   DatabaseAdapter,
   SkillSuggestionAction,
   StoredSkillSuggestion,
-} from "@nakama/db";
+} from "@atlas/db";
 import type { SkillProposalService } from "./skill-proposal-service";
 import type { SkillsService } from "./skills-service";
 
@@ -61,11 +61,11 @@ export class SkillSuggestionService {
     const db = this.requireDatabase();
     const org = await db.getOrganizationById(orgId);
     if (!org) {
-      throw new NakamaApiError("Organization not found.", 404);
+      throw new AtlasApiError("Organization not found.", 404);
     }
     const profile = await db.getProfileForOrg(profileId, orgId);
     if (!profile) {
-      throw new NakamaApiError("Profile not found.", 404);
+      throw new AtlasApiError("Profile not found.", 404);
     }
     return resolveSkillWriteApprovalRequired({
       orgSkillsWriteApproval: org.skillsWriteApproval ?? false,
@@ -124,7 +124,7 @@ export class SkillSuggestionService {
       id
     );
     if (!suggestion) {
-      throw new NakamaApiError("Skill suggestion not found.", 404);
+      throw new AtlasApiError("Skill suggestion not found.", 404);
     }
     return suggestion;
   }
@@ -182,7 +182,7 @@ export class SkillSuggestionService {
     if (suggestion.action === "create") {
       const content = suggestion.content;
       if (!content?.trim()) {
-        throw new NakamaApiError("Suggestion is missing content.", 400);
+        throw new AtlasApiError("Suggestion is missing content.", 400);
       }
       parseRawProfileSkillContent(content, orgId, suggestion.profileId);
       await skills.createAndAssignRawSkillToProfile(
@@ -194,7 +194,7 @@ export class SkillSuggestionService {
       const oldString = suggestion.patchOldString;
       const newString = suggestion.patchNewString;
       if (oldString === null || oldString === "" || newString === null) {
-        throw new NakamaApiError("Suggestion is missing patch fields.", 400);
+        throw new AtlasApiError("Suggestion is missing patch fields.", 400);
       }
       await this.assertProfileOwnedSkill(
         orgId,
@@ -228,16 +228,16 @@ export class SkillSuggestionService {
     const skillName = assertValidSkillName(name);
     const record = await db.getSkillByName(skillName);
     if (!record) {
-      throw new NakamaApiError(`Skill "${skillName}" not found.`, 404);
+      throw new AtlasApiError(`Skill "${skillName}" not found.`, 404);
     }
     if (isGlobalSkillSourcePath(record.sourcePath)) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         "Global skills cannot be modified by agents.",
         403
       );
     }
     if (!isPathWithinProfileSkillsDir(orgId, profileId, record.sourcePath)) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         `Skill "${skillName}" is not owned by this profile.`,
         403
       );
@@ -260,21 +260,21 @@ export class SkillSuggestionService {
 
   private requireDatabase(): DatabaseAdapter {
     if (!this.database) {
-      throw new NakamaApiError("Database not configured.", 500);
+      throw new AtlasApiError("Database not configured.", 500);
     }
     return this.database;
   }
 
   private requireSkillsService(): SkillsService {
     if (!this.skillsService) {
-      throw new NakamaApiError("Skills service not configured.", 500);
+      throw new AtlasApiError("Skills service not configured.", 500);
     }
     return this.skillsService;
   }
 
   private requireProposalService(): SkillProposalService {
     if (!this.skillProposalService) {
-      throw new NakamaApiError("Skill proposal service not configured.", 500);
+      throw new AtlasApiError("Skill proposal service not configured.", 500);
     }
     return this.skillProposalService;
   }

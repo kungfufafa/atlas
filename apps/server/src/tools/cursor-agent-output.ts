@@ -1,6 +1,6 @@
 /**
  * Turn Cursor Agent CLI stream-json (NDJSON) stdout into a short, readable
- * summary for the parent Nakama agent. Bash truncates at 32k from the head by
+ * summary for the parent Atlas agent. Bash truncates at 32k from the head by
  * default — stream-json puts the useful result at the end — so coding-agent
  * runs should summarize instead of returning the raw firehose.
  */

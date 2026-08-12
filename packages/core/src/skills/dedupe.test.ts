@@ -13,11 +13,11 @@ describe("dedupeSkillsByName", () => {
 
   beforeEach(async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-skill-dedupe-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
   });
 
   afterEach(() => {
-    delete process.env.NAKAMA_CONFIG_DIR;
+    delete process.env.ATLAS_CONFIG_DIR;
   });
 
   test("keeps the global copy when the same skill name exists in multiple directories", () => {
@@ -51,11 +51,11 @@ describe("isGlobalSkillSourcePath", () => {
 
   beforeEach(async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-skill-dedupe-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
   });
 
   afterEach(() => {
-    delete process.env.NAKAMA_CONFIG_DIR;
+    delete process.env.ATLAS_CONFIG_DIR;
   });
 
   test("detects global and profile skill directories", () => {

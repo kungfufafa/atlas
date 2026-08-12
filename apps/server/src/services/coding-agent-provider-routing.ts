@@ -5,8 +5,8 @@ import {
   type ProviderName,
   resolveOllamaHostMode,
   type UserConfig,
-} from "@nakama/core";
-import type { StoredCodingAgentHarnessKind } from "@nakama/db";
+} from "@atlas/core";
+import type { StoredCodingAgentHarnessKind } from "@atlas/db";
 import { CEREBRAS_CHAT_BASE_URL } from "../providers/cerebras";
 import { readApiKeyForInstance } from "../providers/create";
 import { FIREWORKS_INFERENCE_BASE_URL } from "../providers/fireworks";
@@ -72,7 +72,7 @@ export function isProviderCompatibleWithHarness(
   providerType: ProviderName,
   harnessKind: StoredCodingAgentHarnessKind
 ): boolean {
-  // Cursor Agent uses host Cursor auth — never Nakama provider passthrough.
+  // Cursor Agent uses host Cursor auth — never Atlas provider passthrough.
   if (harnessKind === "cursor_agent") {
     return false;
   }

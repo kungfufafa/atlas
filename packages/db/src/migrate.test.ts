@@ -234,7 +234,7 @@ describe("coding-delegation skill rename migration", () => {
           'skill_coding',
           'coding-delegation',
           'Delegate repo work to a coding agent',
-          '/tmp/.nakama/agent/skills/coding-delegation/SKILL.md',
+          '/tmp/.atlas/agent/skills/coding-delegation/SKILL.md',
           0,
           0,
           1,
@@ -251,7 +251,7 @@ describe("coding-delegation skill rename migration", () => {
 
       expect(skill.name).toBe("coding-agent");
       expect(skill.source_path).toBe(
-        "/tmp/.nakama/agent/skills/coding-agent/SKILL.md"
+        "/tmp/.atlas/agent/skills/coding-agent/SKILL.md"
       );
     } finally {
       db.close();
@@ -283,7 +283,7 @@ describe("coding-delegation skill rename migration", () => {
             'skill_legacy',
             'coding-delegation',
             'Legacy coding delegation',
-            '/tmp/.nakama/agent/skills/coding-delegation/SKILL.md',
+            '/tmp/.atlas/agent/skills/coding-delegation/SKILL.md',
             0,
             0,
             1,
@@ -294,7 +294,7 @@ describe("coding-delegation skill rename migration", () => {
             'skill_canonical',
             'coding-agent',
             'Coding agent',
-            '/tmp/.nakama/agent/skills/coding-agent/SKILL.md',
+            '/tmp/.atlas/agent/skills/coding-agent/SKILL.md',
             0,
             0,
             1,

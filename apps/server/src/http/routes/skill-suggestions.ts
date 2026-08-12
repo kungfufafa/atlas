@@ -1,9 +1,9 @@
-import { createRoute, z } from "@hono/zod-openapi";
-import { NakamaApiError } from "@nakama/core";
+import { AtlasApiError } from "@atlas/core";
 import type {
   ApplySkillSuggestionResponse,
   ListSkillSuggestionsResponse,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
+import { createRoute, z } from "@hono/zod-openapi";
 import {
   type SkillSuggestionService,
   toSkillSuggestion,
@@ -39,14 +39,14 @@ export function registerSkillSuggestionRoutes(
   ): string {
     const orgId = decodeURIComponent(c.req.param("orgId"));
     if (authOrgId !== orgId) {
-      throw new NakamaApiError("Not found", 404);
+      throw new AtlasApiError("Not found", 404);
     }
     return orgId;
   }
 
   function requireService(): SkillSuggestionService {
     if (!skillSuggestionService) {
-      throw new NakamaApiError("Skill suggestion service not configured", 500);
+      throw new AtlasApiError("Skill suggestion service not configured", 500);
     }
     return skillSuggestionService;
   }

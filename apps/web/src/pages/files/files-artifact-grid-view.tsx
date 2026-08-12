@@ -1,4 +1,4 @@
-import type { ArtifactFile } from "@nakama/core/contract";
+import type { ArtifactFile } from "@atlas/core/contract";
 import { ArtifactGridCard } from "@/pages/files/files-artifact-grid-card";
 
 export function ArtifactGridView({

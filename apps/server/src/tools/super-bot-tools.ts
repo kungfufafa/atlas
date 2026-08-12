@@ -3,7 +3,7 @@ import {
   emptyObjectSchema,
   type ToolContext,
   type ToolDefinition,
-} from "@nakama/core";
+} from "@atlas/core";
 import { validateJavascriptToolModule } from "../services/javascript-tool-loader";
 import type { ProfileService } from "../services/profile-service";
 import {
@@ -164,7 +164,7 @@ export function createSuperBotTools(
     },
     {
       description:
-        "Register a JavaScript tool. Workflow: list_tools (check name) → write_file (~/.nakama/tools/<name>.js) → create_tool. Do not call list_profiles as part of this workflow.",
+        "Register a JavaScript tool. Workflow: list_tools (check name) → write_file (~/.atlas/tools/<name>.js) → create_tool. Do not call list_profiles as part of this workflow.",
       name: "create_tool",
       parameters: {
         additionalProperties: false,
@@ -173,7 +173,7 @@ export function createSuperBotTools(
           handlerConfig: {
             additionalProperties: true,
             description:
-              'For javascript tools: { "modulePath": "my-tool.js" } relative to ~/.nakama/tools/. The file must already exist and export run(input, context) plus optional parameters JSON schema.',
+              'For javascript tools: { "modulePath": "my-tool.js" } relative to ~/.atlas/tools/. The file must already exist and export run(input, context) plus optional parameters JSON schema.',
             type: "object",
           },
           handlerType: {
@@ -207,7 +207,7 @@ export function createSuperBotTools(
 
         if (!modulePath?.endsWith(".js")) {
           throw new Error(
-            'JavaScript tools require handlerConfig.modulePath ending in ".js". Write the module with write_file to ~/.nakama/tools/ first.'
+            'JavaScript tools require handlerConfig.modulePath ending in ".js". Write the module with write_file to ~/.atlas/tools/ first.'
           );
         }
 

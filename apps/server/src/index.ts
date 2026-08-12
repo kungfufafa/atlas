@@ -4,24 +4,24 @@ import { ensureProcessPath } from "./lib/ensure-process-path";
 
 ensureProcessPath();
 
-import { mergeOrgMemoryWithApprovedBullet } from "@nakama/agent";
+import { mergeOrgMemoryWithApprovedBullet } from "@atlas/agent";
 import {
+  ATLAS_API_VERSION,
   clearRuntimeServerUrl,
   DEFAULT_SERVER_HOST,
   DEFAULT_SERVER_PORT,
   ensureBundledSkillFiles,
   getUserConfigDir,
   loadConfig,
-  NAKAMA_API_VERSION,
   writeRuntimeServerUrl,
-} from "@nakama/core";
-import { serverHasTaskChat } from "@nakama/core/ensure-server";
+} from "@atlas/core";
+import { serverHasTaskChat } from "@atlas/core/ensure-server";
 import {
   createDatabase,
   type Database,
   ensureBundledSkillsAssigned,
   seedDatabase,
-} from "@nakama/db";
+} from "@atlas/db";
 import { createHonoApp } from "./http/app";
 import { runFirstBootSeed } from "./seed";
 import { AgentService } from "./services/agent-service";
@@ -61,15 +61,15 @@ import { createSubAgentTool } from "./tools/sub-agent-tool";
 
 const projectRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 
-const host = process.env.NAKAMA_HOST ?? DEFAULT_SERVER_HOST;
-const requestedPort = parsePort(process.env.NAKAMA_PORT);
-const canFallbackToNextPort = process.env.NAKAMA_PORT == null;
+const host = process.env.ATLAS_HOST ?? DEFAULT_SERVER_HOST;
+const requestedPort = parsePort(process.env.ATLAS_PORT);
+const canFallbackToNextPort = process.env.ATLAS_PORT == null;
 
-const existingServerUrl = await findRunningNakamaServerUrl(host, requestedPort);
+const existingServerUrl = await findRunningAtlasServerUrl(host, requestedPort);
 
 if (existingServerUrl) {
   const runtimeServerUrl = writeRuntimeServerUrl(existingServerUrl);
-  console.log(`Nakama server already running on ${runtimeServerUrl}`);
+  console.log(`Atlas server already running on ${runtimeServerUrl}`);
   console.log(
     "Stop it before restarting to pick up code changes (for example: kill $(lsof -ti :4310))."
   );
@@ -234,8 +234,8 @@ if (server.port !== requestedPort) {
   console.log(`Port ${requestedPort} is busy. Using ${server.port} instead.`);
 }
 
-console.log(`Nakama server listening on ${serverUrl}`);
-console.log(`Nakama database ready at ${config.databaseUrl}`);
+console.log(`Atlas server listening on ${serverUrl}`);
+console.log(`Atlas database ready at ${config.databaseUrl}`);
 
 void initializeOptionalServices({
   agent,
@@ -251,7 +251,7 @@ try {
 }
 
 if (webDistDir) {
-  console.log(`Nakama web dashboard ready at ${serverUrl}`);
+  console.log(`Atlas web dashboard ready at ${serverUrl}`);
 }
 
 const humanUserCount = await database.adapter.countHumanUsers();
@@ -269,7 +269,7 @@ function parsePort(value: string | undefined): number {
   const port = Number(value);
 
   if (!Number.isInteger(port) || port < 0 || port > 65_535) {
-    throw new Error(`Invalid NAKAMA_PORT: ${value}`);
+    throw new Error(`Invalid ATLAS_PORT: ${value}`);
   }
 
   return port;
@@ -336,7 +336,7 @@ function startServer(options: {
   }
 
   throw (
-    lastError ?? new Error("Failed to find an open port for the Nakama server.")
+    lastError ?? new Error("Failed to find an open port for the Atlas server.")
   );
 }
 
@@ -379,7 +379,7 @@ function registerRuntimeCleanup(
   }
 }
 
-async function findRunningNakamaServerUrl(
+async function findRunningAtlasServerUrl(
   host: string,
   port: number
 ): Promise<string | null> {
@@ -402,7 +402,7 @@ async function findRunningNakamaServerUrl(
     };
     const hasTaskChat = await serverHasTaskChat(serverUrl, controller.signal);
     return payload.ok === true &&
-      payload.apiVersion === NAKAMA_API_VERSION &&
+      payload.apiVersion === ATLAS_API_VERSION &&
       hasTaskChat
       ? serverUrl
       : null;

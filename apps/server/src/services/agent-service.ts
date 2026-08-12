@@ -6,7 +6,7 @@ import {
   draftTaskPromptFromFields,
   executeToolCall,
   suggestToolParamsFromPrompt,
-} from "@nakama/agent";
+} from "@atlas/agent";
 import type {
   AgentBrowserStatusResponse,
   AgentChannel,
@@ -90,8 +90,9 @@ import type {
   VisionSettings,
   VisionSettingsResponse,
   WhatsAppSettingsResponse,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
+  AtlasApiError,
   apiKeyEnvVarForProvider,
   appendOrgMemorySection,
   buildThinkingProviderOptions,
@@ -128,7 +129,6 @@ import {
   loadUserVisionSettings,
   loadWhatsAppSettingsPublic,
   messageContentHasImages,
-  NakamaApiError,
   nanoid,
   normalizeUserContextContent,
   type OrgRole,
@@ -155,15 +155,15 @@ import {
   saveWhatsAppConfig,
   USER_CONTEXT_TEMPLATE,
   writeSoulFile,
-} from "@nakama/core";
-import { canAccessSuperBotProfile } from "@nakama/core/profiles";
+} from "@atlas/core";
+import { canAccessSuperBotProfile } from "@atlas/core/profiles";
 import {
   type DatabaseAdapter,
   type StoredProfileRecord,
   type StoredTaskRunRecord,
   SUPER_BOT_TOOL_AUTHORING_RULES,
   WORKSPACE_SETTINGS_ID,
-} from "@nakama/db";
+} from "@atlas/db";
 import {
   AVAILABLE_MODELS,
   catalogCustomModelsToCatalog,
@@ -571,7 +571,7 @@ export class AgentService {
       });
 
       if (!resolved) {
-        throw new NakamaApiError(
+        throw new AtlasApiError(
           "Selected image parsing model is unavailable. Choose a vision-capable model.",
           400
         );
@@ -626,7 +626,7 @@ export class AgentService {
       });
 
       if (!resolved) {
-        throw new NakamaApiError(
+        throw new AtlasApiError(
           "Selected audio transcription model is unavailable. Choose an OpenAI Whisper model.",
           400
         );
@@ -665,7 +665,7 @@ export class AgentService {
     const mediaType = input.mediaType?.trim();
 
     if (!(data && mediaType)) {
-      throw new NakamaApiError("Audio data and media type are required.", 400);
+      throw new AtlasApiError("Audio data and media type are required.", 400);
     }
 
     let bytes: Buffer;
@@ -673,17 +673,17 @@ export class AgentService {
     try {
       bytes = Buffer.from(data, "base64");
     } catch {
-      throw new NakamaApiError("Audio data must be valid base64.", 400);
+      throw new AtlasApiError("Audio data must be valid base64.", 400);
     }
 
     if (bytes.length === 0) {
-      throw new NakamaApiError("Audio data is empty.", 400);
+      throw new AtlasApiError("Audio data is empty.", 400);
     }
 
     const selection = resolveTranscriptionProviderSelection(this.userConfig);
 
     if (!selection) {
-      throw new NakamaApiError(TRANSCRIPTION_MODEL_REQUIRED_MESSAGE, 400);
+      throw new AtlasApiError(TRANSCRIPTION_MODEL_REQUIRED_MESSAGE, 400);
     }
 
     const text = await transcribeAudioWithOpenAI(
@@ -761,7 +761,7 @@ export class AgentService {
     const model = input.model?.trim() || null;
 
     if (model && !isAllowedImageGenerationSelection(model)) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         "Only openai::gpt-image-2 is supported for image generation.",
         400
       );
@@ -800,13 +800,13 @@ export class AgentService {
 
     const prompt = input.prompt?.trim();
     if (!prompt) {
-      throw new NakamaApiError("Image prompt is required.", 400);
+      throw new AtlasApiError("Image prompt is required.", 400);
     }
 
     const selection = resolveImageGenerationSelection(this.userConfig);
 
     if (!selection) {
-      throw new NakamaApiError(IMAGE_MODEL_REQUIRED_MESSAGE, 400);
+      throw new AtlasApiError(IMAGE_MODEL_REQUIRED_MESSAGE, 400);
     }
 
     const result = await generateImageWithOpenAI({
@@ -1096,8 +1096,8 @@ export class AgentService {
 
     const sender = createSmtpSender(emailConfigToMailboxConfig(config!));
     const result = await sender.send({
-      subject: "Nakama test email",
-      text: "This is a test email from your Nakama deployment.",
+      subject: "Atlas test email",
+      text: "This is a test email from your Atlas deployment.",
       to,
     });
 
@@ -1484,7 +1484,7 @@ export class AgentService {
           orgRole: access?.orgRole,
         }))
     ) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         "Super Bot is only available to org admins.",
         403
       );
@@ -3099,7 +3099,7 @@ export class AgentService {
         const visionSelection = resolveVisionProviderSelection(this.userConfig);
 
         if (!visionSelection) {
-          throw new NakamaApiError(VISION_MODEL_REQUIRED_MESSAGE, 400);
+          throw new AtlasApiError(VISION_MODEL_REQUIRED_MESSAGE, 400);
         }
 
         let visionProvider = createVisionFallbackProvider(visionSelection);

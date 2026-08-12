@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { canRunToolCallsInParallel } from "@nakama/agent";
+import { canRunToolCallsInParallel } from "@atlas/agent";
 import type { SubAgentRunResult } from "./sub-agent-shared";
 import {
   createSubAgentTool,

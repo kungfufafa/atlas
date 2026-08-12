@@ -1,13 +1,13 @@
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { WorkerLogsResponse, WorkerProcessInfo } from "@nakama/core";
+import type { WorkerLogsResponse, WorkerProcessInfo } from "@atlas/core";
 import {
   type PlatformWorkerName,
   readRuntimeServerUrl,
   readWorkerDesiredState,
   setWorkerDesiredRunning,
-} from "@nakama/core";
+} from "@atlas/core";
 
 const WORKER_SCRIPTS: Record<string, string> = {
   automation: "apps/platform/automation/src/index.ts",
@@ -294,15 +294,15 @@ export class WorkerManagerService {
     };
 
     const serverUrl =
-      process.env.nakama_SERVER_URL?.trim() || readRuntimeServerUrl() || "";
+      process.env.atlas_SERVER_URL?.trim() || readRuntimeServerUrl() || "";
 
     if (serverUrl) {
-      env.nakama_SERVER_URL = serverUrl;
+      env.atlas_SERVER_URL = serverUrl;
     }
 
-    const configDir = process.env.NAKAMA_CONFIG_DIR?.trim();
+    const configDir = process.env.ATLAS_CONFIG_DIR?.trim();
     if (configDir) {
-      env.NAKAMA_CONFIG_DIR = configDir;
+      env.ATLAS_CONFIG_DIR = configDir;
     }
 
     return env;

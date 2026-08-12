@@ -1,4 +1,4 @@
-import type { ProfileDetail } from "@nakama/core/contract";
+import type { ProfileDetail } from "@atlas/core/contract";
 import { useState } from "react";
 import {
   Select,

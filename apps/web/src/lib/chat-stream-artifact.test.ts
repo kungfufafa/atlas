@@ -64,7 +64,7 @@ describe("upsertStreamingToolMessage", () => {
     expect(
       upsertStreamingToolMessage([], {
         accumulatedArguments:
-          '{"path":"artifacts/report.md.nakama-meta.json","content":"{}"}',
+          '{"path":"artifacts/report.md.atlas-meta.json","content":"{}"}',
         tool: "write_file",
         toolCallId: "call_meta",
       })
@@ -98,7 +98,7 @@ describe("findLatestStreamingArtifact", () => {
 
 describe("findCompletedContentArtifact", () => {
   const ARTIFACTS_ROOT =
-    "/Users/test/.nakama/orgs/org_1/profiles/profile_1/artifacts";
+    "/Users/test/.atlas/orgs/org_1/profiles/profile_1/artifacts";
 
   test("returns completed content artifact path", () => {
     const messages: ChatListItem[] = [
@@ -133,7 +133,7 @@ describe("findCompletedContentArtifact", () => {
         toolCallId: "call_meta",
         toolResult: {
           bytesWritten: 12,
-          path: `${ARTIFACTS_ROOT}/report.md.nakama-meta.json`,
+          path: `${ARTIFACTS_ROOT}/report.md.atlas-meta.json`,
         },
         toolStatus: "done",
       },

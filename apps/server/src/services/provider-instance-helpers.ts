@@ -15,13 +15,13 @@ import {
   validateCustomModels,
   validateDisplayName,
   validateProviderInstanceLabel,
-} from "@nakama/core";
+} from "@atlas/core";
 import type {
   CreateProviderRequest,
   ProviderInstanceSummary,
   ProviderModelOption,
   UpdateProviderRequest,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import {
   getDefaultModel,
   getModelById,

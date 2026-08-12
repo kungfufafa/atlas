@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { DatabaseAdapter } from "@nakama/db";
+import type { DatabaseAdapter } from "@atlas/db";
 import type { AuthService } from "../../services/auth-service";
 import { setupTestConfigDir } from "../../test-config-dir";
 import { createMinimalHonoApp } from "../test-app-helpers";

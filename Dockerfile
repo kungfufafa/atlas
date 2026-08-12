@@ -1,4 +1,4 @@
-# Nakama — one container: API, web dashboard, automation + task workers
+# Atlas — one container: API, web dashboard, automation + task workers
 # Build & run: ./scripts/docker-build-run.sh
 
 ARG BUILDPLATFORM
@@ -12,7 +12,7 @@ COPY apps apps
 COPY packages packages
 
 RUN bun install --frozen-lockfile --ignore-scripts \
-  && bun run --filter @nakama/web build
+  && bun run --filter @atlas/web build
 
 # --- Production runtime (server + workspace packages + built static assets) ---
 FROM oven/bun:1.3-slim AS runtime
@@ -31,36 +31,36 @@ COPY apps/cli/package.json apps/cli/
 COPY --from=web-builder /app/apps/web/dist apps/web/dist
 
 RUN bun install --frozen-lockfile --production --ignore-scripts \
-      --filter '@nakama/server' \
-      --filter '@nakama/automation' \
-      --filter '@nakama/telegram' \
-      --filter '@nakama/whatsapp' \
-      --filter '@nakama/discord' \
+      --filter '@atlas/server' \
+      --filter '@atlas/automation' \
+      --filter '@atlas/telegram' \
+      --filter '@atlas/whatsapp' \
+      --filter '@atlas/discord' \
   && test -n "$(find node_modules/.bun -path '*/node_modules/pm2/bin/pm2-runtime' -type f -print -quit)" \
-  && mkdir -p /nakama/data \
+  && mkdir -p /atlas/data \
   && if getent group 1000 >/dev/null; then \
        G=$(getent group 1000 | cut -d: -f1); \
-       [ "$G" = nakama ] || groupmod -n nakama "$G"; \
-     else groupadd --system --gid 1000 nakama; fi \
-  && if getent passwd nakama >/dev/null; then \
-       usermod -d /nakama/data nakama; \
+       [ "$G" = atlas ] || groupmod -n atlas "$G"; \
+     else groupadd --system --gid 1000 atlas; fi \
+  && if getent passwd atlas >/dev/null; then \
+       usermod -d /atlas/data atlas; \
      elif getent passwd 1000 >/dev/null; then \
        U=$(getent passwd 1000 | cut -d: -f1); \
-       usermod -l nakama -g nakama -d /nakama/data "$U"; \
-     else useradd --system --uid 1000 --gid nakama --home-dir /nakama/data --create-home nakama; fi \
-  && chown -R nakama:nakama /app /nakama
+       usermod -l atlas -g atlas -d /atlas/data "$U"; \
+     else useradd --system --uid 1000 --gid atlas --home-dir /atlas/data --create-home atlas; fi \
+  && chown -R atlas:atlas /app /atlas
 
 ENV NODE_ENV=production \
-    NAKAMA_HOST=0.0.0.0 \
-    NAKAMA_PORT=4310 \
-    NAKAMA_CONFIG_DIR=/nakama/data \
-    DATABASE_URL=file:/nakama/data/sqlite/nakama.sqlite \
-    BUN_INSTALL_BIN=/nakama/data/.bun/bin \
-    BUN_INSTALL_GLOBAL_DIR=/nakama/data/.bun/install/global
+    ATLAS_HOST=0.0.0.0 \
+    ATLAS_PORT=4310 \
+    ATLAS_CONFIG_DIR=/atlas/data \
+    DATABASE_URL=file:/atlas/data/sqlite/atlas.sqlite \
+    BUN_INSTALL_BIN=/atlas/data/.bun/bin \
+    BUN_INSTALL_GLOBAL_DIR=/atlas/data/.bun/install/global
 
 EXPOSE 4310
 
-VOLUME ["/nakama/data"]
+VOLUME ["/atlas/data"]
 
 USER 1000
 

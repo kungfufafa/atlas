@@ -1,7 +1,7 @@
 import type {
   CreateMcpServerRequest,
   CreateSkillRequest,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {

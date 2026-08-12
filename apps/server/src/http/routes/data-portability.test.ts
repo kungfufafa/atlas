@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { getUserConfigDir } from "@nakama/core";
-import { previewNakamaDataImport } from "../../services/data-portability";
+import { getUserConfigDir } from "@atlas/core";
+import { previewAtlasDataImport } from "../../services/data-portability";
 import { setupTestConfigDir } from "../../test-config-dir";
 import { createMinimalHonoApp } from "../test-app-helpers";
 import {
@@ -10,7 +10,7 @@ import {
   loginPlatformAdminSession,
 } from "../test-session-helpers";
 
-setupTestConfigDir("nakama-data-portability-routes-test-");
+setupTestConfigDir("atlas-data-portability-routes-test-");
 
 function createApp() {
   return createMinimalHonoApp({
@@ -22,7 +22,7 @@ function createApp() {
 }
 
 describe("data portability routes", () => {
-  test("platform admin can download a Nakama export ZIP", async () => {
+  test("platform admin can download a Atlas export ZIP", async () => {
     const { app, authService, databaseAdapter } = createApp();
     const session = await loginPlatformAdminSession(
       app,
@@ -43,7 +43,7 @@ describe("data portability routes", () => {
       "nakama-export-"
     );
 
-    const preview = await previewNakamaDataImport(
+    const preview = await previewAtlasDataImport(
       Buffer.from(await response.arrayBuffer())
     );
     expect(preview.manifest.kind).toBe("nakama-export");

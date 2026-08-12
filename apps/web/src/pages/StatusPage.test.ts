@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { SystemStatusResponse } from "@nakama/core/contract";
+import type { SystemStatusResponse } from "@atlas/core/contract";
 import { buildServiceColumns, deriveSummary } from "./status-page.shared";
 
 const healthyStatus: SystemStatusResponse = {

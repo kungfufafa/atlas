@@ -1,5 +1,5 @@
-import type { LlmUsageModelStats, LlmUsageStats } from "@nakama/core";
-import type { DatabaseAdapter } from "@nakama/db";
+import type { LlmUsageModelStats, LlmUsageStats } from "@atlas/core";
+import type { DatabaseAdapter } from "@atlas/db";
 import {
   estimateUsageCostUsd,
   type PricingContext,

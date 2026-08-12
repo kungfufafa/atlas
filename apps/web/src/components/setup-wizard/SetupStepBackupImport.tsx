@@ -1,4 +1,4 @@
-import type { DataImportPreviewResponse } from "@nakama/core/contract";
+import type { DataImportPreviewResponse } from "@atlas/core/contract";
 import {
   Alert02Icon,
   CheckmarkCircle01Icon,
@@ -220,7 +220,7 @@ export function SetupStepBackupImport({
                 </p>
                 <p className="text-pretty text-muted-foreground text-xs">
                   {requiresRestart
-                    ? "Restart Nakama, then sign in with your restored account."
+                    ? "Restart Atlas, then sign in with your restored account."
                     : "Taking you to sign in…"}
                 </p>
               </div>

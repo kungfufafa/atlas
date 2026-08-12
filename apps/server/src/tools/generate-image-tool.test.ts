@@ -9,15 +9,15 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { UserConfig } from "@nakama/core";
-import { GENERATE_IMAGE_TOOL_ID } from "@nakama/core/tools/protected";
+import type { UserConfig } from "@atlas/core";
+import { GENERATE_IMAGE_TOOL_ID } from "@atlas/core/tools/protected";
 import {
   createInMemoryDatabaseAdapter,
   ensureGenerateImageToolDefinition,
   removeUnsupportedTools,
   seedDatabase,
   seedOrgSuperBotProfile,
-} from "@nakama/db";
+} from "@atlas/db";
 import { IMAGE_GENERATION_SELECTION } from "../providers/models";
 import { IMAGE_MODEL_REQUIRED_MESSAGE } from "../services/image-generation";
 import {
@@ -203,7 +203,7 @@ describe("generate_image tool seed and resolver (U3)", () => {
 });
 
 describe("generate_image tool persistence (U4)", () => {
-  const originalConfigDir = process.env.NAKAMA_CONFIG_DIR;
+  const originalConfigDir = process.env.ATLAS_CONFIG_DIR;
   let tempConfigDir = "";
   let workspaceRoot = "";
 
@@ -217,16 +217,16 @@ describe("generate_image tool persistence (U4)", () => {
       workspaceRoot = "";
     }
     if (originalConfigDir === undefined) {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
     } else {
-      process.env.NAKAMA_CONFIG_DIR = originalConfigDir;
+      process.env.ATLAS_CONFIG_DIR = originalConfigDir;
     }
   });
 
   async function setupWorkspace() {
     tempConfigDir = await mkdtemp(path.join(tmpdir(), "nakama-gen-img-cfg-"));
     workspaceRoot = await mkdtemp(path.join(tmpdir(), "nakama-gen-img-ws-"));
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
   }
 
   test("prompt produces PNG path + sidecar + attachmentId", async () => {
@@ -277,7 +277,7 @@ describe("generate_image tool persistence (U4)", () => {
     const absolute = path.join(workspaceRoot, result.path);
     expect(await readFile(absolute)).toEqual(Buffer.from(PNG_BYTES));
     const meta = JSON.parse(
-      await readFile(`${absolute}.nakama-meta.json`, "utf8")
+      await readFile(`${absolute}.atlas-meta.json`, "utf8")
     ) as {
       mimeType: string;
       sizeBytes: number;
@@ -341,7 +341,7 @@ describe("generate_image tool persistence (U4)", () => {
     const absolute = path.join(workspaceRoot, result.path);
     expect(await readFile(absolute)).toEqual(Buffer.from(PNG_BYTES));
     const meta = JSON.parse(
-      await readFile(`${absolute}.nakama-meta.json`, "utf8")
+      await readFile(`${absolute}.atlas-meta.json`, "utf8")
     ) as {
       mimeType: string;
     };

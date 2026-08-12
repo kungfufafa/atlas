@@ -1,5 +1,5 @@
 {
-  "name": "@nakama/core",
+  "name": "@atlas/core",
   "private": true,
   "type": "module",
   "exports": {

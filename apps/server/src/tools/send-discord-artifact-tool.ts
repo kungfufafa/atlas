@@ -7,13 +7,13 @@ import {
   PathGuardError,
   type ToolContext,
   type ToolDefinition,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
   DISCORD_ARTIFACT_ATTACHMENT_MAX_BYTES,
   formatDiscordAttachmentSizeLimitMessage,
   formatDiscordUnsupportedAttachmentMessage,
   isDiscordAttachableArtifact,
-} from "@nakama/core/discord-attachment";
+} from "@atlas/core/discord-attachment";
 
 export const SEND_DISCORD_ARTIFACT_TOOL_NAME = "send_discord_artifact";
 

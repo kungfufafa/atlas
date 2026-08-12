@@ -1,6 +1,6 @@
 ---
 title: "Troubleshooting"
-description: "Debug the Nakama Telegram bridge worker and fix common configuration issues."
+description: "Debug the Atlas Telegram bridge worker and fix common configuration issues."
 ---
 
 ## Check the worker logs first
@@ -19,7 +19,7 @@ Common things you will spot here:
 
 - `Call to 'getMe' failed! (401: Unauthorized)` — the bot token is wrong, expired, or was revoked in `@BotFather`. Paste a fresh token and **Save**.
 - `Telegram is not configured` — no bot token is saved yet, or the worker started before you saved one. Restart the worker after saving.
-- `Another Nakama Telegram bridge is already running` — a second bridge is running (often a leftover `bun run dev:telegram` or a stale PM2 process). Stop the other one before restarting.
+- `Another Atlas Telegram bridge is already running` — a second bridge is running (often a leftover `bun run dev:telegram` or a stale PM2 process). Stop the other one before restarting.
 
 Use **Refresh** to pull the latest lines, **Copy** to grab the output for a bug report, and **Clear** once you have fixed the issue so the next run starts from a clean log.
 
@@ -29,7 +29,7 @@ Check these first:
 
 1. The bot token is saved correctly
 2. `bun run dev:telegram` is running
-3. The Nakama server is running
+3. The Atlas server is running
 4. The Telegram user is paired or allowlisted
 
 ## Private chat works but group chat does not

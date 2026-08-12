@@ -2,14 +2,14 @@ import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import type { ToolSourceResponse } from "@nakama/core";
-import { NakamaApiError, pathExists } from "@nakama/core";
-import type { StoredToolRecord } from "@nakama/db";
+import type { ToolSourceResponse } from "@atlas/core";
+import { AtlasApiError, pathExists } from "@atlas/core";
+import type { StoredToolRecord } from "@atlas/db";
 import { resolveJavascriptModulePath } from "./javascript-tool-loader";
 
 const require = createRequire(import.meta.url);
 const corePackageRoot = path.dirname(
-  require.resolve("@nakama/core/package.json")
+  require.resolve("@atlas/core/package.json")
 );
 const serverSrcDir = path.join(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -88,7 +88,7 @@ export async function readToolSource(
     const source = BUILTIN_SOURCE_BY_NAME[record.name];
 
     if (!source) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         `No source mapping for built-in tool "${record.name}".`,
         404
       );
@@ -97,7 +97,7 @@ export async function readToolSource(
     return readFixedToolSource(source, "typescript");
   }
 
-  throw new NakamaApiError(
+  throw new AtlasApiError(
     `Unsupported tool handler type: ${record.handlerType}.`,
     404
   );
@@ -109,7 +109,7 @@ async function readJavascriptToolSource(
   const modulePath = readJavascriptModulePath(record.handlerConfig);
 
   if (!modulePath) {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       `Tool "${record.name}" is missing handlerConfig.modulePath.`,
       404
     );
@@ -120,14 +120,14 @@ async function readJavascriptToolSource(
   try {
     resolvedPath = resolveJavascriptModulePath(modulePath);
   } catch (error) {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       error instanceof Error ? error.message : String(error),
       404
     );
   }
 
   if (!(await pathExists(resolvedPath))) {
-    throw new NakamaApiError(`Tool module not found: ${modulePath}`, 404);
+    throw new AtlasApiError(`Tool module not found: ${modulePath}`, 404);
   }
 
   const content = await readFile(resolvedPath, "utf8");
@@ -144,7 +144,7 @@ async function readFixedToolSource(
   language: ToolSourceResponse["language"]
 ): Promise<ToolSourceResponse> {
   if (!(await pathExists(source.filePath))) {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       `Tool source file not found: ${source.displayPath}`,
       404
     );

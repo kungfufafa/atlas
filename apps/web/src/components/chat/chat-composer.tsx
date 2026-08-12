@@ -1,5 +1,5 @@
-import { hasActiveAgentQuestionnaire } from "@nakama/core/agent-questionnaire";
-import { hasActiveAgentTodos } from "@nakama/core/agent-todo";
+import { hasActiveAgentQuestionnaire } from "@atlas/core/agent-questionnaire";
+import { hasActiveAgentTodos } from "@atlas/core/agent-todo";
 import type {
   AgentQuestionAnswer,
   AgentQuestionnaire,
@@ -7,8 +7,8 @@ import type {
   ProviderModelOption,
   SkillSummary,
   ThinkingEffort,
-} from "@nakama/core/contract";
-import { MAX_IMAGE_BYTES } from "@nakama/core/message-content";
+} from "@atlas/core/contract";
+import { MAX_IMAGE_BYTES } from "@atlas/core/message-content";
 import type { ChatStatus, FileUIPart } from "ai";
 import {
   Add01Icon,

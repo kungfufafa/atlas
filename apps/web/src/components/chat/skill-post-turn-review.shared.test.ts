@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { SkillSuggestion } from "@nakama/core/contract";
+import type { SkillSuggestion } from "@atlas/core/contract";
 import {
   extractSkillDescription,
   skillSuggestionPreview,

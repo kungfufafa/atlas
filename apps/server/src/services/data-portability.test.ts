@@ -10,16 +10,16 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  createNakamaDataExport,
-  NAKAMA_EXPORT_MANIFEST,
-  previewNakamaDataImport,
-  restoreNakamaDataImport,
+  ATLAS_EXPORT_MANIFEST,
+  createAtlasDataExport,
+  previewAtlasDataImport,
+  restoreAtlasDataImport,
 } from "./data-portability";
 
 let rootDir = "";
 
 beforeEach(async () => {
-  rootDir = await mkdtemp(join(tmpdir(), "nakama-data-portability-test-"));
+  rootDir = await mkdtemp(join(tmpdir(), "atlas-data-portability-test-"));
 });
 
 afterEach(async () => {
@@ -29,17 +29,17 @@ afterEach(async () => {
   }
 });
 
-describe("Nakama data portability", () => {
+describe("Atlas data portability", () => {
   test("exports config root content with a manifest", async () => {
     await writeFile(join(rootDir, "config.ini"), "provider=openai");
     await writeFile(join(rootDir, "nakama.db"), "sqlite");
     await writeFile(join(rootDir, "tools.js"), "module.exports = {}");
 
-    const result = await createNakamaDataExport({
+    const result = await createAtlasDataExport({
       now: new Date("2026-07-01T10:00:00.000Z"),
       rootDir,
     });
-    const preview = await previewNakamaDataImport(result.data, { rootDir });
+    const preview = await previewAtlasDataImport(result.data, { rootDir });
 
     expect(result.filename).toBe("nakama-export-2026-07-01T10-00-00-000Z.zip");
     expect(result.manifest.kind).toBe("nakama-export");
@@ -65,14 +65,14 @@ describe("Nakama data portability", () => {
     await writeFile(join(rootDir, "config.ini"), "ok");
 
     try {
-      const result = await createNakamaDataExport({
+      const result = await createAtlasDataExport({
         databasePath: outsideDb,
         rootDir,
       });
       expect(result.manifest.skipped).toEqual([
         {
           path: outsideDb,
-          reason: "Database path is outside the Nakama root.",
+          reason: "Database path is outside the Atlas root.",
         },
       ]);
     } finally {
@@ -82,18 +82,18 @@ describe("Nakama data portability", () => {
 
   test("preview does not mutate existing data and restore replaces it after confirmation", async () => {
     await writeFile(join(rootDir, "config.ini"), "original");
-    const exportResult = await createNakamaDataExport({ rootDir });
+    const exportResult = await createAtlasDataExport({ rootDir });
 
     await writeFile(join(rootDir, "config.ini"), "changed");
     await writeFile(join(rootDir, "extra.txt"), "remove me");
 
-    const preview = await previewNakamaDataImport(exportResult.data, {
+    const preview = await previewAtlasDataImport(exportResult.data, {
       rootDir,
     });
     expect(preview.willReplaceRoot).toBe(true);
     expect(await readFile(join(rootDir, "config.ini"), "utf8")).toBe("changed");
 
-    const restore = await restoreNakamaDataImport(exportResult.data, {
+    const restore = await restoreAtlasDataImport(exportResult.data, {
       confirm: true,
       rootDir,
     });
@@ -106,17 +106,17 @@ describe("Nakama data portability", () => {
       readFile(join(rootDir, "extra.txt"), "utf8")
     ).rejects.toThrow();
     await expect(
-      readFile(join(rootDir, NAKAMA_EXPORT_MANIFEST), "utf8")
+      readFile(join(rootDir, ATLAS_EXPORT_MANIFEST), "utf8")
     ).rejects.toThrow();
   });
 
   test("restore keeps the root directory inode so volume mounts stay put", async () => {
     await writeFile(join(rootDir, "config.ini"), "original");
-    const exportResult = await createNakamaDataExport({ rootDir });
+    const exportResult = await createAtlasDataExport({ rootDir });
     await writeFile(join(rootDir, "config.ini"), "changed");
     const before = await lstat(rootDir);
 
-    await restoreNakamaDataImport(exportResult.data, {
+    await restoreAtlasDataImport(exportResult.data, {
       confirm: true,
       rootDir,
     });
@@ -130,41 +130,40 @@ describe("Nakama data portability", () => {
 
     const leftovers = (await readdir(rootDir)).filter(
       (name) =>
-        name.startsWith(".nakama-backup-") ||
-        name.startsWith(".nakama-restore-")
+        name.startsWith(".atlas-backup-") || name.startsWith(".atlas-restore-")
     );
     expect(leftovers).toEqual([]);
   });
 
   test("restore requires explicit confirmation", async () => {
     await writeFile(join(rootDir, "config.ini"), "original");
-    const exportResult = await createNakamaDataExport({ rootDir });
+    const exportResult = await createAtlasDataExport({ rootDir });
 
     await expect(
-      restoreNakamaDataImport(exportResult.data, { confirm: false, rootDir })
+      restoreAtlasDataImport(exportResult.data, { confirm: false, rootDir })
     ).rejects.toThrow("Restore confirmation is required.");
   });
 
   test("rejects malformed archives and unsafe entry paths", async () => {
     await expect(
-      previewNakamaDataImport(Buffer.from("not a zip"), { rootDir })
+      previewAtlasDataImport(Buffer.from("not a zip"), { rootDir })
     ).rejects.toThrow("Invalid ZIP archive.");
 
     const unsafe = buildUnsafeZip();
-    await expect(previewNakamaDataImport(unsafe, { rootDir })).rejects.toThrow(
+    await expect(previewAtlasDataImport(unsafe, { rootDir })).rejects.toThrow(
       "Archive entry escapes restore root"
     );
 
-    const reserved = buildZipWithEntry(".nakama-backup-evil/secret.txt", "{}");
-    await expect(
-      previewNakamaDataImport(reserved, { rootDir })
-    ).rejects.toThrow("Archive entry uses a reserved restore path");
+    const reserved = buildZipWithEntry(".atlas-backup-evil/secret.txt", "{}");
+    await expect(previewAtlasDataImport(reserved, { rootDir })).rejects.toThrow(
+      "Archive entry uses a reserved restore path"
+    );
   });
 
   test("partial backup failure does not delete unbacked siblings", async () => {
     await writeFile(join(rootDir, "keep.ini"), "keep-me");
     await writeFile(join(rootDir, "move.ini"), "move-me");
-    const exportResult = await createNakamaDataExport({ rootDir });
+    const exportResult = await createAtlasDataExport({ rootDir });
 
     const fsPromises = await import("node:fs/promises");
     const originalRename = fsPromises.rename;
@@ -172,7 +171,7 @@ describe("Nakama data portability", () => {
     const renameMock = spyOn(fsPromises, "rename").mockImplementation(
       async (from, to) => {
         const toPath = String(to);
-        if (toPath.includes(".nakama-backup-") && toPath.endsWith("move.ini")) {
+        if (toPath.includes(".atlas-backup-") && toPath.endsWith("move.ini")) {
           throw Object.assign(new Error("simulated backup failure"), {
             code: "EIO",
           });
@@ -183,7 +182,7 @@ describe("Nakama data portability", () => {
 
     try {
       await expect(
-        restoreNakamaDataImport(exportResult.data, { confirm: true, rootDir })
+        restoreAtlasDataImport(exportResult.data, { confirm: true, rootDir })
       ).rejects.toThrow("simulated backup failure");
 
       await expect(readFile(join(rootDir, "keep.ini"), "utf8")).resolves.toBe(

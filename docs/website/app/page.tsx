@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: SITE_NAME,
 };
 
-const GITHUB_REPO_URL = "https://github.com/ahmadrosid/nakama";
+const GITHUB_REPO_URL = "https://github.com/kungfufafa/atlas";
 
 function GitHubIcon({ className }: { className?: string }) {
   return (
@@ -79,7 +79,7 @@ export default function HomePage() {
             className="font-semibold text-lg text-stone-900 tracking-tight dark:text-white"
             href="/"
           >
-            Nakama
+            Atlas
           </Link>
           <div className="flex items-center gap-5 text-sm text-stone-600 dark:text-white/55">
             <Link
@@ -139,7 +139,7 @@ export default function HomePage() {
                   </a>
                   <a
                     className="hero-cta-secondary"
-                    href="https://github.com/ahmadrosid/nakama"
+                    href="https://github.com/kungfufafa/atlas"
                     rel="noreferrer"
                     target="_blank"
                   >
@@ -160,7 +160,7 @@ export default function HomePage() {
                   </span>
                 </div>
                 <img
-                  alt="Nakama chat preview"
+                  alt="Atlas chat preview"
                   className="block w-full dark:hidden"
                   height={640}
                   src={withBasePath("/screenshots/chat-light.png")}
@@ -181,8 +181,8 @@ export default function HomePage() {
 
         <section className="px-6 py-24 md:py-32">
           <p className="landing-lede mx-auto max-w-4xl text-center font-light text-2xl text-stone-600 leading-snug tracking-tight md:text-4xl md:leading-snug dark:text-white/70">
-            <span className="landing-accent font-medium">Nakama</span> gives
-            each agent a role, tools, and memory — then runs your whole{" "}
+            <span className="landing-accent font-medium">Atlas</span> gives each
+            agent a role, tools, and memory — then runs your whole{" "}
             <span className="landing-accent font-medium">team</span> from one
             deployment.
           </p>
@@ -248,7 +248,7 @@ export default function HomePage() {
               </Link>
               <a
                 className="hero-cta-secondary w-full justify-center sm:w-auto"
-                href="https://github.com/ahmadrosid/nakama"
+                href="https://github.com/kungfufafa/atlas"
                 rel="noreferrer"
                 target="_blank"
               >
@@ -261,7 +261,7 @@ export default function HomePage() {
 
       <footer className="border-stone-200 border-t px-6 py-6 text-center text-sm text-stone-500 dark:border-white/5 dark:text-white/40">
         <p>Released under the MIT License.</p>
-        <p>Copyright © Nakama contributors</p>
+        <p>Copyright © Atlas contributors</p>
       </footer>
     </div>
   );

@@ -1,6 +1,6 @@
-import { generateSessionTitleFromMessages } from "@nakama/agent";
-import type { ChatMessage, UserConfig } from "@nakama/core";
-import type { DatabaseAdapter } from "@nakama/db";
+import { generateSessionTitleFromMessages } from "@atlas/agent";
+import type { ChatMessage, UserConfig } from "@atlas/core";
+import type { DatabaseAdapter } from "@atlas/db";
 import { createProviderForInstance } from "../providers/create";
 import { resolveProfileProviderSelection } from "./provider-instance-helpers";
 

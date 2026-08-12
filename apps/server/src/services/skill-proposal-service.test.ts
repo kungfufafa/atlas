@@ -2,12 +2,12 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { NakamaApiError } from "@nakama/core";
+import { AtlasApiError } from "@atlas/core";
 import {
   createInMemoryDatabaseAdapter,
   type DatabaseAdapter,
   seedOrgDefaultProfile,
-} from "@nakama/db";
+} from "@atlas/db";
 import { SkillProposalService } from "./skill-proposal-service";
 import { SkillsService } from "./skills-service";
 
@@ -53,11 +53,11 @@ describe("SkillProposalService", () => {
 
   beforeEach(async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-skill-proposals-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
   });
 
   afterEach(() => {
-    delete process.env.NAKAMA_CONFIG_DIR;
+    delete process.env.ATLAS_CONFIG_DIR;
   });
 
   test("isWriteApprovalRequired respects org default and profile override (AE7)", async () => {
@@ -293,7 +293,7 @@ describe("SkillProposalService", () => {
 
     await expect(
       service.approveProposal("org_other", staged.proposalId!, "admin_user")
-    ).rejects.toBeInstanceOf(NakamaApiError);
+    ).rejects.toBeInstanceOf(AtlasApiError);
     await expect(
       service.approveProposal("org_other", staged.proposalId!, "admin_user")
     ).rejects.toMatchObject({ status: 404 });
@@ -301,7 +301,7 @@ describe("SkillProposalService", () => {
 
   test("stage and approve write_file creates supporting file", async () => {
     const { readFile } = await import("node:fs/promises");
-    const { getProfileSkillsDir } = await import("@nakama/core");
+    const { getProfileSkillsDir } = await import("@atlas/core");
 
     const db = createInMemoryDatabaseAdapter();
     const profile = await seedOrg(db);

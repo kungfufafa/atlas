@@ -1,5 +1,5 @@
-import { hasActiveAgentTodos } from "@nakama/core/agent-todo";
-import type { AgentTodo } from "@nakama/core/contract";
+import { hasActiveAgentTodos } from "@atlas/core/agent-todo";
+import type { AgentTodo } from "@atlas/core/contract";
 import { ArrowDown01Icon, ListViewIcon } from "hugeicons-react";
 import { useState } from "react";
 import { Matrix } from "@/components/ui/matrix";

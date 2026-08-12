@@ -1,4 +1,4 @@
-import type { ToolContext, ToolDefinition } from "@nakama/core";
+import type { ToolContext, ToolDefinition } from "@atlas/core";
 import type { AgentService } from "../services/agent-service";
 import {
   DEFAULT_SUB_AGENT_TIMEOUT_MS,

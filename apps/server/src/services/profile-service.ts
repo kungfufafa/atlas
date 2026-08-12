@@ -19,8 +19,9 @@ import type {
   ToolSummary,
   UpdateProfileRequest,
   UploadKnowledgeBaseResponse,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
+  AtlasApiError,
   createId,
   deleteProfileAvatar,
   getProfileSoulDir,
@@ -28,7 +29,6 @@ import {
   initSoulDirectory,
   listKnowledgeBaseDocuments,
   listKnowledgeBaseSources,
-  NakamaApiError,
   uploadKnowledgeBaseDocument as persistKnowledgeBaseDocument,
   readKnowledgeBaseDocumentContent,
   readProfileAvatar,
@@ -36,20 +36,20 @@ import {
   resolveSoulStackForProfile,
   saveProfileAvatar,
   writeSoulFile,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
   BUILTIN_TOOL_IDS,
   isProtectedToolId,
-} from "@nakama/core/tools/protected";
+} from "@atlas/core/tools/protected";
 import type {
   DatabaseAdapter,
   StoredProfileRecord,
   StoredToolRecord,
-} from "@nakama/db";
+} from "@atlas/db";
 import {
   ensureBuiltinToolDefinitions,
   ensureProfileDefaultBundledSkills,
-} from "@nakama/db";
+} from "@atlas/db";
 import {
   loadJavascriptTool,
   validateJavascriptToolModule,
@@ -411,7 +411,7 @@ export class ProfileService {
     const avatar = await readProfileAvatar(orgId, profileId);
 
     if (!avatar) {
-      throw new NakamaApiError("Profile avatar not found.", 404);
+      throw new AtlasApiError("Profile avatar not found.", 404);
     }
 
     return avatar;
@@ -423,7 +423,7 @@ export class ProfileService {
     const profile = await this.db.getProfile(profileId);
 
     if (!profile?.orgId) {
-      throw new NakamaApiError("Profile not found.", 404);
+      throw new AtlasApiError("Profile not found.", 404);
     }
 
     return this.getProfileAvatar(profile.orgId, profileId);
@@ -434,7 +434,7 @@ export class ProfileService {
     const removed = await deleteProfileAvatar(orgId, profileId);
 
     if (!removed) {
-      throw new NakamaApiError("Profile avatar not found.", 404);
+      throw new AtlasApiError("Profile avatar not found.", 404);
     }
 
     const now = new Date().toISOString();
@@ -473,7 +473,7 @@ export class ProfileService {
         error instanceof Error
           ? error.message
           : "Failed to upload knowledge base document.";
-      throw new NakamaApiError(message, 400);
+      throw new AtlasApiError(message, 400);
     }
   }
 
@@ -490,7 +490,7 @@ export class ProfileService {
     );
 
     if (!deleted) {
-      throw new NakamaApiError("Knowledge base document not found.", 404);
+      throw new AtlasApiError("Knowledge base document not found.", 404);
     }
 
     return { deleted: true, documentId, profileId };
@@ -516,7 +516,7 @@ export class ProfileService {
         error instanceof Error
           ? error.message
           : "Knowledge base document not found.";
-      throw new NakamaApiError(message, 404);
+      throw new AtlasApiError(message, 404);
     }
   }
 
@@ -527,7 +527,7 @@ export class ProfileService {
     const trimmed = requestedId?.trim() || slugifyProfileName(name);
 
     if (!PROFILE_ID_PATTERN.test(trimmed)) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         "Profile id must start with a letter or number and use only letters, numbers, underscores, and hyphens (max 64 characters).",
         400
       );
@@ -536,7 +536,7 @@ export class ProfileService {
     const existing = await this.db.getProfile(trimmed);
 
     if (existing) {
-      throw new NakamaApiError("Profile id already exists.", 409);
+      throw new AtlasApiError("Profile id already exists.", 409);
     }
 
     return trimmed;
@@ -549,7 +549,7 @@ export class ProfileService {
     const profile = await this.db.getProfileForOrg(profileId, orgId);
 
     if (!profile) {
-      throw new NakamaApiError("Profile not found.", 404);
+      throw new AtlasApiError("Profile not found.", 404);
     }
 
     return profile;
@@ -569,7 +569,7 @@ export class ProfileService {
     const tool = await this.db.getTool(toolId);
 
     if (!tool) {
-      throw new NakamaApiError("Tool not found.", 404);
+      throw new AtlasApiError("Tool not found.", 404);
     }
 
     return tool;

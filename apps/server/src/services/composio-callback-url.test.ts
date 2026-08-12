@@ -47,8 +47,8 @@ describe("composio-callback-url", () => {
   });
 
   test("resolveComposioCallbackBaseUrl falls back to env when no request", () => {
-    const previous = process.env.NAKAMA_WEB_PUBLIC_URL;
-    process.env.NAKAMA_WEB_PUBLIC_URL = "https://deployed.example.com/";
+    const previous = process.env.ATLAS_WEB_PUBLIC_URL;
+    process.env.ATLAS_WEB_PUBLIC_URL = "https://deployed.example.com/";
 
     try {
       expect(resolveComposioCallbackBaseUrl()).toBe(
@@ -56,9 +56,9 @@ describe("composio-callback-url", () => {
       );
     } finally {
       if (previous === undefined) {
-        delete process.env.NAKAMA_WEB_PUBLIC_URL;
+        delete process.env.ATLAS_WEB_PUBLIC_URL;
       } else {
-        process.env.NAKAMA_WEB_PUBLIC_URL = previous;
+        process.env.ATLAS_WEB_PUBLIC_URL = previous;
       }
     }
   });
@@ -66,8 +66,8 @@ describe("composio-callback-url", () => {
   test("persistWebPublicUrl preserves path segments", async () => {
     const configDir = join(tmpdir(), `nakama-callback-url-test-${Date.now()}`);
     mkdirSync(configDir, { recursive: true });
-    const previousConfigDir = process.env.NAKAMA_CONFIG_DIR;
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     try {
       expect(await persistWebPublicUrl("https://gateway.example.com/v1/")).toBe(
@@ -78,9 +78,9 @@ describe("composio-callback-url", () => {
       );
     } finally {
       if (previousConfigDir === undefined) {
-        delete process.env.NAKAMA_CONFIG_DIR;
+        delete process.env.ATLAS_CONFIG_DIR;
       } else {
-        process.env.NAKAMA_CONFIG_DIR = previousConfigDir;
+        process.env.ATLAS_CONFIG_DIR = previousConfigDir;
       }
       rmSync(configDir, { force: true, recursive: true });
     }

@@ -6,7 +6,7 @@ import fixPath from "fix-path";
 let ensured = false;
 
 export function ensureProcessPath(): void {
-  if (ensured || process.env.NAKAMA_DISABLE_FIX_PATH === "1") {
+  if (ensured || process.env.ATLAS_DISABLE_FIX_PATH === "1") {
     return;
   }
 
@@ -37,7 +37,7 @@ export function getToolExecutionEnv(): NodeJS.ProcessEnv {
   const { binDir, globalDir } = getBunGlobalPaths(home);
   const pathKey = process.platform === "win32" ? "Path" : "PATH";
 
-  if (process.env.NAKAMA_DISABLE_FIX_PATH === "1") {
+  if (process.env.ATLAS_DISABLE_FIX_PATH === "1") {
     return {
       ...process.env,
       BUN_INSTALL_BIN: process.env.BUN_INSTALL_BIN ?? binDir,

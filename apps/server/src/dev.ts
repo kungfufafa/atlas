@@ -1,6 +1,6 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { clearRuntimeServerUrl, DEFAULT_SERVER_PORT } from "@nakama/core";
+import { clearRuntimeServerUrl, DEFAULT_SERVER_PORT } from "@atlas/core";
 
 const projectRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 const serverEntry = join(projectRoot, "apps/server/src/index.ts");

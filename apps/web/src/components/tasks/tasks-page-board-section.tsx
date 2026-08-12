@@ -2,7 +2,7 @@ import type {
   ProfileSummary,
   StoredTask,
   TaskStatus,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import { Add01Icon, Alert02Icon, KanbanIcon } from "hugeicons-react";
 import { TaskBoard } from "@/components/tasks/TaskBoard";
 import { TaskBoardSkeleton } from "@/components/tasks/TaskBoardSkeleton";

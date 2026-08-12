@@ -2,7 +2,7 @@ import type {
   CreateProviderResponse,
   OllamaHostMode,
   ProviderModelOption,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ModelListRow } from "@/components/ModelListEditor";
 import { normalizeModelListRows } from "@/components/model-list-editor.shared";

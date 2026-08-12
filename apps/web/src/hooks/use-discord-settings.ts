@@ -1,4 +1,4 @@
-import type { UpdateDiscordSettingsRequest } from "@nakama/core/contract";
+import type { UpdateDiscordSettingsRequest } from "@atlas/core/contract";
 import {
   queryOptions,
   useMutation,

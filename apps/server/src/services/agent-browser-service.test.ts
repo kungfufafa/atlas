@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { createHonoApp } from "../http/app";
 import { setupFreshInstallSession } from "../http/test-session-helpers";
 import {
@@ -15,21 +15,21 @@ import { OrgService } from "../services/org-service";
 
 describe("agent-browser service", () => {
   const originalPath = process.env.PATH ?? "";
-  const originalDisableFixPath = process.env.NAKAMA_DISABLE_FIX_PATH;
+  const originalDisableFixPath = process.env.ATLAS_DISABLE_FIX_PATH;
   let tempBinDir = "";
 
   beforeEach(async () => {
     tempBinDir = await mkdtemp(join(tmpdir(), "nakama-agent-browser-bin-"));
     process.env.PATH = tempBinDir;
-    process.env.NAKAMA_DISABLE_FIX_PATH = "1";
+    process.env.ATLAS_DISABLE_FIX_PATH = "1";
   });
 
   afterEach(async () => {
     process.env.PATH = originalPath;
     if (originalDisableFixPath === undefined) {
-      delete process.env.NAKAMA_DISABLE_FIX_PATH;
+      delete process.env.ATLAS_DISABLE_FIX_PATH;
     } else {
-      process.env.NAKAMA_DISABLE_FIX_PATH = originalDisableFixPath;
+      process.env.ATLAS_DISABLE_FIX_PATH = originalDisableFixPath;
     }
 
     if (tempBinDir) {
@@ -61,7 +61,7 @@ describe("agent-browser service", () => {
 
 describe("agent-browser settings routes", () => {
   const originalPath = process.env.PATH ?? "";
-  const originalDisableFixPath = process.env.NAKAMA_DISABLE_FIX_PATH;
+  const originalDisableFixPath = process.env.ATLAS_DISABLE_FIX_PATH;
   let tempBinDir = "";
   let configDir = "";
 
@@ -73,18 +73,18 @@ describe("agent-browser settings routes", () => {
       join(tmpdir(), "nakama-agent-browser-route-config-")
     );
     process.env.PATH = tempBinDir;
-    process.env.NAKAMA_CONFIG_DIR = configDir;
-    process.env.NAKAMA_DISABLE_FIX_PATH = "1";
+    process.env.ATLAS_CONFIG_DIR = configDir;
+    process.env.ATLAS_DISABLE_FIX_PATH = "1";
   });
 
   afterEach(async () => {
     process.env.PATH = originalPath;
     if (originalDisableFixPath === undefined) {
-      delete process.env.NAKAMA_DISABLE_FIX_PATH;
+      delete process.env.ATLAS_DISABLE_FIX_PATH;
     } else {
-      process.env.NAKAMA_DISABLE_FIX_PATH = originalDisableFixPath;
+      process.env.ATLAS_DISABLE_FIX_PATH = originalDisableFixPath;
     }
-    delete process.env.NAKAMA_CONFIG_DIR;
+    delete process.env.ATLAS_CONFIG_DIR;
 
     if (tempBinDir) {
       await rm(tempBinDir, { force: true, recursive: true });

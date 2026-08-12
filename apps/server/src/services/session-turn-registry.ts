@@ -1,4 +1,4 @@
-import type { StreamEvent } from "@nakama/core";
+import type { StreamEvent } from "@atlas/core";
 
 const MAX_BUFFER_EVENTS = 10_000;
 const MAX_BUFFER_BYTES = 4 * 1024 * 1024;

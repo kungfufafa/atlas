@@ -117,7 +117,7 @@ interface FileToolRunOptions {
 let defaultGuardOptions: PathGuardOptions = {};
 
 const BLOCKED_READ_BASENAMES = ["config.ini"];
-const ARTIFACT_META_SUFFIX = ".nakama-meta.json";
+const ARTIFACT_META_SUFFIX = ".atlas-meta.json";
 const artifactRemap = new Map<string, string>();
 
 function normalizeArtifactPath(relativePath: string): string {

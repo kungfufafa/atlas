@@ -1,4 +1,4 @@
-import type { ThinkingEffort } from "@nakama/core/contract";
+import type { ThinkingEffort } from "@atlas/core/contract";
 import { BrainIcon } from "hugeicons-react";
 import {
   PromptInputSelect,

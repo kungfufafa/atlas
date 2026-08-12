@@ -1,6 +1,6 @@
+import type { ProfileSummary, StoredTask } from "@atlas/core/contract";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { ProfileSummary, StoredTask } from "@nakama/core/contract";
 import { Loading03Icon, PencilIcon, PlayIcon } from "hugeicons-react";
 import type { KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";

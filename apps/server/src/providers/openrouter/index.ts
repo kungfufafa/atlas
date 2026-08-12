@@ -10,7 +10,7 @@ import type {
   ProviderClient,
   StreamChatHandlers,
   ToolCall,
-} from "@nakama/core";
+} from "@atlas/core";
 import type { Fetcher } from "@openrouter/sdk";
 import { HTTPClient, OpenRouter } from "@openrouter/sdk";
 import type {
@@ -33,8 +33,8 @@ import {
 } from "../shared";
 import { openRouterModelSupportsThinking } from "./thinking";
 
-const OPENROUTER_REFERER = "https://github.com/ahmadrosid/nakama";
-const OPENROUTER_APP_TITLE = "Nakama";
+const OPENROUTER_REFERER = "https://github.com/kungfufafa/atlas";
+const OPENROUTER_APP_TITLE = "Atlas";
 const PROVIDER_LABEL = "OpenRouter";
 
 export interface OpenRouterProviderOptions {

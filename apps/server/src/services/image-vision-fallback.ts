@@ -1,11 +1,11 @@
 import {
+  AtlasApiError,
   findProviderInstance,
   IMAGE_VISION_SYSTEM_PROMPT,
   type MessageContentPart,
-  NakamaApiError,
   type ProviderClient,
   type UserConfig,
-} from "@nakama/core";
+} from "@atlas/core";
 import { createProviderForInstance } from "../providers/create";
 import { modelSupportsVision } from "../providers/models";
 import {
@@ -26,7 +26,7 @@ export function resolveVisionProviderSelection(
   const decoded = decodeStoredModelSelection(visionModel);
 
   if (!decoded || decoded.providerId === "__unknown__") {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       "Configured image parsing model is invalid. Update it in Settings.",
       400
     );
@@ -38,7 +38,7 @@ export function resolveVisionProviderSelection(
   );
 
   if (!instance) {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       "Configured image parsing provider is missing. Update it in Settings.",
       400
     );
@@ -51,7 +51,7 @@ export function resolveVisionProviderSelection(
   });
 
   if (!resolved) {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       "Configured image parsing model is unavailable. Update it in Settings.",
       400
     );
@@ -64,7 +64,7 @@ export function resolveVisionProviderSelection(
   );
 
   if (supportsVision !== true) {
-    throw new NakamaApiError(
+    throw new AtlasApiError(
       `Configured image parsing model "${resolved.model}" does not support vision.`,
       400
     );

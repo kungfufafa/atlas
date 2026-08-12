@@ -1,6 +1,6 @@
-import type { JsonSchema, ToolDefinition } from "@nakama/core";
-import { emptyObjectSchema } from "@nakama/core";
-import type { StoredMcpServerRecord } from "@nakama/db";
+import type { JsonSchema, ToolDefinition } from "@atlas/core";
+import { emptyObjectSchema } from "@atlas/core";
+import type { StoredMcpServerRecord } from "@atlas/db";
 import type { McpClientManager } from "./mcp-client-manager";
 
 const LLM_TOOL_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;

@@ -1,9 +1,9 @@
-import type { DiscordConfigFile } from "@nakama/core/discord-config";
+import type { DiscordConfigFile } from "@atlas/core/discord-config";
 import {
   isDiscordUserAuthorized,
   loadDiscordConfigFile,
   verifyAndPairDiscordUser,
-} from "@nakama/core/discord-config";
+} from "@atlas/core/discord-config";
 
 export class DiscordAuthStore {
   private config: DiscordConfigFile | null = null;

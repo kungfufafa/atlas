@@ -20,11 +20,11 @@ describe("parseProviderName", () => {
 });
 
 describe("resolveProvider", () => {
-  test("prefers NAKAMA_PROVIDER over env keys", () => {
+  test("prefers ATLAS_PROVIDER over env keys", () => {
     const provider = resolveProvider({
       env: {
+        ATLAS_PROVIDER: "gemini",
         GEMINI_API_KEY: "test-key",
-        NAKAMA_PROVIDER: "gemini",
         OPENAI_API_KEY: "sk-test",
       },
     });

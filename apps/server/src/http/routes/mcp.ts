@@ -1,4 +1,3 @@
-import { createRoute, z } from "@hono/zod-openapi";
 import type {
   AssignMcpServerRequest,
   CreateMcpServerRequest,
@@ -7,7 +6,8 @@ import type {
   ProfileResponse,
   TestMcpServerResponse,
   UpdateMcpServerRequest,
-} from "@nakama/core";
+} from "@atlas/core";
+import { createRoute, z } from "@hono/zod-openapi";
 import type { ServerOptions } from "../context";
 import {
   requireActiveOrgIdFromContext,

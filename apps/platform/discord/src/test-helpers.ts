@@ -1,18 +1,18 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import * as os from "node:os";
 import path from "node:path";
-import type { NakamaClient, StreamHandlers } from "@nakama/client";
+import type { AtlasClient, StreamHandlers } from "@atlas/client";
 import {
   assertBridgeClientMethods,
   parseListProfilesResponse,
   parseListUserOrgsResponse,
-} from "@nakama/core/bridge-api";
-import { ChannelOrgStore } from "@nakama/core/channel-org";
+} from "@atlas/core/bridge-api";
+import { ChannelOrgStore } from "@atlas/core/channel-org";
 import type {
   AgentQuestionnaire,
   ChatMessage,
   UserOrgSummary,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import type { Message } from "discord.js";
 
 export function createDefaultTestOrgs(): UserOrgSummary[] {
@@ -188,7 +188,7 @@ export function createMockClient(
     setOrgId: (orgId: string | null) => {
       activeOrgId = orgId?.trim() || null;
     },
-  } as unknown as NakamaClient;
+  } as unknown as AtlasClient;
 
   assertBridgeClientMethods(client);
 
@@ -553,11 +553,11 @@ export async function writeDiscordConfigIni(
     allowedUserIds?: string[];
   }
 ): Promise<void> {
-  const dir = path.join(homeDir, ".nakama", "discord");
+  const dir = path.join(homeDir, ".atlas", "discord");
   await mkdir(dir, { recursive: true });
 
   const lines = [
-    "# Nakama Discord bridge",
+    "# Atlas Discord bridge",
     `bot_token=${config.botToken}`,
     `profile_id=${config.profileId ?? "default"}`,
   ];
@@ -576,7 +576,7 @@ export async function writeDiscordConfigIni(
 
 export function createTestOrgStore(homeDir: string): ChannelOrgStore {
   return new ChannelOrgStore(
-    path.join(homeDir, ".nakama", "discord", "org-selection.json")
+    path.join(homeDir, ".atlas", "discord", "org-selection.json")
   );
 }
 
@@ -595,17 +595,17 @@ export async function withTempHome<T>(
   await previous;
 
   const homeDir = await mkdtemp(path.join(os.tmpdir(), "nakama-discord-home-"));
-  const configDir = path.join(homeDir, ".nakama");
-  const previousConfigDir = process.env.NAKAMA_CONFIG_DIR;
-  process.env.NAKAMA_CONFIG_DIR = configDir;
+  const configDir = path.join(homeDir, ".atlas");
+  const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
+  process.env.ATLAS_CONFIG_DIR = configDir;
 
   try {
     return await run(homeDir);
   } finally {
     if (previousConfigDir === undefined) {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
     } else {
-      process.env.NAKAMA_CONFIG_DIR = previousConfigDir;
+      process.env.ATLAS_CONFIG_DIR = previousConfigDir;
     }
 
     await rm(homeDir, { force: true, recursive: true });

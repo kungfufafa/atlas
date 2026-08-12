@@ -1,4 +1,4 @@
-import type { CreateProviderResponse } from "@nakama/core/contract";
+import type { CreateProviderResponse } from "@atlas/core/contract";
 import { ProviderSetupForm } from "@/components/ProviderSetupForm";
 
 interface SetupStepProviderProps {

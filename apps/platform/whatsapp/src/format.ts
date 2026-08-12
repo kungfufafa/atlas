@@ -1,5 +1,5 @@
-import { formatClientError } from "@nakama/core/api-error";
-import type { AgentTodo } from "@nakama/core/contract";
+import { formatClientError } from "@atlas/core/api-error";
+import type { AgentTodo } from "@atlas/core/contract";
 
 const WHATSAPP_MAX_MESSAGE_LENGTH = 65_536;
 const WHATSAPP_CHAT_BUBBLE_MAX_CHARS = 400;
@@ -155,7 +155,7 @@ function formatWhatsAppTodoLine(todo: AgentTodo): string {
   }
 }
 
-export const HELP_TEXT = `Nakama WhatsApp commands:
+export const HELP_TEXT = `Atlas WhatsApp commands:
 
 /help \u2014 show this message
 /stop \u2014 stop the agent's current reply (works during tool runs)

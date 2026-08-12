@@ -1,4 +1,4 @@
-import type { ToolDetail } from "@nakama/core/contract";
+import type { ToolDetail } from "@atlas/core/contract";
 
 function formatTimestamp(value: string): string {
   return new Date(value).toLocaleString();

@@ -79,10 +79,10 @@ export function ProfileRail() {
       className="flex h-full w-14 shrink-0 flex-col items-center gap-2 border-border/50 border-r bg-sidebar/60 py-3"
     >
       <a
-        aria-label="Nakama"
+        aria-label="Atlas"
         className="flex size-9 shrink-0 items-center justify-center rounded-xl transition-opacity hover:opacity-80"
         href="/chat"
-        title="Nakama"
+        title="Atlas"
       >
         <img
           alt=""

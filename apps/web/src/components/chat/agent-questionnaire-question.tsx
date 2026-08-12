@@ -1,4 +1,4 @@
-import type { AgentQuestionnaire } from "@nakama/core/contract";
+import type { AgentQuestionnaire } from "@atlas/core/contract";
 import {
   type DraftAnswerState,
   isCustomChoice,

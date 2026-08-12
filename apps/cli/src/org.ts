@@ -1,4 +1,4 @@
-import type { NakamaClient } from "@nakama/client";
+import type { AtlasClient } from "@atlas/client";
 import { loadSavedCliOrgId, saveCliOrgId } from "./cli-config";
 
 export interface CliOrgOptions {
@@ -26,12 +26,12 @@ export function parseCliOrgArgs(argv = process.argv.slice(2)): CliOrgOptions {
 }
 
 export async function resolveCliOrgId(
-  client: NakamaClient,
+  client: AtlasClient,
   options: CliOrgOptions = {}
 ): Promise<string> {
   const explicitOrgId =
     options.orgId?.trim() ||
-    process.env.NAKAMA_ORG_ID?.trim() ||
+    process.env.ATLAS_ORG_ID?.trim() ||
     (await loadSavedCliOrgId());
 
   if (explicitOrgId) {
@@ -64,7 +64,7 @@ export async function resolveCliOrgId(
   throw new Error(
     [
       "Multiple organizations are available.",
-      "Pass --org <id> (or set NAKAMA_ORG_ID).",
+      "Pass --org <id> (or set ATLAS_ORG_ID).",
       "",
       ...orgs.map((org) => `  ${org.id}  ${org.name}`),
     ].join("\n")
@@ -72,7 +72,7 @@ export async function resolveCliOrgId(
 }
 
 async function assertOrgMembership(
-  client: NakamaClient,
+  client: AtlasClient,
   orgRef: string
 ): Promise<string> {
   const { orgs } = await client.listUserOrgs();

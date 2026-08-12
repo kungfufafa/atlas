@@ -1,22 +1,22 @@
 import {
+  AtlasApiError,
   detectOrgMemoryInjectionWarnings,
   isGlobalSkillSourcePath,
   isPathWithinProfileSkillsDir,
-  NakamaApiError,
   parseRawProfileSkillContent,
   resolveProfileSkillSupportingFilePath,
   resolveSkillWriteApprovalRequired,
-} from "@nakama/core";
-import type { SkillProposal } from "@nakama/core/contract";
+} from "@atlas/core";
+import type { SkillProposal } from "@atlas/core/contract";
 import {
   assertNotBundledSkillName,
   assertValidSkillName,
-} from "@nakama/core/skills/write";
+} from "@atlas/core/skills/write";
 import type {
   DatabaseAdapter,
   SkillProposalAction,
   StoredSkillProposal,
-} from "@nakama/db";
+} from "@atlas/db";
 import type { SkillsService } from "./skills-service";
 
 export function toSkillProposal(
@@ -66,11 +66,11 @@ export class SkillProposalService {
     const db = this.requireDatabase();
     const org = await db.getOrganizationById(orgId);
     if (!org) {
-      throw new NakamaApiError("Organization not found.", 404);
+      throw new AtlasApiError("Organization not found.", 404);
     }
     const profile = await db.getProfileForOrg(profileId, orgId);
     if (!profile) {
-      throw new NakamaApiError("Profile not found.", 404);
+      throw new AtlasApiError("Profile not found.", 404);
     }
     return resolveSkillWriteApprovalRequired({
       orgSkillsWriteApproval: org.skillsWriteApproval ?? false,
@@ -84,7 +84,7 @@ export class SkillProposalService {
     const db = this.requireDatabase();
     const profile = await db.getProfileForOrg(input.profileId, input.orgId);
     if (!profile) {
-      throw new NakamaApiError("Profile not found.", 404);
+      throw new AtlasApiError("Profile not found.", 404);
     }
 
     if (input.action === "create") {
@@ -137,13 +137,13 @@ export class SkillProposalService {
       return proposal;
     }
     if (proposal.status !== "pending") {
-      throw new NakamaApiError("Only pending proposals can be approved.", 400);
+      throw new AtlasApiError("Only pending proposals can be approved.", 400);
     }
 
     if (proposal.action === "create") {
       const content = proposal.content;
       if (!content?.trim()) {
-        throw new NakamaApiError("Create proposal is missing content.", 400);
+        throw new AtlasApiError("Create proposal is missing content.", 400);
       }
       parseRawProfileSkillContent(content, orgId, proposal.profileId);
       await skills.createAndAssignRawSkillToProfile(
@@ -155,10 +155,7 @@ export class SkillProposalService {
       const oldString = proposal.patchOldString;
       const newString = proposal.patchNewString;
       if (oldString === null || oldString === "" || newString === null) {
-        throw new NakamaApiError(
-          "Patch proposal is missing patch fields.",
-          400
-        );
+        throw new AtlasApiError("Patch proposal is missing patch fields.", 400);
       }
       await skills.patchAssignedProfileSkill(
         orgId,
@@ -170,7 +167,7 @@ export class SkillProposalService {
     } else if (proposal.action === "edit") {
       const content = proposal.content;
       if (!content?.trim()) {
-        throw new NakamaApiError("Edit proposal is missing content.", 400);
+        throw new AtlasApiError("Edit proposal is missing content.", 400);
       }
       await skills.editAssignedProfileSkill(
         orgId,
@@ -182,7 +179,7 @@ export class SkillProposalService {
       const content = proposal.content;
       const relativePath = proposal.relativePath;
       if (content === null || !relativePath?.trim()) {
-        throw new NakamaApiError(
+        throw new AtlasApiError(
           "Write-file proposal is missing path or content.",
           400
         );
@@ -197,7 +194,7 @@ export class SkillProposalService {
     } else if (proposal.action === "remove_file") {
       const relativePath = proposal.relativePath;
       if (!relativePath?.trim()) {
-        throw new NakamaApiError("Remove-file proposal is missing path.", 400);
+        throw new AtlasApiError("Remove-file proposal is missing path.", 400);
       }
       await skills.removeAssignedProfileSkillSupportingFile(
         orgId,
@@ -240,7 +237,7 @@ export class SkillProposalService {
       return proposal;
     }
     if (proposal.status !== "pending") {
-      throw new NakamaApiError("Only pending proposals can be rejected.", 400);
+      throw new AtlasApiError("Only pending proposals can be rejected.", 400);
     }
 
     const reviewedAt = new Date().toISOString();
@@ -267,7 +264,7 @@ export class SkillProposalService {
   ): Promise<StageSkillProposalResult> {
     const content = input.content;
     if (!content?.trim()) {
-      throw new NakamaApiError("content is required for create.", 400);
+      throw new AtlasApiError("content is required for create.", 400);
     }
     this.assertContentSize(content);
 
@@ -288,7 +285,7 @@ export class SkillProposalService {
         existingByName.sourcePath
       )
     ) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         `Skill "${name}" already exists globally or in another profile and cannot be created here.`,
         400
       );
@@ -336,10 +333,10 @@ export class SkillProposalService {
     const oldString = input.oldString;
     const newString = input.newString;
     if (oldString === undefined || oldString === "") {
-      throw new NakamaApiError("old_string is required for patch.", 400);
+      throw new AtlasApiError("old_string is required for patch.", 400);
     }
     if (newString === undefined) {
-      throw new NakamaApiError("new_string is required for patch.", 400);
+      throw new AtlasApiError("new_string is required for patch.", 400);
     }
     this.assertPatchFieldSize(oldString);
     this.assertPatchFieldSize(newString);
@@ -438,7 +435,7 @@ export class SkillProposalService {
 
     const content = input.content;
     if (!content?.trim()) {
-      throw new NakamaApiError("content is required for edit.", 400);
+      throw new AtlasApiError("content is required for edit.", 400);
     }
     this.assertContentSize(content);
 
@@ -448,7 +445,7 @@ export class SkillProposalService {
       input.profileId
     );
     if (parsedName !== name) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         `Frontmatter name "${parsedName}" must match skill name "${name}".`,
         400
       );
@@ -486,11 +483,11 @@ export class SkillProposalService {
 
     const relativePath = input.relativePath?.trim();
     if (!relativePath) {
-      throw new NakamaApiError("path is required for write_file.", 400);
+      throw new AtlasApiError("path is required for write_file.", 400);
     }
     const content = input.content;
     if (content === undefined) {
-      throw new NakamaApiError("content is required for write_file.", 400);
+      throw new AtlasApiError("content is required for write_file.", 400);
     }
     this.assertContentSize(content);
 
@@ -535,7 +532,7 @@ export class SkillProposalService {
 
     const relativePath = input.relativePath?.trim();
     if (!relativePath) {
-      throw new NakamaApiError("path is required for remove_file.", 400);
+      throw new AtlasApiError("path is required for remove_file.", 400);
     }
 
     resolveProfileSkillSupportingFilePath(
@@ -632,7 +629,7 @@ export class SkillProposalService {
     const db = this.requireDatabase();
     const proposal = await db.getSkillProposal(orgId, proposalId);
     if (!proposal) {
-      throw new NakamaApiError("Skill proposal not found.", 404);
+      throw new AtlasApiError("Skill proposal not found.", 404);
     }
     return proposal;
   }
@@ -646,16 +643,16 @@ export class SkillProposalService {
     const skillName = assertValidSkillName(name);
     const record = await db.getSkillByName(skillName);
     if (!record) {
-      throw new NakamaApiError(`Skill "${skillName}" not found.`, 404);
+      throw new AtlasApiError(`Skill "${skillName}" not found.`, 404);
     }
     if (isGlobalSkillSourcePath(record.sourcePath)) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         "Global skills cannot be modified by agents.",
         403
       );
     }
     if (!isPathWithinProfileSkillsDir(orgId, profileId, record.sourcePath)) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         `Skill "${skillName}" is not owned by this profile.`,
         403
       );
@@ -665,14 +662,14 @@ export class SkillProposalService {
   private readSkillName(input: StageSkillProposalInput): string {
     const name = input.skillName?.trim();
     if (!name) {
-      throw new NakamaApiError("name is required.", 400);
+      throw new AtlasApiError("name is required.", 400);
     }
     return assertValidSkillName(name);
   }
 
   private assertContentSize(content: string): void {
     if (Buffer.byteLength(content, "utf8") > MAX_SKILL_PROPOSAL_CONTENT_BYTES) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         "SKILL.md content exceeds the proposal size limit.",
         400
       );
@@ -681,7 +678,7 @@ export class SkillProposalService {
 
   private assertPatchFieldSize(value: string): void {
     if (Buffer.byteLength(value, "utf8") > MAX_SKILL_PATCH_FIELD_LENGTH) {
-      throw new NakamaApiError("Patch field exceeds the size limit.", 400);
+      throw new AtlasApiError("Patch field exceeds the size limit.", 400);
     }
   }
 
@@ -729,14 +726,14 @@ export class SkillProposalService {
 
   private requireDatabase(): DatabaseAdapter {
     if (!this.database) {
-      throw new NakamaApiError("Database not configured.", 500);
+      throw new AtlasApiError("Database not configured.", 500);
     }
     return this.database;
   }
 
   private requireSkillsService(): SkillsService {
     if (!this.skillsService) {
-      throw new NakamaApiError("Skills service not configured.", 500);
+      throw new AtlasApiError("Skills service not configured.", 500);
     }
     return this.skillsService;
   }

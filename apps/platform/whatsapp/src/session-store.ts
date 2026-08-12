@@ -1,6 +1,6 @@
 import { dirname, join } from "node:path";
-import { readTextOrNull, writePrivateTextFile } from "@nakama/core/fs";
-import { getWhatsAppConfigDir } from "@nakama/core/whatsapp-config";
+import { readTextOrNull, writePrivateTextFile } from "@atlas/core/fs";
+import { getWhatsAppConfigDir } from "@atlas/core/whatsapp-config";
 
 export interface ChatSessionRecord {
   profileId: string;

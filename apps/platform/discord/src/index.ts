@@ -1,20 +1,20 @@
-import { createClient } from "@nakama/client";
+import { createClient } from "@atlas/client";
 import {
   ChannelOrgStore,
   getChannelOrgSelectionPath,
-} from "@nakama/core/channel-org";
+} from "@atlas/core/channel-org";
 import {
   clearDiscordWorkerHeartbeat,
   isHeartbeatAlive,
   readDiscordWorkerHeartbeat,
   writeDiscordWorkerHeartbeat,
-} from "@nakama/core/discord-worker";
+} from "@atlas/core/discord-worker";
 import {
   ensureServerRunning,
   stopSpawnedServer,
-} from "@nakama/core/ensure-server";
-import { loadLocalAuthToken } from "@nakama/core/local-auth";
-import { resolveWebPublicUrl } from "@nakama/core/runtime";
+} from "@atlas/core/ensure-server";
+import { loadLocalAuthToken } from "@atlas/core/local-auth";
+import { resolveWebPublicUrl } from "@atlas/core/runtime";
 import { DiscordAuthStore } from "./auth-store";
 import { createBot } from "./bot";
 import { loadConfig } from "./config";
@@ -43,7 +43,7 @@ try {
     isHeartbeatAlive(existingHeartbeat)
   ) {
     console.error(
-      `Another Nakama Discord bridge is already running (pid ${existingHeartbeat.pid}). ` +
+      `Another Atlas Discord bridge is already running (pid ${existingHeartbeat.pid}). ` +
         "Stop the existing bridge worker or disable it in the dashboard before starting a new one."
     );
     process.exit(1);
@@ -72,7 +72,7 @@ try {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(
-      `Nakama API authentication failed: ${message}\n` +
+      `Atlas API authentication failed: ${message}\n` +
         "Restart the server so it can provision the local client user:\n" +
         "  bun run dev:server"
     );
@@ -99,7 +99,7 @@ try {
     threadStore,
   });
 
-  console.log("Nakama Discord bridge running.");
+  console.log("Atlas Discord bridge running.");
   console.log(`Server: ${serverUrl}`);
   console.log(`Profile: ${config.profileId}`);
   const authConfig = authStore.getConfig();

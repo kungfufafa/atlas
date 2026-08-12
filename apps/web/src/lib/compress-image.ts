@@ -1,4 +1,4 @@
-import { MAX_IMAGE_BYTES } from "@nakama/core/message-content";
+import { MAX_IMAGE_BYTES } from "@atlas/core/message-content";
 import { readFileAsDataUrl } from "@/lib/read-file-as-data-url";
 
 const MAX_DIMENSION = 2048;

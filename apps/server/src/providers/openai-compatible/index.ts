@@ -9,8 +9,8 @@ import type {
   ProviderClient,
   StreamChatHandlers,
   ToolCall,
-} from "@nakama/core";
-import { normalizeBaseUrl } from "@nakama/core";
+} from "@atlas/core";
+import { normalizeBaseUrl } from "@atlas/core";
 import OpenAI from "openai";
 import {
   parseOpenAIToolCalls,

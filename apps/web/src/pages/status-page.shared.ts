@@ -1,4 +1,4 @@
-import type { SystemStatusResponse } from "@nakama/core/contract";
+import type { SystemStatusResponse } from "@atlas/core/contract";
 import {
   Clock01Icon,
   HashtagIcon,
@@ -129,7 +129,7 @@ export function deriveSummary(status: SystemStatusResponse): {
 } {
   if (!status.server.ok) {
     return {
-      description: "Restart Nakama and check your connection.",
+      description: "Restart Atlas and check your connection.",
       title: "Server offline",
       tone: "bad",
     };

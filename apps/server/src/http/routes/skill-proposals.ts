@@ -1,9 +1,9 @@
-import { createRoute, z } from "@hono/zod-openapi";
-import { NakamaApiError } from "@nakama/core";
+import { AtlasApiError } from "@atlas/core";
 import type {
   ListSkillProposalsResponse,
   SkillProposalResponse,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
+import { createRoute, z } from "@hono/zod-openapi";
 import {
   type SkillProposalService,
   toSkillProposal,
@@ -42,14 +42,14 @@ export function registerSkillProposalRoutes(
   ): string {
     const orgId = decodeURIComponent(c.req.param("orgId"));
     if (authOrgId !== orgId) {
-      throw new NakamaApiError("Not found", 404);
+      throw new AtlasApiError("Not found", 404);
     }
     return orgId;
   }
 
   function requireService(): SkillProposalService {
     if (!skillProposalService) {
-      throw new NakamaApiError("Skill proposal service not configured", 500);
+      throw new AtlasApiError("Skill proposal service not configured", 500);
     }
     return skillProposalService;
   }
@@ -105,7 +105,7 @@ export function registerSkillProposalRoutes(
     const sessionId = c.req.query("sessionId");
     const isOrgAdmin = auth.orgRole === "admin" || auth.isPlatformAdmin;
     if (!(isOrgAdmin || sessionId)) {
-      throw new NakamaApiError("Forbidden", 403);
+      throw new AtlasApiError("Forbidden", 403);
     }
     const result = await service.listProposals(orgId, {
       profileId: profileId || undefined,

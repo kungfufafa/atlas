@@ -1,9 +1,9 @@
 import { mkdirSync } from "node:fs";
 import { dirname, isAbsolute, resolve } from "node:path";
-import { getUserConfigDir } from "@nakama/core";
+import { getUserConfigDir } from "@atlas/core";
 
 export interface ResolveDatabasePathOptions {
-  /** Anchor relative file: paths (defaults to ~/.nakama). */
+  /** Anchor relative file: paths (defaults to ~/.atlas). */
   baseDir?: string;
 }
 

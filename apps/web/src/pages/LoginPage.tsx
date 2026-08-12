@@ -67,12 +67,12 @@ export function LoginPage() {
       <div className="w-full max-w-sm space-y-6">
         <div className="flex flex-col items-center text-center">
           <img
-            alt="Nakama"
+            alt="Atlas"
             className="mb-4 size-14 rounded-xl"
             src={ditherLogoSrc(resolvedTheme)}
           />
           <h1 className="font-semibold text-xl tracking-tight">
-            Sign in to Nakama
+            Sign in to Atlas
           </h1>
           {demoLogin ? null : (
             <p className="text-muted-foreground text-sm">

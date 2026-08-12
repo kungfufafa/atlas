@@ -19,7 +19,7 @@ const TEST_CONFIG_DIR = path.join(
 
 describe("artifact shares", () => {
   afterEach(async () => {
-    process.env.NAKAMA_CONFIG_DIR = undefined;
+    process.env.ATLAS_CONFIG_DIR = undefined;
     await rm(TEST_CONFIG_DIR, { force: true, recursive: true });
   });
 
@@ -35,7 +35,7 @@ describe("artifact shares", () => {
   });
 
   test("write and read snapshot round-trip", async () => {
-    process.env.NAKAMA_CONFIG_DIR = TEST_CONFIG_DIR;
+    process.env.ATLAS_CONFIG_DIR = TEST_CONFIG_DIR;
     await mkdir(TEST_CONFIG_DIR, { recursive: true });
 
     const orgId = "org_test";

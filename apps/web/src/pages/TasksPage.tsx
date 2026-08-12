@@ -1,4 +1,4 @@
-import type { StoredTask, TaskStatus } from "@nakama/core/contract";
+import type { StoredTask, TaskStatus } from "@atlas/core/contract";
 import { useQueryClient } from "@tanstack/react-query";
 import { Add01Icon, KanbanIcon } from "hugeicons-react";
 import { useEffect, useMemo, useState } from "react";

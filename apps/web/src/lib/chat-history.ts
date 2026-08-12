@@ -1,11 +1,11 @@
-import { parseAgentQuestionnaireAnswersMessage } from "@nakama/core/agent-questionnaire";
+import { parseAgentQuestionnaireAnswersMessage } from "@atlas/core/agent-questionnaire";
 import type {
   AgentChannel,
   AgentQuestionAnswer,
   ChatMessage,
   SessionMessageMeta,
-} from "@nakama/core/contract";
-import { extractThinkingFromAssistantMessage } from "@nakama/core/thinking-content";
+} from "@atlas/core/contract";
+import { extractThinkingFromAssistantMessage } from "@atlas/core/thinking-content";
 import {
   stripImageDescriptionsFromDisplayText,
   userContentToDisplayDocuments,

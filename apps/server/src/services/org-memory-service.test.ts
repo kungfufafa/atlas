@@ -2,8 +2,8 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { ORG_MEMORY_PREAMBLE, parseOrgMemoryContent } from "@nakama/core";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+import { ORG_MEMORY_PREAMBLE, parseOrgMemoryContent } from "@atlas/core";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { OrgMemoryService } from "./org-memory-service";
 
 describe("OrgMemoryService", () => {

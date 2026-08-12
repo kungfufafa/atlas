@@ -1,4 +1,3 @@
-import { createRoute, z } from "@hono/zod-openapi";
 import type {
   CreateProfileRequest,
   DeleteArtifactResponse,
@@ -15,9 +14,10 @@ import type {
   UpdateSoulFileRequest,
   UploadKnowledgeBaseRequest,
   UploadKnowledgeBaseResponse,
-} from "@nakama/core";
-import { NakamaApiError } from "@nakama/core";
-import { filterProfilesForChatAccess } from "@nakama/core/profiles";
+} from "@atlas/core";
+import { AtlasApiError } from "@atlas/core";
+import { filterProfilesForChatAccess } from "@atlas/core/profiles";
+import { createRoute, z } from "@hono/zod-openapi";
 import type { ServerOptions } from "../context";
 import {
   requireActiveOrgIdFromContext,
@@ -829,7 +829,7 @@ export function registerProfileRoutes(
     if (!auth.isPlatformAdmin) {
       requireOrgAdmin(auth);
       if (!isOrgAdminAllowedProfileSettingsUpdate(body)) {
-        throw new NakamaApiError("Forbidden", 403);
+        throw new AtlasApiError("Forbidden", 403);
       }
     }
 

@@ -1,7 +1,4 @@
-import {
-  createInMemoryDatabaseAdapter,
-  type DatabaseAdapter,
-} from "@nakama/db";
+import { createInMemoryDatabaseAdapter, type DatabaseAdapter } from "@atlas/db";
 import { AuthService } from "../services/auth-service";
 import { OrgService } from "../services/org-service";
 import { createHonoApp } from "./app";

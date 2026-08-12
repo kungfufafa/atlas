@@ -1,9 +1,9 @@
-import { builtinTools } from "@nakama/core";
-import { preinstalledMcpServers } from "@nakama/core/mcp/preinstalled";
+import { builtinTools } from "@atlas/core";
+import { preinstalledMcpServers } from "@atlas/core/mcp/preinstalled";
 import {
   BUILTIN_TOOL_IDS,
   SUB_AGENT_TOOL_ID,
-} from "@nakama/core/tools/protected";
+} from "@atlas/core/tools/protected";
 import { ensureLocalClientAccess } from "./local-client";
 import {
   ensureBashToolDefinition,

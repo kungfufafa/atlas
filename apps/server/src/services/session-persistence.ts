@@ -1,7 +1,7 @@
-import type { AgentChatSession } from "@nakama/agent";
-import type { ChatMessage } from "@nakama/core";
-import { createId } from "@nakama/core";
-import type { DatabaseAdapter } from "@nakama/db";
+import type { AgentChatSession } from "@atlas/agent";
+import type { ChatMessage } from "@atlas/core";
+import { createId } from "@atlas/core";
+import type { DatabaseAdapter } from "@atlas/db";
 
 export function wrapPersistedSession(
   sessionId: string,

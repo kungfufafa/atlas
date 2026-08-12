@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { saveComposioConfig } from "@nakama/core";
-import { LOCAL_CLIENT_USER_ID } from "@nakama/core/local-auth";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+import { saveComposioConfig } from "@atlas/core";
+import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { AuthService } from "./auth-service";
 import type { ComposioApiClient } from "./composio-api-client";
 import { ComposioService } from "./composio-service";
@@ -114,8 +114,8 @@ async function seedOrgWithAdmin(
 
 async function createConfiguredService() {
   const configDir = await mkdtemp(join(tmpdir(), "nakama-composio-service-"));
-  const previous = process.env.NAKAMA_CONFIG_DIR;
-  process.env.NAKAMA_CONFIG_DIR = configDir;
+  const previous = process.env.ATLAS_CONFIG_DIR;
+  process.env.ATLAS_CONFIG_DIR = configDir;
   await saveComposioConfig({ apiKey: TEST_API_KEY });
 
   const db = createInMemoryDatabaseAdapter();
@@ -126,9 +126,9 @@ async function createConfiguredService() {
     db,
     restore() {
       if (previous === undefined) {
-        delete process.env.NAKAMA_CONFIG_DIR;
+        delete process.env.ATLAS_CONFIG_DIR;
       } else {
-        process.env.NAKAMA_CONFIG_DIR = previous;
+        process.env.ATLAS_CONFIG_DIR = previous;
       }
     },
     service,

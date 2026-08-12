@@ -1,18 +1,18 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import * as os from "node:os";
 import path from "node:path";
-import type { NakamaClient, StreamHandlers } from "@nakama/client";
+import type { AtlasClient, StreamHandlers } from "@atlas/client";
 import {
   assertBridgeClientMethods,
   parseListProfilesResponse,
   parseListUserOrgsResponse,
-} from "@nakama/core/bridge-api";
-import { ChannelOrgStore } from "@nakama/core/channel-org";
+} from "@atlas/core/bridge-api";
+import { ChannelOrgStore } from "@atlas/core/channel-org";
 import type {
   AgentTodo,
   ChatMessage,
   UserOrgSummary,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import type { Context } from "grammy";
 import type { TelegramBotInfo } from "./group-message";
 
@@ -385,7 +385,7 @@ export function createMockClient(
       calls.transcribeAudio += 1;
       return { text: "Transcribed voice message" };
     },
-  } as unknown as NakamaClient;
+  } as unknown as AtlasClient;
 
   assertBridgeClientMethods(client);
 
@@ -410,11 +410,11 @@ export async function writeTelegramConfigIni(
     allowedUserIds?: number[];
   }
 ): Promise<void> {
-  const dir = path.join(homeDir, ".nakama", "telegram");
+  const dir = path.join(homeDir, ".atlas", "telegram");
   await mkdir(dir, { recursive: true });
 
   const lines = [
-    "# Nakama Telegram bridge",
+    "# Atlas Telegram bridge",
     `bot_token=${config.botToken}`,
     `profile_id=${config.profileId ?? "default"}`,
   ];
@@ -437,7 +437,7 @@ export async function writeTelegramConfigIni(
 
 export function createTestOrgStore(homeDir: string): ChannelOrgStore {
   return new ChannelOrgStore(
-    path.join(homeDir, ".nakama", "telegram", "org-selection.json")
+    path.join(homeDir, ".atlas", "telegram", "org-selection.json")
   );
 }
 
@@ -458,17 +458,17 @@ export async function withTempHome<T>(
   const homeDir = await mkdtemp(
     path.join(os.tmpdir(), "nakama-telegram-home-")
   );
-  const configDir = path.join(homeDir, ".nakama");
-  const previousConfigDir = process.env.NAKAMA_CONFIG_DIR;
-  process.env.NAKAMA_CONFIG_DIR = configDir;
+  const configDir = path.join(homeDir, ".atlas");
+  const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
+  process.env.ATLAS_CONFIG_DIR = configDir;
 
   try {
     return await run(homeDir);
   } finally {
     if (previousConfigDir === undefined) {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
     } else {
-      process.env.NAKAMA_CONFIG_DIR = previousConfigDir;
+      process.env.ATLAS_CONFIG_DIR = previousConfigDir;
     }
 
     await rm(homeDir, { force: true, recursive: true });

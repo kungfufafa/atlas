@@ -1,5 +1,5 @@
-import type { ProfileDetail, ToolSummary } from "@nakama/core/contract";
-import { BUILTIN_TOOL_IDS } from "@nakama/core/tools/protected";
+import type { ProfileDetail, ToolSummary } from "@atlas/core/contract";
+import { BUILTIN_TOOL_IDS } from "@atlas/core/tools/protected";
 import { Delete02Icon } from "hugeicons-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";

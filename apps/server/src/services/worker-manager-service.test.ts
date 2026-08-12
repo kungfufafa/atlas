@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { mkdir, mkdtemp, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { readWorkerDesiredState, setWorkerDesiredRunning } from "@nakama/core";
+import { readWorkerDesiredState, setWorkerDesiredRunning } from "@atlas/core";
 import { WorkerManagerService } from "./worker-manager-service";
 
 function createMockPm2() {
@@ -31,7 +31,7 @@ let configDir: string | null = null;
 
 beforeEach(async () => {
   configDir = await mkdtemp(join(tmpdir(), "nakama-worker-manager-"));
-  process.env.NAKAMA_CONFIG_DIR = configDir;
+  process.env.ATLAS_CONFIG_DIR = configDir;
 });
 
 afterEach(async () => {
@@ -40,7 +40,7 @@ afterEach(async () => {
     configDir = null;
   }
 
-  delete process.env.NAKAMA_CONFIG_DIR;
+  delete process.env.ATLAS_CONFIG_DIR;
 });
 
 describe("WorkerManagerService", () => {

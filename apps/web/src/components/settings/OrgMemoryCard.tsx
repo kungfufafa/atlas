@@ -1,4 +1,4 @@
-import { parseOrgMemoryContent } from "@nakama/core/soul/org-memory";
+import { parseOrgMemoryContent } from "@atlas/core/soul/org-memory";
 import { PencilIcon, PinIcon } from "hugeicons-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";

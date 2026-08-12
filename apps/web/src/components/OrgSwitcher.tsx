@@ -1,4 +1,4 @@
-import type { UserOrgSummary } from "@nakama/core/contract";
+import type { UserOrgSummary } from "@atlas/core/contract";
 import { Add01Icon, ArrowDown01Icon, PencilIcon } from "hugeicons-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";

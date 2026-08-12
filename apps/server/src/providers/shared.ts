@@ -4,7 +4,7 @@ import type {
   StreamChatHandlers,
   ThinkingEffort,
   ToolCall,
-} from "@nakama/core";
+} from "@atlas/core";
 
 function readNumber(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value)

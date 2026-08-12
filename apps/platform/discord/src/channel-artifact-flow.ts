@@ -1,4 +1,4 @@
-import type { NakamaClient, RemoteChatSession } from "@nakama/client";
+import type { AtlasClient, RemoteChatSession } from "@atlas/client";
 import {
   type DeliverableChannelArtifact,
   extractPairedTurnArtifacts,
@@ -8,7 +8,7 @@ import {
   mintDeliverableArtifacts,
   pushDeliverableArtifact,
   resolveArtifactForAttach,
-} from "@nakama/core";
+} from "@atlas/core";
 import type { TextBasedChannel } from "discord.js";
 import type { DiscordMessenger } from "./messenger";
 import {
@@ -19,7 +19,7 @@ import type { SessionStore } from "./session-store";
 
 export async function uploadDiscordArtifactFromToolResult(input: {
   channel: TextBasedChannel;
-  client: NakamaClient;
+  client: AtlasClient;
   messenger: DiscordMessenger;
   profileId: string;
   result: unknown;
@@ -87,7 +87,7 @@ function parseSendDiscordArtifactResult(result: unknown): {
 
 export async function maybeSendRequestedDiscordArtifactAttachment(input: {
   channel: TextBasedChannel;
-  client: NakamaClient;
+  client: AtlasClient;
   conversationKey: string;
   profileId: string;
   /** Raw user text before group-context prefixing. */
@@ -103,7 +103,7 @@ export async function maybeSendRequestedDiscordArtifactAttachment(input: {
     input.conversationKey
   );
   let listed: Awaited<
-    ReturnType<NakamaClient["listProfileArtifacts"]>
+    ReturnType<AtlasClient["listProfileArtifacts"]>
   >["artifacts"] = [];
 
   if (registry.length === 0) {
@@ -165,7 +165,7 @@ export async function maybeSendRequestedDiscordArtifactAttachment(input: {
 
 export async function deliverDiscordTurnArtifactShares(input: {
   channel: TextBasedChannel;
-  client: NakamaClient;
+  client: AtlasClient;
   session: RemoteChatSession;
   conversationKey: string;
   profileId: string;
@@ -233,7 +233,7 @@ export async function deliverDiscordTurnArtifactShares(input: {
 
 async function tryUploadDiscordArtifact(input: {
   channel: TextBasedChannel;
-  client: NakamaClient;
+  client: AtlasClient;
   profileId: string;
   artifact: DeliverableChannelArtifact;
 }): Promise<boolean> {

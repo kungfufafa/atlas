@@ -1,11 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { getProfileArtifactsDir } from "@nakama/core";
-import {
-  createInMemoryDatabaseAdapter,
-  type DatabaseAdapter,
-} from "@nakama/db";
+import { getProfileArtifactsDir } from "@atlas/core";
+import { createInMemoryDatabaseAdapter, type DatabaseAdapter } from "@atlas/db";
 import { setupTestConfigDir } from "../../test-config-dir";
 import { isPublicRouteRequest } from "../public-routes";
 import { createMinimalHonoApp } from "../test-app-helpers";
@@ -76,7 +73,7 @@ async function seedProfileArtifact(params: {
   await writeFile(join(artifactsDir, params.filename), params.content);
   if (params.meta !== undefined) {
     await writeFile(
-      join(artifactsDir, `${params.filename}.nakama-meta.json`),
+      join(artifactsDir, `${params.filename}.atlas-meta.json`),
       params.meta
     );
   }
@@ -282,7 +279,7 @@ describe("artifact share routes", () => {
 
   test("publish prefers configured web public URL over loopback request URL", async () => {
     await withEnv(
-      { NAKAMA_WEB_PUBLIC_URL: "https://deployed.example.com/" },
+      { ATLAS_WEB_PUBLIC_URL: "https://deployed.example.com/" },
       async () => {
         const { app, databaseAdapter } = createApp();
         const session = await setupFreshInstallSession(app, databaseAdapter);

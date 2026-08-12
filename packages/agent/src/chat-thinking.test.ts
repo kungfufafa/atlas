@@ -3,7 +3,7 @@ import type {
   ChatCompletionResult,
   GenerateChatInput,
   ProviderClient,
-} from "@nakama/core";
+} from "@atlas/core";
 import { createAgentHarness } from "./index";
 
 function createCapturingProvider(

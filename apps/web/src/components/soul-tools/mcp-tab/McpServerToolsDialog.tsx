@@ -1,4 +1,4 @@
-import type { McpServerSummary } from "@nakama/core/contract";
+import type { McpServerSummary } from "@atlas/core/contract";
 import { CubeIcon } from "hugeicons-react";
 import { McpToolList } from "@/components/soul-tools/McpToolList";
 import { Button } from "@/components/ui/button";

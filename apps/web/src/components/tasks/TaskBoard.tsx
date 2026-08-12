@@ -1,3 +1,8 @@
+import type {
+  ProfileSummary,
+  StoredTask,
+  TaskStatus,
+} from "@atlas/core/contract";
 import {
   closestCorners,
   DndContext,
@@ -8,11 +13,6 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import type {
-  ProfileSummary,
-  StoredTask,
-  TaskStatus,
-} from "@nakama/core/contract";
 import { useMemo, useState } from "react";
 import { TASK_COLUMNS } from "@/hooks/use-tasks";
 import { TaskCard } from "./TaskCard";

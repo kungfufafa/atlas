@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { getUserConfigDir, saveUserConfig } from "@nakama/core";
+import { getUserConfigDir, saveUserConfig } from "@atlas/core";
 import { createClient } from "./index";
 
 test("chat stream request includes cookie CSRF protection", async () => {
@@ -199,7 +199,7 @@ test("data import helpers upload base64 archive data", async () => {
 
 test("non-browser clients reload the local auth token once after a 401", async () => {
   const configDir = await mkdtemp(join(tmpdir(), "nakama-client-auth-reload-"));
-  process.env.NAKAMA_CONFIG_DIR = configDir;
+  process.env.ATLAS_CONFIG_DIR = configDir;
 
   try {
     await writeFile(
@@ -243,7 +243,7 @@ test("non-browser clients reload the local auth token once after a 401", async (
     await expect(client.health()).resolves.toEqual({ ok: true });
     expect(attempts).toBe(2);
   } finally {
-    delete process.env.NAKAMA_CONFIG_DIR;
+    delete process.env.ATLAS_CONFIG_DIR;
     await rm(configDir, { force: true, recursive: true });
   }
 });

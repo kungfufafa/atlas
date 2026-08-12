@@ -1,4 +1,4 @@
-import type { AutomationDefinition, ToolDefinition } from "@nakama/core";
+import type { AutomationDefinition, ToolDefinition } from "@atlas/core";
 import {
   type AgentChatSession,
   type AgentChatSessionOptions,

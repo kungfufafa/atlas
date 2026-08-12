@@ -152,7 +152,7 @@ async function main() {
   ];
 
   const siteUrl =
-    process.env.NAKAMA_DOCS_SITE_URL ?? "https://ahmadrosid.github.io/nakama";
+    process.env.ATLAS_DOCS_SITE_URL ?? "https://kungfufafa.github.io/atlas";
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${sitemapUrls

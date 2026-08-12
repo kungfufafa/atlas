@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
-import type { DeliverableChannelArtifact } from "@nakama/core/channel-artifact-delivery";
-import { readTextOrNull, writePrivateTextFile } from "@nakama/core/fs";
-import { getTelegramConfigDir } from "@nakama/core/telegram-config";
+import type { DeliverableChannelArtifact } from "@atlas/core/channel-artifact-delivery";
+import { readTextOrNull, writePrivateTextFile } from "@atlas/core/fs";
+import { getTelegramConfigDir } from "@atlas/core/telegram-config";
 
 export interface ChatSessionRecord {
   artifactShareUrls?: Record<string, string>;

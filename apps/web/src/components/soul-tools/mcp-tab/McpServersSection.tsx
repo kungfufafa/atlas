@@ -1,5 +1,5 @@
-import type { McpServerSummary } from "@nakama/core/contract";
-import { isPreinstalledMcpServerId } from "@nakama/core/mcp/preinstalled";
+import type { McpServerSummary } from "@atlas/core/contract";
+import { isPreinstalledMcpServerId } from "@atlas/core/mcp/preinstalled";
 import {
   Add01Icon,
   Delete02Icon,

@@ -1,4 +1,4 @@
-import type { AgentTodo } from "@nakama/core/contract";
+import type { AgentTodo } from "@atlas/core/contract";
 import { renderDiscordTodoStatus } from "./format";
 import type { DiscordMessenger } from "./messenger";
 

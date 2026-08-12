@@ -1,4 +1,3 @@
-import { createRoute, z } from "@hono/zod-openapi";
 import type {
   CreateTaskRequest,
   DraftTaskPromptRequest,
@@ -9,7 +8,8 @@ import type {
   TaskMessagesResponse,
   TaskResponse,
   UpdateTaskRequest,
-} from "@nakama/core";
+} from "@atlas/core";
+import { createRoute, z } from "@hono/zod-openapi";
 import type { ServerOptions } from "../context";
 import {
   requireActiveOrgIdFromContext,

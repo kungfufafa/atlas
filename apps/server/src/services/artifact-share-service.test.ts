@@ -44,9 +44,9 @@ async function withFreshConfigDir<T>(run: () => T | Promise<T>): Promise<T> {
   try {
     return await withEnv(
       {
-        NAKAMA_CONFIG_DIR: configDir,
+        ATLAS_CONFIG_DIR: configDir,
+        ATLAS_WEB_PUBLIC_URL: undefined,
         NAKAMA_PUBLIC_URL: undefined,
-        NAKAMA_WEB_PUBLIC_URL: undefined,
       },
       run
     );
@@ -67,7 +67,7 @@ describe("resolveArtifactShareBaseUrl", () => {
 
   test("prefers configured web public URL when request host is loopback", async () => {
     await withEnv(
-      { NAKAMA_WEB_PUBLIC_URL: "https://deployed.example.com/" },
+      { ATLAS_WEB_PUBLIC_URL: "https://deployed.example.com/" },
       () => {
         expect(
           resolveArtifactShareBaseUrl({ request: sharePublishRequest() })

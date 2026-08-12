@@ -1,5 +1,5 @@
-import type { ToolContext, UserConfig } from "@nakama/core";
-import type { DatabaseAdapter } from "@nakama/db";
+import type { ToolContext, UserConfig } from "@atlas/core";
+import type { DatabaseAdapter } from "@atlas/db";
 import {
   inferCodingAgentHarnessKind,
   isCodingAgentCommand,
@@ -52,7 +52,7 @@ export async function enrichCodingAgentBashInput(
 
   if (codingAgentRequested && !inferredKind) {
     throw new Error(
-      "codingAgent was set but the bash command does not start with a known coding-agent CLI (codex, claude, opencode, pi, or agent). Use the harness binary as argv0 so Nakama can merge the correct provider passthrough env."
+      "codingAgent was set but the bash command does not start with a known coding-agent CLI (codex, claude, opencode, pi, or agent). Use the harness binary as argv0 so Atlas can merge the correct provider passthrough env."
     );
   }
 

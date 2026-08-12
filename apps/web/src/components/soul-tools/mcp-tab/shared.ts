@@ -1,4 +1,4 @@
-import type { McpTransport } from "@nakama/core/contract";
+import type { McpTransport } from "@atlas/core/contract";
 
 export const sectionClass = "rounded-md border border-border bg-card";
 const REDACTED_SECRET_VALUE = "••••••••";

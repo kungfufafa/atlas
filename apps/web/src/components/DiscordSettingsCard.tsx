@@ -1,4 +1,4 @@
-import type { UpdateDiscordSettingsRequest } from "@nakama/core/contract";
+import type { UpdateDiscordSettingsRequest } from "@atlas/core/contract";
 import { useEffect, useRef, useState } from "react";
 import {
   type AllowedDiscordUser,
@@ -92,7 +92,7 @@ export function DiscordSettingsCard({
 
   const headerSubtitle = configured
     ? hasLinkedUsers && running
-      ? "Your Discord is connected to Nakama"
+      ? "Your Discord is connected to Atlas"
       : hasLinkedUsers
         ? "Linked. Start the bridge to receive messages"
         : pairingCode

@@ -6,7 +6,7 @@ import type {
   ChatMessage,
   CompactionResponse,
   SendMessageInput,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 
 /** Fetch `credentials` option (same values as the standard `RequestCredentials` type). */
 export type FetchCredentials = "omit" | "same-origin" | "include";
@@ -14,7 +14,7 @@ export type FetchCredentials = "omit" | "same-origin" | "include";
 /** Binary buffer input (same values as the standard `BufferSource` type). */
 export type BinaryBufferSource = ArrayBuffer | ArrayBufferView;
 
-export interface NakamaClientOptions {
+export interface AtlasClientOptions {
   authToken?: string;
   baseUrl?: string;
   /** Browser-style origin for OAuth callbacks when this client has no window (e.g. Telegram bridge). */

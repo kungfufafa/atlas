@@ -1,5 +1,5 @@
+import type { WorkerLogsResponse } from "@atlas/core";
 import { createRoute, z } from "@hono/zod-openapi";
-import type { WorkerLogsResponse } from "@nakama/core";
 import type { Context } from "hono";
 import type { ServerOptions } from "../context";
 import {

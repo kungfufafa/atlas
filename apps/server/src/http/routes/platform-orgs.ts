@@ -1,4 +1,3 @@
-import { createRoute, z } from "@hono/zod-openapi";
 import type {
   CreateOrganizationRequest,
   CreateOrganizationResponse,
@@ -7,7 +6,8 @@ import type {
   OrganizationResponse,
   OrgInviteCreatedResponse,
   UpdateOrganizationRequest,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
+import { createRoute, z } from "@hono/zod-openapi";
 import type { ServerOptions } from "../context";
 import { requirePlatformAdminFromContext } from "../org-guards";
 import { errorResponse, json, readJson } from "../shared";

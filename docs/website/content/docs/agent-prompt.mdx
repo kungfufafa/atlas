@@ -1,9 +1,9 @@
 ---
 title: "How Agent Prompts Work"
-description: "Understand how Nakama builds the final system prompt from soul files, tools, bundled system skills, and runtime context."
+description: "Understand how Atlas builds the final system prompt from soul files, tools, bundled system skills, and runtime context."
 ---
 
-When a user starts chatting with a profile, Nakama builds one system prompt from several sources.
+When a user starts chatting with a profile, Atlas builds one system prompt from several sources.
 
 The short version:
 
@@ -23,9 +23,9 @@ Profile soul/system prompt
 
 ## Main profile prompt
 
-Nakama first resolves the profile's main prompt.
+Atlas first resolves the profile's main prompt.
 
-If the profile has soul files, Nakama uses them:
+If the profile has soul files, Atlas uses them:
 
 | File | Injected as |
 |------|-------------|
@@ -34,13 +34,13 @@ If the profile has soul files, Nakama uses them:
 | `INSTRUCTIONS.md` | Operating instructions |
 | `MEMORY.md` | Continuity |
 
-If there are no soul files, Nakama uses the profile's stored `systemPrompt`.
+If there are no soul files, Atlas uses the profile's stored `systemPrompt`.
 
 If both exist and they are different, the stored `systemPrompt` is appended as extra profile instructions.
 
 ## Extra profile context
 
-After the main profile prompt, Nakama may append:
+After the main profile prompt, Atlas may append:
 
 - Assigned skills catalog
 - Knowledge base catalog
@@ -61,11 +61,11 @@ The chat runtime then wraps the profile prompt with general chat instructions:
 - Telegram or WhatsApp behavior when the message comes from those channels
 - Discord behavior when the message comes from a server channel (public replies)
 
-When soul is active, Nakama tells the agent to use tools while staying in character.
+When soul is active, Atlas tells the agent to use tools while staying in character.
 
 ## Per-turn context
 
-On each user message, Nakama can add fresh context for that turn:
+On each user message, Atlas can add fresh context for that turn:
 
 - Active todo/task state
 - Skills matched to the current user message
@@ -74,7 +74,7 @@ This context is not permanent. It is attached only when relevant for the current
 
 ## Current date
 
-Right before sending the request to the LLM, Nakama appends the current date:
+Right before sending the request to the LLM, Atlas appends the current date:
 
 ```text
 Today is <current date>.
@@ -90,7 +90,7 @@ Profiles do not use dedicated memory or artifact builtins. The chat wrapper nudg
 | `archive-profile-memory` | `read_file` + `edit_file` | Move bullets from `MEMORY.md` into `memory-archive/` without deleting them |
 | `save-artifact` | `write_file` or `write_docx` | Save files the agent produces under `artifacts/` with metadata for the dashboard; on web chat, paired saves also show as message attachment chips with in-chat preview |
 
-The skills catalog is always visible. When a user message matches a skill description, Nakama can attach the full skill body for that turn (`include-body-on-match: true`).
+The skills catalog is always visible. When a user message matches a skill description, Atlas can attach the full skill body for that turn (`include-body-on-match: true`).
 
 Active `MEMORY.md` is also composed into the soul stack. Archived content under `memory-archive/` is not loaded automatically — the agent uses `search_files` or `read_file` to retrieve it. Artifact files under `artifacts/` are not loaded into the agent prompt — users browse them in the dashboard Artifacts tab, download via the API, or open them from web chat attachment chips on assistant messages (HTML, Markdown, Word, code, and text previews are rendered by content type).
 

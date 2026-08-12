@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
-import type { ImageAttachment, SendMessageInput } from "@nakama/core";
-import { MAX_IMAGE_BYTES } from "@nakama/core";
+import type { ImageAttachment, SendMessageInput } from "@atlas/core";
+import { MAX_IMAGE_BYTES } from "@atlas/core";
 
 const IMAGE_PATH_PATTERN = /^@(\S+)(?:\s+([\s\S]*))?$/;
 

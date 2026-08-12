@@ -22,7 +22,7 @@ import {
 } from "./builtin";
 
 const PROFILE_CONTEXT = { orgId: "org_test", profileId: "profile_test" };
-const originalConfigDir = process.env.NAKAMA_CONFIG_DIR;
+const originalConfigDir = process.env.ATLAS_CONFIG_DIR;
 
 describe("file builtin tools", () => {
   let tempDir = "";
@@ -38,9 +38,9 @@ describe("file builtin tools", () => {
       configDir = "";
     }
     if (originalConfigDir === undefined) {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
     } else {
-      process.env.NAKAMA_CONFIG_DIR = originalConfigDir;
+      process.env.ATLAS_CONFIG_DIR = originalConfigDir;
     }
     setDefaultFileGuardOptions({});
   });
@@ -116,7 +116,7 @@ describe("file builtin tools", () => {
           savedAt: "2026-07-14T12:00:00.000Z",
           sizeBytes: 10,
         }),
-        path: "artifacts/report.md.nakama-meta.json",
+        path: "artifacts/report.md.atlas-meta.json",
       },
       context,
       { workspaceRoot: tempDir }
@@ -128,7 +128,7 @@ describe("file builtin tools", () => {
     expect(metaResult.path).toBe(
       path.join(
         await realpath(artifactsDir),
-        `report-${dateSuffix}.md.nakama-meta.json`
+        `report-${dateSuffix}.md.atlas-meta.json`
       )
     );
   });
@@ -136,7 +136,7 @@ describe("file builtin tools", () => {
   test("write_file allows custom tool modules outside profile workspace", async () => {
     tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-write-"));
     configDir = await mkdtemp(path.join(os.tmpdir(), "nakama-config-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
     const toolsDir = path.join(configDir, "tools");
     await mkdir(toolsDir, { recursive: true });
 
@@ -644,7 +644,7 @@ describe("file builtin tools", () => {
   test("read_file allows custom tool modules outside profile workspace", async () => {
     tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-read-"));
     configDir = await mkdtemp(path.join(os.tmpdir(), "nakama-config-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
     const toolsDir = path.join(configDir, "tools");
     await mkdir(toolsDir, { recursive: true });
 

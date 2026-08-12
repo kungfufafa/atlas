@@ -1,4 +1,4 @@
-import type { UpdateTelegramSettingsRequest } from "@nakama/core/contract";
+import type { UpdateTelegramSettingsRequest } from "@atlas/core/contract";
 import { useEffect, useState } from "react";
 import { SETTINGS_CARD_LOADING_SKELETON } from "@/components/integration-settings.shared";
 import {
@@ -76,7 +76,7 @@ export function TelegramSettingsCard({
 
   const headerSubtitle = configured
     ? hasLinkedUsers && running
-      ? "Your Telegram is connected to Nakama"
+      ? "Your Telegram is connected to Atlas"
       : hasLinkedUsers
         ? "Linked. Start the bridge to receive messages"
         : pairingCode

@@ -1,10 +1,10 @@
 export {
+  AtlasApiError,
   formatClientError as formatError,
-  NakamaApiError,
-} from "@nakama/core/api-error";
-export { NakamaClient } from "./client";
+} from "@atlas/core/api-error";
+export { AtlasClient } from "./client";
 export type {
-  NakamaClientOptions,
+  AtlasClientOptions,
   RemoteChatSession,
   SendMessageArg,
   SendStreamOptions,
@@ -12,12 +12,12 @@ export type {
   StreamHandlers,
 } from "./types";
 
-import type { ProfileSummary } from "@nakama/core/contract";
-import { NakamaClient } from "./client";
-import type { NakamaClientOptions } from "./types";
+import type { ProfileSummary } from "@atlas/core/contract";
+import { AtlasClient } from "./client";
+import type { AtlasClientOptions } from "./types";
 
-export function createClient(options?: NakamaClientOptions): NakamaClient {
-  return new NakamaClient(options);
+export function createClient(options?: AtlasClientOptions): AtlasClient {
+  return new AtlasClient(options);
 }
 
 export function getProfileAvatarUrl(

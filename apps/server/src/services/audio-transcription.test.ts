@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { UserConfig } from "@nakama/core";
+import type { UserConfig } from "@atlas/core";
 import { resolveTranscriptionProviderSelection } from "./audio-transcription";
 
 describe("resolveTranscriptionProviderSelection", () => {

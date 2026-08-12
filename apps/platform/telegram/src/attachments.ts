@@ -1,9 +1,9 @@
-import type { SendMessageInput } from "@nakama/core/contract";
+import type { SendMessageInput } from "@atlas/core/contract";
 import {
   MAX_DOCUMENT_BYTES,
   normalizeDocumentMediaType,
   validateDocumentAttachments,
-} from "@nakama/core/message-content";
+} from "@atlas/core/message-content";
 import type { Context } from "grammy";
 
 const ALLOWED_DOCUMENT_MEDIA_TYPES = new Set([

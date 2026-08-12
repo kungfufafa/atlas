@@ -1,20 +1,20 @@
-# Nakama — Customer Pitch Deck (ASD-STE100)
+# Atlas — Customer Pitch Deck (ASD-STE100)
 
 **Audience:** Team leads and agencies  
 **Goal:** Open the public demo, or install with Docker  
 **Length:** About 11 slides (8 to 12 minutes)
 
-Copy follows ASD-STE100 practice where possible: short sentences, active voice, approved simple wording, vertical lists, noun clusters of three words or fewer, and no slang or metaphor. Product names (Nakama, ChatGPT, Docker, Telegram, and others) are technical names.
+Copy follows ASD-STE100 practice where possible: short sentences, active voice, approved simple wording, vertical lists, noun clusters of three words or fewer, and no slang or metaphor. Product names (Atlas, ChatGPT, Docker, Telegram, and others) are technical names.
 
 ---
 
 ## Slide 1 — Title
 
-**Nakama**
+**Atlas**
 
 Stop shared work in private ChatGPT chats. Run one agent workspace for your team.
 
-Nakama gives each team or each client agents, memory, and channels on one platform.
+Atlas gives each team or each client agents, memory, and channels on one platform.
 
 `getnakama.cloud` · `demo.getnakama.cloud` · Open source
 
@@ -30,9 +30,9 @@ Nakama gives each team or each client agents, memory, and channels on one platfo
 
 ---
 
-## Slide 3 — Who can use Nakama
+## Slide 3 — Who can use Atlas
 
-**Nakama serves two types of buyers.**
+**Atlas serves two types of buyers.**
 
 | Buyer | Need |
 | --- | --- |
@@ -43,9 +43,9 @@ Nakama gives each team or each client agents, memory, and channels on one platfo
 
 ## Slide 4 — Solution
 
-**Nakama is a multi-tenant platform for AI agents.**
+**Atlas is a multi-tenant platform for AI agents.**
 
-You can install Nakama on your servers, as with WordPress. You can also use managed hosting.
+You can install Atlas on your servers, as with WordPress. You can also use managed hosting.
 
 - One server can serve many organizations.
 - Agents have identity (soul), memory, skills, and tools.
@@ -56,7 +56,7 @@ You can install Nakama on your servers, as with WordPress. You can also use mana
 
 ## Slide 5 — Feature 1: Organizations and roles
 
-**Nakama is multi-tenant by design.**
+**Atlas is multi-tenant by design.**
 
 - Organizations are tenants.
 - You can send invites and assign roles: admin, member, viewer.
@@ -95,7 +95,7 @@ Team knowledge increases over time. Client organizations stay separate.
 
 ## Slide 8 — Work examples
 
-**Nakama agents can do these tasks:**
+**Atlas agents can do these tasks:**
 
 Connect external apps with Composio. Assign skills and tools to each profile.
 
@@ -103,16 +103,16 @@ Connect external apps with Composio. Assign skills and tools to each profile.
 2. **Calendar** — Create, change, and review calendar events.
 3. **Email** — Read email. Write and send replies.
 4. **Short video** — Configure an agent to edit short videos.
-5. **Coding agent** — Start Codex, Claude Code, OpenCode, or Cursor Agent. Write and change code, including Nakama itself.
+5. **Coding agent** — Start Codex, Claude Code, OpenCode, or Cursor Agent. Write and change code, including Atlas itself.
 6. **Automations** — Schedule agent work on a timer for recurring tasks.
 
 ---
 
 ## Slide 9 — Comparison
 
-**Nakama is not only a chatbot. Nakama is not a tool for one operator.**
+**Atlas is not only a chatbot. Atlas is not a tool for one operator.**
 
-| Function | ChatGPT / Claude Team | OpenClaw-style | **Nakama** |
+| Function | ChatGPT / Claude Team | OpenClaw-style | **Atlas** |
 | --- | --- | --- | --- |
 | Shared team agents | Limited | One operator | **Yes** |
 | Multi-tenant orgs | No | No | **Yes** |
@@ -120,19 +120,19 @@ Connect external apps with Composio. Assign skills and tools to each profile.
 | Durable memory | Chat history | One machine | **Org and profile** |
 | Deployment | SaaS only | One local system | **Docker or Cloud** |
 
-Nakama is a platform for team agents.
+Atlas is a platform for team agents.
 
 ---
 
 ## Slide 10 — Evidence
 
-**Nakama is open source. A public demo is available.**
+**Atlas is open source. A public demo is available.**
 
 - **200** GitHub stars
 - **22** forks
 - **7** contributors
 - Public demo: [demo.getnakama.cloud](https://demo.getnakama.cloud)
-- Documentation: [ahmadrosid.github.io/nakama](https://ahmadrosid.github.io/nakama/)
+- Documentation: [kungfufafa.github.io/atlas](https://kungfufafa.github.io/atlas/)
 - Managed hosting: [getnakama.cloud](https://getnakama.cloud/)
 
 Update the star and fork counts before each talk.
@@ -141,7 +141,7 @@ Update the star and fork counts before each talk.
 
 ## Slide 11 — Start a test
 
-**Open the public demo. Install Nakama with Docker when you are ready.**
+**Open the public demo. Install Atlas with Docker when you are ready.**
 
 **1. Public demo**  
 [demo.getnakama.cloud](https://demo.getnakama.cloud)  
@@ -150,15 +150,15 @@ Update the star and fork counts before each talk.
 **2. Install with Docker**
 
 ```bash
-docker pull ghcr.io/ahmadrosid/nakama:latest
-docker run -d -p 4310:4310 -v nakama-data:/nakama/data --name nakama \
-  ghcr.io/ahmadrosid/nakama:latest
+docker pull ghcr.io/kungfufafa/atlas:latest
+docker run -d -p 4310:4310 -v atlas-data:/nakama/data --name nakama \
+  ghcr.io/kungfufafa/atlas:latest
 ```
 
 Open the dashboard: `http://localhost:4310`
 
 **3. Managed hosting**  
-If you do not want to install Nakama, use [getnakama.cloud](https://getnakama.cloud/).
+If you do not want to install Atlas, use [getnakama.cloud](https://getnakama.cloud/).
 
 ---
 
@@ -168,7 +168,7 @@ If you do not want to install Nakama, use [getnakama.cloud](https://getnakama.cl
 | --- | --- |
 | Stop pasting into ChatGPT… | Stop shared work in private ChatGPT chats. Run one agent workspace for your team. |
 | ChatGPT sprawl / shine / blast radius | Plain description; no metaphor |
-| Same product. Different blast radius. | Nakama serves two types of buyers. |
+| Same product. Different blast radius. | Atlas serves two types of buyers. |
 | Context that compounds | Team knowledge increases over time. |
 | Meet teams where they work | Use the channels that your team already uses. |
 | Not a chatbot. Not a solo bot. | Full sentences; specific contrast |

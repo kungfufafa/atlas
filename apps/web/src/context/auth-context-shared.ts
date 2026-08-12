@@ -3,7 +3,7 @@ import type {
   SetupAuthRequest,
   UpdateOrganizationRequest,
   UserOrgSummary,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import { createContext } from "react";
 
 export interface AuthContextValue {

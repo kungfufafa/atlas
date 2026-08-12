@@ -1,9 +1,9 @@
-import { getTimezones } from "@countrystatecity/timezones";
 import type {
   ListTimezonesResponse,
   TimezoneCatalogEntry,
   TimezoneCatalogGroup,
-} from "@nakama/core";
+} from "@atlas/core";
+import { getTimezones } from "@countrystatecity/timezones";
 import { getTimezoneCityAliases } from "./timezone-city-aliases";
 
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" });

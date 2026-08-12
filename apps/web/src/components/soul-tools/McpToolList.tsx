@@ -1,4 +1,4 @@
-import type { CachedMcpToolSummary } from "@nakama/core/contract";
+import type { CachedMcpToolSummary } from "@atlas/core/contract";
 import { ArrowRight01Icon, Search01Icon } from "hugeicons-react";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";

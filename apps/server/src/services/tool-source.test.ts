@@ -1,27 +1,27 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { BASH_TOOL_ID, BUILTIN_TOOL_IDS } from "@nakama/core/tools/protected";
+import { BASH_TOOL_ID, BUILTIN_TOOL_IDS } from "@atlas/core/tools/protected";
 import { readToolSource } from "./tool-source";
 
 describe("readToolSource", () => {
   let configDir: string;
   let toolsDir: string;
-  const previousConfigDir = process.env.NAKAMA_CONFIG_DIR;
+  const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
 
   beforeEach(async () => {
     configDir = path.join(import.meta.dir, ".test-config");
     toolsDir = path.join(configDir, "tools");
     await rm(configDir, { force: true, recursive: true });
     await mkdir(toolsDir, { recursive: true });
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
   });
 
   afterEach(async () => {
     if (previousConfigDir === undefined) {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
     } else {
-      process.env.NAKAMA_CONFIG_DIR = previousConfigDir;
+      process.env.ATLAS_CONFIG_DIR = previousConfigDir;
     }
 
     await rm(configDir, { force: true, recursive: true });

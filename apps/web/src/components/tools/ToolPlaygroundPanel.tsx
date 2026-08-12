@@ -1,4 +1,4 @@
-import type { ToolDetail } from "@nakama/core/contract";
+import type { ToolDetail } from "@atlas/core/contract";
 import { PlayIcon } from "hugeicons-react";
 import { ToolSourceCodeBlock } from "@/components/tools/ToolSourceCodeBlock";
 import {
@@ -24,7 +24,7 @@ export function ToolPlaygroundRunForm({
         <p className="type-body mt-1 text-xs">
           Real side effects. Relative paths resolve in the assigned profile
           workspace under{" "}
-          <code className="type-code">~/.nakama/orgs/…/profiles/…/</code>.
+          <code className="type-code">~/.atlas/orgs/…/profiles/…/</code>.
         </p>
       </div>
 

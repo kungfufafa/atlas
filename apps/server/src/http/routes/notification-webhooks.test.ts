@@ -2,7 +2,7 @@ import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import * as os from "node:os";
 import path from "node:path";
-import { saveTelegramConfig } from "@nakama/core";
+import { saveTelegramConfig } from "@atlas/core";
 import { createMinimalHonoApp } from "../test-app-helpers";
 
 describe("notification webhook routes", () => {

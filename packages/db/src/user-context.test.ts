@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { USER_CONTEXT_TEMPLATE } from "@nakama/core";
+import { USER_CONTEXT_TEMPLATE } from "@atlas/core";
 import { createInMemoryDatabaseAdapter } from "./adapters/in-memory";
 
 describe("user context storage", () => {

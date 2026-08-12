@@ -1,4 +1,3 @@
-import { createRoute, z } from "@hono/zod-openapi";
 import type {
   BranchSessionRequest,
   BranchSessionResponse,
@@ -11,7 +10,8 @@ import type {
   SendMessageResponse,
   SessionMessagesResponse,
   SessionStatusResponse,
-} from "@nakama/core";
+} from "@atlas/core";
+import { createRoute, z } from "@hono/zod-openapi";
 import { resolveRequestClientOrigin } from "../../services/composio-callback-url";
 import { sessionTurnRegistry } from "../../services/session-turn-registry";
 import {

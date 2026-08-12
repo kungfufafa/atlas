@@ -1,4 +1,4 @@
-import { NakamaApiError } from "@nakama/core/api-error";
+import { AtlasApiError } from "@atlas/core/api-error";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,8 +21,8 @@ import { formatError } from "@/lib/client";
 import { cn } from "@/lib/utils";
 
 function formatUserContextError(error: unknown): string {
-  if (error instanceof NakamaApiError && error.status === 404) {
-    return "This feature needs a newer Nakama server. Restart the server and try again.";
+  if (error instanceof AtlasApiError && error.status === 404) {
+    return "This feature needs a newer Atlas server. Restart the server and try again.";
   }
 
   return formatError(error);

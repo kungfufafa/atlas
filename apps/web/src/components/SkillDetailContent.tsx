@@ -2,8 +2,8 @@ import type {
   SkillCreatedBy,
   SkillDetail,
   SkillUsageSummary,
-} from "@nakama/core/contract";
-import { BUNDLED_SKILL_NAMES } from "@nakama/core/skills/bundled-names";
+} from "@atlas/core/contract";
+import { BUNDLED_SKILL_NAMES } from "@atlas/core/skills/bundled-names";
 import { CodeBlock } from "@/components/ai-elements/code-block";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";

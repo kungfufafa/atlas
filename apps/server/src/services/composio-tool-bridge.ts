@@ -2,7 +2,7 @@ import type {
   ComposioToolErrorResult,
   ToolContext,
   ToolDefinition,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
   isLoopbackComposioCallbackBaseUrl,
   resolveComposioCallbackBaseUrl,
@@ -240,7 +240,7 @@ export async function buildComposioConnectTools(
             return {
               code: "COMPOSIO_POLICY",
               error:
-                "Cannot start Composio OAuth from this channel: the callback URL is localhost. Set a reachable public web URL (Settings → Web public URL, or NAKAMA_WEB_PUBLIC_URL), restart the Telegram/WhatsApp/Discord bridge, then ask again.",
+                "Cannot start Composio OAuth from this channel: the callback URL is localhost. Set a reachable public web URL (Settings → Web public URL, or ATLAS_WEB_PUBLIC_URL), restart the Telegram/WhatsApp/Discord bridge, then ask again.",
               toolkitSlug,
             } satisfies ComposioToolErrorResult;
           }

@@ -6,7 +6,7 @@ import type {
   ProviderClient,
   ProviderName,
   StreamChatHandlers,
-} from "@nakama/core";
+} from "@atlas/core";
 import { buildTokenUsage } from "../shared";
 import { continueAnthropicUntilDone } from "./web-search";
 

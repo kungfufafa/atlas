@@ -3,9 +3,9 @@ import type {
   AgentTodo,
   OrgRole,
   ThinkingEffort,
-} from "@nakama/core";
+} from "@atlas/core";
 
-export type { OrgRole } from "@nakama/core";
+export type { OrgRole } from "@atlas/core";
 export type ChannelType = "telegram" | "whatsapp";
 
 export type AutomationRunStatus = "running" | "completed" | "failed";

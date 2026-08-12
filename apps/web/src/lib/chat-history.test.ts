@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { ChatMessage, SessionMessageMeta } from "@nakama/core/contract";
+import type { ChatMessage, SessionMessageMeta } from "@atlas/core/contract";
 import { extractTurnArtifacts } from "./chat-artifacts";
 import { chatMessagesToListItems } from "./chat-history";
 
@@ -114,7 +114,7 @@ describe("chatMessagesToListItems", () => {
 
   test("derives artifact refs from persisted write_file tool messages after hydration", () => {
     const artifactsRoot =
-      "/Users/test/.nakama/orgs/org_1/profiles/profile_1/artifacts";
+      "/Users/test/.atlas/orgs/org_1/profiles/profile_1/artifacts";
     const metaJson = JSON.stringify({
       mimeType: "text/markdown",
       savedAt: "2026-07-13T10:00:00.000Z",
@@ -133,7 +133,7 @@ describe("chatMessagesToListItems", () => {
           {
             arguments: {
               content: metaJson,
-              path: "artifacts/report.md.nakama-meta.json",
+              path: "artifacts/report.md.atlas-meta.json",
             },
             id: "tool_meta",
             name: "write_file",
@@ -152,7 +152,7 @@ describe("chatMessagesToListItems", () => {
       {
         content: JSON.stringify({
           bytesWritten: metaJson.length,
-          path: `${artifactsRoot}/report.md.nakama-meta.json`,
+          path: `${artifactsRoot}/report.md.atlas-meta.json`,
         }),
         name: "write_file",
         role: "tool",

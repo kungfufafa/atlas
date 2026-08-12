@@ -2,8 +2,8 @@ import type {
   OrgMemberSummary,
   OrgMemoryProposal,
   ProfileSummary,
-} from "@nakama/core/contract";
-import { detectOrgMemoryInjectionWarnings } from "@nakama/core/soul/org-memory";
+} from "@atlas/core/contract";
+import { detectOrgMemoryInjectionWarnings } from "@atlas/core/soul/org-memory";
 import { type ReactNode, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {

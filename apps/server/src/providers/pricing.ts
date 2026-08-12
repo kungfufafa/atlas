@@ -2,7 +2,7 @@ import {
   findCustomModel,
   type ProviderInstance,
   type ProviderName,
-} from "@nakama/core";
+} from "@atlas/core";
 import { getModelById, IMAGE_GENERATION_MODEL_ID } from "./models";
 
 export interface ModelPricing {

@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import {
+  AtlasApiError,
   fallbackApiErrorMessage,
   formatClientError,
   formatServerError,
-  NakamaApiError,
   readApiErrorMessage,
 } from "./api-error";
 
@@ -26,7 +26,7 @@ describe("readApiErrorMessage", () => {
     const response = new Response("", { status: 500 });
 
     await expect(readApiErrorMessage(response)).resolves.toBe(
-      "The server encountered an error. Try again or restart the Nakama server."
+      "The server encountered an error. Try again or restart the Atlas server."
     );
   });
 
@@ -37,21 +37,21 @@ describe("readApiErrorMessage", () => {
     });
 
     await expect(readApiErrorMessage(response)).resolves.toBe(
-      "The Nakama server is unavailable. Make sure it is running."
+      "The Atlas server is unavailable. Make sure it is running."
     );
   });
 });
 
 describe("formatClientError", () => {
   test("returns API error messages directly", () => {
-    expect(
-      formatClientError(new NakamaApiError("Invalid timezone.", 400))
-    ).toBe("Invalid timezone.");
+    expect(formatClientError(new AtlasApiError("Invalid timezone.", 400))).toBe(
+      "Invalid timezone."
+    );
   });
 
   test("maps network failures to a helpful message", () => {
     expect(formatClientError(new TypeError("Failed to fetch"))).toBe(
-      "Could not reach the Nakama server. Make sure it is running."
+      "Could not reach the Atlas server. Make sure it is running."
     );
   });
 
@@ -63,7 +63,7 @@ describe("formatClientError", () => {
         )
       )
     ).toBe(
-      "The connection closed before the agent finished. Restart the Nakama server, then try again. Long automations can take a minute or more."
+      "The connection closed before the agent finished. Restart the Atlas server, then try again. Long automations can take a minute or more."
     );
   });
 });
@@ -86,7 +86,7 @@ describe("fallbackApiErrorMessage", () => {
       "The requested resource was not found."
     );
     expect(fallbackApiErrorMessage(500)).toBe(
-      "The server encountered an error. Try again or restart the Nakama server."
+      "The server encountered an error. Try again or restart the Atlas server."
     );
   });
 });

@@ -2,7 +2,7 @@ import type {
   OrgMemberSummary,
   ProfileSummary,
   SkillProposal,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {

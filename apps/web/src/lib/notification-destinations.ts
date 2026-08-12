@@ -1,4 +1,4 @@
-import type { TelegramNotificationDestinationConfig } from "@nakama/core/contract";
+import type { TelegramNotificationDestinationConfig } from "@atlas/core/contract";
 
 export function buildNotificationWebhookUrl(
   origin: string,

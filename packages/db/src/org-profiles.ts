@@ -2,12 +2,12 @@ import {
   DEFAULT_BUNDLED_SKILL_NAMES,
   nanoid,
   SUPER_BOT_BUNDLED_SKILL_NAMES,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
   BASH_TOOL_ID,
   BUILTIN_TOOL_IDS,
   GENERATE_IMAGE_TOOL_ID,
-} from "@nakama/core/tools/protected";
+} from "@atlas/core/tools/protected";
 import { SUPER_BOT_SYSTEM_PROMPT } from "./constants";
 import type { DatabaseAdapter, StoredProfileRecord } from "./types";
 

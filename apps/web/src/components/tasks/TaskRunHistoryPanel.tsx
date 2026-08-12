@@ -2,7 +2,7 @@ import type {
   ProfileSummary,
   StoredTask,
   ThinkingEffort,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import { useQueryClient } from "@tanstack/react-query";
 import type { FileUIPart } from "ai";
 import { Cancel01Icon } from "hugeicons-react";
@@ -381,7 +381,7 @@ export function TaskRunHistoryPanel({
       {chatUnavailable ? (
         <div className="shrink-0 border-border/50 border-t px-4 py-3 sm:px-5">
           <p className="text-pretty text-muted-foreground text-sm">
-            Run history is shown above. Restart the Nakama server to enable
+            Run history is shown above. Restart the Atlas server to enable
             follow-up chat.
           </p>
         </div>

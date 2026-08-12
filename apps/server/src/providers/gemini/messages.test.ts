@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { ChatMessage } from "@nakama/core";
+import type { ChatMessage } from "@atlas/core";
 import {
   extractTextAndThinkingFromParts,
   parseGeminiFunctionCalls,

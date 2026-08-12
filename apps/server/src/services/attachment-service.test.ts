@@ -2,14 +2,14 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { persistInlineAttachmentsInContent } from "@nakama/core";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+import { persistInlineAttachmentsInContent } from "@atlas/core";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import {
   createAttachmentLoader,
   createAttachmentSaver,
 } from "./attachment-service";
 
-const originalConfigDir = process.env.NAKAMA_CONFIG_DIR;
+const originalConfigDir = process.env.ATLAS_CONFIG_DIR;
 let tempConfigDir = "";
 
 afterEach(() => {
@@ -19,16 +19,16 @@ afterEach(() => {
   }
 
   if (originalConfigDir === undefined) {
-    delete process.env.NAKAMA_CONFIG_DIR;
+    delete process.env.ATLAS_CONFIG_DIR;
   } else {
-    process.env.NAKAMA_CONFIG_DIR = originalConfigDir;
+    process.env.ATLAS_CONFIG_DIR = originalConfigDir;
   }
 });
 
 describe("attachment service", () => {
   test("persists metadata and round-trips bytes through loader", async () => {
     tempConfigDir = mkdtempSync(join(tmpdir(), "nakama-att-svc-"));
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const db = createInMemoryDatabaseAdapter();
     const context = {

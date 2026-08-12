@@ -19,8 +19,8 @@
     "noUncheckedSideEffectImports": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@nakama/core/runtime": ["./src/shims/core-runtime.ts"],
-      "@nakama/core/thinking-content": [
+      "@atlas/core/runtime": ["./src/shims/core-runtime.ts"],
+      "@atlas/core/thinking-content": [
         "../../packages/core/src/thinking-content.ts"
       ]
     }

@@ -1,4 +1,4 @@
-import { NakamaApiError } from "./api-error";
+import { AtlasApiError } from "./api-error";
 import type {
   DocumentAttachment,
   MessageContentPart,
@@ -137,7 +137,7 @@ export async function resolveDocumentPartForProvider(
     };
   }
 
-  throw new NakamaApiError(
+  throw new AtlasApiError(
     `Provider "${provider}" does not support ${part.mediaType} documents natively. Register a text parser with registerDocumentTextParser().`,
     400
   );

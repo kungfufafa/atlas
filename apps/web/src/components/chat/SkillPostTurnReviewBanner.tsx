@@ -1,4 +1,4 @@
-import type { SkillProposal, SkillSuggestion } from "@nakama/core/contract";
+import type { SkillProposal, SkillSuggestion } from "@atlas/core/contract";
 import { Link } from "react-router-dom";
 import { skillSuggestionPreview } from "@/components/chat/skill-post-turn-review.shared";
 import { Button } from "@/components/ui/button";

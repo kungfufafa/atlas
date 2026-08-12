@@ -11,7 +11,7 @@ import {
 } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { PathGuardError } from "@nakama/core";
+import { PathGuardError } from "@atlas/core";
 import { runBash } from "./bash";
 
 describe("bash tool", () => {

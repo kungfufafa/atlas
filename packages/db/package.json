@@ -1,5 +1,5 @@
 {
-  "name": "@nakama/db",
+  "name": "@atlas/db",
   "private": true,
   "type": "module",
   "exports": {
@@ -10,7 +10,7 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@nakama/core": "workspace:*",
+    "@atlas/core": "workspace:*",
     "bcryptjs": "^3.0.3"
   }
 }

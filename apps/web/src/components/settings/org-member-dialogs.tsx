@@ -1,4 +1,4 @@
-import type { OrgMemberSummary, OrgRole } from "@nakama/core/contract";
+import type { OrgMemberSummary, OrgRole } from "@atlas/core/contract";
 import { useQuery } from "@tanstack/react-query";
 import { Copy01Icon, Mail01Icon } from "hugeicons-react";
 import { Link } from "react-router-dom";

@@ -1,4 +1,4 @@
-import type { ArtifactFile } from "@nakama/core/contract";
+import type { ArtifactFile } from "@atlas/core/contract";
 import { ArtifactAttachmentPreview } from "@/components/chat/artifact-attachment-preview";
 import { formatBytes } from "@/lib/knowledge-base-files";
 import { ArtifactIcon } from "@/pages/files/files-artifact-icon";

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import path from "node:path";
-import type { ChatMessage } from "@nakama/core/contract";
-import { loadDiscordConfigFile } from "@nakama/core/discord-config";
+import type { ChatMessage } from "@atlas/core/contract";
+import { loadDiscordConfigFile } from "@atlas/core/discord-config";
 import { DiscordAuthStore } from "./auth-store";
 import {
   chatLockOptions,
@@ -54,11 +54,11 @@ async function createPairedHandler(
   await authStore.reload();
   const { client, calls, createdSessionProfileIds } = createMockClient(options);
   const sessionStore = new SessionStore(
-    path.join(homeDir, ".nakama", "discord", "chat-sessions.json")
+    path.join(homeDir, ".atlas", "discord", "chat-sessions.json")
   );
   await sessionStore.load();
   const threadStore = new ThreadStore(
-    path.join(homeDir, ".nakama", "discord", "chat-threads.json")
+    path.join(homeDir, ".atlas", "discord", "chat-threads.json")
   );
   await threadStore.load();
   const orgStore = createTestOrgStore(homeDir);
@@ -107,7 +107,7 @@ describe("createChatHandler artifact delivery", () => {
         {
           arguments: {
             content: metaJson,
-            path: "artifacts/report.md.nakama-meta.json",
+            path: "artifacts/report.md.atlas-meta.json",
           },
           id: "tool_2",
           name: "write_file",
@@ -117,7 +117,7 @@ describe("createChatHandler artifact delivery", () => {
     {
       content: JSON.stringify({
         bytesWritten: 8,
-        path: "/home/.nakama/orgs/org/profiles/default/artifacts/report.md",
+        path: "/home/.atlas/orgs/org/profiles/default/artifacts/report.md",
       }),
       name: "write_file",
       role: "tool",
@@ -126,7 +126,7 @@ describe("createChatHandler artifact delivery", () => {
     {
       content: JSON.stringify({
         bytesWritten: metaJson.length,
-        path: "/home/.nakama/orgs/org/profiles/default/artifacts/report.md.nakama-meta.json",
+        path: "/home/.atlas/orgs/org/profiles/default/artifacts/report.md.atlas-meta.json",
       }),
       name: "write_file",
       role: "tool",
@@ -191,7 +191,7 @@ describe("createChatHandler artifact delivery", () => {
             {
               arguments: {
                 content: pdfMeta,
-                path: "artifacts/nakama-pitch-deck.pdf.nakama-meta.json",
+                path: "artifacts/nakama-pitch-deck.pdf.atlas-meta.json",
               },
               id: "tool_2",
               name: "write_file",
@@ -201,7 +201,7 @@ describe("createChatHandler artifact delivery", () => {
         {
           content: JSON.stringify({
             bytesWritten: 270_000,
-            path: "/home/.nakama/orgs/org/profiles/default/artifacts/nakama-pitch-deck.pdf",
+            path: "/home/.atlas/orgs/org/profiles/default/artifacts/nakama-pitch-deck.pdf",
           }),
           name: "write_file",
           role: "tool",
@@ -210,7 +210,7 @@ describe("createChatHandler artifact delivery", () => {
         {
           content: JSON.stringify({
             bytesWritten: pdfMeta.length,
-            path: "/home/.nakama/orgs/org/profiles/default/artifacts/nakama-pitch-deck.pdf.nakama-meta.json",
+            path: "/home/.atlas/orgs/org/profiles/default/artifacts/nakama-pitch-deck.pdf.atlas-meta.json",
           }),
           name: "write_file",
           role: "tool",
@@ -269,7 +269,7 @@ describe("createChatHandler artifact delivery", () => {
             {
               arguments: {
                 content: csvMeta,
-                path: "artifacts/export.csv.nakama-meta.json",
+                path: "artifacts/export.csv.atlas-meta.json",
               },
               id: "tool_2",
               name: "write_file",
@@ -279,7 +279,7 @@ describe("createChatHandler artifact delivery", () => {
         {
           content: JSON.stringify({
             bytesWritten: 8,
-            path: "/home/.nakama/orgs/org/profiles/default/artifacts/export.csv",
+            path: "/home/.atlas/orgs/org/profiles/default/artifacts/export.csv",
           }),
           name: "write_file",
           role: "tool",
@@ -288,7 +288,7 @@ describe("createChatHandler artifact delivery", () => {
         {
           content: JSON.stringify({
             bytesWritten: csvMeta.length,
-            path: "/home/.nakama/orgs/org/profiles/default/artifacts/export.csv.nakama-meta.json",
+            path: "/home/.atlas/orgs/org/profiles/default/artifacts/export.csv.atlas-meta.json",
           }),
           name: "write_file",
           role: "tool",
@@ -344,7 +344,7 @@ describe("createChatHandler artifact delivery", () => {
             {
               arguments: {
                 content: oversizedMeta,
-                path: "artifacts/clip.mp4.nakama-meta.json",
+                path: "artifacts/clip.mp4.atlas-meta.json",
               },
               id: "tool_2",
               name: "write_file",
@@ -354,7 +354,7 @@ describe("createChatHandler artifact delivery", () => {
         {
           content: JSON.stringify({
             bytesWritten: 9 * 1024 * 1024,
-            path: "/home/.nakama/orgs/org/profiles/default/artifacts/clip.mp4",
+            path: "/home/.atlas/orgs/org/profiles/default/artifacts/clip.mp4",
           }),
           name: "write_file",
           role: "tool",
@@ -363,7 +363,7 @@ describe("createChatHandler artifact delivery", () => {
         {
           content: JSON.stringify({
             bytesWritten: oversizedMeta.length,
-            path: "/home/.nakama/orgs/org/profiles/default/artifacts/clip.mp4.nakama-meta.json",
+            path: "/home/.atlas/orgs/org/profiles/default/artifacts/clip.mp4.atlas-meta.json",
           }),
           name: "write_file",
           role: "tool",
@@ -423,7 +423,7 @@ describe("createChatHandler artifact delivery", () => {
             {
               content: JSON.stringify({
                 bytesWritten: 5,
-                path: "/home/.nakama/orgs/org/profiles/default/artifacts/draft.md",
+                path: "/home/.atlas/orgs/org/profiles/default/artifacts/draft.md",
               }),
               name: "write_file",
               role: "tool",
@@ -620,7 +620,7 @@ describe("createChatHandler early ack", () => {
     await authStore.reload();
     const { client } = createMockClient({ onSendStream });
     const sessionStore = new SessionStore(
-      path.join(homeDir, ".nakama", "discord", "chat-sessions.json")
+      path.join(homeDir, ".atlas", "discord", "chat-sessions.json")
     );
     await sessionStore.load();
     sessionStore.set("dm_channel_1", {

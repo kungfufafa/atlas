@@ -5,7 +5,7 @@ import type {
   ProviderClient,
   ToolContext,
   ToolDefinition,
-} from "@nakama/core";
+} from "@atlas/core";
 import { createAgentHarness } from "./index";
 
 function createCountingProvider(responses: ChatCompletionResult[]): {

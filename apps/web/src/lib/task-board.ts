@@ -1,4 +1,4 @@
-import type { TaskStatus } from "@nakama/core/contract";
+import type { TaskStatus } from "@atlas/core/contract";
 import {
   CancelCircleIcon,
   CheckmarkCircle01Icon,

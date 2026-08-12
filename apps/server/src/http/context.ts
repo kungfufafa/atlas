@@ -1,4 +1,4 @@
-import type { DatabaseAdapter } from "@nakama/db";
+import type { DatabaseAdapter } from "@atlas/db";
 import type { AgentService } from "../services/agent-service";
 import type { AuthService } from "../services/auth-service";
 import type { AutomationService } from "../services/automation-service";

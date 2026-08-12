@@ -1,4 +1,3 @@
-import { createRoute, z } from "@hono/zod-openapi";
 import type {
   AutomationResponse,
   CreateAutomationRequest,
@@ -9,7 +8,8 @@ import type {
   MarkAutomationRunsReadResponse,
   RunAutomationResponse,
   UpdateAutomationRequest,
-} from "@nakama/core";
+} from "@atlas/core";
+import { createRoute, z } from "@hono/zod-openapi";
 import type { ServerOptions } from "../context";
 import {
   requireActiveOrgIdFromContext,

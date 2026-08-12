@@ -1,5 +1,5 @@
-import { formatAgentQuestionnaireMessage } from "@nakama/core/agent-questionnaire";
-import type { AgentQuestionnaire } from "@nakama/core/contract";
+import { formatAgentQuestionnaireMessage } from "@atlas/core/agent-questionnaire";
+import type { AgentQuestionnaire } from "@atlas/core/contract";
 import type { DiscordMessenger } from "./messenger";
 
 export class DiscordQuestionnaireMessage {

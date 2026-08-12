@@ -3,16 +3,16 @@ import type {
   LlmUsageStatus,
   SystemStatusResponse,
   WorkerProcessInfo,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
+  ATLAS_API_VERSION,
   getAutomationWorkerHeartbeatStatus,
   getDiscordWorkerStatus,
   getTelegramWorkerStatus,
   getWhatsAppWorkerStatus,
   isComposioConfiguredAsync,
-  NAKAMA_API_VERSION,
-} from "@nakama/core";
-import type { DatabaseAdapter } from "@nakama/db";
+} from "@atlas/core";
+import type { DatabaseAdapter } from "@atlas/db";
 import type { AgentService } from "./agent-service";
 import type { AutomationRunner } from "./automation-runner";
 import type { ComposioService } from "./composio-service";
@@ -151,7 +151,7 @@ export class SystemStatusService {
     const humanUserCount = (await this.databaseAdapter?.countHumanUsers()) ?? 0;
 
     return {
-      apiVersion: NAKAMA_API_VERSION,
+      apiVersion: ATLAS_API_VERSION,
       // Live probe — intentional here; /health skips this to stay fast.
       composioAvailable: composioConfigured
         ? await (this.composioService?.isReachable() ?? false)

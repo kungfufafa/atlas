@@ -29,8 +29,8 @@ export async function composeKnowledgeBaseCatalog(
 
   if (sources.length > 0) {
     sections.push(
-      "# Nakama documentation",
-      `For Nakama product questions, web_fetch ${NAKAMA_DOCS_LLMS_URL}, then web_fetch the matching .md page from that index. Do not use knowledge_base_search for inherited docs.`
+      "# Atlas documentation",
+      `For Atlas product questions, web_fetch ${NAKAMA_DOCS_LLMS_URL}, then web_fetch the matching .md page from that index. Do not use knowledge_base_search for inherited docs.`
     );
   }
 

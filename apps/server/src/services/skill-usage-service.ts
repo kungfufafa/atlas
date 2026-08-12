@@ -1,4 +1,4 @@
-import type { DatabaseAdapter } from "@nakama/db";
+import type { DatabaseAdapter } from "@atlas/db";
 
 export interface SkillUsageRecordingContext {
   seenCatalogSkillIds: Set<string>;

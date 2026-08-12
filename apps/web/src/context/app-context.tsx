@@ -1,7 +1,7 @@
 import type {
   ConfigureProviderRequest,
   CreateProviderRequest,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import { type ReactNode, useCallback, useMemo } from "react";
 import { AppContext } from "@/context/app-context-shared";
 import { useAuth } from "@/context/use-auth";

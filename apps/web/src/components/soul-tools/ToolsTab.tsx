@@ -1,8 +1,8 @@
-import type { ToolDetail } from "@nakama/core/contract";
+import type { ToolDetail } from "@atlas/core/contract";
 import {
   BUILTIN_TOOL_IDS,
   isProtectedToolId,
-} from "@nakama/core/tools/protected";
+} from "@atlas/core/tools/protected";
 import { Add01Icon, Delete02Icon, Search01Icon } from "hugeicons-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { ChatContextUsage } from "@nakama/core/contract";
+import type { ChatContextUsage } from "@atlas/core/contract";
 import {
   contextUsageRatio,
   formatContextUsageLabel,

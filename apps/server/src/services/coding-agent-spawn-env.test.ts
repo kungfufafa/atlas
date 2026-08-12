@@ -100,16 +100,16 @@ describe("coding-agent spawn env", () => {
     const modelsJson = JSON.parse(
       await readFile(`${env.env.PI_CODING_AGENT_DIR}/models.json`, "utf-8")
     );
-    expect(modelsJson.providers.nakama).toBeDefined();
-    expect(modelsJson.providers.nakama.baseUrl).toBe(
+    expect(modelsJson.providers.atlas).toBeDefined();
+    expect(modelsJson.providers.atlas.baseUrl).toBe(
       "https://custom.example.com/v1"
     );
-    expect(modelsJson.providers.nakama.apiKey).toBe("sk-custom-test");
-    expect(modelsJson.providers.nakama.api).toBe("openai-completions");
+    expect(modelsJson.providers.atlas.apiKey).toBe("sk-custom-test");
+    expect(modelsJson.providers.atlas.api).toBe("openai-completions");
     await env.cleanup?.();
   });
 
-  test("uses nakama provider in models.json for anthropic with custom base URL", async () => {
+  test("uses atlas provider in models.json for anthropic with custom base URL", async () => {
     const env = await buildPiSpawnEnv(
       activeAnthropicRouting({
         apiKey: "sk-proxy-test",
@@ -125,10 +125,10 @@ describe("coding-agent spawn env", () => {
       await readFile(`${env.env.PI_CODING_AGENT_DIR}/models.json`, "utf-8")
     );
     // Custom base URL → nakama provider with openai-completions, NOT anthropic
-    expect(modelsJson.providers.nakama).toBeDefined();
+    expect(modelsJson.providers.atlas).toBeDefined();
     expect(modelsJson.providers.anthropic).toBeUndefined();
-    expect(modelsJson.providers.nakama.api).toBe("openai-completions");
-    expect(modelsJson.providers.nakama.baseUrl).toBe(
+    expect(modelsJson.providers.atlas.api).toBe("openai-completions");
+    expect(modelsJson.providers.atlas.baseUrl).toBe(
       "https://proxy.example.com/v1"
     );
     await env.cleanup?.();
@@ -151,7 +151,7 @@ describe("coding-agent spawn env", () => {
     );
     // Default base URL → override built-in anthropic provider
     expect(modelsJson.providers.anthropic).toBeDefined();
-    expect(modelsJson.providers.nakama).toBeUndefined();
+    expect(modelsJson.providers.atlas).toBeUndefined();
     expect(modelsJson.providers.anthropic.apiKey).toBe("sk-ant-test");
     await env.cleanup?.();
   });

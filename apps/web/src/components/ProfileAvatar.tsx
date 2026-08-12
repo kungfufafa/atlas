@@ -1,5 +1,5 @@
-import { getProfileAvatarUrl } from "@nakama/client";
-import type { ProfileSummary } from "@nakama/core/contract";
+import { getProfileAvatarUrl } from "@atlas/client";
+import type { ProfileSummary } from "@atlas/core/contract";
 import { hashToSeeds, oklchToCss } from "hashvatar";
 import { Hashvatar } from "hashvatar/react";
 import { cn } from "@/lib/utils";

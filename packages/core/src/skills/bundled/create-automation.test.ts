@@ -196,12 +196,12 @@ describe("ensureBundledSkillFiles", () => {
 
   beforeEach(async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-bundled-skills-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
     await mkdir(join(configDir, "agent", "skills"), { recursive: true });
   });
 
   afterEach(() => {
-    delete process.env.NAKAMA_CONFIG_DIR;
+    delete process.env.ATLAS_CONFIG_DIR;
   });
 
   test("writes bundled skills when missing", async () => {

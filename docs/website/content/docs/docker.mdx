@@ -1,20 +1,20 @@
 ---
 title: "Docker"
-description: "Run Nakama in a single Docker container with persistent data volumes."
+description: "Run Atlas in a single Docker container with persistent data volumes."
 ---
 
 ## Quick run
 
-Pull the prebuilt image and start Nakama:
+Pull the prebuilt image and start Atlas:
 
 ```bash
-docker pull ghcr.io/ahmadrosid/nakama:latest
-docker run -d -p 4310:4310 -v nakama-data:/nakama/data --name nakama ghcr.io/ahmadrosid/nakama:latest
+docker pull ghcr.io/kungfufafa/atlas:latest
+docker run -d -p 4310:4310 -v atlas-data:/nakama/data --name nakama ghcr.io/kungfufafa/atlas:latest
 ```
 
 Open `http://localhost:4310`. The container serves the API, web dashboard, and platform workers together.
 
-Data is stored at `/nakama/data` inside the container. The `-v nakama-data:/nakama/data` volume persists orgs, profiles, sessions, provider settings, and the local SQLite database across restarts.
+Data is stored at `/nakama/data` inside the container. The `-v atlas-data:/nakama/data` volume persists orgs, profiles, sessions, provider settings, and the local SQLite database across restarts.
 
 ## Build from source
 
@@ -28,13 +28,13 @@ The script uses `docker buildx` (default `linux/amd64`), then starts the contain
 
 ## Configuration
 
-The data root follows `NAKAMA_CONFIG_DIR` when set. By default it is `/nakama/data` in the container (mapped to your Docker volume).
+The data root follows `ATLAS_CONFIG_DIR` when set. By default it is `/nakama/data` in the container (mapped to your Docker volume).
 
 On first run, complete the setup wizard in the browser and add your LLM provider. See [Providers](/providers) and [First-time setup](/first-time-setup).
 
 ### First-boot seed (optional)
 
-To skip the setup wizard on a fresh data volume, set all three admin seed variables before the first boot. Nakama creates the admin account, a `Personal` org (override with `NAKAMA_SEED_ORG_NAME`), and an OpenCode Zen provider. Self-hosted installs without these variables behave as today.
+To skip the setup wizard on a fresh data volume, set all three admin seed variables before the first boot. Atlas creates the admin account, a `Personal` org (override with `NAKAMA_SEED_ORG_NAME`), and an OpenCode Zen provider. Self-hosted installs without these variables behave as today.
 
 | Variable | Required | Purpose |
 |---|---|---|
@@ -46,11 +46,11 @@ To skip the setup wizard on a fresh data volume, set all three admin seed variab
 Partial seed config fails boot with a clear error. Restarting a seeded instance is a no-op (idempotent).
 
 ```bash
-docker run -d -p 4310:4310 -v nakama-data:/nakama/data \
+docker run -d -p 4310:4310 -v atlas-data:/nakama/data \
   -e NAKAMA_SEED_ADMIN_EMAIL=admin@example.com \
   -e NAKAMA_SEED_ADMIN_NAME=Admin \
   -e NAKAMA_SEED_ADMIN_PASSWORD=seedpass123 \
-  --name nakama ghcr.io/ahmadrosid/nakama:latest
+  --name nakama ghcr.io/kungfufafa/atlas:latest
 ```
 
 ## Reset a local Docker install

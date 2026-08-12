@@ -1,8 +1,8 @@
-import { hasActiveAgentQuestionnaire } from "@nakama/core/agent-questionnaire";
+import { hasActiveAgentQuestionnaire } from "@atlas/core/agent-questionnaire";
 import type {
   AgentQuestionAnswer,
   AgentQuestionnaire,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import type { KeyboardEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {

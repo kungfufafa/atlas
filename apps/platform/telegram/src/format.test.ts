@@ -31,7 +31,7 @@ describe("stripMarkdownForTelegram", () => {
       "http://127.0.0.1:4310/s/tc_share_a7e24436b9bd4ec8bd60edba6d403c74f0b19596f27b440db85d7f171299bbdc";
     const footer =
       `context-engineering-slides.html: ${shareUrl}\n` +
-      "Set Web Public URL in Nakama settings for absolute share links.";
+      "Set Web Public URL in Atlas settings for absolute share links.";
 
     expect(stripMarkdownForTelegram(footer)).toBe(footer);
     expect(stripMarkdownForTelegram(footer)).toContain("tc_share_");

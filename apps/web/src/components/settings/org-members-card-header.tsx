@@ -1,4 +1,4 @@
-import type { OrgRole } from "@nakama/core/contract";
+import type { OrgRole } from "@atlas/core/contract";
 import {
   CheckmarkCircle01Icon,
   Copy01Icon,

@@ -1,7 +1,7 @@
 import type {
   LlmUsageStatus,
   SystemStatusResponse,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import {
   Alert02Icon,
   ArrowDownLeft01Icon,

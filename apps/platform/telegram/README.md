@@ -5,9 +5,9 @@ Chat with your Namaka agent from Telegram. The bridge is a thin client: it forwa
 ### Setup
 
 1. Create a bot with [@BotFather](https://t.me/BotFather) and copy the token.
-2. Ensure the Namaka server is configured (`~/.nakama/config.ini` or env API keys).
+2. Ensure the Namaka server is configured (`~/.atlas/config.ini` or env API keys).
 3. Open **Integrations → Telegram** in the web dashboard, save your bot token and profile, and copy the **pairing code**.
-4. Run `bun run dev:telegram`, message your bot, and paste the pairing code once. Settings are stored in `~/.nakama/telegram/config.ini`.
+4. Run `bun run dev:telegram`, message your bot, and paste the pairing code once. Settings are stored in `~/.atlas/telegram/config.ini`.
 
 ### Run
 
@@ -24,7 +24,7 @@ Optional env vars:
 - `TELEGRAM_BOT_TOKEN` — bot token (instead of the config file)
 - `TELEGRAM_ALLOWED_USER_IDS` — skip pairing for specific numeric user IDs
 - `NAKAMA_SERVER_URL` — server base URL (default `http://127.0.0.1:4310`)
-- `NAKAMA_WEB_PUBLIC_URL` — public web app URL for Composio OAuth links sent in chat (e.g. `https://nakama.example.com`)
+- `ATLAS_WEB_PUBLIC_URL` — public web app URL for Composio OAuth links sent in chat (e.g. `https://nakama.example.com`)
 - `NAKAMA_TELEGRAM_PROFILE_ID` — bot profile (default `default`)
 
 ### Commands
@@ -57,8 +57,8 @@ New users must paste a one-time pairing code from Integrations → Telegram in a
 
 Each group shares one conversation history and one org/profile selection (`/org` and `/profile` apply to the whole group). Pairing codes cannot be used in groups.
 
-Telegram’s default **Group Privacy** limits what group messages reach the bot. Nakama still applies its own local filter, so even with privacy disabled it only responds when the message is a slash command, a reply to the bot, or a real bot mention.
+Telegram’s default **Group Privacy** limits what group messages reach the bot. Atlas still applies its own local filter, so even with privacy disabled it only responds when the message is a slash command, a reply to the bot, or a real bot mention.
 
-Session mapping is stored in `~/.nakama/telegram/chat-sessions.json`.
+Session mapping is stored in `~/.atlas/telegram/chat-sessions.json`.
 
 Replies are tuned for chat UX: the agent uses Telegram-specific prompting, preserves rich text formatting such as emphasis, code, and links, shows a typing indicator while working, and may split longer answers into several short messages.

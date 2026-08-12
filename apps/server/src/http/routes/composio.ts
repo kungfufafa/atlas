@@ -6,8 +6,8 @@ import type {
   ListComposioToolkitsResponse,
   ListProfileComposioToolkitsResponse,
   UpdateProfileComposioToolkitsRequest,
-} from "@nakama/core";
-import { NakamaApiError } from "@nakama/core";
+} from "@atlas/core";
+import { AtlasApiError } from "@atlas/core";
 import { resolveComposioCallbackBaseUrl } from "../../services/composio-callback-url";
 import type { ServerOptions } from "../context";
 import {
@@ -47,7 +47,7 @@ export function registerComposioOAuthRoutes(
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Connected — Nakama</title>
+  <title>Connected — Atlas</title>
   <style>
     body { font-family: system-ui, sans-serif; max-width: 32rem; margin: 4rem auto; padding: 0 1.25rem; line-height: 1.5; color: #111; }
     h1 { font-size: 1.35rem; margin-bottom: 0.5rem; }
@@ -68,7 +68,7 @@ export function registerComposioOAuthRoutes(
         `/integrations?section=composio&connected=${encodeURIComponent(result.toolkitSlug)}`
       );
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
 
@@ -115,7 +115,7 @@ export function registerComposioRoutes(
         } satisfies EnableComposioToolkitRequest)
       );
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
 
@@ -137,7 +137,7 @@ export function registerComposioRoutes(
         )
       );
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
 
@@ -167,7 +167,7 @@ export function registerComposioRoutes(
         )
       );
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
 
@@ -190,7 +190,7 @@ export function registerComposioRoutes(
         )
       );
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
 
@@ -213,7 +213,7 @@ export function registerComposioRoutes(
         )
       );
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
 
@@ -257,7 +257,7 @@ export function registerComposioRoutes(
         await service.updateProfileAssignments(auth.activeOrgId!, profile, body)
       );
     } catch (error) {
-      if (error instanceof NakamaApiError) {
+      if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
 

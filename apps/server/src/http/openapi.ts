@@ -1,5 +1,5 @@
+import { ATLAS_API_VERSION, DEFAULT_SERVER_URL } from "@atlas/core";
 import { OpenAPIHono } from "@hono/zod-openapi";
-import { DEFAULT_SERVER_URL, NAKAMA_API_VERSION } from "@nakama/core";
 import type { ServerOptions } from "./context";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerAutomationRoutes } from "./routes/automations";
@@ -37,9 +37,9 @@ export function buildHttpOpenApiSpec(app?: HonoApp, serverUrl?: string) {
   const openApiApp = app ?? buildNativeOpenApiApp();
   return openApiApp.getOpenAPI31Document({
     info: {
-      description: "HTTP API for the Nakama personal AI assistant.",
-      title: "Nakama API",
-      version: String(NAKAMA_API_VERSION),
+      description: "HTTP API for the Atlas personal AI assistant.",
+      title: "Atlas API",
+      version: String(ATLAS_API_VERSION),
     },
     openapi: "3.1.0",
     servers: [

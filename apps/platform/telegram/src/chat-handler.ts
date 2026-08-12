@@ -1,12 +1,12 @@
-import type { NakamaClient, RemoteChatSession } from "@nakama/client";
+import type { AtlasClient, RemoteChatSession } from "@atlas/client";
 import {
   type ChannelOrgStore,
   findOrgBySelectionInput,
   formatOrgSelectionPrompt,
   formatOrgSwitchConfirmation,
   prepareChannelOrgContext,
-} from "@nakama/core/channel-org";
-import type { SendMessageInput } from "@nakama/core/contract";
+} from "@atlas/core/channel-org";
+import type { SendMessageInput } from "@atlas/core/contract";
 import {
   filterProfilesForChatAccess,
   formatProfileSelectionPrompt,
@@ -16,8 +16,8 @@ import {
   pickProfileForOrg,
   resolveProfileInput,
   resolveProfileInScopes,
-} from "@nakama/core/profiles";
-import { normalizeHandshakeInput } from "@nakama/core/telegram-config";
+} from "@atlas/core/profiles";
+import { normalizeHandshakeInput } from "@atlas/core/telegram-config";
 import type { Context } from "grammy";
 import {
   clearActiveStream,
@@ -72,18 +72,18 @@ const LINK_IN_PRIVATE_REPLY =
   "Link your account in a private chat with this bot first.";
 
 const PAIRING_PROMPT =
-  "Welcome to Nakama.\n\n" +
+  "Welcome to Atlas.\n\n" +
   "Paste your pairing code from Integrations → Telegram in the web dashboard. " +
   "You only need to do this once for this chat.";
 
 const NO_CODE_PROMPT =
   "This bot is not linked yet.\n\n" +
-  "Open Nakama Integrations → Telegram, save your bot token, and copy the pairing code. " +
+  "Open Atlas Integrations → Telegram, save your bot token, and copy the pairing code. " +
   "Then send that code here.";
 
 export interface ChatHandlerDeps {
   authStore: TelegramAuthStore;
-  client: NakamaClient;
+  client: AtlasClient;
   config: TelegramBridgeConfig;
   getBotInfo?: () => TelegramBotInfo | undefined;
   orgStore: ChannelOrgStore;

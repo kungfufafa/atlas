@@ -18,56 +18,59 @@
       },
     },
     "apps/cli": {
-      "name": "@nakama/cli",
+      "name": "@atlas/cli",
+      "bin": {
+        "atlas": "./src/index.ts",
+      },
       "dependencies": {
+        "@atlas/client": "workspace:*",
+        "@atlas/core": "workspace:*",
         "@crosscopy/clipboard": "^0.3.6",
-        "@nakama/client": "workspace:*",
-        "@nakama/core": "workspace:*",
       },
     },
     "apps/platform/automation": {
-      "name": "@nakama/automation",
+      "name": "@atlas/automation",
       "dependencies": {
-        "@nakama/client": "workspace:*",
-        "@nakama/core": "workspace:*",
+        "@atlas/client": "workspace:*",
+        "@atlas/core": "workspace:*",
       },
     },
     "apps/platform/discord": {
-      "name": "@nakama/discord",
+      "name": "@atlas/discord",
       "dependencies": {
-        "@nakama/client": "workspace:*",
-        "@nakama/core": "workspace:*",
+        "@atlas/client": "workspace:*",
+        "@atlas/core": "workspace:*",
         "discord.js": "^14.18.0",
       },
     },
     "apps/platform/telegram": {
-      "name": "@nakama/telegram",
+      "name": "@atlas/telegram",
       "dependencies": {
-        "@nakama/client": "workspace:*",
-        "@nakama/core": "workspace:*",
+        "@atlas/client": "workspace:*",
+        "@atlas/core": "workspace:*",
         "grammy": "^1.35.0",
       },
     },
     "apps/platform/whatsapp": {
-      "name": "@nakama/whatsapp",
+      "name": "@atlas/whatsapp",
       "dependencies": {
-        "@nakama/client": "workspace:*",
-        "@nakama/core": "workspace:*",
+        "@atlas/client": "workspace:*",
+        "@atlas/core": "workspace:*",
         "@whiskeysockets/baileys": "6.7.23",
       },
     },
     "apps/server": {
-      "name": "@nakama/server",
+      "name": "@atlas/server",
       "dependencies": {
         "@anthropic-ai/sdk": "^0.100.1",
+        "@atlas/agent": "workspace:*",
+        "@atlas/core": "workspace:*",
+        "@atlas/db": "workspace:*",
         "@composio/core": "^0.14.1",
         "@countrystatecity/timezones": "^1.0.5",
         "@google/genai": "^2.7.0",
         "@hono/zod-openapi": "^1.4.0",
         "@modelcontextprotocol/sdk": "^1.29.0",
-        "@nakama/agent": "workspace:*",
-        "@nakama/core": "workspace:*",
-        "@nakama/db": "workspace:*",
         "@openrouter/sdk": "^0.12.79",
         "bcryptjs": "^3.0.3",
         "croner": "^10.0.1",
@@ -83,16 +86,16 @@
       },
     },
     "apps/web": {
-      "name": "@nakama/web",
+      "name": "@atlas/web",
       "dependencies": {
+        "@atlas/client": "workspace:*",
+        "@atlas/core": "workspace:*",
         "@base-ui/react": "^1.5.0",
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
         "@dnd-kit/utilities": "^3.2.2",
         "@fontsource-variable/jetbrains-mono": "^5.2.8",
         "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
-        "@nakama/client": "workspace:*",
-        "@nakama/core": "workspace:*",
         "@streamdown/cjk": "^1.0.3",
         "@streamdown/code": "^1.1.1",
         "@streamdown/math": "^1.0.2",
@@ -127,19 +130,19 @@
       },
     },
     "packages/agent": {
-      "name": "@nakama/agent",
+      "name": "@atlas/agent",
       "dependencies": {
-        "@nakama/core": "workspace:*",
+        "@atlas/core": "workspace:*",
       },
     },
     "packages/client": {
-      "name": "@nakama/client",
+      "name": "@atlas/client",
       "dependencies": {
-        "@nakama/core": "workspace:*",
+        "@atlas/core": "workspace:*",
       },
     },
     "packages/core": {
-      "name": "@nakama/core",
+      "name": "@atlas/core",
       "dependencies": {
         "@firecrawl/anydoc": "0.1.3",
         "@vscode/ripgrep": "^1.18.0",
@@ -163,9 +166,9 @@
       },
     },
     "packages/db": {
-      "name": "@nakama/db",
+      "name": "@atlas/db",
       "dependencies": {
-        "@nakama/core": "workspace:*",
+        "@atlas/core": "workspace:*",
         "bcryptjs": "^3.0.3",
       },
     },
@@ -185,6 +188,28 @@
     "@anthropic-ai/sdk": ["@anthropic-ai/sdk@0.100.1", "", { "dependencies": { "json-schema-to-ts": "^3.1.1", "standardwebhooks": "^1.0.0" }, "peerDependencies": { "zod": "^3.25.0 || ^4.0.0" }, "optionalPeers": ["zod"], "bin": { "anthropic-ai-sdk": "bin/cli" } }, "sha512-RANcEe7LpiLczkKGOwoXOTuFdPhuubS0i4xaAKOMpcqc55YO0mukgxppV7eygx3DXNjxWT6RYOLPyOy0aIAmwg=="],
 
     "@asteasolutions/zod-to-openapi": ["@asteasolutions/zod-to-openapi@8.5.0", "", { "dependencies": { "openapi3-ts": "^4.1.2" }, "peerDependencies": { "zod": "^4.0.0" } }, "sha512-SABbKiObg5dLRiTFnqiW1WWwGcg1BJfmHtT2asIBnBHg6Smy/Ms2KHc650+JI4Hw7lSkdiNebEGXpwoxfben8Q=="],
+
+    "@atlas/agent": ["@atlas/agent@workspace:packages/agent"],
+
+    "@atlas/automation": ["@atlas/automation@workspace:apps/platform/automation"],
+
+    "@atlas/cli": ["@atlas/cli@workspace:apps/cli"],
+
+    "@atlas/client": ["@atlas/client@workspace:packages/client"],
+
+    "@atlas/core": ["@atlas/core@workspace:packages/core"],
+
+    "@atlas/db": ["@atlas/db@workspace:packages/db"],
+
+    "@atlas/discord": ["@atlas/discord@workspace:apps/platform/discord"],
+
+    "@atlas/server": ["@atlas/server@workspace:apps/server"],
+
+    "@atlas/telegram": ["@atlas/telegram@workspace:apps/platform/telegram"],
+
+    "@atlas/web": ["@atlas/web@workspace:apps/web"],
+
+    "@atlas/whatsapp": ["@atlas/whatsapp@workspace:apps/platform/whatsapp"],
 
     "@babel/code-frame": ["@babel/code-frame@7.29.0", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.28.5", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-9NhCeYjq9+3uxgdtp20LSiJXJvN0FeCtNGpJxuMFZ1Kv3cWUNb6DOhJwUvcVCzKGR66cw4njwM6hrJLqgOwbcw=="],
 
@@ -515,28 +540,6 @@
     "@modelcontextprotocol/sdk": ["@modelcontextprotocol/sdk@1.29.0", "", { "dependencies": { "@hono/node-server": "^1.19.9", "ajv": "^8.17.1", "ajv-formats": "^3.0.1", "content-type": "^1.0.5", "cors": "^2.8.5", "cross-spawn": "^7.0.5", "eventsource": "^3.0.2", "eventsource-parser": "^3.0.0", "express": "^5.2.1", "express-rate-limit": "^8.2.1", "hono": "^4.11.4", "jose": "^6.1.3", "json-schema-typed": "^8.0.2", "pkce-challenge": "^5.0.0", "raw-body": "^3.0.0", "zod": "^3.25 || ^4.0", "zod-to-json-schema": "^3.25.1" }, "peerDependencies": { "@cfworker/json-schema": "^4.1.1" }, "optionalPeers": ["@cfworker/json-schema"] }, "sha512-zo37mZA9hJWpULgkRpowewez1y6ML5GsXJPY8FI0tBBCd77HEvza4jDqRKOXgHNn867PVGCyTdzqpz0izu5ZjQ=="],
 
     "@mswjs/interceptors": ["@mswjs/interceptors@0.41.9", "", { "dependencies": { "@open-draft/deferred-promise": "^2.2.0", "@open-draft/logger": "^0.3.0", "@open-draft/until": "^2.0.0", "is-node-process": "^1.2.0", "outvariant": "^1.4.3", "strict-event-emitter": "^0.5.1" } }, "sha512-VVPPgHyQ6ShqnrmDWuxjmUIsO9gWyOZFmuOfLd9LfBGQJwZfy0gvv9pbHSJuoFNIYC7ZDX9aoFwowjcdSC4E8w=="],
-
-    "@nakama/agent": ["@nakama/agent@workspace:packages/agent"],
-
-    "@nakama/automation": ["@nakama/automation@workspace:apps/platform/automation"],
-
-    "@nakama/cli": ["@nakama/cli@workspace:apps/cli"],
-
-    "@nakama/client": ["@nakama/client@workspace:packages/client"],
-
-    "@nakama/core": ["@nakama/core@workspace:packages/core"],
-
-    "@nakama/db": ["@nakama/db@workspace:packages/db"],
-
-    "@nakama/discord": ["@nakama/discord@workspace:apps/platform/discord"],
-
-    "@nakama/server": ["@nakama/server@workspace:apps/server"],
-
-    "@nakama/telegram": ["@nakama/telegram@workspace:apps/platform/telegram"],
-
-    "@nakama/web": ["@nakama/web@workspace:apps/web"],
-
-    "@nakama/whatsapp": ["@nakama/whatsapp@workspace:apps/platform/whatsapp"],
 
     "@noble/ciphers": ["@noble/ciphers@1.3.0", "", {}, "sha512-2I0gnIVPtfnMw9ee9h1dJG7tp81+8Ob3OJb3Mv37rx5L40/b0i7djjCVvGOVqc9AEIQyvyu1i6ypKdFw8R8gQw=="],
 
@@ -1830,7 +1833,7 @@
 
     "open": ["open@11.0.0", "", { "dependencies": { "default-browser": "^5.4.0", "define-lazy-prop": "^3.0.0", "is-in-ssh": "^1.0.0", "is-inside-container": "^1.0.0", "powershell-utils": "^0.1.0", "wsl-utils": "^0.3.0" } }, "sha512-smsWv2LzFjP03xmvFoJ331ss6h+jixfA4UUV/Bsiyuu4YJPfN+FIQGOIiv4w9/+MoHkfkJ22UIaQWRVFRfH6Vw=="],
 
-    "openai": ["openai@6.46.0", "", { "peerDependencies": { "@aws-sdk/credential-provider-node": ">=3.972.0 <4", "@smithy/hash-node": ">=4.3.0 <5", "@smithy/signature-v4": ">=5.4.0 <6", "ws": "^8.18.0", "zod": "^3.25 || ^4.0" }, "optionalPeers": ["@aws-sdk/credential-provider-node", "@smithy/hash-node", "@smithy/signature-v4", "ws", "zod"] }, "sha512-DFg6jEPT2RO+oAyXtddeUJU8zkGy1OQ1AjGzNIJUMQG03TTqvCpy9tBpQ+2VVVnvrl3E56F8GEin2JYtWpITtA=="],
+    "openai": ["openai@6.49.0", "", { "peerDependencies": { "@aws-sdk/credential-provider-node": ">=3.972.0 <4", "@smithy/hash-node": ">=4.3.0 <5", "@smithy/signature-v4": ">=5.4.0 <6", "ws": "^8.18.0", "zod": "^3.25 || ^4.0" }, "optionalPeers": ["@aws-sdk/credential-provider-node", "@smithy/hash-node", "@smithy/signature-v4", "ws", "zod"] }, "sha512-aYCc0C6L864eR6WSYIwQGyXriw/nIyZx0ObvhzOEVuk0zoBDpynjSbrionWI7q65B5H8jJX0DXR9snEzM6bfPg=="],
 
     "openapi3-ts": ["openapi3-ts@4.6.0", "", { "dependencies": { "yaml": "^2.9.0" } }, "sha512-a4sfn6L2sIShhtzJqmjGrARvxAW/3F2BJDdyRVvNF9VhAsZSh5hSyI3a9TNvmzBxXmq66nY5LNT5bQcBxYAZZg=="],
 
@@ -2339,8 +2342,6 @@
     "@babel/helper-compilation-targets/semver": ["semver@6.3.1", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA=="],
 
     "@babel/helper-create-class-features-plugin/semver": ["semver@6.3.1", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA=="],
-
-    "@composio/core/openai": ["openai@6.49.0", "", { "peerDependencies": { "@aws-sdk/credential-provider-node": ">=3.972.0 <4", "@smithy/hash-node": ">=4.3.0 <5", "@smithy/signature-v4": ">=5.4.0 <6", "ws": "^8.18.0", "zod": "^3.25 || ^4.0" }, "optionalPeers": ["@aws-sdk/credential-provider-node", "@smithy/hash-node", "@smithy/signature-v4", "ws", "zod"] }, "sha512-aYCc0C6L864eR6WSYIwQGyXriw/nIyZx0ObvhzOEVuk0zoBDpynjSbrionWI7q65B5H8jJX0DXR9snEzM6bfPg=="],
 
     "@discordjs/rest/@discordjs/collection": ["@discordjs/collection@2.1.1", "", {}, "sha512-LiSusze9Tc7qF03sLCujF5iZp7K+vRNEDBZ86FT9aQAv3vxMLihUvKvpsCWiQ2DJq1tVckopKm1rxomgNUc9hg=="],
 

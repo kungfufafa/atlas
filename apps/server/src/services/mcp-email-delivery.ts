@@ -4,12 +4,12 @@ import {
   emailConfigToMailboxConfig,
   isEmailConfigComplete,
   loadEmailConfig,
-} from "@nakama/core";
+} from "@atlas/core";
 import type {
   CachedMcpTool,
   DatabaseAdapter,
   StoredMcpServerRecord,
-} from "@nakama/db";
+} from "@atlas/db";
 import type { McpClientManager } from "./mcp-client-manager";
 
 interface McpEmailTarget {

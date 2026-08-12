@@ -1,23 +1,23 @@
-import { NakamaApiError } from "@nakama/core";
+import { AtlasApiError } from "@atlas/core";
 import type { Context } from "hono";
 import { getRequestAuth, type RequestAuthContext } from "./shared";
 import type { AppEnv } from "./types";
 
 export function requireOrgAdmin(auth: RequestAuthContext): void {
   if (auth.orgRole !== "admin") {
-    throw new NakamaApiError("Forbidden", 403);
+    throw new AtlasApiError("Forbidden", 403);
   }
 }
 
 export function requireNotViewer(auth: RequestAuthContext): void {
   if (auth.orgRole === "viewer") {
-    throw new NakamaApiError("Forbidden", 403);
+    throw new AtlasApiError("Forbidden", 403);
   }
 }
 
 export function requirePlatformAdmin(auth: RequestAuthContext): void {
   if (!auth.isPlatformAdmin) {
-    throw new NakamaApiError("Forbidden", 403);
+    throw new AtlasApiError("Forbidden", 403);
   }
 }
 
@@ -34,7 +34,7 @@ export function requireOrgAdminOrPlatformAdmin(auth: RequestAuthContext): void {
     return;
   }
 
-  throw new NakamaApiError("Forbidden", 403);
+  throw new AtlasApiError("Forbidden", 403);
 }
 
 export function requireOrgAdminOrPlatformAdminFromContext(
@@ -65,7 +65,7 @@ export function requireActiveOrgIdFromContext(c: Context<AppEnv>): string {
   const orgId = getRequestAuth(c).activeOrgId?.trim();
 
   if (!orgId) {
-    throw new NakamaApiError("Organization context required", 400);
+    throw new AtlasApiError("Organization context required", 400);
   }
 
   return orgId;

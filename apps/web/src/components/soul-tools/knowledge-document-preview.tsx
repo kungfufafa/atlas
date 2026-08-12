@@ -1,4 +1,4 @@
-import type { KnowledgeBaseDocument } from "@nakama/core/contract";
+import type { KnowledgeBaseDocument } from "@atlas/core/contract";
 import { ViewIcon } from "hugeicons-react";
 import { useEffect, useState } from "react";
 import { ArtifactAttachmentPanelActions } from "@/components/chat/artifact-attachment-panel-actions";

@@ -1,14 +1,14 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { UserConfig } from "@nakama/core";
+import type { UserConfig } from "@atlas/core";
 import type {
   DatabaseAdapter,
   StoredCodingAgentHarnessKind,
   StoredCodingAgentHarnessProbeCache,
   StoredCodingAgentHarnessRecord,
-} from "@nakama/db";
-import { WORKSPACE_SETTINGS_ID } from "@nakama/db";
+} from "@atlas/db";
+import { WORKSPACE_SETTINGS_ID } from "@atlas/db";
 import {
   ensureBunGlobalInstallDirs,
   ensureProcessPath,
@@ -17,7 +17,7 @@ import {
 import { buildHarnessNonInteractiveArgs } from "./coding-agent-command";
 import {
   formatModelForHarness,
-  mapNakamaProviderToPi,
+  mapAtlasProviderToPi,
   mergeCodingAgentSpawnEnv,
   resolveCodingAgentSpawnBundle,
 } from "./coding-agent-spawn-env";
@@ -541,7 +541,7 @@ export async function verifyCodingAgentHarness(
       ? harness.ready
         ? null
         : (harness.statusMessage ??
-          `Nakama could not verify ${harness.name} yet.`)
+          `Atlas could not verify ${harness.name} yet.`)
       : `${harness.name} is not installed or could not be started with \`${harness.command} --version\`.`,
     harnessId: harness.id,
     installed: harness.installed,
@@ -828,7 +828,7 @@ async function probeHarnessLight(
       authenticated: null,
       nextStep: null,
       ready: true,
-      statusMessage: `${harness.name} is installed. Uses host Cursor auth (no Nakama provider passthrough).`,
+      statusMessage: `${harness.name} is installed. Uses host Cursor auth (no Atlas provider passthrough).`,
     };
   }
 
@@ -871,7 +871,7 @@ async function probeHarnessExec(
       authenticated: null,
       nextStep: null,
       ready: true,
-      statusMessage: `${harness.name} is installed. Uses host Cursor auth (no Nakama provider passthrough).`,
+      statusMessage: `${harness.name} is installed. Uses host Cursor auth (no Atlas provider passthrough).`,
     };
   }
 
@@ -885,7 +885,7 @@ async function probeHarnessExec(
   );
 
   const piProvider = routing.providerType
-    ? mapNakamaProviderToPi(routing.providerType, routing.baseUrl)
+    ? mapAtlasProviderToPi(routing.providerType, routing.baseUrl)
     : null;
   const piModel =
     routing.model && routing.providerType
@@ -918,7 +918,7 @@ async function probeHarnessExec(
         authenticated: true,
         nextStep: null,
         ready: true,
-        statusMessage: `${harness.name} is installed and ready via Nakama provider passthrough.`,
+        statusMessage: `${harness.name} is installed and ready via Atlas provider passthrough.`,
       };
     }
 
@@ -930,8 +930,8 @@ async function probeHarnessExec(
         statusMessage:
           routing.error ??
           (combinedOutput
-            ? `${harness.name} could not authenticate with the configured Nakama provider. ${summarizeProbeOutput(combinedOutput)} Check Settings → Provider.`
-            : `${harness.name} could not authenticate with the configured Nakama provider. Check Settings → Provider.`),
+            ? `${harness.name} could not authenticate with the configured Atlas provider. ${summarizeProbeOutput(combinedOutput)} Check Settings → Provider.`
+            : `${harness.name} could not authenticate with the configured Atlas provider. Check Settings → Provider.`),
       };
     }
 

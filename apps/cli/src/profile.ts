@@ -1,7 +1,7 @@
 import * as readline from "node:readline/promises";
-import type { NakamaClient } from "@nakama/client";
-import type { ProfileSummary } from "@nakama/core";
-import { pickProfileForOrg } from "@nakama/core";
+import type { AtlasClient } from "@atlas/client";
+import type { ProfileSummary } from "@atlas/core";
+import { pickProfileForOrg } from "@atlas/core";
 import { loadSavedCliProfileId, saveCliProfileId } from "./cli-config";
 
 export interface CliProfileOptions {
@@ -141,7 +141,7 @@ function findProfile(
 }
 
 export async function resolveStartupProfile(
-  client: NakamaClient,
+  client: AtlasClient,
   options: CliProfileOptions
 ): Promise<{ profileId: string; profile: ProfileSummary }> {
   const { profiles } = await client.listProfiles();

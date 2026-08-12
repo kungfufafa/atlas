@@ -1,5 +1,5 @@
+import type { ComposioCachedToolSummary } from "@atlas/core";
 import { Composio } from "@composio/core";
-import type { ComposioCachedToolSummary } from "@nakama/core";
 
 export interface ComposioCatalogToolkit {
   description: string | null;

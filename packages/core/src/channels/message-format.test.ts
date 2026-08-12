@@ -14,7 +14,7 @@ describe("formatAutomationDeliveryMessage", () => {
       status: "completed",
     });
 
-    expect(formatted.subject).toBe("[Nakama] AI news — completed");
+    expect(formatted.subject).toBe("[Atlas] AI news — completed");
     expect(formatted.text).toContain("Summary text");
   });
 });

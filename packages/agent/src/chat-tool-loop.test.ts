@@ -5,7 +5,7 @@ import type {
   GenerateChatInput,
   ProviderClient,
   ToolDefinition,
-} from "@nakama/core";
+} from "@atlas/core";
 import { createAgentHarness } from "./index";
 
 function createMockProvider(responses: ChatCompletionResult[]): ProviderClient {

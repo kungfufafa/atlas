@@ -1,4 +1,3 @@
-import { createRoute, z } from "@hono/zod-openapi";
 import {
   type AcceptOrgInviteResponse,
   type AuthUserResponse,
@@ -12,7 +11,8 @@ import {
   type SetActiveOrgRequest,
   type SetupAuthRequest,
   type UpdateAuthProfileRequest,
-} from "@nakama/core";
+} from "@atlas/core";
+import { createRoute, z } from "@hono/zod-openapi";
 import {
   persistWebPublicUrl,
   resolveRequestClientOrigin,

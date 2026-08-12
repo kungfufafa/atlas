@@ -6,7 +6,7 @@ import {
 import type { ChatMessage } from "./contract";
 
 const ARTIFACTS_ROOT =
-  "/Users/test/.nakama/orgs/org_1/profiles/profile_1/artifacts";
+  "/Users/test/.atlas/orgs/org_1/profiles/profile_1/artifacts";
 
 const metaJson = JSON.stringify({
   mimeType: "text/markdown",
@@ -45,7 +45,7 @@ function toolMessage(input: {
 describe("extractPairedTurnArtifacts", () => {
   test("pairs content and sidecar writes into one artifact ref", () => {
     const contentPath = `${ARTIFACTS_ROOT}/report.md`;
-    const sidecarPath = `${ARTIFACTS_ROOT}/report.md.nakama-meta.json`;
+    const sidecarPath = `${ARTIFACTS_ROOT}/report.md.atlas-meta.json`;
 
     const messages: ChatMessage[] = [
       { content: "save report", role: "user" },
@@ -58,7 +58,7 @@ describe("extractPairedTurnArtifacts", () => {
         {
           arguments: {
             content: metaJson,
-            path: "artifacts/report.md.nakama-meta.json",
+            path: "artifacts/report.md.atlas-meta.json",
           },
           id: "tool_2",
           name: "write_file",
@@ -74,7 +74,7 @@ describe("extractPairedTurnArtifacts", () => {
         id: "tool_2",
         input: {
           content: metaJson,
-          path: "artifacts/report.md.nakama-meta.json",
+          path: "artifacts/report.md.atlas-meta.json",
         },
         name: "write_file",
         result: { bytesWritten: metaJson.length, path: sidecarPath },
@@ -170,7 +170,7 @@ describe("extractPairedTurnArtifacts", () => {
         {
           arguments: {
             content: metaJson,
-            path: "artifacts/a.md.nakama-meta.json",
+            path: "artifacts/a.md.atlas-meta.json",
           },
           id: "tool_2",
           name: "write_file",
@@ -183,7 +183,7 @@ describe("extractPairedTurnArtifacts", () => {
         {
           arguments: {
             content: metaJson,
-            path: "artifacts/b.md.nakama-meta.json",
+            path: "artifacts/b.md.atlas-meta.json",
           },
           id: "tool_4",
           name: "write_file",
@@ -197,11 +197,11 @@ describe("extractPairedTurnArtifacts", () => {
       }),
       toolMessage({
         id: "tool_2",
-        input: { content: metaJson, path: "artifacts/a.md.nakama-meta.json" },
+        input: { content: metaJson, path: "artifacts/a.md.atlas-meta.json" },
         name: "write_file",
         result: {
           bytesWritten: metaJson.length,
-          path: `${ARTIFACTS_ROOT}/a.md.nakama-meta.json`,
+          path: `${ARTIFACTS_ROOT}/a.md.atlas-meta.json`,
         },
       }),
       toolMessage({
@@ -212,11 +212,11 @@ describe("extractPairedTurnArtifacts", () => {
       }),
       toolMessage({
         id: "tool_4",
-        input: { content: metaJson, path: "artifacts/b.md.nakama-meta.json" },
+        input: { content: metaJson, path: "artifacts/b.md.atlas-meta.json" },
         name: "write_file",
         result: {
           bytesWritten: metaJson.length,
-          path: `${ARTIFACTS_ROOT}/b.md.nakama-meta.json`,
+          path: `${ARTIFACTS_ROOT}/b.md.atlas-meta.json`,
         },
       }),
     ];
@@ -378,7 +378,7 @@ describe("extractPairedTurnArtifacts", () => {
         {
           arguments: {
             content: metaJson,
-            path: "artifacts/a.md.nakama-meta.json",
+            path: "artifacts/a.md.atlas-meta.json",
           },
           id: "tool_2",
           name: "write_file",
@@ -397,11 +397,11 @@ describe("extractPairedTurnArtifacts", () => {
       }),
       toolMessage({
         id: "tool_2",
-        input: { content: metaJson, path: "artifacts/a.md.nakama-meta.json" },
+        input: { content: metaJson, path: "artifacts/a.md.atlas-meta.json" },
         name: "write_file",
         result: {
           bytesWritten: metaJson.length,
-          path: `${ARTIFACTS_ROOT}/a.md.nakama-meta.json`,
+          path: `${ARTIFACTS_ROOT}/a.md.atlas-meta.json`,
         },
       }),
       toolMessage({

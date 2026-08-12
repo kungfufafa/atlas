@@ -1,4 +1,4 @@
-# Nakama Architecture
+# Atlas Architecture
 
 Agent platform built to work with your team — not replace them. One shared server runtime, thin clients. Orgs are the tenant boundary; profiles, sessions, tools, MCP, skills, automations, tasks, attachments, and usage are org-scoped unless platform-level.
 
@@ -13,7 +13,7 @@ flowchart TB
     wa["apps/platform/whatsapp"]
   end
 
-  subgraph sdk ["@nakama/client"]
+  subgraph sdk ["@atlas/client"]
     client["HTTP + SSE client"]
   end
 
@@ -28,7 +28,7 @@ flowchart TB
   end
 
   subgraph runtime ["Runtime services"]
-    harness["@nakama/agent"]
+    harness["@atlas/agent"]
     tools["Tool resolver + handlers"]
     providers["Provider adapters"]
     mcp["MCP registry + bridge"]
@@ -36,9 +36,9 @@ flowchart TB
   end
 
   subgraph data ["State"]
-    db["@nakama/db (SQLite)"]
-    soul["~/.nakama/orgs/.../profiles/..."]
-    config["~/.nakama/config.ini"]
+    db["@atlas/db (SQLite)"]
+    soul["~/.atlas/orgs/.../profiles/..."]
+    config["~/.atlas/config.ini"]
     files["Attachments / knowledge files"]
   end
 

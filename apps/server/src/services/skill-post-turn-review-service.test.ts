@@ -1,9 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { ChatMessage, UserConfig } from "@nakama/core";
-import {
-  createInMemoryDatabaseAdapter,
-  type DatabaseAdapter,
-} from "@nakama/db";
+import type { ChatMessage, UserConfig } from "@atlas/core";
+import { createInMemoryDatabaseAdapter, type DatabaseAdapter } from "@atlas/db";
 import {
   evaluatePostTurnReviewTurnEligibility,
   SkillPostTurnReviewService,

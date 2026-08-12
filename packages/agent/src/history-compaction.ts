@@ -3,11 +3,11 @@ import type {
   CompactionResponse,
   LlmToolDefinition,
   ProviderClient,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
   estimateUserContentTokens,
   stripImagesForCompaction,
-} from "@nakama/core";
+} from "@atlas/core";
 
 const COMPACTION_BUFFER = 20_000;
 const PRUNE_MINIMUM = 20_000;

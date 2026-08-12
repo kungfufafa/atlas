@@ -1,4 +1,4 @@
-import type { ProfileSummary } from "@nakama/core/contract";
+import type { ProfileSummary } from "@atlas/core/contract";
 
 export function findSuperBotProfile(
   profiles: ProfileSummary[]

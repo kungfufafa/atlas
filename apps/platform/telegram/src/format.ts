@@ -1,5 +1,5 @@
-import { formatClientError } from "@nakama/core/api-error";
-import type { AgentTodo } from "@nakama/core/contract";
+import { formatClientError } from "@atlas/core/api-error";
+import type { AgentTodo } from "@atlas/core/contract";
 
 const TELEGRAM_MAX_MESSAGE_LENGTH = 4096;
 
@@ -257,7 +257,7 @@ function formatTelegramTodoLine(todo: AgentTodo): string {
   }
 }
 
-export const HELP_TEXT = `Nakama Telegram commands:
+export const HELP_TEXT = `Atlas Telegram commands:
 
 /start — welcome and show this message
 /help — show this message

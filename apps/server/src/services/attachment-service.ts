@@ -2,13 +2,13 @@ import type {
   AgentChannel,
   LoadAttachmentBytes,
   SaveInlineAttachment,
-} from "@nakama/core";
-import { createId } from "@nakama/core";
+} from "@atlas/core";
+import { createId } from "@atlas/core";
 import {
   readAttachmentBytes,
   saveAttachmentBytes,
-} from "@nakama/core/attachments/store";
-import type { DatabaseAdapter, StoredAttachmentRecord } from "@nakama/db";
+} from "@atlas/core/attachments/store";
+import type { DatabaseAdapter, StoredAttachmentRecord } from "@atlas/db";
 
 export interface AttachmentServiceContext {
   channel: AgentChannel;

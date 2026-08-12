@@ -4,7 +4,7 @@ import type {
   AutomationRunRecord,
   AutomationRunStatus,
   StoredAutomation,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import {
   ArrowRight01Icon,
   BotIcon,

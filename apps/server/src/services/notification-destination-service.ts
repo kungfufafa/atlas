@@ -1,18 +1,18 @@
 import {
+  AtlasApiError,
   createId,
   type ListNotificationDestinationsResponse,
-  NakamaApiError,
   type NotificationDestinationSummary,
   type NotificationDestinationWithSecret,
   nanoid,
   normalizeCreateNotificationDestinationRequest,
   normalizeUpdateNotificationDestinationRequest,
   type RegenerateNotificationDestinationKeyResponse,
-} from "@nakama/core";
+} from "@atlas/core";
 import type {
   DatabaseAdapter,
   StoredNotificationDestinationRecord,
-} from "@nakama/db";
+} from "@atlas/db";
 import type { AuthService } from "./auth-service";
 
 export function notificationDestinationWebhookPath(
@@ -133,7 +133,7 @@ export class NotificationDestinationService {
       await this.databaseAdapter.getNotificationDestination(destinationId);
 
     if (!record || record.orgId !== orgId) {
-      throw new NakamaApiError("Notification destination not found", 404);
+      throw new AtlasApiError("Notification destination not found", 404);
     }
 
     return record;

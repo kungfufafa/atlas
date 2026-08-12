@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { ToolDefinition } from "@nakama/core";
+import type { ToolDefinition } from "@atlas/core";
 import { canRunToolCallsInParallel, executeToolCall } from "./tool-loop";
 
 const sampleTool: ToolDefinition = {

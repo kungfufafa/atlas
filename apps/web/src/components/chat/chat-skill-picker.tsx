@@ -1,4 +1,4 @@
-import type { SkillSummary } from "@nakama/core/contract";
+import type { SkillSummary } from "@atlas/core/contract";
 import { CheckmarkCircle01Icon, SparklesIcon } from "hugeicons-react";
 import { cn } from "@/lib/utils";
 

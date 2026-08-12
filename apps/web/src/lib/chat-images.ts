@@ -2,16 +2,16 @@ import type {
   DocumentAttachment,
   ImageAttachment,
   MessageContentPart,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import {
   isImageDescriptionText,
   parseImageDescriptionText,
-} from "@nakama/core/image-content";
+} from "@atlas/core/image-content";
 import {
   normalizeDocumentMediaType,
   parseDataUrl,
   parseDocumentDataUrl,
-} from "@nakama/core/message-content";
+} from "@atlas/core/message-content";
 import type { FileUIPart } from "ai";
 import {
   type DisplayDocument,

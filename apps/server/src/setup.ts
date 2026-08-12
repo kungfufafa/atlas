@@ -10,7 +10,7 @@ import {
   resolveProvider,
   saveUserConfig,
   type UserConfig,
-} from "@nakama/core";
+} from "@atlas/core";
 import { createProviderFromSources } from "./providers";
 
 export interface ProviderBootstrap {

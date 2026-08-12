@@ -1,7 +1,7 @@
 import type {
   CustomModelEntry,
   ProviderModelOption,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import type { ModelListRow } from "@/components/ModelListEditor";
 
 export function seedManageModelRows(

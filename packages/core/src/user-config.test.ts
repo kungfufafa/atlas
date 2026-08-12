@@ -23,12 +23,12 @@ describe("ensureUserConfigDir", () => {
       configDir = "";
     }
 
-    delete process.env.NAKAMA_CONFIG_DIR;
+    delete process.env.ATLAS_CONFIG_DIR;
   });
 
   test("creates the config directory when missing", async () => {
     configDir = join(tmpdir(), `nakama-config-${Date.now()}`);
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     expect(await pathExists(configDir)).toBe(false);
     await expect(ensureUserConfigDir()).resolves.toBe(configDir);
@@ -45,12 +45,12 @@ describe("user config multi-provider", () => {
       configDir = "";
     }
 
-    delete process.env.NAKAMA_CONFIG_DIR;
+    delete process.env.ATLAS_CONFIG_DIR;
   });
 
   test("round-trips multiple provider instances", async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-config-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     const openaiId = createProviderInstanceId();
     const compatibleId = createProviderInstanceId();
@@ -104,7 +104,7 @@ describe("user config multi-provider", () => {
 
   test("round-trips cerebras models_json with capability flags", async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-config-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     const cerebrasId = createProviderInstanceId();
 
@@ -145,7 +145,7 @@ describe("user config multi-provider", () => {
 
   test("round-trips fireworks models_json with capability flags", async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-config-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     const fireworksId = createProviderInstanceId();
 
@@ -188,7 +188,7 @@ describe("user config multi-provider", () => {
 
   test("repairs literal undefined label on load", async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-config-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     const id = createProviderInstanceId();
 
@@ -215,7 +215,7 @@ created_at=2026-06-15T00:00:00.000Z
 
   test("saveUserWebPublicUrl preserves path segments", async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-config-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     await expect(
       saveUserWebPublicUrl("https://gateway.devscale.id/v1/")

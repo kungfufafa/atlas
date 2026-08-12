@@ -1,9 +1,9 @@
-import { DOCX_MEDIA_TYPE } from "@nakama/core/artifact-mime";
-import type { DocumentAttachment } from "@nakama/core/contract";
+import { DOCX_MEDIA_TYPE } from "@atlas/core/artifact-mime";
+import type { DocumentAttachment } from "@atlas/core/contract";
 import {
   normalizeDocumentMediaType,
   parseDocumentDataUrl,
-} from "@nakama/core/message-content";
+} from "@atlas/core/message-content";
 
 export const KNOWLEDGE_BASE_ACCEPT = `.pdf,.docx,.txt,.md,.csv,application/pdf,${DOCX_MEDIA_TYPE},text/plain,text/csv,text/markdown`;
 

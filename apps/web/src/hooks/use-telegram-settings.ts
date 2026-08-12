@@ -1,4 +1,4 @@
-import type { UpdateTelegramSettingsRequest } from "@nakama/core/contract";
+import type { UpdateTelegramSettingsRequest } from "@atlas/core/contract";
 import {
   queryOptions,
   useMutation,

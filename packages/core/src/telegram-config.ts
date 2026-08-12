@@ -149,7 +149,7 @@ async function writeTelegramConfigFile(
   config: TelegramConfigFile
 ): Promise<void> {
   const lines = [
-    "# Nakama Telegram bridge",
+    "# Atlas Telegram bridge",
     `bot_token=${config.botToken}`,
     `profile_id=${config.profileId}`,
     ...(config.handshakeCode ? [`handshake_code=${config.handshakeCode}`] : []),
@@ -281,7 +281,7 @@ export async function verifyAndPairTelegramUser(
   if (!expected) {
     return {
       message:
-        "No pairing code is active. Open Nakama Integrations → Telegram and generate a new code.",
+        "No pairing code is active. Open Atlas Integrations → Telegram and generate a new code.",
       ok: false,
     };
   }
@@ -306,7 +306,7 @@ export async function verifyAndPairTelegramUser(
   });
 
   return {
-    message: "Linked successfully. You can chat with Nakama now.",
+    message: "Linked successfully. You can chat with Atlas now.",
     ok: true,
   };
 }
@@ -334,7 +334,7 @@ export function resolveTelegramConfigFromSources(options: {
     handshakeCode: file?.handshakeCode ?? null,
     pairedUserIds: file?.pairedUserIds ?? [],
     profileId:
-      env.nakama_TELEGRAM_PROFILE_ID?.trim() ||
+      env.atlas_TELEGRAM_PROFILE_ID?.trim() ||
       file?.profileId?.trim() ||
       DEFAULT_TELEGRAM_PROFILE_ID,
   };

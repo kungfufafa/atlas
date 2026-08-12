@@ -4,7 +4,7 @@ import type {
   StoredAutomation,
   TelegramOutboundAdapter,
   WhatsAppOutboundAdapter,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
   createEmailOutboundAdapter,
   createTelegramOutboundAdapter,
@@ -12,7 +12,7 @@ import {
   formatAutomationDeliveryMessage,
   shouldDeliverForRun,
   truncateForChannel,
-} from "@nakama/core";
+} from "@atlas/core";
 import type { AutomationService } from "./automation-service";
 
 export interface AutomationDeliveryServiceOptions {

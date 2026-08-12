@@ -199,7 +199,7 @@ function ArtifactShareRecoverView({
         <DialogTitle>Share link not saved here</DialogTitle>
         <DialogDescription>
           This artifact is published, but this browser does not have the link.
-          Nakama only shows the full URL once at publish time and stores a hash
+          Atlas only shows the full URL once at publish time and stores a hash
           on the server, so it cannot be looked up again later. Rotate the link
           to mint a new URL — the previous link will stop working.
         </DialogDescription>

@@ -1,4 +1,4 @@
-import type { KnowledgeBaseDocument } from "@nakama/core/contract";
+import type { KnowledgeBaseDocument } from "@atlas/core/contract";
 import { useEffect, useRef, useState } from "react";
 import { KnowledgeTabPanel } from "@/components/soul-tools/knowledge-tab-panel";
 import { Button } from "@/components/ui/button";

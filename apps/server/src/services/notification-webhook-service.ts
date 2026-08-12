@@ -1,11 +1,11 @@
 import {
+  AtlasApiError,
   createTelegramOutboundAdapter,
-  NakamaApiError,
   type NotificationWebhookRequest,
   normalizeNotificationWebhookRequest,
   type TelegramOutboundAdapter,
-} from "@nakama/core";
-import type { DatabaseAdapter } from "@nakama/db";
+} from "@atlas/core";
+import type { DatabaseAdapter } from "@atlas/db";
 import type { AuthService } from "./auth-service";
 
 function levelPrefix(level: NotificationWebhookRequest["level"]): string {
@@ -57,7 +57,7 @@ export class NotificationWebhookService {
       !(destination && apiKey) ||
       this.authService.hashToken(apiKey) !== destination.secretHash
     ) {
-      throw new NakamaApiError("Invalid notification credentials.", 401);
+      throw new AtlasApiError("Invalid notification credentials.", 401);
     }
 
     const normalized = normalizeNotificationWebhookRequest(payload);
@@ -71,7 +71,7 @@ export class NotificationWebhookService {
     });
 
     if (!result.ok) {
-      throw new NakamaApiError(
+      throw new AtlasApiError(
         result.error ?? "Notification delivery failed.",
         502
       );

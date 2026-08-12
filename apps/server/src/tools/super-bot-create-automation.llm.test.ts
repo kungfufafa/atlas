@@ -5,7 +5,7 @@
  * continues briefly until `create_automation` is called. Asserts the saved
  * automation after executing the tool.
  *
- * Record (needs DeepSeek key in ~/.nakama config, or DEEPSEEK_API_KEY):
+ * Record (needs DeepSeek key in ~/.atlas config, or DEEPSEEK_API_KEY):
  *   LLM_VCR_MODE=record bun test src/tools/super-bot-create-automation.llm.test.ts
  *
  * Replay (default when cassette exists; CI-safe):
@@ -19,13 +19,13 @@ import {
   readBundledSkillBody,
   type ToolCall,
   toLlmToolDefinition,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
   createInMemoryDatabaseAdapter,
   SUPER_BOT_PROFILE_ID,
   SUPER_BOT_SYSTEM_PROMPT,
   SUPER_BOT_TOOL_AUTHORING_RULES,
-} from "@nakama/db";
+} from "@atlas/db";
 import { createProviderForInstance } from "../providers/create";
 import { AutomationRunner } from "../services/automation-runner";
 import { AutomationService } from "../services/automation-service";

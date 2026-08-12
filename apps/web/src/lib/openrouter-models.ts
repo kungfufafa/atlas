@@ -1,4 +1,4 @@
-import type { ProviderModelOption } from "@nakama/core/contract";
+import type { ProviderModelOption } from "@atlas/core/contract";
 
 export interface OpenRouterApiPricing {
   completion?: string;

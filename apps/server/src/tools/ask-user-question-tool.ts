@@ -2,7 +2,7 @@ import {
   type AgentQuestionnaire,
   nanoid,
   type ToolDefinition,
-} from "@nakama/core";
+} from "@atlas/core";
 import type { AgentQuestionnaireState } from "../services/agent-questionnaire-state";
 
 export function createAskUserQuestionTools(

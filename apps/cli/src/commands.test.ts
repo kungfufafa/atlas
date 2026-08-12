@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { ModelsResponse, ProfileSummary } from "@nakama/core";
+import type { ModelsResponse, ProfileSummary } from "@atlas/core";
 import {
   effectiveModelState,
   formatSlashCommands,

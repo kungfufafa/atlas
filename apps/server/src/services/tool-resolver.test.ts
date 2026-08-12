@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { ToolDefinition } from "@nakama/core";
-import { emailTool } from "@nakama/core/tools/email";
+import type { ToolDefinition } from "@atlas/core";
+import { emailTool } from "@atlas/core/tools/email";
 import { omitUnavailableBuiltinTools } from "./tool-resolver";
 
 const webSearchTool: ToolDefinition = {

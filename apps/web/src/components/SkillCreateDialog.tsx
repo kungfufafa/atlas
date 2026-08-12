@@ -1,4 +1,4 @@
-import type { CreateSkillRequest } from "@nakama/core/contract";
+import type { CreateSkillRequest } from "@atlas/core/contract";
 import { type SubmitEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {

@@ -1,13 +1,13 @@
-import { createClient } from "@nakama/client";
+import { createClient } from "@atlas/client";
 import {
   clearAutomationWorkerHeartbeat,
   writeAutomationWorkerHeartbeat,
-} from "@nakama/core/automation-worker";
+} from "@atlas/core/automation-worker";
 import {
   ensureServerRunning,
   stopSpawnedServer,
-} from "@nakama/core/ensure-server";
-import { loadLocalAuthToken } from "@nakama/core/local-auth";
+} from "@atlas/core/ensure-server";
+import { loadLocalAuthToken } from "@atlas/core/local-auth";
 import { loadConfig } from "./config";
 import { AutomationWorkerScheduler } from "./scheduler";
 
@@ -58,7 +58,7 @@ try {
 
   await writeAutomationWorkerHeartbeat(true, 0);
 
-  console.log("Nakama automation worker running.");
+  console.log("Atlas automation worker running.");
   console.log(`Server: ${serverUrl}`);
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);

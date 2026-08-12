@@ -24,13 +24,13 @@ describe("loadLocalAuthToken", () => {
       configDir = "";
     }
 
-    delete process.env.NAKAMA_CONFIG_DIR;
-    delete process.env.nakama_LOCAL_AUTH_TOKEN;
+    delete process.env.ATLAS_CONFIG_DIR;
+    delete process.env.atlas_LOCAL_AUTH_TOKEN;
   });
 
   test("generates a token when none is configured", async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-local-auth-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     const token = await loadLocalAuthToken();
     expect(token).toStartWith("tc_local_");
@@ -48,7 +48,7 @@ describe("loadLocalAuthToken", () => {
 
   test("reuses the token from the private local token file", async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-local-auth-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
     const tokenValue = "tc_local_configured_token";
 
     await saveUserConfig({
@@ -74,7 +74,7 @@ describe("loadLocalAuthToken", () => {
 
   test("verifies the configured local auth token", async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-local-auth-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     const token = await loadLocalAuthToken();
 
@@ -85,7 +85,7 @@ describe("loadLocalAuthToken", () => {
   });
 
   test("prefers env token for production-style setup", async () => {
-    process.env.nakama_LOCAL_AUTH_TOKEN = "tc_local_from_env";
+    process.env.atlas_LOCAL_AUTH_TOKEN = "tc_local_from_env";
     await expect(loadLocalAuthToken()).resolves.toBe("tc_local_from_env");
     await expect(verifyLocalAuthToken("tc_local_from_env")).resolves.toEqual({
       email: "local-client@nakama.internal",
@@ -94,7 +94,7 @@ describe("loadLocalAuthToken", () => {
 
   test("rotateLocalAuthToken replaces the stored token and invalidates the old one", async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-local-auth-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     const original = await loadLocalAuthToken();
     const rotated = await rotateLocalAuthToken();
@@ -109,7 +109,7 @@ describe("loadLocalAuthToken", () => {
   });
 
   test("rotateLocalAuthToken refuses when the token comes from env", async () => {
-    process.env.nakama_LOCAL_AUTH_TOKEN = "tc_local_from_env";
+    process.env.atlas_LOCAL_AUTH_TOKEN = "tc_local_from_env";
     await expect(rotateLocalAuthToken()).rejects.toBeInstanceOf(
       LocalAuthTokenManagedExternallyError
     );

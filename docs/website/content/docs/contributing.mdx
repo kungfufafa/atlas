@@ -1,16 +1,16 @@
 ---
 title: "Contributing"
-description: "Run Nakama from source, find your way around the monorepo, test changes, and open a pull request."
+description: "Run Atlas from source, find your way around the monorepo, test changes, and open a pull request."
 ---
 
-Want to change Nakama itself? This page is the short path. For the full checklist (style, cassette tests, docs conventions), see [CONTRIBUTING.md](https://github.com/ahmadrosid/nakama/blob/main/CONTRIBUTING.md) on GitHub.
+Want to change Atlas itself? This page is the short path. For the full checklist (style, cassette tests, docs conventions), see [CONTRIBUTING.md](https://github.com/kungfufafa/atlas/blob/main/CONTRIBUTING.md) on GitHub.
 
 ## Run locally
 
 You need [Bun](https://bun.sh) 1.3+, git, and optionally the [GitHub CLI](https://cli.github.com/) for PRs.
 
 ```bash
-git clone https://github.com/ahmadrosid/nakama.git
+git clone https://github.com/kungfufafa/atlas.git
 cd nakama
 bun install
 bun run dev:web
@@ -38,7 +38,7 @@ If you run the Docker single-container image instead, the dashboard is at http:/
 | Shared libraries | `packages/{core,agent,db,client}` |
 | User docs (this site) | `docs/website` |
 
-Deeper layout and conventions: [AGENTS.md](https://github.com/ahmadrosid/nakama/blob/main/AGENTS.md), system design: [ARCHITECTURE.md](https://github.com/ahmadrosid/nakama/blob/main/ARCHITECTURE.md).
+Deeper layout and conventions: [AGENTS.md](https://github.com/kungfufafa/atlas/blob/main/AGENTS.md), system design: [ARCHITECTURE.md](https://github.com/kungfufafa/atlas/blob/main/ARCHITECTURE.md).
 
 ## How to test
 
@@ -47,7 +47,7 @@ bun test
 bun run check    # Biome via Ultracite
 ```
 
-Assert behavior, not exact prompt or error copy. Live LLM tests use MSW cassettes (`*.llm.test.ts`); see [CONTRIBUTING.md](https://github.com/ahmadrosid/nakama/blob/main/CONTRIBUTING.md#testing) for replay and `LLM_VCR_MODE=record`.
+Assert behavior, not exact prompt or error copy. Live LLM tests use MSW cassettes (`*.llm.test.ts`); see [CONTRIBUTING.md](https://github.com/kungfufafa/atlas/blob/main/CONTRIBUTING.md#testing) for replay and `LLM_VCR_MODE=record`.
 
 Docs-only changes: register new MDX pages in `meta.json`, link them from the [Documentation](/docs) hub, then run `bun run build:docs`.
 
@@ -61,6 +61,6 @@ Docs-only changes: register new MDX pages in `meta.json`, link them from the [Do
 
 ## Links
 
-- [GitHub repository](https://github.com/ahmadrosid/nakama)
-- [CONTRIBUTING.md](https://github.com/ahmadrosid/nakama/blob/main/CONTRIBUTING.md)
+- [GitHub repository](https://github.com/kungfufafa/atlas)
+- [CONTRIBUTING.md](https://github.com/kungfufafa/atlas/blob/main/CONTRIBUTING.md)
 - [Discord](https://discord.gg/qhKbMFEUc)

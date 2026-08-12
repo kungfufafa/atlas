@@ -14,9 +14,9 @@ Org memory is separate from [profile memory](/profiles#knowledge-base-and-memory
 Org memory lives at the organization level, alongside profile directories:
 
 ```text
-~/.nakama/orgs/{orgId}/MEMORY.md
-~/.nakama/orgs/{orgId}/memory-archive/
-~/.nakama/orgs/{orgId}/memory-history/
+~/.atlas/orgs/{orgId}/MEMORY.md
+~/.atlas/orgs/{orgId}/memory-archive/
+~/.atlas/orgs/{orgId}/memory-history/
 ```
 
 Archived bullets move into monthly `.md` files under `memory-archive/` without deleting history.
@@ -49,7 +49,7 @@ Use this structure:
 
 ## Prompt injection
 
-After the profile soul stack and knowledge base catalog, Nakama appends a `## Org Memory` section for every role except **viewer**.
+After the profile soul stack and knowledge base catalog, Atlas appends a `## Org Memory` section for every role except **viewer**.
 
 | Limit | Value |
 |-------|-------|
@@ -74,10 +74,10 @@ Viewers cannot call these tools. Automations and sub-agents run with member-leve
 
 Agents propose durable org facts via `propose_org_memory`; proposals land in a staging queue until an admin approves or rejects them in **Settings → Org Memory → Proposals**. Admins can still add facts directly from the UI (bypasses the queue). Do not propose secrets, credentials, or PII.
 
-When an admin approves a proposal, Nakama merges the new fact into live memory:
+When an admin approves a proposal, Atlas merges the new fact into live memory:
 
 1. **LLM merge** (when a provider is configured) — the server asks the model to update `MEMORY.md`, replace superseded facts, and keep unrelated bullets intact.
-2. **Mechanical fallback** — if the LLM call fails or no provider is available, Nakama appends the fact to pinned or the recent log and removes near-duplicate bullets using token overlap.
+2. **Mechanical fallback** — if the LLM call fails or no provider is available, Atlas appends the fact to pinned or the recent log and removes near-duplicate bullets using token overlap.
 
 Use **Pin on approve** in the review dialog when the fact should always appear in the injected summary.
 
@@ -136,7 +136,7 @@ Cross-org requests return **404** — the path `orgId` must match the active org
 | | **Org memory** | **Profile `MEMORY.md`** |
 |---|---|---|
 | **Scope** | Entire organization | Single profile |
-| **Path** | `~/.nakama/orgs/{orgId}/MEMORY.md` | `~/.nakama/orgs/{orgId}/profiles/{profileId}/MEMORY.md` |
+| **Path** | `~/.atlas/orgs/{orgId}/MEMORY.md` | `~/.atlas/orgs/{orgId}/profiles/{profileId}/MEMORY.md` |
 | **Structure** | `## Pinned` + dated `## YYYY-MM-DD` sections | Dated `## YYYY-MM-DD` sections |
 | **Who writes** | Org admins (UI/API); agents propose via `propose_org_memory` | Agent via `update-profile-memory` skill |
 | **Prompt injection** | Appended as `## Org Memory` | In soul stack as continuity |

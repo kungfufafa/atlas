@@ -2,9 +2,9 @@ import type {
   ProfileDetail,
   SkillSummary,
   SkillUsageSummary,
-} from "@nakama/core/contract";
-import { BUNDLED_SKILL_NAMES } from "@nakama/core/skills/bundled-names";
-import { BASH_TOOL_ID } from "@nakama/core/tools/protected";
+} from "@atlas/core/contract";
+import { BUNDLED_SKILL_NAMES } from "@atlas/core/skills/bundled-names";
+import { BASH_TOOL_ID } from "@atlas/core/tools/protected";
 import { Delete02Icon } from "hugeicons-react";
 import { useMemo } from "react";
 import { SkillAssignPicker } from "@/components/SkillAssignPicker";

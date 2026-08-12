@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import type { ProviderClient } from "@nakama/core";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+import type { ProviderClient } from "@atlas/core";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { LlmUsageTracker } from "../services/llm-usage-tracker";
 import {
   estimateChatInputBreakdown,

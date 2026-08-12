@@ -1,4 +1,4 @@
-import type { UpdateAutomationRequest } from "@nakama/core/contract";
+import type { UpdateAutomationRequest } from "@atlas/core/contract";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/context/use-auth";
 import { automationsQueryOptions } from "@/hooks/use-app-queries";

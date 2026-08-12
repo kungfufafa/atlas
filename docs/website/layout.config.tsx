@@ -2,7 +2,7 @@ import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 
 export function baseOptions(): BaseLayoutProps {
   return {
-    githubUrl: "https://github.com/ahmadrosid/nakama",
+    githubUrl: "https://github.com/kungfufafa/atlas",
     links: [
       {
         external: true,
@@ -11,7 +11,7 @@ export function baseOptions(): BaseLayoutProps {
       },
     ],
     nav: {
-      title: "Nakama",
+      title: "Atlas",
     },
   };
 }

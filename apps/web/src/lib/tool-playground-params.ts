@@ -1,4 +1,4 @@
-import type { JsonSchema } from "@nakama/core/contract";
+import type { JsonSchema } from "@atlas/core/contract";
 
 function exampleValueForSchema(field: JsonSchema): unknown {
   if (field.enum?.length) {

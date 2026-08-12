@@ -5,7 +5,7 @@ import {
   resolveWebPublicUrl,
   saveUserWebPublicUrl,
   type WebPublicUrlSettingsResponse,
-} from "@nakama/core";
+} from "@atlas/core";
 
 export function resolveRequestClientOrigin(
   request?: Request,
@@ -46,7 +46,7 @@ export async function persistWebPublicUrl(input: string): Promise<string> {
 
 export async function getWebPublicUrlSettings(): Promise<WebPublicUrlSettingsResponse> {
   const envOverride =
-    process.env.NAKAMA_WEB_PUBLIC_URL?.trim() ||
+    process.env.ATLAS_WEB_PUBLIC_URL?.trim() ||
     process.env.NAKAMA_PUBLIC_URL?.trim();
 
   return {

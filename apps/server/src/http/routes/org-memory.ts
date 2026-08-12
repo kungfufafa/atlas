@@ -1,5 +1,4 @@
-import { createRoute, z } from "@hono/zod-openapi";
-import { NakamaApiError } from "@nakama/core";
+import { AtlasApiError } from "@atlas/core";
 import type {
   AddOrgMemoryFactRequest,
   ArchiveOrgMemoryRequest,
@@ -10,7 +9,8 @@ import type {
   PinOrgMemoryRequest,
   UnpinOrgMemoryRequest,
   UpdateOrgMemoryRequest,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
+import { createRoute, z } from "@hono/zod-openapi";
 import type { ServerOptions } from "../context";
 import {
   requireNotViewerFromContext,
@@ -67,14 +67,14 @@ export function registerOrgMemoryRoutes(
   ): string {
     const orgId = decodeURIComponent(c.req.param("orgId"));
     if (authOrgId !== orgId) {
-      throw new NakamaApiError("Not found", 404);
+      throw new AtlasApiError("Not found", 404);
     }
     return orgId;
   }
 
   function requireService() {
     if (!orgMemoryService) {
-      throw new NakamaApiError("Org memory service not configured", 500);
+      throw new AtlasApiError("Org memory service not configured", 500);
     }
     return orgMemoryService;
   }

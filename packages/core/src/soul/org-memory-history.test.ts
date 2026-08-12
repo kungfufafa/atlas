@@ -10,7 +10,7 @@ import {
   ORG_MEMORY_HISTORY_MAX_ENTRIES,
 } from "./org-memory-history";
 
-const originalConfigDir = process.env.NAKAMA_CONFIG_DIR;
+const originalConfigDir = process.env.ATLAS_CONFIG_DIR;
 
 describe("org memory history", () => {
   let tempDir = "";
@@ -21,9 +21,9 @@ describe("org memory history", () => {
       tempDir = "";
     }
     if (originalConfigDir === undefined) {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
     } else {
-      process.env.NAKAMA_CONFIG_DIR = originalConfigDir;
+      process.env.ATLAS_CONFIG_DIR = originalConfigDir;
     }
   });
 
@@ -31,7 +31,7 @@ describe("org memory history", () => {
     tempDir = await mkdtemp(
       path.join(os.tmpdir(), "nakama-org-memory-history-")
     );
-    process.env.NAKAMA_CONFIG_DIR = tempDir;
+    process.env.ATLAS_CONFIG_DIR = tempDir;
     return orgId;
   }
 

@@ -10,7 +10,7 @@ import type {
   SkillUsageSummary,
   SyncSkillsResponse,
   ToolDefinition,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
   assertNotBundledSkillName,
   assertValidSkillName,
@@ -39,13 +39,13 @@ import {
   SKILL_FILE_NAME,
   writeProfileSkillSupportingFile,
   writeRawProfileSkillMarkdown,
-} from "@nakama/core";
+} from "@atlas/core";
 import type {
   DatabaseAdapter,
   SkillCreatedBy,
   StoredSkillRecord,
   StoredSkillUsageRecord,
-} from "@nakama/db";
+} from "@atlas/db";
 import {
   type SkillUsageRecordingContext,
   SkillUsageService,

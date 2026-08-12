@@ -1,7 +1,7 @@
 import type {
   EmailSettingsResponse,
   UpdateEmailSettingsRequest,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useReducer } from "react";
 import { EmailSettingsFooter } from "@/components/email-settings-footer";

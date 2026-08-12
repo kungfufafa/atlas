@@ -106,12 +106,12 @@ describe("ensureBundledSkillFiles for agent-browser", () => {
 
   beforeEach(async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-agent-browser-skills-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
     await mkdir(join(configDir, "agent", "skills"), { recursive: true });
   });
 
   afterEach(() => {
-    delete process.env.NAKAMA_CONFIG_DIR;
+    delete process.env.ATLAS_CONFIG_DIR;
   });
 
   test("writes agent-browser when missing", async () => {

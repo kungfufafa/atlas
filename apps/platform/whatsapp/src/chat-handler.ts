@@ -1,14 +1,14 @@
-import type { NakamaClient, RemoteChatSession } from "@nakama/client";
+import type { AtlasClient, RemoteChatSession } from "@atlas/client";
 import {
   type ChannelOrgStore,
   findOrgBySelectionInput,
   formatOrgSelectionPrompt,
   formatOrgSwitchConfirmation,
   prepareChannelOrgContext,
-} from "@nakama/core/channel-org";
-import type { SendMessageInput } from "@nakama/core/contract";
-import { pickProfileForOrg } from "@nakama/core/profiles";
-import { normalizePairingCode } from "@nakama/core/whatsapp-config";
+} from "@atlas/core/channel-org";
+import type { SendMessageInput } from "@atlas/core/contract";
+import { pickProfileForOrg } from "@atlas/core/profiles";
+import { normalizePairingCode } from "@atlas/core/whatsapp-config";
 import type { WASocket } from "@whiskeysockets/baileys";
 import {
   clearActiveStream,
@@ -31,18 +31,18 @@ import { createTypingLoop } from "./typing-indicator";
 const chatLocks = new Map<string, Promise<void>>();
 
 const PAIRING_PROMPT =
-  "Welcome to Nakama.\n\n" +
+  "Welcome to Atlas.\n\n" +
   "Paste your pairing code from Integrations \u2192 WhatsApp in the web dashboard. " +
   "You only need to do this once for this number.";
 
 const NO_CODE_PROMPT =
   "This number is not linked yet.\n\n" +
-  "Open Nakama Integrations \u2192 WhatsApp, generate a pairing code, " +
+  "Open Atlas Integrations \u2192 WhatsApp, generate a pairing code, " +
   "then send that code here. Or scan the QR code in Integrations.";
 
 export interface ChatHandlerDeps {
   authStore: WhatsAppAuthStore;
-  client: NakamaClient;
+  client: AtlasClient;
   config: WhatsAppBridgeConfig;
   getSocket: () => WASocket | null;
   orgStore: ChannelOrgStore;

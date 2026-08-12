@@ -1,7 +1,7 @@
 import type {
   AutomationRunRecord,
   StoredAutomation,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAppNavigation } from "@/hooks/use-app-navigation";

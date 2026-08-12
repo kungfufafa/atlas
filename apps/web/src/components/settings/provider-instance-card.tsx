@@ -2,7 +2,7 @@ import type {
   ProviderInstanceSummary,
   ProviderModelOption,
   UpdateProviderRequest,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import {
   Delete02Icon,
   Edit03Icon,

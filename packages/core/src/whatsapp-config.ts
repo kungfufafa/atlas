@@ -195,7 +195,7 @@ async function writeWhatsAppConfigFile(
   config: WhatsAppConfigFile
 ): Promise<void> {
   const lines = [
-    "# Nakama WhatsApp bridge",
+    "# Atlas WhatsApp bridge",
     `profile_id=${config.profileId}`,
     ...(config.phoneNumber.trim()
       ? [`phone_number=${config.phoneNumber}`]
@@ -343,7 +343,7 @@ export async function verifyAndPairWhatsAppUser(
   if (!expected) {
     return {
       message:
-        "No pairing code is active. Open Nakama Integrations \u2192 WhatsApp and generate a new code.",
+        "No pairing code is active. Open Atlas Integrations \u2192 WhatsApp and generate a new code.",
       ok: false,
     };
   }
@@ -375,7 +375,7 @@ export async function verifyAndPairWhatsAppUser(
   });
 
   return {
-    message: "Linked successfully. You can chat with Nakama now.",
+    message: "Linked successfully. You can chat with Atlas now.",
     ok: true,
   };
 }
@@ -433,7 +433,7 @@ export function resolveWhatsAppConfigFromSources(options: {
     phoneNumber:
       env.WHATSAPP_PHONE_NUMBER?.trim() || file?.phoneNumber?.trim() || "",
     profileId:
-      env.nakama_WHATSAPP_PROFILE_ID?.trim() ||
+      env.atlas_WHATSAPP_PROFILE_ID?.trim() ||
       file?.profileId?.trim() ||
       DEFAULT_WHATSAPP_PROFILE_ID,
   };

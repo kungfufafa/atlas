@@ -1,6 +1,6 @@
 import type { ChatMessage } from "./contract";
 
-const ARTIFACT_META_SUFFIX = ".nakama-meta.json";
+const ARTIFACT_META_SUFFIX = ".atlas-meta.json";
 const ARTIFACTS_SEGMENT = "/artifacts/";
 const ARTIFACTS_PREFIX = "artifacts/";
 
@@ -90,7 +90,7 @@ function isUnderArtifactsDir(resolvedPath: string): boolean {
 function isArtifactMetaRelativePath(relativePath: string): boolean {
   return (
     relativePath.endsWith(ARTIFACT_META_SUFFIX) ||
-    relativePath.includes(".nakama-meta")
+    relativePath.includes(".atlas-meta")
   );
 }
 
@@ -98,7 +98,7 @@ function isArtifactMetaResolvedPath(resolvedPath: string): boolean {
   return (
     isUnderArtifactsDir(resolvedPath) &&
     (resolvedPath.endsWith(ARTIFACT_META_SUFFIX) ||
-      resolvedPath.includes(".nakama-meta"))
+      resolvedPath.includes(".atlas-meta"))
   );
 }
 
@@ -309,7 +309,7 @@ export function extractLatestTurnMessages(
 }
 
 /**
- * Extract save-artifact pairs (content + `.nakama-meta.json` sidecar) from chat history.
+ * Extract save-artifact pairs (content + `.atlas-meta.json` sidecar) from chat history.
  * Strict pairing only — no content-only or assistant-text fallbacks.
  */
 export function extractPairedTurnArtifacts(

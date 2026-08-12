@@ -1,4 +1,4 @@
-import { BASH_TOOL_ID } from "@nakama/core/tools/protected";
+import { BASH_TOOL_ID } from "@atlas/core/tools/protected";
 import { useAppNavigation } from "@/hooks/use-app-navigation";
 import { ProfileComposioSection } from "@/pages/profiles/profile-composio-section";
 import { ProfileMcpSection } from "@/pages/profiles/profile-mcp-section";

@@ -5,7 +5,7 @@
  * continues briefly until `create_profile` is called. Asserts defaults after
  * executing the tool.
  *
- * Record (needs DeepSeek key in ~/.nakama config, or DEEPSEEK_API_KEY):
+ * Record (needs DeepSeek key in ~/.atlas config, or DEEPSEEK_API_KEY):
  *   LLM_VCR_MODE=record bun test src/tools/super-bot-create-profile.llm.test.ts
  *
  * Replay (default when cassette exists; CI-safe):
@@ -24,13 +24,13 @@ import {
   readBundledSkillBody,
   type ToolCall,
   toLlmToolDefinition,
-} from "@nakama/core";
+} from "@atlas/core";
 import {
   createInMemoryDatabaseAdapter,
   ensureBuiltinToolDefinitions,
   SUPER_BOT_SYSTEM_PROMPT,
   SUPER_BOT_TOOL_AUTHORING_RULES,
-} from "@nakama/db";
+} from "@atlas/db";
 import { createProviderForInstance } from "../providers/create";
 import { ProfileService } from "../services/profile-service";
 import { SuperBotSessionState } from "../services/super-bot-session-state";
@@ -63,9 +63,9 @@ let previousConfigDir: string | undefined;
 
 afterEach(async () => {
   if (previousConfigDir === undefined) {
-    delete process.env.NAKAMA_CONFIG_DIR;
+    delete process.env.ATLAS_CONFIG_DIR;
   } else {
-    process.env.NAKAMA_CONFIG_DIR = previousConfigDir;
+    process.env.ATLAS_CONFIG_DIR = previousConfigDir;
   }
 
   if (tempConfigDir) {
@@ -146,11 +146,11 @@ test(
       );
     }
 
-    previousConfigDir = process.env.NAKAMA_CONFIG_DIR;
+    previousConfigDir = process.env.ATLAS_CONFIG_DIR;
     tempConfigDir = await mkdtemp(
       join(tmpdir(), "nakama-super-bot-create-profile-")
     );
-    process.env.NAKAMA_CONFIG_DIR = tempConfigDir;
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const db = createInMemoryDatabaseAdapter();
     await ensureBuiltinToolDefinitions(db);

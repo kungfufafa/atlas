@@ -22,16 +22,16 @@ import {
   sep,
 } from "node:path";
 import {
+  ATLAS_API_VERSION,
   type DataExportManifest,
   type DataExportSkippedItem,
   type DataImportPreviewResponse,
   getUserConfigDir,
-  NAKAMA_API_VERSION,
   type RestoreDataImportResponse,
-} from "@nakama/core";
+} from "@atlas/core";
 import { unzipSync, zipSync } from "fflate";
 
-export const NAKAMA_EXPORT_MANIFEST = "nakama-export.json";
+export const ATLAS_EXPORT_MANIFEST = "nakama-export.json";
 export const NAKAMA_EXPORT_FORMAT_VERSION = 1;
 
 export interface CreateDataExportOptions {
@@ -67,10 +67,10 @@ interface InventoryItem {
   size: number;
 }
 
-const RESTORE_PREFIX = ".nakama-restore-";
-const BACKUP_PREFIX = ".nakama-backup-";
+const RESTORE_PREFIX = ".atlas-restore-";
+const BACKUP_PREFIX = ".atlas-backup-";
 
-export async function createNakamaDataExport(
+export async function createAtlasDataExport(
   options: CreateDataExportOptions = {}
 ): Promise<CreateDataExportResult> {
   const rootDir = resolve(options.rootDir ?? getUserConfigDir());
@@ -92,25 +92,25 @@ export async function createNakamaDataExport(
     ) {
       skipped.push({
         path: databasePath,
-        reason: "Database path is outside the Nakama root.",
+        reason: "Database path is outside the Atlas root.",
       });
     }
   }
 
   const manifest: DataExportManifest = {
-    apiVersion: NAKAMA_API_VERSION,
+    apiVersion: ATLAS_API_VERSION,
     createdAt,
     fileCount: files.length,
     kind: "nakama-export",
     skipped,
-    sourceRootName: basename(rootDir) || ".nakama",
+    sourceRootName: basename(rootDir) || ".atlas",
     topLevelPaths,
     totalBytes,
     version: NAKAMA_EXPORT_FORMAT_VERSION,
   };
 
   const entries: Record<string, Uint8Array> = {
-    [NAKAMA_EXPORT_MANIFEST]: Buffer.from(
+    [ATLAS_EXPORT_MANIFEST]: Buffer.from(
       JSON.stringify(manifest, null, 2),
       "utf8"
     ),
@@ -128,7 +128,7 @@ export async function createNakamaDataExport(
   };
 }
 
-export async function previewNakamaDataImport(
+export async function previewAtlasDataImport(
   archive: Buffer | Uint8Array | ArrayBuffer,
   options: PreviewDataImportOptions = {}
 ): Promise<DataImportPreviewResponse> {
@@ -136,7 +136,7 @@ export async function previewNakamaDataImport(
   const entries = readZip(toBuffer(archive));
   const manifest = readManifest(entries);
   const restorableEntries = entries.filter(
-    (entry) => entry.name !== NAKAMA_EXPORT_MANIFEST
+    (entry) => entry.name !== ATLAS_EXPORT_MANIFEST
   );
 
   return {
@@ -166,7 +166,7 @@ export function decodeArchiveRequestData(data: string): Buffer {
   return Buffer.from(trimmed, "base64");
 }
 
-export async function restoreNakamaDataImport(
+export async function restoreAtlasDataImport(
   archive: Buffer | Uint8Array | ArrayBuffer,
   options: RestoreDataImportOptions
 ): Promise<RestoreDataImportResponse> {
@@ -193,7 +193,7 @@ export async function restoreNakamaDataImport(
     let restoredFileCount = 0;
 
     for (const entry of entries) {
-      if (entry.name === NAKAMA_EXPORT_MANIFEST) {
+      if (entry.name === ATLAS_EXPORT_MANIFEST) {
         continue;
       }
 
@@ -363,10 +363,10 @@ function readZip(buffer: Buffer): ZipEntry[] {
 
 function readManifest(entries: ZipEntry[]): DataExportManifest {
   const manifestEntry = entries.find(
-    (entry) => entry.name === NAKAMA_EXPORT_MANIFEST
+    (entry) => entry.name === ATLAS_EXPORT_MANIFEST
   );
   if (!manifestEntry) {
-    throw new Error("Archive is missing Nakama export manifest.");
+    throw new Error("Archive is missing Atlas export manifest.");
   }
 
   let manifest: DataExportManifest;
@@ -375,15 +375,15 @@ function readManifest(entries: ZipEntry[]): DataExportManifest {
       manifestEntry.data.toString("utf8")
     ) as DataExportManifest;
   } catch {
-    throw new Error("Nakama export manifest is not valid JSON.");
+    throw new Error("Atlas export manifest is not valid JSON.");
   }
 
   if (manifest.kind !== "nakama-export") {
-    throw new Error("Archive is not a Nakama export.");
+    throw new Error("Archive is not a Atlas export.");
   }
 
   if (manifest.version !== NAKAMA_EXPORT_FORMAT_VERSION) {
-    throw new Error(`Unsupported Nakama export version: ${manifest.version}`);
+    throw new Error(`Unsupported Atlas export version: ${manifest.version}`);
   }
 
   return manifest;
@@ -424,7 +424,7 @@ function toZipPath(path: string): string {
 function shouldSkipRelativePath(path: string): boolean {
   const first = path.split("/")[0];
   return (
-    first === NAKAMA_EXPORT_MANIFEST ||
+    first === ATLAS_EXPORT_MANIFEST ||
     first.startsWith(RESTORE_PREFIX) ||
     first.startsWith(BACKUP_PREFIX)
   );

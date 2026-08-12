@@ -2,7 +2,7 @@ import type {
   ModelsResponse,
   ProfileSummary,
   ProviderModelOption,
-} from "@nakama/core";
+} from "@atlas/core";
 
 export function parseModelCommandArg(raw: string): {
   providerId: string | null;

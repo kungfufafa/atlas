@@ -1,4 +1,4 @@
-import type { SessionSummary } from "@nakama/core/contract";
+import type { SessionSummary } from "@atlas/core/contract";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useActiveChatProfile } from "@/context/use-active-chat-profile";

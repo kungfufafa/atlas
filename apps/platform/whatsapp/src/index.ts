@@ -1,21 +1,21 @@
-import { createClient } from "@nakama/client";
+import { createClient } from "@atlas/client";
 import {
   ChannelOrgStore,
   getChannelOrgSelectionPath,
-} from "@nakama/core/channel-org";
+} from "@atlas/core/channel-org";
 import {
   ensureServerRunning,
   stopSpawnedServer,
-} from "@nakama/core/ensure-server";
-import { loadLocalAuthToken } from "@nakama/core/local-auth";
-import { resolveWebPublicUrl } from "@nakama/core/runtime";
-import { syncWhatsAppOwnerPairing } from "@nakama/core/whatsapp-config";
+} from "@atlas/core/ensure-server";
+import { loadLocalAuthToken } from "@atlas/core/local-auth";
+import { resolveWebPublicUrl } from "@atlas/core/runtime";
+import { syncWhatsAppOwnerPairing } from "@atlas/core/whatsapp-config";
 import {
   clearWhatsAppQrCode,
   clearWhatsAppWorkerHeartbeat,
   writeWhatsAppQrCode,
   writeWhatsAppWorkerHeartbeat,
-} from "@nakama/core/whatsapp-worker";
+} from "@atlas/core/whatsapp-worker";
 import { WhatsAppAuthStore } from "./auth-store";
 import { createChatHandler } from "./chat-handler";
 import { loadConfig } from "./config";
@@ -137,7 +137,7 @@ try {
   const paired = authConfig?.pairedJid ? "yes" : "no";
   const pendingCode = authConfig?.pairingCode ? "yes" : "no";
   console.log(
-    `Nakama WhatsApp bridge · ${serverUrl} · profile ${config.profileId} · paired ${paired} · pairing code ${pendingCode}`
+    `Atlas WhatsApp bridge · ${serverUrl} · profile ${config.profileId} · paired ${paired} · pairing code ${pendingCode}`
   );
 
   await socket.start();

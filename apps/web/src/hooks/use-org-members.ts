@@ -2,7 +2,7 @@ import type {
   AddOrgMemberRequest,
   InviteOrgMemberRequest,
   UpdateOrgMemberRequest,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import {
   queryOptions,
   useMutation,

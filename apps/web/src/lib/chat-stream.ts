@@ -1,10 +1,10 @@
-import type { StreamHandlers } from "@nakama/client";
+import type { StreamHandlers } from "@atlas/client";
 import type {
   AgentQuestionAnswer,
   AgentQuestionnaire,
   AgentTodo,
   ChatContextUsage,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import type { ChatStatus } from "ai";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";

@@ -1,10 +1,10 @@
-import { DEFAULT_CHAT_STREAM_TIMEOUT_MS } from "@nakama/core/chat-stream-timeout";
+import { DEFAULT_CHAT_STREAM_TIMEOUT_MS } from "@atlas/core/chat-stream-timeout";
 import type {
   AgentBrowserInstallEvent,
   AgentBrowserStatusResponse,
   SendMessageInput,
   StreamEvent,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import { readBrowserOrigin } from "./browser";
 import type { SendMessageArg, StreamHandler, StreamHandlers } from "./types";
 

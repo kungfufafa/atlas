@@ -1,4 +1,4 @@
-import type { SoulStackFiles } from "@nakama/core/contract";
+import type { SoulStackFiles } from "@atlas/core/contract";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { SoulFileEditorDialog } from "@/components/soul-tools/soul-file-editor-dialog";

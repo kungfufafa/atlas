@@ -1,4 +1,4 @@
-import type { CustomModelEntry } from "@nakama/core";
+import type { CustomModelEntry } from "@atlas/core";
 import { formatHttpErrorBody } from "../shared";
 
 export const FIREWORKS_GATEWAY_BASE_URL = "https://api.fireworks.ai/v1";

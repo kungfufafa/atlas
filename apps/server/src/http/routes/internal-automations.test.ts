@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { loadLocalAuthToken } from "@nakama/core";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+import { loadLocalAuthToken } from "@atlas/core";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { AuthService } from "../../services/auth-service";
 import { AutomationService } from "../../services/automation-service";
 import { OrgService } from "../../services/org-service";

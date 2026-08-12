@@ -6,7 +6,7 @@ import {
   guardFilePath,
   type ToolContext,
   type ToolDefinition,
-} from "@nakama/core";
+} from "@atlas/core";
 import { mergeCodingAgentSpawnEnv } from "../services/coding-agent-spawn-env";
 import {
   commandLooksLikeCursorAgent,
@@ -53,7 +53,7 @@ export const bashTool: ToolDefinition<BashInput, BashOutput> = {
     properties: {
       codingAgent: {
         description:
-          "When true, Nakama merges coding-agent spawn env (provider passthrough) for this command.",
+          "When true, Atlas merges coding-agent spawn env (provider passthrough) for this command.",
         type: "boolean",
       },
       command: { description: "Shell command to run.", type: "string" },

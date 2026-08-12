@@ -4,7 +4,7 @@ import type {
   ComposioUserConnectionStatus,
   ComposioUserConnectionSummary,
   ListComposioToolkitsResponse,
-} from "@nakama/core/contract";
+} from "@atlas/core/contract";
 import { MoreHorizontalIcon, Search01Icon } from "hugeicons-react";
 import { useDeferredValue, useMemo, useState } from "react";
 import { ComposioToolkitLogo } from "@/components/ComposioToolkitLogo";

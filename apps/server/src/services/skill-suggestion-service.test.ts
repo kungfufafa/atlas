@@ -2,12 +2,12 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { NakamaApiError } from "@nakama/core";
+import { AtlasApiError } from "@atlas/core";
 import {
   createInMemoryDatabaseAdapter,
   type DatabaseAdapter,
   seedOrgDefaultProfile,
-} from "@nakama/db";
+} from "@atlas/db";
 import { SkillProposalService } from "./skill-proposal-service";
 import { SkillSuggestionService } from "./skill-suggestion-service";
 import { SkillsService } from "./skills-service";
@@ -61,11 +61,11 @@ describe("SkillSuggestionService", () => {
 
   beforeEach(async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-skill-suggestions-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
   });
 
   afterEach(() => {
-    delete process.env.NAKAMA_CONFIG_DIR;
+    delete process.env.ATLAS_CONFIG_DIR;
   });
 
   test("createSuggestion inserts a pending row without writing to disk", async () => {
@@ -267,7 +267,7 @@ describe("SkillSuggestionService", () => {
 
     await expect(
       suggestions.applySuggestion("org_other", created.id, "admin_user")
-    ).rejects.toBeInstanceOf(NakamaApiError);
+    ).rejects.toBeInstanceOf(AtlasApiError);
     await expect(
       suggestions.applySuggestion("org_other", created.id, "admin_user")
     ).rejects.toMatchObject({ status: 404 });

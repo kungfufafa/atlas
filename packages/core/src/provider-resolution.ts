@@ -78,7 +78,7 @@ export function resolveProvider(
   const env = options.env ?? process.env;
 
   const explicitEnvProvider = parseProviderName(
-    readEnvValue(env, "NAKAMA_PROVIDER")
+    readEnvValue(env, "ATLAS_PROVIDER")
   );
 
   if (explicitEnvProvider) {

@@ -2,12 +2,12 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { ToolContext } from "@nakama/core";
-import { pathExists, runWriteFile } from "@nakama/core";
+import type { ToolContext } from "@atlas/core";
+import { pathExists, runWriteFile } from "@atlas/core";
 import {
   createInMemoryDatabaseAdapter,
   seedOrgDefaultProfile,
-} from "@nakama/db";
+} from "@atlas/db";
 import { SkillProposalService } from "../services/skill-proposal-service";
 import { SkillsService } from "../services/skills-service";
 import { createSkillManageTools } from "./skill-manage-tool";
@@ -79,7 +79,7 @@ describe("skill_manage tool", () => {
   let configDir: string;
 
   afterEach(async () => {
-    delete process.env.NAKAMA_CONFIG_DIR;
+    delete process.env.ATLAS_CONFIG_DIR;
     if (configDir) {
       await rm(configDir, { force: true, recursive: true });
     }
@@ -87,7 +87,7 @@ describe("skill_manage tool", () => {
 
   async function setup() {
     configDir = await mkdtemp(join(tmpdir(), "nakama-skill-manage-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
     const db = createInMemoryDatabaseAdapter();
     const service = new SkillsService(db);
     return { db, service, tool: skillManageTool(service) };
@@ -410,7 +410,7 @@ Profile body.
 
   test("gate on stages create without writing disk", async () => {
     configDir = await mkdtemp(join(tmpdir(), "nakama-skill-manage-gate-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
     const db = createInMemoryDatabaseAdapter();
     const profile = await seedOrgProfile(db, { orgSkillsWriteApproval: true });
     const service = new SkillsService(db);

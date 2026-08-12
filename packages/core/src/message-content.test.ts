@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { NakamaApiError } from "./api-error";
+import { AtlasApiError } from "./api-error";
 import {
   countUserImages,
   estimateUserContentTokens,
@@ -84,14 +84,14 @@ describe("validateImageAttachments", () => {
       validateImageAttachments([
         { data: tinyPngBase64, mediaType: "image/bmp" },
       ])
-    ).toThrow(NakamaApiError);
+    ).toThrow(AtlasApiError);
   });
 
   test("rejects oversized image", () => {
     const huge = "A".repeat((6 * 1024 * 1024 * 4) / 3);
     expect(() =>
       validateImageAttachments([{ data: huge, mediaType: "image/png" }])
-    ).toThrow(NakamaApiError);
+    ).toThrow(AtlasApiError);
   });
 });
 
@@ -105,7 +105,7 @@ describe("validateDocumentAttachments", () => {
           mediaType: "application/octet-stream",
         },
       ])
-    ).toThrow(NakamaApiError);
+    ).toThrow(AtlasApiError);
   });
 
   test("accepts excel attachments under the size limit", () => {
@@ -139,7 +139,7 @@ describe("validateDocumentAttachments", () => {
       validateDocumentAttachments([
         { data: huge, filename: "big.pdf", mediaType: "application/pdf" },
       ])
-    ).toThrow(NakamaApiError);
+    ).toThrow(AtlasApiError);
   });
 
   test("rejects oversized excel the same way as other documents", () => {
@@ -153,13 +153,13 @@ describe("validateDocumentAttachments", () => {
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         },
       ])
-    ).toThrow(NakamaApiError);
+    ).toThrow(AtlasApiError);
   });
 });
 
 describe("validateCombinedAttachmentCount", () => {
   test("rejects more than five attachments total", () => {
-    expect(() => validateCombinedAttachmentCount(3, 3)).toThrow(NakamaApiError);
+    expect(() => validateCombinedAttachmentCount(3, 3)).toThrow(AtlasApiError);
   });
 });
 

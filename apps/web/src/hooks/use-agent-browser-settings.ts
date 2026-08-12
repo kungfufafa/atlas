@@ -1,4 +1,4 @@
-import type { AgentBrowserStatusResponse } from "@nakama/core/contract";
+import type { AgentBrowserStatusResponse } from "@atlas/core/contract";
 import {
   queryOptions,
   useMutation,

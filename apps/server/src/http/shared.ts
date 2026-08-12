@@ -1,25 +1,25 @@
-import type { AgentChatSession } from "@nakama/agent";
-import type { OrgRole } from "@nakama/core";
+import type { AgentChatSession } from "@atlas/agent";
+import type { OrgRole } from "@atlas/core";
 import {
   type AgentChannel,
   type AgentQuestionnaire,
   type AgentTodo,
   type ApiErrorResponse,
+  AtlasApiError,
   formatServerError,
   LOCAL_CLIENT_EMAIL,
-  NakamaApiError,
   resolveChatFirstTokenTimeoutMs,
   resolveChatStreamTimeoutMs,
   type SendMessageInput,
   type StreamEvent,
   verifyLocalAuthToken,
-} from "@nakama/core";
+} from "@atlas/core";
 import type {
   DatabaseAdapter,
   StoredBrowserSessionRecord,
   StoredUserRecord,
-} from "@nakama/db";
-import { ensureLocalClientAccess } from "@nakama/db";
+} from "@atlas/db";
+import { ensureLocalClientAccess } from "@atlas/db";
 import type { Context } from "hono";
 import type { AuthService } from "../services/auth-service";
 import { sessionTurnRegistry } from "../services/session-turn-registry";
@@ -140,7 +140,7 @@ function toAuthUser(user: StoredUserRecord): RequestAuthContext["user"] {
 export function getRequestAuth(c: Context<AppEnv>): RequestAuthContext {
   const auth = c.get("auth");
   if (!auth) {
-    throw new NakamaApiError("Authentication required", 401);
+    throw new AtlasApiError("Authentication required", 401);
   }
 
   return auth;
@@ -244,11 +244,11 @@ export function assertBrowserCsrf(
   const csrfHeader = request.headers.get(CSRF_HEADER_NAME);
 
   if (!(csrfToken && csrfHeader) || csrfToken !== csrfHeader.trim()) {
-    throw new NakamaApiError("CSRF validation failed.", 403);
+    throw new AtlasApiError("CSRF validation failed.", 403);
   }
 
   if (auth.session?.csrfTokenHash !== authService.hashToken(csrfToken)) {
-    throw new NakamaApiError("CSRF validation failed.", 403);
+    throw new AtlasApiError("CSRF validation failed.", 403);
   }
 }
 
@@ -357,7 +357,7 @@ export async function readJson<T>(request: Request): Promise<T> {
     return (await request.json()) as T;
   } catch (err) {
     if (err instanceof SyntaxError) {
-      throw new NakamaApiError("Invalid JSON in request body.", 400);
+      throw new AtlasApiError("Invalid JSON in request body.", 400);
     }
     throw err;
   }
@@ -394,7 +394,7 @@ export function parseChannel(value: string | undefined): AgentChannel {
     return value;
   }
 
-  throw new NakamaApiError(
+  throw new AtlasApiError(
     "Invalid channel. Expected cli, web, telegram, whatsapp, discord, automation, task, or subagent.",
     400
   );

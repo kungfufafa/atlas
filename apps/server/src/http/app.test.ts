@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { loadLocalAuthToken, verifyLocalAuthToken } from "@nakama/core";
-import { createInMemoryDatabaseAdapter } from "@nakama/db";
+import { loadLocalAuthToken, verifyLocalAuthToken } from "@atlas/core";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { AuthService } from "../services/auth-service";
 import { OrgService } from "../services/org-service";
 import { setupTestConfigDir } from "../test-config-dir";
@@ -336,7 +336,7 @@ function createServerOptions() {
 describe("createHonoApp", () => {
   test("accepts opaque bearer auth for internal clients", async () => {
     const configDir = await mkdtemp(join(tmpdir(), "nakama-bearer-auth-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     try {
       const options = createServerOptions();
@@ -375,7 +375,7 @@ describe("createHonoApp", () => {
         enabled: false,
       });
     } finally {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
       await rm(configDir, { force: true, recursive: true });
     }
   });
@@ -384,7 +384,7 @@ describe("createHonoApp", () => {
     const configDir = await mkdtemp(
       join(tmpdir(), "nakama-bearer-auth-autoprovision-")
     );
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     try {
       const options = createServerOptions();
@@ -414,14 +414,14 @@ describe("createHonoApp", () => {
         await options.databaseAdapter.getUserByEmail(LOCAL_CLIENT_EMAIL)
       ).not.toBeNull();
     } finally {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
       await rm(configDir, { force: true, recursive: true });
     }
   });
 
   test("resolves org context for bearer auth without X-Org-Id", async () => {
     const configDir = await mkdtemp(join(tmpdir(), "nakama-bearer-auth-org-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     try {
       const options = createServerOptions();
@@ -438,7 +438,7 @@ describe("createHonoApp", () => {
 
       expect(profilesResponse.status).toBe(200);
     } finally {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
       await rm(configDir, { force: true, recursive: true });
     }
   });
@@ -460,7 +460,7 @@ describe("createHonoApp", () => {
 
   test("rotates the local auth token from a browser session", async () => {
     const configDir = await mkdtemp(join(tmpdir(), "nakama-rotate-auth-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     try {
       const options = createServerOptions();
@@ -502,7 +502,7 @@ describe("createHonoApp", () => {
       const oldToken = await loadLocalAuthToken();
       expect(oldToken).toBe(rotatePayload.token);
     } finally {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
       await rm(configDir, { force: true, recursive: true });
     }
   });
@@ -511,7 +511,7 @@ describe("createHonoApp", () => {
     const configDir = await mkdtemp(
       join(tmpdir(), "nakama-rotate-auth-bearer-")
     );
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
 
     try {
       const token = await loadLocalAuthToken();
@@ -530,7 +530,7 @@ describe("createHonoApp", () => {
         error: "Sign in through the dashboard to rotate the local auth token.",
       });
     } finally {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
       await rm(configDir, { force: true, recursive: true });
     }
   });

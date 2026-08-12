@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import {
   ensureServerRunning,
   stopSpawnedServer,
-} from "@nakama/core/ensure-server";
+} from "@atlas/core/ensure-server";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 

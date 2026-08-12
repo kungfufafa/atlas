@@ -10,7 +10,7 @@ import type {
   ProviderClient,
   StreamChatHandlers,
   ToolCall,
-} from "@nakama/core";
+} from "@atlas/core";
 import OpenAI from "openai";
 import {
   parseOpenAIToolCalls,

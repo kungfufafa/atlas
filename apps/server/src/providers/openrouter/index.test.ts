@@ -60,9 +60,9 @@ describe("createOpenRouterProvider", () => {
         const headers = request.headers;
         expect(headers.get("Authorization")).toBe("Bearer sk-or-v1-test");
         expect(headers.get("HTTP-Referer")).toBe(
-          "https://github.com/ahmadrosid/nakama"
+          "https://github.com/kungfufafa/atlas"
         );
-        expect(headers.get("X-OpenRouter-Title")).toBe("Nakama");
+        expect(headers.get("X-OpenRouter-Title")).toBe("Atlas");
 
         return new Response(chatCompletionResponse("Hello from OpenRouter"), {
           headers: { "Content-Type": "application/json" },

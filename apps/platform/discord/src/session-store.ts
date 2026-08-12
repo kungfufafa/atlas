@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
-import type { DeliverableChannelArtifact } from "@nakama/core/channel-artifact-delivery";
-import { getDiscordConfigDir } from "@nakama/core/discord-config";
-import { readTextOrNull, writePrivateTextFile } from "@nakama/core/fs";
+import type { DeliverableChannelArtifact } from "@atlas/core/channel-artifact-delivery";
+import { getDiscordConfigDir } from "@atlas/core/discord-config";
+import { readTextOrNull, writePrivateTextFile } from "@atlas/core/fs";
 
 export interface ChatSessionRecord {
   artifactShareUrls?: Record<string, string>;

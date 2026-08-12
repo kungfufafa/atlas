@@ -1,4 +1,4 @@
-import type { NotificationDestinationWithSecret } from "@nakama/core/contract";
+import type { NotificationDestinationWithSecret } from "@atlas/core/contract";
 import {
   CheckmarkCircle01Icon,
   Copy01Icon,
@@ -75,7 +75,7 @@ function LatestSecret({
     `  -H 'X-API-Key: ${apiKey}' \\`,
     `  -d '{`,
     `    "title": "New notification",`,
-    `    "body": "Hello from Nakama",`,
+    `    "body": "Hello from Atlas",`,
     `    "level": "info"`,
     `  }'`,
   ].join("\n");
@@ -326,7 +326,7 @@ export function NotificationDestinationsCard() {
       </div>
 
       <div className="rounded-lg border border-border border-dashed bg-muted/20 p-3 text-muted-foreground text-xs">
-        Open the Telegram topic, copy its link, and paste it here. Nakama will
+        Open the Telegram topic, copy its link, and paste it here. Atlas will
         extract the Chat ID and Topic ID for you automatically.
       </div>
 

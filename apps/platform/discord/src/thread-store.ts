@@ -1,6 +1,6 @@
 import { dirname, join } from "node:path";
-import { getDiscordConfigDir } from "@nakama/core/discord-config";
-import { readTextOrNull, writePrivateTextFile } from "@nakama/core/fs";
+import { getDiscordConfigDir } from "@atlas/core/discord-config";
+import { readTextOrNull, writePrivateTextFile } from "@atlas/core/fs";
 
 /** Persisted ownership of Discord threads the bot started. */
 export class ThreadStore {

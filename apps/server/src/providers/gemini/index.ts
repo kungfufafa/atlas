@@ -1,9 +1,3 @@
-import {
-  ApiError,
-  type GenerateContentResponse,
-  GoogleGenAI,
-  type Part,
-} from "@google/genai";
 import type {
   ChatCompletionResult,
   GenerateChatInput,
@@ -11,7 +5,13 @@ import type {
   GenerateTextResult,
   ProviderClient,
   StreamChatHandlers,
-} from "@nakama/core";
+} from "@atlas/core";
+import {
+  ApiError,
+  type GenerateContentResponse,
+  GoogleGenAI,
+  type Part,
+} from "@google/genai";
 import {
   buildChatCompletionResult,
   extractGeminiTokenUsage,
