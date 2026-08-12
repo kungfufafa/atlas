@@ -1,0 +1,63 @@
+name: Sync Upstream (Nakama)
+
+on:
+  schedule:
+    # Jalankan otomatis setiap 12 jam
+    - cron: '0 */12 * * *'
+  workflow_dispatch: # Memungkinkan trigger manual lewat tab Actions di GitHub
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync-upstream:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git Author
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch Upstream Nakama
+        run: |
+          git remote add upstream https://github.com/ahmadrosid/nakama.git
+          git fetch upstream main
+
+      - name: Check for new commits
+        id: check_commits
+        run: |
+          BEHIND_COUNT=$(git rev-list --count HEAD..upstream/main)
+          echo "behind_count=$BEHIND_COUNT" >> $GITHUB_OUTPUT
+          echo "Ditemukan $BEHIND_COUNT commit baru dari Nakama upstream."
+
+      - name: Merge Upstream Changes into Sync Branch
+        if: steps.check_commits.outputs.behind_count != '0'
+        run: |
+          git checkout -b sync/upstream-latest
+          git merge upstream/main -m "chore(sync): merge latest updates from nakama" || true
+
+      - name: Create Pull Request for Review
+        if: steps.check_commits.outputs.behind_count != '0'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: sync/upstream-latest
+          base: main
+          title: "🔄 Auto Sync: Update terbaru dari Nakama upstream"
+          body: |
+            ## 🚀 Upstream Update (Nakama -> Atlas)
+
+            Workflow otomatis telah mendeteksi commit baru dari `ahmadrosid/nakama`.
+
+            ### 📝 Checklist Review:
+            - [ ] Cek tab **Files changed** di Pull Request ini.
+            - [ ] Pastikan perubahan tidak merusak custom branding / warna UI / provider khusus Atlas.
+            - [ ] Jika ada **Merge Conflict**, selesaikan melalui GitHub Web Editor atau pull branch `sync/upstream-latest` ke lokal.
+          labels: |
+            upstream-sync
+            automated
