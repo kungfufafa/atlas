@@ -25,7 +25,7 @@ import {
   setupFreshInstallSession,
 } from "./test-session-helpers";
 
-setupTestConfigDir("nakama-http-app-test-");
+setupTestConfigDir("atlas-http-app-test-");
 
 async function withNodeEnv<T>(env: string, run: () => Promise<T>): Promise<T> {
   const previousNodeEnv = process.env.NODE_ENV;
@@ -335,7 +335,7 @@ function createServerOptions() {
 
 describe("createHonoApp", () => {
   test("accepts opaque bearer auth for internal clients", async () => {
-    const configDir = await mkdtemp(join(tmpdir(), "nakama-bearer-auth-"));
+    const configDir = await mkdtemp(join(tmpdir(), "atlas-bearer-auth-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     try {
@@ -382,7 +382,7 @@ describe("createHonoApp", () => {
 
   test("auto-provisions local client user on first bearer auth", async () => {
     const configDir = await mkdtemp(
-      join(tmpdir(), "nakama-bearer-auth-autoprovision-")
+      join(tmpdir(), "atlas-bearer-auth-autoprovision-")
     );
     process.env.ATLAS_CONFIG_DIR = configDir;
 
@@ -420,7 +420,7 @@ describe("createHonoApp", () => {
   });
 
   test("resolves org context for bearer auth without X-Org-Id", async () => {
-    const configDir = await mkdtemp(join(tmpdir(), "nakama-bearer-auth-org-"));
+    const configDir = await mkdtemp(join(tmpdir(), "atlas-bearer-auth-org-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     try {
@@ -459,7 +459,7 @@ describe("createHonoApp", () => {
   });
 
   test("rotates the local auth token from a browser session", async () => {
-    const configDir = await mkdtemp(join(tmpdir(), "nakama-rotate-auth-"));
+    const configDir = await mkdtemp(join(tmpdir(), "atlas-rotate-auth-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     try {
@@ -487,7 +487,7 @@ describe("createHonoApp", () => {
           headers: withOrgId(
             {
               Cookie: cookieHeaderFromSetCookies(setupCookies),
-              "X-CSRF-Token": cookieValue(setupCookies, "nakama_csrf"),
+              "X-CSRF-Token": cookieValue(setupCookies, "atlas_csrf"),
             },
             orgId
           ),
@@ -509,7 +509,7 @@ describe("createHonoApp", () => {
 
   test("rejects local auth token rotation from bearer auth", async () => {
     const configDir = await mkdtemp(
-      join(tmpdir(), "nakama-rotate-auth-bearer-")
+      join(tmpdir(), "atlas-rotate-auth-bearer-")
     );
     process.env.ATLAS_CONFIG_DIR = configDir;
 
@@ -598,14 +598,14 @@ describe("createHonoApp", () => {
       headers: { "Content-Type": "application/json" },
       name: "setup over HTTPS sets Secure cookies in production",
       nodeEnv: "production",
-      url: "https://nakama.example/v1/auth/setup",
+      url: "https://atlas.example/v1/auth/setup",
     },
     {
       expectSecure: true,
       headers: { "Content-Type": "application/json" },
       name: "setup over HTTPS sets Secure cookies even when NODE_ENV is not production",
       nodeEnv: "development",
-      url: "https://nakama.example/v1/auth/setup",
+      url: "https://atlas.example/v1/auth/setup",
     },
     {
       expectSecure: true,
@@ -625,7 +625,7 @@ describe("createHonoApp", () => {
       },
       name: "https request URL keeps Secure cookies even if X-Forwarded-Proto is http",
       nodeEnv: "production",
-      url: "https://nakama.example/v1/auth/setup",
+      url: "https://atlas.example/v1/auth/setup",
     },
   ] as const;
 
@@ -681,7 +681,7 @@ describe("createHonoApp", () => {
       cookieHeader: cookieHeaderFromSetCookies(
         extractSetCookies(setupResponse)
       ),
-      csrfToken: cookieValue(extractSetCookies(setupResponse), "nakama_csrf"),
+      csrfToken: cookieValue(extractSetCookies(setupResponse), "atlas_csrf"),
     };
 
     const logoutResponse = await app.fetch(
@@ -697,10 +697,10 @@ describe("createHonoApp", () => {
     expect(logoutResponse.status).toBe(200);
     const clearCookies = extractSetCookies(logoutResponse);
     const sessionClears = clearCookies.filter((cookie) =>
-      cookie.startsWith("nakama_session=")
+      cookie.startsWith("atlas_session=")
     );
     const csrfClears = clearCookies.filter((cookie) =>
-      cookie.startsWith("nakama_csrf=")
+      cookie.startsWith("atlas_csrf=")
     );
     expect(
       sessionClears.some((cookie) => /;\s*Secure(?:;|$)/i.test(cookie))
@@ -1208,7 +1208,7 @@ describe("createHonoApp", () => {
           headers: withOrgId(
             {
               Cookie: cookieHeaderFromSetCookies(platformCookies),
-              "X-CSRF-Token": cookieValue(platformCookies, "nakama_csrf"),
+              "X-CSRF-Token": cookieValue(platformCookies, "atlas_csrf"),
             },
             ""
           ),
@@ -1250,7 +1250,7 @@ describe("createHonoApp", () => {
           headers: {
             ...orgHeaders,
             "Content-Type": "application/json",
-            "X-CSRF-Token": cookieValue(orgAdminCookies, "nakama_csrf"),
+            "X-CSRF-Token": cookieValue(orgAdminCookies, "atlas_csrf"),
           },
           method: "POST",
         })

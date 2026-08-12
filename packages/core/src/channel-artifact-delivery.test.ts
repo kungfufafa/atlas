@@ -17,7 +17,7 @@ describe("isAttachIntent", () => {
     expect(isAttachIntent("send the pdf")).toBe(true);
     expect(isAttachIntent("send me the csv")).toBe(true);
     expect(isAttachIntent("attach the image")).toBe(true);
-    expect(isAttachIntent("send nakama-pitch-deck.pdf")).toBe(true);
+    expect(isAttachIntent("send atlas-pitch-deck.pdf")).toBe(true);
   });
 
   test("does not match unrelated text", () => {
@@ -65,7 +65,7 @@ describe("resolveArtifactForAttach", () => {
     const artifact = resolveArtifactForAttach({
       listed: [
         {
-          filename: "nakama-pitch-deck.pdf",
+          filename: "atlas-pitch-deck.pdf",
           mimeType: "application/pdf",
           sizeBytes: 272_153,
           updatedAt: "2026-08-08T12:51:00.000Z",
@@ -80,8 +80,8 @@ describe("resolveArtifactForAttach", () => {
       registry: [],
     });
 
-    expect(artifact?.filename).toBe("nakama-pitch-deck.pdf");
-    expect(artifact?.path).toBe("nakama-pitch-deck.pdf");
+    expect(artifact?.filename).toBe("atlas-pitch-deck.pdf");
+    expect(artifact?.path).toBe("atlas-pitch-deck.pdf");
   });
 });
 

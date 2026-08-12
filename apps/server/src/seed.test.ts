@@ -16,10 +16,10 @@ import { AuthService } from "./services/auth-service";
 import { OrgService } from "./services/org-service";
 
 const SEED_ENV_KEYS = [
-  "NAKAMA_SEED_ADMIN_EMAIL",
-  "NAKAMA_SEED_ADMIN_NAME",
-  "NAKAMA_SEED_ADMIN_PASSWORD",
-  "NAKAMA_SEED_ORG_NAME",
+  "ATLAS_SEED_ADMIN_EMAIL",
+  "ATLAS_SEED_ADMIN_NAME",
+  "ATLAS_SEED_ADMIN_PASSWORD",
+  "ATLAS_SEED_ORG_NAME",
   "ATLAS_CONFIG_DIR",
 ] as const;
 
@@ -53,7 +53,7 @@ describe("runFirstBootSeed", () => {
 
   async function withFreshConfigDir(): Promise<void> {
     snapshotEnv();
-    configDir = await mkdtemp(join(tmpdir(), "nakama-seed-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-seed-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
   }
 
@@ -83,12 +83,12 @@ describe("runFirstBootSeed", () => {
       runFirstBootSeed({
         ...services,
         env: {
-          NAKAMA_SEED_ADMIN_EMAIL: "admin@example.com",
-          NAKAMA_SEED_ADMIN_NAME: "",
-          NAKAMA_SEED_ADMIN_PASSWORD: "seedpass123",
+          ATLAS_SEED_ADMIN_EMAIL: "admin@example.com",
+          ATLAS_SEED_ADMIN_NAME: "",
+          ATLAS_SEED_ADMIN_PASSWORD: "seedpass123",
         },
       })
-    ).rejects.toThrow(/NAKAMA_SEED_ADMIN_NAME/);
+    ).rejects.toThrow(/ATLAS_SEED_ADMIN_NAME/);
 
     expect(await services.databaseAdapter.countHumanUsers()).toBe(0);
   });
@@ -109,9 +109,9 @@ describe("runFirstBootSeed", () => {
     const result = await runFirstBootSeed({
       ...services,
       env: {
-        NAKAMA_SEED_ADMIN_EMAIL: "admin@example.com",
-        NAKAMA_SEED_ADMIN_NAME: "Admin",
-        NAKAMA_SEED_ADMIN_PASSWORD: "seedpass123",
+        ATLAS_SEED_ADMIN_EMAIL: "admin@example.com",
+        ATLAS_SEED_ADMIN_NAME: "Admin",
+        ATLAS_SEED_ADMIN_PASSWORD: "seedpass123",
       },
     });
 
@@ -142,9 +142,9 @@ describe("runFirstBootSeed", () => {
     const result = await runFirstBootSeed({
       ...services,
       env: {
-        NAKAMA_SEED_ADMIN_EMAIL: "admin@example.com",
-        NAKAMA_SEED_ADMIN_NAME: "Admin",
-        NAKAMA_SEED_ADMIN_PASSWORD: "seedpass123",
+        ATLAS_SEED_ADMIN_EMAIL: "admin@example.com",
+        ATLAS_SEED_ADMIN_NAME: "Admin",
+        ATLAS_SEED_ADMIN_PASSWORD: "seedpass123",
       },
     });
 
@@ -192,9 +192,9 @@ describe("runFirstBootSeed", () => {
     const result = await runFirstBootSeed({
       ...services,
       env: {
-        NAKAMA_SEED_ADMIN_EMAIL: "admin@example.com",
-        NAKAMA_SEED_ADMIN_NAME: "Admin",
-        NAKAMA_SEED_ADMIN_PASSWORD: "seedpass123",
+        ATLAS_SEED_ADMIN_EMAIL: "admin@example.com",
+        ATLAS_SEED_ADMIN_NAME: "Admin",
+        ATLAS_SEED_ADMIN_PASSWORD: "seedpass123",
       },
     });
     expect(result.seeded).toBe(true);

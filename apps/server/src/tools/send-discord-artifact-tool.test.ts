@@ -35,27 +35,27 @@ describe("sendDiscordArtifactTool", () => {
   });
 
   test("accepts an existing attachable artifact on discord", async () => {
-    const home = await mkdtemp(path.join(tmpdir(), "nakama-discord-tool-"));
+    const home = await mkdtemp(path.join(tmpdir(), "atlas-discord-tool-"));
     process.env.ATLAS_CONFIG_DIR = home;
     const orgId = "org_test";
     const profileId = "profile_test";
     const artifactsDir = getProfileArtifactsDir(orgId, profileId);
     await mkdir(artifactsDir, { recursive: true });
     await writeFile(
-      path.join(artifactsDir, "nakama-pitch-deck.pdf"),
+      path.join(artifactsDir, "atlas-pitch-deck.pdf"),
       "%PDF-1.4"
     );
 
     const result = await sendDiscordArtifactTool.run(
-      { path: "artifacts/nakama-pitch-deck.pdf" },
+      { path: "artifacts/atlas-pitch-deck.pdf" },
       { channel: "discord", orgId, profileId }
     );
 
     expect(result).toEqual({
-      filename: "nakama-pitch-deck.pdf",
+      filename: "atlas-pitch-deck.pdf",
       mimeType: "application/pdf",
       ok: true,
-      path: "nakama-pitch-deck.pdf",
+      path: "atlas-pitch-deck.pdf",
       sizeBytes: 8,
     });
   });

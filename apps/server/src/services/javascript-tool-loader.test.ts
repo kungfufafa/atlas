@@ -14,7 +14,7 @@ async function setupToolsDir(): Promise<{
   configDir: string;
   toolsDir: string;
 }> {
-  const configDir = await mkdtemp(path.join(os.tmpdir(), "nakama-config-"));
+  const configDir = await mkdtemp(path.join(os.tmpdir(), "atlas-config-"));
   process.env.ATLAS_CONFIG_DIR = configDir;
   const toolsDir = path.join(configDir, "tools");
   await mkdir(toolsDir, { recursive: true });

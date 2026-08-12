@@ -19,7 +19,7 @@ afterEach(async () => {
 });
 
 async function withConfigDir<T>(run: () => Promise<T>): Promise<T> {
-  const dir = await mkdtemp(join(tmpdir(), "nakama-worker-desired-"));
+  const dir = await mkdtemp(join(tmpdir(), "atlas-worker-desired-"));
   configDirs.push(dir);
   const previous = process.env.ATLAS_CONFIG_DIR;
   process.env.ATLAS_CONFIG_DIR = dir;

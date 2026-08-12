@@ -455,9 +455,7 @@ export async function withTempHome<T>(
 
   await previous;
 
-  const homeDir = await mkdtemp(
-    path.join(os.tmpdir(), "nakama-telegram-home-")
-  );
+  const homeDir = await mkdtemp(path.join(os.tmpdir(), "atlas-telegram-home-"));
   const configDir = path.join(homeDir, ".atlas");
   const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
   process.env.ATLAS_CONFIG_DIR = configDir;

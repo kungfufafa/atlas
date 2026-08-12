@@ -15,7 +15,7 @@ import {
 let configDir: string | null = null;
 
 async function useTempConfigDir(): Promise<string> {
-  configDir = await mkdtemp(join(tmpdir(), "nakama-automation-worker-"));
+  configDir = await mkdtemp(join(tmpdir(), "atlas-automation-worker-"));
   process.env.ATLAS_CONFIG_DIR = configDir;
   return configDir;
 }

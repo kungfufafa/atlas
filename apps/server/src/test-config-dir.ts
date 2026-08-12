@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-export function setupTestConfigDir(prefix = "nakama-server-test-"): void {
+export function setupTestConfigDir(prefix = "atlas-server-test-"): void {
   const originalConfigDir = process.env.ATLAS_CONFIG_DIR;
   let testConfigDir = "";
 

@@ -25,8 +25,8 @@ import type { AuthService } from "../services/auth-service";
 import { sessionTurnRegistry } from "../services/session-turn-registry";
 import type { AppEnv } from "./types";
 
-const SESSION_COOKIE_NAME = "nakama_session";
-const CSRF_COOKIE_NAME = "nakama_csrf";
+const SESSION_COOKIE_NAME = "atlas_session";
+const CSRF_COOKIE_NAME = "atlas_csrf";
 const CSRF_HEADER_NAME = "x-csrf-token";
 const SESSION_COOKIE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 

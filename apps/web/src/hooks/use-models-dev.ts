@@ -5,6 +5,7 @@ import { queryKeys } from "@/lib/query-keys";
 
 export interface ModelsDevRow {
   apiUrl: string;
+  atlasProvider: SelectedProvider;
   context: number;
   deprecated: boolean;
   experimental: boolean;
@@ -12,7 +13,6 @@ export interface ModelsDevRow {
   isZen: boolean;
   modelId: string;
   modelName: string;
-  nakamaProvider: SelectedProvider;
   providerId: string;
   providerName: string;
   reasoning: boolean;
@@ -56,7 +56,7 @@ const UNSUPPORTED_NPM: Record<string, string> = {
   "venice-ai-sdk-provider": "Requires Venice-specific auth",
 };
 
-function resolvenakamaProvider(
+function resolveatlasProvider(
   providerId: string,
   npm: string | undefined
 ): SelectedProvider {
@@ -84,7 +84,7 @@ async function fetchModelsDev(): Promise<ModelsDevRow[]> {
     const npm = provider.npm as string | undefined;
     const models =
       (provider.models as Record<string, unknown> | undefined) ?? {};
-    const nakamaProvider = resolvenakamaProvider(providerId, npm);
+    const atlasProvider = resolveatlasProvider(providerId, npm);
     const unsupportedReason = npm ? UNSUPPORTED_NPM[npm] : undefined;
     const supported = !unsupportedReason;
     const experimental = supported && !OFFICIAL_PROVIDER_IDS.has(providerId);
@@ -110,13 +110,13 @@ async function fetchModelsDev(): Promise<ModelsDevRow[]> {
 
       rows.push({
         apiUrl,
+        atlasProvider,
         context: (limit.context as number | undefined) ?? 0,
         deprecated: (model.status as string | undefined) === "deprecated",
         isFree: inputCost === 0 && outputCost === 0,
         isZen: providerId === "opencode",
         modelId,
         modelName: (model.name as string | undefined) ?? modelId,
-        nakamaProvider,
         providerId,
         providerName,
         reasoning: !!(model.reasoning as boolean | undefined),

@@ -21,7 +21,7 @@ describe("rotate-token command", () => {
   });
 
   test("runRotateToken rotates the on-disk token", async () => {
-    const configDir = await mkdtemp(join(tmpdir(), "nakama-cli-rotate-"));
+    const configDir = await mkdtemp(join(tmpdir(), "atlas-cli-rotate-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     try {
@@ -43,7 +43,7 @@ describe("rotate-token command", () => {
       expect(rotated).not.toBe(original);
       await expect(verifyLocalAuthToken(original!)).resolves.toBeNull();
       await expect(verifyLocalAuthToken(rotated!)).resolves.toEqual({
-        email: "local-client@nakama.internal",
+        email: "local-client@atlas.internal",
       });
       expect(logs.some((line) => line.includes(rotated!))).toBe(true);
     } finally {
@@ -55,6 +55,6 @@ describe("rotate-token command", () => {
   test("formatRotateTokenError surfaces env-managed token errors", () => {
     expect(
       formatRotateTokenError(new LocalAuthTokenManagedExternallyError())
-    ).toContain("NAKAMA_LOCAL_AUTH_TOKEN");
+    ).toContain("ATLAS_LOCAL_AUTH_TOKEN");
   });
 });

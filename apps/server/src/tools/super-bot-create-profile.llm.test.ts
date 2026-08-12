@@ -148,7 +148,7 @@ test(
 
     previousConfigDir = process.env.ATLAS_CONFIG_DIR;
     tempConfigDir = await mkdtemp(
-      join(tmpdir(), "nakama-super-bot-create-profile-")
+      join(tmpdir(), "atlas-super-bot-create-profile-")
     );
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 

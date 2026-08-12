@@ -43,7 +43,7 @@ function createMockClient(): ComposioApiClient {
 }
 
 async function createApp() {
-  const configDir = await mkdtemp(join(tmpdir(), "nakama-composio-route-"));
+  const configDir = await mkdtemp(join(tmpdir(), "atlas-composio-route-"));
   process.env.ATLAS_CONFIG_DIR = configDir;
   await saveComposioConfig({ apiKey: TEST_API_KEY });
 

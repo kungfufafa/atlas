@@ -16,7 +16,7 @@ describe("skill paths", () => {
   });
 
   test("resolveSkillDiscoveryDirs defaults to ~/.atlas/agent/skills", async () => {
-    configDir = await mkdtemp(path.join(tmpdir(), "nakama-paths-test-"));
+    configDir = await mkdtemp(path.join(tmpdir(), "atlas-paths-test-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     await expect(resolveSkillDiscoveryDirs()).resolves.toEqual([
@@ -25,7 +25,7 @@ describe("skill paths", () => {
   });
 
   test("resolveSkillDiscoveryDirs includes profile skills dir", async () => {
-    configDir = await mkdtemp(path.join(tmpdir(), "nakama-paths-test-"));
+    configDir = await mkdtemp(path.join(tmpdir(), "atlas-paths-test-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     await expect(
@@ -44,7 +44,7 @@ describe("skill paths", () => {
   });
 
   test("resolveSkillDiscoveryDirs does not scan every profile when profileId is omitted", async () => {
-    configDir = await mkdtemp(path.join(tmpdir(), "nakama-paths-test-"));
+    configDir = await mkdtemp(path.join(tmpdir(), "atlas-paths-test-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
     await mkdir(
       path.join(configDir, "orgs", ORG_ID, "profiles", "profile_a", "skills"),
@@ -73,7 +73,7 @@ describe("discoverSkills", () => {
   });
 
   test("deduplicates by skill name and prefers the global copy", async () => {
-    configDir = await mkdtemp(path.join(tmpdir(), "nakama-skill-discover-"));
+    configDir = await mkdtemp(path.join(tmpdir(), "atlas-skill-discover-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     const skillMarkdown = `---

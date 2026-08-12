@@ -21,7 +21,7 @@ describe("SkillsService", () => {
   let configDir: string;
 
   beforeEach(async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-skills-test-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skills-test-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     const weatherDir = join(configDir, "agent", "skills", "weather");

@@ -124,7 +124,7 @@ describe("coding-agent spawn env", () => {
     const modelsJson = JSON.parse(
       await readFile(`${env.env.PI_CODING_AGENT_DIR}/models.json`, "utf-8")
     );
-    // Custom base URL → nakama provider with openai-completions, NOT anthropic
+    // Custom base URL → atlas provider with openai-completions, NOT anthropic
     expect(modelsJson.providers.atlas).toBeDefined();
     expect(modelsJson.providers.anthropic).toBeUndefined();
     expect(modelsJson.providers.atlas.api).toBe("openai-completions");
@@ -185,7 +185,7 @@ describe("coding-agent spawn env", () => {
     const env = mergeCodingAgentSpawnEnv(
       { HOME: "/tmp" },
       {
-        ANTHROPIC_API_KEY: "sk-from-nakama",
+        ANTHROPIC_API_KEY: "sk-from-atlas",
         ANTHROPIC_BASE_URL: "https://api.anthropic.com",
       },
       {
@@ -197,7 +197,7 @@ describe("coding-agent spawn env", () => {
       }
     );
 
-    expect(env.ANTHROPIC_API_KEY).toBe("sk-from-nakama");
+    expect(env.ANTHROPIC_API_KEY).toBe("sk-from-atlas");
     expect(env.CUSTOM_FLAG).toBe("1");
   });
 

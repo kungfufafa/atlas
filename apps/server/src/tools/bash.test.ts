@@ -25,7 +25,7 @@ describe("bash tool", () => {
   });
 
   test("kills the shell when the turn is cancelled", async () => {
-    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "nakama-bash-"));
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-bash-"));
 
     const controller = new AbortController();
     const startedAt = Date.now();
@@ -48,7 +48,7 @@ describe("bash tool", () => {
   });
 
   test("runs commands in the profile workspace by default", async () => {
-    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "nakama-bash-"));
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-bash-"));
 
     const result = await runBash(
       { command: "pwd" },
@@ -62,7 +62,7 @@ describe("bash tool", () => {
   });
 
   test("supports cwd within the profile workspace", async () => {
-    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "nakama-bash-"));
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-bash-"));
     const nestedDir = path.join(workspaceRoot, "nested");
     await mkdir(nestedDir, { recursive: true });
 
@@ -77,7 +77,7 @@ describe("bash tool", () => {
   });
 
   test("rejects cwd outside the profile workspace", async () => {
-    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "nakama-bash-"));
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-bash-"));
 
     await expect(
       runBash(
@@ -95,7 +95,7 @@ describe("bash tool", () => {
   });
 
   test("accepts delegation-scale timeouts up to 30 minutes", async () => {
-    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "nakama-bash-"));
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-bash-"));
 
     const result = await runBash(
       { command: "echo ok", timeoutMs: 30 * 60_000 },
@@ -108,7 +108,7 @@ describe("bash tool", () => {
   });
 
   test("merges explicit env vars into the spawned shell process", async () => {
-    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "nakama-bash-"));
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-bash-"));
 
     const result = await runBash(
       {
@@ -124,7 +124,7 @@ describe("bash tool", () => {
   });
 
   test("summarizes Cursor stream-json for coding-agent runs and saves a full log", async () => {
-    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "nakama-bash-"));
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-bash-"));
     const agentPath = path.join(workspaceRoot, "agent");
     const stream = [
       '{"type":"system","subtype":"init","model":"composer-2","cwd":"/tmp/repo"}',
@@ -175,7 +175,7 @@ describe("bash tool", () => {
   });
 
   test("keep-tails long plain coding-agent stdout instead of head-truncating", async () => {
-    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "nakama-bash-"));
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-bash-"));
     const agentPath = path.join(workspaceRoot, "agent");
     const body = `${"n".repeat(40_000)}TAIL_MARKER_OK`;
     await writeFile(

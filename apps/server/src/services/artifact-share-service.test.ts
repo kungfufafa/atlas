@@ -39,14 +39,14 @@ async function withEnv<T>(
 }
 
 async function withFreshConfigDir<T>(run: () => T | Promise<T>): Promise<T> {
-  const configDir = join(tmpdir(), `nakama-artifact-share-base-${Date.now()}`);
+  const configDir = join(tmpdir(), `atlas-artifact-share-base-${Date.now()}`);
   mkdirSync(configDir, { recursive: true });
   try {
     return await withEnv(
       {
         ATLAS_CONFIG_DIR: configDir,
+        ATLAS_PUBLIC_URL: undefined,
         ATLAS_WEB_PUBLIC_URL: undefined,
-        NAKAMA_PUBLIC_URL: undefined,
       },
       run
     );
@@ -59,10 +59,10 @@ describe("resolveArtifactShareBaseUrl", () => {
   test("prefers explicit clientOrigin over loopback request URL", () => {
     expect(
       resolveArtifactShareBaseUrl({
-        clientOrigin: "https://nakama.example.com/",
+        clientOrigin: "https://atlas.example.com/",
         request: sharePublishRequest(),
       })
-    ).toBe("https://nakama.example.com");
+    ).toBe("https://atlas.example.com");
   });
 
   test("prefers configured web public URL when request host is loopback", async () => {

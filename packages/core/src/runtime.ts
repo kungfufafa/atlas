@@ -59,7 +59,7 @@ export function resolveWebPublicUrl(
   env: Record<string, string | undefined> = process.env
 ): string | undefined {
   const configured =
-    env.ATLAS_WEB_PUBLIC_URL?.trim() || env.NAKAMA_PUBLIC_URL?.trim();
+    env.ATLAS_WEB_PUBLIC_URL?.trim() || env.ATLAS_PUBLIC_URL?.trim();
   if (configured) {
     return normalizeBaseUrl(configured);
   }

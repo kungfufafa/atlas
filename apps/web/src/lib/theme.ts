@@ -2,7 +2,7 @@ export type Theme = "light" | "dark" | "system";
 
 export type ResolvedTheme = "light" | "dark";
 
-export const THEME_STORAGE_KEY = "nakama-theme";
+export const THEME_STORAGE_KEY = "atlas-theme";
 
 export function isTheme(value: string | null | undefined): value is Theme {
   return value === "light" || value === "dark" || value === "system";
@@ -48,8 +48,8 @@ export function applyTheme(theme: Theme): void {
 
 export function ditherLogoSrc(resolvedTheme: ResolvedTheme): string {
   return resolvedTheme === "light"
-    ? "/nakama-logo-dither-light.png"
-    : "/nakama-logo-dither.png";
+    ? "/atlas-logo-dither-light.png"
+    : "/atlas-logo-dither.png";
 }
 
 function applyFavicon(resolved: ResolvedTheme): void {

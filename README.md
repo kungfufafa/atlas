@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/nakama-logo-dither-dark.png" />
-    <img alt="Atlas logo" src="assets/nakama-logo-dither-light.png" width="188" />
+    <source media="(prefers-color-scheme: dark)" srcset="assets/atlas-logo-dither-dark.png" />
+    <img alt="Atlas logo" src="assets/atlas-logo-dither-light.png" width="188" />
   </picture>
 </p>
 
@@ -13,7 +13,7 @@
 
 > **Fork & Attribution Notice**: **Atlas** is a rebranded fork of [Nakama](https://github.com/ahmadrosid/nakama), originally created by [ahmadrosid](https://github.com/ahmadrosid).
 
-[Documentation](https://kungfufafa.github.io/atlas/) · [Demo](https://demo.getnakama.cloud) · [Managed hosting](https://getnakama.cloud/)
+[Documentation](https://kungfufafa.github.io/atlas/) · [Demo](https://demo.getatlas.cloud) · [Managed hosting](https://getatlas.cloud/)
 
 Your next hire will still be human.
 With Atlas, that person works on important tasks.
@@ -27,8 +27,8 @@ Atlas is a small, self-hosted service for AI agents. You can imagine that Atlas 
 - Each org has isolated profiles, sessions, member invites, and roles.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/nakama_demo_dark.png" />
-  <img alt="Atlas dashboard demo" src="assets/nakama_demo_light.png" />
+  <source media="(prefers-color-scheme: dark)" srcset="assets/atlas_demo_dark.png" />
+  <img alt="Atlas dashboard demo" src="assets/atlas_demo_light.png" />
 </picture>
 
 Open [ARCHITECTURE.md](./ARCHITECTURE.md) for the system design.
@@ -38,14 +38,14 @@ Open the [docs site](https://kungfufafa.github.io/atlas/) for the full guide.
 
 ### Try the demo
 
-Open the live demo at [https://demo.getnakama.cloud](https://demo.getnakama.cloud).
+Open the live demo at [https://demo.getatlas.cloud](https://demo.getatlas.cloud).
 
-- Username: `demo@getnakama.cloud`
+- Username: `demo@getatlas.cloud`
 - Password: `demo1234`
 
 ### Managed hosting
 
-Use [Atlas Cloud](https://getnakama.cloud/) to try Atlas with the least work.
+Use [Atlas Cloud](https://getatlas.cloud/) to try Atlas with the least work.
 
 1. Create an account.
 2. Provision an instance.

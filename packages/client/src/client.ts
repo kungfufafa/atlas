@@ -263,7 +263,7 @@ export class AtlasClient {
     return {
       data: await response.arrayBuffer(),
       filename:
-        readContentDispositionFilename(response.headers) ?? "nakama-export.zip",
+        readContentDispositionFilename(response.headers) ?? "atlas-export.zip",
     };
   }
 
@@ -2242,7 +2242,7 @@ export class AtlasClient {
     }
 
     if (isMutatingMethod(method)) {
-      const csrfToken = readCookie("nakama_csrf");
+      const csrfToken = readCookie("atlas_csrf");
       if (csrfToken) {
         merged["X-CSRF-Token"] = csrfToken;
       }

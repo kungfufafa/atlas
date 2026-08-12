@@ -6,7 +6,7 @@ import {
   loginUserSession,
 } from "./test-session-helpers";
 
-setupTestConfigDir("nakama-org-members-test-");
+setupTestConfigDir("atlas-org-members-test-");
 
 function createApp() {
   return createMinimalHonoApp();

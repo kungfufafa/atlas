@@ -143,7 +143,7 @@ export type SharedChannelConfigCase<TId extends string | number> = {
 export function describeSharedChannelConfigTests<TId extends string | number>(
   tc: SharedChannelConfigCase<TId>
 ): void {
-  const tempPrefix = `nakama-core-${tc.name}-home-`;
+  const tempPrefix = `atlas-core-${tc.name}-home-`;
 
   describe(`${tc.name} shared channel config`, () => {
     describe("maskBotToken", () => {

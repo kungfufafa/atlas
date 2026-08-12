@@ -39,7 +39,7 @@ describe("chat history route helpers", () => {
 
   test("buildNewChatPath carries profile so ChatPage remount keeps the selection", () => {
     const path = buildNewChatPath("gary-vee");
-    const url = new URL(path, "http://nakama.local");
+    const url = new URL(path, "http://atlas.local");
     expect(url.pathname).toBe("/chat");
     expect(url.searchParams.get("new")).toBe("1");
     expect(url.searchParams.get("profile")).toBe("gary-vee");
@@ -66,7 +66,7 @@ describe("chat history route helpers", () => {
   });
 
   test("uses a profile-scoped session storage key", () => {
-    expect(sessionStorageKey("default")).toBe("nakama:session:default");
+    expect(sessionStorageKey("default")).toBe("atlas:session:default");
   });
 
   test("resolveActiveProfileIdFromLocation prefers URL, live chat state, and defaults", () => {

@@ -619,7 +619,7 @@ describe("composio-tool-bridge", () => {
 
     const result = await tools[0]?.run(
       { toolkit_slug: "gmail" },
-      { clientOrigin: "https://nakama.example.com" }
+      { clientOrigin: "https://atlas.example.com" }
     );
     expect(result).toMatchObject({
       displayName: "Gmail",

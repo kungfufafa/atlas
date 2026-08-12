@@ -33,7 +33,7 @@ describe("profile service createTool", () => {
 
   test("defaults to an executable javascript tool", async () => {
     tempConfigDir = await mkdtemp(
-      path.join(os.tmpdir(), "nakama-profile-tool-")
+      path.join(os.tmpdir(), "atlas-profile-tool-")
     );
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
     const toolsDir = path.join(tempConfigDir, "tools");
@@ -86,7 +86,7 @@ describe("profile service avatar", () => {
 
   test("uploads, serves, and deletes profile avatars", async () => {
     tempConfigDir = await mkdtemp(
-      path.join(os.tmpdir(), "nakama-profile-avatar-")
+      path.join(os.tmpdir(), "atlas-profile-avatar-")
     );
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
@@ -132,7 +132,7 @@ describe("profile service createProfile", () => {
 
   test("scaffolds soul templates for new profiles", async () => {
     tempConfigDir = await mkdtemp(
-      path.join(os.tmpdir(), "nakama-profile-soul-")
+      path.join(os.tmpdir(), "atlas-profile-soul-")
     );
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
@@ -155,7 +155,7 @@ describe("profile service createProfile", () => {
 
   test("assigns basic tools when the built-in tools exist", async () => {
     tempConfigDir = await mkdtemp(
-      path.join(os.tmpdir(), "nakama-profile-default-tools-")
+      path.join(os.tmpdir(), "atlas-profile-default-tools-")
     );
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
@@ -180,7 +180,7 @@ describe("profile service createProfile", () => {
 
   test("assigns default bundled skills when they exist", async () => {
     tempConfigDir = await mkdtemp(
-      path.join(os.tmpdir(), "nakama-profile-default-skills-")
+      path.join(os.tmpdir(), "atlas-profile-default-skills-")
     );
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
@@ -209,7 +209,7 @@ describe("profile service createProfile", () => {
 
   test("skips missing basic built-in tools without failing", async () => {
     tempConfigDir = await mkdtemp(
-      path.join(os.tmpdir(), "nakama-profile-missing-tools-")
+      path.join(os.tmpdir(), "atlas-profile-missing-tools-")
     );
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
@@ -226,7 +226,7 @@ describe("profile service createProfile", () => {
 
   test("writes generated soul files and keeps memory empty", async () => {
     tempConfigDir = await mkdtemp(
-      path.join(os.tmpdir(), "nakama-profile-generated-soul-")
+      path.join(os.tmpdir(), "atlas-profile-generated-soul-")
     );
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
@@ -263,7 +263,7 @@ describe("profile service createProfile", () => {
 
   test("rejects unsupported generated soul file keys", async () => {
     tempConfigDir = await mkdtemp(
-      path.join(os.tmpdir(), "nakama-profile-bad-soul-")
+      path.join(os.tmpdir(), "atlas-profile-bad-soul-")
     );
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
@@ -281,7 +281,7 @@ describe("profile service createProfile", () => {
 
   test("stores profile model selection", async () => {
     tempConfigDir = await mkdtemp(
-      path.join(os.tmpdir(), "nakama-profile-model-")
+      path.join(os.tmpdir(), "atlas-profile-model-")
     );
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
@@ -303,7 +303,7 @@ describe("profile service createProfile", () => {
 
   test("uses a slug from the profile name when id is omitted", async () => {
     tempConfigDir = await mkdtemp(
-      path.join(os.tmpdir(), "nakama-profile-slug-id-")
+      path.join(os.tmpdir(), "atlas-profile-slug-id-")
     );
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
@@ -317,7 +317,7 @@ describe("profile service createProfile", () => {
 
   test("uses a custom profile id when provided", async () => {
     tempConfigDir = await mkdtemp(
-      path.join(os.tmpdir(), "nakama-profile-custom-id-")
+      path.join(os.tmpdir(), "atlas-profile-custom-id-")
     );
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
@@ -332,7 +332,7 @@ describe("profile service createProfile", () => {
 
   test("rejects duplicate custom profile ids", async () => {
     tempConfigDir = await mkdtemp(
-      path.join(os.tmpdir(), "nakama-profile-duplicate-id-")
+      path.join(os.tmpdir(), "atlas-profile-duplicate-id-")
     );
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
@@ -376,7 +376,7 @@ describe("profile service assignSkill", () => {
 
   test("assigns coding-agent without requiring a ready coding harness", async () => {
     tempConfigDir = await mkdtemp(
-      path.join(os.tmpdir(), "nakama-profile-assign-skill-")
+      path.join(os.tmpdir(), "atlas-profile-assign-skill-")
     );
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
     process.env.PATH = tempConfigDir;
@@ -426,7 +426,7 @@ describe("profile service knowledge base", () => {
   });
 
   test("uploads, lists, and deletes knowledge base documents", async () => {
-    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "nakama-profile-kb-"));
+    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "atlas-profile-kb-"));
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const service = new ProfileService(createInMemoryDatabaseAdapter());
@@ -462,7 +462,7 @@ describe("profile service knowledge base", () => {
   });
 
   test("readKnowledgeBaseDocument returns preview text and download bytes", async () => {
-    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "nakama-profile-kb-"));
+    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "atlas-profile-kb-"));
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const service = new ProfileService(createInMemoryDatabaseAdapter());
@@ -497,7 +497,7 @@ describe("profile service knowledge base", () => {
   });
 
   test("readKnowledgeBaseDocument throws for unknown document", async () => {
-    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "nakama-profile-kb-"));
+    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "atlas-profile-kb-"));
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const service = new ProfileService(createInMemoryDatabaseAdapter());

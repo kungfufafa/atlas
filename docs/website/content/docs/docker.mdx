@@ -9,12 +9,12 @@ Pull the prebuilt image and start Atlas:
 
 ```bash
 docker pull ghcr.io/kungfufafa/atlas:latest
-docker run -d -p 4310:4310 -v atlas-data:/nakama/data --name nakama ghcr.io/kungfufafa/atlas:latest
+docker run -d -p 4310:4310 -v atlas-data:/atlas/data --name atlas ghcr.io/kungfufafa/atlas:latest
 ```
 
 Open `http://localhost:4310`. The container serves the API, web dashboard, and platform workers together.
 
-Data is stored at `/nakama/data` inside the container. The `-v atlas-data:/nakama/data` volume persists orgs, profiles, sessions, provider settings, and the local SQLite database across restarts.
+Data is stored at `/atlas/data` inside the container. The `-v atlas-data:/atlas/data` volume persists orgs, profiles, sessions, provider settings, and the local SQLite database across restarts.
 
 ## Build from source
 
@@ -28,29 +28,29 @@ The script uses `docker buildx` (default `linux/amd64`), then starts the contain
 
 ## Configuration
 
-The data root follows `ATLAS_CONFIG_DIR` when set. By default it is `/nakama/data` in the container (mapped to your Docker volume).
+The data root follows `ATLAS_CONFIG_DIR` when set. By default it is `/atlas/data` in the container (mapped to your Docker volume).
 
 On first run, complete the setup wizard in the browser and add your LLM provider. See [Providers](/providers) and [First-time setup](/first-time-setup).
 
 ### First-boot seed (optional)
 
-To skip the setup wizard on a fresh data volume, set all three admin seed variables before the first boot. Atlas creates the admin account, a `Personal` org (override with `NAKAMA_SEED_ORG_NAME`), and an OpenCode Zen provider. Self-hosted installs without these variables behave as today.
+To skip the setup wizard on a fresh data volume, set all three admin seed variables before the first boot. Atlas creates the admin account, a `Personal` org (override with `ATLAS_SEED_ORG_NAME`), and an OpenCode Zen provider. Self-hosted installs without these variables behave as today.
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `NAKAMA_SEED_ADMIN_EMAIL` | Yes (with the other two) | Platform admin email |
-| `NAKAMA_SEED_ADMIN_NAME` | Yes (with the other two) | Platform admin display name |
-| `NAKAMA_SEED_ADMIN_PASSWORD` | Yes (with the other two) | Platform admin password (min 8 characters) |
-| `NAKAMA_SEED_ORG_NAME` | No | Organization name (default `Personal`) |
+| `ATLAS_SEED_ADMIN_EMAIL` | Yes (with the other two) | Platform admin email |
+| `ATLAS_SEED_ADMIN_NAME` | Yes (with the other two) | Platform admin display name |
+| `ATLAS_SEED_ADMIN_PASSWORD` | Yes (with the other two) | Platform admin password (min 8 characters) |
+| `ATLAS_SEED_ORG_NAME` | No | Organization name (default `Personal`) |
 
 Partial seed config fails boot with a clear error. Restarting a seeded instance is a no-op (idempotent).
 
 ```bash
-docker run -d -p 4310:4310 -v atlas-data:/nakama/data \
-  -e NAKAMA_SEED_ADMIN_EMAIL=admin@example.com \
-  -e NAKAMA_SEED_ADMIN_NAME=Admin \
-  -e NAKAMA_SEED_ADMIN_PASSWORD=seedpass123 \
-  --name nakama ghcr.io/kungfufafa/atlas:latest
+docker run -d -p 4310:4310 -v atlas-data:/atlas/data \
+  -e ATLAS_SEED_ADMIN_EMAIL=admin@example.com \
+  -e ATLAS_SEED_ADMIN_NAME=Admin \
+  -e ATLAS_SEED_ADMIN_PASSWORD=seedpass123 \
+  --name atlas ghcr.io/kungfufafa/atlas:latest
 ```
 
 ## Reset a local Docker install

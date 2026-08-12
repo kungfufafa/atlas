@@ -105,7 +105,7 @@ describe("ensureBundledSkillFiles for agent-browser", () => {
   let configDir: string;
 
   beforeEach(async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-agent-browser-skills-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-agent-browser-skills-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
     await mkdir(join(configDir, "agent", "skills"), { recursive: true });
   });

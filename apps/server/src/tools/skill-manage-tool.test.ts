@@ -86,7 +86,7 @@ describe("skill_manage tool", () => {
   });
 
   async function setup() {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-skill-manage-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-manage-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
     const db = createInMemoryDatabaseAdapter();
     const service = new SkillsService(db);
@@ -409,7 +409,7 @@ Profile body.
   });
 
   test("gate on stages create without writing disk", async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-skill-manage-gate-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-manage-gate-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
     const db = createInMemoryDatabaseAdapter();
     const profile = await seedOrgProfile(db, { orgSkillsWriteApproval: true });

@@ -14,7 +14,7 @@ describe("formatDataPortabilityBytes", () => {
 });
 
 describe("canRestoreDataImport", () => {
-  const file = new File(["zip"], "nakama.zip", { type: "application/zip" });
+  const file = new File(["zip"], "atlas.zip", { type: "application/zip" });
 
   test("requires a selected file, successful preview, and idle restore state", () => {
     expect(
@@ -49,7 +49,7 @@ describe("canRestoreDataImport", () => {
 });
 
 describe("shouldStartInitialFilePreview", () => {
-  const file = new File(["zip"], "nakama.zip", { type: "application/zip" });
+  const file = new File(["zip"], "atlas.zip", { type: "application/zip" });
   const other = new File(["zip"], "other.zip", { type: "application/zip" });
 
   test("starts once per File identity and resets when cleared", () => {

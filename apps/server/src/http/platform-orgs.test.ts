@@ -9,7 +9,7 @@ import {
   loginPlatformAdminSession,
 } from "./test-session-helpers";
 
-setupTestConfigDir("nakama-platform-orgs-test-");
+setupTestConfigDir("atlas-platform-orgs-test-");
 
 function createPlatformApp() {
   const databaseAdapter = createInMemoryDatabaseAdapter();

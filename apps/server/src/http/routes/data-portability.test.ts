@@ -40,13 +40,13 @@ describe("data portability routes", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("application/zip");
     expect(response.headers.get("content-disposition")).toContain(
-      "nakama-export-"
+      "atlas-export-"
     );
 
     const preview = await previewAtlasDataImport(
       Buffer.from(await response.arrayBuffer())
     );
-    expect(preview.manifest.kind).toBe("nakama-export");
+    expect(preview.manifest.kind).toBe("atlas-export");
     expect(preview.topLevelPaths).toContain("config.ini");
   });
 

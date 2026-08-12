@@ -8,7 +8,7 @@ import {
   setupFreshInstallSession,
 } from "../test-session-helpers";
 
-setupTestConfigDir("nakama-org-memory-routes-test-");
+setupTestConfigDir("atlas-org-memory-routes-test-");
 
 function createApp() {
   const databaseAdapter = createInMemoryDatabaseAdapter();

@@ -46,7 +46,7 @@ const features: Array<{
   {
     details: "One server — shared orgs, channels, and ops.",
     icon: PackageIcon,
-    title: "Your nakama, one deployment",
+    title: "Your atlas, one deployment",
   },
   {
     details: "Orgs, members, profiles, and tools — isolated by tenant.",
@@ -64,7 +64,7 @@ const features: Array<{
     title: "Works across channels",
   },
   {
-    details: "Docker, self-host, or getnakama.cloud — open source.",
+    details: "Docker, self-host, or getatlas.cloud — open source.",
     icon: CloudIcon,
     title: "Self-hosted or managed",
   },
@@ -90,7 +90,7 @@ export default function HomePage() {
             </Link>
             <a
               className="hidden transition-colors hover:text-stone-900 sm:inline dark:hover:text-white"
-              href="https://getnakama.cloud/"
+              href="https://getatlas.cloud/"
               rel="noreferrer"
               target="_blank"
             >
@@ -131,7 +131,7 @@ export default function HomePage() {
                   </Link>
                   <a
                     className="hero-cta-secondary"
-                    href="https://getnakama.cloud/"
+                    href="https://getatlas.cloud/"
                     rel="noreferrer"
                     target="_blank"
                   >
@@ -156,7 +156,7 @@ export default function HomePage() {
                   <span className="size-2.5 rounded-full bg-stone-300 dark:bg-white/15" />
                   <span className="size-2.5 rounded-full bg-stone-300 dark:bg-white/15" />
                   <span className="ml-2 text-[11px] text-stone-500 dark:text-white/35">
-                    nakama · dashboard
+                    atlas · dashboard
                   </span>
                 </div>
                 <img
@@ -192,7 +192,7 @@ export default function HomePage() {
           <div className="mx-auto max-w-6xl">
             <div className="mb-10 max-w-2xl">
               <h2 className="landing-section-title font-medium text-3xl tracking-tight md:text-4xl">
-                Your whole nakama.
+                Your whole atlas.
               </h2>
               <p className="mt-3 text-stone-600 dark:text-white/50">
                 Profiles, orgs, channels, and tools — focused agents, shared

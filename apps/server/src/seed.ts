@@ -10,10 +10,10 @@ import type { DatabaseAdapter } from "@atlas/db";
 import type { AuthService } from "./services/auth-service";
 import type { OrgService } from "./services/org-service";
 
-const SEED_ADMIN_EMAIL = "NAKAMA_SEED_ADMIN_EMAIL";
-const SEED_ADMIN_NAME = "NAKAMA_SEED_ADMIN_NAME";
-const SEED_ADMIN_PASSWORD = "NAKAMA_SEED_ADMIN_PASSWORD";
-const SEED_ORG_NAME = "NAKAMA_SEED_ORG_NAME";
+const SEED_ADMIN_EMAIL = "ATLAS_SEED_ADMIN_EMAIL";
+const SEED_ADMIN_NAME = "ATLAS_SEED_ADMIN_NAME";
+const SEED_ADMIN_PASSWORD = "ATLAS_SEED_ADMIN_PASSWORD";
+const SEED_ORG_NAME = "ATLAS_SEED_ORG_NAME";
 
 const REQUIRED_SEED_ENV_KEYS = [
   SEED_ADMIN_EMAIL,

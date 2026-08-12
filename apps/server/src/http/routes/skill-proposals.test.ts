@@ -9,7 +9,7 @@ import {
   setupFreshInstallSession,
 } from "../test-session-helpers";
 
-setupTestConfigDir("nakama-skill-proposals-routes-test-");
+setupTestConfigDir("atlas-skill-proposals-routes-test-");
 
 const sampleSkillMarkdown = `---
 name: deploy-notes

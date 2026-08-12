@@ -91,7 +91,7 @@ export async function discoverSkillDirectory(
     };
   } catch (error) {
     console.warn(
-      `[nakama:skills] Skipping ${skillFilePath}:`,
+      `[atlas:skills] Skipping ${skillFilePath}:`,
       error instanceof Error ? error.message : error
     );
     return null;

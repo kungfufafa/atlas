@@ -236,7 +236,7 @@ export function createDmMessage(options: {
   const message = {
     author: { bot: false, id: options.userId ?? "424242424242424242" },
     channel,
-    client: { user: { id: "bot_id", username: "nakamabot" } },
+    client: { user: { id: "bot_id", username: "atlasbot" } },
     content: options.content ?? "",
   } as unknown as Message;
 
@@ -400,7 +400,7 @@ export function createGuildChatMessage(options: {
     channel,
     client: {
       channels: clientChannels,
-      user: { id: botId, username: "nakamabot" },
+      user: { id: botId, username: "atlasbot" },
     },
     content: options.content ?? "",
     guild: {
@@ -594,7 +594,7 @@ export async function withTempHome<T>(
 
   await previous;
 
-  const homeDir = await mkdtemp(path.join(os.tmpdir(), "nakama-discord-home-"));
+  const homeDir = await mkdtemp(path.join(os.tmpdir(), "atlas-discord-home-"));
   const configDir = path.join(homeDir, ".atlas");
   const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
   process.env.ATLAS_CONFIG_DIR = configDir;

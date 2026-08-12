@@ -34,15 +34,15 @@ describe("composio-config", () => {
   });
 
   test("composioOrgUserId namespaces org id", () => {
-    expect(composioOrgUserId("org_123")).toBe("nakama:org:org_123");
+    expect(composioOrgUserId("org_123")).toBe("atlas:org:org_123");
   });
 
-  test("composioUserId namespaces nakama user id", () => {
-    expect(composioUserId("usr_123")).toBe("nakama:user:usr_123");
+  test("composioUserId namespaces atlas user id", () => {
+    expect(composioUserId("usr_123")).toBe("atlas:user:usr_123");
   });
 
   test("saveComposioConfig writes config.ini", async () => {
-    const configDir = await mkdtemp(join(tmpdir(), "nakama-composio-config-"));
+    const configDir = await mkdtemp(join(tmpdir(), "atlas-composio-config-"));
     const previous = process.env.ATLAS_CONFIG_DIR;
     process.env.ATLAS_CONFIG_DIR = configDir;
 

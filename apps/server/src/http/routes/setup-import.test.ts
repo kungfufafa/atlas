@@ -10,7 +10,7 @@ import { setupTestConfigDir } from "../../test-config-dir";
 import { createMinimalHonoApp } from "../test-app-helpers";
 import { loginPlatformAdminSession } from "../test-session-helpers";
 
-setupTestConfigDir("nakama-setup-import-routes-test-");
+setupTestConfigDir("atlas-setup-import-routes-test-");
 
 function createApp() {
   return createMinimalHonoApp({

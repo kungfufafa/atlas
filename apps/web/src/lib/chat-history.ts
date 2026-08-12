@@ -79,7 +79,7 @@ export function readRequestedDraftKeyFromNewChatSearch(
   return draftKey || null;
 }
 
-export const CHAT_DRAFT_STORAGE_PREFIX = "nakama:chat-draft:";
+export const CHAT_DRAFT_STORAGE_PREFIX = "atlas:chat-draft:";
 
 export function consumeStoredChatDraft(key: string): string | null {
   if (typeof sessionStorage === "undefined") {
@@ -112,7 +112,7 @@ export function isChatSessionPath(pathname: string): boolean {
   return chatProfileIdFromPath(pathname) !== null;
 }
 
-export const ACTIVE_CHAT_PROFILE_STORAGE_KEY = "nakama:active-chat-profile";
+export const ACTIVE_CHAT_PROFILE_STORAGE_KEY = "atlas:active-chat-profile";
 
 export function readStoredActiveChatProfileId(): string | null {
   if (typeof localStorage === "undefined") {
@@ -295,7 +295,7 @@ export interface ChatListItem {
 }
 
 export function sessionStorageKey(profileId: string): string {
-  return `nakama:session:${profileId}`;
+  return `atlas:session:${profileId}`;
 }
 
 export const HISTORY_SESSION_CHANNELS = [

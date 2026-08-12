@@ -122,7 +122,7 @@ export function WebPublicUrlSettingsRow() {
               handleSave();
             }
           }}
-          placeholder="https://nakama.example.com"
+          placeholder="https://atlas.example.com"
           value={value}
         />
         <Button

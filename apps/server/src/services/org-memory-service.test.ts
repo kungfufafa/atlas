@@ -17,7 +17,7 @@ describe("OrgMemoryService", () => {
   });
 
   async function setup(withDb = false): Promise<OrgMemoryService> {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-org-memory-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-org-memory-"));
     return new OrgMemoryService(
       withDb ? createInMemoryDatabaseAdapter() : null,
       { configDir: tempDir }

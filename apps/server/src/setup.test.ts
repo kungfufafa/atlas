@@ -72,7 +72,7 @@ describe("ensureProviderConfigured", () => {
 
   test("bootstraps provider config from env vars when config.ini is missing", async () => {
     snapshotEnv();
-    configDir = await mkdtemp(join(tmpdir(), "nakama-setup-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-setup-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
     process.env.ATLAS_PROVIDER = "openai";
     process.env.OPENAI_API_KEY = "sk-test";

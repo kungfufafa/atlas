@@ -29,7 +29,7 @@ describe("profile avatar", () => {
   });
 
   test("saves, reads, and deletes avatar files", async () => {
-    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "nakama-avatar-"));
+    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "atlas-avatar-"));
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const profileId = "profile_test";
@@ -57,7 +57,7 @@ describe("profile avatar", () => {
   });
 
   test("replaces an existing avatar on upload", async () => {
-    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "nakama-avatar-"));
+    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "atlas-avatar-"));
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const profileId = "profile_test";

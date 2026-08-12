@@ -13,7 +13,7 @@ test("chat stream request includes cookie CSRF protection", async () => {
   (
     globalThis as typeof globalThis & { document?: { cookie: string } }
   ).document = {
-    cookie: "nakama_csrf=csrf-token-123; other=value",
+    cookie: "atlas_csrf=csrf-token-123; other=value",
   };
 
   const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
@@ -94,8 +94,7 @@ test("data export downloads zip bytes with filename metadata", async () => {
       fetchCalls.push({ init, input });
       return new Response(new Uint8Array([1, 2, 3]), {
         headers: {
-          "Content-Disposition":
-            'attachment; filename="nakama-export-test.zip"',
+          "Content-Disposition": 'attachment; filename="atlas-export-test.zip"',
           "Content-Type": "application/zip",
         },
       });
@@ -110,7 +109,7 @@ test("data export downloads zip bytes with filename metadata", async () => {
   const headers = new Headers(fetchCalls[0]!.init?.headers);
   expect(headers.get("Authorization")).toBe("Bearer local-auth-token");
   expect(headers.get("Content-Type")).toBeNull();
-  expect(result.filename).toBe("nakama-export-test.zip");
+  expect(result.filename).toBe("atlas-export-test.zip");
   expect(Array.from(new Uint8Array(result.data))).toEqual([1, 2, 3]);
 });
 
@@ -162,16 +161,16 @@ test("data import helpers upload base64 archive data", async () => {
         return Response.json({
           archiveFileCount: 1,
           archiveTotalBytes: 3,
-          manifest: { kind: "nakama-export" },
+          manifest: { kind: "atlas-export" },
           topLevelPaths: ["config.ini"],
           willReplaceRoot: true,
         });
       }
 
       return Response.json({
-        manifest: { kind: "nakama-export" },
+        manifest: { kind: "atlas-export" },
         restoredFileCount: 1,
-        restoredRoot: "/tmp/nakama",
+        restoredRoot: "/tmp/atlas",
       });
     },
   });
@@ -198,7 +197,7 @@ test("data import helpers upload base64 archive data", async () => {
 });
 
 test("non-browser clients reload the local auth token once after a 401", async () => {
-  const configDir = await mkdtemp(join(tmpdir(), "nakama-client-auth-reload-"));
+  const configDir = await mkdtemp(join(tmpdir(), "atlas-client-auth-reload-"));
   process.env.ATLAS_CONFIG_DIR = configDir;
 
   try {
@@ -337,12 +336,12 @@ function createPublishShareClient(options: {
 
 test("publishProfileArtifactShare includes clientOrigin when configured", async () => {
   const { client, fetchCalls } = createPublishShareClient({
-    clientOrigin: "https://nakama.example.com/",
+    clientOrigin: "https://atlas.example.com/",
     response: {
       id: "share_1",
       refreshed: false,
       sharePath: "/s/tok",
-      shareUrl: "https://nakama.example.com/s/tok",
+      shareUrl: "https://atlas.example.com/s/tok",
       token: "tok",
       webPublicUrlConfigured: true,
     },
@@ -355,7 +354,7 @@ test("publishProfileArtifactShare includes clientOrigin when configured", async 
     "http://127.0.0.1:4310/v1/profiles/profile_1/artifacts/shares"
   );
   expect(JSON.parse(fetchCalls[0]!.init?.body as string)).toEqual({
-    clientOrigin: "https://nakama.example.com",
+    clientOrigin: "https://atlas.example.com",
     path: "report.md",
   });
 });

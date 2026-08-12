@@ -312,7 +312,7 @@ describe("AgentService coding delegation context", () => {
 
   beforeEach(async () => {
     tempBinDir = await mkdtemp(
-      path.join(tmpdir(), "nakama-agent-delegation-bin-")
+      path.join(tmpdir(), "atlas-agent-delegation-bin-")
     );
     process.env.PATH = tempBinDir;
     process.env.ATLAS_DISABLE_FIX_PATH = "1";
@@ -458,7 +458,7 @@ describe("AgentService skill_manage injection", () => {
 
   beforeEach(async () => {
     configDir = await mkdtemp(
-      path.join(tmpdir(), "nakama-skill-manage-inject-")
+      path.join(tmpdir(), "atlas-skill-manage-inject-")
     );
     process.env.ATLAS_CONFIG_DIR = configDir;
   });

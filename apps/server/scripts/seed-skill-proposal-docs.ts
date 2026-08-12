@@ -8,7 +8,7 @@ import { SkillProposalService } from "../src/services/skill-proposal-service";
 import { SkillsService } from "../src/services/skills-service";
 
 const configDir = process.env.ATLAS_CONFIG_DIR?.trim() || getUserConfigDir();
-const database = await createDatabase("file:data/sqlite/nakama.sqlite", {
+const database = await createDatabase("file:data/sqlite/atlas.sqlite", {
   baseDir: configDir,
 });
 const db = database.adapter;

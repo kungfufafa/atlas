@@ -17,7 +17,7 @@ Atlas is a multi-tenant Bun + TypeScript platform for running AI agent teams (or
 
 ```bash
 git clone https://github.com/kungfufafa/atlas.git
-cd nakama
+cd atlas
 bun install
 ```
 

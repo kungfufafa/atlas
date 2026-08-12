@@ -16,7 +16,7 @@ describe("search_files tool", () => {
   });
 
   test("returns matching snippets with relative file paths", async () => {
-    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "nakama-search-"));
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-search-"));
     await writeFile(
       path.join(workspaceRoot, "notes.txt"),
       "alpha one\nbeta two\n",
@@ -47,7 +47,7 @@ describe("search_files tool", () => {
   });
 
   test("supports fixed-string mode", async () => {
-    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "nakama-search-"));
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-search-"));
     await writeFile(
       path.join(workspaceRoot, "literal.txt"),
       "abc.def\n",
@@ -65,7 +65,7 @@ describe("search_files tool", () => {
   });
 
   test("applies glob filters", async () => {
-    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "nakama-search-"));
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-search-"));
     await writeFile(
       path.join(workspaceRoot, "one.md"),
       "needle here\n",
@@ -88,7 +88,7 @@ describe("search_files tool", () => {
   });
 
   test("searches only inside requested subpath", async () => {
-    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "nakama-search-"));
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-search-"));
     await mkdir(path.join(workspaceRoot, "data"), { recursive: true });
     await writeFile(
       path.join(workspaceRoot, "data", "inside.txt"),
@@ -112,7 +112,7 @@ describe("search_files tool", () => {
   });
 
   test("rejects path traversal outside workspace", async () => {
-    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "nakama-search-"));
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-search-"));
 
     await expect(
       runSearchFiles(
@@ -124,7 +124,7 @@ describe("search_files tool", () => {
   });
 
   test("requires profileId", async () => {
-    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "nakama-search-"));
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-search-"));
 
     await expect(
       runSearchFiles({ query: "x" }, {}, { workspaceRoot })
@@ -132,7 +132,7 @@ describe("search_files tool", () => {
   });
 
   test("truncates based on maxResults", async () => {
-    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "nakama-search-"));
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-search-"));
     const lines = Array.from(
       { length: 40 },
       (_, index) => `hit ${index + 1}`
@@ -150,7 +150,7 @@ describe("search_files tool", () => {
   });
 
   test("returns empty results when query has no matches", async () => {
-    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "nakama-search-"));
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-search-"));
     await writeFile(
       path.join(workspaceRoot, "plain.txt"),
       "hello world\n",

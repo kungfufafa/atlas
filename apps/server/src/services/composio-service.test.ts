@@ -21,7 +21,7 @@ function createMockClient(): ComposioApiClient {
       _allowedTools,
       connectedAccounts = {}
     ) {
-      expect(userId).toBe("nakama:user:user_admin");
+      expect(userId).toBe("atlas:user:user_admin");
       expect(connectedAccounts).toEqual({});
       return {
         headers: { Authorization: "Bearer test" },
@@ -93,7 +93,7 @@ async function seedOrgWithAdmin(
   });
   await db.createUser({
     createdAt: now,
-    email: "local-client@nakama.internal",
+    email: "local-client@atlas.internal",
     id: LOCAL_CLIENT_USER_ID,
     passwordHash: "hash",
     updatedAt: now,
@@ -113,7 +113,7 @@ async function seedOrgWithAdmin(
 }
 
 async function createConfiguredService() {
-  const configDir = await mkdtemp(join(tmpdir(), "nakama-composio-service-"));
+  const configDir = await mkdtemp(join(tmpdir(), "atlas-composio-service-"));
   const previous = process.env.ATLAS_CONFIG_DIR;
   process.env.ATLAS_CONFIG_DIR = configDir;
   await saveComposioConfig({ apiKey: TEST_API_KEY });

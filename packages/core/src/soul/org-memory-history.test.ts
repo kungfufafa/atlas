@@ -29,7 +29,7 @@ describe("org memory history", () => {
 
   async function setupOrg(orgId = "org_a"): Promise<string> {
     tempDir = await mkdtemp(
-      path.join(os.tmpdir(), "nakama-org-memory-history-")
+      path.join(os.tmpdir(), "atlas-org-memory-history-")
     );
     process.env.ATLAS_CONFIG_DIR = tempDir;
     return orgId;

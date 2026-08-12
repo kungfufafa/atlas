@@ -19,8 +19,8 @@ describe("database reopen after restore", () => {
   // The ENOENT that follows such a timeout is afterEach removing the temp dir
   // underneath the timed-out body, not a second fault.
   test("reopen reads the replacement sqlite file at the same path", async () => {
-    rootDir = await mkdtemp(join(tmpdir(), "nakama-db-reopen-"));
-    const databaseUrl = `file:${join(rootDir, "sqlite", "nakama.sqlite")}`;
+    rootDir = await mkdtemp(join(tmpdir(), "atlas-db-reopen-"));
+    const databaseUrl = `file:${join(rootDir, "sqlite", "atlas.sqlite")}`;
     const now = new Date().toISOString();
 
     const database = await createDatabase(databaseUrl);
@@ -42,7 +42,7 @@ describe("database reopen after restore", () => {
     await mkdir(stagedSqliteDir, { recursive: true });
 
     const staged = await createDatabase(
-      `file:${join(stagedSqliteDir, "nakama.sqlite")}`
+      `file:${join(stagedSqliteDir, "atlas.sqlite")}`
     );
     await staged.adapter.createUser({
       createdAt: now,

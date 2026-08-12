@@ -8,7 +8,7 @@ import { setupTestConfigDir } from "../test-config-dir";
 import { AuthService } from "./auth-service";
 import { OrgService } from "./org-service";
 
-setupTestConfigDir("nakama-org-service-test-");
+setupTestConfigDir("atlas-org-service-test-");
 
 function createOrgService() {
   const databaseAdapter = createInMemoryDatabaseAdapter();

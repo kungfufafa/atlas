@@ -12,7 +12,7 @@ import {
 import type { MailReader } from "../mail/types";
 import { runExtractDocumentText } from "./extract-document-text";
 
-process.env.NAKAMA_EMAIL_ATTACHMENT_SECRET ??=
+process.env.ATLAS_EMAIL_ATTACHMENT_SECRET ??=
   "test-email-attachment-secret-32-chars";
 
 const FIXTURES = join(import.meta.dir, "..", "__fixtures__");

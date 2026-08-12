@@ -3,11 +3,11 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 SCREENSHOT_DIR="$(cd "$(dirname "$0")/.." && pwd)/public/screenshots"
-TEMP_CONFIG="/tmp/nakama-docs-chat-screenshots-$$"
-COOKIE_JAR="/tmp/nakama-docs-chat-cookies-$$.txt"
+TEMP_CONFIG="/tmp/atlas-docs-chat-screenshots-$$"
+COOKIE_JAR="/tmp/atlas-docs-chat-cookies-$$.txt"
 PORT=4313
 BASE_URL="http://127.0.0.1:${PORT}"
-SESSION=nakama-docs-chat-screenshots
+SESSION=atlas-docs-chat-screenshots
 SERVER_PID=""
 VIEWPORT_WIDTH=1280
 VIEWPORT_HEIGHT=800
@@ -25,7 +25,7 @@ trap cleanup EXIT
 mkdir -p "$SCREENSHOT_DIR" "$TEMP_CONFIG"
 
 ATLAS_CONFIG_DIR="$TEMP_CONFIG" ATLAS_PORT="$PORT" \
-  bun run "$ROOT/apps/server/src/index.ts" > /tmp/nakama-docs-chat-screenshot-server.log 2>&1 &
+  bun run "$ROOT/apps/server/src/index.ts" > /tmp/atlas-docs-chat-screenshot-server.log 2>&1 &
 SERVER_PID=$!
 
 for _ in $(seq 1 60); do
@@ -45,8 +45,8 @@ curl -sf -c "$COOKIE_JAR" -X POST "${BASE_URL}/v1/auth/setup" \
     \"webPublicUrl\": \"${BASE_URL}\"
   }" >/dev/null
 
-CSRF_VAL=$(awk '$6=="nakama_csrf"{print $7}' "$COOKIE_JAR")
-SESSION_VAL=$(awk '$6=="nakama_session"{print $7}' "$COOKIE_JAR")
+CSRF_VAL=$(awk '$6=="atlas_csrf"{print $7}' "$COOKIE_JAR")
+SESSION_VAL=$(awk '$6=="atlas_session"{print $7}' "$COOKIE_JAR")
 
 curl -sf -b "$COOKIE_JAR" -X POST "${BASE_URL}/v1/providers" \
   -H 'Content-Type: application/json' \
@@ -54,9 +54,9 @@ curl -sf -b "$COOKIE_JAR" -X POST "${BASE_URL}/v1/providers" \
   -d '{"type":"ollama","apiKey":"","hostMode":"local","model":"llama3.2"}' >/dev/null
 
 agent-browser --session "$SESSION" close --all 2>/dev/null || true
-agent-browser --session "$SESSION" cookies set nakama_session "$SESSION_VAL" \
+agent-browser --session "$SESSION" cookies set atlas_session "$SESSION_VAL" \
   --url "${BASE_URL}/" --httpOnly --sameSite Lax
-agent-browser --session "$SESSION" cookies set nakama_csrf "$CSRF_VAL" \
+agent-browser --session "$SESSION" cookies set atlas_csrf "$CSRF_VAL" \
   --url "${BASE_URL}/" --sameSite Lax
 agent-browser --session "$SESSION" open "${BASE_URL}/chat"
 agent-browser --session "$SESSION" wait 3000

@@ -9,7 +9,7 @@ import {
   type UserConfig,
 } from "./user-config";
 
-export const LOCAL_CLIENT_EMAIL = "local-client@nakama.internal";
+export const LOCAL_CLIENT_EMAIL = "local-client@atlas.internal";
 export const LOCAL_CLIENT_USER_ID = "user_local_client";
 const LOCAL_AUTH_TOKEN_PREFIX = "tc_local_";
 const LOCAL_AUTH_TOKEN_FILENAME = "local-auth-token";
@@ -17,7 +17,7 @@ const LOCAL_AUTH_TOKEN_FILENAME = "local-auth-token";
 export class LocalAuthTokenManagedExternallyError extends Error {
   constructor() {
     super(
-      "Local auth token is managed by NAKAMA_LOCAL_AUTH_TOKEN and cannot be rotated on disk."
+      "Local auth token is managed by ATLAS_LOCAL_AUTH_TOKEN and cannot be rotated on disk."
     );
     this.name = "LocalAuthTokenManagedExternallyError";
   }

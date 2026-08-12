@@ -27,7 +27,7 @@ describe("knowledge_base_search tool", () => {
     filename: string,
     body: string
   ): Promise<void> {
-    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "nakama-kb-search-"));
+    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "atlas-kb-search-"));
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const profileDir = path.join(

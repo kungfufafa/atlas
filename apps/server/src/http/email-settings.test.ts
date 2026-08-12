@@ -22,7 +22,7 @@ describe("email settings routes", () => {
   });
 
   test("org admin can read and update email settings without exposing password", async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-email-route-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-email-route-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     const databaseAdapter = createInMemoryDatabaseAdapter();

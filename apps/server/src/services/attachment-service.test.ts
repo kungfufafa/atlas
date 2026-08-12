@@ -27,7 +27,7 @@ afterEach(() => {
 
 describe("attachment service", () => {
   test("persists metadata and round-trips bytes through loader", async () => {
-    tempConfigDir = mkdtempSync(join(tmpdir(), "nakama-att-svc-"));
+    tempConfigDir = mkdtempSync(join(tmpdir(), "atlas-att-svc-"));
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
     const db = createInMemoryDatabaseAdapter();

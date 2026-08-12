@@ -24,7 +24,7 @@ afterEach(async () => {
 });
 
 async function withConfigDir(): Promise<void> {
-  configDir = await mkdtemp(join(tmpdir(), "nakama-system-status-"));
+  configDir = await mkdtemp(join(tmpdir(), "atlas-system-status-"));
   process.env.ATLAS_CONFIG_DIR = configDir;
 }
 

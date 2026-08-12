@@ -42,7 +42,7 @@ export async function writeCodexConfigToml(
   const apiKey = routing.apiKey ?? "";
 
   const contents = [
-    'model_provider = "nakama"',
+    'model_provider = "atlas"',
     "",
     "[model_providers.atlas]",
     'name = "Atlas"',
@@ -53,7 +53,7 @@ export async function writeCodexConfigToml(
     `OPENAI_API_KEY = "${apiKey.replace(/"/g, '\\"')}"`,
     "",
     "[profiles.atlas]",
-    'model_provider = "nakama"',
+    'model_provider = "atlas"',
     `model = "${model.replace(/"/g, '\\"')}"`,
     "",
   ].join("\n");
@@ -111,7 +111,7 @@ function resolveOpenCodeProviderKey(providerType: ProviderName): string {
     return "opencode-go";
   }
 
-  return "nakama";
+  return "atlas";
 }
 
 /**
@@ -141,14 +141,14 @@ function resolvePiProviderId(providerType: ProviderName): string {
   if (providerType === "opencode_go") {
     return "opencode";
   }
-  return "nakama";
+  return "atlas";
 }
 
 /**
  * Default base URLs for built-in pi providers.
  * When the configured base URL matches the default, we can safely override
  * the built-in provider (which keeps the correct API type).
- * When it doesn't match (proxy/gateway), we create a custom "nakama" provider
+ * When it doesn't match (proxy/gateway), we create a custom "atlas" provider
  * with the OpenAI Chat Completions API, which is universally supported.
  */
 const PI_DEFAULT_BASE_URLS: Partial<Record<ProviderName, string>> = {
@@ -182,7 +182,7 @@ function isDefaultBaseUrl(
  * - If the base URL matches the built-in provider's default (e.g. real
  *   api.anthropic.com), override the built-in provider's baseUrl + apiKey.
  *   This keeps the provider's native API type (anthropic-messages, etc).
- * - If the base URL is custom (proxy/gateway), create a standalone "nakama"
+ * - If the base URL is custom (proxy/gateway), create a standalone "atlas"
  *   provider with the OpenAI Chat Completions API ("openai-completions"),
  *   which is the most universally supported format across proxies/gateways.
  *   Using the built-in "anthropic" or "openai" provider with a custom base URL

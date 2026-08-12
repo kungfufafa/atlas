@@ -15,7 +15,7 @@ describe("isLegacySoulPlaceholder", () => {
 
 describe("initSoulDirectory seeding", () => {
   test("fills an empty SOUL.md on init", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "nakama-soul-empty-"));
+    const directory = await mkdtemp(join(tmpdir(), "atlas-soul-empty-"));
 
     try {
       await writeFile(join(directory, "SOUL.md"), "\n", "utf8");
@@ -29,7 +29,7 @@ describe("initSoulDirectory seeding", () => {
   });
 
   test("upgrades legacy placeholder SOUL.md", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "nakama-soul-legacy-"));
+    const directory = await mkdtemp(join(tmpdir(), "atlas-soul-legacy-"));
 
     try {
       await writeFile(
@@ -47,7 +47,7 @@ describe("initSoulDirectory seeding", () => {
   });
 
   test("does not overwrite customized SOUL.md", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "nakama-soul-custom-"));
+    const directory = await mkdtemp(join(tmpdir(), "atlas-soul-custom-"));
 
     try {
       await writeFile(
@@ -67,7 +67,7 @@ describe("initSoulDirectory seeding", () => {
 
   test("creates full stack for first install", async () => {
     const directory = await mkdtemp(
-      join(tmpdir(), "nakama-soul-first-install-")
+      join(tmpdir(), "atlas-soul-first-install-")
     );
 
     try {

@@ -6,7 +6,7 @@ import {
 } from "node:crypto";
 
 function deriveKey(secret: string): Buffer {
-  return createHash("sha256").update(`nakama-composio:${secret}`).digest();
+  return createHash("sha256").update(`atlas-composio:${secret}`).digest();
 }
 
 export function encryptComposioSecret(

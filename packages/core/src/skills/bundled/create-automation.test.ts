@@ -195,7 +195,7 @@ describe("ensureBundledSkillFiles", () => {
   let configDir: string;
 
   beforeEach(async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-bundled-skills-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-bundled-skills-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
     await mkdir(join(configDir, "agent", "skills"), { recursive: true });
   });

@@ -19,7 +19,7 @@ describe("agent-browser service", () => {
   let tempBinDir = "";
 
   beforeEach(async () => {
-    tempBinDir = await mkdtemp(join(tmpdir(), "nakama-agent-browser-bin-"));
+    tempBinDir = await mkdtemp(join(tmpdir(), "atlas-agent-browser-bin-"));
     process.env.PATH = tempBinDir;
     process.env.ATLAS_DISABLE_FIX_PATH = "1";
   });
@@ -67,10 +67,10 @@ describe("agent-browser settings routes", () => {
 
   beforeEach(async () => {
     tempBinDir = await mkdtemp(
-      join(tmpdir(), "nakama-agent-browser-route-bin-")
+      join(tmpdir(), "atlas-agent-browser-route-bin-")
     );
     configDir = await mkdtemp(
-      join(tmpdir(), "nakama-agent-browser-route-config-")
+      join(tmpdir(), "atlas-agent-browser-route-config-")
     );
     process.env.PATH = tempBinDir;
     process.env.ATLAS_CONFIG_DIR = configDir;

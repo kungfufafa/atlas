@@ -38,7 +38,7 @@ describe("composeSoulSystemPrompt", () => {
 
 describe("default seed compose integration", () => {
   test("initSoulDirectory + loadSoulStack + compose omits Profile Instructions", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "nakama-soul-compose-"));
+    const directory = await mkdtemp(join(tmpdir(), "atlas-soul-compose-"));
 
     try {
       await initSoulDirectory(directory);
@@ -52,7 +52,7 @@ describe("default seed compose integration", () => {
   });
 
   test("initSoulDirectory does not overwrite existing SOUL.md", async () => {
-    const directory = await mkdtemp(join(tmpdir(), "nakama-soul-init-"));
+    const directory = await mkdtemp(join(tmpdir(), "atlas-soul-init-"));
 
     try {
       await initSoulDirectory(directory);

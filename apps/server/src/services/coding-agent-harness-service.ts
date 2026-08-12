@@ -881,7 +881,7 @@ async function probeHarnessExec(
     userConfig: probeContext?.userConfig,
   });
   const tempDir = await mkdtemp(
-    path.join(tmpdir(), "nakama-coding-agent-probe-")
+    path.join(tmpdir(), "atlas-coding-agent-probe-")
   );
 
   const piProvider = routing.providerType

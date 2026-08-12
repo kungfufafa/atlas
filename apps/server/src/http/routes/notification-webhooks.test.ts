@@ -20,7 +20,7 @@ describe("notification webhook routes", () => {
   });
 
   async function createApp() {
-    tempHome = await mkdtemp(path.join(os.tmpdir(), "nakama-notify-webhook-"));
+    tempHome = await mkdtemp(path.join(os.tmpdir(), "atlas-notify-webhook-"));
     homedirSpy = spyOn(os, "homedir").mockReturnValue(tempHome);
     await saveTelegramConfig({ botToken: "1234567890:TEST" });
 

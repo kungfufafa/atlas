@@ -55,7 +55,7 @@ try {
 
   const client = createClient({
     authToken:
-      (await loadLocalAuthToken("discord@nakama.internal")) ?? undefined,
+      (await loadLocalAuthToken("discord@atlas.internal")) ?? undefined,
     baseUrl: serverUrl,
     clientOrigin: resolveWebPublicUrl(),
   });

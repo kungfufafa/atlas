@@ -33,10 +33,10 @@ function contextScope(
 }
 
 function sign(payload: string): string {
-  const secret = process.env.NAKAMA_EMAIL_ATTACHMENT_SECRET?.trim();
+  const secret = process.env.ATLAS_EMAIL_ATTACHMENT_SECRET?.trim();
   if (!secret || secret.length < 32) {
     throw new Error(
-      "NAKAMA_EMAIL_ATTACHMENT_SECRET must be configured with at least 32 characters."
+      "ATLAS_EMAIL_ATTACHMENT_SECRET must be configured with at least 32 characters."
     );
   }
 

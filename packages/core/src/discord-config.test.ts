@@ -72,7 +72,7 @@ describe("loadDiscordSettingsPublic", () => {
   });
 
   test("includes an invite URL when Discord returns the application id", async () => {
-    await withTempHomedir("nakama-core-discord-home-", async (tempHome) => {
+    await withTempHomedir("atlas-core-discord-home-", async (tempHome) => {
       await writeChannelIniConfig(tempHome, "discord", {
         botToken: "discord-bot-token",
       });

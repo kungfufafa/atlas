@@ -33,8 +33,8 @@ export function cookieValue(setCookies: string[], name: string): string {
 
 export function cookieHeaderFromSetCookies(setCookies: string[]): string {
   return [
-    `nakama_session=${cookieValue(setCookies, "nakama_session")}`,
-    `nakama_csrf=${cookieValue(setCookies, "nakama_csrf")}`,
+    `atlas_session=${cookieValue(setCookies, "atlas_session")}`,
+    `atlas_csrf=${cookieValue(setCookies, "atlas_csrf")}`,
   ].join("; ");
 }
 
@@ -56,7 +56,7 @@ export function browserSessionFromResponse(
 ): TestBrowserSession {
   const setCookies = extractSetCookies(response);
   const cookieHeader = cookieHeaderFromSetCookies(setCookies);
-  const csrfToken = cookieValue(setCookies, "nakama_csrf");
+  const csrfToken = cookieValue(setCookies, "atlas_csrf");
 
   return {
     cookieHeader,

@@ -18,6 +18,6 @@ export function loadConfig(
   env: Record<string, string | undefined> = process.env
 ): AppConfig {
   return {
-    databaseUrl: env.DATABASE_URL ?? "file:data/sqlite/nakama.sqlite",
+    databaseUrl: env.DATABASE_URL ?? "file:data/sqlite/atlas.sqlite",
   };
 }

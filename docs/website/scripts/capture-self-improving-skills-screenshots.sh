@@ -5,19 +5,19 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 SCREENSHOT_DIR="$(cd "$(dirname "$0")/.." && pwd)/public/screenshots"
-TEMP_CONFIG="/tmp/nakama-docs-skills-screenshots-$$"
-COOKIE_JAR="/tmp/nakama-docs-skills-cookies-$$.txt"
+TEMP_CONFIG="/tmp/atlas-docs-skills-screenshots-$$"
+COOKIE_JAR="/tmp/atlas-docs-skills-cookies-$$.txt"
 PORT=4315
 BASE_URL="http://127.0.0.1:${PORT}"
-SESSION=nakama-docs-skills-screenshots
+SESSION=atlas-docs-skills-screenshots
 SERVER_PID=""
 VIEWPORT_WIDTH=1280
 VIEWPORT_HEIGHT=720
 
 if command -v agent-browser >/dev/null 2>&1; then
   AB="$(command -v agent-browser)"
-elif [[ -x "/Users/ahmadrosid/Library/pnpm/nodejs/22.23.1/bin/agent-browser" ]]; then
-  AB="/Users/ahmadrosid/Library/pnpm/nodejs/22.23.1/bin/agent-browser"
+elif [[ -x "${HOME}/Library/pnpm/nodejs/22.23.1/bin/agent-browser" ]]; then
+  AB="${HOME}/Library/pnpm/nodejs/22.23.1/bin/agent-browser"
 else
   AB="npx --yes agent-browser"
 fi
@@ -33,7 +33,7 @@ stop_server() {
 start_server() {
   stop_server
   ATLAS_CONFIG_DIR="$TEMP_CONFIG" ATLAS_PORT="$PORT" \
-    bun run "$ROOT/apps/server/src/index.ts" > /tmp/nakama-docs-skills-screenshot-server.log 2>&1 &
+    bun run "$ROOT/apps/server/src/index.ts" > /tmp/atlas-docs-skills-screenshot-server.log 2>&1 &
   SERVER_PID=$!
 
   for _ in $(seq 1 60); do
@@ -44,7 +44,7 @@ start_server() {
   done
 
   echo "Server failed to start. Log:"
-  tail -20 /tmp/nakama-docs-skills-screenshot-server.log || true
+  tail -20 /tmp/atlas-docs-skills-screenshot-server.log || true
   exit 1
 }
 
@@ -68,8 +68,8 @@ SETUP_BODY=$(curl -sf -c "$COOKIE_JAR" -X POST "${BASE_URL}/v1/auth/setup" \
   }")
 
 ORG_ID=$(printf '%s' "$SETUP_BODY" | bun -e 'const j=JSON.parse(await Bun.stdin.text()); process.stdout.write(j.activeOrgId ?? "");')
-CSRF_VAL=$(awk '$6=="nakama_csrf"{print $7}' "$COOKIE_JAR")
-SESSION_VAL=$(awk '$6=="nakama_session"{print $7}' "$COOKIE_JAR")
+CSRF_VAL=$(awk '$6=="atlas_csrf"{print $7}' "$COOKIE_JAR")
+SESSION_VAL=$(awk '$6=="atlas_session"{print $7}' "$COOKIE_JAR")
 
 curl -sf -b "$COOKIE_JAR" -X POST "${BASE_URL}/v1/providers" \
   -H 'Content-Type: application/json' \
@@ -87,9 +87,9 @@ stop_server
 start_server
 
 $AB --session "$SESSION" close --all 2>/dev/null || true
-$AB --session "$SESSION" cookies set nakama_session "$SESSION_VAL" \
+$AB --session "$SESSION" cookies set atlas_session "$SESSION_VAL" \
   --url "${BASE_URL}/" --httpOnly --sameSite Lax
-$AB --session "$SESSION" cookies set nakama_csrf "$CSRF_VAL" \
+$AB --session "$SESSION" cookies set atlas_csrf "$CSRF_VAL" \
   --url "${BASE_URL}/" --sameSite Lax
 $AB --session "$SESSION" set viewport "$VIEWPORT_WIDTH" "$VIEWPORT_HEIGHT"
 $AB --session "$SESSION" set media light

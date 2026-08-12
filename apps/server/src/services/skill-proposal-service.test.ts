@@ -52,7 +52,7 @@ describe("SkillProposalService", () => {
   let configDir: string;
 
   beforeEach(async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-skill-proposals-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-proposals-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
   });
 

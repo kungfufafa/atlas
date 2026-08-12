@@ -77,7 +77,7 @@ flowchart TB
 ## Repo map
 
 ```text
-nakama/
+atlas/
 ├── apps/
 │   ├── server/                 # HTTP API, auth, org, agent orchestration
 │   ├── web/                    # Dashboard

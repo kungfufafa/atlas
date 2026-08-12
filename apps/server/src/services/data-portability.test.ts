@@ -32,7 +32,7 @@ afterEach(async () => {
 describe("Atlas data portability", () => {
   test("exports config root content with a manifest", async () => {
     await writeFile(join(rootDir, "config.ini"), "provider=openai");
-    await writeFile(join(rootDir, "nakama.db"), "sqlite");
+    await writeFile(join(rootDir, "atlas.db"), "sqlite");
     await writeFile(join(rootDir, "tools.js"), "module.exports = {}");
 
     const result = await createAtlasDataExport({
@@ -41,26 +41,26 @@ describe("Atlas data portability", () => {
     });
     const preview = await previewAtlasDataImport(result.data, { rootDir });
 
-    expect(result.filename).toBe("nakama-export-2026-07-01T10-00-00-000Z.zip");
-    expect(result.manifest.kind).toBe("nakama-export");
+    expect(result.filename).toBe("atlas-export-2026-07-01T10-00-00-000Z.zip");
+    expect(result.manifest.kind).toBe("atlas-export");
     expect(result.manifest.topLevelPaths).toEqual([
+      "atlas.db",
       "config.ini",
-      "nakama.db",
       "tools.js",
     ]);
     expect(preview.manifest.createdAt).toBe("2026-07-01T10:00:00.000Z");
     expect(preview.archiveFileCount).toBe(3);
     expect(preview.topLevelPaths).toEqual([
+      "atlas.db",
       "config.ini",
-      "nakama.db",
       "tools.js",
     ]);
   });
 
   test("reports external database paths without copying them", async () => {
     const outsideDb = join(
-      await mkdtemp(join(tmpdir(), "nakama-external-db-")),
-      "nakama.db"
+      await mkdtemp(join(tmpdir(), "atlas-external-db-")),
+      "atlas.db"
     );
     await writeFile(join(rootDir, "config.ini"), "ok");
 

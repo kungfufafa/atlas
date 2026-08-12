@@ -8,7 +8,7 @@ import {
   setupFreshInstallSession,
 } from "../test-session-helpers";
 
-setupTestConfigDir("nakama-profiles-artifacts-auth-test-");
+setupTestConfigDir("atlas-profiles-artifacts-auth-test-");
 
 function createApp() {
   const readCalls: Array<{ render?: "markdown" }> = [];

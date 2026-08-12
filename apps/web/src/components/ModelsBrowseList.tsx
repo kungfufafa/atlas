@@ -311,7 +311,7 @@ function ModelRowButton({
           {row.experimental && (
             <span
               className="inline-flex items-center rounded bg-amber-500/15 px-1.5 py-0.5 font-bold text-[0.6rem] text-amber-400 uppercase tracking-wide ring-1 ring-amber-500/30"
-              title="Untested with nakama — feature support (tools, JSON mode, streaming) may vary."
+              title="Untested with atlas — feature support (tools, JSON mode, streaming) may vary."
             >
               experimental
             </span>

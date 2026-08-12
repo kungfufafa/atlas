@@ -11,7 +11,7 @@ import {
   type TestBrowserSession,
 } from "../test-session-helpers";
 
-setupTestConfigDir("nakama-artifact-shares-test-");
+setupTestConfigDir("atlas-artifact-shares-test-");
 
 function createApp(databaseAdapter = createInMemoryDatabaseAdapter()) {
   return createMinimalHonoApp({
@@ -258,7 +258,7 @@ describe("artifact share routes", () => {
     const publishResponse = await app.fetch(
       publishArtifactShareRequest({
         body: {
-          clientOrigin: "https://nakama.example.com/",
+          clientOrigin: "https://atlas.example.com/",
           path: "note.md",
         },
         host: "127.0.0.1",
@@ -273,7 +273,7 @@ describe("artifact share routes", () => {
       shareUrl: string | null;
       webPublicUrlConfigured: boolean;
     };
-    expect(published.shareUrl).toMatch(/^https:\/\/nakama\.example\.com\/s\//);
+    expect(published.shareUrl).toMatch(/^https:\/\/atlas\.example\.com\/s\//);
     expect(published.webPublicUrlConfigured).toBe(true);
   });
 

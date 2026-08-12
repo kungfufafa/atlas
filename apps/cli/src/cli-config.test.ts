@@ -10,7 +10,7 @@ import {
 
 describe("cli-config", () => {
   test("saves and loads profile_id", async () => {
-    const configDir = await mkdtemp(join(tmpdir(), "nakama-cli-"));
+    const configDir = await mkdtemp(join(tmpdir(), "atlas-cli-"));
     const previous = process.env.ATLAS_CONFIG_DIR;
     process.env.ATLAS_CONFIG_DIR = configDir;
 

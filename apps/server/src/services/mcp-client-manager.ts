@@ -60,7 +60,7 @@ export class McpClientManager {
 
     const transport = createTransport(server.transport, server.config, options);
     const client = new Client({
-      name: "nakama",
+      name: "atlas",
       version: "1.0.0",
     });
 
@@ -141,7 +141,7 @@ export class McpClientManager {
   ): Promise<CachedMcpTool[]> {
     const mcpTransport = createTransport(transport, config);
     const client = new Client({
-      name: "nakama",
+      name: "atlas",
       version: "1.0.0",
     });
 
@@ -171,7 +171,7 @@ export class McpClientManager {
       },
     });
     const client = new Client({
-      name: "nakama",
+      name: "atlas",
       version: "1.0.0",
     });
 

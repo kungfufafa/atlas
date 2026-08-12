@@ -150,7 +150,7 @@ export const sendDiscordArtifactTool: ToolDefinition<
     properties: {
       path: {
         description:
-          "Artifact path relative to the profile artifacts folder (e.g. nakama-pitch-deck.pdf or artifacts/nakama-pitch-deck.pdf).",
+          "Artifact path relative to the profile artifacts folder (e.g. atlas-pitch-deck.pdf or artifacts/atlas-pitch-deck.pdf).",
         type: "string",
       },
     },

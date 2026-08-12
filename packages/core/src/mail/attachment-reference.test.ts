@@ -4,7 +4,7 @@ import {
   verifyAttachmentReference,
 } from "./attachment-reference";
 
-process.env.NAKAMA_EMAIL_ATTACHMENT_SECRET ??=
+process.env.ATLAS_EMAIL_ATTACHMENT_SECRET ??=
   "test-email-attachment-secret-32-chars";
 
 const context = {

@@ -5,7 +5,7 @@ import { setupTestConfigDir } from "../../test-config-dir";
 import { createMinimalHonoApp } from "../test-app-helpers";
 import { loginUserSession } from "../test-session-helpers";
 
-setupTestConfigDir("nakama-rbac-mutations-test-");
+setupTestConfigDir("atlas-rbac-mutations-test-");
 
 const ORG_ID = "org_test";
 const PASSWORD = "password123";

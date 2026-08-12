@@ -20,7 +20,7 @@ let previousConfigDir: string | undefined;
 
 beforeEach(async () => {
   previousConfigDir = process.env.ATLAS_CONFIG_DIR;
-  configDir = await mkdtemp(path.join(tmpdir(), "nakama-artifacts-"));
+  configDir = await mkdtemp(path.join(tmpdir(), "atlas-artifacts-"));
   process.env.ATLAS_CONFIG_DIR = configDir;
   await mkdir(getProfileArtifactsDir(ORG_ID, PROFILE_ID), { recursive: true });
 });

@@ -6,7 +6,7 @@ import {
   loginPlatformAdminSession,
 } from "./test-session-helpers";
 
-setupTestConfigDir("nakama-org-invites-test-");
+setupTestConfigDir("atlas-org-invites-test-");
 
 function createApp() {
   return createMinimalHonoApp();

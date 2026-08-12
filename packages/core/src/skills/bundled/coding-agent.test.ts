@@ -43,7 +43,7 @@ describe("ensureBundledSkillFiles for coding agent", () => {
   let configDir: string;
 
   beforeEach(async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-coding-agent-skills-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-coding-agent-skills-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
     await mkdir(join(configDir, "agent", "skills"), { recursive: true });
   });

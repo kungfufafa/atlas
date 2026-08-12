@@ -61,7 +61,7 @@ try {
 
   const client = createClient({
     authToken:
-      (await loadLocalAuthToken("whatsapp@nakama.internal")) ?? undefined,
+      (await loadLocalAuthToken("whatsapp@atlas.internal")) ?? undefined,
     baseUrl: serverUrl,
     clientOrigin: resolveWebPublicUrl(),
   });

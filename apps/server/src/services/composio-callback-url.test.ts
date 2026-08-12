@@ -41,9 +41,9 @@ describe("composio-callback-url", () => {
     expect(isLoopbackComposioCallbackBaseUrl("http://localhost:3003")).toBe(
       true
     );
-    expect(
-      isLoopbackComposioCallbackBaseUrl("https://nakama.example.com")
-    ).toBe(false);
+    expect(isLoopbackComposioCallbackBaseUrl("https://atlas.example.com")).toBe(
+      false
+    );
   });
 
   test("resolveComposioCallbackBaseUrl falls back to env when no request", () => {
@@ -64,7 +64,7 @@ describe("composio-callback-url", () => {
   });
 
   test("persistWebPublicUrl preserves path segments", async () => {
-    const configDir = join(tmpdir(), `nakama-callback-url-test-${Date.now()}`);
+    const configDir = join(tmpdir(), `atlas-callback-url-test-${Date.now()}`);
     mkdirSync(configDir, { recursive: true });
     const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
     process.env.ATLAS_CONFIG_DIR = configDir;

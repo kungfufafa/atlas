@@ -6,7 +6,7 @@ import { setupTestConfigDir } from "../test-config-dir";
 import { createMinimalHonoApp } from "./test-app-helpers";
 import { setupFreshInstallSession } from "./test-session-helpers";
 
-setupTestConfigDir("nakama-web-public-url-test-");
+setupTestConfigDir("atlas-web-public-url-test-");
 
 function createApp() {
   return createMinimalHonoApp();
@@ -14,7 +14,7 @@ function createApp() {
 
 describe("web public url settings", () => {
   test("org admin can read and persist the public web URL", async () => {
-    const configDir = await mkdtemp(join(tmpdir(), "nakama-web-public-url-"));
+    const configDir = await mkdtemp(join(tmpdir(), "atlas-web-public-url-"));
     const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
     process.env.ATLAS_CONFIG_DIR = configDir;
 

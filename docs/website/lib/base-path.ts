@@ -1,5 +1,5 @@
 /** Must match `basePath` in next.config.mjs */
-export const BASE_PATH = "/nakama";
+export const BASE_PATH = "/atlas";
 
 export function withBasePath(path: string): string {
   if (!path.startsWith("/")) {

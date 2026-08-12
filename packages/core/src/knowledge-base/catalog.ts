@@ -1,4 +1,4 @@
-import { listKnowledgeBaseSources, NAKAMA_DOCS_LLMS_URL } from "./sources";
+import { ATLAS_DOCS_LLMS_URL, listKnowledgeBaseSources } from "./sources";
 import { listKnowledgeBaseDocuments } from "./store";
 
 export async function composeKnowledgeBaseCatalog(
@@ -30,7 +30,7 @@ export async function composeKnowledgeBaseCatalog(
   if (sources.length > 0) {
     sections.push(
       "# Atlas documentation",
-      `For Atlas product questions, web_fetch ${NAKAMA_DOCS_LLMS_URL}, then web_fetch the matching .md page from that index. Do not use knowledge_base_search for inherited docs.`
+      `For Atlas product questions, web_fetch ${ATLAS_DOCS_LLMS_URL}, then web_fetch the matching .md page from that index. Do not use knowledge_base_search for inherited docs.`
     );
   }
 

@@ -3,10 +3,10 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 SCREENSHOT_DIR="$(cd "$(dirname "$0")/.." && pwd)/public/screenshots"
-TEMP_CONFIG="/tmp/nakama-docs-screenshots-$$"
+TEMP_CONFIG="/tmp/atlas-docs-screenshots-$$"
 PORT=4312
 BASE_URL="http://127.0.0.1:${PORT}"
-SESSION=nakama-docs-screenshots
+SESSION=atlas-docs-screenshots
 SERVER_PID=""
 # Per-step heights: account has 5 fields; org/provider need less vertical space.
 VIEWPORT_WIDTH=1280
@@ -23,7 +23,7 @@ trap cleanup EXIT
 
 mkdir -p "$SCREENSHOT_DIR" "$TEMP_CONFIG"
 ATLAS_CONFIG_DIR="$TEMP_CONFIG" ATLAS_PORT="$PORT" \
-  bun run "$ROOT/apps/server/src/index.ts" > /tmp/nakama-docs-screenshot-server.log 2>&1 &
+  bun run "$ROOT/apps/server/src/index.ts" > /tmp/atlas-docs-screenshot-server.log 2>&1 &
 SERVER_PID=$!
 
 for _ in $(seq 1 60); do

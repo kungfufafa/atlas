@@ -26,7 +26,7 @@ afterEach(() => {
 });
 
 function useTempConfigDir(): void {
-  tempConfigDir = mkdtempSync(join(tmpdir(), "nakama-attachments-"));
+  tempConfigDir = mkdtempSync(join(tmpdir(), "atlas-attachments-"));
   process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 }
 

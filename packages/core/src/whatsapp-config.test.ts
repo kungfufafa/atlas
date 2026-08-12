@@ -100,7 +100,7 @@ describe("generatePairingCode", () => {
 
 describe("saveWhatsAppConfig", () => {
   test("creates config without auto-generating a pairing code", async () => {
-    await withTempHomedir("nakama-core-wa-home-", async () => {
+    await withTempHomedir("atlas-core-wa-home-", async () => {
       const result = await saveWhatsAppConfig({ profileId: "profile_custom" });
 
       expect(result.pairingCode).toBeNull();
@@ -116,7 +116,7 @@ describe("saveWhatsAppConfig", () => {
   });
 
   test("saves profile without requiring a phone number", async () => {
-    await withTempHomedir("nakama-core-wa-home-", async () => {
+    await withTempHomedir("atlas-core-wa-home-", async () => {
       const result = await saveWhatsAppConfig({
         profileId: "profile_custom",
       });
@@ -129,7 +129,7 @@ describe("saveWhatsAppConfig", () => {
   });
 
   test("preserves pairedJid when updating other fields", async () => {
-    await withTempHomedir("nakama-core-wa-home-", async (tempHome) => {
+    await withTempHomedir("atlas-core-wa-home-", async (tempHome) => {
       await saveWhatsAppConfig({ phoneNumber: "+1234567890" });
       const first = await loadWhatsAppConfigFile();
 
@@ -158,7 +158,7 @@ describe("saveWhatsAppConfig", () => {
   });
 
   test("allows first save with profile only", async () => {
-    await withTempHomedir("nakama-core-wa-home-", async () => {
+    await withTempHomedir("atlas-core-wa-home-", async () => {
       const result = await saveWhatsAppConfig({ profileId: "default" });
       expect(result.configured).toBe(true);
     });
@@ -167,7 +167,7 @@ describe("saveWhatsAppConfig", () => {
 
 describe("resetWhatsAppSessionForReconnect", () => {
   test("clears auth dir, pairing fields, and QR while preserving phone and profile", async () => {
-    await withTempHomedir("nakama-core-wa-reset-", async (tempHome) => {
+    await withTempHomedir("atlas-core-wa-reset-", async (tempHome) => {
       await saveWhatsAppConfig({
         phoneNumber: "+1234567890",
         profileId: "profile_custom",
@@ -221,7 +221,7 @@ describe("resetWhatsAppSessionForReconnect", () => {
   });
 
   test("throws when WhatsApp is not configured", async () => {
-    await withTempHomedir("nakama-core-wa-reset-", async () => {
+    await withTempHomedir("atlas-core-wa-reset-", async () => {
       expect(resetWhatsAppSessionForReconnect()).rejects.toThrow(
         "Enable WhatsApp in Integrations before reconnecting."
       );
@@ -229,7 +229,7 @@ describe("resetWhatsAppSessionForReconnect", () => {
   });
 
   test("succeeds when auth dir and QR file are already absent", async () => {
-    await withTempHomedir("nakama-core-wa-reset-", async () => {
+    await withTempHomedir("atlas-core-wa-reset-", async () => {
       await saveWhatsAppConfig({ phoneNumber: "+1234567890" });
 
       const result = await resetWhatsAppSessionForReconnect();
@@ -293,7 +293,7 @@ describe("resolveWhatsAppConfigFromSources", () => {
 
 describe("syncWhatsAppOwnerPairing", () => {
   test("auto-pairs owner when WhatsApp JID includes a device suffix", async () => {
-    await withTempHomedir("nakama-core-wa-sync-", async () => {
+    await withTempHomedir("atlas-core-wa-sync-", async () => {
       await saveWhatsAppConfig({ profileId: "default" });
 
       await syncWhatsAppOwnerPairing({
@@ -310,7 +310,7 @@ describe("syncWhatsAppOwnerPairing", () => {
   });
 
   test("overwrites a stale phone number after QR link", async () => {
-    await withTempHomedir("nakama-core-wa-sync-", async () => {
+    await withTempHomedir("atlas-core-wa-sync-", async () => {
       await saveWhatsAppConfig({ phoneNumber: "+6281227900622" });
 
       await syncWhatsAppOwnerPairing({
@@ -325,7 +325,7 @@ describe("syncWhatsAppOwnerPairing", () => {
   });
 
   test("clears stale pairing code when owner pairing sync completes", async () => {
-    await withTempHomedir("nakama-core-wa-sync-", async (tempHome) => {
+    await withTempHomedir("atlas-core-wa-sync-", async (tempHome) => {
       await saveWhatsAppConfig({ phoneNumber: "+6281379292556" });
 
       const dir = path.join(tempHome, ".atlas", "whatsapp");
@@ -355,7 +355,7 @@ describe("syncWhatsAppOwnerPairing", () => {
   });
 
   test("preserves an existing paired LID during owner sync", async () => {
-    await withTempHomedir("nakama-core-wa-sync-", async (tempHome) => {
+    await withTempHomedir("atlas-core-wa-sync-", async (tempHome) => {
       const dir = path.join(tempHome, ".atlas", "whatsapp");
       await mkdir(dir, { recursive: true });
       await writeFile(

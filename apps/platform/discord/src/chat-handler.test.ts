@@ -183,7 +183,7 @@ describe("createChatHandler artifact delivery", () => {
             {
               arguments: {
                 content: "%PDF-1.4",
-                path: "artifacts/nakama-pitch-deck.pdf",
+                path: "artifacts/atlas-pitch-deck.pdf",
               },
               id: "tool_1",
               name: "write_file",
@@ -191,7 +191,7 @@ describe("createChatHandler artifact delivery", () => {
             {
               arguments: {
                 content: pdfMeta,
-                path: "artifacts/nakama-pitch-deck.pdf.atlas-meta.json",
+                path: "artifacts/atlas-pitch-deck.pdf.atlas-meta.json",
               },
               id: "tool_2",
               name: "write_file",
@@ -201,7 +201,7 @@ describe("createChatHandler artifact delivery", () => {
         {
           content: JSON.stringify({
             bytesWritten: 270_000,
-            path: "/home/.atlas/orgs/org/profiles/default/artifacts/nakama-pitch-deck.pdf",
+            path: "/home/.atlas/orgs/org/profiles/default/artifacts/atlas-pitch-deck.pdf",
           }),
           name: "write_file",
           role: "tool",
@@ -210,7 +210,7 @@ describe("createChatHandler artifact delivery", () => {
         {
           content: JSON.stringify({
             bytesWritten: pdfMeta.length,
-            path: "/home/.atlas/orgs/org/profiles/default/artifacts/nakama-pitch-deck.pdf.atlas-meta.json",
+            path: "/home/.atlas/orgs/org/profiles/default/artifacts/atlas-pitch-deck.pdf.atlas-meta.json",
           }),
           name: "write_file",
           role: "tool",
@@ -458,16 +458,16 @@ describe("createChatHandler artifact delivery", () => {
           artifactContentBytes: new TextEncoder().encode("%PDF-1.4"),
           onSendStream: async (_input, handlers) => {
             handlers?.onToolStart?.({
-              input: { path: "nakama-pitch-deck.pdf" },
+              input: { path: "atlas-pitch-deck.pdf" },
               tool: "send_discord_artifact",
               toolCallId: "tool_1",
             });
             handlers?.onToolEnd?.({
               result: {
-                filename: "nakama-pitch-deck.pdf",
+                filename: "atlas-pitch-deck.pdf",
                 mimeType: "application/pdf",
                 ok: true,
-                path: "nakama-pitch-deck.pdf",
+                path: "atlas-pitch-deck.pdf",
                 sizeBytes: 8,
               },
               tool: "send_discord_artifact",
@@ -506,9 +506,9 @@ describe("createChatHandler artifact delivery", () => {
           artifactContentBytes: new TextEncoder().encode("%PDF-1.4"),
           listedArtifacts: [
             {
-              filename: "nakama-pitch-deck.pdf",
+              filename: "atlas-pitch-deck.pdf",
               mimeType: "application/pdf",
-              path: "/tmp/artifacts/nakama-pitch-deck.pdf",
+              path: "/tmp/artifacts/atlas-pitch-deck.pdf",
               sizeBytes: 8,
               updatedAt: "2026-08-08T12:51:00.000Z",
             },

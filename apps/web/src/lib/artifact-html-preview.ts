@@ -1,5 +1,5 @@
 const HIDDEN_SCROLLBAR_STYLE =
-  "<style data-nakama-html-preview>html,body{scrollbar-width:none;-ms-overflow-style:none}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none}</style>";
+  "<style data-atlas-html-preview>html,body{scrollbar-width:none;-ms-overflow-style:none}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none}</style>";
 
 /** Scripts run inside the iframe, but without same-origin access to the host app. */
 export const ARTIFACT_HTML_IFRAME_SANDBOX =

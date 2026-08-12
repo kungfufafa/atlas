@@ -224,8 +224,8 @@ describe("generate_image tool persistence (U4)", () => {
   });
 
   async function setupWorkspace() {
-    tempConfigDir = await mkdtemp(path.join(tmpdir(), "nakama-gen-img-cfg-"));
-    workspaceRoot = await mkdtemp(path.join(tmpdir(), "nakama-gen-img-ws-"));
+    tempConfigDir = await mkdtemp(path.join(tmpdir(), "atlas-gen-img-cfg-"));
+    workspaceRoot = await mkdtemp(path.join(tmpdir(), "atlas-gen-img-ws-"));
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
   }
 

@@ -123,7 +123,7 @@ export const CODING_AGENT_CREDENTIAL_ENV_KEYS = [
  *
  * When the base URL is the default for the provider type, we use the built-in
  * pi provider name (e.g. "anthropic", "openai"). When the base URL is custom
- * (proxy/gateway), we use "nakama" — matching the custom provider entry in
+ * (proxy/gateway), we use "atlas" — matching the custom provider entry in
  * models.json that uses the OpenAI Chat Completions API.
  */
 const PI_PROVIDER_NAME: Partial<Record<ProviderName, string>> = {
@@ -133,7 +133,7 @@ const PI_PROVIDER_NAME: Partial<Record<ProviderName, string>> = {
   fireworks: "fireworks",
   ollama: "ollama",
   openai: "openai",
-  openai_compatible: "nakama",
+  openai_compatible: "atlas",
   opencode_go: "opencode",
   openrouter: "openrouter",
 };
@@ -230,7 +230,7 @@ export async function buildOpenCodeSpawnEnv(
     return { env: {} };
   }
 
-  const configDir = await createHarnessConfigDir("nakama-opencode-config-");
+  const configDir = await createHarnessConfigDir("atlas-opencode-config-");
   await writeOpenCodeConfig(configDir.dir, routing, "opencode", providerType);
 
   return {
@@ -254,7 +254,7 @@ export async function buildPiSpawnEnv(
   // via models.json in the pi config directory (PI_CODING_AGENT_DIR).
   // We create a temp config dir with a models.json that overrides the
   // provider's baseUrl + apiKey, then point pi to it.
-  const configDir = await createHarnessConfigDir("nakama-pi-config-");
+  const configDir = await createHarnessConfigDir("atlas-pi-config-");
   await writePiModelsJson(configDir.dir, routing, providerType);
 
   return {
@@ -294,7 +294,7 @@ export async function buildSpawnEnvForHarness(
       return { env };
     }
 
-    const configDir = await createHarnessConfigDir("nakama-codex-config-");
+    const configDir = await createHarnessConfigDir("atlas-codex-config-");
     await writeCodexConfigToml(configDir.dir, routing, "codex", providerType);
 
     return {

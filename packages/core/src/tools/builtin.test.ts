@@ -46,7 +46,7 @@ describe("file builtin tools", () => {
   });
 
   test("write_file creates nested files", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-write-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-write-"));
     const targetPath = path.join(tempDir, "nested", "hello.txt");
 
     const result = await runWriteFile(
@@ -61,7 +61,7 @@ describe("file builtin tools", () => {
   });
 
   test("write_file resolves relative paths from profile workspace", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-write-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-write-"));
     const result = await runWriteFile(
       { content: "relative", path: "notes.txt" },
       PROFILE_CONTEXT,
@@ -73,7 +73,7 @@ describe("file builtin tools", () => {
   });
 
   test("write_file adds a date suffix when an artifact filename already exists", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-write-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-write-"));
     const artifactsDir = path.join(tempDir, "artifacts");
     await mkdir(artifactsDir, { recursive: true });
     const existingPath = path.join(artifactsDir, "report.md");
@@ -94,7 +94,7 @@ describe("file builtin tools", () => {
   });
 
   test("write_file remaps artifact metadata sidecar after suffixing content", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-write-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-write-"));
     const artifactsDir = path.join(tempDir, "artifacts");
     await mkdir(artifactsDir, { recursive: true });
     const existingPath = path.join(artifactsDir, "report.md");
@@ -134,8 +134,8 @@ describe("file builtin tools", () => {
   });
 
   test("write_file allows custom tool modules outside profile workspace", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-write-"));
-    configDir = await mkdtemp(path.join(os.tmpdir(), "nakama-config-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-write-"));
+    configDir = await mkdtemp(path.join(os.tmpdir(), "atlas-config-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
     const toolsDir = path.join(configDir, "tools");
     await mkdir(toolsDir, { recursive: true });
@@ -157,7 +157,7 @@ describe("file builtin tools", () => {
   });
 
   test("delete_file removes a file", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-delete-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-delete-"));
     const targetPath = path.join(tempDir, "remove-me.txt");
     await mkdir(path.dirname(targetPath), { recursive: true });
     await writeFile(targetPath, "temp", "utf8");
@@ -172,7 +172,7 @@ describe("file builtin tools", () => {
   });
 
   test("edit_file replaces a unique text match", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-edit-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-edit-"));
     const targetPath = path.join(tempDir, "note.txt");
     await writeFile(targetPath, "hello old world", "utf8");
 
@@ -189,7 +189,7 @@ describe("file builtin tools", () => {
   });
 
   test("edit_file resolves relative paths from profile workspace", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-edit-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-edit-"));
     await writeFile(path.join(tempDir, "note.txt"), "relative old", "utf8");
 
     const result = await runEditFile(
@@ -203,7 +203,7 @@ describe("file builtin tools", () => {
   });
 
   test("edit_file applies multiple edits against the original file", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-edit-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-edit-"));
     const targetPath = path.join(tempDir, "note.txt");
     await writeFile(targetPath, "one two three", "utf8");
 
@@ -224,7 +224,7 @@ describe("file builtin tools", () => {
   });
 
   test("edit_file rejects ambiguous matches", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-edit-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-edit-"));
     const targetPath = path.join(tempDir, "note.txt");
     await writeFile(targetPath, "old and old", "utf8");
 
@@ -239,7 +239,7 @@ describe("file builtin tools", () => {
   });
 
   test("edit_file rejects overlapping edits", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-edit-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-edit-"));
     const targetPath = path.join(tempDir, "note.txt");
     await writeFile(targetPath, "abcdef", "utf8");
 
@@ -260,7 +260,7 @@ describe("file builtin tools", () => {
   });
 
   test("edit_file fuzzy matches line endings and smart punctuation", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-edit-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-edit-"));
     const targetPath = path.join(tempDir, "note.txt");
     await writeFile(
       targetPath,
@@ -284,7 +284,7 @@ describe("file builtin tools", () => {
   });
 
   test("edit_file preserves CRLF style in replacement text", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-edit-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-edit-"));
     const targetPath = path.join(tempDir, "note.txt");
     await writeFile(targetPath, "before\r\nold block\r\nafter\r\n", "utf8");
 
@@ -303,7 +303,7 @@ describe("file builtin tools", () => {
   });
 
   test("edit_file fuzzy matching ignores trailing whitespace", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-edit-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-edit-"));
     const targetPath = path.join(tempDir, "note.txt");
     await writeFile(targetPath, "alpha  \nbeta\n", "utf8");
 
@@ -321,7 +321,7 @@ describe("file builtin tools", () => {
   });
 
   test("edit_file preserves a UTF-8 BOM", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-edit-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-edit-"));
     const targetPath = path.join(tempDir, "note.txt");
     await writeFile(targetPath, "\uFEFFhello old", "utf8");
 
@@ -337,7 +337,7 @@ describe("file builtin tools", () => {
   });
 
   test("edit_file rejects missing oldText", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-edit-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-edit-"));
     const targetPath = path.join(tempDir, "note.txt");
     await writeFile(targetPath, "hello", "utf8");
 
@@ -351,7 +351,7 @@ describe("file builtin tools", () => {
   });
 
   test("read_file reads an existing file", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-read-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-read-"));
     const targetPath = path.join(tempDir, "sample.txt");
     await writeFile(targetPath, "hello world", "utf8");
 
@@ -369,7 +369,7 @@ describe("file builtin tools", () => {
   });
 
   test("write_file refuses Word extensions instead of faking a document", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-write-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-write-"));
 
     expect(
       runWriteFile(
@@ -395,7 +395,7 @@ describe("file builtin tools", () => {
   });
 
   test("file tools refuse skills/* paths when forbidProfileSkillMarkdownWrites", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-skill-md-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-skill-md-"));
     await mkdir(path.join(tempDir, "skills", "notes", "docs"), {
       recursive: true,
     });
@@ -469,7 +469,7 @@ describe("file builtin tools", () => {
   });
 
   test("write_file, edit_file, and delete_file refuse skills/*/tool.js and tool.ts", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-skill-tool-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-skill-tool-"));
     await mkdir(path.join(tempDir, "skills", "notes"), { recursive: true });
 
     await expect(
@@ -518,7 +518,7 @@ describe("file builtin tools", () => {
   });
 
   test("write_docx produces a real Word archive that reads back as markdown", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-docx-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-docx-"));
     const targetPath = path.join(tempDir, "laporan.docx");
 
     const result = await runWriteDocx(
@@ -542,7 +542,7 @@ describe("file builtin tools", () => {
   });
 
   test("write_docx does not overwrite an existing artifact", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-docx-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-docx-"));
     await mkdir(path.join(tempDir, "artifacts"), { recursive: true });
 
     const first = await runWriteDocx(
@@ -569,7 +569,7 @@ describe("file builtin tools", () => {
   });
 
   test("write_docx rejects a non-.docx path", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-docx-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-docx-"));
 
     expect(
       runWriteDocx(
@@ -581,7 +581,7 @@ describe("file builtin tools", () => {
   });
 
   test("read_file converts a .docx to markdown instead of decoding it as utf-8", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-read-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-read-"));
     const targetPath = path.join(tempDir, "laporan.docx");
     await copyFile(
       path.join(import.meta.dir, "..", "__fixtures__", "sample.docx"),
@@ -597,7 +597,7 @@ describe("file builtin tools", () => {
   });
 
   test("read_file reads HTML that was saved under a .doc name", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-read-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-read-"));
     const targetPath = path.join(tempDir, "lama.doc");
     await writeFile(
       targetPath,
@@ -614,7 +614,7 @@ describe("file builtin tools", () => {
   });
 
   test("read_file rejects a genuine legacy OLE .doc with an actionable message", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-read-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-read-"));
     const targetPath = path.join(tempDir, "lama.doc");
     // OLE compound file magic: a real Word 97-2003 document.
     await writeFile(
@@ -630,7 +630,7 @@ describe("file builtin tools", () => {
   });
 
   test("read_file resolves relative paths from profile workspace", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-read-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-read-"));
     await writeFile(path.join(tempDir, "notes.txt"), "relative", "utf8");
 
     const result = await runReadFile({ path: "notes.txt" }, PROFILE_CONTEXT, {
@@ -642,8 +642,8 @@ describe("file builtin tools", () => {
   });
 
   test("read_file allows custom tool modules outside profile workspace", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-read-"));
-    configDir = await mkdtemp(path.join(os.tmpdir(), "nakama-config-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-read-"));
+    configDir = await mkdtemp(path.join(os.tmpdir(), "atlas-config-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
     const toolsDir = path.join(configDir, "tools");
     await mkdir(toolsDir, { recursive: true });
@@ -660,7 +660,7 @@ describe("file builtin tools", () => {
   });
 
   test("read_file supports offset and limit", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-read-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-read-"));
     const targetPath = path.join(tempDir, "lines.txt");
     await writeFile(targetPath, "one\ntwo\nthree\nfour", "utf8");
 
@@ -697,8 +697,8 @@ describe("file builtin tools", () => {
   // -----------------------------------------------------------------------
 
   test("rejects path traversal via ../ escape", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-sec-"));
-    const escapePath = path.join(tempDir, "../../../etc/nakama-exploit-test");
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-sec-"));
+    const escapePath = path.join(tempDir, "../../../etc/atlas-exploit-test");
 
     await expect(
       runWriteFile({ content: "ESCAPE", path: escapePath }, PROFILE_CONTEXT, {
@@ -708,11 +708,11 @@ describe("file builtin tools", () => {
   });
 
   test("rejects absolute path outside allowed dirs", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-sec-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-sec-"));
 
     await expect(
       runWriteFile(
-        { content: "NOPE", path: "/etc/nakama-should-fail" },
+        { content: "NOPE", path: "/etc/atlas-should-fail" },
         PROFILE_CONTEXT,
         { workspaceRoot: tempDir }
       )
@@ -720,11 +720,11 @@ describe("file builtin tools", () => {
   });
 
   test("rejects home directory expansion outside allowed dirs", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-sec-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-sec-"));
 
     await expect(
       runWriteFile(
-        { content: "SSH_KEY", path: "~/.ssh/nakama-test" },
+        { content: "SSH_KEY", path: "~/.ssh/atlas-test" },
         PROFILE_CONTEXT,
         { workspaceRoot: tempDir }
       )
@@ -732,7 +732,7 @@ describe("file builtin tools", () => {
   });
 
   test("cwd injection falls back to profile workspace", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-sec-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-sec-"));
 
     const result = await runWriteFile(
       { content: "OK", cwd: "/etc", path: "safe.txt" },
@@ -744,7 +744,7 @@ describe("file builtin tools", () => {
   });
 
   test("rejects null byte in path", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-sec-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-sec-"));
 
     await expect(
       runWriteFile(
@@ -756,7 +756,7 @@ describe("file builtin tools", () => {
   });
 
   test("rejects content exceeding max file size", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-sec-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-sec-"));
     setDefaultFileGuardOptions({ maxFileBytes: 100 });
 
     await expect(
@@ -769,7 +769,7 @@ describe("file builtin tools", () => {
   });
 
   test("delete_file rejects path outside allowed dirs", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-sec-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-sec-"));
 
     await expect(
       runDeleteFile({ path: "/etc/should-not-delete" }, PROFILE_CONTEXT, {
@@ -779,13 +779,13 @@ describe("file builtin tools", () => {
   });
 
   test("edit_file rejects path outside allowed dirs", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-sec-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-sec-"));
 
     await expect(
       runEditFile(
         {
           edits: [{ newText: "y", oldText: "x" }],
-          path: "/etc/nakama-should-fail",
+          path: "/etc/atlas-should-fail",
         },
         PROFILE_CONTEXT,
         { workspaceRoot: tempDir }
@@ -794,7 +794,7 @@ describe("file builtin tools", () => {
   });
 
   test("edit_file rejects oversized replacement result", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-sec-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-sec-"));
     setDefaultFileGuardOptions({ maxFileBytes: 100 });
     const targetPath = path.join(tempDir, "small.txt");
     await writeFile(targetPath, "small", "utf8");
@@ -812,7 +812,7 @@ describe("file builtin tools", () => {
   });
 
   test("allows nested subdirectory writes", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-sec-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-sec-"));
 
     const nestedPath = path.join(tempDir, "deep", "nested", "file.txt");
     const result = await runWriteFile(
@@ -826,7 +826,7 @@ describe("file builtin tools", () => {
   });
 
   test("rejects special filesystem paths", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-sec-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-sec-"));
 
     await expect(
       runWriteFile({ content: "test", path: "/dev/null" }, PROFILE_CONTEXT, {
@@ -836,8 +836,8 @@ describe("file builtin tools", () => {
   });
 
   test("read_file rejects path traversal via ../ escape", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-read-sec-"));
-    const escapePath = path.join(tempDir, "../../../etc/nakama-exploit-test");
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-read-sec-"));
+    const escapePath = path.join(tempDir, "../../../etc/atlas-exploit-test");
 
     await expect(
       runReadFile({ path: escapePath }, PROFILE_CONTEXT, {
@@ -847,17 +847,17 @@ describe("file builtin tools", () => {
   });
 
   test("read_file rejects path outside allowed dirs with workspace hint", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-read-sec-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-read-sec-"));
 
     await expect(
-      runReadFile({ path: "/etc/nakama-should-fail" }, PROFILE_CONTEXT, {
+      runReadFile({ path: "/etc/atlas-should-fail" }, PROFILE_CONTEXT, {
         workspaceRoot: tempDir,
       })
     ).rejects.toThrow(/relative path under the active profile workspace/i);
   });
 
   test("read_file rejects null byte in path", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-read-sec-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-read-sec-"));
 
     await expect(
       runReadFile(
@@ -869,7 +869,7 @@ describe("file builtin tools", () => {
   });
 
   test("read_file rejects missing file", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-read-sec-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-read-sec-"));
 
     await expect(
       runReadFile(
@@ -883,7 +883,7 @@ describe("file builtin tools", () => {
   });
 
   test("read_file rejects directory path", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-read-sec-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-read-sec-"));
 
     await expect(
       runReadFile({ path: tempDir }, PROFILE_CONTEXT, {
@@ -893,7 +893,7 @@ describe("file builtin tools", () => {
   });
 
   test("read_file rejects config.ini", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-read-sec-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-read-sec-"));
     const targetPath = path.join(tempDir, "config.ini");
     await writeFile(targetPath, "secret=value", "utf8");
 
@@ -905,7 +905,7 @@ describe("file builtin tools", () => {
   });
 
   test("read_file rejects oversized file", async () => {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-read-sec-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-read-sec-"));
     setDefaultFileGuardOptions({ maxFileBytes: 100 });
     const targetPath = path.join(tempDir, "big.txt");
     await writeFile(targetPath, "A".repeat(200), "utf8");

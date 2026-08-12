@@ -13,7 +13,7 @@ function readTimeoutEnvValue(
 export function resolveChatStreamTimeoutMs(
   env: Record<string, string | undefined> = process.env
 ): number {
-  const raw = readTimeoutEnvValue(env, "NAKAMA_CHAT_STREAM_TIMEOUT_MS");
+  const raw = readTimeoutEnvValue(env, "ATLAS_CHAT_STREAM_TIMEOUT_MS");
   if (!raw) {
     return DEFAULT_CHAT_STREAM_TIMEOUT_MS;
   }
@@ -39,7 +39,7 @@ export function resolveChatStreamTimeoutMs(
  * (a chunk, a thinking delta, a tool call) satisfies this deadline; the 4s
  * server keepalive does not, since it proves nothing about the provider.
  *
- * Set NAKAMA_CHAT_FIRST_TOKEN_TIMEOUT_MS to 0 to turn it off, for a deployment
+ * Set ATLAS_CHAT_FIRST_TOKEN_TIMEOUT_MS to 0 to turn it off, for a deployment
  * whose model really does think for minutes before emitting anything.
  */
 export const DEFAULT_CHAT_FIRST_TOKEN_TIMEOUT_MS = 120_000;
@@ -48,7 +48,7 @@ export const MIN_CHAT_FIRST_TOKEN_TIMEOUT_MS = 5000;
 export function resolveChatFirstTokenTimeoutMs(
   env: Record<string, string | undefined> = process.env
 ): number {
-  const raw = readTimeoutEnvValue(env, "NAKAMA_CHAT_FIRST_TOKEN_TIMEOUT_MS");
+  const raw = readTimeoutEnvValue(env, "ATLAS_CHAT_FIRST_TOKEN_TIMEOUT_MS");
   if (!raw) {
     return DEFAULT_CHAT_FIRST_TOKEN_TIMEOUT_MS;
   }

@@ -42,7 +42,7 @@ describe("createSkillFile", () => {
   });
 
   test("writes a profile skill to ~/.atlas/orgs/{orgId}/profiles/{id}/skills/", async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-skill-write-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-write-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     const directory = await createSkillFile({
@@ -82,7 +82,7 @@ describe("createSkillFile", () => {
   });
 
   test("deleteSkillDirectory removes a managed profile skill directory", async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-skill-write-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-write-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     const directory = await createSkillFile({
@@ -122,7 +122,7 @@ describe("writeRawProfileSkillMarkdown", () => {
   });
 
   test("writes raw SKILL.md preserving include-body-on-match", async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-skill-raw-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-raw-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     const content = `---
@@ -149,7 +149,7 @@ include-body-on-match: true
   });
 
   test("adopts existing valid skill directory when allowExisting", async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-skill-adopt-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-adopt-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     const directory = join(
@@ -194,7 +194,7 @@ Old body.
   });
 
   test("refuses bundled skill names", async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-skill-bundled-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-bundled-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     await expect(
@@ -213,7 +213,7 @@ Nope.
   });
 
   test("refuses existing skill without allowExisting", async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-skill-exists-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-exists-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     const content = `---
@@ -251,7 +251,7 @@ describe("patchSkillFile", () => {
   });
 
   test("applies unique old_string replacement and re-validates", async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-skill-patch-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-patch-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     await writeRawProfileSkillMarkdown({
@@ -282,7 +282,7 @@ Use staging first.
   });
 
   test("errors when old_string is missing or duplicated", async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-skill-patch-err-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-patch-err-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     await writeRawProfileSkillMarkdown({
@@ -320,7 +320,7 @@ step
   });
 
   test("refuses patch on bundled skill name", async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-skill-patch-bundled-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-patch-bundled-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     await expect(
@@ -347,7 +347,7 @@ describe("resolveProfileSkillDirectory", () => {
   });
 
   test("resolves under profile skills dir and rejects escape names", async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-skill-resolve-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-resolve-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
     await mkdir(
       join(configDir, "orgs", ORG_ID, "profiles", PROFILE_ID, "skills"),
@@ -374,7 +374,7 @@ describe("resolveProfileSkillDirectory", () => {
   });
 
   test("refuses symlink escape outside the profile skills dir", async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-skill-symlink-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-symlink-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     const skillsRoot = join(
@@ -423,7 +423,7 @@ describe("profile skill supporting files", () => {
   });
 
   test("writes nested supporting files and refuses SKILL.md / path escape", async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-skill-support-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-support-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     await writeRawProfileSkillMarkdown({

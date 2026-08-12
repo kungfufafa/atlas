@@ -8,7 +8,7 @@ import {
   setupFreshInstallSession,
 } from "../test-session-helpers";
 
-setupTestConfigDir("nakama-profiles-skills-write-approval-test-");
+setupTestConfigDir("atlas-profiles-skills-write-approval-test-");
 
 function createApp() {
   const databaseAdapter = createInMemoryDatabaseAdapter();

@@ -47,7 +47,7 @@ export async function persistWebPublicUrl(input: string): Promise<string> {
 export async function getWebPublicUrlSettings(): Promise<WebPublicUrlSettingsResponse> {
   const envOverride =
     process.env.ATLAS_WEB_PUBLIC_URL?.trim() ||
-    process.env.NAKAMA_PUBLIC_URL?.trim();
+    process.env.ATLAS_PUBLIC_URL?.trim();
 
   return {
     envOverride: envOverride ? normalizeBaseUrl(envOverride) : null,
@@ -84,7 +84,7 @@ export function resolveComposioCallbackBaseUrl(
     return configured;
   }
 
-  const webPort = process.env.NAKAMA_WEB_PORT?.trim() || "3003";
+  const webPort = process.env.ATLAS_WEB_PORT?.trim() || "3003";
   return `http://127.0.0.1:${webPort}`;
 }
 

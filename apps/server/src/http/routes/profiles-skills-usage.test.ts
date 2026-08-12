@@ -9,7 +9,7 @@ import {
   setupFreshInstallSession,
 } from "../test-session-helpers";
 
-setupTestConfigDir("nakama-profiles-skills-usage-test-");
+setupTestConfigDir("atlas-profiles-skills-usage-test-");
 
 function createApp() {
   const databaseAdapter = createInMemoryDatabaseAdapter();

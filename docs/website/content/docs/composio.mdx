@@ -32,7 +32,7 @@ The key is stored in `~/.atlas/composio/config.ini` on the Atlas server.
 ## Tenancy model
 
 - **Org catalog:** which SaaS toolkits are permitted (`enabled` / `disabled` per org).
-- **User connections:** each member's OAuth lives in `composio_user_connections`; Composio `user_id` is `nakama:user:{userId}`.
+- **User connections:** each member's OAuth lives in `composio_user_connections`; Composio `user_id` is `atlas:user:{userId}`.
 - Chat uses the **chatting user's** connected accounts for assigned toolkits.
 - Org admins enable/disable toolkits and assign them to profiles. Members connect their own accounts.
 

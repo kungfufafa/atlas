@@ -27,7 +27,7 @@ export function useAppNavigation() {
         return;
       }
 
-      const url = new URL(buildNewChatPath(profileId), "http://nakama.local");
+      const url = new URL(buildNewChatPath(profileId), "http://atlas.local");
       if (draft.length <= MAX_URL_CHAT_DRAFT_LENGTH) {
         url.searchParams.set("draft", draft);
       } else {

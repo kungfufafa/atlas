@@ -30,7 +30,7 @@ const projectRoot = "/tmp/test-project";
 let configDir: string | null = null;
 
 beforeEach(async () => {
-  configDir = await mkdtemp(join(tmpdir(), "nakama-worker-manager-"));
+  configDir = await mkdtemp(join(tmpdir(), "atlas-worker-manager-"));
   process.env.ATLAS_CONFIG_DIR = configDir;
 });
 
@@ -136,7 +136,7 @@ describe("WorkerManagerService", () => {
 
     test("starts worker from dist when dist build exists", async () => {
       const tmpProjectRoot = await mkdtemp(
-        join(tmpdir(), "nakama-worker-dist-")
+        join(tmpdir(), "atlas-worker-dist-")
       );
       const distFilePath = join(
         tmpProjectRoot,
@@ -160,7 +160,7 @@ describe("WorkerManagerService", () => {
 
     test("starts telegram worker from dist when dist build exists", async () => {
       const tmpProjectRoot = await mkdtemp(
-        join(tmpdir(), "nakama-worker-dist-")
+        join(tmpdir(), "atlas-worker-dist-")
       );
       const distFilePath = join(
         tmpProjectRoot,
@@ -184,7 +184,7 @@ describe("WorkerManagerService", () => {
 
     test("starts automation worker from dist when dist build exists", async () => {
       const tmpProjectRoot = await mkdtemp(
-        join(tmpdir(), "nakama-worker-dist-")
+        join(tmpdir(), "atlas-worker-dist-")
       );
       const distFilePath = join(
         tmpProjectRoot,
@@ -383,7 +383,7 @@ describe("WorkerManagerService", () => {
 
   describe("getWorkerLogs", () => {
     test("returns last N lines of stdout and stderr", async () => {
-      const tmpDir = await mkdtemp(join(tmpdir(), "nakama-logs-"));
+      const tmpDir = await mkdtemp(join(tmpdir(), "atlas-logs-"));
       const outPath = join(tmpDir, "out.log");
       const errPath = join(tmpDir, "err.log");
       await writeFile(outPath, "line1\nline2\nline3\nline4\nline5\n");

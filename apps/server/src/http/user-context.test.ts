@@ -7,7 +7,7 @@ import { setupTestConfigDir } from "../test-config-dir";
 import { createHonoApp } from "./app";
 import { setupFreshInstallSession } from "./test-session-helpers";
 
-setupTestConfigDir("nakama-user-context-test-");
+setupTestConfigDir("atlas-user-context-test-");
 
 describe("user context routes", () => {
   test("stores USER.md per authenticated member", async () => {

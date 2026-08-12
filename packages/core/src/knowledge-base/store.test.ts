@@ -30,7 +30,7 @@ describe("knowledge base store", () => {
   });
 
   async function setupProfile(profileId: string): Promise<void> {
-    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "nakama-kb-store-"));
+    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "atlas-kb-store-"));
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
     await import("node:fs/promises").then(({ mkdir }) =>
       mkdir(path.join(tempConfigDir, "orgs", ORG_ID, "profiles", profileId), {

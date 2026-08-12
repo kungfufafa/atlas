@@ -1,7 +1,7 @@
 import { createMDX } from "fumadocs-mdx/next";
 
-const repoBase = "/nakama";
-const isGitHubPages = process.env.NAKAMA_DOCS_GITHUB_PAGES === "true";
+const repoBase = "/atlas";
+const isGitHubPages = process.env.ATLAS_DOCS_GITHUB_PAGES === "true";
 
 /** @type {import('next').NextConfig} */
 const config = {

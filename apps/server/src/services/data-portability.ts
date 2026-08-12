@@ -31,8 +31,8 @@ import {
 } from "@atlas/core";
 import { unzipSync, zipSync } from "fflate";
 
-export const ATLAS_EXPORT_MANIFEST = "nakama-export.json";
-export const NAKAMA_EXPORT_FORMAT_VERSION = 1;
+export const ATLAS_EXPORT_MANIFEST = "atlas-export.json";
+export const ATLAS_EXPORT_FORMAT_VERSION = 1;
 
 export interface CreateDataExportOptions {
   databasePath?: string | null;
@@ -101,12 +101,12 @@ export async function createAtlasDataExport(
     apiVersion: ATLAS_API_VERSION,
     createdAt,
     fileCount: files.length,
-    kind: "nakama-export",
+    kind: "atlas-export",
     skipped,
     sourceRootName: basename(rootDir) || ".atlas",
     topLevelPaths,
     totalBytes,
-    version: NAKAMA_EXPORT_FORMAT_VERSION,
+    version: ATLAS_EXPORT_FORMAT_VERSION,
   };
 
   const entries: Record<string, Uint8Array> = {
@@ -123,7 +123,7 @@ export async function createAtlasDataExport(
 
   return {
     data: Buffer.from(zipSync(entries)),
-    filename: `nakama-export-${createdAt.replace(/[:.]/g, "-")}.zip`,
+    filename: `atlas-export-${createdAt.replace(/[:.]/g, "-")}.zip`,
     manifest,
   };
 }
@@ -178,7 +178,7 @@ export async function restoreAtlasDataImport(
   const entries = readZip(toBuffer(archive));
   const manifest = readManifest(entries);
 
-  // Stage and back up inside rootDir so Docker volume mounts (e.g. /nakama/data)
+  // Stage and back up inside rootDir so Docker volume mounts (e.g. /atlas/data)
   // are never renamed — rename(2) on a mount point returns EBUSY.
   await mkdir(rootDir, { mode: 0o700, recursive: true });
   const stagingParent = await mkdtemp(join(rootDir, RESTORE_PREFIX));
@@ -378,11 +378,11 @@ function readManifest(entries: ZipEntry[]): DataExportManifest {
     throw new Error("Atlas export manifest is not valid JSON.");
   }
 
-  if (manifest.kind !== "nakama-export") {
+  if (manifest.kind !== "atlas-export") {
     throw new Error("Archive is not a Atlas export.");
   }
 
-  if (manifest.version !== NAKAMA_EXPORT_FORMAT_VERSION) {
+  if (manifest.version !== ATLAS_EXPORT_FORMAT_VERSION) {
     throw new Error(`Unsupported Atlas export version: ${manifest.version}`);
   }
 

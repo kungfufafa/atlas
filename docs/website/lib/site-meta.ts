@@ -1,12 +1,12 @@
 export const SITE_NAME = "Atlas";
 export const SITE_TAGLINE = "AI agents that work with your team.";
 export const SITE_DESCRIPTION =
-  "Atlas is AI agents that work with your team — self-hosted or on managed hosting at getnakama.cloud, multi-tenant, and open source.";
+  "Atlas is AI agents that work with your team — self-hosted or on managed hosting at getatlas.cloud, multi-tenant, and open source.";
 export const SITE_URL =
   process.env.ATLAS_DOCS_SITE_URL ?? "https://kungfufafa.github.io/atlas";
 export const AUTHOR_NAME = "Ahmad Rosid";
 export const AUTHOR_ROLE = "Creator and maintainer of Atlas";
-export const OG_IMAGE_URL = `${SITE_URL}/nakama-demo.png`;
+export const OG_IMAGE_URL = `${SITE_URL}/atlas-demo.png`;
 
 export const pageDescriptions: Record<string, string> = {
   "agent-browser.md":
@@ -34,7 +34,7 @@ export const pageDescriptions: Record<string, string> = {
   "getting-started.md":
     "Redirects to Quickstart — install Atlas and complete first-time setup.",
   "index.md":
-    "Atlas is AI agents that work with your team — with profiles, tools, channels, multi-tenant workspaces, and managed hosting at getnakama.cloud.",
+    "Atlas is AI agents that work with your team — with profiles, tools, channels, multi-tenant workspaces, and managed hosting at getatlas.cloud.",
   "integrations.md":
     "See which dashboard integration sections manage channels, coding-agent harnesses, Composio, and related deployment settings.",
   "mcp.md":
@@ -361,7 +361,7 @@ export function buildLlmsTxt(pages: string[]) {
     "",
     `> ${SITE_DESCRIPTION} ${SITE_TAGLINE}`,
     "",
-    `${SITE_NAME} is AI agents that work with your team. Each profile is an agent with its own role, soul, tools, and memory. Organizations, skills, MCP servers, and channels like web, CLI, Telegram, WhatsApp, and Discord let you run your nakama from one deployment — self-hosted, in Docker, or on managed hosting at https://getnakama.cloud/.`,
+    `${SITE_NAME} is AI agents that work with your team. Each profile is an agent with its own role, soul, tools, and memory. Organizations, skills, MCP servers, and channels like web, CLI, Telegram, WhatsApp, and Discord let you run your atlas from one deployment — self-hosted, in Docker, or on managed hosting at https://getatlas.cloud/.`,
     "",
     `Maintainer: ${AUTHOR_NAME} (${AUTHOR_ROLE})`,
     `Website: ${SITE_URL}/`,

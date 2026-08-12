@@ -6,7 +6,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-IMAGE="${1:-nakama}"
+IMAGE="${1:-atlas}"
 FIXTURE_PDF="${ROOT}/packages/core/src/__fixtures__/sample.pdf"
 FIXTURE_XLSX="${ROOT}/packages/core/src/__fixtures__/sample.xlsx"
 

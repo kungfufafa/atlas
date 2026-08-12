@@ -3,7 +3,7 @@ import type { DatabaseAdapter } from "@atlas/db";
 import type { AuthService } from "../../services/auth-service";
 
 export const TEST_ORG_ID = "org_test";
-export const LOCAL_CLIENT_EMAIL = "local-client@nakama.internal";
+export const LOCAL_CLIENT_EMAIL = "local-client@atlas.internal";
 
 export function buildSetupAuthBody(
   email = "admin@example.com",

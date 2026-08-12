@@ -30,7 +30,7 @@ describe("memory archive", () => {
   });
 
   async function setupProfileMemory(content: string): Promise<string> {
-    tempDir = await mkdtemp(path.join(os.tmpdir(), "nakama-memory-archive-"));
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-memory-archive-"));
     const soulDir = path.join(
       tempDir,
       "orgs",

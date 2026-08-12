@@ -7,7 +7,7 @@ export function baseOptions(): BaseLayoutProps {
       {
         external: true,
         text: "Managed hosting",
-        url: "https://getnakama.cloud/",
+        url: "https://getatlas.cloud/",
       },
     ],
     nav: {

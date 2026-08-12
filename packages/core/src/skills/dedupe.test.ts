@@ -12,7 +12,7 @@ describe("dedupeSkillsByName", () => {
   let configDir: string;
 
   beforeEach(async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-skill-dedupe-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-dedupe-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
   });
 
@@ -50,7 +50,7 @@ describe("isGlobalSkillSourcePath", () => {
   let configDir: string;
 
   beforeEach(async () => {
-    configDir = await mkdtemp(join(tmpdir(), "nakama-skill-dedupe-"));
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-dedupe-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
   });
 

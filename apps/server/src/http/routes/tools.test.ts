@@ -8,7 +8,7 @@ import {
   loginUserSession,
 } from "../test-session-helpers";
 
-setupTestConfigDir("nakama-tools-route-test-");
+setupTestConfigDir("atlas-tools-route-test-");
 
 function createApp(agentOverrides: Record<string, unknown> = {}) {
   return createMinimalHonoApp({

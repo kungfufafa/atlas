@@ -36,7 +36,7 @@ describe("super bot create_tool", () => {
   });
 
   test("always registers agent-authored tools as javascript", async () => {
-    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "nakama-super-tool-"));
+    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "atlas-super-tool-"));
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
     const toolsDir = path.join(tempConfigDir, "tools");
     await mkdir(toolsDir, { recursive: true });
@@ -123,7 +123,7 @@ describe("super bot create_tool", () => {
   });
 
   test("rejects missing javascript modules before storing the tool", async () => {
-    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "nakama-super-tool-"));
+    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "atlas-super-tool-"));
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
     const toolsDir = path.join(tempConfigDir, "tools");
     await mkdir(toolsDir, { recursive: true });

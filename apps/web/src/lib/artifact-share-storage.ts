@@ -1,4 +1,4 @@
-const STORAGE_PREFIX = "nakama:artifact-share:";
+const STORAGE_PREFIX = "atlas:artifact-share:";
 
 export function artifactShareStorageKey(
   orgId: string,

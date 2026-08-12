@@ -19,7 +19,7 @@ const originalConfigDir = process.env.ATLAS_CONFIG_DIR;
 let testConfigDir = "";
 
 beforeAll(() => {
-  testConfigDir = mkdtempSync(join(tmpdir(), "nakama-app-test-"));
+  testConfigDir = mkdtempSync(join(tmpdir(), "atlas-app-test-"));
   process.env.ATLAS_CONFIG_DIR = testConfigDir;
 });
 
@@ -172,9 +172,9 @@ describe("browser session auth", () => {
     expect(setupBody.activeOrgId).toStartWith("org_");
     const setCookies = extractSetCookies(setupResponse);
     expect(
-      setCookies.some((cookie) => cookie.startsWith("nakama_session="))
+      setCookies.some((cookie) => cookie.startsWith("atlas_session="))
     ).toBe(true);
-    expect(setCookies.some((cookie) => cookie.startsWith("nakama_csrf="))).toBe(
+    expect(setCookies.some((cookie) => cookie.startsWith("atlas_csrf="))).toBe(
       true
     );
 
@@ -221,7 +221,7 @@ describe("browser session auth", () => {
     expect(loginResponse.status).toBe(200);
     const setCookies = extractSetCookies(loginResponse);
     const cookieHeader = cookieHeaderFromSetCookies(setCookies);
-    const csrfToken = cookieValue(setCookies, "nakama_csrf");
+    const csrfToken = cookieValue(setCookies, "atlas_csrf");
 
     const logoutResponse = await app.fetch(
       new Request("http://localhost:4310/v1/auth/logout", {
@@ -255,7 +255,7 @@ describe("browser session auth", () => {
     const setupBody = (await setupResponse.json()) as { activeOrgId: string };
     const setCookies = extractSetCookies(setupResponse);
     const cookieHeader = cookieHeaderFromSetCookies(setCookies);
-    const csrfToken = cookieValue(setCookies, "nakama_csrf");
+    const csrfToken = cookieValue(setCookies, "atlas_csrf");
 
     const denied = await app.fetch(
       new Request("http://localhost:4310/v1/workers/whatsapp/start", {
@@ -291,7 +291,7 @@ describe("browser session auth", () => {
     );
     const setCookies = extractSetCookies(setupResponse);
     const cookieHeader = cookieHeaderFromSetCookies(setCookies);
-    const csrfToken = cookieValue(setCookies, "nakama_csrf");
+    const csrfToken = cookieValue(setCookies, "atlas_csrf");
 
     const createResponse = await app.fetch(
       new Request("http://localhost:4310/v1/auth/orgs", {
@@ -362,7 +362,7 @@ describe("browser session auth", () => {
         headers: {
           "Content-Type": "application/json",
           Cookie: cookieHeaderFromSetCookies(setCookies),
-          "X-CSRF-Token": cookieValue(setCookies, "nakama_csrf"),
+          "X-CSRF-Token": cookieValue(setCookies, "atlas_csrf"),
         },
         method: "POST",
       })

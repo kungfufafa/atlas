@@ -210,7 +210,7 @@ export interface DataExportManifest {
   apiVersion: typeof ATLAS_API_VERSION;
   createdAt: string;
   fileCount: number;
-  kind: "nakama-export";
+  kind: "atlas-export";
   skipped: DataExportSkippedItem[];
   sourceRootName: string;
   topLevelPaths: string[];
@@ -271,7 +271,7 @@ export interface UpdateWebPublicUrlRequest {
 }
 
 export interface WebPublicUrlSettingsResponse {
-  /** Set when ATLAS_WEB_PUBLIC_URL / NAKAMA_PUBLIC_URL overrides the saved value. */
+  /** Set when ATLAS_WEB_PUBLIC_URL / ATLAS_PUBLIC_URL overrides the saved value. */
   envOverride: string | null;
   webPublicUrl: string | null;
 }
