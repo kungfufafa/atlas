@@ -6,6 +6,7 @@ import type { SetupAccountDraft } from "@/components/setup-wizard/setup-wizard.s
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 
 interface SetupStepAccountProps {
   onNext: (account: SetupAccountDraft) => void;
@@ -119,13 +120,12 @@ export function SetupStepAccount({ onNext }: SetupStepAccountProps) {
           >
             Password
           </label>
-          <Input
+          <PasswordInput
             id="setup-password"
             minLength={8}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="••••••••"
             required
-            type="password"
             value={password}
           />
         </div>
@@ -136,12 +136,11 @@ export function SetupStepAccount({ onNext }: SetupStepAccountProps) {
           >
             Confirm Password
           </label>
-          <Input
+          <PasswordInput
             id="setup-confirm"
             onChange={(event) => setConfirmPassword(event.target.value)}
             placeholder="••••••••"
             required
-            type="password"
             value={confirmPassword}
           />
         </div>
@@ -150,7 +149,7 @@ export function SetupStepAccount({ onNext }: SetupStepAccountProps) {
             {error}
           </div>
         )}
-        <Button className="w-full" type="submit">
+        <Button className="w-full" size="lg" type="submit">
           Continue
         </Button>
         <div className="flex justify-center border-border border-t pt-4">

@@ -86,7 +86,23 @@ async function toGeminiUserParts(
 function toGeminiAssistantParts(
   message: Extract<ChatMessage, { role: "assistant" }>
 ): Part[] {
+  if (
+    Array.isArray(message.providerContent) &&
+    message.providerContent.length > 0
+  ) {
+    return message.providerContent as Part[];
+  }
+
   const parts: Part[] = [];
+
+  const thinking = message.thinking?.trim();
+  if (thinking) {
+    parts.push({
+      text: thinking,
+      thought: true,
+    });
+  }
+
   const text = message.content.trim();
 
   if (text) {

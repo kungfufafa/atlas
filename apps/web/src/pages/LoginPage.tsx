@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { useAppContext } from "@/context/use-app-context";
 import { useAuth } from "@/context/use-auth";
 import { useTheme } from "@/context/use-theme";
@@ -115,12 +116,11 @@ export function LoginPage() {
             >
               Password
             </label>
-            <Input
+            <PasswordInput
               id="password"
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              type="password"
               value={password}
             />
           </div>
@@ -129,7 +129,12 @@ export function LoginPage() {
               {error}
             </div>
           )}
-          <Button className="w-full" disabled={isSubmitting} type="submit">
+          <Button
+            className="w-full"
+            disabled={isSubmitting}
+            size="lg"
+            type="submit"
+          >
             {isSubmitting ? "Signing in..." : "Sign in"}
           </Button>
         </form>

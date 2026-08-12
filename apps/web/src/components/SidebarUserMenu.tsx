@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import {
   Tooltip,
   TooltipContent,
@@ -343,12 +344,11 @@ function UserProfileDialog({
               >
                 Current
               </label>
-              <Input
+              <PasswordInput
                 autoComplete="current-password"
                 id="profile-current-password"
                 onChange={(event) => setCurrentPassword(event.target.value)}
                 placeholder="••••••••"
-                type="password"
                 value={currentPassword}
               />
             </div>
@@ -359,12 +359,11 @@ function UserProfileDialog({
               >
                 New
               </label>
-              <Input
+              <PasswordInput
                 autoComplete="new-password"
                 id="profile-new-password"
                 onChange={(event) => setNewPassword(event.target.value)}
                 placeholder="••••••••"
-                type="password"
                 value={newPassword}
               />
             </div>
@@ -375,12 +374,11 @@ function UserProfileDialog({
               >
                 Confirm
               </label>
-              <Input
+              <PasswordInput
                 autoComplete="new-password"
                 id="profile-confirm-password"
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 placeholder="••••••••"
-                type="password"
                 value={confirmPassword}
               />
             </div>

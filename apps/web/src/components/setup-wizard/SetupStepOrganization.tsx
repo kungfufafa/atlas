@@ -131,12 +131,18 @@ export function SetupStepOrganization({
           <Button
             className="flex-1"
             onClick={onBack}
+            size="lg"
             type="button"
             variant="outline"
           >
             Back
           </Button>
-          <Button className="flex-1" disabled={isSubmitting} type="submit">
+          <Button
+            className="flex-1"
+            disabled={isSubmitting}
+            size="lg"
+            type="submit"
+          >
             {isSubmitting ? "Creating..." : "Create Organization"}
           </Button>
         </div>

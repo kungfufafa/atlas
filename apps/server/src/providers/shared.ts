@@ -105,6 +105,7 @@ export function buildChatCompletionResult(options: {
   content: string | null | undefined;
   toolCalls: ToolCall[];
   thinking?: string | null | undefined;
+  providerContent?: unknown[];
   usage?: ChatCompletionResult["usage"];
 }): ChatCompletionResult {
   const content = options.content?.trim() ?? "";
@@ -114,6 +115,9 @@ export function buildChatCompletionResult(options: {
     role: "assistant",
     ...(thinking ? { thinking } : {}),
     ...(options.toolCalls.length > 0 ? { toolCalls: options.toolCalls } : {}),
+    ...(options.providerContent?.length
+      ? { providerContent: options.providerContent }
+      : {}),
   };
 
   return {

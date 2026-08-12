@@ -56,7 +56,7 @@ export function SetupStepUserContext({
       </div>
 
       <div className="flex items-center justify-between">
-        <Button onClick={onBack} size="sm" type="button" variant="ghost">
+        <Button onClick={onBack} type="button" variant="ghost">
           Back
         </Button>
 
@@ -69,7 +69,7 @@ export function SetupStepUserContext({
             Set up later
           </button>
 
-          <Button onClick={onNext} size="sm" type="button">
+          <Button onClick={onNext} size="lg" type="button">
             Continue
           </Button>
         </div>

@@ -43,6 +43,70 @@ describe("toGeminiContents", () => {
     expect(contents[2]?.parts?.[0]?.functionResponse?.id).toBe("call_1");
   });
 
+  test("preserves thinking parts in assistant message before function call", async () => {
+    const messages: ChatMessage[] = [
+      { content: "Search KB", role: "user" },
+      {
+        content: "",
+        role: "assistant",
+        thinking: "Searching knowledge base for query",
+        toolCalls: [
+          {
+            arguments: { query: "test" },
+            id: "call_kb",
+            name: "knowledge_base_search",
+          },
+        ],
+      },
+    ];
+
+    const contents = await toGeminiContents(messages);
+
+    expect(contents[1]?.role).toBe("model");
+    expect(contents[1]?.parts).toHaveLength(2);
+    expect(contents[1]?.parts?.[0]).toEqual({
+      text: "Searching knowledge base for query",
+      thought: true,
+    });
+    expect(contents[1]?.parts?.[1]?.functionCall).toEqual({
+      args: { query: "test" },
+      id: "call_kb",
+      name: "knowledge_base_search",
+    });
+  });
+
+  test("uses raw providerContent with thoughtSignature when present", async () => {
+    const rawPartWithSig = {
+      functionCall: {
+        args: { path: "demo.txt" },
+        id: "call_sig",
+        name: "write_file",
+      },
+      thoughtSignature: "sig_abc_123",
+    };
+
+    const messages: ChatMessage[] = [
+      { content: "Write file", role: "user" },
+      {
+        content: "",
+        providerContent: [rawPartWithSig],
+        role: "assistant",
+        toolCalls: [
+          {
+            arguments: { path: "demo.txt" },
+            id: "call_sig",
+            name: "write_file",
+          },
+        ],
+      },
+    ];
+
+    const contents = await toGeminiContents(messages);
+
+    expect(contents[1]?.role).toBe("model");
+    expect(contents[1]?.parts).toEqual([rawPartWithSig]);
+  });
+
   test("maps image parts to inlineData", async () => {
     const messages: ChatMessage[] = [
       {
