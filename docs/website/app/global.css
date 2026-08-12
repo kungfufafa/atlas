@@ -3,8 +3,8 @@
 @import "fumadocs-ui/css/preset.css";
 
 @theme {
-  --color-fd-primary: #d97706;
-  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --color-fd-primary: #2563eb;
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, monospace;
 }
 

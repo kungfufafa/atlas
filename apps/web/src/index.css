@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/plus-jakarta-sans";
+@import "@fontsource-variable/instrument-sans";
 @import "@fontsource-variable/jetbrains-mono";
 @import "streamdown/styles.css";
 
@@ -23,7 +23,7 @@
   --color-surface-600: #3f3f46;
   --color-accent-400: #fbbf24;
   --color-accent-500: #2563eb;
-  --color-accent-600: #d97706;
+  --color-accent-600: #2563eb;
 }
 
 @layer base {
@@ -200,6 +200,7 @@
   .skeleton-shimmer {
     @apply relative overflow-hidden bg-muted;
   }
+
   .skeleton-shimmer::after {
     position: absolute;
     inset: 0;
@@ -225,6 +226,7 @@
       transform: translateY(100%);
       opacity: 0;
     }
+
     to {
       transform: translateY(0);
       opacity: 1;
@@ -1028,8 +1030,7 @@
 }
 
 @theme inline {
-  --font-sans:
-    "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
   --font-heading: var(--font-sans);
   --text-xs: 0.75rem;
@@ -1089,7 +1090,7 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #d97706;
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -1100,7 +1101,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: #d97706;
+  --ring: #2563eb;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -1109,12 +1110,12 @@
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: #d97706;
+  --sidebar-primary: #2563eb;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: oklch(0.96 0.01 75);
   --sidebar-accent-foreground: oklch(0.35 0.08 55);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: #d97706;
+  --sidebar-ring: #2563eb;
 }
 
 .dark {

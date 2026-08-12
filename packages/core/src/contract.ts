@@ -1272,6 +1272,20 @@ export interface ListProvidersResponse {
   providers: ProviderInstanceSummary[];
 }
 
+export interface TestProviderRequest {
+  apiKey?: string;
+  baseUrl?: string;
+  customModels?: CustomModelEntry[];
+  hostMode?: OllamaHostMode;
+  model?: string;
+  type: ProviderName;
+}
+
+export interface TestProviderResponse {
+  message: string;
+  ok: true;
+}
+
 export interface CreateProviderRequest {
   apiKey: string;
   baseUrl?: string;
@@ -1279,6 +1293,7 @@ export interface CreateProviderRequest {
   hostMode?: OllamaHostMode;
   label?: string;
   model?: string;
+  skipValidation?: boolean;
   type: ProviderName;
 }
 
@@ -1294,6 +1309,7 @@ export interface UpdateProviderRequest {
   customModels?: CustomModelEntry[];
   hostMode?: OllamaHostMode;
   label?: string;
+  skipValidation?: boolean;
 }
 
 export interface UpdateProviderResponse {

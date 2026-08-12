@@ -37,6 +37,89 @@ export function buildGeminiGenerateConfig(options: {
   };
 }
 
+const DISALLOWED_GEMINI_SCHEMA_KEYS = new Set([
+  "$schema",
+  "$id",
+  "$ref",
+  "$defs",
+  "definitions",
+  "additionalProperties",
+  "unevaluatedProperties",
+  "exclusiveMinimum",
+  "exclusiveMaximum",
+  "allOf",
+  "oneOf",
+  "not",
+  "const",
+  "multipleOf",
+  "uniqueItems",
+  "readOnly",
+  "writeOnly",
+  "prefixItems",
+]);
+
+export function sanitizeGeminiSchema(
+  obj: unknown
+): Record<string, unknown> | undefined {
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
+    return;
+  }
+
+  const record = obj as Record<string, unknown>;
+  const result: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(record)) {
+    if (key === "exclusiveMinimum") {
+      if (typeof value === "number" && !("minimum" in record)) {
+        result.minimum = value;
+      }
+      continue;
+    }
+
+    if (key === "exclusiveMaximum") {
+      if (typeof value === "number" && !("maximum" in record)) {
+        result.maximum = value;
+      }
+      continue;
+    }
+
+    if (DISALLOWED_GEMINI_SCHEMA_KEYS.has(key)) {
+      continue;
+    }
+
+    if (key === "type" && Array.isArray(value)) {
+      const nonNullType = value.find(
+        (item) => typeof item === "string" && item !== "null"
+      );
+      if (value.includes("null")) {
+        result.nullable = true;
+      }
+      if (typeof nonNullType === "string") {
+        result.type = nonNullType;
+      }
+      continue;
+    }
+
+    if (value && typeof value === "object") {
+      if (Array.isArray(value)) {
+        result[key] = value
+          .map((item) =>
+            typeof item === "object" && item !== null
+              ? sanitizeGeminiSchema(item)
+              : item
+          )
+          .filter((item) => item !== undefined);
+      } else {
+        result[key] = sanitizeGeminiSchema(value);
+      }
+    } else {
+      result[key] = value;
+    }
+  }
+
+  return result;
+}
+
 function buildGeminiTools(
   tools: LlmToolDefinition[] | undefined,
   webSearch: boolean
@@ -52,7 +135,13 @@ function buildGeminiTools(
       functionDeclarations: tools.map((tool) => ({
         description: tool.description,
         name: tool.name,
-        parameters: tool.parameters,
+        parameters: (sanitizeGeminiSchema(tool.parameters) as Record<
+          string,
+          unknown
+        >) ?? {
+          properties: {},
+          type: "OBJECT",
+        },
       })),
     });
   }

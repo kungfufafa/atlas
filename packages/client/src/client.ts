@@ -134,6 +134,8 @@ import type {
   TaskRunRecord,
   TelegramSettingsResponse,
   TestMcpServerResponse,
+  TestProviderRequest,
+  TestProviderResponse,
   ThinkingSettings,
   ThinkingSettingsResponse,
   TimezoneSettingsResponse,
@@ -405,6 +407,15 @@ export class AtlasClient {
 
   async listProviders(): Promise<ListProvidersResponse> {
     return this.request<ListProvidersResponse>("/v1/providers");
+  }
+
+  async testProvider(
+    request: TestProviderRequest
+  ): Promise<TestProviderResponse> {
+    return this.request<TestProviderResponse>("/v1/providers/test", {
+      body: JSON.stringify(request),
+      method: "POST",
+    });
   }
 
   async createProvider(

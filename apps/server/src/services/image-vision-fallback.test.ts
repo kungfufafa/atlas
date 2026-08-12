@@ -24,11 +24,11 @@ describe("resolveVisionProviderSelection", () => {
           type: "gemini",
         },
       ],
-      visionModel: "p-gemini::gemini-2.5-flash",
+      visionModel: "p-gemini::gemini-3-flash-preview",
     };
 
     const resolved = resolveVisionProviderSelection(config);
-    expect(resolved?.model).toBe("gemini-2.5-flash");
+    expect(resolved?.model).toBe("gemini-3-flash-preview");
     expect(resolved?.instance.id).toBe("p-gemini");
   });
 

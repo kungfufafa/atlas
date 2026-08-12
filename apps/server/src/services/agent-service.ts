@@ -61,6 +61,8 @@ import type {
   SuggestToolParamsResponse,
   SyncSkillsResponse,
   TelegramSettingsResponse,
+  TestProviderRequest,
+  TestProviderResponse,
   ThinkingSettings,
   ThinkingSettingsResponse,
   ToolDefinition,
@@ -258,6 +260,7 @@ import {
   resolveProfileProviderSelection,
   toProviderInstanceSummary,
 } from "./provider-instance-helpers";
+import { validateProviderConnection } from "./provider-validation-service";
 import {
   loadSessionHistory,
   replaceSessionHistory,
@@ -2046,9 +2049,35 @@ export class AgentService {
     };
   }
 
+  async testProvider(
+    request: TestProviderRequest
+  ): Promise<TestProviderResponse> {
+    await validateProviderConnection(request);
+    return {
+      message: "Connection verified successfully.",
+      ok: true,
+    };
+  }
+
   async createProvider(
     request: CreateProviderRequest
   ): Promise<CreateProviderResponse> {
+    const shouldSkipValidation =
+      request.skipValidation === true ||
+      process.env.ATLAS_SKIP_PROVIDER_VALIDATION === "true" ||
+      process.env.NODE_ENV === "test";
+
+    if (!shouldSkipValidation) {
+      await validateProviderConnection({
+        apiKey: request.apiKey,
+        baseUrl: request.baseUrl,
+        customModels: request.customModels,
+        hostMode: request.hostMode,
+        model: request.model,
+        type: request.type,
+      });
+    }
+
     const existing = this.userConfig?.providers ?? [];
     const instance = buildProviderInstanceFromCreateRequest(request, existing);
     const model = resolveInitialModel(instance, request.model);
@@ -2103,6 +2132,22 @@ export class AgentService {
     }
 
     const updated = applyProviderInstanceUpdate(current, request);
+
+    const shouldSkipValidation =
+      request.skipValidation === true ||
+      process.env.ATLAS_SKIP_PROVIDER_VALIDATION === "true" ||
+      process.env.NODE_ENV === "test";
+
+    if (!shouldSkipValidation && request.apiKey != null) {
+      await validateProviderConnection({
+        apiKey: updated.apiKey,
+        baseUrl: updated.baseUrl,
+        customModels: updated.customModels,
+        hostMode: updated.hostMode,
+        type: updated.type,
+      });
+    }
+
     const providers = this.userConfig.providers.map((instance) =>
       instance.id === providerId ? updated : instance
     );
@@ -2164,7 +2209,7 @@ export class AgentService {
       return this.buildModelsResponse({
         active: null,
         currentProviderId: null,
-        models: AVAILABLE_MODELS,
+        models: [],
         providers: [],
       });
     }

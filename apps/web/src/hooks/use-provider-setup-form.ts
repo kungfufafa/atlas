@@ -10,7 +10,7 @@ import { useAppContext } from "@/context/use-app-context";
 import { useAuth } from "@/context/use-auth";
 import { useModelsQuery, useProvidersQuery } from "@/hooks/use-app-queries";
 import type { ModelsDevRow } from "@/hooks/use-models-dev";
-import { formatError } from "@/lib/client";
+import { client, formatError } from "@/lib/client";
 import {
   appendOpenRouterModelRow,
   buildCreateProviderRequest,
@@ -95,6 +95,9 @@ export function useProviderSetupForm(
   const [modelsError, setModelsError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [testSuccess, setTestSuccess] = useState<string | null>(null);
+  const [testError, setTestError] = useState<string | null>(null);
 
   useEffect(() => {
     if (catalogQueryError) {
@@ -182,6 +185,11 @@ export function useProviderSetupForm(
         setFormError(null);
       }
 
+      if (testSuccess || testError) {
+        setTestSuccess(null);
+        setTestError(null);
+      }
+
       if (apiKeyTouched) {
         setApiKeyError(
           validateApiKeyForProvider(
@@ -210,6 +218,8 @@ export function useProviderSetupForm(
       }
 
       setSelectedProvider(provider);
+      setTestSuccess(null);
+      setTestError(null);
 
       if (provider === "openrouter" && openRouterModels.length === 0) {
         setOpenRouterModels([{ id: "", name: "" }]);
@@ -368,6 +378,103 @@ export function useProviderSetupForm(
     setOpenRouterModelsError(null);
   }, []);
 
+  const handleTestConnection = useCallback(async () => {
+    const trimmedKey = apiKey.trim();
+    const nextApiKeyError = validateApiKeyForProvider(
+      trimmedKey,
+      selectedProvider,
+      ollamaApiKeyOptions
+    );
+    const nextOpenRouterModelsError =
+      selectedProvider === "openrouter"
+        ? validateOpenRouterModelsInput(openRouterModels)
+        : null;
+    const nextShortlistModelsError = isShortlistCapabilityProvider(
+      selectedProvider
+    )
+      ? validateShortlistCapabilityModelsInput(shortlistModels)
+      : null;
+    const nextDisplayNameError =
+      selectedProvider === "openai_compatible"
+        ? validateDisplayNameInput(displayName)
+        : null;
+    const nextBaseUrlError =
+      selectedProvider === "openai_compatible" || selectedProvider === "ollama"
+        ? validateBaseUrlInput(baseUrl)
+        : null;
+    const nextModelsError =
+      selectedProvider === "openai_compatible" || selectedProvider === "ollama"
+        ? validateCustomModelsInput(customModels)
+        : null;
+
+    setApiKeyTouched(true);
+    setApiKeyError(nextApiKeyError);
+    setOpenRouterModelsError(nextOpenRouterModelsError);
+    setShortlistModelsError(nextShortlistModelsError);
+    setDisplayNameError(nextDisplayNameError);
+    setBaseUrlError(nextBaseUrlError);
+    setModelsError(nextModelsError);
+
+    if (
+      nextApiKeyError ||
+      nextOpenRouterModelsError ||
+      nextShortlistModelsError ||
+      nextDisplayNameError ||
+      nextBaseUrlError ||
+      nextModelsError
+    ) {
+      return;
+    }
+
+    const modelToSave =
+      selectedProvider === "openrouter"
+        ? resolveOpenRouterSetupModel(openRouterModels, selectedModel)
+        : isShortlistCapabilityProvider(selectedProvider)
+          ? resolveOpenRouterSetupModel(shortlistModels, selectedModel)
+          : selectedProvider === "ollama"
+            ? resolveOpenRouterSetupModel(customModels, selectedModel)
+            : selectedModel;
+
+    setTestingConnection(true);
+    setTestSuccess(null);
+    setTestError(null);
+
+    try {
+      const res = await client.testProvider({
+        apiKey: trimmedKey,
+        baseUrl,
+        customModels:
+          selectedProvider === "openai_compatible" ||
+          selectedProvider === "ollama"
+            ? normalizeModelListRows(customModels)
+            : selectedProvider === "openrouter"
+              ? normalizeModelListRows(openRouterModels)
+              : isShortlistCapabilityProvider(selectedProvider)
+                ? normalizeModelListRows(shortlistModels)
+                : undefined,
+        hostMode: selectedProvider === "ollama" ? ollamaHostMode : undefined,
+        model: modelToSave || undefined,
+        type: selectedProvider,
+      });
+      setTestSuccess(res.message);
+    } catch (err) {
+      setTestError(formatError(err));
+    } finally {
+      setTestingConnection(false);
+    }
+  }, [
+    apiKey,
+    selectedProvider,
+    ollamaApiKeyOptions,
+    openRouterModels,
+    shortlistModels,
+    displayName,
+    baseUrl,
+    customModels,
+    selectedModel,
+    ollamaHostMode,
+  ]);
+
   const handleSubmit = useCallback(
     async (event: React.FormEvent) => {
       event.preventDefault();
@@ -459,6 +566,8 @@ export function useProviderSetupForm(
 
       setBusy(true);
       setFormError(null);
+      setTestSuccess(null);
+      setTestError(null);
 
       try {
         const result = await createProvider(
@@ -547,6 +656,7 @@ export function useProviderSetupForm(
     handleProviderSelect,
     handleShortlistModelsChange,
     handleSubmit,
+    handleTestConnection,
     modelsError,
     ollamaHostMode,
     openCodeZenConfigured,
@@ -562,5 +672,8 @@ export function useProviderSetupForm(
     shortlistModels,
     shortlistModelsError,
     showApiKey,
+    testError,
+    testingConnection,
+    testSuccess,
   };
 }

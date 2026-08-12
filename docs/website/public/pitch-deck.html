@@ -88,15 +88,19 @@
     .slide.active .reveal:nth-child(1) {
       animation-delay: 40ms;
     }
+
     .slide.active .reveal:nth-child(2) {
       animation-delay: 120ms;
     }
+
     .slide.active .reveal:nth-child(3) {
       animation-delay: 200ms;
     }
+
     .slide.active .reveal:nth-child(4) {
       animation-delay: 280ms;
     }
+
     .slide.active .reveal:nth-child(5) {
       animation-delay: 360ms;
     }
@@ -107,6 +111,7 @@
         transform: translateY(14px);
         filter: blur(4px);
       }
+
       to {
         opacity: 1;
         transform: translateY(0);
@@ -505,6 +510,7 @@
     }
     </style>
   </head>
+
   <body>
     <main aria-live="polite" class="deck" id="deck">
       <!-- 1 -->
@@ -521,16 +527,7 @@
           Atlas gives each team or each client agents, memory, and channels on
           one platform.
         </p>
-        <p class="meta reveal">
-          <a href="https://getatlas.cloud/" rel="noopener" target="_blank"
-            >getatlas.cloud</a
-          >
-          ·
-          <a href="https://demo.getatlas.cloud" rel="noopener" target="_blank"
-            >demo.getatlas.cloud</a
-          >
-          · Open source
-        </p>
+        <p class="meta reveal">Open source platform for AI agents</p>
       </section>
 
       <!-- 2 -->
@@ -793,21 +790,6 @@
           </div>
         </div>
         <p class="meta reveal">
-          <a href="https://demo.getatlas.cloud" rel="noopener" target="_blank"
-            >Public demo</a
-          >
-          ·
-          <a
-            href="https://kungfufafa.github.io/atlas/"
-            rel="noopener"
-            target="_blank"
-            >Documentation</a
-          >
-          ·
-          <a href="https://getatlas.cloud/" rel="noopener" target="_blank"
-            >Atlas Cloud</a
-          >
-          ·
           <a
             href="https://github.com/kungfufafa/atlas"
             rel="noopener"
@@ -819,39 +801,25 @@
 
       <!-- 11 -->
       <section class="slide" data-slide="11">
-        <p class="eyebrow reveal">Start a test</p>
+        <p class="eyebrow reveal">Mulai Uji Coba</p>
         <h2 class="reveal">
-          Open the public demo. Install Atlas with Docker when you are ready.
+          Jalankan Atlas dengan Docker atau dari source code lokal.
         </h2>
         <div class="cta-grid reveal">
           <article class="card">
-            <h3>1. Public demo</h3>
-            <p>
-              <a
-                href="https://demo.getatlas.cloud"
-                rel="noopener"
-                target="_blank"
-                >demo.getatlas.cloud</a
-              >
-            </p>
-            <p class="creds">demo@getatlas.cloud / demo1234</p>
-            <h3 style="margin-top: 1.1rem">3. Managed hosting</h3>
-            <p>
-              If you do not want to install Atlas, use
-              <a href="https://getatlas.cloud/" rel="noopener" target="_blank"
-                >getatlas.cloud</a
-              >.
-            </p>
+            <h3>1. Build dari source</h3>
+            <pre>./scripts/docker-build-run.sh
+
+# Buka dashboard: http://localhost:4310</pre>
           </article>
           <article class="card">
-            <h3>2. Install with Docker</h3>
-            <pre>docker pull ghcr.io/kungfufafa/atlas:latest
-docker run -d -p 4310:4310 \
+            <h3>2. Install dengan Docker</h3>
+            <pre>docker run -d -p 4310:4310 \
   -v atlas-data:/atlas/data \
   --name atlas \
   ghcr.io/kungfufafa/atlas:latest
 
-# Open the dashboard: http://localhost:4310</pre>
+# Buka dashboard: http://localhost:4310</pre>
           </article>
         </div>
       </section>

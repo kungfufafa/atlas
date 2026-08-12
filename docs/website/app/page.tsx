@@ -64,9 +64,9 @@ const features: Array<{
     title: "Works across channels",
   },
   {
-    details: "Docker, self-host, or getatlas.cloud — open source.",
+    details: "Docker, self-host, or local setup — open source.",
     icon: CloudIcon,
-    title: "Self-hosted or managed",
+    title: "Self-hosted or Docker",
   },
 ];
 
@@ -88,14 +88,6 @@ export default function HomePage() {
             >
               Docs
             </Link>
-            <a
-              className="hidden transition-colors hover:text-stone-900 sm:inline dark:hover:text-white"
-              href="https://getatlas.cloud/"
-              rel="noreferrer"
-              target="_blank"
-            >
-              Managed hosting
-            </a>
             <a
               aria-label="GitHub repository"
               className="inline-flex items-center justify-center transition-colors hover:text-stone-900 dark:hover:text-white"
@@ -129,14 +121,6 @@ export default function HomePage() {
                     Get Started
                     <ArrowRight01Icon aria-hidden className="size-4" />
                   </Link>
-                  <a
-                    className="hero-cta-secondary"
-                    href="https://getatlas.cloud/"
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    Managed hosting
-                  </a>
                   <a
                     className="hero-cta-secondary"
                     href="https://github.com/kungfufafa/atlas"

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
+import { sanitizeGeminiSchema } from "./config";
 import { createGeminiProvider } from "./index";
 
 const originalFetch = globalThis.fetch;
@@ -61,7 +62,7 @@ describe("createGeminiProvider", () => {
   test("generateText returns model text", async () => {
     const fetchMock = mock(async (input: RequestInfo | URL) => {
       const url = String(input);
-      expect(url).toContain("gemini-2.5-flash");
+      expect(url).toContain("gemini-3-flash-preview");
       expect(url).toContain("generateContent");
 
       return new Response(
@@ -76,7 +77,7 @@ describe("createGeminiProvider", () => {
     await withMockFetch(fetchMock as typeof fetch, async () => {
       const provider = createGeminiProvider({
         apiKey: "AIzaTest",
-        model: "gemini-2.5-flash",
+        model: "gemini-3-flash-preview",
       });
 
       const result = await provider.generateText({
@@ -198,6 +199,75 @@ describe("createGeminiProvider", () => {
       expect(result.assistantMessage.thinking).toBe("Plan");
       expect(chunks).toEqual(["Hi"]);
       expect(thinking).toEqual(["Plan"]);
+    });
+  });
+});
+
+describe("sanitizeGeminiSchema", () => {
+  test("strips exclusiveMinimum, exclusiveMaximum, $schema, and additionalProperties", () => {
+    const rawSchema = {
+      $schema: "http://json-schema.org/draft-07/schema#",
+      additionalProperties: false,
+      properties: {
+        count: {
+          exclusiveMinimum: 0,
+          type: "number",
+        },
+        limit: {
+          exclusiveMaximum: 100,
+          type: "number",
+        },
+      },
+      type: "object",
+    };
+
+    const sanitized = sanitizeGeminiSchema(rawSchema);
+
+    expect(sanitized).toEqual({
+      properties: {
+        count: {
+          minimum: 0,
+          type: "number",
+        },
+        limit: {
+          maximum: 100,
+          type: "number",
+        },
+      },
+      type: "object",
+    });
+  });
+
+  test("strips boolean exclusiveMinimum/exclusiveMaximum, $ref, and normalizes type arrays", () => {
+    const rawSchema = {
+      $ref: "#/definitions/Foo",
+      properties: {
+        flag: {
+          exclusiveMinimum: true,
+          minimum: 1,
+          type: "number",
+        },
+        name: {
+          type: ["string", "null"],
+        },
+      },
+      type: "object",
+    };
+
+    const sanitized = sanitizeGeminiSchema(rawSchema);
+
+    expect(sanitized).toEqual({
+      properties: {
+        flag: {
+          minimum: 1,
+          type: "number",
+        },
+        name: {
+          nullable: true,
+          type: "string",
+        },
+      },
+      type: "object",
     });
   });
 });

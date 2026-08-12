@@ -30,8 +30,17 @@ describe("resolveModel", () => {
   });
 
   test("resolves catalog models for Gemini", () => {
-    expect(resolveModel("gemini", "gemini-2.5-pro")).toBe("gemini-2.5-pro");
-    expect(getDefaultModel("gemini")).toBe("gemini-2.5-flash");
+    expect(resolveModel("gemini", "gemini-3-flash-preview")).toBe(
+      "gemini-3-flash-preview"
+    );
+    expect(resolveModel("gemini", "gemini-3.1-flash-lite")).toBe(
+      "gemini-3.1-flash-lite"
+    );
+    expect(resolveModel("gemini", "gemini-3.5-flash")).toBe("gemini-3.5-flash");
+    expect(resolveModel("gemini", "gemini-2.5-flash")).toBe(
+      "gemini-3-flash-preview"
+    );
+    expect(getDefaultModel("gemini")).toBe("gemini-3-flash-preview");
   });
 
   test("resolves custom shortlist models for OpenAI", () => {

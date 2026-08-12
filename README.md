@@ -5,15 +5,9 @@
   </picture>
 </p>
 
-<p align="center">
-  <a href="https://discord.gg/qhKbMFEUc"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
-</p>
-
 # Atlas
 
 > **Fork & Attribution Notice**: **Atlas** is a rebranded fork of [Nakama](https://github.com/ahmadrosid/nakama), originally created by [ahmadrosid](https://github.com/ahmadrosid).
-
-[Documentation](https://kungfufafa.github.io/atlas/) · [Demo](https://demo.getatlas.cloud) · [Managed hosting](https://getatlas.cloud/)
 
 Your next hire will still be human.
 With Atlas, that person works on important tasks.
@@ -32,26 +26,8 @@ Atlas is a small, self-hosted service for AI agents. You can imagine that Atlas 
 </picture>
 
 Open [ARCHITECTURE.md](./ARCHITECTURE.md) for the system design.
-Open the [docs site](https://kungfufafa.github.io/atlas/) for the full guide.
 
 ## Quick start
-
-### Try the demo
-
-Open the live demo at [https://demo.getatlas.cloud](https://demo.getatlas.cloud).
-
-- Username: `demo@getatlas.cloud`
-- Password: `demo1234`
-
-### Managed hosting
-
-Use [Atlas Cloud](https://getatlas.cloud/) to try Atlas with the least work.
-
-1. Create an account.
-2. Provision an instance.
-3. Complete the first-time setup wizard in the browser.
-
-You do not need Bun, Docker, or a VPS.
 
 ### Run locally
 

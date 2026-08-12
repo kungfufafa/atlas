@@ -16,7 +16,7 @@ Stop shared work in private ChatGPT chats. Run one agent workspace for your team
 
 Atlas gives each team or each client agents, memory, and channels on one platform.
 
-`getatlas.cloud` · `demo.getatlas.cloud` · Open source
+Open source platform for AI agents
 
 ---
 
@@ -131,9 +131,6 @@ Atlas is a platform for team agents.
 - **200** GitHub stars
 - **22** forks
 - **7** contributors
-- Public demo: [demo.getatlas.cloud](https://demo.getatlas.cloud)
-- Documentation: [kungfufafa.github.io/atlas](https://kungfufafa.github.io/atlas/)
-- Managed hosting: [getatlas.cloud](https://getatlas.cloud/)
 
 Update the star and fork counts before each talk.
 
@@ -141,24 +138,22 @@ Update the star and fork counts before each talk.
 
 ## Slide 11 — Start a test
 
-**Open the public demo. Install Atlas with Docker when you are ready.**
+**Install Atlas with Docker or run from source when you are ready.**
 
-**1. Public demo**  
-[demo.getatlas.cloud](https://demo.getatlas.cloud)  
-`demo@getatlas.cloud` / `demo1234`
+**1. Build from source**
+
+```bash
+./scripts/docker-build-run.sh
+```
 
 **2. Install with Docker**
 
 ```bash
-docker pull ghcr.io/kungfufafa/atlas:latest
 docker run -d -p 4310:4310 -v atlas-data:/atlas/data --name atlas \
   ghcr.io/kungfufafa/atlas:latest
 ```
 
 Open the dashboard: `http://localhost:4310`
-
-**3. Managed hosting**  
-If you do not want to install Atlas, use [getatlas.cloud](https://getatlas.cloud/).
 
 ---
 

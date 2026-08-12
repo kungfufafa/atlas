@@ -1,7 +1,7 @@
 export const SITE_NAME = "Atlas";
 export const SITE_TAGLINE = "AI agents that work with your team.";
 export const SITE_DESCRIPTION =
-  "Atlas is AI agents that work with your team — self-hosted or on managed hosting at getatlas.cloud, multi-tenant, and open source.";
+  "Atlas is AI agents that work with your team — self-hosted, multi-tenant, and open source.";
 export const SITE_URL =
   process.env.ATLAS_DOCS_SITE_URL ?? "https://kungfufafa.github.io/atlas";
 export const AUTHOR_NAME = "Ahmad Rosid";
@@ -34,7 +34,7 @@ export const pageDescriptions: Record<string, string> = {
   "getting-started.md":
     "Redirects to Quickstart — install Atlas and complete first-time setup.",
   "index.md":
-    "Atlas is AI agents that work with your team — with profiles, tools, channels, multi-tenant workspaces, and managed hosting at getatlas.cloud.",
+    "Atlas is AI agents that work with your team — with profiles, tools, channels, and multi-tenant workspaces.",
   "integrations.md":
     "See which dashboard integration sections manage channels, coding-agent harnesses, Composio, and related deployment settings.",
   "mcp.md":
@@ -361,7 +361,7 @@ export function buildLlmsTxt(pages: string[]) {
     "",
     `> ${SITE_DESCRIPTION} ${SITE_TAGLINE}`,
     "",
-    `${SITE_NAME} is AI agents that work with your team. Each profile is an agent with its own role, soul, tools, and memory. Organizations, skills, MCP servers, and channels like web, CLI, Telegram, WhatsApp, and Discord let you run your atlas from one deployment — self-hosted, in Docker, or on managed hosting at https://getatlas.cloud/.`,
+    `${SITE_NAME} is AI agents that work with your team. Each profile is an agent with its own role, soul, tools, and memory. Organizations, skills, MCP servers, and channels like web, CLI, Telegram, WhatsApp, and Discord let you run your atlas from one deployment — self-hosted or in Docker.`,
     "",
     `Maintainer: ${AUTHOR_NAME} (${AUTHOR_ROLE})`,
     `Website: ${SITE_URL}/`,

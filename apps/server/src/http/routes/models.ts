@@ -20,6 +20,8 @@ import {
   type SendEmailTestRequest,
   type SendEmailTestResponse,
   type TelegramSettingsResponse,
+  type TestProviderRequest,
+  type TestProviderResponse,
   type ThinkingSettingsResponse,
   type TimezoneSettingsResponse,
   type TranscribeAudioRequest,
@@ -174,6 +176,13 @@ export function registerModelRoutes(
       providerId: z.string().optional(),
     })
     .openapi("DiscoverModelsRequest");
+  const testProviderRequestSchema = z
+    .object({})
+    .passthrough()
+    .openapi("TestProviderRequest");
+  const testProviderResponseSchema = z
+    .object({ message: z.string(), ok: z.literal(true) })
+    .openapi("TestProviderResponse");
   const createProviderRequestSchema = z
     .object({})
     .passthrough()
@@ -300,6 +309,35 @@ export function registerModelRoutes(
         },
       },
       summary: "List configured provider instances",
+      tags: ["Models"],
+    })
+  );
+  app.openAPIRegistry.registerPath(
+    createRoute({
+      method: "post",
+      operationId: "testProvider",
+      path: "/v1/providers/test",
+      request: {
+        body: {
+          content: {
+            "application/json": { schema: testProviderRequestSchema },
+          },
+          required: true,
+        },
+      },
+      responses: {
+        200: {
+          content: {
+            "application/json": { schema: testProviderResponseSchema },
+          },
+          description: "Provider connection verified",
+        },
+        400: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Validation error",
+        },
+      },
+      summary: "Test a provider API key and connection reachability",
       tags: ["Models"],
     })
   );
@@ -1134,6 +1172,22 @@ export function registerModelRoutes(
   app.get("/v1/providers", async (c) => {
     getRequestAuth(c);
     return json<ListProvidersResponse>(await agent.listProviders());
+  });
+
+  app.post("/v1/providers/test", async (c) => {
+    getRequestAuth(c);
+    const body = await readJson<TestProviderRequest>(c.req.raw);
+
+    try {
+      const result = await agent.testProvider(body);
+      return json<TestProviderResponse>(result);
+    } catch (error) {
+      if (error instanceof AtlasApiError) {
+        return errorResponse(error.message, error.status);
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      return errorResponse(message, 400);
+    }
   });
 
   app.post("/v1/providers", async (c) => {

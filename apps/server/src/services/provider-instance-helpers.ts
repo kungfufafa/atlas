@@ -59,7 +59,18 @@ export function toProviderInstanceSummary(
   };
 }
 
+export function isProviderInstanceUsable(instance: ProviderInstance): boolean {
+  return (
+    Boolean(instance.apiKey?.trim()) ||
+    instance.type === "openai_compatible" ||
+    (instance.type === "ollama" && !isOllamaCloudInstance(instance))
+  );
+}
+
 export function countModelsForInstance(instance: ProviderInstance): number {
+  if (!isProviderInstanceUsable(instance)) {
+    return 0;
+  }
   return getModelsForProviderInstance(instance).length;
 }
 
@@ -400,6 +411,9 @@ export function mergeModelsForConfig(
   const models: ProviderModelOption[] = [];
 
   for (const instance of providers) {
+    if (!isProviderInstanceUsable(instance)) {
+      continue;
+    }
     models.push(...getModelsForProviderInstance(instance));
   }
 

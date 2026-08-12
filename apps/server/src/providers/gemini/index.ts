@@ -25,7 +25,7 @@ import {
 } from "./messages";
 
 const PROVIDER_LABEL = "Gemini";
-const DEFAULT_MODEL = "gemini-2.5-flash";
+const DEFAULT_MODEL = "gemini-3-flash-preview";
 
 export interface GeminiProviderOptions {
   apiKey: string;

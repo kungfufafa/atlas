@@ -275,6 +275,21 @@ export function ProviderSetupForm({
             </FormField>
           ) : null}
 
+          {form.testSuccess ? (
+            <p
+              className="font-medium text-emerald-600 text-sm dark:text-emerald-400"
+              role="status"
+            >
+              ✓ {form.testSuccess}
+            </p>
+          ) : null}
+
+          {form.testError ? (
+            <p className="text-destructive text-sm" role="alert">
+              {form.testError}
+            </p>
+          ) : null}
+
           {form.formError ? (
             <p className="text-destructive text-sm" role="alert">
               {form.formError}
@@ -283,7 +298,11 @@ export function ProviderSetupForm({
 
           <div className="flex flex-wrap gap-2 pt-1">
             <Button
-              disabled={form.busy || !(apiKeyOptional || form.apiKey.trim())}
+              disabled={
+                form.busy ||
+                form.testingConnection ||
+                !(apiKeyOptional || form.apiKey.trim())
+              }
               type="submit"
             >
               {form.busy ? (
@@ -293,6 +312,25 @@ export function ProviderSetupForm({
                 </>
               ) : (
                 submitLabel
+              )}
+            </Button>
+            <Button
+              disabled={
+                form.busy ||
+                form.testingConnection ||
+                !(apiKeyOptional || form.apiKey.trim())
+              }
+              onClick={() => void form.handleTestConnection()}
+              type="button"
+              variant="outline"
+            >
+              {form.testingConnection ? (
+                <>
+                  <Spinner className="mr-2" />
+                  Testing connection…
+                </>
+              ) : (
+                "Test connection"
               )}
             </Button>
           </div>

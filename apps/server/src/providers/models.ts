@@ -93,23 +93,35 @@ export const AVAILABLE_MODELS: ProviderModelOption[] = withVisionDefaults([
     supportsThinking: false,
   },
   {
-    contextWindow: 1_000_000,
+    contextWindow: 1_048_576,
     default: true,
-    id: "gemini-2.5-flash",
-    inputPerMillionUsd: 0.15,
-    maxOutputTokens: 8192,
-    name: "Gemini 2.5 Flash",
-    outputPerMillionUsd: 0.6,
+    id: "gemini-3-flash-preview",
+    inputPerMillionUsd: 0.5,
+    maxOutputTokens: 65_536,
+    name: "Gemini 3 Flash",
+    outputPerMillionUsd: 3.0,
     provider: "gemini",
+    supportsThinking: true,
   },
   {
-    contextWindow: 1_000_000,
-    id: "gemini-2.5-pro",
-    inputPerMillionUsd: 1.25,
-    maxOutputTokens: 8192,
-    name: "Gemini 2.5 Pro",
-    outputPerMillionUsd: 5,
+    contextWindow: 1_048_576,
+    id: "gemini-3.1-flash-lite",
+    inputPerMillionUsd: 0.25,
+    maxOutputTokens: 65_536,
+    name: "Gemini 3.1 Flash Lite",
+    outputPerMillionUsd: 1.5,
     provider: "gemini",
+    supportsThinking: true,
+  },
+  {
+    contextWindow: 1_048_576,
+    id: "gemini-3.5-flash",
+    inputPerMillionUsd: 1.5,
+    maxOutputTokens: 65_536,
+    name: "Gemini 3.5 Flash",
+    outputPerMillionUsd: 9.0,
+    provider: "gemini",
+    supportsThinking: true,
   },
   {
     contextWindow: 1_000_000,
@@ -477,7 +489,7 @@ export function getDefaultModel(
       : provider === "anthropic"
         ? "claude-sonnet-4-6"
         : provider === "gemini"
-          ? "gemini-2.5-flash"
+          ? "gemini-3-flash-preview"
           : provider === "deepseek"
             ? "deepseek-v4-flash"
             : provider === "cerebras"
@@ -500,6 +512,21 @@ export function resolveModel(
   customModels?: CustomModelEntry[]
 ): string {
   const trimmed = model?.trim();
+
+  if (
+    provider === "gemini" &&
+    trimmed &&
+    (trimmed === "gemini-2.0-flash" ||
+      trimmed === "gemini-2.0-flash-lite" ||
+      trimmed === "gemini-1.5-flash" ||
+      trimmed === "gemini-1.5-pro" ||
+      trimmed === "gemini-2.0-pro-exp-02-05" ||
+      trimmed === "gemini-2.5-flash" ||
+      trimmed === "gemini-2.5-flash-lite" ||
+      trimmed === "gemini-2.5-pro")
+  ) {
+    return "gemini-3-flash-preview";
+  }
 
   if (trimmed && provider === "openrouter" && isOpenRouterModelSlug(trimmed)) {
     return trimmed;
