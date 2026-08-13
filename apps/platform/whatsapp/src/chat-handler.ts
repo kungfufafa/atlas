@@ -8,7 +8,10 @@ import {
 } from "@atlas/core/channel-org";
 import type { SendMessageInput } from "@atlas/core/contract";
 import { pickProfileForOrg } from "@atlas/core/profiles";
-import { normalizePairingCode } from "@atlas/core/whatsapp-config";
+import {
+  normalizePairingCode,
+  syncWhatsAppOwnerPairing,
+} from "@atlas/core/whatsapp-config";
 import type { WASocket } from "@whiskeysockets/baileys";
 import {
   clearActiveStream,
@@ -53,10 +56,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   const { client, config, authStore, sessionStore, orgStore, getSocket } = deps;
 
   return async function handleMessage(data: {
+    fromMe?: boolean;
     jid: string;
     text: string;
   }): Promise<void> {
-    const { jid, text } = data;
+    const { jid, text, fromMe } = data;
 
     if (!(text && text.trim())) {
       return;
@@ -74,7 +78,18 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     await withChatLock(jid, async () => {
       await authStore.reload();
-      const authorized = authStore.isAuthorized(jid);
+      const fileConfig = authStore.getConfig();
+      let authorized = authStore.isAuthorized(jid);
+
+      if (!authorized && fromMe && fileConfig?.pairedJid) {
+        await syncWhatsAppOwnerPairing({
+          forceLidUpdate: true,
+          ownerJid: fileConfig.pairedJid,
+          ownerLid: jid,
+        });
+        await authStore.reload();
+        authorized = authStore.isAuthorized(jid);
+      }
 
       if (!authorized) {
         await handlePairing(jid, trimmed);

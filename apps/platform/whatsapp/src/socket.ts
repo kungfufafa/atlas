@@ -17,7 +17,11 @@ import {
 export interface WhatsAppSocketDeps {
   onConnected?: (me: { id: string; lid?: string | null }) => void;
   onDisconnected?: () => void;
-  onMessage: (data: { jid: string; text: string }) => Promise<void>;
+  onMessage: (data: {
+    fromMe?: boolean;
+    jid: string;
+    text: string;
+  }) => Promise<void>;
   onQr?: (qr: string) => void;
 }
 
@@ -84,8 +88,15 @@ export async function createWhatsAppSocket(
           const shouldReconnect =
             statusCode !== DisconnectReason.loggedOut && !stopped;
 
+          const isRestartRequired =
+            statusCode === DisconnectReason.restartRequired ||
+            statusCode === 515;
+          const statusText = isRestartRequired
+            ? "515 - restart required"
+            : String(statusCode);
+
           console.log(
-            `WhatsApp disconnected (code: ${statusCode}).${shouldReconnect ? " Reconnecting..." : ""}`
+            `WhatsApp disconnected (code: ${statusText}).${shouldReconnect ? " Reconnecting..." : ""}`
           );
 
           if (shouldReconnect) {
@@ -97,9 +108,15 @@ export async function createWhatsAppSocket(
       socket.ev.on("creds.update", saveCreds);
 
       socket.ev.on("messages.upsert", async (m) => {
-        console.log(
-          `WhatsApp messages.upsert type=${m.type} count=${m.messages.length}`
+        const isVerbose = isVerboseLoggingEnabled(
+          process.env.WHATSAPP_VERBOSE_LOGS
         );
+
+        if (isVerbose) {
+          console.log(
+            `WhatsApp messages.upsert type=${m.type} count=${m.messages.length}`
+          );
+        }
 
         if (!isSupportedUpsertType(m.type)) {
           return;
@@ -112,15 +129,23 @@ export async function createWhatsAppSocket(
           const text = extractInboundText(msg.message);
           const shouldHandle = shouldHandleInboundMessage(msg, me);
 
-          if (remoteJid) {
+          if (isVerbose && remoteJid) {
             console.log(
               `WhatsApp upsert item jid=${remoteJid} fromMe=${msg.key.fromMe ? "yes" : "no"} participant=${msg.key.participant ?? "-"} text=${text ? "yes" : "no"} handle=${shouldHandle ? "yes" : "no"}`
             );
           }
 
+          const isProtocolOrSync = Boolean(
+            msg.message?.protocolMessage ||
+              msg.message?.senderKeyDistributionMessage ||
+              msg.message?.messageContextInfo
+          );
+
           if (
+            isVerbose &&
             remoteJid &&
             !text &&
+            !isProtocolOrSync &&
             !loggedMissingTextPayload &&
             isPrivateWhatsAppChat(remoteJid)
           ) {
@@ -141,7 +166,11 @@ export async function createWhatsAppSocket(
           );
 
           try {
-            await deps.onMessage({ jid: remoteJid, text });
+            await deps.onMessage({
+              fromMe: Boolean(msg.key.fromMe),
+              jid: remoteJid,
+              text,
+            });
           } catch (error) {
             console.error("WhatsApp inbound message handling failed.", {
               error: error instanceof Error ? error.message : String(error),
@@ -161,6 +190,10 @@ export async function createWhatsAppSocket(
   };
 
   return handle;
+}
+
+function isVerboseLoggingEnabled(value: string | undefined): boolean {
+  return value?.trim().toLowerCase() === "true";
 }
 
 function isSupportedUpsertType(type: string): boolean {

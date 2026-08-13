@@ -91,12 +91,13 @@ function whatsAppJidServer(jid: string): string {
 
 function normalizeWhatsAppUserJid(jid: string): string {
   const server = whatsAppJidServer(jid);
+  const user = jid.split("@")[0]?.split(":")[0] ?? "";
 
-  if (server !== "s.whatsapp.net") {
-    return jid.trim();
+  if (!server) {
+    return user;
   }
 
-  return `${jid.split("@")[0]?.split(":")[0] ?? ""}@${server}`;
+  return `${user}@${server}`;
 }
 
 function isSameWhatsAppUserJid(left: string, right: string): boolean {
@@ -124,12 +125,12 @@ export function isWhatsAppUserAuthorized(
   jid: string,
   config: Pick<WhatsAppConfigFile, "pairedJid" | "pairedLid">
 ): boolean {
-  if (!config.pairedJid) {
+  if (!(config.pairedJid || config.pairedLid)) {
     return false;
   }
 
   if (
-    isSameWhatsAppUserJid(jid, config.pairedJid) ||
+    (config.pairedJid ? isSameWhatsAppUserJid(jid, config.pairedJid) : false) ||
     (config.pairedLid ? isSameWhatsAppUserJid(jid, config.pairedLid) : false)
   ) {
     return true;
@@ -384,6 +385,7 @@ export async function verifyAndPairWhatsAppUser(
 export async function syncWhatsAppOwnerPairing(options: {
   ownerJid: string;
   ownerLid?: string | null;
+  forceLidUpdate?: boolean;
 }): Promise<void> {
   const config = await loadWhatsAppConfigFile();
 
@@ -394,12 +396,15 @@ export async function syncWhatsAppOwnerPairing(options: {
   const isPhoneJid = whatsAppJidServer(options.ownerJid) === "s.whatsapp.net";
   const ownerPhone = isPhoneJid ? whatsAppUserDigits(options.ownerJid) : "";
   const ownerLid = options.ownerLid?.trim() || null;
+  const pairedLid = options.forceLidUpdate
+    ? (ownerLid ?? config.pairedLid)
+    : (config.pairedLid ?? ownerLid);
+
   const next: WhatsAppConfigFile = {
     ...config,
     pairedJid: config.pairedJid ?? options.ownerJid,
-    // Preserve an existing chat LID. `me.lid` can be a device/account LID, which
-    // does not always match the private self-chat JID used for inbound messages.
-    pairedLid: config.pairedLid ?? ownerLid,
+    // Preserve an existing chat LID unless forceLidUpdate is true.
+    pairedLid,
     pairingCode: null,
     phoneNumber: ownerPhone || config.phoneNumber,
   };

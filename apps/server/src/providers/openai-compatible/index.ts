@@ -20,6 +20,7 @@ import {
 import { openAIModelRejectsChatToolsWithReasoning } from "../openai/thinking";
 import {
   buildChatCompletionResult,
+  DEFAULT_USER_AGENT,
   extractOpenAITokenUsage,
   formatHttpErrorBody,
   normalizeThinkingEffort,
@@ -53,6 +54,9 @@ export function createOpenAICompatibleProvider(
   const client = new OpenAI({
     apiKey,
     baseURL: baseUrl,
+    defaultHeaders: {
+      "User-Agent": DEFAULT_USER_AGENT,
+    },
     maxRetries: 0,
     timeout: 300_000,
   });
@@ -278,6 +282,7 @@ async function streamChatCompletion(options: {
     headers: {
       Authorization: `Bearer ${options.apiKey}`,
       "Content-Type": "application/json",
+      "User-Agent": DEFAULT_USER_AGENT,
     },
     method: "POST",
     signal: options.signal,

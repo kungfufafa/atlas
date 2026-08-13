@@ -9,6 +9,8 @@ type ProfileAvatarProfile = Pick<
   "id" | "name" | "hasAvatar" | "updatedAt" | "isSuper"
 >;
 
+const SUPER_AGENT_DEFAULT_AVATAR = "/super-agent.png";
+
 const sizeClasses = {
   lg: "size-16",
   md: "size-9",
@@ -47,6 +49,10 @@ function resolveAvatarSrc(profile: ProfileAvatarProfile): string | null {
   const uploaded = getProfileAvatarUrl(profile);
   if (uploaded) {
     return uploaded;
+  }
+
+  if (profile.isSuper) {
+    return SUPER_AGENT_DEFAULT_AVATAR;
   }
 
   return null;

@@ -14,6 +14,7 @@ import {
 } from "@atlas/core";
 import {
   buildTokenUsage,
+  DEFAULT_USER_AGENT,
   normalizeThinkingEffort,
   parseJsonRecord,
   readRecord,
@@ -42,6 +43,7 @@ export async function generateOpenAIResponsesChat(options: {
     headers: {
       Authorization: `Bearer ${options.apiKey}`,
       "Content-Type": "application/json",
+      "User-Agent": DEFAULT_USER_AGENT,
     },
     method: "POST",
     signal: options.input.signal,

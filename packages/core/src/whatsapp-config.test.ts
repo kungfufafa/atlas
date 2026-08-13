@@ -73,6 +73,24 @@ describe("isWhatsAppUserAuthorized", () => {
     ).toBe(true);
   });
 
+  test("returns true when inbound LID JID matches pairedLid with device suffix", () => {
+    expect(
+      isWhatsAppUserAuthorized("154352568283178@lid", {
+        pairedJid: "6282240221108@s.whatsapp.net",
+        pairedLid: "154352568283178:0@lid",
+      })
+    ).toBe(true);
+  });
+
+  test("returns true when pairedJid is null but pairedLid matches", () => {
+    expect(
+      isWhatsAppUserAuthorized("154352568283178@lid", {
+        pairedJid: null,
+        pairedLid: "154352568283178@lid",
+      })
+    ).toBe(true);
+  });
+
   test("returns false when JID does not match pairedJid", () => {
     expect(
       isWhatsAppUserAuthorized("9999999999@s.whatsapp.net", {

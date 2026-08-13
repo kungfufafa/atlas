@@ -6,6 +6,9 @@ import type {
   ToolCall,
 } from "@atlas/core";
 
+export const DEFAULT_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Atlas/1.0";
+
 function readNumber(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value)
     ? value

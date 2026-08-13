@@ -19,6 +19,7 @@ import {
 } from "@atlas/core";
 import {
   buildChatCompletionResult,
+  DEFAULT_USER_AGENT,
   extractOpenAITokenUsage,
   normalizeThinkingEffort,
   notifyToolInputDelta,
@@ -160,6 +161,7 @@ function buildRequestHeaders(
   return {
     Authorization: `Bearer ${client.apiKey}`,
     "Content-Type": "application/json",
+    "User-Agent": DEFAULT_USER_AGENT,
     ...client.extraHeaders,
   };
 }

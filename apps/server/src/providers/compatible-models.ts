@@ -8,6 +8,7 @@ import OpenAI from "openai";
 import type { ProviderModelOption } from "./models";
 import { AVAILABLE_MODELS } from "./models";
 import { openRouterSlugSupportsThinking } from "./openrouter/thinking";
+import { DEFAULT_USER_AGENT } from "./shared";
 
 const DEFAULT_CONTEXT_WINDOW = 128_000;
 const DEFAULT_MAX_OUTPUT = 8192;
@@ -438,6 +439,9 @@ export async function fetchRemoteOpenAIModels(
   const client = new OpenAI({
     apiKey: apiKey || "not-needed",
     baseURL: normalized,
+    defaultHeaders: {
+      "User-Agent": DEFAULT_USER_AGENT,
+    },
   });
 
   try {
@@ -472,6 +476,7 @@ async function fetchRemoteOpenAIModelsRaw(
     headers: {
       ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
       Accept: "application/json",
+      "User-Agent": DEFAULT_USER_AGENT,
     },
   });
 

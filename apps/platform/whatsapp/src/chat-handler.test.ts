@@ -218,12 +218,65 @@ describe("createChatHandler", () => {
       await handleMessage({ jid: pairJid, text: "ABCD1234" });
 
       expect(sent.length).toBe(1);
-      expect(sent[0].text).toContain("Linked successfully");
+      expect(sent[0]!.text).toContain("Linked successfully");
       expect(authStore.isAuthorized(pairJid)).toBe(true);
 
       await handleMessage({ jid: pairJid, text: "hello agent" });
       expect(calls.createSession).toBe(1);
       expect(calls.sendStream).toBe(1);
+    });
+  });
+
+  test("auto-pairs owner LID when fromMe is true and pairedJid is linked", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        pairedLid: "stale_device:1@lid",
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        profiles: [
+          {
+            createdAt: new Date().toISOString(),
+            hasAvatar: false,
+            id: "default",
+            isSuper: false,
+            mcpServerCount: 0,
+            model: null,
+            name: "Default",
+            soulActive: false,
+            toolCount: 0,
+            updatedAt: new Date().toISOString(),
+          },
+        ],
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket } = createMockSocket();
+
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      const realAccountLid = "154352568283178@lid";
+      await handleMessage({ fromMe: true, jid: realAccountLid, text: "hello" });
+
+      expect(calls.createSession).toBe(1);
+      expect(calls.sendStream).toBe(1);
+
+      await authStore.reload();
+      expect(authStore.getConfig()?.pairedLid).toBe(realAccountLid);
     });
   });
 

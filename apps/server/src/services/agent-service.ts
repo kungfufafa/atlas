@@ -362,6 +362,54 @@ export class AgentService {
     });
   }
 
+  /**
+   * Binds a savings recorder to one org. Fire and forget on purpose: a counter
+   * for a dashboard must never delay a tool result or fail a turn, so the write
+   * is not awaited and a rejection is swallowed.
+   */
+  /** Same fire-and-forget shape as the savings recorder, for provider tokens. */
+  private turnUsageRecorderFor(orgId: string | undefined) {
+    if (!orgId?.trim()) {
+      return;
+    }
+
+    const scopedOrgId = orgId.trim();
+
+    return (turn: {
+      estimated: boolean;
+      inputTokens: number;
+      optimized: boolean;
+      outputTokens: number;
+    }): void => {
+      void this.db
+        .incrementLlmTurnUsage(scopedOrgId, turn)
+        .catch(() => undefined);
+    };
+  }
+
+  private savingsRecorderFor(orgId: string | undefined) {
+    if (!orgId?.trim()) {
+      return;
+    }
+
+    const scopedOrgId = orgId.trim();
+
+    return (saving: {
+      bytesIn: number;
+      bytesOut: number;
+      optimizer: string;
+      tool: string;
+    }): void => {
+      void this.db
+        .incrementToolOutputSavings(
+          scopedOrgId,
+          saving,
+          new Date().toISOString()
+        )
+        .catch(() => undefined);
+    };
+  }
+
   get profiles(): ProfileService {
     return this.profileService;
   }
@@ -1174,6 +1222,8 @@ export class AgentService {
         orgId,
         orgRole: "member",
         profileId,
+        recordToolOutputSavings: this.savingsRecorderFor(orgId),
+        recordTurnUsage: this.turnUsageRecorderFor(orgId),
       }),
       tools,
       userContext,
@@ -1237,6 +1287,8 @@ export class AgentService {
         orgId: input.orgId,
         orgRole: "member",
         profileId: input.profileId,
+        recordToolOutputSavings: this.savingsRecorderFor(input.orgId),
+        recordTurnUsage: this.turnUsageRecorderFor(input.orgId),
         sessionId: input.sessionId,
         userId: input.userId,
       }),
@@ -3092,6 +3144,11 @@ export class AgentService {
       orgRole,
       skillUsageContext
     );
+    // Per-org override for the tool-output optimiser. Undefined leaves the
+    // decision to the server's env var, so an operator who never opened the UI
+    // keeps whatever they configured.
+    const tokenOptimizerEnabled = (await this.db.getWorkspaceSettings())
+      ?.tokenOptimizerEnabled;
     const resolvedSystemPrompt = profile.isSuper
       ? `${systemPrompt.trim()}\n\n${SUPER_AGENT_TOOL_AUTHORING_RULES}`
       : systemPrompt;
@@ -3233,7 +3290,10 @@ export class AgentService {
         orgId,
         orgRole: orgRole ?? undefined,
         profileId,
+        recordToolOutputSavings: this.savingsRecorderFor(orgId),
+        recordTurnUsage: this.turnUsageRecorderFor(orgId),
         sessionId,
+        tokenOptimizerEnabled: tokenOptimizerEnabled ?? undefined,
         userId: userId ?? undefined,
       }),
       tools,
