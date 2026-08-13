@@ -7,9 +7,9 @@ import {
 import { validateJavascriptToolModule } from "../services/javascript-tool-loader";
 import type { ProfileService } from "../services/profile-service";
 import {
-  type SuperBotSessionState,
+  type SuperAgentSessionState,
   TOOL_ASSIGNMENT_CONFIRMATION_MESSAGE,
-} from "../services/super-bot-session-state";
+} from "../services/super-agent-session-state";
 
 const SUPPORTED_SOUL_FILE_NAMES = [
   "SOUL.md",
@@ -29,14 +29,14 @@ function requireOrgId(context: ToolContext): string {
   return orgId;
 }
 
-export function createSuperBotTools(
+export function createSuperAgentTools(
   profileService: ProfileService,
-  sessionState: SuperBotSessionState
+  sessionState: SuperAgentSessionState
 ): ToolDefinition[] {
   return [
     {
       description:
-        "List all bot profiles with their id, name, and tool counts. Use when managing profiles or when the user asks you to assign a tool and you need profile ids.",
+        "List all agent profiles with their id, name, and tool counts. Use when managing profiles or when the user asks you to assign a tool and you need profile ids.",
       name: "list_profiles",
       parameters: emptyObjectSchema(),
       async run(_input, context: ToolContext) {
@@ -44,7 +44,7 @@ export function createSuperBotTools(
       },
     },
     {
-      description: "Get a bot profile by id, including assigned tools.",
+      description: "Get an agent profile by id, including assigned tools.",
       name: "get_profile",
       parameters: {
         additionalProperties: false,
@@ -65,13 +65,13 @@ export function createSuperBotTools(
       },
     },
     {
-      description: "Create a new bot profile.",
+      description: "Create a new agent profile.",
       name: "create_profile",
       parameters: {
         additionalProperties: false,
         properties: {
           isSuper: {
-            description: "Whether this profile is a super bot.",
+            description: "Whether this profile is a super agent.",
             type: "boolean",
           },
           model: {
@@ -95,7 +95,7 @@ export function createSuperBotTools(
             type: "object",
           },
           systemPrompt: {
-            description: "System prompt for the bot.",
+            description: "System prompt for the agent.",
             type: "string",
           },
         },
@@ -199,7 +199,7 @@ export function createSuperBotTools(
 
         if (requestedHandlerType && requestedHandlerType !== handlerType) {
           throw new Error(
-            'Super Bot can only create JavaScript tools. Use handlerType "javascript".'
+            'Super Agent can only create JavaScript tools. Use handlerType "javascript".'
           );
         }
 

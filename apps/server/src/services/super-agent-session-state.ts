@@ -3,7 +3,7 @@ interface TurnState {
   createdToolIds: Set<string>;
 }
 
-export class SuperBotSessionState {
+export class SuperAgentSessionState {
   private readonly turns = new Map<string, TurnState>();
 
   beginTurn(sessionId: string): void {

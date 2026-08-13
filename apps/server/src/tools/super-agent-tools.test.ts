@@ -10,16 +10,16 @@ import type {
 } from "@atlas/core";
 import type { ProfileService } from "../services/profile-service";
 import {
-  SuperBotSessionState,
+  SuperAgentSessionState,
   TOOL_ASSIGNMENT_CONFIRMATION_MESSAGE,
-} from "../services/super-bot-session-state";
-import { createSuperBotTools } from "./super-bot-tools";
+} from "../services/super-agent-session-state";
+import { createSuperAgentTools } from "./super-agent-tools";
 
 const originalConfigDir = process.env.ATLAS_CONFIG_DIR;
 const ORG_ID = "org_test";
 const SESSION_ID = "session_test";
 
-describe("super bot create_tool", () => {
+describe("super agent create_tool", () => {
   let tempConfigDir = "";
 
   afterEach(async () => {
@@ -153,8 +153,8 @@ describe("super bot create_tool", () => {
   });
 });
 
-describe("super bot assign_tool_to_profile", () => {
-  const sessionState = new SuperBotSessionState();
+describe("super agent assign_tool_to_profile", () => {
+  const sessionState = new SuperAgentSessionState();
 
   test("allows the first assignment for a tool created this turn", async () => {
     sessionState.beginTurn(SESSION_ID);
@@ -175,7 +175,7 @@ describe("super bot assign_tool_to_profile", () => {
               mcpServerCount: 0,
               mcpServers: [],
               model: null,
-              name: "Default Bot",
+              name: "Default Agent",
               skills: [],
               soulActive: false,
               systemPrompt: "You are helpful.",
@@ -247,7 +247,7 @@ describe("super bot assign_tool_to_profile", () => {
               mcpServerCount: 0,
               mcpServers: [],
               model: null,
-              name: "Other Bot",
+              name: "Other Agent",
               skills: [],
               soulActive: false,
               systemPrompt: "You are helpful.",
@@ -270,7 +270,7 @@ describe("super bot assign_tool_to_profile", () => {
   });
 });
 
-describe("super bot create_profile", () => {
+describe("super agent create_profile", () => {
   test("passes generated soul files to profile creation", async () => {
     const capturedRequests: CreateProfileRequest[] = [];
 
@@ -407,9 +407,9 @@ function createTestTools(
     Pick<ProfileService, "createTool" | "assignTool" | "createProfile">
   >
 ) {
-  const sessionState = new SuperBotSessionState();
+  const sessionState = new SuperAgentSessionState();
   sessionState.beginTurn(SESSION_ID);
-  return createSuperBotTools(profileService as ProfileService, sessionState);
+  return createSuperAgentTools(profileService as ProfileService, sessionState);
 }
 
 function getCreateToolTool(profileService: Pick<ProfileService, "createTool">) {
@@ -440,9 +440,9 @@ function getCreateProfileTool(
 
 function getAssignToolTool(
   profileService: Pick<ProfileService, "assignTool">,
-  sessionState: SuperBotSessionState
+  sessionState: SuperAgentSessionState
 ) {
-  const tool = createSuperBotTools(
+  const tool = createSuperAgentTools(
     profileService as ProfileService,
     sessionState
   ).find((candidate) => candidate.name === "assign_tool_to_profile");

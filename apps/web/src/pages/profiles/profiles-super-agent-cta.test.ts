@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { ProfileSummary } from "@atlas/core/contract";
-import { resolveSuperBotChatProfileId } from "@/lib/profiles";
+import { resolveSuperAgentChatProfileId } from "@/lib/profiles";
 
 function profile(
   partial: Pick<ProfileSummary, "id" | "name" | "isSuper" | "isDefault">
@@ -20,10 +20,10 @@ function profile(
   };
 }
 
-describe("resolveSuperBotChatProfileId", () => {
-  test("returns the super bot profile id when present", () => {
+describe("resolveSuperAgentChatProfileId", () => {
+  test("returns the super agent profile id when present", () => {
     expect(
-      resolveSuperBotChatProfileId([
+      resolveSuperAgentChatProfileId([
         profile({
           id: "default",
           isDefault: true,
@@ -31,18 +31,18 @@ describe("resolveSuperBotChatProfileId", () => {
           name: "Default",
         }),
         profile({
-          id: "super_bot",
+          id: "super_agent",
           isDefault: false,
           isSuper: true,
-          name: "Super Bot",
+          name: "Super Agent",
         }),
       ])
-    ).toBe("super_bot");
+    ).toBe("super_agent");
   });
 
-  test("returns null when no super bot exists", () => {
+  test("returns null when no super agent exists", () => {
     expect(
-      resolveSuperBotChatProfileId([
+      resolveSuperAgentChatProfileId([
         profile({
           id: "default",
           isDefault: true,

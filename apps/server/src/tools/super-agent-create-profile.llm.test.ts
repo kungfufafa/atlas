@@ -1,15 +1,15 @@
 /**
- * Live LLM cassette test: Super Bot create-profile end-to-end.
+ * Live LLM cassette test: Super Agent create-profile end-to-end.
  *
- * Starts from a one-line user ask (real Super Bot confirm-first flow), then
- * continues briefly until `create_profile` is called. Asserts defaults after
- * executing the tool.
+ * Starts from a one-line user ask (draft-and-confirm skill flow), then continues
+ * through the tool-call turns until `create_profile` is invoked. Asserts the
+ * saved profile and assigned tools after the run.
  *
  * Record (needs DeepSeek key in ~/.atlas config, or DEEPSEEK_API_KEY):
- *   LLM_VCR_MODE=record bun test src/tools/super-bot-create-profile.llm.test.ts
+ *   LLM_VCR_MODE=record bun test src/tools/super-agent-create-profile.llm.test.ts
  *
  * Replay (default when cassette exists; CI-safe):
- *   bun test src/tools/super-bot-create-profile.llm.test.ts
+ *   bun test src/tools/super-agent-create-profile.llm.test.ts
  */
 
 import { afterEach, expect, test } from "bun:test";
@@ -28,24 +28,24 @@ import {
 import {
   createInMemoryDatabaseAdapter,
   ensureBuiltinToolDefinitions,
-  SUPER_BOT_SYSTEM_PROMPT,
-  SUPER_BOT_TOOL_AUTHORING_RULES,
+  SUPER_AGENT_SYSTEM_PROMPT,
+  SUPER_AGENT_TOOL_AUTHORING_RULES,
 } from "@atlas/db";
 import { createProviderForInstance } from "../providers/create";
 import { ProfileService } from "../services/profile-service";
-import { SuperBotSessionState } from "../services/super-bot-session-state";
+import { SuperAgentSessionState } from "../services/super-agent-session-state";
 import {
   cassetteFilePath,
   loadCassette,
   withMswCassette,
 } from "../testing/llm-msw-cassette";
-import { createSuperBotTools } from "./super-bot-tools";
+import { createSuperAgentTools } from "./super-agent-tools";
 
-const cassetteName = "super-bot-create-profile";
+const cassetteName = "super-agent-create-profile";
 const modelId = "deepseek-v4-flash";
 const deepseekChatCompletionsUrl = "https://api.deepseek.com/chat/completions";
-const ORG_ID = "org_super_bot_llm";
-const SESSION_ID = "session_super_bot_llm";
+const ORG_ID = "org_super_agent_llm";
+const SESSION_ID = "session_super_agent_llm";
 const USER_ASK = "Create a Refund Support Bot for customer refund questions.";
 const MAX_TURNS = 5;
 
@@ -120,12 +120,12 @@ async function seedDefaultBundledSkills(
   }
 }
 
-async function buildSuperBotSystemPrompt(): Promise<string> {
+async function buildSuperAgentSystemPrompt(): Promise<string> {
   const skillBody = await readBundledSkillBody("create-profile");
   return [
-    SUPER_BOT_SYSTEM_PROMPT.trim(),
+    SUPER_AGENT_SYSTEM_PROMPT.trim(),
     "",
-    SUPER_BOT_TOOL_AUTHORING_RULES.trim(),
+    SUPER_AGENT_TOOL_AUTHORING_RULES.trim(),
     "",
     "# Active Skill: create-profile",
     skillBody.trim(),
@@ -133,7 +133,7 @@ async function buildSuperBotSystemPrompt(): Promise<string> {
 }
 
 test(
-  "Super Bot prompt + create-profile skill creates a profile with defaults",
+  "Super Agent prompt + create-profile skill creates a profile with defaults",
   async () => {
     const cassettePath = cassetteFilePath(cassetteName);
     const existing = await loadCassette(cassettePath);
@@ -142,13 +142,13 @@ test(
 
     if (!existing && mode !== "record" && !instance) {
       throw new Error(
-        "Missing DeepSeek credentials to record super-bot-create-profile cassette. Set DEEPSEEK_API_KEY or configure a DeepSeek provider, then run with LLM_VCR_MODE=record."
+        "Missing DeepSeek credentials to record super-agent-create-profile cassette. Set DEEPSEEK_API_KEY or configure a DeepSeek provider, then run with LLM_VCR_MODE=record."
       );
     }
 
     previousConfigDir = process.env.ATLAS_CONFIG_DIR;
     tempConfigDir = await mkdtemp(
-      join(tmpdir(), "atlas-super-bot-create-profile-")
+      join(tmpdir(), "atlas-super-agent-create-profile-")
     );
     process.env.ATLAS_CONFIG_DIR = tempConfigDir;
 
@@ -157,9 +157,9 @@ test(
     await seedDefaultBundledSkills(db, tempConfigDir);
 
     const profileService = new ProfileService(db);
-    const sessionState = new SuperBotSessionState();
+    const sessionState = new SuperAgentSessionState();
     sessionState.beginTurn(SESSION_ID);
-    const tools = createSuperBotTools(profileService, sessionState);
+    const tools = createSuperAgentTools(profileService, sessionState);
     const toolDefs = tools.map(toLlmToolDefinition);
     const toolContext = { orgId: ORG_ID, sessionId: SESSION_ID };
     const createProfileTool = tools.find(
@@ -187,7 +187,7 @@ test(
           throw new Error("Failed to construct DeepSeek provider.");
         }
 
-        const system = await buildSuperBotSystemPrompt();
+        const system = await buildSuperAgentSystemPrompt();
         const messages: ChatMessage[] = [{ content: USER_ASK, role: "user" }];
         let createCall: ToolCall | null = null;
         let confirmed = false;

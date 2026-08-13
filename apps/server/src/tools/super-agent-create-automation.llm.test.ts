@@ -1,15 +1,15 @@
 /**
- * Live LLM cassette test: Super Bot create-automation end-to-end.
+ * Live LLM cassette test: Super Agent create-automation end-to-end.
  *
  * Starts from a one-line user ask (confirm-schedule skill flow), then
  * continues briefly until `create_automation` is called. Asserts the saved
  * automation after executing the tool.
  *
  * Record (needs DeepSeek key in ~/.atlas config, or DEEPSEEK_API_KEY):
- *   LLM_VCR_MODE=record bun test src/tools/super-bot-create-automation.llm.test.ts
+ *   LLM_VCR_MODE=record bun test src/tools/super-agent-create-automation.llm.test.ts
  *
  * Replay (default when cassette exists; CI-safe):
- *   bun test src/tools/super-bot-create-automation.llm.test.ts
+ *   bun test src/tools/super-agent-create-automation.llm.test.ts
  */
 import { expect, test } from "bun:test";
 import {
@@ -22,9 +22,9 @@ import {
 } from "@atlas/core";
 import {
   createInMemoryDatabaseAdapter,
-  SUPER_BOT_PROFILE_ID,
-  SUPER_BOT_SYSTEM_PROMPT,
-  SUPER_BOT_TOOL_AUTHORING_RULES,
+  SUPER_AGENT_PROFILE_ID,
+  SUPER_AGENT_SYSTEM_PROMPT,
+  SUPER_AGENT_TOOL_AUTHORING_RULES,
 } from "@atlas/db";
 import { createProviderForInstance } from "../providers/create";
 import { AutomationRunner } from "../services/automation-runner";
@@ -36,11 +36,11 @@ import {
 } from "../testing/llm-msw-cassette";
 import { createAutomationTools } from "./automation-tools";
 
-const cassetteName = "super-bot-create-automation";
+const cassetteName = "super-agent-create-automation";
 const modelId = "deepseek-v4-flash";
 const deepseekChatCompletionsUrl = "https://api.deepseek.com/chat/completions";
-const ORG_ID = "org_super_bot_automation_llm";
-const SESSION_ID = "session_super_bot_automation_llm";
+const ORG_ID = "org_super_agent_automation_llm";
+const SESSION_ID = "session_super_agent_automation_llm";
 const USER_TIMEZONE = "Asia/Jakarta";
 const USER_ASK =
   "Remind me every Monday at 9am Asia/Jakarta to review open tasks. Just save the results — no delivery.";
@@ -48,42 +48,46 @@ const MAX_TURNS = 5;
 
 async function resolveDeepseekInstance(): Promise<ProviderInstance | null> {
   const config = await loadUserConfig();
-  const configured =
-    config?.providers.find(
-      (provider) => provider.type === "deepseek" && provider.apiKey.trim()
-    ) ?? null;
+  const instances = config ? Object.values(config.instances ?? {}) : [];
+  const found = instances.find(
+    (entry) =>
+      entry.type === "deepseek" &&
+      typeof entry.apiKey === "string" &&
+      entry.apiKey.trim().length > 0
+  );
 
-  if (configured) {
-    return configured;
+  if (found) {
+    return found;
   }
 
-  const apiKey = process.env.DEEPSEEK_API_KEY?.trim();
-  if (!apiKey) {
+  const envKey = process.env.DEEPSEEK_API_KEY?.trim();
+
+  if (!envKey) {
     return null;
   }
 
   return {
-    apiKey,
-    createdAt: new Date().toISOString(),
-    id: "env-deepseek",
-    label: "DeepSeek",
+    apiKey: envKey,
+    id: "deepseek-env",
+    label: "DeepSeek (env)",
+    models: [{ id: modelId, name: modelId }],
     type: "deepseek",
   };
 }
 
-async function buildSuperBotSystemPrompt(): Promise<string> {
+async function buildSuperAgentSystemPrompt(): Promise<string> {
   const skillBody = await readBundledSkillBody("create-automation");
   return [
-    SUPER_BOT_SYSTEM_PROMPT.trim(),
+    SUPER_AGENT_SYSTEM_PROMPT.trim(),
     "",
-    SUPER_BOT_TOOL_AUTHORING_RULES.trim(),
+    SUPER_AGENT_TOOL_AUTHORING_RULES.trim(),
     "",
     "# Active Skill: create-automation",
     skillBody.trim(),
   ].join("\n");
 }
 
-async function seedOrgAndSuperBot(
+async function seedOrgAndSuperAgent(
   db: ReturnType<typeof createInMemoryDatabaseAdapter>
 ): Promise<void> {
   const now = new Date().toISOString();
@@ -91,26 +95,26 @@ async function seedOrgAndSuperBot(
   await db.upsertOrganization({
     createdAt: now,
     id: ORG_ID,
-    name: "Super Bot Automation Org",
-    slug: "super-bot-automation-org",
+    name: "Super Agent Automation Org",
+    slug: "super-agent-automation-org",
     updatedAt: now,
   });
 
   await db.upsertProfile({
     createdAt: now,
-    id: SUPER_BOT_PROFILE_ID,
+    id: SUPER_AGENT_PROFILE_ID,
     isDefault: false,
     isSuper: true,
     model: null,
-    name: "Super Bot",
+    name: "Super Agent",
     orgId: ORG_ID,
-    systemPrompt: SUPER_BOT_SYSTEM_PROMPT,
+    systemPrompt: SUPER_AGENT_SYSTEM_PROMPT,
     updatedAt: now,
   });
 }
 
 test(
-  "Super Bot prompt + create-automation skill creates a Monday schedule",
+  "Super Agent prompt + create-automation skill creates a Monday schedule",
   async () => {
     const cassettePath = cassetteFilePath(cassetteName);
     const existing = await loadCassette(cassettePath);
@@ -119,12 +123,12 @@ test(
 
     if (!existing && mode !== "record" && !instance) {
       throw new Error(
-        "Missing DeepSeek credentials to record super-bot-create-automation cassette. Set DEEPSEEK_API_KEY or configure a DeepSeek provider, then run with LLM_VCR_MODE=record."
+        "Missing DeepSeek credentials to record super-agent-create-automation cassette. Set DEEPSEEK_API_KEY or configure a DeepSeek provider, then run with LLM_VCR_MODE=record."
       );
     }
 
     const db = createInMemoryDatabaseAdapter();
-    await seedOrgAndSuperBot(db);
+    await seedOrgAndSuperAgent(db);
 
     const automationService = new AutomationService(db, {
       getUserTimezone: async () => USER_TIMEZONE,
@@ -136,7 +140,7 @@ test(
     const toolDefs = tools.map(toLlmToolDefinition);
     const toolContext = {
       orgId: ORG_ID,
-      profileId: SUPER_BOT_PROFILE_ID,
+      profileId: SUPER_AGENT_PROFILE_ID,
       sessionId: SESSION_ID,
     };
     const createAutomationTool = tools.find(
@@ -164,7 +168,7 @@ test(
           throw new Error("Failed to construct DeepSeek provider.");
         }
 
-        const system = await buildSuperBotSystemPrompt();
+        const system = await buildSuperAgentSystemPrompt();
         const messages: ChatMessage[] = [{ content: USER_ASK, role: "user" }];
         let createCall: ToolCall | null = null;
         let confirmed = false;
@@ -255,7 +259,7 @@ test(
         const listed = await automationService.listForOrg(ORG_ID);
         expect(listed.automations).toHaveLength(1);
         expect(listed.automations[0]?.id).toBe(created.id);
-        expect(listed.automations[0]?.profileId).toBe(SUPER_BOT_PROFILE_ID);
+        expect(listed.automations[0]?.profileId).toBe(SUPER_AGENT_PROFILE_ID);
       },
       { url: deepseekChatCompletionsUrl }
     );
