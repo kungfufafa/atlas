@@ -15,11 +15,11 @@ describe("cli-config", () => {
     process.env.ATLAS_CONFIG_DIR = configDir;
 
     try {
-      await saveCliProfileId("super_bot");
-      expect(await loadSavedCliProfileId()).toBe("super_bot");
+      await saveCliProfileId("super_agent");
+      expect(await loadSavedCliProfileId()).toBe("super_agent");
 
       const raw = await readFile(getCliConfigPath(), "utf8");
-      expect(raw).toContain("profile_id=super_bot");
+      expect(raw).toContain("profile_id=super_agent");
     } finally {
       if (previous === undefined) {
         delete process.env.ATLAS_CONFIG_DIR;

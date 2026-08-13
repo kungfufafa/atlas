@@ -15,7 +15,7 @@ import {
 import { useAuth } from "@/context/use-auth";
 import { useAppNavigation } from "@/hooks/use-app-navigation";
 import { useSkillProposals } from "@/hooks/use-skill-proposals";
-import { resolveSuperBotChatProfileId } from "@/lib/profiles";
+import { resolveSuperAgentChatProfileId } from "@/lib/profiles";
 import { cn } from "@/lib/utils";
 import { ProfileConfigTab } from "@/pages/profiles/profile-config-tab";
 import {
@@ -52,14 +52,14 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
   const isOrgAdmin = activeOrg?.role === "admin";
   const canCreateProfile = user?.isPlatformAdmin === true;
   const { navigateToNewChat } = useAppNavigation();
-  const superBotProfileId = resolveSuperBotChatProfileId(profiles);
+  const superAgentProfileId = resolveSuperAgentChatProfileId(profiles);
   const { data: skillProposalsData } = useSkillProposals(
     isOrgAdmin && selectedId ? (activeOrg?.id ?? null) : null,
     { profileId: selectedId ?? undefined, status: "pending" }
   );
   const pendingSkillProposals = skillProposalsData?.pendingCount ?? 0;
-  const onAskSuperBot = superBotProfileId
-    ? () => navigateToNewChat(superBotProfileId)
+  const onAskSuperAgent = superAgentProfileId
+    ? () => navigateToNewChat(superAgentProfileId)
     : undefined;
   const pageHeaderActions =
     typeof document === "undefined"
@@ -218,7 +218,7 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
                 <ProfilesEmptyState
                   canCreate={canCreateProfile}
                   disabled={busy}
-                  onAskSuperBot={onAskSuperBot}
+                  onAskSuperAgent={onAskSuperAgent}
                   onCreate={() => setCreateOpen(true)}
                   variant="compact"
                 />
@@ -244,7 +244,7 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
                 <ProfilesEmptyState
                   canCreate={canCreateProfile}
                   disabled={busy}
-                  onAskSuperBot={onAskSuperBot}
+                  onAskSuperAgent={onAskSuperAgent}
                   onCreate={() => setCreateOpen(true)}
                   variant="full"
                 />

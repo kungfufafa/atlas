@@ -23,11 +23,11 @@ const profiles: ProfileSummary[] = [
     name: "Alpha",
   },
   {
-    id: "super_bot",
+    id: "super_agent",
     isDefault: false,
     isSuper: true,
     model: null,
-    name: "Super Bot",
+    name: "Super Agent",
   },
 ];
 
@@ -38,9 +38,17 @@ describe("resolveProfileInput", () => {
     expect(resolveProfileInput(profiles, "2")?.id).toBe("profile_b");
   });
 
-  test("matches super bot aliases", () => {
-    expect(resolveProfileInput(profiles, "super_bot")?.id).toBe("super_bot");
-    expect(resolveProfileInput(profiles, "super-bot")?.id).toBe("super_bot");
+  test("matches super agent aliases", () => {
+    expect(resolveProfileInput(profiles, "super_agent")?.id).toBe(
+      "super_agent"
+    );
+    expect(resolveProfileInput(profiles, "super-agent")?.id).toBe(
+      "super_agent"
+    );
+    expect(resolveProfileInput(profiles, "super agent")?.id).toBe(
+      "super_agent"
+    );
+    expect(resolveProfileInput(profiles, "superagent")?.id).toBe("super_agent");
   });
 
   test("returns undefined for ambiguous input", () => {
@@ -65,7 +73,7 @@ describe("resolveProfileInput", () => {
 });
 
 describe("filterProfilesForChatAccess", () => {
-  test("hides super bot from org members and channel bridges", () => {
+  test("hides super agent from org members and channel bridges", () => {
     expect(
       filterProfilesForChatAccess(profiles, { orgRole: "member" }).map(
         (profile) => profile.id
@@ -73,18 +81,18 @@ describe("filterProfilesForChatAccess", () => {
     ).toEqual(["profile_b", "profile_a"]);
     expect(
       filterProfilesForChatAccess(profiles, {
-        excludeSuperBot: true,
+        excludeSuperAgent: true,
         orgRole: "admin",
       }).map((profile) => profile.id)
     ).toEqual(["profile_b", "profile_a"]);
   });
 
-  test("keeps super bot for org admins", () => {
+  test("keeps super agent for org admins", () => {
     expect(
       filterProfilesForChatAccess(profiles, { orgRole: "admin" }).map(
         (profile) => profile.id
       )
-    ).toEqual(["profile_b", "profile_a", "super_bot"]);
+    ).toEqual(["profile_b", "profile_a", "super_agent"]);
   });
 });
 
@@ -101,7 +109,7 @@ describe("resolveProfileInScopes", () => {
               isDefault: true,
               isSuper: false,
               model: null,
-              name: "Default Bot",
+              name: "Default Agent",
             },
           ],
         },

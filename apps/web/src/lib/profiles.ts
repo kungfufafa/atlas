@@ -1,13 +1,13 @@
 import type { ProfileSummary } from "@atlas/core/contract";
 
-export function findSuperBotProfile(
+export function findSuperAgentProfile(
   profiles: ProfileSummary[]
 ): ProfileSummary | undefined {
   return profiles.find((profile) => profile.isSuper);
 }
 
-/** Profile id to open for Super Bot chat CTAs, or null when none exists. */
-export function resolveSuperBotChatProfileId(
+/** Profile id to open for Super Agent chat CTAs, or null when none exists. */
+export function resolveSuperAgentChatProfileId(
   profiles: Array<Pick<ProfileSummary, "id" | "isSuper">>
 ): string | null {
   return profiles.find((profile) => profile.isSuper)?.id ?? null;

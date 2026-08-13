@@ -51,7 +51,7 @@ describe("bundled create-profile skill", () => {
     expect(
       matchSkillsForMessage(
         [discovered],
-        "Create a support bot profile for billing"
+        "Create a support agent profile for billing"
       ).map((skill) => skill.name)
     ).toEqual(["create-profile"]);
   });

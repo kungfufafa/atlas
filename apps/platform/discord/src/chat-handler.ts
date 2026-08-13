@@ -1004,7 +1004,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
   async function listSelectableProfiles() {
     const { profiles } = await client.listProfiles();
-    return filterProfilesForChatAccess(profiles, { excludeSuperBot: true });
+    return filterProfilesForChatAccess(profiles, { excludeSuperAgent: true });
   }
 
   async function replyStatus(

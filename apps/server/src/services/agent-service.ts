@@ -158,12 +158,12 @@ import {
   USER_CONTEXT_TEMPLATE,
   writeSoulFile,
 } from "@atlas/core";
-import { canAccessSuperBotProfile } from "@atlas/core/profiles";
+import { canAccessSuperAgentProfile } from "@atlas/core/profiles";
 import {
   type DatabaseAdapter,
   type StoredProfileRecord,
   type StoredTaskRunRecord,
-  SUPER_BOT_TOOL_AUTHORING_RULES,
+  SUPER_AGENT_TOOL_AUTHORING_RULES,
   WORKSPACE_SETTINGS_ID,
 } from "@atlas/db";
 import {
@@ -197,7 +197,7 @@ import {
   type SubAgentRunResult,
 } from "../tools/sub-agent-shared";
 import { SUB_AGENT_TOOL_NAME } from "../tools/sub-agent-tool";
-import { createSuperBotTools } from "../tools/super-bot-tools";
+import { createSuperAgentTools } from "../tools/super-agent-tools";
 import { createTodoTools } from "../tools/todo-tools";
 import { getAgentBrowserStatus } from "./agent-browser-service";
 import { AgentQuestionnaireState } from "./agent-questionnaire-state";
@@ -272,7 +272,7 @@ import { SkillPostTurnReviewService } from "./skill-post-turn-review-service";
 import type { SkillProposalService } from "./skill-proposal-service";
 import type { SkillSuggestionService } from "./skill-suggestion-service";
 import type { SkillsService } from "./skills-service";
-import { SuperBotSessionState } from "./super-bot-session-state";
+import { SuperAgentSessionState } from "./super-agent-session-state";
 import type { TaskRunner } from "./task-runner";
 import { resolveProfileStoredTools } from "./tool-resolver";
 
@@ -285,7 +285,7 @@ interface StoredSession {
 export type { SubAgentRunInput, SubAgentRunResult };
 
 export interface SessionAccessOptions {
-  excludeSuperBot?: boolean;
+  excludeSuperAgent?: boolean;
   isPlatformAdmin?: boolean;
   orgRole?: OrgRole | null;
 }
@@ -295,10 +295,10 @@ export class AgentService {
   private userConfig: UserConfig | null;
   private readonly db: DatabaseAdapter;
   private readonly profileService: ProfileService;
-  private readonly superBotSessionState = new SuperBotSessionState();
+  private readonly superAgentSessionState = new SuperAgentSessionState();
   private readonly agentTodoState: AgentTodoState;
   private readonly agentQuestionnaireState: AgentQuestionnaireState;
-  private readonly superBotTools: ToolDefinition[];
+  private readonly superAgentTools: ToolDefinition[];
   private readonly orgMemoryTools: ToolDefinition[];
   private automationTools: ToolDefinition[] = [];
   private automationRunHistoryTools: ToolDefinition[] = [];
@@ -344,9 +344,9 @@ export class AgentService {
       this.agentQuestionnaireState
     );
     this.todoTools = createTodoTools(this.agentTodoState);
-    this.superBotTools = createSuperBotTools(
+    this.superAgentTools = createSuperAgentTools(
       this.profileService,
-      this.superBotSessionState
+      this.superAgentSessionState
     );
     this.orgMemoryTools = createOrgMemoryTools(this.getOrgMemoryService());
     this._providerConfigured =
@@ -1481,14 +1481,14 @@ export class AgentService {
 
     if (
       profile.isSuper &&
-      (access?.excludeSuperBot ||
-        !canAccessSuperBotProfile({
+      (access?.excludeSuperAgent ||
+        !canAccessSuperAgentProfile({
           isPlatformAdmin: access?.isPlatformAdmin,
           orgRole: access?.orgRole,
         }))
     ) {
       throw new AtlasApiError(
-        "Super Bot is only available to org admins.",
+        "Super Agent is only available to org admins.",
         403
       );
     }
@@ -1717,7 +1717,7 @@ export class AgentService {
     }
 
     this.sessions.delete(sessionId);
-    this.superBotSessionState.clearSession(sessionId);
+    this.superAgentSessionState.clearSession(sessionId);
     this.agentTodoState.clearSession(sessionId);
     this.agentQuestionnaireState.clearSession(sessionId);
     await this.db.deleteSession(sessionId);
@@ -3051,7 +3051,7 @@ export class AgentService {
     }
 
     if (profile.isSuper) {
-      resolved = [...resolved, ...this.superBotTools];
+      resolved = [...resolved, ...this.superAgentTools];
     }
 
     resolved = [...resolved, ...this.orgMemoryTools];
@@ -3093,7 +3093,7 @@ export class AgentService {
       skillUsageContext
     );
     const resolvedSystemPrompt = profile.isSuper
-      ? `${systemPrompt.trim()}\n\n${SUPER_BOT_TOOL_AUTHORING_RULES}`
+      ? `${systemPrompt.trim()}\n\n${SUPER_AGENT_TOOL_AUTHORING_RULES}`
       : systemPrompt;
     const initialHistory = await loadSessionHistory(this.db, sessionId);
     const userTimezone = await this.getUserTimezone();
@@ -3243,7 +3243,7 @@ export class AgentService {
 
     return wrapPersistedSession(sessionId, session, this.db, {
       onBeginTurn: (id) => {
-        this.superBotSessionState.beginTurn(id);
+        this.superAgentSessionState.beginTurn(id);
         void this.agentQuestionnaireState.clear(id);
       },
     });

@@ -104,10 +104,10 @@ export function ToolPlaygroundRunForm({
 
 export function ToolPlaygroundOutput({
   run,
-  superBotProfileId,
+  superAgentProfileId,
 }: {
   run: ToolPlaygroundRunControls;
-  superBotProfileId: string | null;
+  superAgentProfileId: string | null;
 }) {
   return (
     <div className="min-h-32">
@@ -136,14 +136,14 @@ export function ToolPlaygroundOutput({
           <pre className="text-destructive text-xs leading-relaxed">
             {run.runState.error}
           </pre>
-          {superBotProfileId ? (
+          {superAgentProfileId ? (
             <Button
-              onClick={run.handleFixWithSuperBot}
+              onClick={run.handleFixWithSuperAgent}
               size="sm"
               type="button"
               variant="outline"
             >
-              Fix with Super Bot
+              Fix with Super Agent
             </Button>
           ) : null}
         </div>

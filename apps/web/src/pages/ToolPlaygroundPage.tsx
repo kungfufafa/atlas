@@ -18,7 +18,7 @@ import {
   canUseToolPlayground,
   toolPlaygroundBackTarget,
 } from "@/lib/navigation";
-import { findSuperBotProfile } from "@/lib/profiles";
+import { findSuperAgentProfile } from "@/lib/profiles";
 import { cn } from "@/lib/utils";
 
 const sectionClass = "rounded-md border border-border bg-card";
@@ -41,7 +41,7 @@ export function ToolPlaygroundPage() {
     error: toolError,
   } = useToolQuery(toolId ?? null);
   const { data: profiles = [] } = useProfilesQuery();
-  const superBotProfileId = findSuperBotProfile(profiles)?.id ?? null;
+  const superAgentProfileId = findSuperAgentProfile(profiles)?.id ?? null;
 
   if (authLoading) {
     return <PageState message="Loading…" />;
@@ -76,7 +76,7 @@ export function ToolPlaygroundPage() {
 
   return (
     <ToolPlaygroundPageContent
-      superBotProfileId={superBotProfileId}
+      superAgentProfileId={superAgentProfileId}
       tool={tool}
     />
   );
@@ -84,15 +84,15 @@ export function ToolPlaygroundPage() {
 
 function ToolPlaygroundPageContent({
   tool,
-  superBotProfileId,
+  superAgentProfileId,
 }: {
   tool: ToolDetail;
-  superBotProfileId: string | null;
+  superAgentProfileId: string | null;
 }) {
   const [searchParams] = useSearchParams();
   const back = toolPlaygroundBackTarget(searchParams);
   const isJavascriptTool = tool.handlerType === "javascript";
-  const run = useToolPlaygroundRun(tool, superBotProfileId);
+  const run = useToolPlaygroundRun(tool, superAgentProfileId);
   const [mainTab, setMainTab] = useState<"output" | "detail">("output");
 
   return (
@@ -145,7 +145,7 @@ function ToolPlaygroundPageContent({
                     >
                       <ToolPlaygroundOutput
                         run={run}
-                        superBotProfileId={superBotProfileId}
+                        superAgentProfileId={superAgentProfileId}
                       />
                     </div>
                   ) : (

@@ -20,7 +20,7 @@ import {
   formatSessionRelativeTime,
 } from "@/lib/chat-history";
 import { formatError } from "@/lib/client";
-import { findSuperBotProfile } from "@/lib/profiles";
+import { findSuperAgentProfile } from "@/lib/profiles";
 import { formatTrigger } from "@/pages/automations/automations-page.shared";
 
 const EMPTY_AUTOMATIONS: StoredAutomation[] = [];
@@ -39,7 +39,7 @@ export function useAutomationsPage() {
   const unreadByAutomationId =
     automationsData?.unread?.byAutomationId ?? EMPTY_UNREAD_BY_AUTOMATION_ID;
   const { data: profiles = [] } = useProfilesQuery();
-  const superBotProfile = findSuperBotProfile(profiles);
+  const superAgentProfile = findSuperAgentProfile(profiles);
   const [searchParams] = useSearchParams();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const {
@@ -245,12 +245,12 @@ export function useAutomationsPage() {
   }
 
   function goToCreateAutomation() {
-    if (!superBotProfile) {
-      setError("No super bot profile exists in this organization.");
+    if (!superAgentProfile) {
+      setError("No super agent profile exists in this organization.");
       return;
     }
 
-    navigateToNewChat(superBotProfile.id);
+    navigateToNewChat(superAgentProfile.id);
   }
 
   const runScheduleHint = selected

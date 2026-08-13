@@ -664,7 +664,7 @@ describe("composio-tool-bridge", () => {
 
     const result = await tools[0]?.run(
       { toolkit_slug: "gmail" },
-      { clientOrigin: "http://127.0.0.1:3003" }
+      { clientOrigin: "http://127.0.0.1:3000" }
     );
 
     expect(result).toMatchObject({
@@ -686,12 +686,12 @@ describe("composio-tool-bridge", () => {
     const request = new Request(
       "http://127.0.0.1:4310/v1/sessions/s1/messages",
       {
-        headers: { Origin: "http://localhost:3003" },
+        headers: { Origin: "http://localhost:3000" },
       }
     );
 
     expect(resolveComposioCallbackBaseUrl({ request })).toBe(
-      "http://localhost:3003"
+      "http://localhost:3000"
     );
   });
 });

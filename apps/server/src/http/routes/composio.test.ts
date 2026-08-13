@@ -144,7 +144,7 @@ describe("composio routes", () => {
 
     const connectResponse = await app.fetch(
       new Request("http://localhost:4310/v1/composio/toolkits/gmail/connect", {
-        body: JSON.stringify({ callbackOrigin: "http://localhost:3003" }),
+        body: JSON.stringify({ callbackOrigin: "http://localhost:3000" }),
         headers: session.headers({
           "Content-Type": "application/json",
           "X-CSRF-Token": session.csrfToken,

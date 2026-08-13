@@ -27,7 +27,7 @@ import { formatError } from "@/lib/client";
 import { fileToImageAttachment } from "@/lib/profile-images";
 
 interface ProfileCreateDialogProps {
-  onAskSuperBot?: () => void;
+  onAskSuperAgent?: () => void;
   onCreated: (profileId: string) => void;
   onOpenChange: (open: boolean) => void;
   open: boolean;
@@ -113,13 +113,13 @@ export function ProfileCreateDialog({
   tools,
   onCreated,
   onOpenChange,
-  onAskSuperBot,
+  onAskSuperAgent,
 }: ProfileCreateDialogProps) {
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
       {open ? (
         <ProfileCreateDialogContent
-          onAskSuperBot={onAskSuperBot}
+          onAskSuperAgent={onAskSuperAgent}
           onCreated={onCreated}
           onOpenChange={onOpenChange}
           tools={tools}
@@ -133,12 +133,12 @@ function ProfileCreateDialogContent({
   tools,
   onCreated,
   onOpenChange,
-  onAskSuperBot,
+  onAskSuperAgent,
 }: {
   tools: ToolSummary[];
   onCreated: (profileId: string) => void;
   onOpenChange: (open: boolean) => void;
-  onAskSuperBot?: () => void;
+  onAskSuperAgent?: () => void;
 }) {
   const createMutation = useCreateProfileMutation();
   const uploadAvatarMutation = useUploadProfileAvatarMutation();
@@ -284,7 +284,7 @@ function ProfileCreateDialogContent({
           <DialogTitle>Create profile</DialogTitle>
           <DialogDescription>
             Set name and profile id.
-            {onAskSuperBot ? (
+            {onAskSuperAgent ? (
               <>
                 {" "}
                 Or{" "}
@@ -293,11 +293,11 @@ function ProfileCreateDialogContent({
                   disabled={busy}
                   onClick={() => {
                     onOpenChange(false);
-                    onAskSuperBot();
+                    onAskSuperAgent();
                   }}
                   type="button"
                 >
-                  ask Super Bot
+                  ask Super Agent
                 </button>{" "}
                 to draft from chat.
               </>

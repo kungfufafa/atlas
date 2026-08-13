@@ -1,6 +1,6 @@
 import type { OrgRole, ProfileSummary } from "./contract";
 
-export function canAccessSuperBotProfile(options: {
+export function canAccessSuperAgentProfile(options: {
   orgRole?: OrgRole | null;
   isPlatformAdmin?: boolean;
 }): boolean {
@@ -12,10 +12,10 @@ export function filterProfilesForChatAccess(
   options: {
     orgRole?: OrgRole | null;
     isPlatformAdmin?: boolean;
-    excludeSuperBot?: boolean;
+    excludeSuperAgent?: boolean;
   } = {}
 ): ProfileSummary[] {
-  if (options.excludeSuperBot || !canAccessSuperBotProfile(options)) {
+  if (options.excludeSuperAgent || !canAccessSuperAgentProfile(options)) {
     return profiles.filter((profile) => !profile.isSuper);
   }
 
@@ -66,18 +66,18 @@ export function resolveProfileInput(
   }
 
   const lower = trimmed.toLowerCase();
-  const superBotAliases = new Set([
-    "super_bot",
-    "super-bot",
-    "superbot",
-    "super bot",
+  const superAgentAliases = new Set([
+    "super_agent",
+    "super-agent",
+    "superagent",
+    "super agent",
   ]);
 
-  if (superBotAliases.has(lower)) {
-    const superBots = profiles.filter((profile) => profile.isSuper);
+  if (superAgentAliases.has(lower)) {
+    const superAgents = profiles.filter((profile) => profile.isSuper);
 
-    if (superBots.length === 1) {
-      return superBots[0];
+    if (superAgents.length === 1) {
+      return superAgents[0];
     }
   }
 

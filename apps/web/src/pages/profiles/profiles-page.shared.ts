@@ -63,7 +63,7 @@ export type RemoveAssignmentTarget =
 
 export function profileSidebarDescription(profile: ProfileSummary): string {
   if (profile.isSuper) {
-    return "Super bot";
+    return "Super agent";
   }
 
   const parts: string[] = [];

@@ -7,7 +7,7 @@ import {
   DEFAULT_BUNDLED_SKILL_NAMES,
   OPT_IN_BUNDLED_SKILL_NAMES,
   RUNTIME_ONLY_BUNDLED_SKILL_NAMES,
-  SUPER_BOT_BUNDLED_SKILL_NAMES,
+  SUPER_AGENT_BUNDLED_SKILL_NAMES,
 } from "../bundled-names";
 import { parseSkillMarkdown } from "../parse";
 
@@ -17,7 +17,7 @@ export {
   DEFAULT_BUNDLED_SKILL_NAMES,
   OPT_IN_BUNDLED_SKILL_NAMES,
   RUNTIME_ONLY_BUNDLED_SKILL_NAMES,
-  SUPER_BOT_BUNDLED_SKILL_NAMES,
+  SUPER_AGENT_BUNDLED_SKILL_NAMES,
 };
 
 const bundledDir = path.join(path.dirname(fileURLToPath(import.meta.url)));

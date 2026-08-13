@@ -1,6 +1,6 @@
 ---
 name: create-profile
-description: Create, design, or set up a new bot profile with soul files and appropriate tool assignments. Use when the user asks for a new profile, support bot, assistant, persona, or specialized bot.
+description: Create, design, or set up a new agent profile with soul files and appropriate tool assignments. Use when the user asks for a new profile, support agent, assistant, persona, or specialized agent.
 include-body-on-match: true
 ---
 

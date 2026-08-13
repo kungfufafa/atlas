@@ -20,11 +20,11 @@ import {
   validateAutomationDelivery,
   validateAutomationInput,
 } from "@atlas/core";
-import { canAccessSuperBotProfile } from "@atlas/core/profiles";
+import { canAccessSuperAgentProfile } from "@atlas/core/profiles";
 import { type DatabaseAdapter, DatabaseAutomationStore } from "@atlas/db";
 
-/** Caller role context used to gate access to admin-only profiles (e.g. Super Bot). */
-export type ProfileAccess = Parameters<typeof canAccessSuperBotProfile>[0];
+/** Caller role context used to gate access to admin-only profiles (e.g. Super Agent). */
+export type ProfileAccess = Parameters<typeof canAccessSuperAgentProfile>[0];
 
 export interface AutomationServiceOptions {
   canSendEmail?: (profileId: string, orgId: string) => Promise<boolean>;
@@ -360,9 +360,9 @@ export class AutomationService {
     if (trimmed) {
       const profile = await this.db.getProfileForOrg(trimmed, orgId);
       if (profile) {
-        if (profile.isSuper && access && !canAccessSuperBotProfile(access)) {
+        if (profile.isSuper && access && !canAccessSuperAgentProfile(access)) {
           throw new AtlasApiError(
-            "Super Bot is only available to org admins.",
+            "Super Agent is only available to org admins.",
             403
           );
         }

@@ -150,7 +150,7 @@ describe("OrgService", () => {
     );
     expect(
       profiles.some(
-        (profile) => profile.isSuper && profile.name === "Super Bot"
+        (profile) => profile.isSuper && profile.name === "Super Agent"
       )
     ).toBe(true);
   });

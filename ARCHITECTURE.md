@@ -124,7 +124,7 @@ Every authed non-platform request needs an active org (`X-Org-Id` or `active_org
 
 ## Agent runtime
 
-Assembled in [`agent-service.ts`](./apps/server/src/services/agent-service.ts): profile + soul, provider/model, builtins, custom JS tools, MCP tools, Super Bot extras, questionnaire/todo, attachments.
+Assembled in [`agent-service.ts`](./apps/server/src/services/agent-service.ts): profile + soul, provider/model, builtins, custom JS tools, MCP tools, Super Agent extras, questionnaire/todo, attachments.
 
 Prompt layers:
 
@@ -148,7 +148,7 @@ Prompt layers:
 | Custom JS | `javascript-tool-loader.ts` |
 | MCP | `mcp-tool-bridge.ts` |
 
-Tools are profile-scoped (plus Super Bot runtime extras when allowed).
+Tools are profile-scoped (plus Super Agent runtime extras when allowed).
 
 ## Workers, automations, tasks
 

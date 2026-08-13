@@ -24,7 +24,7 @@ import { useProfilesQuery, useToolsQuery } from "@/hooks/use-app-queries";
 import { useDeleteToolMutation } from "@/hooks/use-resource-mutations";
 import { formatError } from "@/lib/client";
 import { canUseToolPlayground, toolPlaygroundPath } from "@/lib/navigation";
-import { findSuperBotProfile } from "@/lib/profiles";
+import { findSuperAgentProfile } from "@/lib/profiles";
 import { cn } from "@/lib/utils";
 
 const sectionClass = "rounded-md border border-border bg-card";
@@ -44,7 +44,7 @@ export function ToolsTab({ embedded = false }: { embedded?: boolean } = {}) {
   );
   const { data: tools = [], isLoading, error } = useToolsQuery();
   const { data: profiles = [] } = useProfilesQuery();
-  const superBotProfile = findSuperBotProfile(profiles);
+  const superAgentProfile = findSuperAgentProfile(profiles);
   const deleteToolMutation = useDeleteToolMutation();
   const [actionError, setActionError] = useState<string | null>(null);
   const [emailConfigOpen, setEmailConfigOpen] = useState(false);
@@ -60,12 +60,12 @@ export function ToolsTab({ embedded = false }: { embedded?: boolean } = {}) {
   const builtinTools = tools.filter((tool) => !isDeletableTool(tool));
 
   function goToCreateTool() {
-    if (!superBotProfile) {
-      setActionError("No super bot profile exists in this organization.");
+    if (!superAgentProfile) {
+      setActionError("No super agent profile exists in this organization.");
       return;
     }
 
-    navigateToNewChat(superBotProfile.id);
+    navigateToNewChat(superAgentProfile.id);
   }
 
   function requestDeleteTool(toolId: string, toolName: string) {
@@ -115,7 +115,7 @@ export function ToolsTab({ embedded = false }: { embedded?: boolean } = {}) {
 
       {tools.length === 0 ? (
         <div className="flex min-h-48 flex-col items-center justify-center gap-3 text-center text-muted-foreground text-sm">
-          <p>No tools yet. Ask Super Bot to create one.</p>
+          <p>No tools yet. Ask Super Agent to create one.</p>
           <Button onClick={goToCreateTool} size="sm" type="button">
             <Add01Icon
               aria-hidden

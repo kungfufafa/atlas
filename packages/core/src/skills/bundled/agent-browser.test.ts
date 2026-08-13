@@ -6,7 +6,7 @@ import {
   BUNDLED_SKILL_NAMES,
   DEFAULT_BUNDLED_SKILL_NAMES,
   OPT_IN_BUNDLED_SKILL_NAMES,
-  SUPER_BOT_BUNDLED_SKILL_NAMES,
+  SUPER_AGENT_BUNDLED_SKILL_NAMES,
 } from "../bundled-names";
 import { matchSkillsForMessage } from "../match";
 import { parseSkillMarkdown } from "../parse";
@@ -97,7 +97,7 @@ describe("bundled agent-browser skill", () => {
     expect(OPT_IN_BUNDLED_SKILL_NAMES).toContain("agent-browser");
     expect(BUNDLED_SKILL_NAMES).toContain("agent-browser");
     expect(DEFAULT_BUNDLED_SKILL_NAMES).not.toContain("agent-browser");
-    expect(SUPER_BOT_BUNDLED_SKILL_NAMES).not.toContain("agent-browser");
+    expect(SUPER_AGENT_BUNDLED_SKILL_NAMES).not.toContain("agent-browser");
   });
 });
 

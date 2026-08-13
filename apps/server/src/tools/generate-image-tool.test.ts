@@ -16,7 +16,7 @@ import {
   ensureGenerateImageToolDefinition,
   removeUnsupportedTools,
   seedDatabase,
-  seedOrgSuperBotProfile,
+  seedOrgSuperAgentProfile,
 } from "@atlas/db";
 import { IMAGE_GENERATION_SELECTION } from "../providers/models";
 import { IMAGE_MODEL_REQUIRED_MESSAGE } from "../services/image-generation";
@@ -78,7 +78,7 @@ describe("generate_image tool seed and resolver (U3)", () => {
     expect(await db.getTool(GENERATE_IMAGE_TOOL_ID)).not.toBeNull();
   });
 
-  test("seedDatabase includes generate_image and Super Bot is not auto-assigned", async () => {
+  test("seedDatabase includes generate_image and Super Agent is not auto-assigned", async () => {
     const db = createInMemoryDatabaseAdapter();
     await db.upsertOrganization({
       createdAt: new Date().toISOString(),
@@ -89,11 +89,11 @@ describe("generate_image tool seed and resolver (U3)", () => {
     });
 
     await seedDatabase(db);
-    const superBot = await seedOrgSuperBotProfile(db, "org_a");
+    const superAgent = await seedOrgSuperAgentProfile(db, "org_a");
 
     expect(await db.getTool(GENERATE_IMAGE_TOOL_ID)).not.toBeNull();
 
-    const assignedIds = (await db.listToolsForProfile(superBot.id)).map(
+    const assignedIds = (await db.listToolsForProfile(superAgent.id)).map(
       (tool) => tool.id
     );
     expect(assignedIds).not.toContain(GENERATE_IMAGE_TOOL_ID);

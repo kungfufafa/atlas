@@ -8,7 +8,7 @@ import { ensureLocalClientAccess } from "./local-client";
 import {
   ensureBashToolDefinition,
   ensureGenerateImageToolDefinition,
-  ensureOrgSuperBotProfiles,
+  ensureOrgSuperAgentProfiles,
 } from "./org-profiles";
 import type { DatabaseAdapter } from "./types";
 
@@ -44,7 +44,7 @@ export async function seedDatabase(db: DatabaseAdapter): Promise<void> {
   await ensureGenerateImageToolDefinition(db);
   await ensurePreinstalledMcpServers(db);
   await ensureLocalClientAccess(db);
-  await ensureOrgSuperBotProfiles(db);
+  await ensureOrgSuperAgentProfiles(db);
 }
 
 export async function removeLegacyBuiltinTools(

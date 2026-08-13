@@ -251,13 +251,13 @@ export function ProfilesEmptyState({
   disabled,
   canCreate = true,
   onCreate,
-  onAskSuperBot,
+  onAskSuperAgent,
 }: {
   variant: "compact" | "full";
   disabled?: boolean;
   canCreate?: boolean;
   onCreate: () => void;
-  onAskSuperBot?: () => void;
+  onAskSuperAgent?: () => void;
 }) {
   const isCompact = variant === "compact";
 
@@ -316,15 +316,15 @@ export function ProfilesEmptyState({
             {isCompact ? "Create profile" : "New profile"}
           </Button>
         ) : null}
-        {onAskSuperBot ? (
+        {onAskSuperAgent ? (
           <Button
             disabled={disabled}
-            onClick={onAskSuperBot}
+            onClick={onAskSuperAgent}
             size="sm"
             type="button"
             variant="ghost"
           >
-            Ask Super Bot
+            Ask Super Agent
           </Button>
         ) : null}
       </div>

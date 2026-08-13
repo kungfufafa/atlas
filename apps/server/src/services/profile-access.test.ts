@@ -3,7 +3,7 @@ import { AtlasApiError } from "@atlas/core";
 import {
   createInMemoryDatabaseAdapter,
   seedOrgDefaultProfile,
-  seedOrgSuperBotProfile,
+  seedOrgSuperAgentProfile,
 } from "@atlas/db";
 import { AutomationService } from "./automation-service";
 import { TaskService } from "./task-service";
@@ -21,7 +21,7 @@ async function seed() {
     updatedAt: now,
   });
   const defaultProfile = await seedOrgDefaultProfile(db, ORG_ID);
-  const superProfile = await seedOrgSuperBotProfile(db, ORG_ID);
+  const superProfile = await seedOrgSuperAgentProfile(db, ORG_ID);
   return { db, defaultId: defaultProfile.id, superId: superProfile.id };
 }
 
@@ -33,8 +33,8 @@ const automationInput = {
 };
 const taskInput = { prompt: "do it", status: "backlog" as const, title: "t" };
 
-describe("profile access: binding an automation/task to Super Bot is admin-only", () => {
-  test("member cannot bind an automation to the Super Bot profile", async () => {
+describe("profile access: binding an automation/task to Super Agent is admin-only", () => {
+  test("member cannot bind an automation to the Super Agent profile", async () => {
     const { db, superId } = await seed();
     const service = new AutomationService(db, {
       getUserTimezone: async () => "UTC",
@@ -48,7 +48,7 @@ describe("profile access: binding an automation/task to Super Bot is admin-only"
     await expect(attempt).rejects.toMatchObject({ status: 403 });
   });
 
-  test("admin can bind an automation to the Super Bot profile", async () => {
+  test("admin can bind an automation to the Super Agent profile", async () => {
     const { db, superId } = await seed();
     const service = new AutomationService(db, {
       getUserTimezone: async () => "UTC",
@@ -66,7 +66,7 @@ describe("profile access: binding an automation/task to Super Bot is admin-only"
     expect(automation.profileId).toBe(superId);
   });
 
-  test("member cannot bind a task to the Super Bot profile", async () => {
+  test("member cannot bind a task to the Super Agent profile", async () => {
     const { db, superId } = await seed();
     const service = new TaskService(db);
 

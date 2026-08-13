@@ -7,9 +7,9 @@ import {
 import { createInMemoryDatabaseAdapter } from "./adapters/in-memory";
 import {
   ensureBundledSkillsAssigned,
-  ensureOrgSuperBotProfiles,
+  ensureOrgSuperAgentProfiles,
   seedOrgDefaultProfile,
-  seedOrgSuperBotProfile,
+  seedOrgSuperAgentProfile,
 } from "./org-profiles";
 import { ensureBuiltinToolDefinitions } from "./seed";
 
@@ -18,17 +18,12 @@ async function upsertSkill(
   name: string
 ) {
   const now = new Date().toISOString();
-
   await db.upsertSkill({
+    body: "test skill body",
     createdAt: now,
-    createdBy: "bundled",
-    description: `${name} skill`,
-    disableModelInvocation: false,
-    enabled: true,
-    hasTool: false,
+    description: "test skill description",
     id: `skill_${name}`,
     name,
-    sourcePath: `/tmp/skills/${name}`,
     updatedAt: now,
   });
 }
@@ -37,29 +32,27 @@ describe("seedOrgDefaultProfile", () => {
   test("creates one default profile per org", async () => {
     const db = createInMemoryDatabaseAdapter();
 
-    const orgAProfile = await seedOrgDefaultProfile(db, "org_a");
-    const orgBProfile = await seedOrgDefaultProfile(db, "org_b");
+    const orgADefault = await seedOrgDefaultProfile(db, "org_a");
+    const orgBDefault = await seedOrgDefaultProfile(db, "org_b");
 
-    expect(orgAProfile.orgId).toBe("org_a");
-    expect(orgBProfile.orgId).toBe("org_b");
-    expect(orgAProfile.id).not.toBe(orgBProfile.id);
-    expect(orgAProfile.isDefault).toBe(true);
-    expect(orgBProfile.isDefault).toBe(true);
+    expect(orgADefault.orgId).toBe("org_a");
+    expect(orgBDefault.orgId).toBe("org_b");
+    expect(orgADefault.id).not.toBe(orgBDefault.id);
+    expect(orgADefault.isDefault).toBe(true);
+    expect(orgADefault.isSuper).toBe(false);
+    expect(orgADefault.name).toBe("Default Agent");
 
     const orgAList = await db.listProfilesForOrg("org_a");
-    const orgBList = await db.listProfilesForOrg("org_b");
-
     expect(orgAList).toHaveLength(1);
-    expect(orgBList).toHaveLength(1);
-    expect(orgAList[0]?.id).toBe(orgAProfile.id);
-    expect(orgBList[0]?.id).toBe(orgBProfile.id);
+    expect(orgAList[0]?.id).toBe(orgADefault.id);
   });
 
   test("seeds empty systemPrompt so soul stack defines identity", async () => {
     const db = createInMemoryDatabaseAdapter();
-    const profile = await seedOrgDefaultProfile(db, "org_a");
 
-    expect(profile.systemPrompt).toBe("");
+    const seeded = await seedOrgDefaultProfile(db, "org_a");
+
+    expect(seeded.systemPrompt).toBe("");
   });
 
   test("is idempotent for the same org", async () => {
@@ -71,9 +64,10 @@ describe("seedOrgDefaultProfile", () => {
     expect(await db.listProfilesForOrg("org_a")).toHaveLength(1);
   });
 
-  test("assigns default bundled skills but not super bot skills", async () => {
+  test("assigns default bundled skills but not super agent skills", async () => {
     const db = createInMemoryDatabaseAdapter();
     await upsertSkill(db, "create-automation");
+    await upsertSkill(db, "manage-skills");
     await upsertSkill(db, "update-profile-memory");
     await upsertSkill(db, "archive-profile-memory");
     await upsertSkill(db, "save-artifact");
@@ -85,6 +79,7 @@ describe("seedOrgDefaultProfile", () => {
     );
 
     expect(skillNames).toContain("create-automation");
+    expect(skillNames).toContain("manage-skills");
     expect(skillNames).toContain("update-profile-memory");
     expect(skillNames).toContain("archive-profile-memory");
     expect(skillNames).toContain("save-artifact");
@@ -92,29 +87,29 @@ describe("seedOrgDefaultProfile", () => {
   });
 });
 
-describe("seedOrgSuperBotProfile", () => {
-  test("creates one super bot per org", async () => {
+describe("seedOrgSuperAgentProfile", () => {
+  test("creates one super agent per org", async () => {
     const db = createInMemoryDatabaseAdapter();
 
-    const orgASuperBot = await seedOrgSuperBotProfile(db, "org_a");
-    const orgBSuperBot = await seedOrgSuperBotProfile(db, "org_b");
+    const orgASuperAgent = await seedOrgSuperAgentProfile(db, "org_a");
+    const orgBSuperAgent = await seedOrgSuperAgentProfile(db, "org_b");
 
-    expect(orgASuperBot.orgId).toBe("org_a");
-    expect(orgBSuperBot.orgId).toBe("org_b");
-    expect(orgASuperBot.id).not.toBe(orgBSuperBot.id);
-    expect(orgASuperBot.isSuper).toBe(true);
-    expect(orgASuperBot.isDefault).toBe(false);
-    expect(orgASuperBot.name).toBe("Super Bot");
+    expect(orgASuperAgent.orgId).toBe("org_a");
+    expect(orgBSuperAgent.orgId).toBe("org_b");
+    expect(orgASuperAgent.id).not.toBe(orgBSuperAgent.id);
+    expect(orgASuperAgent.isSuper).toBe(true);
+    expect(orgASuperAgent.isDefault).toBe(false);
+    expect(orgASuperAgent.name).toBe("Super Agent");
 
     const orgAList = await db.listProfilesForOrg("org_a");
     expect(orgAList).toHaveLength(1);
-    expect(orgAList[0]?.id).toBe(orgASuperBot.id);
+    expect(orgAList[0]?.id).toBe(orgASuperAgent.id);
   });
 
   test("assigns builtins and bash", async () => {
     const db = createInMemoryDatabaseAdapter();
     await ensureBuiltinToolDefinitions(db);
-    const profile = await seedOrgSuperBotProfile(db, "org_a");
+    const profile = await seedOrgSuperAgentProfile(db, "org_a");
     const toolIds = (await db.listToolsForProfile(profile.id)).map(
       (tool) => tool.id
     );
@@ -127,14 +122,14 @@ describe("seedOrgSuperBotProfile", () => {
     expect(toolIds).not.toContain(GENERATE_IMAGE_TOOL_ID);
   });
 
-  test("assigns super bot bundled skills", async () => {
+  test("assigns super agent bundled skills", async () => {
     const db = createInMemoryDatabaseAdapter();
     await upsertSkill(db, "create-automation");
     await upsertSkill(db, "create-profile");
     await upsertSkill(db, "coding-agent");
     await upsertSkill(db, "agent-browser");
 
-    const profile = await seedOrgSuperBotProfile(db, "org_a");
+    const profile = await seedOrgSuperAgentProfile(db, "org_a");
     const skillNames = (await db.listSkillsForProfile(profile.id)).map(
       (skill) => skill.name
     );
@@ -147,22 +142,22 @@ describe("seedOrgSuperBotProfile", () => {
 
   test("is idempotent for the same org", async () => {
     const db = createInMemoryDatabaseAdapter();
-    const first = await seedOrgSuperBotProfile(db, "org_a");
-    const second = await seedOrgSuperBotProfile(db, "org_a");
+    const first = await seedOrgSuperAgentProfile(db, "org_a");
+    const second = await seedOrgSuperAgentProfile(db, "org_a");
 
     expect(second.id).toBe(first.id);
     expect(await db.listProfilesForOrg("org_a")).toHaveLength(1);
   });
 
-  test("backfills newly added bundled skills on existing super bot", async () => {
+  test("backfills newly added bundled skills on existing super agent", async () => {
     const db = createInMemoryDatabaseAdapter();
 
-    const profile = await seedOrgSuperBotProfile(db, "org_a");
+    const profile = await seedOrgSuperAgentProfile(db, "org_a");
     await upsertSkill(db, "update-profile-memory");
     await upsertSkill(db, "archive-profile-memory");
     await upsertSkill(db, "save-artifact");
 
-    await seedOrgSuperBotProfile(db, "org_a");
+    await seedOrgSuperAgentProfile(db, "org_a");
 
     const skillNames = (await db.listSkillsForProfile(profile.id)).map(
       (skill) => skill.name
@@ -172,13 +167,13 @@ describe("seedOrgSuperBotProfile", () => {
     expect(skillNames).toContain("save-artifact");
   });
 
-  test("backfills super bot bundled skills on existing super bot", async () => {
+  test("backfills super agent bundled skills on existing super agent", async () => {
     const db = createInMemoryDatabaseAdapter();
 
-    const profile = await seedOrgSuperBotProfile(db, "org_a");
+    const profile = await seedOrgSuperAgentProfile(db, "org_a");
     await upsertSkill(db, "create-profile");
 
-    await seedOrgSuperBotProfile(db, "org_a");
+    await seedOrgSuperAgentProfile(db, "org_a");
 
     const skillNames = (await db.listSkillsForProfile(profile.id)).map(
       (skill) => skill.name
@@ -188,30 +183,33 @@ describe("seedOrgSuperBotProfile", () => {
 });
 
 describe("ensureBundledSkillsAssigned", () => {
-  test("does not assign super bot-only skills to ordinary profiles", async () => {
+  test("does not assign super agent-only skills to ordinary profiles", async () => {
     const db = createInMemoryDatabaseAdapter();
-    await upsertSkill(db, "create-automation");
-    await upsertSkill(db, "create-profile");
-    await upsertSkill(db, "agent-browser");
+    const now = new Date().toISOString();
+    await db.upsertOrganization({
+      createdAt: now,
+      id: "org_a",
+      name: "Org A",
+      slug: "org-a",
+      updatedAt: now,
+    });
 
-    const profile = await seedOrgDefaultProfile(db, "org_a");
+    const defaultProfile = await seedOrgDefaultProfile(db, "org_a");
+    await upsertSkill(db, "create-profile");
 
     await ensureBundledSkillsAssigned(db);
 
-    const skillNames = (await db.listSkillsForProfile(profile.id)).map(
-      (skill) => skill.name
-    );
-    expect(skillNames).toContain("create-automation");
-    expect(skillNames).not.toContain("create-profile");
-    expect(skillNames).not.toContain("agent-browser");
+    const defaultSkills = (
+      await db.listSkillsForProfile(defaultProfile.id)
+    ).map((skill) => skill.name);
+    expect(defaultSkills).not.toContain("create-profile");
   });
 });
 
-describe("ensureOrgSuperBotProfiles", () => {
-  test("backfills super bot for existing orgs", async () => {
+describe("ensureOrgSuperAgentProfiles", () => {
+  test("backfills super agent for existing orgs", async () => {
     const db = createInMemoryDatabaseAdapter();
     const now = new Date().toISOString();
-
     await db.upsertOrganization({
       createdAt: now,
       id: "org_legacy",
@@ -227,7 +225,7 @@ describe("ensureOrgSuperBotProfiles", () => {
       )
     ).toBe(false);
 
-    await ensureOrgSuperBotProfiles(db);
+    await ensureOrgSuperAgentProfiles(db);
 
     const profiles = await db.listProfilesForOrg("org_legacy");
     expect(profiles).toHaveLength(2);

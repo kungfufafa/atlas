@@ -2,7 +2,7 @@ import type { ToolDetail } from "@atlas/core/contract";
 import { useState } from "react";
 import { useAppNavigation } from "@/hooks/use-app-navigation";
 import { client, formatError } from "@/lib/client";
-import { buildSuperBotFixDraft } from "@/lib/tool-playground-draft";
+import { buildSuperAgentFixDraft } from "@/lib/tool-playground-draft";
 import { buildExampleParametersJson } from "@/lib/tool-playground-params";
 
 export type ToolPlaygroundRunState =
@@ -14,9 +14,10 @@ export type ToolPlaygroundRunState =
 export interface ToolPlaygroundRunControls {
   actionError: string | null;
   assistPrompt: string;
-  handleFixWithSuperBot: () => void;
+  handleAssist: () => Promise<void>;
+  handleFixWithSuperAgent: () => void;
+  handleReset: () => void;
   handleRun: () => Promise<void>;
-  handleSuggestParams: () => Promise<void>;
   jsonError: string | null;
   parametersJson: string;
   running: boolean;
@@ -46,7 +47,7 @@ function parseParametersJson(raw: string): Record<string, unknown> | null {
 
 export function useToolPlaygroundRun(
   tool: ToolDetail,
-  superBotProfileId: string | null
+  superAgentProfileId: string | null
 ): ToolPlaygroundRunControls {
   const { navigateToNewChat } = useAppNavigation();
   const [parametersJson, setParametersJsonState] = useState(() =>
@@ -60,20 +61,67 @@ export function useToolPlaygroundRun(
   });
   const [actionError, setActionError] = useState<string | null>(null);
 
-  async function handleSuggestParams() {
-    const prompt = assistPrompt.trim();
+  const running = runState.status === "running";
 
-    if (!prompt) {
-      setActionError("Describe what you want to test first.");
+  async function handleRun() {
+    setActionError(null);
+    const parsed = parseParametersJson(parametersJson);
+
+    if (!parsed) {
+      setJsonError("Invalid JSON object");
       return;
     }
 
-    setSuggesting(true);
-    setActionError(null);
+    setJsonError(null);
+    setRunState({ status: "running" });
 
     try {
-      const response = await client.suggestToolParams(tool.id, { prompt });
-      setParametersJson(JSON.stringify(response.parameters ?? {}, null, 2));
+      const response = await client.runToolPlayground(tool.id, parsed);
+
+      if (response.error) {
+        setRunState({
+          error: response.error,
+          parameters: parsed,
+          status: "error",
+        });
+      } else {
+        setRunState({
+          parameters: parsed,
+          result: response.result,
+          status: "success",
+        });
+      }
+    } catch (error) {
+      setRunState({
+        error: formatError(error),
+        parameters: parsed,
+        status: "error",
+      });
+    }
+  }
+
+  function handleReset() {
+    setActionError(null);
+    setJsonError(null);
+    setRunState({ status: "idle" });
+    setParametersJsonState(buildExampleParametersJson(tool.parameters));
+  }
+
+  async function handleAssist() {
+    if (!assistPrompt.trim()) {
+      return;
+    }
+
+    setActionError(null);
+    setSuggesting(true);
+
+    try {
+      const response = await client.suggestToolPlaygroundParams(
+        tool.id,
+        assistPrompt.trim()
+      );
+      setParametersJsonState(JSON.stringify(response.parameters, null, 2));
+      setJsonError(null);
     } catch (error) {
       setActionError(formatError(error));
     } finally {
@@ -81,52 +129,18 @@ export function useToolPlaygroundRun(
     }
   }
 
-  async function handleRun() {
-    const parameters = parseParametersJson(parametersJson);
-
-    if (!parameters) {
-      setJsonError("Enter valid JSON parameters before running.");
+  function handleFixWithSuperAgent() {
+    if (runState.status !== "error" || !superAgentProfileId) {
       return;
     }
 
-    setJsonError(null);
-    setActionError(null);
-    setRunState({ status: "running" });
-
-    try {
-      const response = await client.runTool(tool.id, { parameters });
-
-      if (!response.ok) {
-        setRunState({
-          error: response.error ?? "Tool run failed.",
-          parameters,
-          status: "error",
-        });
-        return;
-      }
-
-      setRunState({ parameters, result: response.result, status: "success" });
-    } catch (error) {
-      setRunState({
-        error: formatError(error),
-        parameters,
-        status: "error",
-      });
-    }
-  }
-
-  function handleFixWithSuperBot() {
-    if (runState.status !== "error" || !superBotProfileId) {
-      return;
-    }
-
-    const draft = buildSuperBotFixDraft({
+    const draft = buildSuperAgentFixDraft({
       error: runState.error,
       parameters: runState.parameters,
       toolName: tool.name,
     });
 
-    navigateToNewChat(superBotProfileId, { draft });
+    navigateToNewChat(superAgentProfileId, { draft });
   }
 
   function setParametersJson(value: string) {
@@ -137,12 +151,13 @@ export function useToolPlaygroundRun(
   return {
     actionError,
     assistPrompt,
-    handleFixWithSuperBot,
+    handleAssist,
+    handleFixWithSuperAgent,
+    handleReset,
     handleRun,
-    handleSuggestParams,
     jsonError,
     parametersJson,
-    running: runState.status === "running",
+    running,
     runState,
     setAssistPrompt,
     setParametersJson,

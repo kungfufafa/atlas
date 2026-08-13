@@ -1,14 +1,14 @@
 import {
   DEFAULT_BUNDLED_SKILL_NAMES,
   nanoid,
-  SUPER_BOT_BUNDLED_SKILL_NAMES,
+  SUPER_AGENT_BUNDLED_SKILL_NAMES,
 } from "@atlas/core";
 import {
   BASH_TOOL_ID,
   BUILTIN_TOOL_IDS,
   GENERATE_IMAGE_TOOL_ID,
 } from "@atlas/core/tools/protected";
-import { SUPER_BOT_SYSTEM_PROMPT } from "./constants";
+import { SUPER_AGENT_SYSTEM_PROMPT } from "./constants";
 import type { DatabaseAdapter, StoredProfileRecord } from "./types";
 
 const DEFAULT_BUILTIN_TOOL_IDS = Object.values(BUILTIN_TOOL_IDS);
@@ -35,11 +35,11 @@ export async function ensureProfileDefaultBundledSkills(
   }
 }
 
-export async function ensureProfileSuperBotBundledSkills(
+export async function ensureProfileSuperAgentBundledSkills(
   db: DatabaseAdapter,
   profileId: string
 ): Promise<void> {
-  for (const name of SUPER_BOT_BUNDLED_SKILL_NAMES) {
+  for (const name of SUPER_AGENT_BUNDLED_SKILL_NAMES) {
     const skill = await db.getSkillByName(name);
 
     if (skill) {
@@ -65,8 +65,6 @@ export async function seedOrgDefaultProfile(
   const existing = await db.getDefaultProfileForOrg(orgId);
 
   if (existing) {
-    await ensureProfileDefaultBuiltinTools(db, existing.id);
-    await ensureProfileDefaultBundledSkills(db, existing.id);
     return existing;
   }
 
@@ -77,7 +75,7 @@ export async function seedOrgDefaultProfile(
     isDefault: true,
     isSuper: false,
     model: null,
-    name: "Default Bot",
+    name: "Default Agent",
     orgId,
     systemPrompt: "",
     updatedAt: now,
@@ -86,7 +84,9 @@ export async function seedOrgDefaultProfile(
   await db.upsertProfile(profile);
 
   for (const toolId of DEFAULT_BUILTIN_TOOL_IDS) {
-    await db.assignToolToProfile(profile.id, toolId);
+    if (toolId !== BASH_TOOL_ID && toolId !== GENERATE_IMAGE_TOOL_ID) {
+      await db.assignToolToProfile(profile.id, toolId);
+    }
   }
 
   await ensureProfileDefaultBundledSkills(db, profile.id);
@@ -94,7 +94,7 @@ export async function seedOrgDefaultProfile(
   return profile;
 }
 
-export async function seedOrgSuperBotProfile(
+export async function seedOrgSuperAgentProfile(
   db: DatabaseAdapter,
   orgId: string
 ): Promise<StoredProfileRecord> {
@@ -103,10 +103,9 @@ export async function seedOrgSuperBotProfile(
   );
 
   if (existing) {
-    await ensureProfileDefaultBuiltinTools(db, existing.id);
+    await ensureSuperAgentBashTool(db, existing.id);
     await ensureProfileDefaultBundledSkills(db, existing.id);
-    await ensureProfileSuperBotBundledSkills(db, existing.id);
-    await ensureSuperBotBashTool(db, existing.id);
+    await ensureProfileSuperAgentBundledSkills(db, existing.id);
     return existing;
   }
 
@@ -117,9 +116,9 @@ export async function seedOrgSuperBotProfile(
     isDefault: false,
     isSuper: true,
     model: null,
-    name: "Super Bot",
+    name: "Super Agent",
     orgId,
-    systemPrompt: SUPER_BOT_SYSTEM_PROMPT,
+    systemPrompt: SUPER_AGENT_SYSTEM_PROMPT,
     updatedAt: now,
   };
 
@@ -129,22 +128,24 @@ export async function seedOrgSuperBotProfile(
     await db.assignToolToProfile(profile.id, toolId);
   }
 
-  await ensureSuperBotBashTool(db, profile.id);
+  await ensureSuperAgentBashTool(db, profile.id);
   await ensureProfileDefaultBundledSkills(db, profile.id);
-  await ensureProfileSuperBotBundledSkills(db, profile.id);
+  await ensureProfileSuperAgentBundledSkills(db, profile.id);
 
   return profile;
 }
 
-export async function ensureOrgSuperBotProfiles(
+export async function ensureOrgSuperAgentProfiles(
   db: DatabaseAdapter
 ): Promise<void> {
   const orgs = await db.listOrganizations();
 
   for (const org of orgs) {
-    await seedOrgSuperBotProfile(db, org.id);
+    await seedOrgSuperAgentProfile(db, org.id);
   }
 }
+
+export const ensureOrgSuperBotProfiles = ensureOrgSuperAgentProfiles;
 
 export async function ensureBashToolDefinition(
   db: DatabaseAdapter
@@ -182,7 +183,7 @@ export async function ensureGenerateImageToolDefinition(
   });
 }
 
-export async function ensureSuperBotBashTool(
+export async function ensureSuperAgentBashTool(
   db: DatabaseAdapter,
   profileId: string
 ): Promise<void> {

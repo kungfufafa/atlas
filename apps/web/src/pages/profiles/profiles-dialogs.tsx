@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { useAppNavigation } from "@/hooks/use-app-navigation";
-import { resolveSuperBotChatProfileId } from "@/lib/profiles";
+import { resolveSuperAgentChatProfileId } from "@/lib/profiles";
 import type { ProfilesPageState } from "@/pages/profiles/use-profiles-page";
 
 export function ProfilesDialogs(state: ProfilesPageState) {
@@ -48,15 +48,15 @@ export function ProfilesDialogs(state: ProfilesPageState) {
     profiles,
   } = state;
   const { navigateToNewChat } = useAppNavigation();
-  const superBotProfileId = resolveSuperBotChatProfileId(profiles);
-  const onAskSuperBot = superBotProfileId
-    ? () => navigateToNewChat(superBotProfileId)
+  const superAgentProfileId = resolveSuperAgentChatProfileId(profiles);
+  const onAskSuperAgent = superAgentProfileId
+    ? () => navigateToNewChat(superAgentProfileId)
     : undefined;
 
   return (
     <>
       <ProfileCreateDialog
-        onAskSuperBot={onAskSuperBot}
+        onAskSuperAgent={onAskSuperAgent}
         onCreated={(profileId) => setSelectedId(profileId)}
         onOpenChange={handleCreateOpenChange}
         open={createOpen}

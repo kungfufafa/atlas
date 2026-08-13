@@ -10,7 +10,7 @@ const serverUrl = process.env.ATLAS_SERVER_URL ?? "http://127.0.0.1:4310";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   preview: {
-    port: 3003,
+    port: 3000,
   },
   resolve: {
     alias: {
@@ -31,7 +31,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3003,
+    port: 3000,
     proxy: {
       "/health": serverUrl,
       "/v1": serverUrl,

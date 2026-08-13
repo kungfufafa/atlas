@@ -27,18 +27,18 @@ describe("composio-callback-url", () => {
     const request = new Request(
       "http://api.example.com/v1/sessions/s1/messages",
       {
-        headers: { Origin: "http://localhost:3003" },
+        headers: { Origin: "http://localhost:3000" },
       }
     );
 
-    expect(resolveRequestClientOrigin(request)).toBe("http://localhost:3003");
+    expect(resolveRequestClientOrigin(request)).toBe("http://localhost:3000");
   });
 
   test("isLoopbackComposioCallbackBaseUrl detects localhost hosts", () => {
-    expect(isLoopbackComposioCallbackBaseUrl("http://127.0.0.1:3003")).toBe(
+    expect(isLoopbackComposioCallbackBaseUrl("http://127.0.0.1:3000")).toBe(
       true
     );
-    expect(isLoopbackComposioCallbackBaseUrl("http://localhost:3003")).toBe(
+    expect(isLoopbackComposioCallbackBaseUrl("http://localhost:3000")).toBe(
       true
     );
     expect(isLoopbackComposioCallbackBaseUrl("https://atlas.example.com")).toBe(

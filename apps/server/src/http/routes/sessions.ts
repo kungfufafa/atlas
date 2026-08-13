@@ -350,7 +350,7 @@ export function registerSessionRoutes(
       body.profileId,
       auth.user.id,
       {
-        excludeSuperBot: auth.mode === "local-token" && channel !== "cli",
+        excludeSuperAgent: auth.mode === "local-token" && channel !== "cli",
         isPlatformAdmin: auth.isPlatformAdmin,
         orgRole: auth.orgRole,
       }

@@ -1,4 +1,4 @@
-export function buildSuperBotFixDraft(input: {
+export function buildSuperAgentFixDraft(input: {
   toolName: string;
   parameters: unknown;
   error: string;

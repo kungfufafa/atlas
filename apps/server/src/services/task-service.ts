@@ -6,13 +6,13 @@ import type {
   UpdateTaskRequest,
 } from "@atlas/core";
 import { AtlasApiError, createId } from "@atlas/core";
-import { canAccessSuperBotProfile } from "@atlas/core/profiles";
+import { canAccessSuperAgentProfile } from "@atlas/core/profiles";
 import type { DatabaseAdapter, StoredTaskRecord } from "@atlas/db";
 import type { TaskRunner } from "./task-runner";
 import { isValidTaskStatus, validateTaskInput } from "./task-validate";
 
-/** Caller role context used to gate access to admin-only profiles (e.g. Super Bot). */
-export type ProfileAccess = Parameters<typeof canAccessSuperBotProfile>[0];
+/** Caller role context used to gate access to admin-only profiles (e.g. Super Agent). */
+export type ProfileAccess = Parameters<typeof canAccessSuperAgentProfile>[0];
 
 export class TaskService {
   private taskRunner: TaskRunner | null = null;
@@ -233,9 +233,9 @@ export class TaskService {
     if (trimmed) {
       const profile = await this.db.getProfileForOrg(trimmed, orgId);
       if (profile) {
-        if (profile.isSuper && access && !canAccessSuperBotProfile(access)) {
+        if (profile.isSuper && access && !canAccessSuperAgentProfile(access)) {
           throw new AtlasApiError(
-            "Super Bot is only available to org admins.",
+            "Super Agent is only available to org admins.",
             403
           );
         }

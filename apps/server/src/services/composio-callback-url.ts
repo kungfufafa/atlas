@@ -84,7 +84,7 @@ export function resolveComposioCallbackBaseUrl(
     return configured;
   }
 
-  const webPort = process.env.ATLAS_WEB_PORT?.trim() || "3003";
+  const webPort = process.env.ATLAS_WEB_PORT?.trim() || "3000";
   return `http://127.0.0.1:${webPort}`;
 }
 

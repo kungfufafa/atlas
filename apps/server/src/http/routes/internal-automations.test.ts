@@ -54,7 +54,7 @@ async function seedOrgAndProfile(
     isDefault: true,
     isSuper: false,
     model: null,
-    name: "Default Bot",
+    name: "Default Agent",
     orgId: ORG_ID,
     systemPrompt: "",
     updatedAt: now,

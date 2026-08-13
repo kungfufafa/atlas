@@ -114,11 +114,11 @@ Path: `~/.atlas/orgs/{orgId}/profiles/{profileId}/` (`getProfileSoulDir`). Load:
 | `save-artifact` | Persist under `artifacts/` |
 | `knowledge_base_search` / `web_search` / `email` | KB, web, mailbox |
 | `search_files` / `ripgrep` | File/content search |
-| `bash` | Profile workspace shell — assign per profile; Super Bot by default |
+| `bash` | Profile workspace shell — assign per profile; Super Agent by default |
 | `sub_agent` | Opt-in same-profile delegate (not repo coding) |
 | `coding-agent` | Codex / Claude Code / OpenCode / pi / Cursor Agent (`agent`) via `bash` |
 | `agent-browser` | Opt-in browser CLI; needs host install — `docs/website/agent-browser.md` |
-| `create-profile` | Super Bot only, confirm-first — `apps/server/src/tools/super-bot-tools.ts` |
+| `create-profile` | Super Agent only, confirm-first — `apps/server/src/tools/super-agent-tools.ts` |
 | `skill_manage` | Interactive web/cli with `manage-skills` — create/patch/edit/delete profile skills + supporting-file write/remove + auto-assign (`apps/server/src/tools/skill-manage-tool.ts`). When org/profile **write approval** is enabled, mutations stage as proposals for org-admin review instead of writing immediately. When present, file tools refuse any path under `skills/*/` (`forbidProfileSkillMarkdownWrites`). Not injected for automations or Telegram/WhatsApp/Discord. Opt-in **post-turn skill review** (`skills_post_turn_review`) may suggest or stage create/patch after complex turns without writing into model history. |
 | Composio | Org toolkits + per-user OAuth — `docs/website/composio.md` |
 
@@ -153,7 +153,7 @@ Always build context with `buildToolExecutionContext()` (`packages/core/src/tool
 | Playground | `POST /v1/tools/:toolId/run` → `runToolPlayground()` (`resolvePlaygroundProfileId`) |
 | Param suggest | `POST /v1/tools/:toolId/params/suggest` |
 
-**Debug:** (1) check path resolution in `~/.atlas/tools/`, (2) confirm `buildToolExecutionContext` + real `profileId`, (3) monorepo-root paths ⇒ missing `workspaceRoot`, (4) put test files in the assigned profile workspace. Super Bot authoring rules: `SUPER_BOT_SYSTEM_PROMPT` in `packages/db/src/constants.ts`.
+**Debug:** (1) check path resolution in `~/.atlas/tools/`, (2) confirm `buildToolExecutionContext` + real `profileId`, (3) monorepo-root paths ⇒ missing `workspaceRoot`, (4) put test files in the assigned profile workspace. Super Agent authoring rules: `SUPER_AGENT_SYSTEM_PROMPT` in `packages/db/src/constants.ts`.
 
 **Playground UI:** `/system/playground/:toolId` — `ToolPlaygroundPage.tsx`, `ToolPlaygroundPanel.tsx`; admin-only via `canUseToolPlayground()`.
 
@@ -164,7 +164,7 @@ Always build context with `buildToolExecutionContext()` (`packages/core/src/tool
 - `packages/db` — DB
 - `packages/client` — API client
 
-Server: Hono in `apps/server/src/http/app.ts`. Middleware: auth → org → routes (`routes/*`). OpenAPI from `openapi.ts` (`/openapi.json`). Platform-admin-only: profile/tool/MCP/skill mutations (org admins use provisioned profiles or Super Bot `create-profile`). Org-admin: `/v1/orgs/{orgId}/…` members. Viewers blocked by `requireNotViewer` on worker control and agent invoke.
+Server: Hono in `apps/server/src/http/app.ts`. Middleware: auth → org → routes (`routes/*`). OpenAPI from `openapi.ts` (`/openapi.json`). Platform-admin-only: profile/tool/MCP/skill mutations (org admins use provisioned profiles or Super Agent `create-profile`). Org-admin: `/v1/orgs/{orgId}/…` members. Viewers blocked by `requireNotViewer` on worker control and agent invoke.
 
 ## Developing 
 

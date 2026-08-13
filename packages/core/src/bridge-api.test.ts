@@ -31,10 +31,10 @@ describe("bridge API contract", () => {
   test("parseListProfilesResponse accepts valid payloads", () => {
     expect(
       parseListProfilesResponse({
-        profiles: [{ id: "default", name: "Default Bot" }],
+        profiles: [{ id: "default", name: "Default Agent" }],
       })
     ).toEqual({
-      profiles: [{ id: "default", name: "Default Bot" }],
+      profiles: [{ id: "default", name: "Default Agent" }],
     });
   });
 

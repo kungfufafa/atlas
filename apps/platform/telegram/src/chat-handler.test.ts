@@ -145,7 +145,7 @@ describe("createChatHandler group chats", () => {
       const { client, calls, getLastCreateSessionProfileId } = createMockClient(
         {
           profiles: [
-            { id: "default", isDefault: true, name: "Default Bot" },
+            { id: "default", isDefault: true, name: "Default Agent" },
             { id: "research", name: "Research Bot" },
           ],
         }
@@ -203,7 +203,7 @@ describe("createChatHandler group chats", () => {
       await authStore.reload();
       const { client, getLastCreateSessionProfileId } = createMockClient({
         profiles: [
-          { id: "default", isDefault: true, name: "Default Bot" },
+          { id: "default", isDefault: true, name: "Default Agent" },
           { id: "research", name: "Research Bot" },
         ],
       });
@@ -261,7 +261,7 @@ describe("createChatHandler group chats", () => {
       await authStore.reload();
       const { client } = createMockClient({
         profiles: [
-          { id: "default", isDefault: true, name: "Default Bot" },
+          { id: "default", isDefault: true, name: "Default Agent" },
           { id: "research", name: "Research Bot" },
         ],
       });
@@ -316,7 +316,7 @@ describe("createChatHandler group chats", () => {
             id: "default",
             isDefault: true,
             model: "local::base",
-            name: "Default Bot",
+            name: "Default Agent",
           },
           { id: "research", model: "local::research", name: "Research Bot" },
         ],
@@ -371,7 +371,7 @@ describe("createChatHandler group chats", () => {
       await authStore.reload();
       const { client, getLastCreateSessionProfileId } = createMockClient({
         profiles: [
-          { id: "default", isDefault: true, name: "Default Bot" },
+          { id: "default", isDefault: true, name: "Default Agent" },
           { id: "support", name: "Support Bot" },
         ],
       });
@@ -415,7 +415,7 @@ describe("createChatHandler group chats", () => {
       const { client, calls } = createMockClient({
         orgs: createMultiTestOrgs(),
         profilesByOrgId: {
-          org_a: [{ id: "default", isDefault: true, name: "Default Bot" }],
+          org_a: [{ id: "default", isDefault: true, name: "Default Agent" }],
           org_b: [{ id: "gary", isDefault: true, name: "Gary Vee" }],
         },
       });
@@ -1587,7 +1587,7 @@ describe("bridge API integration", () => {
       await authStore.reload();
       const { client } = createMockClient({
         profiles: [
-          { id: "default", isDefault: true, name: "Default Bot" },
+          { id: "default", isDefault: true, name: "Default Agent" },
           { id: "research", name: "Research Bot" },
         ],
       });
@@ -1611,12 +1611,12 @@ describe("bridge API integration", () => {
       await handleMessage(ctx);
 
       expect(replies.join("\n")).toContain("Choose a profile");
-      expect(replies.join("\n")).toContain("Default Bot");
+      expect(replies.join("\n")).toContain("Default Agent");
       expect(replies.join("\n")).toContain("Research Bot");
     });
   });
 
-  test("/profile hides super bot from channel profile switches", async () => {
+  test("/profile hides super agent from channel profile switches", async () => {
     await withTempHome(async (homeDir) => {
       await writeTelegramConfigIni(homeDir, {
         botToken: "1234567890:TEST",
@@ -1627,8 +1627,8 @@ describe("bridge API integration", () => {
       await authStore.reload();
       const { client } = createMockClient({
         profiles: [
-          { id: "default", isDefault: true, name: "Default Bot" },
-          { id: "super_bot", isSuper: true, name: "Super Bot" },
+          { id: "default", isDefault: true, name: "Default Agent" },
+          { id: "super_agent", isSuper: true, name: "Super Agent" },
         ],
       });
       const sessionStore = new SessionStore(
@@ -1651,8 +1651,8 @@ describe("bridge API integration", () => {
       await handleMessage(ctx);
 
       const text = replies.join("\n");
-      expect(text).toContain("Default Bot");
-      expect(text).not.toContain("Super Bot");
+      expect(text).toContain("Default Agent");
+      expect(text).not.toContain("Super Agent");
     });
   });
 
@@ -1668,7 +1668,7 @@ describe("bridge API integration", () => {
       const { client, calls, getLastCreateSessionProfileId } = createMockClient(
         {
           profiles: [
-            { id: "default", isDefault: true, name: "Default Bot" },
+            { id: "default", isDefault: true, name: "Default Agent" },
             { id: "research", name: "Research Bot" },
           ],
         }
@@ -1717,7 +1717,7 @@ describe("bridge API integration", () => {
       const { client, getLastCreateSessionProfileId } = createMockClient({
         orgs: createMultiTestOrgs(),
         profilesByOrgId: {
-          org_a: [{ id: "default", isDefault: true, name: "Default Bot" }],
+          org_a: [{ id: "default", isDefault: true, name: "Default Agent" }],
           org_b: [{ id: "gary", isDefault: true, name: "Gary Vee" }],
         },
       });
@@ -1763,7 +1763,7 @@ describe("bridge API integration", () => {
         orgs: createMultiTestOrgs(),
         profilesByOrgId: {
           org_a: [
-            { id: "default", isDefault: true, name: "Default Bot" },
+            { id: "default", isDefault: true, name: "Default Agent" },
             { id: "research", name: "Research Bot" },
           ],
           org_b: [

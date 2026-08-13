@@ -34,7 +34,7 @@ import {
   ORG_INVITE_EXPIRY_DAYS,
   ORG_ROLES,
   seedOrgDefaultProfile,
-  seedOrgSuperBotProfile,
+  seedOrgSuperAgentProfile,
 } from "@atlas/db";
 import type { AuthService } from "./auth-service";
 
@@ -761,11 +761,11 @@ export class OrgService {
     );
     await initSoulDirectory(getProfileSoulDir(orgId, defaultProfile.id));
 
-    const superBotProfile = await seedOrgSuperBotProfile(
+    const superAgentProfile = await seedOrgSuperAgentProfile(
       this.databaseAdapter,
       orgId
     );
-    await initSoulDirectory(getProfileSoulDir(orgId, superBotProfile.id));
+    await initSoulDirectory(getProfileSoulDir(orgId, superAgentProfile.id));
   }
 }
 
