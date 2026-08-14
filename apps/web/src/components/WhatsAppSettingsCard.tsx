@@ -100,8 +100,7 @@ export function WhatsAppSettingsCard({
     []
   );
 
-  const useQrLinking = !pairingCode;
-  const showQr = configured && running && Boolean(qrCode) && useQrLinking;
+  const showQr = configured && running && Boolean(qrCode);
   const awaitingQr =
     configured &&
     !paired &&
@@ -109,16 +108,11 @@ export function WhatsAppSettingsCard({
     !connected &&
     !qrCode &&
     !qrWasVisible &&
-    useQrLinking;
+    !pairingCode;
   const bridgeStarting =
     configured && !paired && running && !connected && Boolean(pairingCode);
   const linkingAfterScan =
-    configured &&
-    !paired &&
-    running &&
-    !qrCode &&
-    (qrWasVisible || connected) &&
-    useQrLinking;
+    configured && !paired && running && !qrCode && (qrWasVisible || connected);
   const showReconnect = configured && !showQr && !awaitingQr;
   const canSave = !configured || profileId !== settings?.profileId;
   const actionLabel = submitLabel ?? (configured ? "Save" : "Enable WhatsApp");
@@ -130,29 +124,27 @@ export function WhatsAppSettingsCard({
 
   const headerSubtitle = configured
     ? paired && running && !showQr
-      ? "WhatsApp is linked and the bridge is running"
+      ? "WhatsApp is connected and ready to receive messages"
       : paired && !running
-        ? "Linked. Start the WhatsApp bridge to receive messages"
+        ? "WhatsApp is linked. Start the bridge to receive messages"
         : showQr
-          ? "Scan the QR code with WhatsApp to link your device"
+          ? "Scan the QR code in WhatsApp to link this device"
           : linkingAfterScan
-            ? "Linking your WhatsApp account…"
+            ? "Connecting WhatsApp…"
             : bridgeStarting
-              ? "Bridge starting — enter the pairing code in WhatsApp"
+              ? "Preparing QR code…"
               : awaitingQr
                 ? "Preparing QR code…"
-                : pairingCode
-                  ? "Enter the pairing code in WhatsApp"
-                  : "Scan the QR code, or generate a pairing code"
-    : "Choose a profile and enable WhatsApp to get started";
+                : "Scan the QR code in WhatsApp to connect"
+    : "Choose a reply profile, then enable WhatsApp";
 
   const statusBadge = configured
     ? paired && running && !showQr
       ? "Connected"
       : paired && !running
-        ? "Paired"
+        ? "Bridge stopped"
         : linkingAfterScan
-          ? "Linking"
+          ? "Connecting"
           : bridgeStarting
             ? "Starting…"
             : showQr
@@ -161,7 +153,7 @@ export function WhatsAppSettingsCard({
                 ? "Starting…"
                 : pairingCode
                   ? "Awaiting link"
-                  : "Not linked"
+                  : "Not connected"
     : "Not set up";
 
   async function copyPairingCode() {
@@ -180,7 +172,7 @@ export function WhatsAppSettingsCard({
         copyTimeoutRef.current = null;
       }, 2000);
     } catch {
-      setHint("Copy the code manually.");
+      setHint("Copy failed. Select the code and copy it manually.");
     }
   }
 
@@ -200,7 +192,9 @@ export function WhatsAppSettingsCard({
         if (saved.pairedJid) {
           setHint("Saved.");
         } else if (saved.pairingCode) {
-          setHint("Saved. Use the pairing code in WhatsApp.");
+          setHint(
+            "Saved. Send the chat access code in the WhatsApp chat you want to authorize."
+          );
         } else if (configured) {
           setHint("Saved.");
         } else {
@@ -220,7 +214,9 @@ export function WhatsAppSettingsCard({
         setFormError(formatError(error));
       },
       onSuccess: () => {
-        setHint("New code ready.");
+        setHint(
+          "Chat access code generated. Send it in the WhatsApp chat you want to authorize."
+        );
       },
     });
   }

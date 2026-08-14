@@ -308,9 +308,7 @@ export async function regenerateWhatsAppPairingCode(): Promise<WhatsAppSettingsP
   const existing = await loadWhatsAppConfigFile();
 
   if (!existing) {
-    throw new Error(
-      "Enable WhatsApp in Integrations before generating a pairing code."
-    );
+    throw new Error("Enable WhatsApp before generating a chat access code.");
   }
 
   const next: WhatsAppConfigFile = {
@@ -336,7 +334,7 @@ export async function verifyAndPairWhatsAppUser(
   }
 
   if (isWhatsAppUserAuthorized(jid, config)) {
-    return { message: "This number is already linked.", ok: true };
+    return { message: "This chat is already authorized.", ok: true };
   }
 
   const expected = config.pairingCode;
@@ -344,7 +342,7 @@ export async function verifyAndPairWhatsAppUser(
   if (!expected) {
     return {
       message:
-        "No pairing code is active. Open Atlas Integrations \u2192 WhatsApp and generate a new code.",
+        "No chat access code is active. Generate one in Integrations \u2192 WhatsApp, then send it here.",
       ok: false,
     };
   }
@@ -354,7 +352,7 @@ export async function verifyAndPairWhatsAppUser(
   ) {
     return {
       message:
-        "Invalid pairing code. Copy it from Integrations \u2192 WhatsApp and try again.",
+        "That chat access code is invalid. Copy the current code from Integrations \u2192 WhatsApp and try again.",
       ok: false,
     };
   }
@@ -376,7 +374,7 @@ export async function verifyAndPairWhatsAppUser(
   });
 
   return {
-    message: "Linked successfully. You can chat with Atlas now.",
+    message: "Chat authorized. Send a message to start chatting with Atlas.",
     ok: true,
   };
 }

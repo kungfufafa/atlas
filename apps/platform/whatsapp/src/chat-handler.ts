@@ -34,14 +34,14 @@ import { createTypingLoop } from "./typing-indicator";
 const chatLocks = new Map<string, Promise<void>>();
 
 const PAIRING_PROMPT =
-  "Welcome to Atlas.\n\n" +
-  "Paste your pairing code from Integrations \u2192 WhatsApp in the web dashboard. " +
-  "You only need to do this once for this number.";
+  "Atlas has not authorized this chat yet.\n\n" +
+  "Send the chat access code shown in Integrations \u2192 WhatsApp. " +
+  "You only need to authorize this chat once.";
 
 const NO_CODE_PROMPT =
-  "This number is not linked yet.\n\n" +
-  "Open Atlas Integrations \u2192 WhatsApp, generate a pairing code, " +
-  "then send that code here. Or scan the QR code in Integrations.";
+  "Atlas has not authorized this chat yet.\n\n" +
+  "Open Integrations \u2192 WhatsApp in Atlas and generate a chat access code. " +
+  "Send the code here to authorize this chat.";
 
 export interface ChatHandlerDeps {
   authStore: WhatsAppAuthStore;

@@ -53,12 +53,12 @@ export function WhatsAppSettingsLinkingSection({
         className={rowClassName}
         description={
           pairingCode
-            ? "Open Linked Devices in WhatsApp and enter this code."
+            ? "Send this code in the WhatsApp chat you want to authorize."
             : paired
-              ? "This number is linked. Generate a new code only if you need to relink."
-              : "Optional — use this instead of scanning the QR code."
+              ? "Generate a one-time code to authorize a WhatsApp chat."
+              : "Connect WhatsApp before authorizing chats."
         }
-        label="Pairing code"
+        label="Chat access code"
       >
         {pairingCode ? (
           <div className="flex flex-wrap items-center justify-end gap-2">
@@ -93,14 +93,14 @@ export function WhatsAppSettingsLinkingSection({
               ) : (
                 <>
                   <RefreshIcon aria-hidden="true" className="size-3.5" />
-                  New code
+                  Generate new code
                 </>
               )}
             </Button>
           </div>
         ) : paired ? (
           <Button
-            disabled={regeneratePending || savePending}
+            disabled={!paired || regeneratePending || savePending}
             onClick={onRegeneratePairingCode}
             size="sm"
             type="button"
@@ -111,13 +111,13 @@ export function WhatsAppSettingsLinkingSection({
             ) : (
               <>
                 <RefreshIcon aria-hidden="true" className="size-3.5" />
-                New code
+                Generate code
               </>
             )}
           </Button>
         ) : (
           <Button
-            disabled={regeneratePending || savePending}
+            disabled={!paired || regeneratePending || savePending}
             onClick={onRegeneratePairingCode}
             size="sm"
             type="button"
@@ -129,7 +129,7 @@ export function WhatsAppSettingsLinkingSection({
                 Generating…
               </>
             ) : (
-              "Generate pairing code"
+              "Connect WhatsApp first"
             )}
           </Button>
         )}
@@ -142,9 +142,8 @@ export function WhatsAppSettingsLinkingSection({
             !compact && "px-4 py-3 pl-8"
           )}
         >
-          <li>Open WhatsApp on your phone</li>
-          <li>Go to Settings, then Linked Devices</li>
-          <li>Choose Link with phone number and enter this code</li>
+          <li>Open a private chat with the connected WhatsApp account</li>
+          <li>Send the code as a message</li>
         </ol>
       ) : null}
 
@@ -152,7 +151,9 @@ export function WhatsAppSettingsLinkingSection({
         <div className={cn("space-y-3", !compact && "px-4 py-4")}>
           <div className="flex items-center gap-2">
             <QrCodeScanIcon aria-hidden className="size-4 text-primary" />
-            <p className="font-medium text-foreground text-sm">Scan QR code</p>
+            <p className="font-medium text-foreground text-sm">
+              Link WhatsApp with a QR code
+            </p>
           </div>
           <div className="flex justify-center">
             <div className="inline-flex rounded-xl border border-border bg-white p-3">
@@ -175,7 +176,7 @@ export function WhatsAppSettingsLinkingSection({
           )}
         >
           <Spinner className="size-4" />
-          Linking your WhatsApp account…
+          Connecting WhatsApp…
         </div>
       ) : bridgeStarting ? (
         <div
@@ -185,7 +186,7 @@ export function WhatsAppSettingsLinkingSection({
           )}
         >
           <Spinner className="size-4" />
-          Bridge starting — enter the pairing code in WhatsApp
+          Preparing QR code…
         </div>
       ) : awaitingQr ? (
         <div

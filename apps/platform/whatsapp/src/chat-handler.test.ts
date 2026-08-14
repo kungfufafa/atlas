@@ -100,7 +100,7 @@ describe("createChatHandler", () => {
     });
   });
 
-  test("rejects invalid pairing codes", async () => {
+  test("rejects invalid chat access codes", async () => {
     await withTempHome(async (homeDir) => {
       await writeWhatsAppConfigIni(homeDir, {
         pairingCode: "ABCD1234",
@@ -156,7 +156,7 @@ describe("createChatHandler", () => {
       await handleMessage({ jid: "9999999999@s.whatsapp.net", text: "WRONG" });
 
       expect(sent.length).toBe(1);
-      expect(sent[0].text).toContain("Invalid pairing code");
+      expect(sent[0].text).toContain("chat access code is invalid");
       expect(calls.sendStream).toBe(0);
     });
   });
@@ -218,7 +218,7 @@ describe("createChatHandler", () => {
       await handleMessage({ jid: pairJid, text: "ABCD1234" });
 
       expect(sent.length).toBe(1);
-      expect(sent[0]!.text).toContain("Linked successfully");
+      expect(sent[0]!.text).toContain("Chat authorized");
       expect(authStore.isAuthorized(pairJid)).toBe(true);
 
       await handleMessage({ jid: pairJid, text: "hello agent" });

@@ -1,6 +1,6 @@
 ---
 title: "WhatsApp"
-description: "Set up Atlas on WhatsApp with linking, commands, and troubleshooting."
+description: "Connect WhatsApp to Atlas, authorize chats, and troubleshoot the bridge."
 ---
 
 Use WhatsApp when you want the same Atlas agent available from your phone in a direct chat.
@@ -13,14 +13,14 @@ WhatsApp works well for:
 
 - quick questions while away from your desk
 - using one Atlas profile from phone and web
-- simple direct-chat workflows for one linked number
+- private chats with authorized users
 - lightweight status checks and short back-and-forth conversations
 
 ## What WhatsApp can do
 
 With WhatsApp enabled, users can:
 
-- chat with a Atlas profile in a private WhatsApp chat
+- chat with an Atlas profile in a private WhatsApp chat
 - switch org with commands
 - start a new conversation or clear history
 - stop an in-progress reply
@@ -61,19 +61,7 @@ If the Atlas server is not already running, start it too:
 bun run dev:server
 ```
 
-### 3. Link your WhatsApp account
-
-Atlas supports two ways to link:
-
-#### Option A: pairing code
-
-1. In **Integrations → WhatsApp**, generate or copy the pairing code
-2. Open WhatsApp on your phone
-3. Go to **Settings → Linked Devices**
-4. Choose **Link with phone number**
-5. Enter the pairing code
-
-#### Option B: QR code
+### 3. Connect your WhatsApp account
 
 1. Start the WhatsApp bridge
 2. Wait for the QR code to appear in **Integrations → WhatsApp**
@@ -81,7 +69,18 @@ Atlas supports two ways to link:
 4. Go to **Settings → Linked Devices**
 5. Tap **Link a Device** and scan the QR code
 
-After linking succeeds, Atlas shows the linked account and the bridge can receive messages.
+After you scan the QR code, Atlas shows **Connected** and the linked account. The bridge can now receive messages.
+
+### 4. Authorize a WhatsApp chat
+
+Atlas authorizes the connected account. Other WhatsApp chats need a one-time chat access code before Atlas replies.
+
+1. In **Integrations → WhatsApp**, generate a **Chat access code**
+2. Copy the code
+3. Open a private chat with the connected WhatsApp account
+4. Send the code as a message
+
+Atlas authorizes that chat, clears the code, and blocks chats that do not have access.
 
 ## Chat behavior
 
@@ -89,7 +88,7 @@ WhatsApp currently works as a **private chat** channel.
 
 - direct chats are supported
 - group chats are not handled by the current bridge
-- each linked WhatsApp chat keeps its own Atlas session
+- each authorized WhatsApp chat keeps its own Atlas session
 
 If you change the reply profile, new messages use that profile. Starting a new conversation with `/new` gives you a fresh session.
 
@@ -115,18 +114,18 @@ Check:
 
 1. the Atlas server is running
 2. the WhatsApp bridge is running with `bun run dev:whatsapp`
-3. the WhatsApp account is linked
-4. the linked number shown in **Integrations → WhatsApp** is the one you are messaging from
+3. **Integrations → WhatsApp** shows **Connected**
+4. Atlas has authorized the chat; if Atlas asks for a code, generate a chat access code and send it from that chat
 
-### Pairing code does not work
+### Chat access code does not work
 
 Check these first:
 
-1. generate a fresh pairing code from **Integrations → WhatsApp**
-2. open **Settings → Linked Devices → Link with phone number**
-3. paste the latest code exactly as shown
+1. Confirm that **Integrations → WhatsApp** shows **Connected**
+2. Generate a new chat access code
+3. Send the current code from the chat you want to authorize
 
-If a code was already used or expired, generate a new one.
+Atlas accepts the current code once. Generate another code if the current one was used or replaced.
 
 ### QR linking is stuck
 
