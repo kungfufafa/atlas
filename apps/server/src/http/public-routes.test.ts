@@ -25,4 +25,10 @@ describe("isPublicRouteRequest", () => {
     expect(isPublicRouteRequest("GET", "/v1/auth/me")).toBe(true);
     expect(isPublicRouteRequest("PATCH", "/v1/auth/me")).toBe(false);
   });
+
+  test("allows only the tool catalog GET without auth", () => {
+    expect(isPublicRouteRequest("GET", "/v1/tools")).toBe(true);
+    expect(isPublicRouteRequest("POST", "/v1/tools")).toBe(false);
+    expect(isPublicRouteRequest("DELETE", "/v1/tools")).toBe(false);
+  });
 });

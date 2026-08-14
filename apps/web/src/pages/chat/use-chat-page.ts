@@ -27,6 +27,7 @@ import {
 import type { QueuedComposerMessage } from "@/components/chat/ChatMessageQueuePanel";
 import { useActiveChatProfile } from "@/context/use-active-chat-profile";
 import { useAppContext } from "@/context/use-app-context";
+import { useAuth } from "@/context/use-auth";
 import { useProfileQuery } from "@/hooks/use-app-queries";
 import {
   useBranchSessionMutation,
@@ -107,6 +108,9 @@ interface QueuedSend {
 }
 
 export function useChatPage() {
+  const { activeOrg, user } = useAuth();
+  const canManageProfileModel =
+    user?.isPlatformAdmin === true || activeOrg?.role === "admin";
   const params = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -196,7 +200,9 @@ export function useChatPage() {
     useThinkingSettings();
   const saveThinkingSettingsMutation = useSaveThinkingSettings();
   const thinkingAutoEnableRef = useRef(false);
-  const activeProfileQuery = useProfileQuery(profileId || null);
+  const activeProfileQuery = useProfileQuery(
+    canManageProfileModel ? profileId || null : null
+  );
 
   const activeProfile = useMemo(
     () => profiles.find((profile) => profile.id === profileId),
@@ -263,7 +269,7 @@ export function useChatPage() {
 
   const handleModelChange = useCallback(
     (selection: string) => {
-      if (!(profileId && selection)) {
+      if (!(canManageProfileModel && profileId && selection)) {
         return;
       }
       const decoded = decodeModelSelection(selection);
@@ -285,7 +291,7 @@ export function useChatPage() {
           setError(formatError(err));
         });
     },
-    [profileId, updateProfileMutation]
+    [canManageProfileModel, profileId, updateProfileMutation]
   );
 
   const loadProfiles = useCallback(async () => {
@@ -938,6 +944,7 @@ export function useChatPage() {
     availableSkills,
     branchingMessageId,
     busy,
+    canManageProfileModel,
     canStop,
     chatStatus,
     composerDisabled,

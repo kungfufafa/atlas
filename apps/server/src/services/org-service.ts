@@ -700,11 +700,14 @@ export class OrgService {
     }
 
     if (nextRole !== undefined && nextRole !== "admin") {
-      throw new AtlasApiError("Cannot change role of the last org admin.", 409);
+      throw new AtlasApiError(
+        "Cannot change the role of the last Workspace Admin.",
+        409
+      );
     }
 
     if (nextRole === undefined) {
-      throw new AtlasApiError("Cannot remove the last org admin.", 409);
+      throw new AtlasApiError("Cannot remove the last Workspace Admin.", 409);
     }
 
     return member;

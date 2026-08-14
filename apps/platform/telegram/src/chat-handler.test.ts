@@ -2231,4 +2231,61 @@ describe("createChatHandler artifact delivery", () => {
       expect(sendDocumentCalls).toBe(1);
     });
   });
+
+  test("locks chat to fixedWorkspaceId and prevents switching workspaces", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        botToken: "1234567890:TEST",
+        pairedUserIds: [4242],
+      });
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls, orgIds } = createMockClient({
+        orgs: createMultiTestOrgs(),
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        fixedWorkspaceId: "org_b",
+        orgStore,
+        sessionStore,
+      });
+
+      const chatMsg = createMessageContext({
+        text: "hello",
+        userId: 4242,
+      });
+      await handleMessage(chatMsg.ctx);
+
+      expect(orgIds).toContain("org_b");
+      expect(calls.createSession).toBe(1);
+      expect(calls.sendStream).toBe(1);
+      expect(
+        chatMsg.replies.some((reply) =>
+          reply.includes("Choose an organization")
+        )
+      ).toBe(false);
+
+      const orgCmd = createMessageContext({
+        text: "/org",
+        userId: 4242,
+      });
+      await handleMessage(orgCmd.ctx);
+
+      expect(
+        orgCmd.replies.some((reply) =>
+          reply.includes(
+            "belongs to one workspace and cannot switch workspaces"
+          )
+        )
+      ).toBe(true);
+    });
+  });
 });

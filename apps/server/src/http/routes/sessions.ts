@@ -340,6 +340,7 @@ export function registerSessionRoutes(
   );
 
   app.post("/v1/sessions", async (c) => {
+    requireNotViewerFromContext(c);
     const auth = getRequestAuth(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<CreateSessionRequest>(c.req.raw);
@@ -373,11 +374,13 @@ export function registerSessionRoutes(
   });
 
   app.delete("/v1/sessions/:sessionId", async (c) => {
+    requireNotViewerFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
     const purge = c.req.query("purge") === "true";
     const cleared = purge
-      ? await agent.purgeSession(sessionId)
-      : await agent.clearSession(sessionId);
+      ? await agent.purgeSession(orgId, sessionId)
+      : await agent.clearSession(orgId, sessionId);
 
     if (!cleared) {
       return errorResponse("Session not found", 404);
@@ -387,11 +390,13 @@ export function registerSessionRoutes(
   });
 
   app.post("/v1/sessions/:sessionId/compact", async (c) => {
+    requireNotViewerFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
     const body = await readJson<CompactSessionRequest>(c.req.raw).catch(
       () => ({})
     );
-    const result = await agent.compactSession(sessionId, {
+    const result = await agent.compactSession(orgId, sessionId, {
       force: body.force ?? false,
     });
 
@@ -403,16 +408,17 @@ export function registerSessionRoutes(
   });
 
   app.get("/v1/sessions/:sessionId/messages", async (c) => {
+    const orgId = requireActiveOrgIdFromContext(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
-    const result = await agent.getSessionMessages(sessionId);
+    const result = await agent.getSessionMessages(orgId, sessionId);
 
     if (!result) {
       return errorResponse("Session not found", 404);
     }
 
-    const todos = (await agent.getSessionTodos(sessionId)) ?? [];
+    const todos = (await agent.getSessionTodos(orgId, sessionId)) ?? [];
     const questionnaire =
-      (await agent.getSessionQuestionnaire(sessionId)) ?? null;
+      (await agent.getSessionQuestionnaire(orgId, sessionId)) ?? null;
     return json<SessionMessagesResponse>({
       channel: result.channel,
       contextUsage: result.contextUsage,
@@ -424,8 +430,9 @@ export function registerSessionRoutes(
   });
 
   app.get("/v1/sessions/:sessionId/status", async (c) => {
+    const orgId = requireActiveOrgIdFromContext(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
-    const result = await agent.getSessionMessages(sessionId);
+    const result = await agent.getSessionMessages(orgId, sessionId);
 
     if (!result) {
       return errorResponse("Session not found", 404);
@@ -439,8 +446,9 @@ export function registerSessionRoutes(
   });
 
   app.get("/v1/sessions/:sessionId/stream", async (c) => {
+    const orgId = requireActiveOrgIdFromContext(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
-    const result = await agent.getSessionMessages(sessionId);
+    const result = await agent.getSessionMessages(orgId, sessionId);
 
     if (!result) {
       return errorResponse("Session not found", 404);
@@ -456,10 +464,16 @@ export function registerSessionRoutes(
   });
 
   app.post("/v1/sessions/:sessionId/branch", async (c) => {
+    requireNotViewerFromContext(c);
     try {
+      const orgId = requireActiveOrgIdFromContext(c);
       const sessionId = decodeURIComponent(c.req.param("sessionId"));
       const body = await readJson<BranchSessionRequest>(c.req.raw);
-      const result = await agent.branchSession(sessionId, body.messageIndex);
+      const result = await agent.branchSession(
+        orgId,
+        sessionId,
+        body.messageIndex
+      );
 
       if (!result) {
         return errorResponse("Session not found", 404);
@@ -474,8 +488,9 @@ export function registerSessionRoutes(
 
   app.post("/v1/sessions/:sessionId/messages", async (c) => {
     requireNotViewerFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
-    const session = await agent.resolveSession(sessionId);
+    const session = await agent.resolveSession(orgId, sessionId);
 
     if (!session) {
       return errorResponse("Session not found", 404);

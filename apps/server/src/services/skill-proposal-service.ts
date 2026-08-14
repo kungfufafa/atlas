@@ -316,7 +316,7 @@ export class SkillProposalService {
     });
 
     return {
-      message: `Staged create for skill "${name}" (proposal ${proposal.id}). An org admin must approve before it goes live.`,
+      message: `Staged create for skill "${name}" (proposal ${proposal.id}). A Workspace Admin must approve before it goes live.`,
       outcome: "created",
       proposalId: proposal.id,
       warnings: this.warningsForContent(content),
@@ -381,7 +381,7 @@ export class SkillProposalService {
     });
 
     return {
-      message: `Staged patch for skill "${name}" (proposal ${proposal.id}). An org admin must approve before it goes live.`,
+      message: `Staged patch for skill "${name}" (proposal ${proposal.id}). A Workspace Admin must approve before it goes live.`,
       outcome: "created",
       proposalId: proposal.id,
       warnings: this.warningsForPatch(oldString, newString),
@@ -420,7 +420,7 @@ export class SkillProposalService {
     });
 
     return {
-      message: `Staged delete for skill "${name}" (proposal ${proposal.id}). An org admin must approve before it is removed.`,
+      message: `Staged delete for skill "${name}" (proposal ${proposal.id}). A Workspace Admin must approve before it is removed.`,
       outcome: "created",
       proposalId: proposal.id,
     };
@@ -467,7 +467,7 @@ export class SkillProposalService {
     });
 
     return {
-      message: `Staged edit for skill "${name}" (proposal ${proposal.id}). An org admin must approve before it goes live.`,
+      message: `Staged edit for skill "${name}" (proposal ${proposal.id}). A Workspace Admin must approve before it goes live.`,
       outcome: "created",
       proposalId: proposal.id,
       warnings: this.warningsForContent(content),
@@ -515,7 +515,7 @@ export class SkillProposalService {
     });
 
     return {
-      message: `Staged write_file for skill "${name}" path "${relativePath}" (proposal ${proposal.id}). An org admin must approve before it goes live.`,
+      message: `Staged write_file for skill "${name}" path "${relativePath}" (proposal ${proposal.id}). A Workspace Admin must approve before it goes live.`,
       outcome: "created",
       proposalId: proposal.id,
       relativePath,
@@ -558,7 +558,7 @@ export class SkillProposalService {
     });
 
     return {
-      message: `Staged remove_file for skill "${name}" path "${relativePath}" (proposal ${proposal.id}). An org admin must approve before it is removed.`,
+      message: `Staged remove_file for skill "${name}" path "${relativePath}" (proposal ${proposal.id}). A Workspace Admin must approve before it is removed.`,
       outcome: "created",
       proposalId: proposal.id,
       relativePath,

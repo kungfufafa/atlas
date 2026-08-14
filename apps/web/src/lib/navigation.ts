@@ -139,7 +139,6 @@ export const SETUP_PATH = "/setup";
 
 export const PLATFORM_ADMIN_PAGE_IDS: ReadonlySet<PageId> = new Set([
   "files",
-  "profiles",
   "soul",
 ]);
 

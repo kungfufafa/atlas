@@ -148,7 +148,9 @@ describe("platform org routes", () => {
     );
 
     expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({ error: "Forbidden" });
+    await expect(response.json()).resolves.toEqual({
+      error: "Superadmin access required",
+    });
   });
 
   test("returns 409 for duplicate organization slugs", async () => {

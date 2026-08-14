@@ -114,7 +114,7 @@ export function SettingsPage() {
                 </div>
               </div>
 
-              <WebPublicUrlSettingsRow />
+              {isPlatformAdmin ? <WebPublicUrlSettingsRow /> : null}
             </>
           ) : null}
         </CardContent>

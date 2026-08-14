@@ -813,4 +813,51 @@ describe("bridge API integration", () => {
       expect(calls.sendStream).toBe(1);
     });
   });
+
+  test("locks chat to fixedWorkspaceId and prevents switching workspaces", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls, orgIds } = createMockClient({
+        orgs: createMultiTestOrgs(),
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        fixedWorkspaceId: "org_b",
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({ jid: PAIRED_JID, text: "hello" });
+      expect(orgIds).toContain("org_b");
+      expect(calls.createSession).toBe(1);
+      expect(calls.sendStream).toBe(1);
+      expect(
+        sent.some((message) => message.text.includes("Choose an organization"))
+      ).toBe(false);
+
+      await handleMessage({ jid: PAIRED_JID, text: "/org" });
+      expect(
+        sent.some((message) =>
+          message.text.includes(
+            "belongs to one workspace and cannot switch workspaces."
+          )
+        )
+      ).toBe(true);
+    });
+  });
 });

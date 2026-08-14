@@ -87,11 +87,17 @@ describe("filterProfilesForChatAccess", () => {
     ).toEqual(["profile_b", "profile_a"]);
   });
 
-  test("keeps super agent for org admins", () => {
+  test("hides Super Agent from Workspace Admins and keeps it for Superadmins", () => {
     expect(
       filterProfilesForChatAccess(profiles, { orgRole: "admin" }).map(
         (profile) => profile.id
       )
+    ).toEqual(["profile_b", "profile_a"]);
+    expect(
+      filterProfilesForChatAccess(profiles, {
+        isPlatformAdmin: true,
+        orgRole: "admin",
+      }).map((profile) => profile.id)
     ).toEqual(["profile_b", "profile_a", "super_agent"]);
   });
 });

@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 
 export function ProfileRail() {
   const { data: profiles = [] } = useProfilesQuery();
-  const { user } = useAuth();
+  const { user, activeOrg } = useAuth();
   const { resolvedTheme } = useTheme();
   const {
     profileId: liveChatProfileId,
@@ -132,7 +132,7 @@ export function ProfileRail() {
           );
         })}
 
-        {user?.isPlatformAdmin ? (
+        {user?.isPlatformAdmin || activeOrg?.role === "admin" ? (
           <ProfileAdminPlusButton
             label="Manage profiles"
             onClick={() => navigate(pathForPage("profiles"))}

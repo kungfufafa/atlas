@@ -144,7 +144,7 @@ There are two common paths.
 
 ### From the dashboard
 
-Platform admins can:
+Workspace Admins can:
 
 1. Go to **Agent → Profiles**
 2. Open a profile
@@ -170,7 +170,7 @@ When `manage-skills` is assigned, interactive chat gets a `skill_manage` tool (`
 
 ### Write approval (optional)
 
-Org admins can enable **skill write approval** under **System → Organization → Skill write approval**. When the gate is on, skill changes wait for admin review before they go live; see [Self-improving skills](/self-improving-skills).
+Workspace Admins can enable **skill write approval** under **System → Workspace → Skill write approval**. When the gate is on, skill changes wait for admin review before they go live; see [Self-improving skills](/self-improving-skills).
 
 ### Bundled system skills
 
@@ -205,14 +205,14 @@ If you add or change skill folders manually, run skill sync so Atlas refreshes w
 
 ## Permissions
 
-Skill management is a platform-admin operation in the dashboard and API.
+Shared skill definitions are managed by Superadmins. Workspace Admins can assign existing skills to profiles in their workspace.
 
 | Actor | Can manage skills | Can use a profile with skills |
 |------|-------------------|-------------------------------|
-| Platform admin | Yes | Yes |
-| Org admin | No | Yes |
-| Org member | No | Yes |
-| Org viewer | No | No |
+| Superadmin | Yes | Yes |
+| Workspace Admin | No (shared definition) | Yes (workspace profile assignment) |
+| Member | No | Yes |
+| Viewer | No | No |
 
 Viewers cannot invoke agents, so they cannot trigger skills either.
 

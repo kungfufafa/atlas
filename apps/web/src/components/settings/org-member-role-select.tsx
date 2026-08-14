@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/select";
 
 const ROLE_LABELS: Record<OrgRole, string> = {
-  admin: "Admin",
+  admin: "Workspace Admin",
   member: "Member",
   viewer: "Viewer",
 };

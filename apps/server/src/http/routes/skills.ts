@@ -11,6 +11,7 @@ import { createRoute, z } from "@hono/zod-openapi";
 import type { ServerOptions } from "../context";
 import {
   requireActiveOrgIdFromContext,
+  requireOrgAdminOrPlatformAdminFromContext,
   requirePlatformAdminFromContext,
 } from "../org-guards";
 import { json, readJson } from "../shared";
@@ -266,7 +267,7 @@ export function registerSkillRoutes(
   });
 
   app.post("/v1/profiles/:profileId/skills", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<AssignSkillRequest>(c.req.raw);
     return json<ProfileResponse>(
@@ -279,7 +280,7 @@ export function registerSkillRoutes(
   });
 
   app.delete("/v1/profiles/:profileId/skills/:skillId", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     return json<ProfileResponse>(
       await agent.unassignSkill(

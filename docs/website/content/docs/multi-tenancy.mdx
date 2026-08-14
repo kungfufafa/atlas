@@ -1,85 +1,55 @@
 ---
 title: "How Multi-tenancy Works"
-description: "Learn how organizations, roles, and tenant isolation work in Atlas."
+description: "Learn how workspaces, roles, and tenant isolation work in Atlas."
 ---
 
-Atlas is built for running more than one team or customer on the same deployment.
-
-The main rule is simple:
-
-- One **organization** is one tenant boundary
-
-That organization keeps its own:
-
-- Profiles
-- Sessions
-- Members
-- Tools
-- Skills
-- MCP servers
-- Usage data
-- [Org memory](/org-memory) — shared, admin-curated facts for every profile in the org
+Atlas can run more than one team or customer on the same deployment. One
+**workspace** is one tenant boundary. Each workspace keeps its own profiles,
+sessions, members, provider credentials, model settings, assignments, memory,
+and usage data.
 
 ## Why this matters
 
 Multi-tenancy lets you run one Atlas server without mixing teams together.
+Workspace A cannot read Workspace B's chat, provider credentials, profiles, or
+settings—even if someone knows a resource ID from the other workspace.
 
-For example:
+## Roles
 
-- Agency A should not see Agency B's profiles
-- Internal HR bots should not share memory with Sales bots
-- A contractor can be added to one org without seeing the others
-
-## Actors and roles
-
-| Actor | Scope | Capabilities |
+| Role | Scope | Capabilities |
 |---|---|---|
-| Platform admin | Whole deployment | Create orgs and manage shared system-level bot resources |
-| Org admin | One organization | Invite members and manage roles |
-| Org member | One organization | Chat with profiles and use the workspace |
-| Org viewer | One organization | Read chat history only — no org memory, agent invoke, or mutations |
+| Superadmin | Entire system | Create workspaces and manage system-wide infrastructure and secrets |
+| Workspace Admin | One workspace | Manage members, providers, profiles, assignments, and workspace settings |
+| Member | One workspace | Chat with profiles and use assigned workspace capabilities |
+| Viewer | One workspace | Read chat history only; no agent invocation or mutations |
 
-## Practical mental model
-
-When deciding permissions, think of it like this:
-
-- **Platform admin** manages the deployment itself
-- **Org admin** manages who is inside one organization
-- **Member** uses the bots
-- **Viewer** can look, but not act
+The practical rule is simple: a **Superadmin** manages Atlas as a whole, while
+a **Workspace Admin** manages only the workspace in which that role was
+granted.
 
 ## First-time setup
 
-When you install Atlas for the first time:
+1. Create the first Superadmin.
+2. Atlas creates the first workspace.
+3. Configure that workspace's AI provider.
+4. Invite people as Workspace Admin, Member, or Viewer.
+5. The Superadmin can create more workspaces later.
 
-1. You create the first admin user
-2. Atlas creates the first organization
-3. That admin can invite more people
-4. More organizations can be created later if needed
+## Choosing workspace boundaries
 
-## Common examples
+Use separate workspaces for different customers, internal teams, environments,
+or privacy boundaries. If one team needs multiple assistants while sharing the
+same people and data boundary, use multiple [profiles](/profiles) in one
+workspace.
 
-Use separate organizations when you want clear separation between:
-
-- Different customers
-- Different internal teams
-- Different environments
-- Different privacy boundaries
-
-If one team needs different bots but should still share users and data boundaries, use multiple **profiles** inside one organization instead.
-
-## Important limitation
-
-Org admins manage members, but profile and tool provisioning is still a platform-admin responsibility.
-
-So the split is:
-
-- Org admin manages people
-- Platform admin manages the bot system
+Workspace Admins can configure providers and profiles only in their active
+workspace. Global messaging workers, shared tool/MCP/skill definitions, data
+import/export, and host installation remain Superadmin-only. A Workspace Admin
+can assign existing shared capabilities to profiles in their workspace.
 
 ## Next steps
 
-- [Org memory](/org-memory) — shared facts injected into every profile
-- [Profiles](/profiles) — how to model bots inside an organization
-- [Builtin tools](/builtin-tools) — how profile capabilities are controlled
+- [Org memory](/org-memory) — shared facts for every profile in a workspace
+- [Profiles](/profiles) — assistants inside a workspace
+- [Builtin tools](/builtin-tools) — profile capability controls
 - [Quickstart](/quickstart) — setup flow from zero

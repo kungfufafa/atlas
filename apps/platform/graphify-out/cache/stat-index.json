@@ -1,0 +1,420 @@
+{
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/automation/package.json": {
+    "size": 370,
+    "mtime_ns": 1786539225183061112,
+    "word_count": 38,
+    "hashes": {
+      "automation/package.json": "d8ea37ca656d65b13dc7d40caab662c63229de781a17e972d78d4e5671ea5287"
+    }
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/automation/src/config.ts": {
+    "size": 520,
+    "mtime_ns": 1786540071715885332,
+    "word_count": 38
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/automation/src/index.ts": {
+    "size": 2278,
+    "mtime_ns": 1786539306573908503,
+    "word_count": 222
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/automation/src/scheduler.test.ts": {
+    "size": 3284,
+    "mtime_ns": 1786539306573774294,
+    "word_count": 342
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/automation/src/scheduler.ts": {
+    "size": 2396,
+    "mtime_ns": 1786539306573842253,
+    "word_count": 223
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/package.json": {
+    "size": 397,
+    "mtime_ns": 1786539219748268531,
+    "word_count": 40,
+    "hashes": {
+      "discord/package.json": "35497ec5cea0c4e23250a7ebaf4b98cff3c931f3e4a124d46469371e728691bd"
+    }
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/active-stream.ts": {
+    "size": 767,
+    "mtime_ns": 1786539058493636453,
+    "word_count": 76
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/auth-store.ts": {
+    "size": 1061,
+    "mtime_ns": 1786539238178063208,
+    "word_count": 108
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/bot.ts": {
+    "size": 2930,
+    "mtime_ns": 1786539058493734246,
+    "word_count": 260
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/channel-artifact-flow.ts": {
+    "size": 7200,
+    "mtime_ns": 1786539306569753343,
+    "word_count": 663
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/chat-handler.test.ts": {
+    "size": 50328,
+    "mtime_ns": 1786540071713849356,
+    "word_count": 3887
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/chat-handler.ts": {
+    "size": 36427,
+    "mtime_ns": 1786604828881225305,
+    "word_count": 3349
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/config.ts": {
+    "size": 1389,
+    "mtime_ns": 1786539238178623171,
+    "word_count": 151
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/format.test.ts": {
+    "size": 633,
+    "mtime_ns": 1786539058494184166,
+    "word_count": 62
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/format.ts": {
+    "size": 3261,
+    "mtime_ns": 1786539306570331389,
+    "word_count": 405
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/guild-message.test.ts": {
+    "size": 8611,
+    "mtime_ns": 1786540071712310593,
+    "word_count": 799
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/guild-message.ts": {
+    "size": 6367,
+    "mtime_ns": 1786539058494383709,
+    "word_count": 684
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/index.ts": {
+    "size": 3981,
+    "mtime_ns": 1786540071713112808,
+    "word_count": 409
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/interaction-errors.test.ts": {
+    "size": 1072,
+    "mtime_ns": 1786539058494510627,
+    "word_count": 95
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/interaction-errors.ts": {
+    "size": 673,
+    "mtime_ns": 1786539058494563503,
+    "word_count": 89
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/messenger.ts": {
+    "size": 2150,
+    "mtime_ns": 1786539058494632920,
+    "word_count": 235
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/questionnaire-message.ts": {
+    "size": 1608,
+    "mtime_ns": 1786539238178545671,
+    "word_count": 164
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/send-artifact-attachment.test.ts": {
+    "size": 2342,
+    "mtime_ns": 1786539058494746546,
+    "word_count": 208
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/send-artifact-attachment.ts": {
+    "size": 1450,
+    "mtime_ns": 1786539238177483203,
+    "word_count": 120
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/session-store.ts": {
+    "size": 2418,
+    "mtime_ns": 1786539238178406253,
+    "word_count": 227
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/slash-commands.test.ts": {
+    "size": 667,
+    "mtime_ns": 1786539058494922381,
+    "word_count": 68
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/slash-commands.ts": {
+    "size": 1605,
+    "mtime_ns": 1786539058495015382,
+    "word_count": 157
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/test-helpers.ts": {
+    "size": 16629,
+    "mtime_ns": 1786540071712601221,
+    "word_count": 1786
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/thread-store.test.ts": {
+    "size": 2037,
+    "mtime_ns": 1786539238178850132,
+    "word_count": 172
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/thread-store.ts": {
+    "size": 2162,
+    "mtime_ns": 1786539238177239701,
+    "word_count": 268
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/todo-status-message.ts": {
+    "size": 1940,
+    "mtime_ns": 1786539238178909007,
+    "word_count": 202
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/typing-indicator.test.ts": {
+    "size": 2637,
+    "mtime_ns": 1786539058495319926,
+    "word_count": 288
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/discord/src/typing-indicator.ts": {
+    "size": 1224,
+    "mtime_ns": 1786539058495369260,
+    "word_count": 145
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/README.md": {
+    "size": 3362,
+    "mtime_ns": 1786540071713965982,
+    "word_count": 543,
+    "hashes": {
+      "telegram/readme.md": "6f902485ebba7d80125738c6737708b6da897e029bb58cb633f454bda4249bb6"
+    }
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/package.json": {
+    "size": 420,
+    "mtime_ns": 1786539208438246416,
+    "word_count": 42,
+    "hashes": {
+      "telegram/package.json": "619510fcc065cd6dd3a2a1f91702576a0adb256b026f9426ca9740052b22e9dc"
+    }
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/active-stream.ts": {
+    "size": 767,
+    "mtime_ns": 1786539058495592053,
+    "word_count": 76
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/attachments.test.ts": {
+    "size": 4266,
+    "mtime_ns": 1786539238179325344,
+    "word_count": 362
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/attachments.ts": {
+    "size": 3768,
+    "mtime_ns": 1786539238179915516,
+    "word_count": 401
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/audio.ts": {
+    "size": 2597,
+    "mtime_ns": 1786539306572147863,
+    "word_count": 266
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/auth-store.ts": {
+    "size": 889,
+    "mtime_ns": 1786539238180117476,
+    "word_count": 87
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/bot.ts": {
+    "size": 863,
+    "mtime_ns": 1786539058495868056,
+    "word_count": 94
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/channel-artifact-flow.ts": {
+    "size": 2947,
+    "mtime_ns": 1786539306571814527,
+    "word_count": 255
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/chat-handler.test.ts": {
+    "size": 69613,
+    "mtime_ns": 1786604828881397431,
+    "word_count": 5961
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/chat-handler.ts": {
+    "size": 24274,
+    "mtime_ns": 1786604828881638558,
+    "word_count": 2140
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/config.ts": {
+    "size": 1423,
+    "mtime_ns": 1786539238180479354,
+    "word_count": 152
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/format.test.ts": {
+    "size": 4628,
+    "mtime_ns": 1786539306572261031,
+    "word_count": 407
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/format.ts": {
+    "size": 7326,
+    "mtime_ns": 1786539306572634826,
+    "word_count": 758
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/group-message.test.ts": {
+    "size": 4909,
+    "mtime_ns": 1786539306571926861,
+    "word_count": 497
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/group-message.ts": {
+    "size": 3826,
+    "mtime_ns": 1786539058496494769,
+    "word_count": 425
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/images.ts": {
+    "size": 2140,
+    "mtime_ns": 1786539238179805973,
+    "word_count": 212
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/index.ts": {
+    "size": 3801,
+    "mtime_ns": 1786540071714963574,
+    "word_count": 397
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/reply.test.ts": {
+    "size": 1612,
+    "mtime_ns": 1786539058496634396,
+    "word_count": 172
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/reply.ts": {
+    "size": 812,
+    "mtime_ns": 1786539058496689938,
+    "word_count": 95
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/rich-message.test.ts": {
+    "size": 2579,
+    "mtime_ns": 1786539058496732938,
+    "word_count": 253
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/rich-message.ts": {
+    "size": 2550,
+    "mtime_ns": 1786539058496778314,
+    "word_count": 250
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/send-artifact-document.test.ts": {
+    "size": 628,
+    "mtime_ns": 1786539058496829064,
+    "word_count": 66
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/send-artifact-document.ts": {
+    "size": 1308,
+    "mtime_ns": 1786539058496876398,
+    "word_count": 150
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/session-store.ts": {
+    "size": 2421,
+    "mtime_ns": 1786539238180305978,
+    "word_count": 227
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/test-helpers.ts": {
+    "size": 12799,
+    "mtime_ns": 1786540178789918061,
+    "word_count": 1290
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/todo-status-message.test.ts": {
+    "size": 1841,
+    "mtime_ns": 1786539058497046024,
+    "word_count": 204
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/todo-status-message.ts": {
+    "size": 2026,
+    "mtime_ns": 1786539238180675897,
+    "word_count": 208
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/typing-indicator.ts": {
+    "size": 781,
+    "mtime_ns": 1786539058497144608,
+    "word_count": 95
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/README.md": {
+    "size": 566,
+    "mtime_ns": 1786539238181525030,
+    "word_count": 90,
+    "hashes": {
+      "whatsapp/readme.md": "9752c72566b1ae3a95517dbc9ec5ed914d3b16611621702c54ca564620261de5"
+    }
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/package.json": {
+    "size": 496,
+    "mtime_ns": 1786539213932248506,
+    "word_count": 48,
+    "hashes": {
+      "whatsapp/package.json": "4df465834855a9983ed97178043724e2e4ec63a5d785aff1af0e2f01ef426594"
+    }
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/src/active-stream.ts": {
+    "size": 928,
+    "mtime_ns": 1786539058497351527,
+    "word_count": 91
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/src/auth-store.ts": {
+    "size": 881,
+    "mtime_ns": 1786539238182184910,
+    "word_count": 87
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/src/chat-handler.test.ts": {
+    "size": 25247,
+    "mtime_ns": 1786672241426525539,
+    "word_count": 2164
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/src/chat-handler.ts": {
+    "size": 12609,
+    "mtime_ns": 1786672241340267976,
+    "word_count": 1215
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/src/config.ts": {
+    "size": 1227,
+    "mtime_ns": 1786539238182376537,
+    "word_count": 134
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/src/format.test.ts": {
+    "size": 2126,
+    "mtime_ns": 1786539058497691446,
+    "word_count": 198
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/src/format.ts": {
+    "size": 4202,
+    "mtime_ns": 1786539306574435383,
+    "word_count": 429
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/src/inbound-message.test.ts": {
+    "size": 2110,
+    "mtime_ns": 1786539058497791531,
+    "word_count": 195
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/src/inbound-message.ts": {
+    "size": 1995,
+    "mtime_ns": 1786539058497837114,
+    "word_count": 221
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/src/index.ts": {
+    "size": 5058,
+    "mtime_ns": 1786540071717036467,
+    "word_count": 501
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/src/outbound-server.ts": {
+    "size": 2307,
+    "mtime_ns": 1786539238182083951,
+    "word_count": 265
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/src/session-store.ts": {
+    "size": 1438,
+    "mtime_ns": 1786539238182247036,
+    "word_count": 158
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/src/socket.ts": {
+    "size": 7029,
+    "mtime_ns": 1786611894760547321,
+    "word_count": 668
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/src/test-helpers.ts": {
+    "size": 8314,
+    "mtime_ns": 1786540178798627261,
+    "word_count": 847
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/src/todo-status-message.ts": {
+    "size": 1839,
+    "mtime_ns": 1786539238182511455,
+    "word_count": 192
+  },
+  "/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/src/typing-indicator.ts": {
+    "size": 860,
+    "mtime_ns": 1786539058498234326,
+    "word_count": 103
+  }
+}

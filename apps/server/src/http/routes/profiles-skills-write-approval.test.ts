@@ -16,6 +16,8 @@ function createApp() {
   return {
     ...createMinimalHonoApp({
       agent: {
+        getProfile: (orgId: string, profileId: string) =>
+          profileService.getProfile(orgId, profileId),
         updateProfile: (orgId: string, profileId: string, body: unknown) =>
           profileService.updateProfile(
             orgId,
@@ -31,8 +33,8 @@ function createApp() {
 
 const BASE = "http://localhost:4310";
 
-describe("profile skillsWriteApproval auth", () => {
-  test("org admin can patch skillsWriteApproval only; other fields forbidden", async () => {
+describe("org admin profile settings auth", () => {
+  test("org admin can read profile details and update operational settings", async () => {
     const { app, databaseAdapter } = createApp();
     const platformSession = await setupFreshInstallSession(
       app,
@@ -64,6 +66,29 @@ describe("profile skillsWriteApproval auth", () => {
     );
 
     const profileId = (await databaseAdapter.listProfilesForOrg(orgId))[0]!.id;
+
+    const detailResp = await app.fetch(
+      new Request(`${BASE}/v1/profiles/${profileId}`, {
+        headers: orgAdminSession.headers({}, orgId),
+      })
+    );
+    expect(detailResp.status).toBe(200);
+
+    const modelResp = await app.fetch(
+      new Request(`${BASE}/v1/profiles/${profileId}`, {
+        body: JSON.stringify({ model: "provider_test:model_test" }),
+        headers: orgAdminSession.headers(
+          { "X-CSRF-Token": orgAdminSession.csrfToken },
+          orgId
+        ),
+        method: "PUT",
+      })
+    );
+    expect(modelResp.status).toBe(200);
+    const modelBody = (await modelResp.json()) as {
+      profile: { model: string | null };
+    };
+    expect(modelBody.profile.model).toBe("provider_test:model_test");
 
     const okResp = await app.fetch(
       new Request(`${BASE}/v1/profiles/${profileId}`, {
@@ -97,7 +122,7 @@ describe("profile skillsWriteApproval auth", () => {
     };
     expect(reviewBody.profile.skillsPostTurnReview).toBe(true);
 
-    const forbiddenResp = await app.fetch(
+    const fullUpdateResp = await app.fetch(
       new Request(`${BASE}/v1/profiles/${profileId}`, {
         body: JSON.stringify({ name: "Renamed", skillsWriteApproval: false }),
         headers: orgAdminSession.headers(
@@ -107,6 +132,13 @@ describe("profile skillsWriteApproval auth", () => {
         method: "PUT",
       })
     );
-    expect(forbiddenResp.status).toBe(403);
+    expect(fullUpdateResp.status).toBe(200);
+    const fullUpdateBody = (await fullUpdateResp.json()) as {
+      profile: { name: string; skillsWriteApproval: boolean | null };
+    };
+    expect(fullUpdateBody.profile).toMatchObject({
+      name: "Renamed",
+      skillsWriteApproval: false,
+    });
   });
 });

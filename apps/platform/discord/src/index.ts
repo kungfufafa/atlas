@@ -35,6 +35,7 @@ registerCleanupHandlers(() => {
 });
 
 try {
+  const workspaceId = process.env.ATLAS_WORKSPACE_ID?.trim() || undefined;
   const existingHeartbeat = await readDiscordWorkerHeartbeat();
 
   if (
@@ -49,7 +50,7 @@ try {
     process.exit(1);
   }
 
-  const config = await loadConfig();
+  const config = await loadConfig(process.env, workspaceId);
   const { serverUrl, spawnedChild: child } = await ensureServerRunning();
   spawnedChild = child;
 
@@ -58,6 +59,7 @@ try {
       (await loadLocalAuthToken("discord@atlas.internal")) ?? undefined,
     baseUrl: serverUrl,
     clientOrigin: resolveWebPublicUrl(),
+    orgId: workspaceId,
   });
   const health = await client.health();
 
@@ -85,15 +87,18 @@ try {
   const threadStore = new ThreadStore();
   await threadStore.load();
 
-  const orgStore = new ChannelOrgStore(getChannelOrgSelectionPath("discord"));
+  const orgStore = new ChannelOrgStore(
+    getChannelOrgSelectionPath("discord", workspaceId)
+  );
   await orgStore.load();
 
-  const authStore = new DiscordAuthStore();
+  const authStore = new DiscordAuthStore(workspaceId);
   await authStore.reload();
 
   const discord = await createBot(config, {
     authStore,
     client,
+    fixedWorkspaceId: workspaceId,
     orgStore,
     sessionStore,
     threadStore,
@@ -102,6 +107,7 @@ try {
   console.log("Atlas Discord bridge running.");
   console.log(`Server: ${serverUrl}`);
   console.log(`Profile: ${config.profileId}`);
+  console.log(`Workspace: ${workspaceId ?? "legacy selectable mode"}`);
   const authConfig = authStore.getConfig();
   const paired = authConfig?.pairedUserIds.length ?? 0;
   const pendingHandshake = authConfig?.handshakeCode ? "yes" : "no";

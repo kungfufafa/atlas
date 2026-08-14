@@ -49,8 +49,8 @@ export function SkillPostTurnReviewBanner({
             Skill {proposal.action} “{proposal.skillName}” pending admin review
           </p>
           <p className="mt-1 text-muted-foreground text-xs">
-            Post-turn review staged this change. It will not go live until an
-            org admin approves it.
+            Post-turn review staged this change. It will not go live until a
+            Workspace Admin approves it.
           </p>
           {isOrgAdmin ? (
             <p className="mt-2 text-xs">

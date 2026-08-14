@@ -11,7 +11,9 @@ export class SessionTitleService {
 
   constructor(
     private readonly db: DatabaseAdapter,
-    private readonly getUserConfig: () => UserConfig | null
+    private readonly getUserConfig: (
+      orgId: string
+    ) => UserConfig | null | Promise<UserConfig | null>
   ) {}
 
   scheduleSessionTitleGeneration(sessionId: string): void {
@@ -46,7 +48,10 @@ export class SessionTitleService {
         return;
       }
 
-      const userConfig = this.getUserConfig();
+      const profile = await this.db.getProfile(session.profileId);
+      const userConfig = profile?.orgId
+        ? await this.getUserConfig(profile.orgId)
+        : null;
       const provider = await this.resolveProviderForProfile(
         session.profileId,
         userConfig

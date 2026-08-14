@@ -36,7 +36,7 @@ export function registerTokenOptimizationRoutes(
     const [rows, turnRows, settings, installed] = await Promise.all([
       options.databaseAdapter.listToolOutputSavings(orgId),
       options.databaseAdapter.listLlmTurnUsage(orgId),
-      options.databaseAdapter.getWorkspaceSettings(),
+      options.databaseAdapter.getWorkspaceSettings(orgId),
       isOmniInstalled(),
     ]);
     const enabled = settings?.tokenOptimizerEnabled ?? isOmniEnabled();
@@ -149,13 +149,15 @@ export function registerTokenOptimizationRoutes(
   app.put("/v1/token-optimization", async (c) => {
     // Admin only: this changes what every session in the org does.
     requireOrgAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<{ enabled: boolean }>(c.req.raw);
-    const existing = await options.databaseAdapter.getWorkspaceSettings();
+    const existing = await options.databaseAdapter.getWorkspaceSettings(orgId);
 
     await options.databaseAdapter.upsertWorkspaceSettings({
       codingAgentHarnesses: existing?.codingAgentHarnesses ?? [],
-      id: existing?.id ?? "default",
+      id: existing?.id ?? `workspace-settings:${orgId}`,
       imageModel: existing?.imageModel ?? null,
+      orgId,
       selectedCodingAgentHarness: existing?.selectedCodingAgentHarness ?? null,
       tokenOptimizerEnabled: Boolean(body.enabled),
       transcriptionModel: existing?.transcriptionModel ?? null,

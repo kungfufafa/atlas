@@ -25,7 +25,6 @@ export function ProfileToolsSection({
   onRemove: (target: RemoveAssignmentTarget) => void;
 }) {
   const { user, activeOrg } = useAuth();
-  const isOrgAdmin = activeOrg?.role === "admin";
   const canOpenPlayground = canUseToolPlayground(
     user?.isPlatformAdmin === true,
     activeOrg?.role
@@ -61,7 +60,8 @@ export function ProfileToolsSection({
               </p>
             );
             const onConfigure =
-              isOrgAdmin && tool.id === BUILTIN_TOOL_IDS.email
+              user?.isPlatformAdmin === true &&
+              tool.id === BUILTIN_TOOL_IDS.email
                 ? () => setEmailConfigOpen(true)
                 : undefined;
 

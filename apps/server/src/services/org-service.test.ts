@@ -430,7 +430,7 @@ describe("OrgService", () => {
     await expect(
       orgService.removeMember(created.organization.id, localClientUserId!)
     ).rejects.toMatchObject({
-      message: "Cannot remove the last org admin.",
+      message: "Cannot remove the last Workspace Admin.",
       status: 409,
     });
 
@@ -439,7 +439,7 @@ describe("OrgService", () => {
         role: "member",
       })
     ).rejects.toMatchObject({
-      message: "Cannot change role of the last org admin.",
+      message: "Cannot change the role of the last Workspace Admin.",
       status: 409,
     });
   });

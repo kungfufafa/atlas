@@ -7,7 +7,7 @@ A **profile** is an agent definition Atlas runs for a session.
 
 It answers one practical question: **which agent should respond, and what is its role?**
 
-Profiles belong to an **organization**. Switching orgs in the dashboard shows only that org's agents.
+Profiles belong to a **workspace**. Switching workspaces shows only that workspace's agents.
 
 ## Default profile per organization
 
@@ -24,14 +24,14 @@ That profile is named **Default Agent** and gets a unique id (not a fixed string
 | What | Behavior |
 |------|----------|
 | Default profile | Exactly one per org, marked with `isDefault` |
-| Super agent | Not auto-created; platform admin may add a profile with `isSuper: true` if needed |
+| Super agent | System orchestrator visible only to Superadmins |
 | Additional orgs | Each gets its own default profile and isolated on-disk data |
 
 If a session or channel config omits a profile id — or names one that does not exist in the active org — Atlas falls back to that org's default profile.
 
 ### New custom profiles
 
-Platform admins create extra profiles inside the **active org**. Each new profile gets its own soul directory and starts with `read_file`, `write_file`, `edit_file`, `search_files`, and `knowledge_base_search` when those builtins are available. Default and super-agent profiles also receive bundled skills (memory, automations, skill authoring) when installed on the server. Assign more tools, MCP servers, and skills from the dashboard.
+Superadmins and Workspace Admins create profiles inside the **active workspace**. Each new profile gets its own soul directory and starts with `read_file`, `write_file`, `edit_file`, `search_files`, and `knowledge_base_search` when those builtins are available. Assign existing tools, MCP servers, and skills from the dashboard.
 
 Super Agent can also create profiles from chat using a confirm-first factory. For profile-creation requests, it drafts soul files and a tool plan in chat, waits for your explicit OK, then calls `create_profile`. New profiles keep `MEMORY.md` empty and receive basic file/knowledge tools automatically; extra tools still need an explicit ask. On the Profiles page, use **Ask Super Agent** (empty state or create dialog) when a Super Agent profile exists.
 
@@ -115,7 +115,7 @@ Artifacts are files your agent creates and saves for you (reports, documents, ge
 
 If you want richer personality and clearer long-term behavior, use soul files. If you only need a quick setup, the stored `systemPrompt` may be enough.
 
-Platform-admin data exports include these org/profile workspaces as part of the full Atlas data-root ZIP.
+Superadmin data exports include these workspace/profile directories as part of the full Atlas data-root ZIP.
 Restoring an export replaces the local data root after preview and confirmation; it is not a per-profile merge.
 
 ### Default Agent soul stack
@@ -148,7 +148,7 @@ Memory writes and archives use bundled skills (`update-profile-memory`, `archive
 
 | Store | Loaded into chat | How agents write |
 |-------|------------------|------------------|
-| Org memory | Yes (appended as `## Org Memory` for non-viewers) | Org admins via Settings or API — see [Org memory](/org-memory) |
+| Workspace memory | Yes (appended as `## Org Memory` for non-viewers) | Workspace Admins via Settings or API — see [Workspace memory](/org-memory) |
 | `MEMORY.md` | Yes (via soul stack) | `update-profile-memory` skill + `read_file` / `edit_file` / `write_file` |
 | `memory-archive/` | No | `archive-profile-memory` skill + file tools |
 | `artifacts/` | No (dashboard, download API, web chat preview) | `save-artifact` skill + `write_file` or `write_docx` |
@@ -179,9 +179,9 @@ Profiles are tenant-owned data inside an organization:
 | Lookup | Requesting another org's profile id returns not found |
 | Sessions | Bind to one profile within the active org |
 | Tool access | Scoped per profile |
-| Mutations | Platform-admin only; org members chat with org profiles |
+| Mutations | Workspace Admin or Superadmin; members chat with workspace profiles |
 
-Org admins manage members, not profiles. Platform admins need an active org context when creating or editing profiles.
+Workspace Admins manage members and profiles in their active workspace. Superadmins can do the same after switching to that workspace.
 
 ## When to create multiple profiles
 

@@ -15,7 +15,7 @@ export function createTelegramOutboundAdapter(
   return {
     async send(input): Promise<ChannelSendResult> {
       try {
-        const config = await loadTelegramConfigFile();
+        const config = await loadTelegramConfigFile(input.orgId);
         const token = config?.botToken.trim();
 
         if (!token) {

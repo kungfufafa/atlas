@@ -55,7 +55,8 @@ registerCleanupHandlers(() => {
 });
 
 try {
-  const config = await loadConfig();
+  const workspaceId = process.env.ATLAS_WORKSPACE_ID?.trim() || undefined;
+  const config = await loadConfig(process.env, workspaceId);
   const { serverUrl, spawnedChild: child } = await ensureServerRunning();
   spawnedChild = child;
 
@@ -64,6 +65,7 @@ try {
       (await loadLocalAuthToken("whatsapp@atlas.internal")) ?? undefined,
     baseUrl: serverUrl,
     clientOrigin: resolveWebPublicUrl(),
+    orgId: workspaceId,
   });
   const health = await client.health();
 
@@ -76,16 +78,19 @@ try {
   const sessionStore = new SessionStore();
   await sessionStore.load();
 
-  const orgStore = new ChannelOrgStore(getChannelOrgSelectionPath("whatsapp"));
+  const orgStore = new ChannelOrgStore(
+    getChannelOrgSelectionPath("whatsapp", workspaceId)
+  );
   await orgStore.load();
 
-  const authStore = new WhatsAppAuthStore();
+  const authStore = new WhatsAppAuthStore(workspaceId);
   await authStore.reload();
 
   const handleMessage = createChatHandler({
     authStore,
     client,
     config,
+    fixedWorkspaceId: workspaceId,
     getSocket: () =>
       socketHandle ? ((socketHandle as any).socket ?? null) : null,
     orgStore,
@@ -99,6 +104,7 @@ try {
       console.log("WhatsApp connected.");
       void clearWhatsAppQrCode();
       void syncWhatsAppOwnerPairing({
+        orgId: workspaceId,
         ownerJid: me.id,
         ownerLid: me.lid,
       }).then(() => authStore.reload());
@@ -127,6 +133,7 @@ try {
         sendMessage: (jid, content) => activeSocket.sendMessage(jid, content),
       };
     },
+    orgId: workspaceId,
   });
 
   console.log(
@@ -137,7 +144,7 @@ try {
   const paired = authConfig?.pairedJid ? "yes" : "no";
   const pendingCode = authConfig?.pairingCode ? "yes" : "no";
   console.log(
-    `Atlas WhatsApp bridge · ${serverUrl} · profile ${config.profileId} · paired ${paired} · pairing code ${pendingCode}`
+    `Atlas WhatsApp bridge · ${serverUrl} · workspace ${workspaceId ?? "legacy selectable mode"} · profile ${config.profileId} · paired ${paired} · pairing code ${pendingCode}`
   );
 
   await socket.start();

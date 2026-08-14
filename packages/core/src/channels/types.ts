@@ -16,6 +16,7 @@ export interface EmailOutboundAdapter {
 export interface TelegramOutboundAdapter {
   send(input: {
     text: string;
+    orgId?: string | null;
     chatIds?: number[];
     topicId?: number;
     parseMode?: "HTML";
@@ -23,5 +24,8 @@ export interface TelegramOutboundAdapter {
 }
 
 export interface WhatsAppOutboundAdapter {
-  send(input: { text: string }): Promise<ChannelSendResult>;
+  send(input: {
+    orgId?: string | null;
+    text: string;
+  }): Promise<ChannelSendResult>;
 }

@@ -325,8 +325,10 @@ export function registerAutomationRoutes(
 
   app.post("/v1/automations/draft", async (c) => {
     requireNotViewerFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<DraftAutomationRequest>(c.req.raw);
     const automation = await agent.draftAutomation(
+      orgId,
       body.prompt,
       parseChannel(body.channel)
     );

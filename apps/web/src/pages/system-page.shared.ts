@@ -7,7 +7,7 @@ import {
 
 export const SYSTEM_TABS = [
   { icon: DashboardSquare01Icon, id: "status" as const, label: "Status" },
-  { icon: Building03Icon, id: "organization" as const, label: "Organization" },
+  { icon: Building03Icon, id: "organization" as const, label: "Workspace" },
   { icon: LayoutGridIcon, id: "tools" as const, label: "Tools" },
   { icon: Plug01Icon, id: "mcp" as const, label: "MCP" },
 ] as const;

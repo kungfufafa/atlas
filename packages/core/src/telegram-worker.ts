@@ -20,8 +20,8 @@ export interface TelegramWorkerHeartbeat {
 const DEFAULT_HEARTBEAT_MAX_AGE_MS = 45_000;
 const HEARTBEAT_FILENAME = "worker-heartbeat.json";
 
-export function getTelegramWorkerHeartbeatPath(): string {
-  return join(getTelegramConfigDir(), HEARTBEAT_FILENAME);
+export function getTelegramWorkerHeartbeatPath(orgId?: string | null): string {
+  return join(getTelegramConfigDir(orgId), HEARTBEAT_FILENAME);
 }
 
 export function resolveTelegramWorkerStatus(
@@ -127,9 +127,19 @@ export async function isTelegramWorkerRunning(
   return isHeartbeatAlive(await readTelegramWorkerHeartbeat(), maxAgeMs);
 }
 
-export async function getTelegramWorkerStatus(): Promise<TelegramWorkerStatus> {
-  const settings = await loadTelegramSettingsPublic();
-  const running = await isTelegramWorkerRunning();
+export async function getTelegramWorkerStatus(
+  orgId?: string | null
+): Promise<TelegramWorkerStatus> {
+  const settings = await loadTelegramSettingsPublic(orgId);
+  const heartbeat = await readTelegramWorkerHeartbeatForOrg(orgId);
+  const running = isHeartbeatAlive(heartbeat);
 
   return resolveTelegramWorkerStatus(settings, running);
+}
+
+async function readTelegramWorkerHeartbeatForOrg(
+  orgId?: string | null
+): Promise<TelegramWorkerHeartbeat | null> {
+  const raw = await readTextOrNull(getTelegramWorkerHeartbeatPath(orgId));
+  return raw === null ? null : parseTelegramWorkerHeartbeat(raw.trim());
 }

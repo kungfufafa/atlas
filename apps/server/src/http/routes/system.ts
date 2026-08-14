@@ -7,7 +7,10 @@ import {
   resolveRequestClientOrigin,
 } from "../../services/composio-callback-url";
 import type { ServerOptions } from "../context";
-import { requireOrgAdminFromContext } from "../org-guards";
+import {
+  requireActiveOrgIdFromContext,
+  requirePlatformAdminFromContext,
+} from "../org-guards";
 import { errorResponse, readJson } from "../shared";
 import type { HonoApp } from "../types";
 
@@ -185,19 +188,20 @@ export function registerSystemRoutes(
     );
   });
 
-  app.openapi(systemStatusRoute, async (c) =>
-    c.json(await systemStatus.getStatus(), 200)
-  );
+  app.openapi(systemStatusRoute, async (c) => {
+    const orgId = requireActiveOrgIdFromContext(c);
+    return c.json(await systemStatus.getStatus(orgId), 200);
+  });
 
   app.openapi(getWebPublicUrlRoute, async (c) => {
-    requireOrgAdminFromContext(c);
+    requirePlatformAdminFromContext(c);
     return c.json(await getWebPublicUrlSettings(), 200);
   });
 
   app.openAPIRegistry.registerPath(updateWebPublicUrlRoute);
 
   app.put("/v1/system/web-public-url", async (c) => {
-    requireOrgAdminFromContext(c);
+    requirePlatformAdminFromContext(c);
     const body = await readJson<UpdateWebPublicUrlRequest>(c.req.raw);
     const webPublicUrl = resolveRequestClientOrigin(
       c.req.raw,

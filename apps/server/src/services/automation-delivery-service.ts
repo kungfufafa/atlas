@@ -80,10 +80,14 @@ export class AutomationDeliveryService {
     } else if (delivery.channel === "telegram") {
       result = await this.telegram.send({
         chatIds: delivery.chatId ? [delivery.chatId] : undefined,
+        orgId: automation.orgId,
         text: formatted.text,
       });
     } else {
-      result = await this.whatsapp.send({ text: formatted.text });
+      result = await this.whatsapp.send({
+        orgId: automation.orgId,
+        text: formatted.text,
+      });
     }
 
     await this.automationService.updateRunDelivery(run.id, automation.id, {

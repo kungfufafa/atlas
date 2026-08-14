@@ -177,6 +177,12 @@ export interface StoredWorkspaceSettingsRecord {
   visionModel: string | null;
 }
 
+export interface StoredOrgAiConfigRecord {
+  config: unknown;
+  orgId: string;
+  updatedAt: string;
+}
+
 export type StoredCodingAgentHarnessKind =
   | "codex"
   | "claude_code"
@@ -615,6 +621,7 @@ export interface DatabaseAdapter {
   getNotificationDestination(
     id: string
   ): Promise<StoredNotificationDestinationRecord | null>;
+  getOrgAiConfig(orgId: string): Promise<StoredOrgAiConfigRecord | null>;
   getOrganizationById(id: string): Promise<StoredOrganizationRecord | null>;
   getOrganizationBySlug(slug: string): Promise<StoredOrganizationRecord | null>;
   getOrgInviteByTokenHash(
@@ -685,7 +692,9 @@ export interface DatabaseAdapter {
   getUserById(id: string): Promise<StoredUserRecord | null>;
   getUserContext(orgId: string, userId: string): Promise<string | null>;
 
-  getWorkspaceSettings(): Promise<StoredWorkspaceSettingsRecord | null>;
+  getWorkspaceSettings(
+    orgId?: string
+  ): Promise<StoredWorkspaceSettingsRecord | null>;
   incrementLlmTurnUsage(orgId: string, delta: LlmTurnUsageDelta): Promise<void>;
   incrementLlmUsageStats(
     delta: LlmUsageStatsDelta,
@@ -905,6 +914,7 @@ export interface DatabaseAdapter {
   upsertNotificationDestination(
     record: StoredNotificationDestinationRecord
   ): Promise<void>;
+  upsertOrgAiConfig(record: StoredOrgAiConfigRecord): Promise<void>;
 
   upsertOrganization(record: StoredOrganizationRecord): Promise<void>;
   upsertOrgMember(record: StoredOrgMemberRecord): Promise<void>;

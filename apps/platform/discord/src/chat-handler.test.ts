@@ -42,6 +42,7 @@ async function createPairedHandler(
     configProfileId?: string;
     pairedUserIds?: string[];
     allowedUserIds?: string[];
+    fixedWorkspaceId?: string;
   } = {}
 ) {
   await writeDiscordConfigIni(homeDir, {
@@ -70,6 +71,7 @@ async function createPairedHandler(
       botToken: "discord-bot-token",
       profileId: options.configProfileId ?? "default",
     },
+    fixedWorkspaceId: options.fixedWorkspaceId,
     orgStore,
     sessionStore,
     threadStore,
@@ -1603,5 +1605,45 @@ describe("createChatHandler guild thread routing", () => {
     releaseHang();
     await first;
     expect(order).toEqual(["first-start", "second", "first-end"]);
+  });
+
+  test("locks chat to fixedWorkspaceId and prevents switching workspaces", async () => {
+    await withTempHome(async (homeDir) => {
+      const { handleMessage, calls, client } = await createPairedHandler(
+        homeDir,
+        {
+          fixedWorkspaceId: "org_b",
+          orgs: createMultiTestOrgs(),
+        }
+      );
+
+      const dm = createDmMessage({
+        content: "hello",
+        userId: "424242424242424242",
+      });
+      await handleMessage(dm.message);
+
+      expect(calls.createSession).toBe(1);
+      expect(calls.sendStream).toBe(1);
+      expect(
+        dm.sentMessages.some((reply) =>
+          reply.includes("Choose an organization")
+        )
+      ).toBe(false);
+
+      const orgCmd = createDmMessage({
+        content: "/org",
+        userId: "424242424242424242",
+      });
+      await handleMessage(orgCmd.message);
+
+      expect(
+        orgCmd.sentMessages.some((reply) =>
+          reply.includes(
+            "belongs to one workspace and cannot switch workspaces"
+          )
+        )
+      ).toBe(true);
+    });
   });
 });

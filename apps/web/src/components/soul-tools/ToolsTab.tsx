@@ -61,7 +61,7 @@ export function ToolsTab({ embedded = false }: { embedded?: boolean } = {}) {
 
   function goToCreateTool() {
     if (!superAgentProfile) {
-      setActionError("No super agent profile exists in this organization.");
+      setActionError("No super agent profile exists in this workspace.");
       return;
     }
 

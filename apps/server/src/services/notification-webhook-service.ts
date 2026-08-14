@@ -63,6 +63,7 @@ export class NotificationWebhookService {
     const normalized = normalizeNotificationWebhookRequest(payload);
     const result = await this.telegram.send({
       chatIds: [destination.config.chatId],
+      orgId: destination.orgId,
       parseMode: "HTML",
       text: formatNotificationMessage(normalized),
       ...(destination.config.topicId

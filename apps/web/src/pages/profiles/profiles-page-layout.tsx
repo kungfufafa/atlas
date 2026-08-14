@@ -50,7 +50,7 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
   } = state;
   const { user, activeOrg } = useAuth();
   const isOrgAdmin = activeOrg?.role === "admin";
-  const canCreateProfile = user?.isPlatformAdmin === true;
+  const canCreateProfile = user?.isPlatformAdmin === true || isOrgAdmin;
   const { navigateToNewChat } = useAppNavigation();
   const superAgentProfileId = resolveSuperAgentChatProfileId(profiles);
   const { data: skillProposalsData } = useSkillProposals(

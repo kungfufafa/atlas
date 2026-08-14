@@ -31,10 +31,15 @@ export class SystemStatusService {
     private readonly databaseAdapter: DatabaseAdapter | null = null
   ) {}
 
-  async getStatus(): Promise<SystemStatusResponse> {
-    const providerConfigured = this.agent.providerConfigured;
-    const models = await this.agent.getModels();
-    const usageFields = this.agent.getUsageStatusFields();
+  async getStatus(orgId?: string): Promise<SystemStatusResponse> {
+    const usageFields = orgId
+      ? await this.agent.getUsageStatusFieldsForOrg(orgId)
+      : {
+          ...this.agent.getUsageStatusFields(),
+          providerConfigured: this.agent.providerConfigured,
+        };
+    const providerConfigured = usageFields.providerConfigured;
+    const models = await this.agent.getModels(orgId);
 
     const statuses = await this.workerManager.getAllWorkerStatuses();
     const automationProcess = statuses.automation ?? null;
@@ -44,10 +49,28 @@ export class SystemStatusService {
       automationProcess?.managed === true &&
       automationProcess.status === "online";
 
+    const canReadWorkspaceProcesses =
+      typeof this.workerManager.getWorkspaceWorkerStatus === "function";
+    const workspaceProcesses =
+      orgId && canReadWorkspaceProcesses
+        ? await Promise.all([
+            this.workerManager.getWorkspaceWorkerStatus("telegram", orgId),
+            this.workerManager.getWorkspaceWorkerStatus("whatsapp", orgId),
+            this.workerManager.getWorkspaceWorkerStatus("discord", orgId),
+          ])
+        : [statuses.telegram, statuses.whatsapp, statuses.discord];
     const [telegramStatus, whatsappStatus, discordStatus] = await Promise.all([
-      this.resolveWorkerStatus("telegram", statuses.telegram),
-      this.resolveWorkerStatus("whatsapp", statuses.whatsapp),
-      this.resolveWorkerStatus("discord", statuses.discord),
+      this.resolveWorkerStatus(
+        "telegram",
+        workspaceProcesses[0] ?? null,
+        orgId
+      ),
+      this.resolveWorkerStatus(
+        "whatsapp",
+        workspaceProcesses[1] ?? null,
+        orgId
+      ),
+      this.resolveWorkerStatus("discord", workspaceProcesses[2] ?? null, orgId),
     ]);
 
     return {
@@ -73,7 +96,7 @@ export class SystemStatusService {
       mcp: this.mcpService
         ? await this.mcpService.getStatusSummary()
         : { assignedProfileCount: 0, connectedCount: 0, serverCount: 0 },
-      server: await this.getServerStatus(),
+      server: await this.getServerStatus(providerConfigured),
       taskWorker: {
         activeRuns: this.taskRunner.getActiveRunCount(),
         ok: true,
@@ -86,13 +109,14 @@ export class SystemStatusService {
 
   private async resolveWorkerStatus(
     name: "telegram" | "whatsapp" | "discord",
-    pm2Status: WorkerProcessInfo | null
+    pm2Status: WorkerProcessInfo | null,
+    orgId?: string
   ) {
     if (pm2Status?.managed) {
       const running = pm2Status.status === "online";
 
       if (name === "telegram") {
-        const heartbeat = await getTelegramWorkerStatus();
+        const heartbeat = await getTelegramWorkerStatus(orgId);
         return {
           ...heartbeat,
           process: pm2Status,
@@ -101,7 +125,7 @@ export class SystemStatusService {
       }
 
       if (name === "discord") {
-        const heartbeat = await getDiscordWorkerStatus();
+        const heartbeat = await getDiscordWorkerStatus(orgId);
         return {
           ...heartbeat,
           process: pm2Status,
@@ -109,7 +133,7 @@ export class SystemStatusService {
         };
       }
 
-      const heartbeat = await getWhatsAppWorkerStatus();
+      const heartbeat = await getWhatsAppWorkerStatus(orgId);
       return {
         ...heartbeat,
         process: pm2Status,
@@ -118,14 +142,14 @@ export class SystemStatusService {
     }
 
     if (name === "telegram") {
-      return getTelegramWorkerStatus();
+      return getTelegramWorkerStatus(orgId);
     }
 
     if (name === "discord") {
-      return getDiscordWorkerStatus();
+      return getDiscordWorkerStatus(orgId);
     }
 
-    return getWhatsAppWorkerStatus();
+    return getWhatsAppWorkerStatus(orgId);
   }
 
   private getLlmUsage(
@@ -146,7 +170,9 @@ export class SystemStatusService {
     };
   }
 
-  private async getServerStatus(): Promise<HealthResponse> {
+  private async getServerStatus(
+    providerConfigured: boolean
+  ): Promise<HealthResponse> {
     const composioConfigured = await isComposioConfiguredAsync();
     const humanUserCount = (await this.databaseAdapter?.countHumanUsers()) ?? 0;
 
@@ -158,7 +184,7 @@ export class SystemStatusService {
         : false,
       composioConfigured,
       ok: true,
-      providerConfigured: this.agent.providerConfigured,
+      providerConfigured,
       userConfigured: humanUserCount > 0,
     };
   }

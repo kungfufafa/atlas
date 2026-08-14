@@ -1,6 +1,7 @@
 import {
   loadWhatsAppConfigFile,
   resolveWhatsAppOutboundPort,
+  saveWhatsAppOutboundPort,
 } from "@atlas/core";
 
 export interface WhatsAppOutboundSendHandle {
@@ -9,13 +10,14 @@ export interface WhatsAppOutboundSendHandle {
 
 export interface WhatsAppOutboundServerOptions {
   getSendHandle: () => WhatsAppOutboundSendHandle | null;
+  orgId?: string | null;
 }
 
 export async function startWhatsAppOutboundServer(
   options: WhatsAppOutboundServerOptions
 ): Promise<{ port: number; stop: () => void }> {
-  const config = await loadWhatsAppConfigFile();
-  const port = resolveWhatsAppOutboundPort(config);
+  const config = await loadWhatsAppConfigFile(options.orgId);
+  const port = config?.outboundPort ? resolveWhatsAppOutboundPort(config) : 0;
   let stopped = false;
 
   const server = Bun.serve({
@@ -27,7 +29,7 @@ export async function startWhatsAppOutboundServer(
       const url = new URL(request.url);
 
       if (request.method === "POST" && url.pathname === "/send") {
-        const latestConfig = await loadWhatsAppConfigFile();
+        const latestConfig = await loadWhatsAppConfigFile(options.orgId);
         const pairedJid = latestConfig?.pairedJid?.trim();
 
         if (!pairedJid) {
@@ -78,6 +80,10 @@ export async function startWhatsAppOutboundServer(
     hostname: "127.0.0.1",
     port,
   });
+
+  if (server.port) {
+    await saveWhatsAppOutboundPort(server.port, options.orgId);
+  }
 
   return {
     port: server.port ?? port,

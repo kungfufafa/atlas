@@ -111,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const createOrg = useCallback(
     async (input: { name: string; slug: string }) => {
       if (!user?.isPlatformAdmin) {
-        throw new Error("Only platform admins can create organizations.");
+        throw new Error("Only Superadmins can create workspaces.");
       }
 
       const created = await client.createUserOrganization(input);
@@ -130,11 +130,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (orgId: string, input: UpdateOrganizationRequest) => {
       const org = orgs.find((entry) => entry.id === orgId);
       if (!org) {
-        throw new Error("Organization not found.");
+        throw new Error("Workspace not found.");
       }
 
       if (!user?.isPlatformAdmin && org.role !== "admin") {
-        throw new Error("Only org admins can edit organizations.");
+        throw new Error("Only Workspace Admins can edit workspaces.");
       }
 
       if (user?.isPlatformAdmin) {

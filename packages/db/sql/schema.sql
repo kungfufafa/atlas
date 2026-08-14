@@ -39,6 +39,7 @@ CREATE TABLE IF NOT EXISTS profile_tools (
 
 CREATE TABLE IF NOT EXISTS sessions (
   id TEXT PRIMARY KEY NOT NULL,
+  org_id TEXT,
   profile_id TEXT NOT NULL,
   channel TEXT NOT NULL,
   user_id TEXT,
@@ -46,8 +47,18 @@ CREATE TABLE IF NOT EXISTS sessions (
   title TEXT,
   agent_todos TEXT DEFAULT '[]' NOT NULL,
   agent_questionnaire TEXT,
+  FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE,
   FOREIGN KEY (profile_id) REFERENCES profiles (id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS sessions_org_id_idx ON sessions (org_id);
+
+CREATE TABLE IF NOT EXISTS org_ai_configs (
+  org_id TEXT PRIMARY KEY NOT NULL,
+  config TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS session_messages (
@@ -401,13 +412,19 @@ CREATE UNIQUE INDEX IF NOT EXISTS browser_sessions_token_hash_unique
 
 CREATE TABLE IF NOT EXISTS workspace_settings (
   id TEXT PRIMARY KEY NOT NULL,
+  org_id TEXT,
   vision_model TEXT,
   transcription_model TEXT,
   image_model TEXT,
   coding_agent_harnesses TEXT NOT NULL DEFAULT '[]',
   selected_coding_agent_harness TEXT,
-  updated_at TEXT NOT NULL
+  token_optimizer_enabled INTEGER,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS workspace_settings_org_id_unique
+  ON workspace_settings (org_id) WHERE org_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS composio_toolkits (
   id TEXT PRIMARY KEY NOT NULL,

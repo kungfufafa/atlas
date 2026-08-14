@@ -5,6 +5,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Layout } from "@/components/Layout";
 import { PlatformAdminGuard } from "@/components/PlatformAdminGuard";
 import { SetupGuard } from "@/components/SetupGuard";
+import { WorkspaceAdminGuard } from "@/components/WorkspaceAdminGuard";
 import { AppProvider } from "@/context/app-context";
 import { AuthProvider } from "@/context/auth-context";
 import { AppQueryPrefetch } from "@/hooks/use-app-queries";
@@ -66,8 +67,10 @@ function AppShell() {
                     path="/system/playground/:toolId"
                   />
                   <Route element={<SystemPage />} path="/system" />
-                  <Route element={<PlatformAdminGuard />}>
+                  <Route element={<WorkspaceAdminGuard />}>
                     <Route element={<ProfilesPage />} path="/profiles" />
+                  </Route>
+                  <Route element={<PlatformAdminGuard />}>
                     <Route
                       element={<SkillDetailPage />}
                       path="/profiles/skills/:skillId"

@@ -51,7 +51,12 @@ import {
 import { getTimezoneCatalog } from "../../services/timezone-catalog-service";
 import { streamAgentBrowserInstall } from "../coding-harness-install-stream";
 import type { ServerOptions } from "../context";
-import { requireOrgAdminFromContext } from "../org-guards";
+import {
+  requireActiveOrgIdFromContext,
+  requireNotViewerFromContext,
+  requireOrgAdminOrPlatformAdminFromContext,
+  requirePlatformAdminFromContext,
+} from "../org-guards";
 import { errorResponse, getRequestAuth, json, readJson } from "../shared";
 import type { HonoApp } from "../types";
 
@@ -1147,21 +1152,22 @@ export function registerModelRoutes(
   });
 
   app.get("/v1/models", async (c) => {
-    getRequestAuth(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const source = c.req.query("source");
     const modelsSource =
       source === "remote" ? ("remote" as const) : ("catalog" as const);
     return json<ModelsResponse>(
-      await agent.getModels({ source: modelsSource })
+      await agent.getModels(orgId, { source: modelsSource })
     );
   });
 
   app.post("/v1/models/discover", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<DiscoverModelsRequest>(c.req.raw);
 
     try {
-      const result = await agent.discoverModels(body);
+      const result = await agent.discoverModels(orgId, body);
       return json<ModelsResponse>(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -1170,12 +1176,13 @@ export function registerModelRoutes(
   });
 
   app.get("/v1/providers", async (c) => {
-    getRequestAuth(c);
-    return json<ListProvidersResponse>(await agent.listProviders());
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    return json<ListProvidersResponse>(await agent.listProviders(orgId));
   });
 
   app.post("/v1/providers/test", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const body = await readJson<TestProviderRequest>(c.req.raw);
 
     try {
@@ -1191,16 +1198,21 @@ export function registerModelRoutes(
   });
 
   app.post("/v1/providers", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<CreateProviderRequest>(c.req.raw);
-    return json<CreateProviderResponse>(await agent.createProvider(body));
+    return json<CreateProviderResponse>(
+      await agent.createProvider(orgId, body)
+    );
   });
 
   app.patch("/v1/providers/:providerId", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<UpdateProviderRequest>(c.req.raw);
     return json<UpdateProviderResponse>(
       await agent.updateProvider(
+        orgId,
         decodeURIComponent(c.req.param("providerId")),
         body
       )
@@ -1208,16 +1220,21 @@ export function registerModelRoutes(
   });
 
   app.delete("/v1/providers/:providerId", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     return json<DeleteProviderResponse>(
-      await agent.deleteProvider(decodeURIComponent(c.req.param("providerId")))
+      await agent.deleteProvider(
+        orgId,
+        decodeURIComponent(c.req.param("providerId"))
+      )
     );
   });
 
   app.put("/v1/settings/provider", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<ConfigureProviderRequest>(c.req.raw);
-    const result = await agent.configureProvider(body);
+    const result = await agent.configureProvider(orgId, body);
     return json<ConfigureProviderResponse>(result);
   });
 
@@ -1227,43 +1244,55 @@ export function registerModelRoutes(
   });
 
   app.get("/v1/settings/timezone", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     return json<TimezoneSettingsResponse>({
-      timezone: await agent.getUserTimezone(),
+      timezone: await agent.getOrgTimezone(orgId),
     });
   });
 
   app.put("/v1/settings/timezone", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<UpdateTimezoneRequest>(c.req.raw);
-    const timezone = await agent.setUserTimezone(body.timezone);
+    const timezone = await agent.setOrgTimezone(orgId, body.timezone);
     return json<TimezoneSettingsResponse>({ timezone });
   });
 
   app.get("/v1/settings/thinking", async (c) => {
-    getRequestAuth(c);
-    return json<ThinkingSettingsResponse>(await agent.getThinkingSettings());
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    return json<ThinkingSettingsResponse>(
+      await agent.getOrgThinkingSettings(orgId)
+    );
   });
 
   app.put("/v1/settings/thinking", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<UpdateThinkingRequest>(c.req.raw);
     return json<ThinkingSettingsResponse>(
-      await agent.setThinkingSettings(body)
+      await agent.setOrgThinkingSettings(orgId, body)
     );
   });
 
   app.get("/v1/settings/vision", async (c) => {
-    getRequestAuth(c);
-    return json<VisionSettingsResponse>(await agent.getVisionSettings());
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    return json<VisionSettingsResponse>(
+      await agent.getOrgVisionSettings(orgId)
+    );
   });
 
   app.put("/v1/settings/vision", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<UpdateVisionRequest>(c.req.raw);
 
     try {
-      return json<VisionSettingsResponse>(await agent.setVisionSettings(body));
+      return json<VisionSettingsResponse>(
+        await agent.setOrgVisionSettings(orgId, body)
+      );
     } catch (error) {
       if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
@@ -1275,19 +1304,21 @@ export function registerModelRoutes(
   });
 
   app.get("/v1/settings/transcription", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     return json<TranscriptionSettingsResponse>(
-      await agent.getTranscriptionSettings()
+      await agent.getOrgTranscriptionSettings(orgId)
     );
   });
 
   app.put("/v1/settings/transcription", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<UpdateTranscriptionRequest>(c.req.raw);
 
     try {
       return json<TranscriptionSettingsResponse>(
-        await agent.setTranscriptionSettings(body)
+        await agent.setOrgTranscriptionSettings(orgId, body)
       );
     } catch (error) {
       if (error instanceof AtlasApiError) {
@@ -1300,11 +1331,14 @@ export function registerModelRoutes(
   });
 
   app.post("/v1/audio/transcribe", async (c) => {
-    getRequestAuth(c);
+    requireNotViewerFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<TranscribeAudioRequest>(c.req.raw);
 
     try {
-      return json<TranscribeAudioResponse>(await agent.transcribeAudio(body));
+      return json<TranscribeAudioResponse>(
+        await agent.transcribeAudioForOrg(orgId, body)
+      );
     } catch (error) {
       if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
@@ -1316,19 +1350,21 @@ export function registerModelRoutes(
   });
 
   app.get("/v1/settings/image-generation", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     return json<ImageGenerationSettingsResponse>(
-      await agent.getImageGenerationSettings()
+      await agent.getOrgImageGenerationSettings(orgId)
     );
   });
 
   app.put("/v1/settings/image-generation", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<UpdateImageGenerationRequest>(c.req.raw);
 
     try {
       return json<ImageGenerationSettingsResponse>(
-        await agent.setImageGenerationSettings(body)
+        await agent.setOrgImageGenerationSettings(orgId, body)
       );
     } catch (error) {
       if (error instanceof AtlasApiError) {
@@ -1341,11 +1377,14 @@ export function registerModelRoutes(
   });
 
   app.post("/v1/images/generate", async (c) => {
-    getRequestAuth(c);
+    requireNotViewerFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<GenerateImageRequest>(c.req.raw);
 
     try {
-      return json<GenerateImageResponse>(await agent.generateImage(body));
+      return json<GenerateImageResponse>(
+        await agent.generateImageForOrg(orgId, body)
+      );
     } catch (error) {
       if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
@@ -1357,12 +1396,12 @@ export function registerModelRoutes(
   });
 
   app.get("/v1/settings/email", async (c) => {
-    requireOrgAdminFromContext(c);
+    requirePlatformAdminFromContext(c);
     return json<EmailSettingsResponse>(await agent.getEmailSettings());
   });
 
   app.put("/v1/settings/email", async (c) => {
-    requireOrgAdminFromContext(c);
+    requirePlatformAdminFromContext(c);
     const body = await readJson<UpdateEmailSettingsRequest>(c.req.raw);
 
     try {
@@ -1377,7 +1416,7 @@ export function registerModelRoutes(
   });
 
   app.post("/v1/settings/email/test", async (c) => {
-    const auth = requireOrgAdminFromContext(c);
+    const auth = requirePlatformAdminFromContext(c);
     const body = await readJson<SendEmailTestRequest>(c.req.raw).catch(
       () => ({}) as SendEmailTestRequest
     );
@@ -1396,14 +1435,14 @@ export function registerModelRoutes(
   });
 
   app.get("/v1/settings/agent-browser", async (c) => {
-    requireOrgAdminFromContext(c);
+    requirePlatformAdminFromContext(c);
     return json<AgentBrowserStatusResponse>(
       await agent.getAgentBrowserStatus()
     );
   });
 
   app.post("/v1/settings/agent-browser/install", async (c) => {
-    requireOrgAdminFromContext(c);
+    requirePlatformAdminFromContext(c);
 
     return streamAgentBrowserInstall(
       async (send) => {
@@ -1427,18 +1466,22 @@ export function registerModelRoutes(
   });
 
   app.get("/v1/settings/telegram", async (c) => {
-    getRequestAuth(c);
-    return json<TelegramSettingsResponse>(await agent.getTelegramSettings());
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    return json<TelegramSettingsResponse>(
+      await agent.getTelegramSettings(orgId)
+    );
   });
 
   app.put("/v1/settings/telegram", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<UpdateTelegramSettingsRequest>(c.req.raw);
 
     try {
-      return json<TelegramSettingsResponse>(
-        await agent.setTelegramSettings(body)
-      );
+      const settings = await agent.setTelegramSettings(orgId, body);
+      await workerManager.startWorkspaceWorker("telegram", orgId);
+      return json<TelegramSettingsResponse>(settings);
     } catch (error) {
       if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
@@ -1449,10 +1492,11 @@ export function registerModelRoutes(
   });
 
   app.post("/v1/settings/telegram/handshake", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     try {
       return json<TelegramSettingsResponse>(
-        await agent.regenerateTelegramHandshake()
+        await agent.regenerateTelegramHandshake(orgId)
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -1461,18 +1505,20 @@ export function registerModelRoutes(
   });
 
   app.get("/v1/settings/discord", async (c) => {
-    getRequestAuth(c);
-    return json<DiscordSettingsResponse>(await agent.getDiscordSettings());
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    return json<DiscordSettingsResponse>(await agent.getDiscordSettings(orgId));
   });
 
   app.put("/v1/settings/discord", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<UpdateDiscordSettingsRequest>(c.req.raw);
 
     try {
-      return json<DiscordSettingsResponse>(
-        await agent.setDiscordSettings(body)
-      );
+      const settings = await agent.setDiscordSettings(orgId, body);
+      await workerManager.startWorkspaceWorker("discord", orgId);
+      return json<DiscordSettingsResponse>(settings);
     } catch (error) {
       if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
@@ -1483,10 +1529,11 @@ export function registerModelRoutes(
   });
 
   app.post("/v1/settings/discord/handshake", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     try {
       return json<DiscordSettingsResponse>(
-        await agent.regenerateDiscordHandshake()
+        await agent.regenerateDiscordHandshake(orgId)
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -1495,12 +1542,12 @@ export function registerModelRoutes(
   });
 
   app.get("/v1/settings/composio", async (c) => {
-    getRequestAuth(c);
+    requirePlatformAdminFromContext(c);
     return json<ComposioSettingsResponse>(await agent.getComposioSettings());
   });
 
   app.put("/v1/settings/composio", async (c) => {
-    getRequestAuth(c);
+    requirePlatformAdminFromContext(c);
     const body = await readJson<UpdateComposioSettingsRequest>(c.req.raw);
 
     try {
@@ -1516,18 +1563,22 @@ export function registerModelRoutes(
     }
   });
   app.get("/v1/settings/whatsapp", async (c) => {
-    getRequestAuth(c);
-    return json<WhatsAppSettingsResponse>(await agent.getWhatsAppSettings());
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    return json<WhatsAppSettingsResponse>(
+      await agent.getWhatsAppSettings(orgId)
+    );
   });
 
   app.put("/v1/settings/whatsapp", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<UpdateWhatsAppSettingsRequest>(c.req.raw);
 
     try {
-      return json<WhatsAppSettingsResponse>(
-        await agent.setWhatsAppSettings(body)
-      );
+      const settings = await agent.setWhatsAppSettings(orgId, body);
+      await workerManager.startWorkspaceWorker("whatsapp", orgId);
+      return json<WhatsAppSettingsResponse>(settings);
     } catch (error) {
       if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
@@ -1539,10 +1590,11 @@ export function registerModelRoutes(
   });
 
   app.post("/v1/settings/whatsapp/pairing-code", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     try {
       return json<WhatsAppSettingsResponse>(
-        await agent.regenerateWhatsAppPairingCode()
+        await agent.regenerateWhatsAppPairingCode(orgId)
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -1551,13 +1603,16 @@ export function registerModelRoutes(
   });
 
   app.post("/v1/settings/whatsapp/reconnect", async (c) => {
-    getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     try {
-      await workerManager.stopWorker("whatsapp").catch(() => {});
-      const settings = await resetWhatsAppSessionForReconnect();
+      await workerManager
+        .stopWorkspaceWorker("whatsapp", orgId)
+        .catch(() => {});
+      const settings = await resetWhatsAppSessionForReconnect(orgId);
 
       try {
-        await workerManager.startWorker("whatsapp");
+        await workerManager.startWorkspaceWorker("whatsapp", orgId);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         return errorResponse(

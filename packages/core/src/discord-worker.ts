@@ -21,8 +21,8 @@ export interface DiscordWorkerHeartbeat {
 const DEFAULT_HEARTBEAT_MAX_AGE_MS = 45_000;
 const HEARTBEAT_FILENAME = "worker-heartbeat.json";
 
-export function getDiscordWorkerHeartbeatPath(): string {
-  return join(getDiscordConfigDir(), HEARTBEAT_FILENAME);
+export function getDiscordWorkerHeartbeatPath(orgId?: string | null): string {
+  return join(getDiscordConfigDir(orgId), HEARTBEAT_FILENAME);
 }
 
 export function resolveDiscordWorkerStatus(
@@ -140,9 +140,13 @@ export async function isDiscordWorkerRunning(
   return isHeartbeatAlive(await readDiscordWorkerHeartbeat(), maxAgeMs);
 }
 
-export async function getDiscordWorkerStatus(): Promise<DiscordWorkerStatus> {
-  const settings = await loadDiscordSettingsPublic();
-  const heartbeat = await readDiscordWorkerHeartbeat();
+export async function getDiscordWorkerStatus(
+  orgId?: string | null
+): Promise<DiscordWorkerStatus> {
+  const settings = await loadDiscordSettingsPublic(orgId);
+  const raw = await readTextOrNull(getDiscordWorkerHeartbeatPath(orgId));
+  const heartbeat =
+    raw === null ? null : parseDiscordWorkerHeartbeat(raw.trim());
   const running = isHeartbeatAlive(heartbeat);
 
   return resolveDiscordWorkerStatus(

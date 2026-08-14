@@ -144,7 +144,7 @@ function stagedSkillManageResult(options: {
     staged: true as const,
     ...(options.path === undefined ? {} : { path: options.path }),
     matchHint:
-      "The skill change is pending admin approval and is not live yet. It will not match until an org admin approves the proposal.",
+      "The skill change is pending admin approval and is not live yet. It will not match until a Workspace Admin approves the proposal.",
   };
 }
 

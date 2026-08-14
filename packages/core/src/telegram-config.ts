@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { join } from "node:path";
 import { parseIni, readTextOrNull, writePrivateTextFile } from "./fs";
-import { getUserConfigDir } from "./user-config";
+import { getWorkspaceChannelDir } from "./workspace-channel-paths";
 
 export const DEFAULT_TELEGRAM_PROFILE_ID = "default";
 
@@ -28,12 +28,14 @@ export interface UpdateTelegramSettingsInput {
   profileId?: string;
 }
 
-export function getTelegramConfigDir(): string {
-  return join(getUserConfigDir(), "telegram");
+export function getTelegramConfigDir(orgId?: string | null): string {
+  return orgId === undefined
+    ? getWorkspaceChannelDir("telegram")
+    : getWorkspaceChannelDir("telegram", orgId);
 }
 
-export function getTelegramConfigPath(): string {
-  return join(getTelegramConfigDir(), "config.ini");
+export function getTelegramConfigPath(orgId?: string | null): string {
+  return join(getTelegramConfigDir(orgId), "config.ini");
 }
 
 export function maskBotToken(token: string): string | null {
@@ -90,8 +92,10 @@ export function isTelegramUserAuthorized(
   );
 }
 
-export async function loadTelegramConfigFile(): Promise<TelegramConfigFile | null> {
-  const raw = await readTextOrNull(getTelegramConfigPath());
+export async function loadTelegramConfigFile(
+  orgId?: string | null
+): Promise<TelegramConfigFile | null> {
+  const raw = await readTextOrNull(getTelegramConfigPath(orgId));
 
   if (raw === null) {
     return null;
@@ -141,12 +145,15 @@ export function toTelegramSettingsPublic(
   };
 }
 
-export async function loadTelegramSettingsPublic(): Promise<TelegramSettingsPublic> {
-  return toTelegramSettingsPublic(await loadTelegramConfigFile());
+export async function loadTelegramSettingsPublic(
+  orgId?: string | null
+): Promise<TelegramSettingsPublic> {
+  return toTelegramSettingsPublic(await loadTelegramConfigFile(orgId));
 }
 
 async function writeTelegramConfigFile(
-  config: TelegramConfigFile
+  config: TelegramConfigFile,
+  orgId?: string | null
 ): Promise<void> {
   const lines = [
     "# Atlas Telegram bridge",
@@ -162,8 +169,8 @@ async function writeTelegramConfigFile(
     "",
   ];
 
-  await writePrivateTextFile(getTelegramConfigPath(), lines.join("\n"), {
-    ensureDir: getTelegramConfigDir(),
+  await writePrivateTextFile(getTelegramConfigPath(orgId), lines.join("\n"), {
+    ensureDir: getTelegramConfigDir(orgId),
   });
 }
 
@@ -235,16 +242,19 @@ function buildSavedTelegramConfig(
 }
 
 export async function saveTelegramConfig(
-  input: UpdateTelegramSettingsInput
+  input: UpdateTelegramSettingsInput,
+  orgId?: string | null
 ): Promise<TelegramSettingsPublic> {
-  const existing = await loadTelegramConfigFile();
+  const existing = await loadTelegramConfigFile(orgId);
   const next = buildSavedTelegramConfig(input, existing);
-  await writeTelegramConfigFile(next);
+  await writeTelegramConfigFile(next, orgId);
   return toTelegramSettingsPublic(next);
 }
 
-export async function regenerateTelegramHandshake(): Promise<TelegramSettingsPublic> {
-  const existing = await loadTelegramConfigFile();
+export async function regenerateTelegramHandshake(
+  orgId?: string | null
+): Promise<TelegramSettingsPublic> {
+  const existing = await loadTelegramConfigFile(orgId);
 
   if (!existing?.botToken.trim()) {
     throw new Error("Save a bot token before generating a pairing code.");
@@ -255,15 +265,16 @@ export async function regenerateTelegramHandshake(): Promise<TelegramSettingsPub
     handshakeCode: generateHandshakeCode(),
   };
 
-  await writeTelegramConfigFile(next);
+  await writeTelegramConfigFile(next, orgId);
   return toTelegramSettingsPublic(next);
 }
 
 export async function verifyAndPairTelegramUser(
   handshakeInput: string,
-  userId: number
+  userId: number,
+  orgId?: string | null
 ): Promise<{ ok: true; message: string } | { ok: false; message: string }> {
-  const config = await loadTelegramConfigFile();
+  const config = await loadTelegramConfigFile(orgId);
 
   if (!config) {
     return {
@@ -299,11 +310,14 @@ export async function verifyAndPairTelegramUser(
 
   const pairedUserIds = [...new Set([...config.pairedUserIds, userId])];
 
-  await writeTelegramConfigFile({
-    ...config,
-    handshakeCode: null,
-    pairedUserIds,
-  });
+  await writeTelegramConfigFile(
+    {
+      ...config,
+      handshakeCode: null,
+      pairedUserIds,
+    },
+    orgId
+  );
 
   return {
     message: "Linked successfully. You can chat with Atlas now.",

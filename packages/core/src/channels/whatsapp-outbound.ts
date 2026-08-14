@@ -33,7 +33,7 @@ export function createWhatsAppOutboundAdapter(
   return {
     async send(input): Promise<ChannelSendResult> {
       try {
-        const config = await loadWhatsAppConfigFile();
+        const config = await loadWhatsAppConfigFile(input.orgId);
 
         if (!config?.pairedJid) {
           return { error: "WhatsApp is not paired.", ok: false };

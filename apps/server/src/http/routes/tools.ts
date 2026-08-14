@@ -357,12 +357,17 @@ export function registerToolRoutes(app: HonoApp, options: ServerOptions): void {
 
   app.post("/v1/tools/:toolId/params/suggest", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const toolId = decodeURIComponent(c.req.param("toolId"));
     const body = await readJson<SuggestToolParamsRequest>(c.req.raw);
 
     try {
       return json<SuggestToolParamsResponse>(
-        await agent.suggestToolPlaygroundParams(toolId, body.prompt ?? "")
+        await agent.suggestToolPlaygroundParams(
+          orgId,
+          toolId,
+          body.prompt ?? ""
+        )
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -372,7 +377,7 @@ export function registerToolRoutes(app: HonoApp, options: ServerOptions): void {
   });
 
   app.get("/v1/profiles/:profileId/tools", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     return json<ListToolsResponse>(
       await agent.listProfileTools(
@@ -383,7 +388,7 @@ export function registerToolRoutes(app: HonoApp, options: ServerOptions): void {
   });
 
   app.post("/v1/profiles/:profileId/tools", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<AssignToolRequest>(c.req.raw);
     return json<ProfileResponse>(
@@ -396,7 +401,7 @@ export function registerToolRoutes(app: HonoApp, options: ServerOptions): void {
   });
 
   app.delete("/v1/profiles/:profileId/tools/:toolId", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     return json<ProfileResponse>(
       await agent.unassignTool(

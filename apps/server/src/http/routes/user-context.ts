@@ -5,7 +5,10 @@ import type {
 } from "@atlas/core";
 import { createRoute, z } from "@hono/zod-openapi";
 import type { ServerOptions } from "../context";
-import { requireActiveOrgIdFromContext } from "../org-guards";
+import {
+  requireActiveOrgIdFromContext,
+  requireNotViewerFromContext,
+} from "../org-guards";
 import { getRequestAuth, json, readJson } from "../shared";
 import type { HonoApp } from "../types";
 
@@ -105,7 +108,7 @@ export function registerUserContextRoutes(
   });
 
   app.put("/v1/user/context", async (c) => {
-    const auth = getRequestAuth(c);
+    const auth = requireNotViewerFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<UpdateUserContextRequest>(c.req.raw);
     await agent.writeUserContext(orgId, auth.user.id, body);
@@ -113,7 +116,7 @@ export function registerUserContextRoutes(
   });
 
   app.post("/v1/user/context/init", async (c) => {
-    const auth = getRequestAuth(c);
+    const auth = requireNotViewerFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     return json<InitUserContextResponse>(
       await agent.initUserContext(orgId, auth.user.id),

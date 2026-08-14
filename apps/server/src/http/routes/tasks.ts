@@ -280,10 +280,15 @@ export function registerTaskRoutes(app: HonoApp, options: ServerOptions): void {
 
   app.post("/v1/tasks/draft-prompt", async (c) => {
     requireNotViewerFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<DraftTaskPromptRequest>(c.req.raw);
 
     try {
-      const prompt = await agent.draftTaskPrompt(body.title, body.description);
+      const prompt = await agent.draftTaskPrompt(
+        orgId,
+        body.title,
+        body.description
+      );
       return json<DraftTaskPromptResponse>({ prompt });
     } catch (error) {
       if (

@@ -104,7 +104,7 @@ export class ComposioService {
   /**
    * Channel bridges (Telegram / WhatsApp / Discord / CLI) authenticate as the
    * local client user. Composio OAuth is per human member, so map the local
-   * client onto the earliest human org admin — same convention as the legacy
+   * client onto the earliest human Workspace Admin — same convention as the legacy
    * org-shared connection migration.
    */
   async resolveComposioActingUserId(
@@ -386,7 +386,7 @@ export class ComposioService {
 
     if (orgToolkit.status !== "enabled") {
       throw new AtlasApiError(
-        "An org admin must enable this toolkit before you can connect.",
+        "A Workspace Admin must enable this toolkit before you can connect.",
         400
       );
     }

@@ -51,7 +51,7 @@ export function SetupStepOrganization({
     const trimmedSlug = slug.trim().toLowerCase();
 
     if (!trimmedName) {
-      setError("Organization name is required.");
+      setError("Workspace name is required.");
       return;
     }
 
@@ -75,7 +75,7 @@ export function SetupStepOrganization({
       onNext();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to create organization"
+        err instanceof Error ? err.message : "Failed to create workspace"
       );
     } finally {
       setIsSubmitting(false);
@@ -90,7 +90,7 @@ export function SetupStepOrganization({
             className="mb-1 block font-medium text-sm"
             htmlFor="setup-org-name"
           >
-            Organization name
+            Workspace name
           </label>
           <Input
             id="setup-org-name"
@@ -143,7 +143,7 @@ export function SetupStepOrganization({
             size="lg"
             type="submit"
           >
-            {isSubmitting ? "Creating..." : "Create Organization"}
+            {isSubmitting ? "Creating..." : "Create Workspace"}
           </Button>
         </div>
       </form>

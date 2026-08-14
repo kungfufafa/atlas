@@ -48,6 +48,7 @@ describe("NotificationWebhookService", () => {
     expect(calls).toEqual([
       {
         chatIds: [1001],
+        orgId: "org_1",
         parseMode: "HTML",
         text: "✅ **New payment received**\n\nCustomer: Ahmad",
         topicId: 22,

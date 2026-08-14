@@ -47,13 +47,22 @@ export interface ChatHandlerDeps {
   authStore: WhatsAppAuthStore;
   client: AtlasClient;
   config: WhatsAppBridgeConfig;
+  fixedWorkspaceId?: string;
   getSocket: () => WASocket | null;
   orgStore: ChannelOrgStore;
   sessionStore: SessionStore;
 }
 
 export function createChatHandler(deps: ChatHandlerDeps) {
-  const { client, config, authStore, sessionStore, orgStore, getSocket } = deps;
+  const {
+    client,
+    config,
+    authStore,
+    sessionStore,
+    orgStore,
+    getSocket,
+    fixedWorkspaceId,
+  } = deps;
 
   return async function handleMessage(data: {
     fromMe?: boolean;
@@ -84,6 +93,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       if (!authorized && fromMe && fileConfig?.pairedJid) {
         await syncWhatsAppOwnerPairing({
           forceLidUpdate: true,
+          orgId: fixedWorkspaceId,
           ownerJid: fileConfig.pairedJid,
           ownerLid: jid,
         });
@@ -194,6 +204,15 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     jid: string,
     messageText: string
   ): Promise<boolean> {
+    if (fixedWorkspaceId) {
+      client.setOrgId(fixedWorkspaceId);
+      if (orgStore.get(jid)?.orgId !== fixedWorkspaceId) {
+        orgStore.set(jid, fixedWorkspaceId);
+        await orgStore.save();
+      }
+      return true;
+    }
+
     const orgContext = await prepareChannelOrgContext({
       getSelectedOrgId: () => orgStore.get(jid)?.orgId,
       listOrgs: () => client.listUserOrgs(),
@@ -225,6 +244,14 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   }
 
   async function handleOrgCommand(jid: string, text: string): Promise<void> {
+    if (fixedWorkspaceId) {
+      await sendText(
+        jid,
+        "This WhatsApp integration belongs to one workspace and cannot switch workspaces."
+      );
+      return;
+    }
+
     const { orgs } = await client.listUserOrgs();
 
     if (orgs.length === 0) {

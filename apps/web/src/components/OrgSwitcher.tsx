@@ -61,7 +61,7 @@ export function OrgSwitcher({ collapsed = false }: OrgSwitcherProps) {
     return null;
   }
 
-  const label = activeOrg?.name ?? "Organization";
+  const label = activeOrg?.name ?? "Workspace";
   const initial = label.charAt(0).toUpperCase();
 
   function openEditDialog(org: UserOrgSummary) {
@@ -79,7 +79,7 @@ export function OrgSwitcher({ collapsed = false }: OrgSwitcherProps) {
     const trimmedSlug = slug.trim().toLowerCase();
 
     if (!trimmedName) {
-      setError("Organization name is required.");
+      setError("Workspace name is required.");
       return;
     }
 
@@ -98,7 +98,7 @@ export function OrgSwitcher({ collapsed = false }: OrgSwitcherProps) {
       slugEditedRef.current = false;
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to create organization"
+        err instanceof Error ? err.message : "Failed to create workspace"
       );
     } finally {
       setIsSubmitting(false);
@@ -115,7 +115,7 @@ export function OrgSwitcher({ collapsed = false }: OrgSwitcherProps) {
 
     const trimmedName = name.trim();
     if (!trimmedName) {
-      setError("Organization name is required.");
+      setError("Workspace name is required.");
       return;
     }
 
@@ -128,7 +128,7 @@ export function OrgSwitcher({ collapsed = false }: OrgSwitcherProps) {
       setName("");
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to update organization"
+        err instanceof Error ? err.message : "Failed to update workspace"
       );
     } finally {
       setIsSubmitting(false);
@@ -137,7 +137,7 @@ export function OrgSwitcher({ collapsed = false }: OrgSwitcherProps) {
 
   const trigger = (
     <Button
-      aria-label={collapsed ? `Current organization: ${label}` : undefined}
+      aria-label={collapsed ? `Current workspace: ${label}` : undefined}
       className={cn(
         "font-normal hover:bg-sidebar-accent/60 motion-reduce:transition-none",
         collapsed
@@ -174,7 +174,7 @@ export function OrgSwitcher({ collapsed = false }: OrgSwitcherProps) {
         >
           <div className="border-border/50 border-b px-2 py-1.5">
             <p className="font-medium text-muted-foreground text-xs">
-              Select organization
+              Select workspace
             </p>
           </div>
           <div className="p-1">
@@ -226,7 +226,7 @@ export function OrgSwitcher({ collapsed = false }: OrgSwitcherProps) {
                 }}
               >
                 <Add01Icon className="size-4" />
-                Create organization
+                Create workspace
               </DropdownMenuItem>
             </div>
           ) : null}
@@ -237,7 +237,7 @@ export function OrgSwitcher({ collapsed = false }: OrgSwitcherProps) {
         <Dialog onOpenChange={setCreateOpen} open={createOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create organization</DialogTitle>
+              <DialogTitle>Create workspace</DialogTitle>
             </DialogHeader>
             <form className="space-y-4" onSubmit={handleCreate}>
               <div>
@@ -298,7 +298,7 @@ export function OrgSwitcher({ collapsed = false }: OrgSwitcherProps) {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit organization</DialogTitle>
+            <DialogTitle>Edit workspace</DialogTitle>
           </DialogHeader>
           <form className="space-y-4" onSubmit={handleEdit}>
             <div>

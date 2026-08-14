@@ -8,7 +8,7 @@ import {
   removeFile,
   writePrivateTextFile,
 } from "./fs";
-import { getUserConfigDir } from "./user-config";
+import { getWorkspaceChannelDir } from "./workspace-channel-paths";
 
 export const DEFAULT_WHATSAPP_PROFILE_ID = "default";
 
@@ -34,12 +34,14 @@ export interface UpdateWhatsAppSettingsInput {
   profileId?: string;
 }
 
-export function getWhatsAppConfigDir(): string {
-  return join(getUserConfigDir(), "whatsapp");
+export function getWhatsAppConfigDir(orgId?: string | null): string {
+  return orgId === undefined
+    ? getWorkspaceChannelDir("whatsapp")
+    : getWorkspaceChannelDir("whatsapp", orgId);
 }
 
-export function getWhatsAppConfigPath(): string {
-  return join(getWhatsAppConfigDir(), "config.ini");
+export function getWhatsAppConfigPath(orgId?: string | null): string {
+  return join(getWhatsAppConfigDir(orgId), "config.ini");
 }
 
 export function maskPhoneNumber(phoneNumber: string): string | null {
@@ -139,8 +141,10 @@ export function isWhatsAppUserAuthorized(
   return false;
 }
 
-export async function loadWhatsAppConfigFile(): Promise<WhatsAppConfigFile | null> {
-  const raw = await readTextOrNull(getWhatsAppConfigPath());
+export async function loadWhatsAppConfigFile(
+  orgId?: string | null
+): Promise<WhatsAppConfigFile | null> {
+  const raw = await readTextOrNull(getWhatsAppConfigPath(orgId));
 
   if (raw === null) {
     return null;
@@ -188,12 +192,15 @@ export function toWhatsAppSettingsPublic(
   };
 }
 
-export async function loadWhatsAppSettingsPublic(): Promise<WhatsAppSettingsPublic> {
-  return toWhatsAppSettingsPublic(await loadWhatsAppConfigFile());
+export async function loadWhatsAppSettingsPublic(
+  orgId?: string | null
+): Promise<WhatsAppSettingsPublic> {
+  return toWhatsAppSettingsPublic(await loadWhatsAppConfigFile(orgId));
 }
 
 async function writeWhatsAppConfigFile(
-  config: WhatsAppConfigFile
+  config: WhatsAppConfigFile,
+  orgId?: string | null
 ): Promise<void> {
   const lines = [
     "# Atlas WhatsApp bridge",
@@ -204,11 +211,12 @@ async function writeWhatsAppConfigFile(
     ...(config.pairingCode ? [`pairing_code=${config.pairingCode}`] : []),
     ...(config.pairedJid ? [`paired_jid=${config.pairedJid}`] : []),
     ...(config.pairedLid ? [`paired_lid=${config.pairedLid}`] : []),
+    ...(config.outboundPort ? [`outbound_port=${config.outboundPort}`] : []),
     "",
   ];
 
-  await writePrivateTextFile(getWhatsAppConfigPath(), lines.join("\n"), {
-    ensureDir: getWhatsAppConfigDir(),
+  await writePrivateTextFile(getWhatsAppConfigPath(orgId), lines.join("\n"), {
+    ensureDir: getWhatsAppConfigDir(orgId),
   });
 }
 
@@ -260,35 +268,38 @@ function buildSavedWhatsAppConfig(
 }
 
 export async function saveWhatsAppConfig(
-  input: UpdateWhatsAppSettingsInput
+  input: UpdateWhatsAppSettingsInput,
+  orgId?: string | null
 ): Promise<WhatsAppSettingsPublic> {
-  const existing = await loadWhatsAppConfigFile();
+  const existing = await loadWhatsAppConfigFile(orgId);
   const next = buildSavedWhatsAppConfig(input, existing);
-  await writeWhatsAppConfigFile(next);
+  await writeWhatsAppConfigFile(next, orgId);
   return toWhatsAppSettingsPublic(next);
 }
 
-function getWhatsAppAuthDir(): string {
-  return join(getWhatsAppConfigDir(), "auth");
+export function getWhatsAppAuthDir(orgId?: string | null): string {
+  return join(getWhatsAppConfigDir(orgId), "auth");
 }
 
 // ponytail: filename mirrors whatsapp-worker.ts QR_CODE_FILENAME
-function getWhatsAppQrCodePath(): string {
-  return join(getWhatsAppConfigDir(), "worker-qr.txt");
+function getWhatsAppQrCodePath(orgId?: string | null): string {
+  return join(getWhatsAppConfigDir(orgId), "worker-qr.txt");
 }
 
-export async function resetWhatsAppSessionForReconnect(): Promise<WhatsAppSettingsPublic> {
-  const existing = await loadWhatsAppConfigFile();
+export async function resetWhatsAppSessionForReconnect(
+  orgId?: string | null
+): Promise<WhatsAppSettingsPublic> {
+  const existing = await loadWhatsAppConfigFile(orgId);
 
   if (!existing) {
     throw new Error("Enable WhatsApp in Integrations before reconnecting.");
   }
 
-  if (await pathExists(getWhatsAppAuthDir())) {
-    await rm(getWhatsAppAuthDir(), { force: true, recursive: true });
+  if (await pathExists(getWhatsAppAuthDir(orgId))) {
+    await rm(getWhatsAppAuthDir(orgId), { force: true, recursive: true });
   }
 
-  const qrPath = getWhatsAppQrCodePath();
+  const qrPath = getWhatsAppQrCodePath(orgId);
   if (await pathExists(qrPath)) {
     await removeFile(qrPath);
   }
@@ -300,12 +311,14 @@ export async function resetWhatsAppSessionForReconnect(): Promise<WhatsAppSettin
     pairingCode: null,
   };
 
-  await writeWhatsAppConfigFile(next);
+  await writeWhatsAppConfigFile(next, orgId);
   return toWhatsAppSettingsPublic(next);
 }
 
-export async function regenerateWhatsAppPairingCode(): Promise<WhatsAppSettingsPublic> {
-  const existing = await loadWhatsAppConfigFile();
+export async function regenerateWhatsAppPairingCode(
+  orgId?: string | null
+): Promise<WhatsAppSettingsPublic> {
+  const existing = await loadWhatsAppConfigFile(orgId);
 
   if (!existing) {
     throw new Error("Enable WhatsApp before generating a chat access code.");
@@ -316,15 +329,16 @@ export async function regenerateWhatsAppPairingCode(): Promise<WhatsAppSettingsP
     pairingCode: generatePairingCode(),
   };
 
-  await writeWhatsAppConfigFile(next);
+  await writeWhatsAppConfigFile(next, orgId);
   return toWhatsAppSettingsPublic(next);
 }
 
 export async function verifyAndPairWhatsAppUser(
   pairingCodeInput: string,
-  jid: string
+  jid: string,
+  orgId?: string | null
 ): Promise<{ ok: true; message: string } | { ok: false; message: string }> {
-  const config = await loadWhatsAppConfigFile();
+  const config = await loadWhatsAppConfigFile(orgId);
 
   if (!config) {
     return {
@@ -365,13 +379,16 @@ export async function verifyAndPairWhatsAppUser(
       (config.phoneNumber ? phoneToWhatsAppJid(config.phoneNumber) : null))
     : jid;
 
-  await writeWhatsAppConfigFile({
-    ...config,
-    pairedJid,
-    pairedLid,
-    pairingCode: null,
-    phoneNumber: phoneFromJid || config.phoneNumber,
-  });
+  await writeWhatsAppConfigFile(
+    {
+      ...config,
+      pairedJid,
+      pairedLid,
+      pairingCode: null,
+      phoneNumber: phoneFromJid || config.phoneNumber,
+    },
+    orgId
+  );
 
   return {
     message: "Chat authorized. Send a message to start chatting with Atlas.",
@@ -384,8 +401,9 @@ export async function syncWhatsAppOwnerPairing(options: {
   ownerJid: string;
   ownerLid?: string | null;
   forceLidUpdate?: boolean;
+  orgId?: string | null;
 }): Promise<void> {
-  const config = await loadWhatsAppConfigFile();
+  const config = await loadWhatsAppConfigFile(options.orgId);
 
   if (!config) {
     return;
@@ -415,7 +433,22 @@ export async function syncWhatsAppOwnerPairing(options: {
     return;
   }
 
-  await writeWhatsAppConfigFile(next);
+  await writeWhatsAppConfigFile(next, options.orgId);
+}
+
+export async function saveWhatsAppOutboundPort(
+  port: number,
+  orgId?: string | null
+): Promise<void> {
+  const config = await loadWhatsAppConfigFile(orgId);
+  if (!config) {
+    return;
+  }
+
+  await writeWhatsAppConfigFile(
+    { ...config, outboundPort: String(port) },
+    orgId
+  );
 }
 
 export function resolveWhatsAppConfigFromSources(options: {

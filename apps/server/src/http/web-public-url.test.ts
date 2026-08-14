@@ -13,7 +13,7 @@ function createApp() {
 }
 
 describe("web public url settings", () => {
-  test("org admin can read and persist the public web URL", async () => {
+  test("Superadmin can read and persist the public web URL", async () => {
     const configDir = await mkdtemp(join(tmpdir(), "atlas-web-public-url-"));
     const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
     process.env.ATLAS_CONFIG_DIR = configDir;

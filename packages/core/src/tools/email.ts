@@ -192,7 +192,7 @@ export async function runEmailTool(
   if (!isEmailConfigComplete(config)) {
     return {
       error:
-        "Email is not configured. Ask an org admin to set up mailbox settings in System → Tools.",
+        "Email is not configured. Ask a Superadmin to set up mailbox settings in Integrations.",
     };
   }
 

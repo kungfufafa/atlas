@@ -16,6 +16,7 @@ import type {
   StoredLlmUsageStatsRecord,
   StoredMcpServerRecord,
   StoredNotificationDestinationRecord,
+  StoredOrgAiConfigRecord,
   StoredOrganizationRecord,
   StoredOrgInviteRecord,
   StoredOrgMemberRecord,
@@ -88,6 +89,8 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
   const toolOutputSavings = new Map<string, StoredToolOutputSavingsRecord>();
   const llmTurnUsage = new Map<string, StoredLlmTurnUsageRecord>();
   let workspaceSettings: StoredWorkspaceSettingsRecord | null = null;
+  const orgWorkspaceSettings = new Map<string, StoredWorkspaceSettingsRecord>();
+  const orgAiConfigs = new Map<string, StoredOrgAiConfigRecord>();
   const notificationDestinations = new Map<
     string,
     StoredNotificationDestinationRecord
@@ -458,6 +461,10 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       return notificationDestinations.get(id) ?? null;
     },
 
+    async getOrgAiConfig(orgId) {
+      return orgAiConfigs.get(orgId) ?? null;
+    },
+
     async getOrganizationById(id) {
       return organizations.get(id) ?? null;
     },
@@ -639,11 +646,14 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       return orgMembers.get(`${orgId}:${userId}`)?.userContext ?? null;
     },
 
-    async getWorkspaceSettings() {
-      return workspaceSettings
+    async getWorkspaceSettings(orgId) {
+      const selected = orgId
+        ? (orgWorkspaceSettings.get(orgId) ?? null)
+        : workspaceSettings;
+      return selected
         ? {
-            ...workspaceSettings,
-            codingAgentHarnesses: workspaceSettings.codingAgentHarnesses.map(
+            ...selected,
+            codingAgentHarnesses: selected.codingAgentHarnesses.map(
               (harness) => ({
                 ...harness,
                 args: [...harness.args],
@@ -1401,6 +1411,10 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       notificationDestinations.set(record.id, record);
     },
 
+    async upsertOrgAiConfig(record) {
+      orgAiConfigs.set(record.orgId, structuredClone(record));
+    },
+
     async upsertOrganization(record) {
       organizations.set(record.id, record);
       organizationsBySlug.set(record.slug, record);
@@ -1459,6 +1473,10 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     },
 
     async upsertWorkspaceSettings(record) {
+      if (record.orgId) {
+        orgWorkspaceSettings.set(record.orgId, structuredClone(record));
+        return;
+      }
       workspaceSettings = {
         ...record,
         codingAgentHarnesses: record.codingAgentHarnesses.map((harness) => ({

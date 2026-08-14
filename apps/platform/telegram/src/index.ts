@@ -34,6 +34,7 @@ registerCleanupHandlers(() => {
 });
 
 try {
+  const workspaceId = process.env.ATLAS_WORKSPACE_ID?.trim() || undefined;
   const existingHeartbeat = await readTelegramWorkerHeartbeat();
 
   if (
@@ -48,7 +49,7 @@ try {
     process.exit(1);
   }
 
-  const config = await loadConfig();
+  const config = await loadConfig(process.env, workspaceId);
   const { serverUrl, spawnedChild: child } = await ensureServerRunning();
   spawnedChild = child;
 
@@ -57,6 +58,7 @@ try {
       (await loadLocalAuthToken("telegram@atlas.internal")) ?? undefined,
     baseUrl: serverUrl,
     clientOrigin: resolveWebPublicUrl(),
+    orgId: workspaceId,
   });
   const health = await client.health();
 
@@ -81,15 +83,18 @@ try {
   const sessionStore = new SessionStore();
   await sessionStore.load();
 
-  const orgStore = new ChannelOrgStore(getChannelOrgSelectionPath("telegram"));
+  const orgStore = new ChannelOrgStore(
+    getChannelOrgSelectionPath("telegram", workspaceId)
+  );
   await orgStore.load();
 
-  const authStore = new TelegramAuthStore();
+  const authStore = new TelegramAuthStore(workspaceId);
   await authStore.reload();
 
   const bot = await createBot(config, {
     authStore,
     client,
+    fixedWorkspaceId: workspaceId,
     orgStore,
     sessionStore,
   });
@@ -97,6 +102,7 @@ try {
   console.log("Atlas Telegram bridge running (long polling).");
   console.log(`Server: ${serverUrl}`);
   console.log(`Profile: ${config.profileId}`);
+  console.log(`Workspace: ${workspaceId ?? "legacy selectable mode"}`);
   const authConfig = authStore.getConfig();
   const paired = authConfig?.pairedUserIds.length ?? 0;
   const pendingHandshake = authConfig?.handshakeCode ? "yes" : "no";

@@ -23,6 +23,8 @@ export function migrateDatabase(db: Database): void {
   migrateSkillUsageTables(db);
   migrateTenantOrgScope(db);
   migrateProfileOrgColumns(db);
+  migrateSessionOrgScope(db);
+  migrateOrgAiConfigsTable(db);
   migrateBrowserSessionsTable(db);
   migrateLegacyProfileIds(db);
   migrateCodingDelegationSkillName(db);
@@ -996,6 +998,41 @@ function migrateSessionsTable(db: Database): void {
   }
 }
 
+function migrateSessionOrgScope(db: Database): void {
+  const columns = db.prepare("PRAGMA table_info(sessions)").all() as Array<{
+    name: string;
+  }>;
+
+  if (!columns.some((column) => column.name === "org_id")) {
+    db.exec(`
+      ALTER TABLE sessions ADD COLUMN org_id TEXT REFERENCES organizations (id) ON DELETE CASCADE;
+    `);
+  }
+
+  db.exec(`
+    UPDATE sessions
+    SET org_id = (
+      SELECT profiles.org_id
+      FROM profiles
+      WHERE profiles.id = sessions.profile_id
+    )
+    WHERE org_id IS NULL;
+
+    CREATE INDEX IF NOT EXISTS sessions_org_id_idx ON sessions (org_id);
+  `);
+}
+
+function migrateOrgAiConfigsTable(db: Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS org_ai_configs (
+      org_id TEXT PRIMARY KEY NOT NULL,
+      config TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE
+    );
+  `);
+}
+
 function migrateWorkspaceSettingsTable(db: Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS workspace_settings (
@@ -1046,6 +1083,17 @@ function migrateWorkspaceSettingsTable(db: Database): void {
       ALTER TABLE workspace_settings ADD COLUMN token_optimizer_enabled INTEGER;
     `);
   }
+
+  if (!columnNames.has("org_id")) {
+    db.exec(`
+      ALTER TABLE workspace_settings ADD COLUMN org_id TEXT REFERENCES organizations (id) ON DELETE CASCADE;
+    `);
+  }
+
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS workspace_settings_org_id_unique
+      ON workspace_settings (org_id) WHERE org_id IS NOT NULL;
+  `);
 }
 
 function migrateAutomationRunsTable(db: Database): void {

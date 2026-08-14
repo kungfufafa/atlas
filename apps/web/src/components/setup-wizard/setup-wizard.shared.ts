@@ -12,7 +12,7 @@ export interface SetupAccountDraft {
 
 export const SETUP_STEPS = [
   { id: 1, label: "Account", required: true },
-  { id: 2, label: "Organization", required: true },
+  { id: 2, label: "Workspace", required: true },
   { id: 3, label: "Provider", required: true },
   { id: 4, label: "About You", required: false },
 ] as const;

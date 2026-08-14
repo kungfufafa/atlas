@@ -1,0 +1,2 @@
+/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/README.md
+/Users/apriansyahrs/Documents/Code/atlas/apps/platform/whatsapp/README.md

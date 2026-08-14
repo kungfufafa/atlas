@@ -246,7 +246,7 @@ export function useAutomationsPage() {
 
   function goToCreateAutomation() {
     if (!superAgentProfile) {
-      setError("No super agent profile exists in this organization.");
+      setError("No super agent profile exists in this workspace.");
       return;
     }
 

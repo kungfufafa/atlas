@@ -85,7 +85,7 @@ function resolveSection(value: string | null): IntegrationSectionId {
 }
 
 export function IntegrationsPage() {
-  const { activeOrg, isLoading } = useAuth();
+  const { activeOrg, isLoading, user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   if (isLoading) {
@@ -101,12 +101,25 @@ export function IntegrationsPage() {
   }
 
   const isOrgAdmin = activeOrg?.role === "admin";
+  const isSuperadmin = user?.isPlatformAdmin === true;
   const section = resolveSection(
-    isOrgAdmin ? searchParams.get("section") : "composio"
+    isSuperadmin || isOrgAdmin ? searchParams.get("section") : "composio"
   );
-  const visibleSections = isOrgAdmin
+  const visibleSections = isSuperadmin
     ? INTEGRATION_SECTIONS
-    : INTEGRATION_SECTIONS.filter((item) => item.id === "composio");
+    : INTEGRATION_SECTIONS.filter((item) =>
+        isOrgAdmin
+          ? item.id === "telegram" ||
+            item.id === "whatsapp" ||
+            item.id === "discord" ||
+            item.id === "notifications" ||
+            item.id === "composio" ||
+            item.id === "optimization"
+          : item.id === "composio"
+      );
+  const visibleSection = visibleSections.some((item) => item.id === section)
+    ? section
+    : "composio";
 
   function setSection(nextSection: IntegrationSectionId) {
     setSearchParams(
@@ -138,7 +151,7 @@ export function IntegrationsPage() {
           >
             {visibleSections.map((item) => (
               <SidebarButton
-                active={section === item.id}
+                active={visibleSection === item.id}
                 description={item.description}
                 icon={item.icon}
                 key={item.id}
@@ -150,26 +163,26 @@ export function IntegrationsPage() {
         </aside>
 
         <div className="min-w-0 flex-1 p-4 sm:p-5">
-          {section === "token" ? <LocalAuthTokenCard /> : null}
+          {visibleSection === "token" ? <LocalAuthTokenCard /> : null}
 
-          {section === "optimization" ? <TokenOptimizationCard /> : null}
+          {visibleSection === "optimization" ? <TokenOptimizationCard /> : null}
 
-          {section === "composio" ? (
+          {visibleSection === "composio" ? (
             <div className={cn(isOrgAdmin && "space-y-4")}>
-              {isOrgAdmin ? <ComposioSettingsCard embedded /> : null}
+              {isSuperadmin ? <ComposioSettingsCard embedded /> : null}
               <ComposioConnectionsCard bordered embedded />
             </div>
           ) : null}
 
-          {section === "telegram" ? <TelegramSettingsCard /> : null}
+          {visibleSection === "telegram" ? <TelegramSettingsCard /> : null}
 
-          {section === "discord" ? <DiscordSettingsCard /> : null}
+          {visibleSection === "discord" ? <DiscordSettingsCard /> : null}
 
-          {section === "notifications" ? (
+          {visibleSection === "notifications" ? (
             <NotificationDestinationsCard />
           ) : null}
 
-          {section === "whatsapp" ? <WhatsAppSettingsCard /> : null}
+          {visibleSection === "whatsapp" ? <WhatsAppSettingsCard /> : null}
         </div>
       </div>
     </section>

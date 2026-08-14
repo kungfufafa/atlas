@@ -1,6 +1,6 @@
 ---
 title: "First-time setup"
-description: "Complete Atlas setup wizard: admin account, organization, provider, and profiles."
+description: "Complete Atlas setup wizard: Superadmin account, workspace, provider, and profiles."
 ---
 
 ## Open the dashboard
@@ -16,9 +16,9 @@ On a fresh install, Atlas redirects you to the setup wizard automatically.
 
 Docker installs can skip the wizard by setting `ATLAS_SEED_ADMIN_EMAIL`, `ATLAS_SEED_ADMIN_NAME`, and `ATLAS_SEED_ADMIN_PASSWORD` before first boot. See [Docker → First-boot seed](/docker#first-boot-seed-optional).
 
-## Step 1: Admin account
+## Step 1: Superadmin account
 
-Create the first platform admin. This account can manage organizations, profiles, providers, and system settings.
+Create the first Superadmin. This account can manage every workspace and system-wide setting.
 
 ![Create your admin account](/screenshots/setup-step-account.png)
 
@@ -38,13 +38,13 @@ If provider setup was already complete in the backup, Atlas opens chat after sig
 
 See [Backup and restore](/backup-restore) for what is included in export ZIPs and when to use dashboard import after setup is complete.
 
-## Step 2: Organization
+## Step 2: Workspace
 
-Every workspace lives inside an organization. Name yours and choose a slug for URLs and API context.
+Name the first workspace and choose a slug for URLs and API context.
 
 ![Create your organization](/screenshots/setup-step-organization.png)
 
-The slug must use lowercase letters, numbers, and hyphens only. Click **Create Organization** to save the admin account and org together.
+The slug must use lowercase letters, numbers, and hyphens only. Click **Create Workspace** to save the Superadmin account and workspace together.
 
 ## Step 3: Provider
 

@@ -5,7 +5,7 @@ description: "Shared, admin-curated facts for an organization — injected into 
 
 **Org memory** is shared context for the whole organization.
 
-Every non-viewer agent in the org sees a summary of pinned facts plus recent log entries in its system prompt. Org admins curate facts from **Settings → Org Memory** and review agent proposals on the **Proposals** tab. Members can read and search; viewers are blocked entirely.
+Every non-viewer agent in the workspace sees a summary of pinned facts plus recent log entries in its system prompt. Workspace Admins curate facts from **Settings → Workspace Memory** and review agent proposals on the **Proposals** tab. Members can read and search; viewers are blocked entirely.
 
 Org memory is separate from [profile memory](/profiles#knowledge-base-and-memory). Profile `MEMORY.md` is per-bot continuity that agents update themselves. Org memory is team-wide facts that admins maintain.
 
@@ -23,7 +23,7 @@ Archived bullets move into monthly `.md` files under `memory-archive/` without d
 
 **Change history** snapshots live under `memory-history/` — one JSON metadata file and one markdown snapshot per revision (up to **50** entries, oldest pruned automatically). This is separate from `memory-archive/`, which stores bullets removed from the live pinned list.
 
-Platform-admin [data exports](/backup-restore) include org memory as part of the org workspace in the ZIP.
+Superadmin [data exports](/backup-restore) include workspace memory as part of the workspace data in the ZIP.
 
 ## Format
 
@@ -85,7 +85,7 @@ Proposal rows live in the SQLite database and are **not** included in workspace 
 
 ## Admin UI
 
-Org admins manage org memory from **Settings → Org Memory** (`/settings`).
+Workspace Admins manage workspace memory from **Settings → Workspace Memory** (`/settings`).
 
 The card has three tabs:
 
@@ -105,7 +105,7 @@ For per-bot continuity the agent manages itself, use the profile `update-profile
 
 ## HTTP API (admin)
 
-Org admins can also manage memory via the REST API (`X-Org-Id` required):
+Workspace Admins can also manage memory via the REST API (`X-Org-Id` required):
 
 | Method | Path | Purpose |
 |--------|------|---------|
@@ -138,7 +138,7 @@ Cross-org requests return **404** — the path `orgId` must match the active org
 | **Scope** | Entire organization | Single profile |
 | **Path** | `~/.atlas/orgs/{orgId}/MEMORY.md` | `~/.atlas/orgs/{orgId}/profiles/{profileId}/MEMORY.md` |
 | **Structure** | `## Pinned` + dated `## YYYY-MM-DD` sections | Dated `## YYYY-MM-DD` sections |
-| **Who writes** | Org admins (UI/API); agents propose via `propose_org_memory` | Agent via `update-profile-memory` skill |
+| **Who writes** | Workspace Admins (UI/API); agents propose via `propose_org_memory` | Agent via `update-profile-memory` skill |
 | **Prompt injection** | Appended as `## Org Memory` | In soul stack as continuity |
 | **Active file limit** | 8192 bytes (live); 2048 bytes injected | 4096 bytes soft limit |
 | **Viewer access** | Blocked | Follows normal chat access |

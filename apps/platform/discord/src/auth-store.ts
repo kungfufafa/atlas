@@ -8,8 +8,10 @@ import {
 export class DiscordAuthStore {
   private config: DiscordConfigFile | null = null;
 
+  constructor(private readonly orgId?: string | null) {}
+
   async reload(): Promise<DiscordConfigFile | null> {
-    this.config = await loadDiscordConfigFile();
+    this.config = await loadDiscordConfigFile(this.orgId);
     return this.config;
   }
 
@@ -34,7 +36,11 @@ export class DiscordAuthStore {
     handshakeInput: string,
     userId: string
   ): Promise<{ ok: boolean; message: string }> {
-    const result = await verifyAndPairDiscordUser(handshakeInput, userId);
+    const result = await verifyAndPairDiscordUser(
+      handshakeInput,
+      userId,
+      this.orgId
+    );
     await this.reload();
     return result;
   }

@@ -44,7 +44,7 @@ export function ProfileComposioSection({
 
       {composioToolkitsData.orgToolkits.length === 0 ? (
         <p className="type-body text-muted-foreground text-xs">
-          Ask an org admin to enable apps on Integrations first.
+          Ask a Workspace Admin to enable apps on Integrations first.
         </p>
       ) : assignedComposioToolkits.length === 0 ? null : (
         <ul className="divide-y divide-border rounded-md border border-border">

@@ -11,7 +11,7 @@ The mental model is simple:
 - Different profiles can have different permissions
 - Tool access is one of the main ways you control risk
 
-Platform admins assign tools to profiles from the dashboard.
+Superadmins manage shared tool definitions. Workspace Admins assign existing tools to profiles in their workspace.
 
 ## Why tools matter
 
@@ -60,7 +60,7 @@ Atlas includes these builtins:
 | `bash` | When assigned | No | Run shell commands in the profile workspace |
 | `sub_agent` | No | No | Opt-in: delegate to a same-profile sub-agent (see below) |
 
-**New custom profiles** receive `read_file`, `write_file`, `edit_file`, `search_files`, `knowledge_base_search`, and `web_fetch` until a platform admin assigns additional tools. Memory writes, archives, and artifact saves use bundled skills with those file tools — see [Skills](/skills#bundled-system-skills). Word documents use `write_docx` (system profiles only by default). Coding-agent workflows use `bash` with the `coding-agent` skill — see [Coding agent](/coding-agent). Interactive browser automation (login walls, forms, clicks) uses `bash` with the opt-in `agent-browser` skill — see [Agent browser](/agent-browser). The `sub_agent` tool is seeded but **not** auto-assigned — platform admins opt in per profile. System profiles (`default`, `super_agent`) get the full seeded builtin set; Super Agent also receives `bash`.
+**New custom profiles** receive `read_file`, `write_file`, `edit_file`, `search_files`, `knowledge_base_search`, and `web_fetch` until a Workspace Admin assigns additional tools. Memory writes, archives, and artifact saves use bundled skills with those file tools — see [Skills](/skills#bundled-system-skills). Word documents use `write_docx` (system profiles only by default). Coding-agent workflows use `bash` with the `coding-agent` skill — see [Coding agent](/coding-agent). Interactive browser automation (login walls, forms, clicks) uses `bash` with the opt-in `agent-browser` skill — see [Agent browser](/agent-browser). The `sub_agent` tool is seeded but **not** auto-assigned — Workspace Admins opt in per profile. System profiles (`default`, `super_agent`) get the full seeded builtin set; Super Agent also receives `bash`.
 
 ## Choosing tools for a profile
 
@@ -369,7 +369,7 @@ The `email` tool uses a deployment-global mailbox. Required keys in `~/.atlas/co
 - Resolvable `from` address
 - TLS flags as needed
 
-Org admins configure these from the web **System → Tools** page.
+Workspace Admins configure profile assignments from **Profiles**. Superadmins manage shared definitions under **System → Tools**.
 
 ### Web search
 
@@ -381,7 +381,7 @@ Upload documents via the profile dashboard or API. Search only indexes extracted
 
 ### Data portability
 
-Platform admins can export and import the whole local Atlas data root from **Settings** in the dashboard.
+Superadmins can export and import the whole local Atlas data root from **Settings** in the dashboard.
 Use **Export ZIP** to download a backup.
 Exports are `.zip` backups and should be handled as sensitive files because they can include local auth, provider configuration, custom tools, skills, profile workspaces, and a local SQLite database.
 

@@ -99,7 +99,7 @@ registerGenerateImageTool(
   createGenerateImageTool({
     db: database.adapter,
     ensureSettingsLoaded: () => agent.ensureImageGenerationSettingsLoaded(),
-    getUserConfig: () => agent.getUserConfig(),
+    getUserConfig: (orgId) => agent.getUserConfigForOrg(orgId),
     recordUsage: (modelId, inputTokens, outputTokens) => {
       llmUsageTracker.record(modelId, inputTokens, outputTokens);
     },

@@ -381,7 +381,7 @@ function ComposioToolkitList({
             <>
               <p>No apps are enabled for your org yet.</p>
               <p className="text-xs">
-                Ask an org admin to enable toolkits first.
+                Ask a Workspace Admin to enable toolkits first.
               </p>
             </>
           )}
@@ -520,7 +520,7 @@ export function ComposioConnectionsCard({
           <p>
             {isOrgAdmin
               ? "Once the key is saved above, you can enable toolkits here. Members connect from chat."
-              : "Ask an org admin to save the Composio project API key on Integrations."}
+              : "Ask a Superadmin to save the Composio project API key on Integrations."}
           </p>
         </div>
       </IntegrationCardShell>

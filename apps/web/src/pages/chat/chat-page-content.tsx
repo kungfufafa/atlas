@@ -20,6 +20,7 @@ export function ChatPageContent(state: ChatPageState) {
     availableSkills,
     chatStatus,
     busy,
+    canManageProfileModel,
     lastSuccessfulTurnAt,
     turnStartedAt,
     canStop,
@@ -91,6 +92,7 @@ export function ChatPageContent(state: ChatPageState) {
         currentModelSelection={currentModelSelection}
         disabled={composerDisabled}
         error={error}
+        modelSelectionDisabled={!canManageProfileModel}
         onModelChange={handleModelChange}
         onNavigateSetup={navigateSetup}
         onStop={stopStreaming}

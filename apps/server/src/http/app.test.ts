@@ -109,7 +109,10 @@ function createServerOptions() {
       getImageGenerationSettings: async () => ({
         imageGeneration: { model: null },
       }),
-      getModels: async ({ source }: { source: "catalog" | "remote" }) => ({
+      getModels: async (
+        _orgId: string,
+        { source }: { source: "catalog" | "remote" }
+      ) => ({
         models: [{ id: `model-${source}` }],
       }),
       getProfile: async (_profileId: string) => ({ id: "default" }),
@@ -1145,7 +1148,9 @@ describe("createHonoApp", () => {
       );
 
       expect(response.status).toBe(403);
-      await expect(response.json()).resolves.toEqual({ error: "Forbidden" });
+      await expect(response.json()).resolves.toEqual({
+        error: "Viewer access is read-only",
+      });
     });
 
     test("returns 403 when viewers send session messages", async () => {
@@ -1169,12 +1174,14 @@ describe("createHonoApp", () => {
       );
 
       expect(response.status).toBe(403);
-      await expect(response.json()).resolves.toEqual({ error: "Forbidden" });
+      await expect(response.json()).resolves.toEqual({
+        error: "Viewer access is read-only",
+      });
     });
   });
 
   describe("platform admin routes", () => {
-    test("allows profile list for org members but blocks profile management", async () => {
+    test("allows Workspace Admin profile management but keeps shared skill definitions Superadmin-only", async () => {
       const options = createServerOptions();
       const app = createHonoApp(options);
       await createPlatformAdminUser(
@@ -1246,7 +1253,10 @@ describe("createHonoApp", () => {
 
       const createProfileResponse = await app.fetch(
         new Request("http://localhost:4310/v1/profiles", {
-          body: JSON.stringify({ name: "Blocked", systemPrompt: "nope" }),
+          body: JSON.stringify({
+            name: "Workspace profile",
+            systemPrompt: "ok",
+          }),
           headers: {
             ...orgHeaders,
             "Content-Type": "application/json",
@@ -1255,14 +1265,14 @@ describe("createHonoApp", () => {
           method: "POST",
         })
       );
-      expect(createProfileResponse.status).toBe(403);
+      expect(createProfileResponse.status).toBe(201);
 
       const soulResponse = await app.fetch(
         new Request("http://localhost:4310/v1/profiles/default/soul", {
           headers: orgHeaders,
         })
       );
-      expect(soulResponse.status).toBe(403);
+      expect(soulResponse.status).toBe(200);
 
       const skillsResponse = await app.fetch(
         new Request("http://localhost:4310/v1/skills", { headers: orgHeaders })

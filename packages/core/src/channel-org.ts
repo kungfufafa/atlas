@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
 import type { ListUserOrgsResponse, UserOrgSummary } from "./contract";
 import { readTextOrNull, writePrivateTextFile } from "./fs";
-import { getUserConfigDir } from "./user-config";
+import { getWorkspaceChannelDir } from "./workspace-channel-paths";
 
 export type ChannelOrgSelectionChannel = "telegram" | "whatsapp" | "discord";
 
@@ -13,9 +13,10 @@ export interface ChannelOrgRecord {
 type ChannelOrgMap = Record<string, ChannelOrgRecord>;
 
 export function getChannelOrgSelectionPath(
-  channel: ChannelOrgSelectionChannel
+  channel: ChannelOrgSelectionChannel,
+  orgId?: string | null
 ): string {
-  return join(getUserConfigDir(), channel, "org-selection.json");
+  return join(getWorkspaceChannelDir(channel, orgId), "org-selection.json");
 }
 
 export class ChannelOrgStore {

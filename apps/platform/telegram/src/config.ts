@@ -11,9 +11,10 @@ export interface TelegramBridgeConfig {
 }
 
 export async function loadConfig(
-  env: Record<string, string | undefined> = process.env
+  env: Record<string, string | undefined> = process.env,
+  orgId?: string | null
 ): Promise<TelegramBridgeConfig> {
-  const file = await loadTelegramConfigFile();
+  const file = await loadTelegramConfigFile(orgId);
   const resolved = resolveTelegramConfigFromSources({ env, file });
 
   if (!resolved) {

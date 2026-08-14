@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { join } from "node:path";
 import { parseIni, readTextOrNull, writePrivateTextFile } from "./fs";
-import { getUserConfigDir } from "./user-config";
+import { getWorkspaceChannelDir } from "./workspace-channel-paths";
 
 export const DEFAULT_DISCORD_PROFILE_ID = "default";
 
@@ -31,12 +31,14 @@ export interface UpdateDiscordSettingsInput {
   profileId?: string;
 }
 
-export function getDiscordConfigDir(): string {
-  return join(getUserConfigDir(), "discord");
+export function getDiscordConfigDir(orgId?: string | null): string {
+  return orgId === undefined
+    ? getWorkspaceChannelDir("discord")
+    : getWorkspaceChannelDir("discord", orgId);
 }
 
-export function getDiscordConfigPath(): string {
-  return join(getDiscordConfigDir(), "config.ini");
+export function getDiscordConfigPath(orgId?: string | null): string {
+  return join(getDiscordConfigDir(orgId), "config.ini");
 }
 
 const DISCORD_API_BASE_URL = "https://discord.com/api/v10";
@@ -169,8 +171,10 @@ export function isDiscordUserAuthorized(
   );
 }
 
-async function loadDiscordConfigFile(): Promise<DiscordConfigFile | null> {
-  const raw = await readTextOrNull(getDiscordConfigPath());
+async function loadDiscordConfigFile(
+  orgId?: string | null
+): Promise<DiscordConfigFile | null> {
+  const raw = await readTextOrNull(getDiscordConfigPath(orgId));
 
   if (raw === null) {
     return null;
@@ -224,14 +228,17 @@ export function toDiscordSettingsPublic(
   };
 }
 
-export async function loadDiscordSettingsPublic(): Promise<DiscordSettingsPublic> {
-  const file = await loadDiscordConfigFile();
+export async function loadDiscordSettingsPublic(
+  orgId?: string | null
+): Promise<DiscordSettingsPublic> {
+  const file = await loadDiscordConfigFile(orgId);
   const base = toDiscordSettingsPublic(file);
   return withDiscordInviteUrl(base, file?.botToken ?? null);
 }
 
 async function writeDiscordConfigFile(
-  config: DiscordConfigFile
+  config: DiscordConfigFile,
+  orgId?: string | null
 ): Promise<void> {
   const lines = [
     "# Atlas Discord bridge",
@@ -247,8 +254,8 @@ async function writeDiscordConfigFile(
     "",
   ];
 
-  await writePrivateTextFile(getDiscordConfigPath(), lines.join("\n"), {
-    ensureDir: getDiscordConfigDir(),
+  await writePrivateTextFile(getDiscordConfigPath(orgId), lines.join("\n"), {
+    ensureDir: getDiscordConfigDir(orgId),
   });
 }
 
@@ -318,9 +325,10 @@ function buildSavedDiscordConfig(
 }
 
 export async function saveDiscordConfig(
-  input: UpdateDiscordSettingsInput
+  input: UpdateDiscordSettingsInput,
+  orgId?: string | null
 ): Promise<DiscordSettingsPublic> {
-  const existing = await loadDiscordConfigFile();
+  const existing = await loadDiscordConfigFile(orgId);
   const next = buildSavedDiscordConfig(input, existing);
 
   if (
@@ -330,12 +338,13 @@ export async function saveDiscordConfig(
     clearDiscordApplicationIdCache(existing.botToken);
   }
 
-  await writeDiscordConfigFile(next);
+  await writeDiscordConfigFile(next, orgId);
   return withDiscordInviteUrl(toDiscordSettingsPublic(next), next.botToken);
 }
 
 export async function addDiscordAllowedUserId(
-  userId: string
+  userId: string,
+  orgId?: string | null
 ): Promise<
   | { alreadyAllowed: boolean; ok: true; userId: string }
   | { message: string; ok: false }
@@ -346,7 +355,7 @@ export async function addDiscordAllowedUserId(
     return { message: "Invalid Discord user ID.", ok: false };
   }
 
-  const config = await loadDiscordConfigFile();
+  const config = await loadDiscordConfigFile(orgId);
 
   if (!config) {
     return {
@@ -360,10 +369,13 @@ export async function addDiscordAllowedUserId(
   }
 
   try {
-    await writeDiscordConfigFile({
-      ...config,
-      allowedUserIds: [...config.allowedUserIds, trimmed],
-    });
+    await writeDiscordConfigFile(
+      {
+        ...config,
+        allowedUserIds: [...config.allowedUserIds, trimmed],
+      },
+      orgId
+    );
   } catch {
     return {
       message: "Could not update the Discord allowed list.",
@@ -374,8 +386,10 @@ export async function addDiscordAllowedUserId(
   return { alreadyAllowed: false, ok: true, userId: trimmed };
 }
 
-export async function regenerateDiscordHandshake(): Promise<DiscordSettingsPublic> {
-  const existing = await loadDiscordConfigFile();
+export async function regenerateDiscordHandshake(
+  orgId?: string | null
+): Promise<DiscordSettingsPublic> {
+  const existing = await loadDiscordConfigFile(orgId);
 
   if (!existing?.botToken.trim()) {
     throw new Error("Save a bot token before generating a pairing code.");
@@ -386,15 +400,16 @@ export async function regenerateDiscordHandshake(): Promise<DiscordSettingsPubli
     handshakeCode: generateHandshakeCode(),
   };
 
-  await writeDiscordConfigFile(next);
+  await writeDiscordConfigFile(next, orgId);
   return withDiscordInviteUrl(toDiscordSettingsPublic(next), next.botToken);
 }
 
 export async function verifyAndPairDiscordUser(
   handshakeInput: string,
-  userId: string
+  userId: string,
+  orgId?: string | null
 ): Promise<{ ok: true; message: string } | { ok: false; message: string }> {
-  const config = await loadDiscordConfigFile();
+  const config = await loadDiscordConfigFile(orgId);
 
   if (!config) {
     return {
@@ -430,11 +445,14 @@ export async function verifyAndPairDiscordUser(
 
   const pairedUserIds = [...new Set([...config.pairedUserIds, userId])];
 
-  await writeDiscordConfigFile({
-    ...config,
-    handshakeCode: null,
-    pairedUserIds,
-  });
+  await writeDiscordConfigFile(
+    {
+      ...config,
+      handshakeCode: null,
+      pairedUserIds,
+    },
+    orgId
+  );
 
   return {
     message: "Linked successfully. You can chat with Atlas now.",

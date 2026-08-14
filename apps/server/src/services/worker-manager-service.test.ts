@@ -72,6 +72,22 @@ describe("WorkerManagerService", () => {
   });
 
   describe("startWorker", () => {
+    test("starts an isolated worker for one workspace", async () => {
+      const mockPm2 = createMockPm2();
+      const service = new WorkerManagerService(projectRoot, mockPm2);
+
+      await service.startWorkspaceWorker("telegram", "workspace-a");
+
+      expect(mockPm2.stop).toHaveBeenCalledWith(
+        "telegram--workspace-a",
+        expect.any(Function)
+      );
+      const opts = (mockPm2.start as ReturnType<typeof mock>).mock.calls[0][0];
+      expect(opts.name).toBe("telegram--workspace-a");
+      expect(opts.env.ATLAS_WORKSPACE_ID).toBe("workspace-a");
+      expect(opts.args).toContain("apps/platform/telegram/src/index.ts");
+    });
+
     test("starts telegram worker with correct script path", async () => {
       const mockPm2 = createMockPm2();
       const service = new WorkerManagerService(projectRoot, mockPm2);

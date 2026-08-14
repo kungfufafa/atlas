@@ -243,7 +243,7 @@ export function SkillsWriteApprovalOrgCard() {
             </p>
             <p className="max-w-prose text-muted-foreground text-xs leading-relaxed">
               When enabled, agent skill creates, patches, and deletes require
-              org admin approval before they go live.
+              Workspace Admin approval before they go live.
             </p>
           </div>
           {activeTab === "gate" ? (

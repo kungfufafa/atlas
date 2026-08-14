@@ -15,34 +15,16 @@ import type {
   UploadKnowledgeBaseRequest,
   UploadKnowledgeBaseResponse,
 } from "@atlas/core";
-import { AtlasApiError } from "@atlas/core";
 import { filterProfilesForChatAccess } from "@atlas/core/profiles";
 import { createRoute, z } from "@hono/zod-openapi";
 import type { ServerOptions } from "../context";
 import {
   requireActiveOrgIdFromContext,
-  requireOrgAdmin,
-  requirePlatformAdminFromContext,
+  requireOrgAdminOrPlatformAdminFromContext,
+  requirePlatformAdmin,
 } from "../org-guards";
 import { getRequestAuth, json, readJson } from "../shared";
 import type { HonoApp } from "../types";
-
-const ORG_ADMIN_PROFILE_SETTING_KEYS = new Set([
-  "skillsWriteApproval",
-  "skillsPostTurnReview",
-]);
-
-function isOrgAdminAllowedProfileSettingsUpdate(
-  body: UpdateProfileRequest
-): boolean {
-  const keys = Object.keys(body).filter(
-    (key) => body[key as keyof UpdateProfileRequest] !== undefined
-  );
-  return (
-    keys.length > 0 &&
-    keys.every((key) => ORG_ADMIN_PROFILE_SETTING_KEYS.has(key))
-  );
-}
 
 export function registerProfileRoutes(
   app: HonoApp,
@@ -362,7 +344,7 @@ export function registerProfileRoutes(
         },
       },
       summary:
-        "Read artifact bytes for a profile (org members; list/delete remain platform-admin)",
+        "Read artifact bytes for a profile (workspace members; list/delete require Workspace Admin)",
       tags: ["Profiles"],
     })
   );
@@ -595,14 +577,17 @@ export function registerProfileRoutes(
   });
 
   app.post("/v1/profiles", async (c) => {
-    requirePlatformAdminFromContext(c);
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<CreateProfileRequest>(c.req.raw);
+    if (body.isSuper) {
+      requirePlatformAdmin(auth);
+    }
     return json<ProfileResponse>(await agent.createProfile(orgId, body), 201);
   });
 
   app.get("/v1/profiles/:profileId/soul", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
     const includeContents = c.req.query("contents") === "true";
@@ -612,7 +597,7 @@ export function registerProfileRoutes(
   });
 
   app.get("/v1/profiles/:profileId/soul/stack", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
     return json<SoulStackResponse>(
@@ -621,7 +606,7 @@ export function registerProfileRoutes(
   });
 
   app.post("/v1/profiles/:profileId/soul/init", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
     return json<InitSoulResponse>(
@@ -631,7 +616,7 @@ export function registerProfileRoutes(
   });
 
   app.put("/v1/profiles/:profileId/soul/files/:fileKey", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
     const body = await readJson<UpdateSoulFileRequest>(c.req.raw);
@@ -645,7 +630,7 @@ export function registerProfileRoutes(
   });
 
   app.get("/v1/profiles/:profileId/artifacts", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
     const limitRaw = c.req.query("limit");
@@ -710,7 +695,7 @@ export function registerProfileRoutes(
   });
 
   app.delete("/v1/profiles/:profileId/artifacts", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
     const artifactPath = c.req.query("path");
@@ -725,7 +710,7 @@ export function registerProfileRoutes(
   });
 
   app.get("/v1/profiles/:profileId/knowledge-base", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
     return json<ListKnowledgeBaseResponse>(
@@ -734,7 +719,7 @@ export function registerProfileRoutes(
   });
 
   app.post("/v1/profiles/:profileId/knowledge-base", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
     const body = await readJson<UploadKnowledgeBaseRequest>(c.req.raw);
@@ -747,7 +732,7 @@ export function registerProfileRoutes(
   app.delete(
     "/v1/profiles/:profileId/knowledge-base/:documentId",
     async (c) => {
-      requirePlatformAdminFromContext(c);
+      requireOrgAdminOrPlatformAdminFromContext(c);
       const orgId = requireActiveOrgIdFromContext(c);
       const profileId = decodeURIComponent(c.req.param("profileId"));
       return json<DeleteKnowledgeBaseResponse>(
@@ -763,7 +748,7 @@ export function registerProfileRoutes(
   app.get(
     "/v1/profiles/:profileId/knowledge-base/:documentId/content",
     async (c) => {
-      requirePlatformAdminFromContext(c);
+      requireOrgAdminOrPlatformAdminFromContext(c);
       const orgId = requireActiveOrgIdFromContext(c);
       const profileId = decodeURIComponent(c.req.param("profileId"));
       const documentId = decodeURIComponent(c.req.param("documentId"));
@@ -796,7 +781,7 @@ export function registerProfileRoutes(
   });
 
   app.put("/v1/profiles/:profileId/avatar", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
     const body = await readJson<ImageAttachment>(c.req.raw);
@@ -806,7 +791,7 @@ export function registerProfileRoutes(
   });
 
   app.delete("/v1/profiles/:profileId/avatar", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
     await agent.deleteProfileAvatar(orgId, profileId);
@@ -814,24 +799,17 @@ export function registerProfileRoutes(
   });
 
   app.get("/v1/profiles/:profileId", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
     return json<ProfileResponse>(await agent.getProfile(orgId, profileId));
   });
 
   app.put("/v1/profiles/:profileId", async (c) => {
-    const auth = getRequestAuth(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
     const body = await readJson<UpdateProfileRequest>(c.req.raw);
-
-    if (!auth.isPlatformAdmin) {
-      requireOrgAdmin(auth);
-      if (!isOrgAdminAllowedProfileSettingsUpdate(body)) {
-        throw new AtlasApiError("Forbidden", 403);
-      }
-    }
 
     return json<ProfileResponse>(
       await agent.updateProfile(orgId, profileId, body)
@@ -839,7 +817,7 @@ export function registerProfileRoutes(
   });
 
   app.delete("/v1/profiles/:profileId", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
     await agent.deleteProfile(orgId, profileId);

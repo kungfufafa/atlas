@@ -109,6 +109,7 @@ export interface ChatHandlerDeps {
   authStore: DiscordAuthStore;
   client: AtlasClient;
   config: DiscordBridgeConfig;
+  fixedWorkspaceId?: string;
   getBotInfo?: () => DiscordBotInfo | undefined;
   orgStore: ChannelOrgStore;
   sessionStore: SessionStore;
@@ -123,6 +124,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     sessionStore,
     threadStore,
     orgStore,
+    fixedWorkspaceId,
     getBotInfo = () => undefined,
   } = deps;
 
@@ -805,6 +807,17 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     channelOrgKey: string,
     messageText: string | undefined
   ): Promise<boolean> {
+    if (fixedWorkspaceId) {
+      client.setOrgId(fixedWorkspaceId);
+      if (
+        getOrgSelection(orgStore, channelOrgKey)?.orgId !== fixedWorkspaceId
+      ) {
+        orgStore.set(channelOrgKey, fixedWorkspaceId);
+        await orgStore.save();
+      }
+      return true;
+    }
+
     const orgContext = await prepareChannelOrgContext({
       getSelectedOrgId: () => getOrgSelection(orgStore, channelOrgKey)?.orgId,
       listOrgs: () => client.listUserOrgs(),
@@ -841,6 +854,13 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     conversationKey: string,
     messenger: DiscordMessenger
   ): Promise<void> {
+    if (fixedWorkspaceId) {
+      await messenger.send(
+        "This bot belongs to one workspace and cannot switch workspaces."
+      );
+      return;
+    }
+
     const { orgs } = await client.listUserOrgs();
 
     if (orgs.length === 0) {

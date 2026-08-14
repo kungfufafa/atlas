@@ -11,9 +11,10 @@ export interface DiscordBridgeConfig {
 }
 
 export async function loadConfig(
-  env: Record<string, string | undefined> = process.env
+  env: Record<string, string | undefined> = process.env,
+  orgId?: string | null
 ): Promise<DiscordBridgeConfig> {
-  const file = await loadDiscordConfigFile();
+  const file = await loadDiscordConfigFile(orgId);
   const resolved = resolveDiscordConfigFromSources({ env, file });
 
   if (!resolved) {

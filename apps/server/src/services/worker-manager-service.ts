@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { WorkerLogsResponse, WorkerProcessInfo } from "@atlas/core";
 import {
+  listConfiguredChannelWorkspaceIds,
   type PlatformWorkerName,
   readRuntimeServerUrl,
   readWorkerDesiredState,
@@ -24,6 +25,8 @@ const WORKER_DIST_SCRIPTS: Partial<Record<string, string>> = {
 };
 
 const VALID_WORKERS = Object.keys(WORKER_SCRIPTS);
+const WORKSPACE_WORKERS = ["telegram", "discord", "whatsapp"] as const;
+type WorkspaceWorkerName = (typeof WORKSPACE_WORKERS)[number];
 
 function promisifyPm2<T>(
   fn: (cb: (err: Error | null, result?: T) => void) => void
@@ -131,6 +134,42 @@ export class WorkerManagerService {
     });
   }
 
+  async startWorkspaceWorker(
+    name: WorkspaceWorkerName,
+    orgId: string
+  ): Promise<void> {
+    const workspaceId = validateWorkspaceId(orgId);
+    const processName = workspaceWorkerProcessName(name, workspaceId);
+
+    await this.withPm2(async (pm2) => {
+      const script = this.resolveWorkerScript(name);
+      await this.removeWorkerFromPm2(pm2, processName);
+      await promisifyPm2<void>((cb) =>
+        pm2.start(
+          {
+            args: ["run", script],
+            cwd: this.projectRoot,
+            env: this.workerProcessEnv(workspaceId),
+            name: processName,
+            script: "bun",
+          },
+          cb
+        )
+      );
+    });
+  }
+
+  async stopWorkspaceWorker(
+    name: WorkspaceWorkerName,
+    orgId: string
+  ): Promise<void> {
+    const processName = workspaceWorkerProcessName(
+      name,
+      validateWorkspaceId(orgId)
+    );
+    await this.withPm2((pm2) => this.removeWorkerFromPm2(pm2, processName));
+  }
+
   async stopWorker(name: string): Promise<void> {
     if (!this.isValidWorker(name)) {
       throw new Error(`Unknown worker: ${name}`);
@@ -162,6 +201,28 @@ export class WorkerManagerService {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         console.warn(`Could not recover ${name} worker: ${message}`);
+      }
+    }
+
+    for (const name of WORKSPACE_WORKERS) {
+      const orgIds = await listConfiguredChannelWorkspaceIds(name);
+      for (const orgId of orgIds) {
+        const processName = workspaceWorkerProcessName(name, orgId);
+        const current = await this.getPm2ProcessStatus(processName);
+        if (current?.status === "online") {
+          continue;
+        }
+
+        try {
+          await this.startWorkspaceWorker(name, orgId);
+          console.log(`Recovered ${name} worker for workspace ${orgId}`);
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : String(error);
+          console.warn(
+            `Could not recover ${name} worker for workspace ${orgId}: ${message}`
+          );
+        }
       }
     }
   }
@@ -247,6 +308,15 @@ export class WorkerManagerService {
     }
   }
 
+  async getWorkspaceWorkerStatus(
+    name: WorkspaceWorkerName,
+    orgId: string
+  ): Promise<WorkerProcessInfo | null> {
+    return this.getPm2ProcessStatus(
+      workspaceWorkerProcessName(name, validateWorkspaceId(orgId))
+    );
+  }
+
   async getWorkerLogs(
     name: string,
     lines: number
@@ -288,7 +358,20 @@ export class WorkerManagerService {
     );
   }
 
-  private workerProcessEnv(): Record<string, string> {
+  private async getPm2ProcessStatus(
+    processName: string
+  ): Promise<WorkerProcessInfo | null> {
+    try {
+      const list = await this.listAllPm2Processes();
+      return this.pm2ProcessToInfo(
+        list.find((process) => process.name === processName)
+      );
+    } catch {
+      return null;
+    }
+  }
+
+  private workerProcessEnv(orgId?: string): Record<string, string> {
     const env: Record<string, string> = {
       NODE_ENV: process.env.NODE_ENV ?? "development",
     };
@@ -305,8 +388,27 @@ export class WorkerManagerService {
       env.ATLAS_CONFIG_DIR = configDir;
     }
 
+    if (orgId) {
+      env.ATLAS_WORKSPACE_ID = orgId;
+    }
+
     return env;
   }
+}
+
+function validateWorkspaceId(orgId: string): string {
+  const trimmed = orgId.trim();
+  if (!/^[a-zA-Z0-9_-]+$/.test(trimmed)) {
+    throw new Error("Invalid workspace id.");
+  }
+  return trimmed;
+}
+
+function workspaceWorkerProcessName(
+  name: WorkspaceWorkerName,
+  orgId: string
+): string {
+  return `${name}--${orgId}`;
 }
 
 async function readLastLines(path: string, lineCount: number): Promise<string> {

@@ -105,6 +105,7 @@ import {
   createSmtpSender,
   DEFAULT_THINKING_EFFORT,
   DEFAULT_THINKING_ENABLED,
+  DEFAULT_TIMEZONE,
   defaultOllamaBaseUrl,
   deleteArtifactFile,
   emailConfigToMailboxConfig,
@@ -131,6 +132,7 @@ import {
   loadUserVisionSettings,
   loadWhatsAppSettingsPublic,
   messageContentHasImages,
+  migrateLegacyChannelToWorkspace,
   nanoid,
   normalizeUserContextContent,
   type OrgRole,
@@ -151,11 +153,11 @@ import {
   saveDiscordConfig,
   saveEmailConfig,
   saveTelegramConfig,
-  saveUserConfig,
   saveUserThinkingSettings,
   saveUserTimezone,
   saveWhatsAppConfig,
   USER_CONTEXT_TEMPLATE,
+  validateTimezone,
   writeSoulFile,
 } from "@atlas/core";
 import { canAccessSuperAgentProfile } from "@atlas/core/profiles";
@@ -291,8 +293,8 @@ export interface SessionAccessOptions {
 }
 
 export class AgentService {
-  private harness: AgentHarness;
   private userConfig: UserConfig | null;
+  private readonly orgUserConfigs = new Map<string, UserConfig | null>();
   private readonly db: DatabaseAdapter;
   private readonly profileService: ProfileService;
   private readonly superAgentSessionState = new SuperAgentSessionState();
@@ -330,13 +332,12 @@ export class AgentService {
     this.userConfig = userConfig;
     this.db = db;
     this.profileService = new ProfileService(db);
-    this.sessionTitleService = new SessionTitleService(
-      db,
-      () => this.userConfig
+    this.sessionTitleService = new SessionTitleService(db, (orgId) =>
+      this.getOrgUserConfig(orgId)
     );
     this.skillPostTurnReviewService = new SkillPostTurnReviewService(
       db,
-      () => this.userConfig
+      (orgId) => this.getOrgUserConfig(orgId)
     );
     this.agentTodoState = new AgentTodoState(db);
     this.agentQuestionnaireState = new AgentQuestionnaireState(db);
@@ -351,15 +352,6 @@ export class AgentService {
     this.orgMemoryTools = createOrgMemoryTools(this.getOrgMemoryService());
     this._providerConfigured =
       isProviderConfigured(userConfig) && provider !== null;
-    const activeInstance = getActiveProviderInstance(userConfig);
-    this.harness = this.createHarness({
-      modelId: activeInstance
-        ? resolveDefaultModelForInstance(activeInstance)
-        : null,
-      provider,
-      providerInstance: activeInstance,
-      thinking: this.resolveWorkspaceThinkingDefaults(),
-    });
   }
 
   /**
@@ -552,6 +544,155 @@ export class AgentService {
     return this.userConfig;
   }
 
+  async getUserConfigForOrg(orgId: string): Promise<UserConfig | null> {
+    return this.getOrgUserConfig(orgId);
+  }
+
+  async getOrgTimezone(orgId: string): Promise<string> {
+    return (await this.getOrgUserConfig(orgId))?.timezone ?? DEFAULT_TIMEZONE;
+  }
+
+  async setOrgTimezone(orgId: string, timezone: string): Promise<string> {
+    const normalized = validateTimezone(timezone);
+    const config = await this.getOrgConfigForUpdate(orgId);
+    await this.saveOrgUserConfig(orgId, { ...config, timezone: normalized });
+    return normalized;
+  }
+
+  async getOrgThinkingSettings(
+    orgId: string
+  ): Promise<ThinkingSettingsResponse> {
+    const config = await this.getOrgUserConfig(orgId);
+    return {
+      thinking: {
+        effort: config?.thinkingEffort ?? DEFAULT_THINKING_EFFORT,
+        enabled: config?.thinkingEnabled ?? DEFAULT_THINKING_ENABLED,
+      },
+    };
+  }
+
+  async setOrgThinkingSettings(
+    orgId: string,
+    input: UpdateThinkingRequest
+  ): Promise<ThinkingSettingsResponse> {
+    const config = await this.getOrgConfigForUpdate(orgId);
+    const current = await this.getOrgThinkingSettings(orgId);
+    const thinking = {
+      effort: input.effort ?? current.thinking.effort,
+      enabled: input.enabled,
+    };
+    await this.saveOrgUserConfig(orgId, {
+      ...config,
+      thinkingEffort: thinking.effort,
+      thinkingEnabled: thinking.enabled,
+    });
+    return { thinking };
+  }
+
+  async getOrgVisionSettings(orgId: string): Promise<VisionSettingsResponse> {
+    return {
+      vision: {
+        model: (await this.getOrgUserConfig(orgId))?.visionModel ?? null,
+      },
+    };
+  }
+
+  async setOrgVisionSettings(
+    orgId: string,
+    input: UpdateVisionRequest
+  ): Promise<VisionSettingsResponse> {
+    const config = await this.getOrgConfigForUpdate(orgId);
+    const model = input.model?.trim() || null;
+    if (
+      model &&
+      !resolveVisionProviderSelection({ ...config, visionModel: model })
+    ) {
+      throw new AtlasApiError(
+        "Selected image parsing model is unavailable. Choose a vision-capable model.",
+        400
+      );
+    }
+    await this.saveOrgUserConfig(orgId, { ...config, visionModel: model });
+    return { vision: { model } };
+  }
+
+  async getOrgTranscriptionSettings(
+    orgId: string
+  ): Promise<TranscriptionSettingsResponse> {
+    return {
+      transcription: {
+        model: (await this.getOrgUserConfig(orgId))?.transcriptionModel ?? null,
+      },
+    };
+  }
+
+  async setOrgTranscriptionSettings(
+    orgId: string,
+    input: UpdateTranscriptionRequest
+  ): Promise<TranscriptionSettingsResponse> {
+    const config = await this.getOrgConfigForUpdate(orgId);
+    const model = input.model?.trim() || null;
+    if (
+      model &&
+      !resolveTranscriptionProviderSelection({
+        ...config,
+        transcriptionModel: model,
+      })
+    ) {
+      throw new AtlasApiError(
+        "Selected audio transcription model is unavailable. Choose an OpenAI Whisper model.",
+        400
+      );
+    }
+    await this.saveOrgUserConfig(orgId, {
+      ...config,
+      transcriptionModel: model,
+    });
+    return { transcription: { model } };
+  }
+
+  async getOrgImageGenerationSettings(
+    orgId: string
+  ): Promise<ImageGenerationSettingsResponse> {
+    return {
+      imageGeneration: {
+        model: (await this.getOrgUserConfig(orgId))?.imageModel ?? null,
+      },
+    };
+  }
+
+  async setOrgImageGenerationSettings(
+    orgId: string,
+    input: UpdateImageGenerationRequest
+  ): Promise<ImageGenerationSettingsResponse> {
+    const config = await this.getOrgConfigForUpdate(orgId);
+    const model = input.model?.trim() || null;
+    if (model && !isAllowedImageGenerationSelection(model)) {
+      throw new AtlasApiError(
+        "Only openai::gpt-image-2 is supported for image generation.",
+        400
+      );
+    }
+    await this.saveOrgUserConfig(orgId, { ...config, imageModel: model });
+    return { imageGeneration: { model } };
+  }
+
+  async transcribeAudioForOrg(
+    orgId: string,
+    input: TranscribeAudioRequest
+  ): Promise<TranscribeAudioResponse> {
+    const config = await this.getOrgUserConfig(orgId);
+    return this.transcribeAudioWithConfig(input, config);
+  }
+
+  async generateImageForOrg(
+    orgId: string,
+    input: GenerateImageRequest
+  ): Promise<GenerateImageResponse> {
+    const config = await this.getOrgUserConfig(orgId);
+    return this.generateImageWithConfig(input, config);
+  }
+
   async setUserTimezone(timezone: string): Promise<string> {
     await saveUserTimezone(timezone);
 
@@ -587,15 +728,6 @@ export class AgentService {
       };
     }
 
-    this.harness = this.createHarness({
-      modelId: (() => {
-        const active = getActiveProviderInstance(this.userConfig);
-        return active ? resolveDefaultModelForInstance(active) : null;
-      })(),
-      provider: createProviderFromSources(process.env, this.userConfig),
-      providerInstance: getActiveProviderInstance(this.userConfig),
-      thinking: this.resolveWorkspaceThinkingDefaults(),
-    });
     this.sessions.clear();
 
     return { thinking };
@@ -1026,14 +1158,17 @@ export class AgentService {
     };
   }
 
-  async getTelegramSettings(): Promise<TelegramSettingsResponse> {
-    return loadTelegramSettingsPublic();
+  async getTelegramSettings(orgId: string): Promise<TelegramSettingsResponse> {
+    await this.ensureLegacyChannelMigrated("telegram", orgId);
+    return loadTelegramSettingsPublic(orgId);
   }
 
   async setTelegramSettings(
+    orgId: string,
     input: UpdateTelegramSettingsRequest
   ): Promise<TelegramSettingsResponse> {
-    const existing = await loadTelegramSettingsPublic();
+    await this.ensureLegacyChannelMigrated("telegram", orgId);
+    const existing = await loadTelegramSettingsPublic(orgId);
     const botToken =
       input.botToken !== undefined && input.botToken.trim()
         ? input.botToken.trim()
@@ -1043,29 +1178,45 @@ export class AgentService {
       throw new Error("Bot token is required.");
     }
 
-    return saveTelegramConfig({
-      ...(botToken ? { botToken } : {}),
-      ...(input.allowedUserIds === undefined
-        ? existing.allowedUserIds.length > 0
-          ? { allowedUserIds: existing.allowedUserIds.join(",") }
-          : {}
-        : { allowedUserIds: input.allowedUserIds }),
-      ...(input.profileId === undefined ? {} : { profileId: input.profileId }),
-    });
+    const profileId = input.profileId?.trim();
+    if (profileId) {
+      await this.requireProfile(orgId, profileId);
+    }
+
+    return saveTelegramConfig(
+      {
+        ...(botToken ? { botToken } : {}),
+        ...(input.allowedUserIds === undefined
+          ? existing.allowedUserIds.length > 0
+            ? { allowedUserIds: existing.allowedUserIds.join(",") }
+            : {}
+          : { allowedUserIds: input.allowedUserIds }),
+        ...(input.profileId === undefined
+          ? {}
+          : { profileId: input.profileId }),
+      },
+      orgId
+    );
   }
 
-  async regenerateTelegramHandshake(): Promise<TelegramSettingsResponse> {
-    return regenerateTelegramHandshake();
+  async regenerateTelegramHandshake(
+    orgId: string
+  ): Promise<TelegramSettingsResponse> {
+    await this.ensureLegacyChannelMigrated("telegram", orgId);
+    return regenerateTelegramHandshake(orgId);
   }
 
-  async getDiscordSettings(): Promise<DiscordSettingsResponse> {
-    return loadDiscordSettingsPublic();
+  async getDiscordSettings(orgId: string): Promise<DiscordSettingsResponse> {
+    await this.ensureLegacyChannelMigrated("discord", orgId);
+    return loadDiscordSettingsPublic(orgId);
   }
 
   async setDiscordSettings(
+    orgId: string,
     input: UpdateDiscordSettingsRequest
   ): Promise<DiscordSettingsResponse> {
-    const existing = await loadDiscordSettingsPublic();
+    await this.ensureLegacyChannelMigrated("discord", orgId);
+    const existing = await loadDiscordSettingsPublic(orgId);
     const botToken =
       input.botToken !== undefined && input.botToken.trim()
         ? input.botToken.trim()
@@ -1075,19 +1226,32 @@ export class AgentService {
       throw new Error("Bot token is required.");
     }
 
-    return saveDiscordConfig({
-      ...(botToken ? { botToken } : {}),
-      ...(input.allowedUserIds === undefined
-        ? existing.allowedUserIds.length > 0
-          ? { allowedUserIds: existing.allowedUserIds.join(",") }
-          : {}
-        : { allowedUserIds: input.allowedUserIds }),
-      ...(input.profileId === undefined ? {} : { profileId: input.profileId }),
-    });
+    const profileId = input.profileId?.trim();
+    if (profileId) {
+      await this.requireProfile(orgId, profileId);
+    }
+
+    return saveDiscordConfig(
+      {
+        ...(botToken ? { botToken } : {}),
+        ...(input.allowedUserIds === undefined
+          ? existing.allowedUserIds.length > 0
+            ? { allowedUserIds: existing.allowedUserIds.join(",") }
+            : {}
+          : { allowedUserIds: input.allowedUserIds }),
+        ...(input.profileId === undefined
+          ? {}
+          : { profileId: input.profileId }),
+      },
+      orgId
+    );
   }
 
-  async regenerateDiscordHandshake(): Promise<DiscordSettingsResponse> {
-    return regenerateDiscordHandshake();
+  async regenerateDiscordHandshake(
+    orgId: string
+  ): Promise<DiscordSettingsResponse> {
+    await this.ensureLegacyChannelMigrated("discord", orgId);
+    return regenerateDiscordHandshake(orgId);
   }
 
   async getComposioSettings(): Promise<ComposioSettingsResponse> {
@@ -1163,23 +1327,39 @@ export class AgentService {
     return getAgentBrowserStatus();
   }
 
-  async getWhatsAppSettings(): Promise<WhatsAppSettingsResponse> {
-    return loadWhatsAppSettingsPublic();
+  async getWhatsAppSettings(orgId: string): Promise<WhatsAppSettingsResponse> {
+    await this.ensureLegacyChannelMigrated("whatsapp", orgId);
+    return loadWhatsAppSettingsPublic(orgId);
   }
 
   async setWhatsAppSettings(
+    orgId: string,
     input: UpdateWhatsAppSettingsRequest
   ): Promise<WhatsAppSettingsResponse> {
-    return saveWhatsAppConfig({
-      ...(input.phoneNumber === undefined
-        ? {}
-        : { phoneNumber: input.phoneNumber.trim() }),
-      ...(input.profileId === undefined ? {} : { profileId: input.profileId }),
-    });
+    await this.ensureLegacyChannelMigrated("whatsapp", orgId);
+    const profileId = input.profileId?.trim();
+    if (profileId) {
+      await this.requireProfile(orgId, profileId);
+    }
+
+    return saveWhatsAppConfig(
+      {
+        ...(input.phoneNumber === undefined
+          ? {}
+          : { phoneNumber: input.phoneNumber.trim() }),
+        ...(input.profileId === undefined
+          ? {}
+          : { profileId: input.profileId }),
+      },
+      orgId
+    );
   }
 
-  async regenerateWhatsAppPairingCode(): Promise<WhatsAppSettingsResponse> {
-    return regenerateWhatsAppPairingCode();
+  async regenerateWhatsAppPairingCode(
+    orgId: string
+  ): Promise<WhatsAppSettingsResponse> {
+    await this.ensureLegacyChannelMigrated("whatsapp", orgId);
+    return regenerateWhatsAppPairingCode(orgId);
   }
 
   async runAutomationPrompt(
@@ -1189,27 +1369,30 @@ export class AgentService {
     automationId?: string,
     automationRunId?: string
   ): Promise<string> {
-    if (!this._providerConfigured) {
+    const userConfig = await this.getOrgUserConfig(orgId);
+    if (!isProviderConfigured(userConfig)) {
       throw new Error("Provider is not configured.");
     }
 
     const profile = await this.requireProfile(orgId, profileId);
-    const tools = [
-      ...(await this.resolveProfileTools(profile, {
+    const profileTools = await this.resolveProfileTools(
+      profile,
+      {
         includeAutomationTools: false,
         includeTodoTools: false,
-      })),
-      ...this.automationRunHistoryTools,
-    ];
+      },
+      userConfig
+    );
+    const tools = [...profileTools, ...this.automationRunHistoryTools];
     const { systemPrompt, soulActive } = await this.resolveProfileSystemPrompt(
       orgId,
       profileId,
       profile.systemPrompt,
       "member"
     );
-    const userTimezone = await this.getUserTimezone();
+    const userTimezone = userConfig?.timezone ?? DEFAULT_TIMEZONE;
     const userContext = await this.loadUserContextForUser(orgId, undefined);
-    const harness = this.createHarnessForProfile(profile);
+    const harness = this.createHarnessForProfile(profile, userConfig);
 
     const session = harness.createChatSession({
       channel: "automation",
@@ -1236,7 +1419,8 @@ export class AgentService {
   async runSubAgentPrompt(input: SubAgentRunInput): Promise<SubAgentRunResult> {
     const startedAt = Date.now();
 
-    if (!this._providerConfigured) {
+    const userConfig = await this.getOrgUserConfig(input.orgId);
+    if (!isProviderConfigured(userConfig)) {
       return failSubAgentResult("Provider is not configured.");
     }
 
@@ -1248,13 +1432,17 @@ export class AgentService {
 
     const timeoutMs = clampSubAgentTimeout(input.timeoutMs);
     const profile = await this.requireProfile(input.orgId, input.profileId);
-    const tools = await this.resolveProfileTools(profile, {
-      includeAutomationTools: false,
-      includeQuestionTools: false,
-      includeSubAgentTool: false,
-      includeTodoTools: false,
-      userId: input.userId,
-    });
+    const tools = await this.resolveProfileTools(
+      profile,
+      {
+        includeAutomationTools: false,
+        includeQuestionTools: false,
+        includeSubAgentTool: false,
+        includeTodoTools: false,
+        userId: input.userId,
+      },
+      userConfig
+    );
     const { systemPrompt, soulActive } = await this.resolveProfileSystemPrompt(
       input.orgId,
       input.profileId,
@@ -1268,12 +1456,12 @@ export class AgentService {
       "Complete the assigned task and return a clear final answer.",
       "Do not spawn sub-agents.",
     ].join("\n");
-    const userTimezone = await this.getUserTimezone();
+    const userTimezone = userConfig?.timezone ?? DEFAULT_TIMEZONE;
     const userContext = await this.loadUserContextForUser(
       input.orgId,
       input.userId
     );
-    const harness = this.createHarnessForProfile(profile);
+    const harness = this.createHarnessForProfile(profile, userConfig);
     const prompt = buildSubAgentPrompt(task, input.context);
 
     const session = harness.createChatSession({
@@ -1369,14 +1557,14 @@ export class AgentService {
     profileId: string,
     prompt: string
   ): Promise<string> {
-    if (!this._providerConfigured) {
-      throw new Error("Provider is not configured.");
-    }
-
     const task = await this.db.getTask(taskId);
 
     if (!task?.orgId) {
       throw new Error("Task not found.");
+    }
+
+    if (!isProviderConfigured(await this.getOrgUserConfig(task.orgId))) {
+      throw new Error("Provider is not configured.");
     }
 
     const sessionId = await this.ensureTaskSession(
@@ -1384,7 +1572,7 @@ export class AgentService {
       profileId,
       task.orgId
     );
-    const session = await this.resolveSession(sessionId);
+    const session = await this.resolveSession(task.orgId, sessionId);
 
     if (!session) {
       throw new Error("Session not found.");
@@ -1540,7 +1728,7 @@ export class AgentService {
         }))
     ) {
       throw new AtlasApiError(
-        "Super Agent is only available to org admins.",
+        "Super Agent is only available to Superadmins.",
         403
       );
     }
@@ -1553,6 +1741,7 @@ export class AgentService {
       channel,
       createdAt: new Date().toISOString(),
       id: sessionId,
+      orgId,
       profileId: resolvedProfileId,
       title: null,
       userId: userId ?? null,
@@ -1576,8 +1765,11 @@ export class AgentService {
     return sessionId;
   }
 
-  async getSessionTodos(sessionId: string): Promise<AgentTodo[] | null> {
-    const record = await this.db.getSession(sessionId);
+  async getSessionTodos(
+    orgId: string,
+    sessionId: string
+  ): Promise<AgentTodo[] | null> {
+    const record = await this.getSessionRecordForOrg(orgId, sessionId);
 
     if (!record) {
       return null;
@@ -1587,9 +1779,10 @@ export class AgentService {
   }
 
   async getSessionQuestionnaire(
+    orgId: string,
     sessionId: string
   ): Promise<AgentQuestionnaire | null> {
-    const record = await this.db.getSession(sessionId);
+    const record = await this.getSessionRecordForOrg(orgId, sessionId);
 
     if (!record) {
       return null;
@@ -1598,13 +1791,16 @@ export class AgentService {
     return this.agentQuestionnaireState.get(sessionId);
   }
 
-  async getSessionMessages(sessionId: string): Promise<{
+  async getSessionMessages(
+    orgId: string,
+    sessionId: string
+  ): Promise<{
     channel: AgentChannel;
     messages: ChatMessage[];
     messageMeta: Array<{ id: string; seq: number; createdAt: string }>;
     contextUsage: ChatContextUsage | null;
   } | null> {
-    const record = await this.db.getSession(sessionId);
+    const record = await this.getSessionRecordForOrg(orgId, sessionId);
 
     if (!record) {
       return null;
@@ -1617,7 +1813,7 @@ export class AgentService {
     }
 
     if (sessionTurnRegistry.isActive(sessionId)) {
-      const liveSession = await this.resolveSession(sessionId);
+      const liveSession = await this.resolveSession(orgId, sessionId);
 
       if (liveSession) {
         const history = liveSession.getHistory();
@@ -1642,7 +1838,8 @@ export class AgentService {
     const cached = this.sessions.get(sessionId)?.session;
     const contextUsage = cached
       ? cached.getContextUsage()
-      : ((await this.resolveSession(sessionId))?.getContextUsage() ?? null);
+      : ((await this.resolveSession(orgId, sessionId))?.getContextUsage() ??
+        null);
 
     return {
       channel,
@@ -1657,10 +1854,11 @@ export class AgentService {
   }
 
   async branchSession(
+    orgId: string,
     sessionId: string,
     messageIndex: number
   ): Promise<BranchSessionResponse | null> {
-    const record = await this.db.getSession(sessionId);
+    const record = await this.getSessionRecordForOrg(orgId, sessionId);
 
     if (!record) {
       return null;
@@ -1688,6 +1886,7 @@ export class AgentService {
       channel: record.channel,
       createdAt: new Date().toISOString(),
       id: nextSessionId,
+      orgId,
       profileId: record.profileId,
       title: null,
       userId: record.userId ?? null,
@@ -1705,8 +1904,6 @@ export class AgentService {
     if (!channel) {
       throw new Error("Session channel is invalid.");
     }
-
-    const { orgId } = await this.requireProfileRecord(record.profileId);
 
     const branchOrgRole = await this.resolveOrgRole(orgId, record.userId);
     const session = await this.buildChatSession(
@@ -1761,8 +1958,8 @@ export class AgentService {
     return this.skillPostTurnReviewService;
   }
 
-  async purgeSession(sessionId: string): Promise<boolean> {
-    const record = await this.db.getSession(sessionId);
+  async purgeSession(orgId: string, sessionId: string): Promise<boolean> {
+    const record = await this.getSessionRecordForOrg(orgId, sessionId);
 
     if (!record) {
       return false;
@@ -1776,17 +1973,20 @@ export class AgentService {
     return true;
   }
 
-  async resolveSession(sessionId: string): Promise<AgentChatSession | null> {
+  async resolveSession(
+    orgId: string,
+    sessionId: string
+  ): Promise<AgentChatSession | null> {
+    const record = await this.getSessionRecordForOrg(orgId, sessionId);
+
+    if (!record) {
+      return null;
+    }
+
     const stored = this.sessions.get(sessionId);
 
     if (stored) {
       return stored.session;
-    }
-
-    const record = await this.db.getSession(sessionId);
-
-    if (!record) {
-      return null;
     }
 
     const channel = parseAgentChannel(record.channel);
@@ -1794,8 +1994,6 @@ export class AgentService {
     if (!channel) {
       return null;
     }
-
-    const { orgId } = await this.requireProfileRecord(record.profileId);
 
     const resumeOrgRole = await this.resolveOrgRole(orgId, record.userId);
     const session = await this.buildChatSession(
@@ -1816,8 +2014,8 @@ export class AgentService {
     return session;
   }
 
-  async clearSession(sessionId: string): Promise<boolean> {
-    const record = await this.db.getSession(sessionId);
+  async clearSession(orgId: string, sessionId: string): Promise<boolean> {
+    const record = await this.getSessionRecordForOrg(orgId, sessionId);
 
     if (!record) {
       return false;
@@ -1835,10 +2033,11 @@ export class AgentService {
   }
 
   async compactSession(
+    orgId: string,
     sessionId: string,
     options: { force?: boolean } = {}
   ): Promise<CompactionResponse | null> {
-    const session = await this.resolveSession(sessionId);
+    const session = await this.resolveSession(orgId, sessionId);
 
     if (!session) {
       return null;
@@ -1847,7 +2046,10 @@ export class AgentService {
     return session.compact(options);
   }
 
-  async deleteSession(sessionId: string): Promise<boolean> {
+  async deleteSession(orgId: string, sessionId: string): Promise<boolean> {
+    if (!(await this.getSessionRecordForOrg(orgId, sessionId))) {
+      return false;
+    }
     const deleted = this.sessions.delete(sessionId);
 
     if (deleted) {
@@ -1859,16 +2061,50 @@ export class AgentService {
     return deleted;
   }
 
-  async draftAutomation(prompt: string, channel: AgentChannel) {
-    if (!this._providerConfigured) {
+  private async getSessionRecordForOrg(
+    orgId: string,
+    sessionId: string
+  ): Promise<StoredSessionRecord | null> {
+    const record = await this.db.getSession(sessionId);
+
+    if (!record) {
+      return null;
+    }
+
+    if (record.orgId) {
+      return record.orgId === orgId ? record : null;
+    }
+
+    const profile = await this.db.getProfile(record.profileId);
+    return profile?.orgId === orgId ? record : null;
+  }
+
+  async draftAutomation(orgId: string, prompt: string, channel: AgentChannel) {
+    const userConfig = await this.getOrgUserConfig(orgId);
+    const provider = createProviderFromActiveConfig(userConfig);
+    const active = getActiveProviderInstance(userConfig);
+    if (!(isProviderConfigured(userConfig) && provider)) {
       throw new Error("Provider is not configured.");
     }
 
-    return this.harness.createAutomationFromPrompt({ channel, prompt });
+    const harness = this.createHarness({
+      modelId: active ? resolveDefaultModelForInstance(active) : null,
+      provider,
+      providerInstance: active,
+      thinking: this.resolveWorkspaceThinkingDefaults(userConfig),
+    });
+    return harness.createAutomationFromPrompt({ channel, prompt });
   }
 
-  async draftTaskPrompt(title: string, description?: string): Promise<string> {
-    const provider = createProviderFromSources(process.env, this.userConfig);
+  async draftTaskPrompt(
+    orgId: string,
+    title: string,
+    description?: string
+  ): Promise<string> {
+    const provider = createProviderFromSources(
+      process.env,
+      await this.getOrgUserConfig(orgId)
+    );
 
     return draftTaskPromptFromFields(
       { description, title },
@@ -1877,15 +2113,21 @@ export class AgentService {
   }
 
   async discoverModels(
+    orgId: string,
     request: DiscoverModelsRequest
   ): Promise<ModelsResponse> {
+    const userConfig = await this.getOrgUserConfig(orgId);
     const providerId = request.providerId?.trim();
     if (providerId) {
-      return this.discoverModelsForProvider(providerId, {
-        apiKey: request.apiKey,
-        baseUrl: request.baseUrl?.trim() || undefined,
-        hostMode: request.hostMode,
-      });
+      return this.discoverModelsForProvider(
+        providerId,
+        {
+          apiKey: request.apiKey,
+          baseUrl: request.baseUrl?.trim() || undefined,
+          hostMode: request.hostMode,
+        },
+        userConfig
+      );
     }
 
     if (request.provider === "fireworks") {
@@ -1969,10 +2211,11 @@ export class AgentService {
       baseUrl?: string;
       apiKey?: string;
       hostMode?: DiscoverModelsRequest["hostMode"];
-    }
+    },
+    userConfig: UserConfig | null = this.userConfig
   ): Promise<ModelsResponse> {
     const instance = findProviderInstance(
-      this.userConfig ?? { defaultProviderId: null, providers: [] },
+      userConfig ?? { defaultProviderId: null, providers: [] },
       providerId
     );
 
@@ -2090,11 +2333,12 @@ export class AgentService {
     };
   }
 
-  async listProviders(): Promise<ListProvidersResponse> {
-    const providers = this.userConfig?.providers ?? [];
+  async listProviders(orgId: string): Promise<ListProvidersResponse> {
+    const userConfig = await this.getOrgUserConfig(orgId);
+    const providers = userConfig?.providers ?? [];
 
     return {
-      defaultProviderId: this.userConfig?.defaultProviderId ?? null,
+      defaultProviderId: userConfig?.defaultProviderId ?? null,
       providers: providers.map((instance) =>
         toProviderInstanceSummary(instance, countModelsForInstance(instance))
       ),
@@ -2112,8 +2356,10 @@ export class AgentService {
   }
 
   async createProvider(
+    orgId: string,
     request: CreateProviderRequest
   ): Promise<CreateProviderResponse> {
+    const userConfig = await this.getOrgUserConfig(orgId);
     const shouldSkipValidation =
       request.skipValidation === true ||
       process.env.ATLAS_SKIP_PROVIDER_VALIDATION === "true" ||
@@ -2130,20 +2376,20 @@ export class AgentService {
       });
     }
 
-    const existing = this.userConfig?.providers ?? [];
+    const existing = userConfig?.providers ?? [];
     const instance = buildProviderInstanceFromCreateRequest(request, existing);
     const model = resolveInitialModel(instance, request.model);
     const providers = [...existing, instance];
     const isFirst = providers.length === 1;
     const thinking = await this.resolveThinkingSettings();
-    const baseConfig = this.userConfig ?? {
+    const baseConfig = userConfig ?? {
       defaultProviderId: null,
       providers: [],
       thinkingEffort: thinking.effort,
       thinkingEnabled: thinking.enabled,
     };
 
-    this.userConfig = {
+    const updatedConfig: UserConfig = {
       ...baseConfig,
       defaultProviderId:
         isFirst || !baseConfig.defaultProviderId
@@ -2152,15 +2398,14 @@ export class AgentService {
       providers,
     };
 
-    await saveUserConfig(this.userConfig);
-    this.refreshHarness();
+    await this.saveOrgUserConfig(orgId, updatedConfig);
 
     if (isFirst) {
       await this.ensureSoulScaffolded();
     }
 
     return {
-      defaultProviderId: this.userConfig.defaultProviderId!,
+      defaultProviderId: updatedConfig.defaultProviderId!,
       initialModel: model,
       provider: toProviderInstanceSummary(
         instance,
@@ -2170,14 +2415,16 @@ export class AgentService {
   }
 
   async updateProvider(
+    orgId: string,
     providerId: string,
     request: UpdateProviderRequest
   ): Promise<UpdateProviderResponse> {
-    if (!this.userConfig) {
+    const userConfig = await this.getOrgUserConfig(orgId);
+    if (!userConfig) {
       throw new Error("Provider is not configured.");
     }
 
-    const current = findProviderInstance(this.userConfig, providerId);
+    const current = findProviderInstance(userConfig, providerId);
 
     if (!current) {
       throw new Error("Provider not found.");
@@ -2200,13 +2447,11 @@ export class AgentService {
       });
     }
 
-    const providers = this.userConfig.providers.map((instance) =>
+    const providers = userConfig.providers.map((instance) =>
       instance.id === providerId ? updated : instance
     );
 
-    this.userConfig = { ...this.userConfig, providers };
-    await saveUserConfig(this.userConfig);
-    this.refreshHarness();
+    await this.saveOrgUserConfig(orgId, { ...userConfig, providers });
 
     return {
       provider: toProviderInstanceSummary(
@@ -2216,43 +2461,50 @@ export class AgentService {
     };
   }
 
-  async deleteProvider(providerId: string): Promise<DeleteProviderResponse> {
-    if (!this.userConfig) {
+  async deleteProvider(
+    orgId: string,
+    providerId: string
+  ): Promise<DeleteProviderResponse> {
+    const userConfig = await this.getOrgUserConfig(orgId);
+    if (!userConfig) {
       throw new Error("Provider is not configured.");
     }
 
-    const providers = this.userConfig.providers.filter(
+    const providers = userConfig.providers.filter(
       (instance) => instance.id !== providerId
     );
 
-    if (providers.length === this.userConfig.providers.length) {
+    if (providers.length === userConfig.providers.length) {
       throw new Error("Provider not found.");
     }
 
-    let defaultProviderId = this.userConfig.defaultProviderId;
+    let defaultProviderId = userConfig.defaultProviderId;
 
     if (defaultProviderId === providerId) {
       defaultProviderId = providers[0]?.id ?? null;
     }
 
-    this.userConfig = {
-      ...this.userConfig,
+    const updatedConfig = {
+      ...userConfig,
       defaultProviderId,
       providers,
     };
 
-    await saveUserConfig(this.userConfig);
-    this.refreshHarness();
+    await this.saveOrgUserConfig(orgId, updatedConfig);
 
     return { defaultProviderId };
   }
 
   async getModels(
+    orgId?: string,
     options: { source?: "catalog" | "remote" } = {}
   ): Promise<ModelsResponse> {
-    const active = getActiveProviderInstance(this.userConfig);
-    const currentProviderId = this.userConfig?.defaultProviderId ?? null;
-    const configuredProviders = this.userConfig?.providers ?? [];
+    const userConfig = orgId
+      ? await this.getOrgUserConfig(orgId)
+      : this.userConfig;
+    const active = getActiveProviderInstance(userConfig);
+    const currentProviderId = userConfig?.defaultProviderId ?? null;
+    const configuredProviders = userConfig?.providers ?? [];
     const providers = configuredProviders.map((instance) =>
       toProviderInstanceSummary(instance, countModelsForInstance(instance))
     );
@@ -2277,7 +2529,7 @@ export class AgentService {
       );
       const remoteInstance = { ...active, customModels: remote };
       const models = mergeModelsForConfig(
-        (this.userConfig?.providers ?? []).map((instance) =>
+        (userConfig?.providers ?? []).map((instance) =>
           instance.id === active.id ? remoteInstance : instance
         )
       );
@@ -2291,7 +2543,7 @@ export class AgentService {
       });
     }
 
-    const models = mergeModelsForConfig(this.userConfig?.providers ?? []);
+    const models = mergeModelsForConfig(userConfig?.providers ?? []);
 
     return this.buildModelsResponse({
       active,
@@ -2347,9 +2599,10 @@ export class AgentService {
   }
 
   async configureProvider(
+    orgId: string,
     request: ConfigureProviderRequest
   ): Promise<ConfigureProviderResponse> {
-    const result = await this.createProvider({
+    const result = await this.createProvider(orgId, {
       apiKey: request.apiKey,
       baseUrl: request.baseUrl,
       customModels: request.customModels,
@@ -2360,7 +2613,7 @@ export class AgentService {
     });
 
     const instance = findProviderInstance(
-      this.userConfig,
+      await this.getOrgUserConfig(orgId),
       result.defaultProviderId
     );
 
@@ -2376,21 +2629,152 @@ export class AgentService {
 
   private refreshHarness(): void {
     const provider = createProviderFromActiveConfig(this.userConfig);
-    const active = getActiveProviderInstance(this.userConfig);
     this._providerConfigured =
       isProviderConfigured(this.userConfig) && provider !== null;
-    this.harness = this.createHarness({
-      modelId: active ? resolveDefaultModelForInstance(active) : null,
-      provider,
-      providerInstance: active,
-      thinking: this.resolveWorkspaceThinkingDefaults(),
-    });
     this.sessions.clear();
+  }
+
+  private async ensureLegacyChannelMigrated(
+    channel: "telegram" | "discord" | "whatsapp",
+    orgId: string
+  ): Promise<void> {
+    const organizations = await this.db.listOrganizations();
+    const bootstrapOrg = organizations
+      .slice()
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt))[0];
+
+    if (bootstrapOrg?.id === orgId) {
+      await migrateLegacyChannelToWorkspace(channel, orgId);
+    }
+  }
+
+  private async getOrgUserConfig(orgId: string): Promise<UserConfig | null> {
+    if (this.orgUserConfigs.has(orgId)) {
+      return this.orgUserConfigs.get(orgId) ?? null;
+    }
+
+    const stored = await this.db.getOrgAiConfig(orgId);
+    const storedConfig = parseStoredUserConfig(stored?.config);
+
+    if (storedConfig) {
+      this.orgUserConfigs.set(orgId, storedConfig);
+      return storedConfig;
+    }
+
+    const organizations = await this.db.listOrganizations();
+    const bootstrapOrg = organizations
+      .slice()
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt))[0];
+
+    if (bootstrapOrg?.id === orgId && this.userConfig) {
+      const migratedConfig: UserConfig = {
+        defaultProviderId: this.userConfig.defaultProviderId,
+        imageModel: this.userConfig.imageModel,
+        providers: this.userConfig.providers,
+        thinkingEffort: this.userConfig.thinkingEffort,
+        thinkingEnabled: this.userConfig.thinkingEnabled,
+        timezone: this.userConfig.timezone,
+        transcriptionModel: this.userConfig.transcriptionModel,
+        visionModel: this.userConfig.visionModel,
+      };
+      await this.saveOrgUserConfig(orgId, migratedConfig);
+      return migratedConfig;
+    }
+
+    this.orgUserConfigs.set(orgId, null);
+    return null;
+  }
+
+  private async saveOrgUserConfig(
+    orgId: string,
+    config: UserConfig
+  ): Promise<void> {
+    await this.db.upsertOrgAiConfig({
+      config,
+      orgId,
+      updatedAt: new Date().toISOString(),
+    });
+    this.orgUserConfigs.set(orgId, config);
+    this.sessions.clear();
+  }
+
+  private async getOrgConfigForUpdate(orgId: string): Promise<UserConfig> {
+    return (
+      (await this.getOrgUserConfig(orgId)) ?? {
+        defaultProviderId: null,
+        providers: [],
+      }
+    );
+  }
+
+  private async transcribeAudioWithConfig(
+    input: TranscribeAudioRequest,
+    config: UserConfig | null
+  ): Promise<TranscribeAudioResponse> {
+    const data = input.data?.trim();
+    const mediaType = input.mediaType?.trim();
+    if (!(data && mediaType)) {
+      throw new AtlasApiError("Audio data and media type are required.", 400);
+    }
+    const bytes = Buffer.from(data, "base64");
+    if (bytes.length === 0) {
+      throw new AtlasApiError("Audio data is empty.", 400);
+    }
+    const selection = resolveTranscriptionProviderSelection(config);
+    if (!selection) {
+      throw new AtlasApiError(TRANSCRIPTION_MODEL_REQUIRED_MESSAGE, 400);
+    }
+    const text = await transcribeAudioWithOpenAI(
+      selection.instance.apiKey,
+      selection.instance.baseUrl,
+      selection.model,
+      {
+        bytes,
+        filename: input.filename?.trim() || "audio.ogg",
+        mediaType,
+      }
+    );
+    return { text };
+  }
+
+  private async generateImageWithConfig(
+    input: GenerateImageRequest,
+    config: UserConfig | null
+  ): Promise<GenerateImageResponse> {
+    const prompt = input.prompt?.trim();
+    if (!prompt) {
+      throw new AtlasApiError("Image prompt is required.", 400);
+    }
+    const selection = resolveImageGenerationSelection(config);
+    if (!selection) {
+      throw new AtlasApiError(IMAGE_MODEL_REQUIRED_MESSAGE, 400);
+    }
+    const result = await generateImageWithOpenAI({
+      apiKey: selection.apiKey,
+      model: selection.model,
+      prompt,
+      size: input.size,
+    });
+    const usage = result.usage ?? { inputTokens: 0, outputTokens: 0 };
+    this.llmUsageTracker?.record(
+      result.model,
+      usage.inputTokens,
+      usage.outputTokens
+    );
+    return {
+      data: Buffer.from(result.data).toString("base64"),
+      mediaType: result.mediaType,
+      model: result.model,
+      size: result.size,
+      sizeBytes: result.data.byteLength,
+      ...(result.revisedPrompt ? { revisedPrompt: result.revisedPrompt } : {}),
+    };
   }
 
   /** After a data-root restore, reload provider config and clear in-memory session state. */
   async reloadAfterDataRestore(): Promise<void> {
     this.userConfig = await loadUserConfig();
+    this.orgUserConfigs.clear();
     this.refreshHarness();
     this.composioService?.reloadConfiguration();
     await this.llmUsageTracker?.reloadFromDatabase();
@@ -2532,6 +2916,7 @@ export class AgentService {
   }
 
   async suggestToolPlaygroundParams(
+    orgId: string,
     toolId: string,
     prompt: string
   ): Promise<SuggestToolParamsResponse> {
@@ -2550,7 +2935,10 @@ export class AgentService {
     }
 
     const loaded = await loadJavascriptTool(record);
-    const provider = createProviderFromSources(process.env, this.userConfig);
+    const provider = createProviderFromSources(
+      process.env,
+      await this.getOrgUserConfig(orgId)
+    );
     const parameters = await suggestToolParamsFromPrompt(
       {
         description: tool.description,
@@ -2940,6 +3328,28 @@ export class AgentService {
     };
   }
 
+  async getUsageStatusFieldsForOrg(orgId: string): Promise<{
+    displayName: string | null;
+    costEstimated: boolean;
+    currentModel: string | null;
+    providerConfigured: boolean;
+  }> {
+    const config = await this.getOrgUserConfig(orgId);
+    const active = getActiveProviderInstance(config);
+    const currentModel = active ? resolveDefaultModelForInstance(active) : null;
+    return {
+      costEstimated: isCostEstimated(
+        active?.type ?? null,
+        currentModel,
+        active
+      ),
+      currentModel,
+      displayName:
+        active?.type === "openai_compatible" ? (active.label ?? null) : null,
+      providerConfigured: isProviderConfigured(config),
+    };
+  }
+
   private async requireProfile(
     orgId: string,
     profileId: string
@@ -2947,18 +3357,6 @@ export class AgentService {
     const profile = await this.db.getProfileForOrg(profileId, orgId);
 
     if (!profile) {
-      throw new Error("Profile not found.");
-    }
-
-    return profile;
-  }
-
-  private async requireProfileRecord(
-    profileId: string
-  ): Promise<StoredProfileRecord> {
-    const profile = await this.db.getProfile(profileId);
-
-    if (!profile?.orgId) {
       throw new Error("Profile not found.");
     }
 
@@ -3000,11 +3398,12 @@ export class AgentService {
       includeSubAgentTool?: boolean;
       includeSkillManageTools?: boolean;
       userId?: string | null;
-    } = {}
+    } = {},
+    userConfig: UserConfig | null = this.userConfig
   ): Promise<ToolDefinition[]> {
     const storedTools = await this.db.listToolsForProfile(profile.id);
     const tools = await resolveProfileStoredTools(storedTools, this.db, [], {
-      userConfig: this.userConfig,
+      userConfig,
     });
     const includeAutomationTools = options.includeAutomationTools ?? true;
     const includeTodoTools = options.includeTodoTools ?? true;
@@ -3123,13 +3522,17 @@ export class AgentService {
     userId?: string | null,
     orgRole?: OrgRole | null
   ): Promise<AgentChatSession> {
-    await this.ensureVisionSettingsLoaded();
+    const userConfig = await this.getOrgUserConfig(orgId);
     const profile = await this.requireProfile(orgId, profileId);
     const includeSkillManageTools = channel === "web" || channel === "cli";
-    let tools = await this.resolveProfileTools(profile, {
-      includeSkillManageTools,
-      userId,
-    });
+    let tools = await this.resolveProfileTools(
+      profile,
+      {
+        includeSkillManageTools,
+        userId,
+      },
+      userConfig
+    );
     if (channel === "discord") {
       tools = [...tools, ...createSendDiscordArtifactTools()];
     }
@@ -3147,16 +3550,16 @@ export class AgentService {
     // Per-org override for the tool-output optimiser. Undefined leaves the
     // decision to the server's env var, so an operator who never opened the UI
     // keeps whatever they configured.
-    const tokenOptimizerEnabled = (await this.db.getWorkspaceSettings())
+    const tokenOptimizerEnabled = (await this.db.getWorkspaceSettings(orgId))
       ?.tokenOptimizerEnabled;
     const resolvedSystemPrompt = profile.isSuper
       ? `${systemPrompt.trim()}\n\n${SUPER_AGENT_TOOL_AUTHORING_RULES}`
       : systemPrompt;
     const initialHistory = await loadSessionHistory(this.db, sessionId);
-    const userTimezone = await this.getUserTimezone();
+    const userTimezone = userConfig?.timezone ?? DEFAULT_TIMEZONE;
     const userContext = await this.loadUserContextForUser(orgId, userId);
-    const compaction = this.resolveCompactionConfig(profile);
-    const harness = this.createHarnessForProfile(profile);
+    const compaction = this.resolveCompactionConfig(profile, userConfig);
+    const harness = this.createHarnessForProfile(profile, userConfig);
     const saveAttachment = createAttachmentSaver(this.db, {
       channel,
       orgId,
@@ -3190,7 +3593,7 @@ export class AgentService {
         );
 
         const primarySupportsVision = resolvePrimaryModelVisionSupport(
-          this.userConfig,
+          userConfig,
           profile.model
         );
 
@@ -3198,7 +3601,7 @@ export class AgentService {
           return content;
         }
 
-        const visionSelection = resolveVisionProviderSelection(this.userConfig);
+        const visionSelection = resolveVisionProviderSelection(userConfig);
 
         if (!visionSelection) {
           throw new AtlasApiError(VISION_MODEL_REQUIRED_MESSAGE, 400);
@@ -3339,7 +3742,7 @@ export class AgentService {
     const workspaceRoot = getProfileSoulDir(orgId, profileId);
     const probeContext = {
       profileModel: profile?.model ?? null,
-      userConfig: this.userConfig,
+      userConfig: await this.getOrgUserConfig(orgId),
     };
 
     if (installed.length === 0) {
@@ -3479,11 +3882,14 @@ export class AgentService {
     return this.skillsService;
   }
 
-  private createHarnessForProfile(profile: StoredProfileRecord): AgentHarness {
+  private createHarnessForProfile(
+    profile: StoredProfileRecord,
+    userConfig: UserConfig | null = this.userConfig
+  ): AgentHarness {
     const resolved = resolveProfileProviderSelection({
-      defaultProviderId: this.userConfig?.defaultProviderId,
+      defaultProviderId: userConfig?.defaultProviderId,
       profileModel: profile.model,
-      providers: this.userConfig?.providers ?? [],
+      providers: userConfig?.providers ?? [],
     });
 
     if (!resolved) {
@@ -3491,7 +3897,7 @@ export class AgentService {
         modelId: null,
         provider: null,
         providerInstance: null,
-        thinking: this.resolveWorkspaceThinkingDefaults(),
+        thinking: this.resolveWorkspaceThinkingDefaults(userConfig),
       });
     }
 
@@ -3500,7 +3906,7 @@ export class AgentService {
       resolved.model
     );
     const primarySupportsVision = resolvePrimaryModelVisionSupport(
-      this.userConfig,
+      userConfig,
       profile.model
     );
     const resolvedProvider =
@@ -3512,7 +3918,7 @@ export class AgentService {
       modelId: resolved.model,
       provider: resolvedProvider,
       providerInstance: resolved.instance,
-      thinking: this.resolveWorkspaceThinkingDefaults(),
+      thinking: this.resolveWorkspaceThinkingDefaults(userConfig),
     });
   }
 
@@ -3544,12 +3950,13 @@ export class AgentService {
   }
 
   private resolveCompactionConfig(
-    profile: StoredProfileRecord
+    profile: StoredProfileRecord,
+    userConfig: UserConfig | null = this.userConfig
   ): CompactionConfig | undefined {
     const resolved = resolveProfileProviderSelection({
-      defaultProviderId: this.userConfig?.defaultProviderId,
+      defaultProviderId: userConfig?.defaultProviderId,
       profileModel: profile.model,
-      providers: this.userConfig?.providers ?? [],
+      providers: userConfig?.providers ?? [],
     });
 
     if (!resolved) {
@@ -3564,12 +3971,40 @@ export class AgentService {
     };
   }
 
-  private resolveWorkspaceThinkingDefaults(): ThinkingSettings {
+  private resolveWorkspaceThinkingDefaults(
+    userConfig: UserConfig | null = this.userConfig
+  ): ThinkingSettings {
     return {
-      effort: this.userConfig?.thinkingEffort ?? DEFAULT_THINKING_EFFORT,
-      enabled: this.userConfig?.thinkingEnabled ?? DEFAULT_THINKING_ENABLED,
+      effort: userConfig?.thinkingEffort ?? DEFAULT_THINKING_EFFORT,
+      enabled: userConfig?.thinkingEnabled ?? DEFAULT_THINKING_ENABLED,
     };
   }
+}
+
+function parseStoredUserConfig(value: unknown): UserConfig | null {
+  if (!(value && typeof value === "object")) {
+    return null;
+  }
+
+  const candidate = value as Partial<UserConfig>;
+  const defaultProviderId = candidate.defaultProviderId;
+
+  if (
+    !(
+      Array.isArray(candidate.providers) &&
+      (defaultProviderId === null ||
+        defaultProviderId === undefined ||
+        typeof defaultProviderId === "string")
+    )
+  ) {
+    return null;
+  }
+
+  return {
+    ...candidate,
+    defaultProviderId: defaultProviderId ?? null,
+    providers: candidate.providers,
+  };
 }
 
 function parseAgentChannel(value: string): AgentChannel | null {

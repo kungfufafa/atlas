@@ -33,7 +33,7 @@ const automationInput = {
 };
 const taskInput = { prompt: "do it", status: "backlog" as const, title: "t" };
 
-describe("profile access: binding an automation/task to Super Agent is admin-only", () => {
+describe("profile access: binding an automation/task to Super Agent is Superadmin-only", () => {
   test("member cannot bind an automation to the Super Agent profile", async () => {
     const { db, superId } = await seed();
     const service = new AutomationService(db, {
@@ -48,7 +48,7 @@ describe("profile access: binding an automation/task to Super Agent is admin-onl
     await expect(attempt).rejects.toMatchObject({ status: 403 });
   });
 
-  test("admin can bind an automation to the Super Agent profile", async () => {
+  test("Superadmin can bind an automation to the Super Agent profile", async () => {
     const { db, superId } = await seed();
     const service = new AutomationService(db, {
       getUserTimezone: async () => "UTC",
@@ -59,6 +59,7 @@ describe("profile access: binding an automation/task to Super Agent is admin-onl
       automationInput as any,
       superId,
       {
+        isPlatformAdmin: true,
         orgRole: "admin",
       }
     );

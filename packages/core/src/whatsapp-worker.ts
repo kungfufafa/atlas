@@ -22,12 +22,12 @@ const DEFAULT_HEARTBEAT_MAX_AGE_MS = 45_000;
 const HEARTBEAT_FILENAME = "worker-heartbeat.json";
 const QR_CODE_FILENAME = "worker-qr.txt";
 
-export function getWhatsAppWorkerHeartbeatPath(): string {
-  return join(getWhatsAppConfigDir(), HEARTBEAT_FILENAME);
+export function getWhatsAppWorkerHeartbeatPath(orgId?: string | null): string {
+  return join(getWhatsAppConfigDir(orgId), HEARTBEAT_FILENAME);
 }
 
-export function getWhatsAppQrCodePath(): string {
-  return join(getWhatsAppConfigDir(), QR_CODE_FILENAME);
+export function getWhatsAppQrCodePath(orgId?: string | null): string {
+  return join(getWhatsAppConfigDir(orgId), QR_CODE_FILENAME);
 }
 
 export function resolveWhatsAppWorkerStatus(
@@ -158,11 +158,20 @@ export async function isWhatsAppWorkerRunning(
   );
 }
 
-export async function getWhatsAppWorkerStatus(): Promise<WhatsAppWorkerStatus> {
-  const settings = await loadWhatsAppSettingsPublic();
-  const heartbeat = await readWhatsAppWorkerHeartbeat();
+export async function getWhatsAppWorkerStatus(
+  orgId?: string | null
+): Promise<WhatsAppWorkerStatus> {
+  const settings = await loadWhatsAppSettingsPublic(orgId);
+  const heartbeatRaw = await readTextOrNull(
+    getWhatsAppWorkerHeartbeatPath(orgId)
+  );
+  const heartbeat =
+    heartbeatRaw === null
+      ? null
+      : parseWhatsAppWorkerHeartbeat(heartbeatRaw.trim());
   const running = isWhatsAppHeartbeatAlive(heartbeat);
-  const qrCode = await readWhatsAppQrCode();
+  const qrRaw = await readTextOrNull(getWhatsAppQrCodePath(orgId));
+  const qrCode = qrRaw?.trim() || null;
   const connected = heartbeat?.connected === true;
 
   return resolveWhatsAppWorkerStatus(settings, running, qrCode, connected);

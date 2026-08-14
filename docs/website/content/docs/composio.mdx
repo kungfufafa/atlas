@@ -5,7 +5,7 @@ description: "Connect SaaS apps through Composio with org-scoped OAuth and profi
 
 Atlas integrates with [Composio](https://composio.dev) to give agents access to external SaaS tools with managed OAuth.
 
-Atlas uses the Composio SDK (`@composio/core`) with a **hybrid** model: org admins curate which toolkits are allowed; each member connects their own accounts.
+Atlas uses the Composio SDK (`@composio/core`) with a **hybrid** model: Workspace Admins curate which toolkits are allowed; each member connects their own accounts.
 
 ## API key
 
@@ -22,10 +22,10 @@ The key is stored in `~/.atlas/composio/config.ini` on the Atlas server.
 
 ## Setup
 
-1. As an org admin, open **Integrations → Composio** and save your Composio **project API key**.
+1. As a Superadmin, open **Integrations → Composio** and save the system-wide Composio **project API key**.
 2. Confirm `/health` reports `composioConfigured: true`. Reachability (`composioAvailable`) is on `GET /v1/system/status` under `server`.
-3. As an org admin, **enable** a toolkit for the organization.
-4. As any org member, click **Connect your account** and complete OAuth in the browser.
+3. As a Workspace Admin, **enable** a toolkit for the workspace.
+4. As any workspace member, click **Connect your account** and complete OAuth in the browser.
 5. Click **Sync tools** after connecting.
 6. Assign the toolkit to a profile on the **Profiles** page.
 
@@ -34,11 +34,11 @@ The key is stored in `~/.atlas/composio/config.ini` on the Atlas server.
 - **Org catalog:** which SaaS toolkits are permitted (`enabled` / `disabled` per org).
 - **User connections:** each member's OAuth lives in `composio_user_connections`; Composio `user_id` is `atlas:user:{userId}`.
 - Chat uses the **chatting user's** connected accounts for assigned toolkits.
-- Org admins enable/disable toolkits and assign them to profiles. Members connect their own accounts.
+- Workspace Admins enable/disable toolkits and assign them to profiles. Members connect their own accounts.
 
 ## Upgrades
 
-If you used org-shared connections before this model, existing connected toolkits are migrated to the first org admin's user connection on database startup. Other members should connect their own accounts on Integrations.
+If you used workspace-shared connections before this model, existing connected toolkits are migrated to the first Workspace Admin's user connection on database startup. Other members should connect their own accounts on Integrations.
 
 ## Chat behavior
 
@@ -46,8 +46,8 @@ If you used org-shared connections before this model, existing connected toolkit
 - When the user's account is not connected, chat exposes `composio__connect_account` so the agent can generate an OAuth link and send it in the reply.
 - **Web chat:** callback URL comes from the browser automatically (`window.location.origin`).
 - **Setup wizard:** silently saves `window.location.origin` during first-time setup (no extra step shown).
-- **Settings:** org admins can view or change the public web URL under Settings.
-- **Telegram / WhatsApp / Discord / CLI:** these bridges authenticate as the local client user. Composio still uses the **earliest human org admin's** connected accounts (so OAuth completed in the web Integrations UI works on Telegram). Bridges also read `web_public_url` from `~/.atlas/config.ini` (or `ATLAS_WEB_PUBLIC_URL`) and pass it on each message so new OAuth links open on a reachable host — localhost callbacks are rejected.
+- **Settings:** only Superadmins can view or change the system-wide public web URL.
+- **Telegram / WhatsApp / Discord / CLI:** these bridges authenticate as the local client user. Composio still uses the **earliest human Workspace Admin's** connected accounts (so OAuth completed in the web Integrations UI works on Telegram). Bridges also read `web_public_url` from `~/.atlas/config.ini` (or `ATLAS_WEB_PUBLIC_URL`) and pass it on each message so new OAuth links open on a reachable host — localhost callbacks are rejected.
 - The OAuth callback (`/v1/composio/oauth/callback`) is public — Composio redirects the browser there without a Atlas login cookie. After success, close the tab and continue in chat.
 - Auth failures return `COMPOSIO_NOT_CONNECTED`; the agent should call `composio__connect_account` and share the link.
 - Automations without a user context do not resolve personal Composio tools.

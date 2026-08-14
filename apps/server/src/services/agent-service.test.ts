@@ -84,28 +84,36 @@ describe("AgentService branching", () => {
       title: "Need input",
     });
 
-    const result = await service.branchSession(sourceSessionId, 1);
+    const result = await service.branchSession(ORG_ID, sourceSessionId, 1);
 
     expect(result).not.toBeNull();
     const branchSessionId = result!.sessionId;
 
-    const branchMessages = await service.getSessionMessages(branchSessionId);
+    const branchMessages = await service.getSessionMessages(
+      ORG_ID,
+      branchSessionId
+    );
     expect(branchMessages?.messages).toEqual([
       { content: "Hello", role: "user" },
       { content: "Hi there", role: "assistant" },
     ]);
     expect(branchMessages?.messageMeta).toHaveLength(2);
 
-    const branchTodos = await service.getSessionTodos(branchSessionId);
+    const branchTodos = await service.getSessionTodos(ORG_ID, branchSessionId);
     expect(branchTodos).toEqual([]);
-    expect(await service.getSessionQuestionnaire(branchSessionId)).toBeNull();
+    expect(
+      await service.getSessionQuestionnaire(ORG_ID, branchSessionId)
+    ).toBeNull();
 
     const branchRecord = await db.getSession(branchSessionId);
     expect(branchRecord?.profileId).toBe("profile_default");
     expect(branchRecord?.channel).toBe("web");
     expect(branchRecord?.title).toBe("Original chat (Branch)");
 
-    const sourceMessages = await service.getSessionMessages(sourceSessionId);
+    const sourceMessages = await service.getSessionMessages(
+      ORG_ID,
+      sourceSessionId
+    );
     expect(sourceMessages?.messages).toHaveLength(3);
   });
 
@@ -129,9 +137,31 @@ describe("AgentService branching", () => {
       },
     ]);
 
-    await expect(service.branchSession(sourceSessionId, 3)).rejects.toThrow(
-      "messageIndex is out of bounds."
+    await expect(
+      service.branchSession(ORG_ID, sourceSessionId, 3)
+    ).rejects.toThrow("messageIndex is out of bounds.");
+  });
+
+  test("does not expose a session through another workspace", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    await db.upsertProfile(createDefaultProfile());
+    await db.upsertProfile({
+      ...createDefaultProfile(),
+      id: "profile_other",
+      orgId: "org_other",
+    });
+    const service = new AgentService(null, null, db);
+    const sessionId = await service.createSession(
+      ORG_ID,
+      "web",
+      "profile_default"
     );
+
+    expect(await service.getSessionMessages("org_other", sessionId)).toBeNull();
+    expect(await service.clearSession("org_other", sessionId)).toBe(false);
+    expect(await service.purgeSession("org_other", sessionId)).toBe(false);
+    expect(await service.resolveSession("org_other", sessionId)).toBeNull();
+    expect(await service.resolveSession(ORG_ID, sessionId)).not.toBeNull();
   });
 
   test("falls back to org default when the requested profile is missing", async () => {
@@ -172,6 +202,54 @@ describe("AgentService branching", () => {
     } finally {
       database.close();
     }
+  });
+});
+
+describe("AgentService workspace provider isolation", () => {
+  test("returns only providers stored for the requested workspace", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    await db.upsertOrgAiConfig({
+      config: {
+        defaultProviderId: "provider_a",
+        providers: [
+          {
+            apiKey: "secret-a",
+            baseUrl: "https://a.example/v1",
+            createdAt: "2026-08-14T00:00:00.000Z",
+            id: "provider_a",
+            label: "Workspace A",
+            type: "openai_compatible",
+          },
+        ],
+      },
+      orgId: ORG_ID,
+      updatedAt: "2026-08-14T00:00:00.000Z",
+    });
+    await db.upsertOrgAiConfig({
+      config: {
+        defaultProviderId: "provider_b",
+        providers: [
+          {
+            apiKey: "secret-b",
+            baseUrl: "https://b.example/v1",
+            createdAt: "2026-08-14T00:00:00.000Z",
+            id: "provider_b",
+            label: "Workspace B",
+            type: "openai_compatible",
+          },
+        ],
+      },
+      orgId: "org_other",
+      updatedAt: "2026-08-14T00:00:00.000Z",
+    });
+    const service = new AgentService(null, null, db);
+
+    expect((await service.listProviders(ORG_ID)).providers).toMatchObject([
+      { id: "provider_a", label: "Workspace A" },
+    ]);
+    expect((await service.listProviders("org_other")).providers).toMatchObject([
+      { id: "provider_b", label: "Workspace B" },
+    ]);
   });
 });
 

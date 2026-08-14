@@ -167,7 +167,7 @@ export function OrgMemberInvitePopover({
           <p className="font-medium text-foreground text-sm">Invite member</p>
           <p className="text-muted-foreground text-xs">
             Send an invite by email. The recipient gets a link to join this
-            organization.
+            workspace.
           </p>
         </div>
         <div className="space-y-4 p-4">
@@ -499,7 +499,7 @@ export function OrgMemberRemoveDialog({
           <DialogTitle>Remove member?</DialogTitle>
           <DialogDescription>
             Remove {displayName} from {orgName}? They will lose access to this
-            organization.
+            workspace.
           </DialogDescription>
           {member?.name ? (
             <p className="text-muted-foreground text-sm">{member.email}</p>

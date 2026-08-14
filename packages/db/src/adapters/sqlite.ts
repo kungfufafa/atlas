@@ -102,6 +102,7 @@ interface SessionRow {
   channel: string;
   created_at: string;
   id: string;
+  org_id: string | null;
   profile_id: string;
   title: string | null;
   user_id?: string | null;
@@ -188,11 +189,18 @@ interface WorkspaceSettingsRow {
   coding_agent_harnesses: string;
   id: string;
   image_model: string | null;
+  org_id: string | null;
   selected_coding_agent_harness: string | null;
   token_optimizer_enabled: number | null;
   transcription_model: string | null;
   updated_at: string;
   vision_model: string | null;
+}
+
+interface OrgAiConfigRow {
+  config: string;
+  org_id: string;
+  updated_at: string;
 }
 
 interface NotificationDestinationRow {
@@ -586,9 +594,10 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   const listSessionsStmt = db.prepare("SELECT * FROM sessions");
   const getSessionStmt = db.prepare("SELECT * FROM sessions WHERE id = ?");
   const upsertSessionStmt = db.prepare(`
-    INSERT INTO sessions (id, profile_id, channel, created_at, user_id)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO sessions (id, org_id, profile_id, channel, created_at, user_id)
+    VALUES (?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
+      org_id = excluded.org_id,
       profile_id = excluded.profile_id,
       channel = excluded.channel,
       user_id = COALESCE(excluded.user_id, sessions.user_id)
@@ -904,9 +913,23 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   const getWorkspaceSettingsStmt = db.prepare(
     "SELECT * FROM workspace_settings WHERE id = ?"
   );
+  const getWorkspaceSettingsForOrgStmt = db.prepare(
+    "SELECT * FROM workspace_settings WHERE org_id = ?"
+  );
+  const getOrgAiConfigStmt = db.prepare(
+    "SELECT * FROM org_ai_configs WHERE org_id = ?"
+  );
+  const upsertOrgAiConfigStmt = db.prepare(`
+    INSERT INTO org_ai_configs (org_id, config, updated_at)
+    VALUES (?, ?, ?)
+    ON CONFLICT(org_id) DO UPDATE SET
+      config = excluded.config,
+      updated_at = excluded.updated_at
+  `);
   const upsertWorkspaceSettingsStmt = db.prepare(`
     INSERT INTO workspace_settings (
       id,
+      org_id,
       vision_model,
       transcription_model,
       image_model,
@@ -915,9 +938,10 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       token_optimizer_enabled,
       updated_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       vision_model = excluded.vision_model,
+      org_id = excluded.org_id,
       transcription_model = excluded.transcription_model,
       image_model = excluded.image_model,
       coding_agent_harnesses = excluded.coding_agent_harnesses,
@@ -1872,6 +1896,17 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       return row ? toNotificationDestinationRecord(row) : null;
     },
 
+    async getOrgAiConfig(orgId) {
+      const row = getOrgAiConfigStmt.get(orgId) as OrgAiConfigRow | null;
+      return row
+        ? {
+            config: parseJson(row.config),
+            orgId: row.org_id,
+            updatedAt: row.updated_at,
+          }
+        : null;
+    },
+
     async getOrganizationById(id) {
       const row = getOrganizationByIdStmt.get(id) as OrganizationRow | null;
       return row ? toOrganizationRecord(row) : null;
@@ -2069,9 +2104,11 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       return row?.user_context ?? null;
     },
 
-    async getWorkspaceSettings() {
-      const row = getWorkspaceSettingsStmt.get(
-        WORKSPACE_SETTINGS_ID
+    async getWorkspaceSettings(orgId) {
+      const row = (
+        orgId
+          ? getWorkspaceSettingsForOrgStmt.get(orgId)
+          : getWorkspaceSettingsStmt.get(WORKSPACE_SETTINGS_ID)
       ) as WorkspaceSettingsRow | null;
       return row ? toWorkspaceSettingsRecord(row) : null;
     },
@@ -2771,6 +2808,14 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       );
     },
 
+    async upsertOrgAiConfig(record) {
+      upsertOrgAiConfigStmt.run(
+        record.orgId,
+        JSON.stringify(record.config),
+        record.updatedAt
+      );
+    },
+
     async upsertOrganization(record) {
       upsertOrganizationStmt.run(
         record.id,
@@ -2826,6 +2871,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     async upsertSession(record) {
       upsertSessionStmt.run(
         record.id,
+        record.orgId ?? null,
         record.profileId,
         record.channel,
         record.createdAt,
@@ -2881,6 +2927,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     async upsertWorkspaceSettings(record) {
       upsertWorkspaceSettingsStmt.run(
         record.id,
+        record.orgId ?? null,
         record.visionModel,
         record.transcriptionModel,
         record.imageModel,
@@ -3115,6 +3162,7 @@ function toSessionRecord(row: SessionRow): StoredSessionRecord {
     channel: row.channel,
     createdAt: row.created_at,
     id: row.id,
+    orgId: row.org_id,
     profileId: row.profile_id,
     title: row.title ?? null,
     userId: row.user_id ?? null,
@@ -3248,6 +3296,7 @@ function toWorkspaceSettingsRecord(
     codingAgentHarnesses: parseCodingAgentHarnesses(row.coding_agent_harnesses),
     id: row.id,
     imageModel: row.image_model?.trim() || null,
+    orgId: row.org_id,
     selectedCodingAgentHarness:
       row.selected_coding_agent_harness?.trim() || null,
     tokenOptimizerEnabled:

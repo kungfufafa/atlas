@@ -51,7 +51,9 @@ export interface GenerateImageToolDeps {
   ensureSettingsLoaded: () => Promise<void>;
   /** Test seam — defaults to live OpenAI Images call. */
   generateImage?: typeof generateImageWithOpenAI;
-  getUserConfig: () => UserConfig | null | undefined;
+  getUserConfig: (
+    orgId: string
+  ) => UserConfig | null | undefined | Promise<UserConfig | null | undefined>;
   recordUsage?: (
     modelId: string,
     inputTokens: number,
@@ -130,7 +132,9 @@ export async function runGenerateImageTool(
 
   let selection;
   try {
-    selection = resolveImageGenerationSelection(deps.getUserConfig());
+    selection = resolveImageGenerationSelection(
+      await deps.getUserConfig(orgId)
+    );
   } catch (error) {
     return { error: errorMessage(error) };
   }

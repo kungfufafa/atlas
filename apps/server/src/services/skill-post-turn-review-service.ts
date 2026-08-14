@@ -140,7 +140,9 @@ export class SkillPostTurnReviewService {
 
   constructor(
     private readonly db: DatabaseAdapter,
-    private readonly getUserConfig: () => UserConfig | null,
+    private readonly getUserConfig: (
+      orgId: string
+    ) => UserConfig | null | Promise<UserConfig | null>,
     runner?: PostTurnReviewRunner
   ) {
     this.runner = runner ?? ((context) => this.reviewTurnWithLlm(context));
@@ -254,13 +256,13 @@ export class SkillPostTurnReviewService {
   }
 
   async resolveProviderForProfile(profileId: string) {
-    const userConfig = this.getUserConfig();
-    if (!userConfig) {
+    const profile = await this.db.getProfile(profileId);
+    if (!profile?.orgId) {
       return null;
     }
 
-    const profile = await this.db.getProfile(profileId);
-    if (!profile) {
+    const userConfig = await this.getUserConfig(profile.orgId);
+    if (!userConfig) {
       return null;
     }
 

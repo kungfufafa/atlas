@@ -112,6 +112,7 @@ interface ChatComposerFullProps extends ChatComposerBaseProps {
   availableSkills?: SkillSummary[];
   contextUsage?: ChatContextUsage | null;
   currentModelSelection: string | null;
+  modelSelectionDisabled?: boolean;
   onModelChange: (selection: string) => void;
   onNavigateSetup?: () => void;
   onThinkingEffortChange?: (effort: ThinkingEffort) => void;
@@ -510,6 +511,7 @@ function ChatComposerFullFooter({
           <div className="min-w-[4.5rem] shrink overflow-hidden">
             <PromptInputSelect
               disabled={
+                props.modelSelectionDisabled === true ||
                 !props.providerModelGroups.some(
                   (group) => group.models.length > 0
                 )

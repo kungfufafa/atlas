@@ -28,7 +28,10 @@ describe("org guards", () => {
     try {
       requireOrgAdmin(auth("member"));
     } catch (error) {
-      expect(error).toMatchObject({ message: "Forbidden", status: 403 });
+      expect(error).toMatchObject({
+        message: "Workspace Admin access required",
+        status: 403,
+      });
     }
   });
 
@@ -41,7 +44,10 @@ describe("org guards", () => {
     try {
       requireNotViewer(auth("viewer"));
     } catch (error) {
-      expect(error).toMatchObject({ message: "Forbidden", status: 403 });
+      expect(error).toMatchObject({
+        message: "Viewer access is read-only",
+        status: 403,
+      });
     }
   });
 
@@ -58,7 +64,10 @@ describe("org guards", () => {
     try {
       requirePlatformAdmin(auth("admin"));
     } catch (error) {
-      expect(error).toMatchObject({ message: "Forbidden", status: 403 });
+      expect(error).toMatchObject({
+        message: "Superadmin access required",
+        status: 403,
+      });
     }
   });
 });

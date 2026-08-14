@@ -85,6 +85,7 @@ export interface ChatHandlerDeps {
   authStore: TelegramAuthStore;
   client: AtlasClient;
   config: TelegramBridgeConfig;
+  fixedWorkspaceId?: string;
   getBotInfo?: () => TelegramBotInfo | undefined;
   orgStore: ChannelOrgStore;
   sessionStore: SessionStore;
@@ -97,6 +98,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     authStore,
     sessionStore,
     orgStore,
+    fixedWorkspaceId,
     getBotInfo = () => undefined,
   } = deps;
 
@@ -531,6 +533,17 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     channelOrgKey: string,
     messageText: string | undefined
   ): Promise<boolean> {
+    if (fixedWorkspaceId) {
+      client.setOrgId(fixedWorkspaceId);
+      if (
+        getOrgSelection(orgStore, channelOrgKey)?.orgId !== fixedWorkspaceId
+      ) {
+        orgStore.set(channelOrgKey, fixedWorkspaceId);
+        await orgStore.save();
+      }
+      return true;
+    }
+
     const orgContext = await prepareChannelOrgContext({
       getSelectedOrgId: () => getOrgSelection(orgStore, channelOrgKey)?.orgId,
       listOrgs: () => client.listUserOrgs(),
@@ -567,6 +580,13 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     conversationKey: string,
     telegram: TelegramRichMessenger
   ): Promise<void> {
+    if (fixedWorkspaceId) {
+      await telegram.send(
+        "This bot belongs to one workspace and cannot switch workspaces."
+      );
+      return;
+    }
+
     const { orgs } = await client.listUserOrgs();
 
     if (orgs.length === 0) {

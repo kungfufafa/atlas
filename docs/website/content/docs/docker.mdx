@@ -38,9 +38,9 @@ To skip the setup wizard on a fresh data volume, set all three admin seed variab
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `ATLAS_SEED_ADMIN_EMAIL` | Yes (with the other two) | Platform admin email |
-| `ATLAS_SEED_ADMIN_NAME` | Yes (with the other two) | Platform admin display name |
-| `ATLAS_SEED_ADMIN_PASSWORD` | Yes (with the other two) | Platform admin password (min 8 characters) |
+| `ATLAS_SEED_ADMIN_EMAIL` | Yes (with the other two) | Superadmin email |
+| `ATLAS_SEED_ADMIN_NAME` | Yes (with the other two) | Superadmin display name |
+| `ATLAS_SEED_ADMIN_PASSWORD` | Yes (with the other two) | Superadmin password (min 8 characters) |
 | `ATLAS_SEED_ORG_NAME` | No | Organization name (default `Personal`) |
 
 Partial seed config fails boot with a clear error. Restarting a seeded instance is a no-op (idempotent).

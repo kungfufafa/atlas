@@ -11,6 +11,7 @@ import { createRoute, z } from "@hono/zod-openapi";
 import type { ServerOptions } from "../context";
 import {
   requireActiveOrgIdFromContext,
+  requireOrgAdminOrPlatformAdminFromContext,
   requirePlatformAdminFromContext,
 } from "../org-guards";
 import { json, readJson } from "../shared";
@@ -337,7 +338,7 @@ export function registerMcpRoutes(app: HonoApp, options: ServerOptions): void {
   });
 
   app.post("/v1/profiles/:profileId/mcp-servers", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<AssignMcpServerRequest>(c.req.raw);
     return json<ProfileResponse>(
@@ -350,7 +351,7 @@ export function registerMcpRoutes(app: HonoApp, options: ServerOptions): void {
   });
 
   app.delete("/v1/profiles/:profileId/mcp-servers/:serverId", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     return json<ProfileResponse>(
       await agent.unassignMcpServer(
