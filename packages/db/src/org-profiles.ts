@@ -7,11 +7,17 @@ import {
   BASH_TOOL_ID,
   BUILTIN_TOOL_IDS,
   GENERATE_IMAGE_TOOL_ID,
+  PYTHON_EXECUTE_TOOL_ID,
+  TOOL_SEARCH_TOOL_ID,
 } from "@atlas/core/tools/protected";
 import { SUPER_AGENT_SYSTEM_PROMPT } from "./constants";
 import type { DatabaseAdapter, StoredProfileRecord } from "./types";
 
-const DEFAULT_BUILTIN_TOOL_IDS = Object.values(BUILTIN_TOOL_IDS);
+const DEFAULT_BUILTIN_TOOL_IDS = [
+  ...Object.values(BUILTIN_TOOL_IDS),
+  PYTHON_EXECUTE_TOOL_ID,
+  TOOL_SEARCH_TOOL_ID,
+];
 
 export async function ensureProfileDefaultBuiltinTools(
   db: DatabaseAdapter,

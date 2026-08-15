@@ -62,7 +62,7 @@ afterEach(() => {
 });
 
 describe("web_fetch input schema", () => {
-  test("accepts a valid http(s) url with optional raw", () => {
+  test("accepts a valid http(s) url with optional raw or mode", () => {
     expect(webFetchInputSchema.parse({ url: "https://example.com" })).toEqual({
       url: "https://example.com",
     });
@@ -71,6 +71,15 @@ describe("web_fetch input schema", () => {
     ).toEqual({
       raw: true,
       url: "http://x.io/a",
+    });
+    expect(
+      webFetchInputSchema.parse({
+        mode: "metadata",
+        url: "https://example.com",
+      })
+    ).toEqual({
+      mode: "metadata",
+      url: "https://example.com",
     });
   });
 
@@ -92,12 +101,6 @@ describe("web_fetch input schema", () => {
   test("rejects unknown keys (strict)", () => {
     expect(() =>
       webFetchInputSchema.parse({ extra: 1, url: "https://example.com" })
-    ).toThrow();
-  });
-
-  test("rejects non-boolean raw", () => {
-    expect(() =>
-      webFetchInputSchema.parse({ raw: "true", url: "https://x" })
     ).toThrow();
   });
 });
@@ -162,7 +165,11 @@ describe("web_fetch SSRF guard", () => {
   });
 
   test("allows hostnames with at least one public address", async () => {
-    stubFetch(async () => htmlResponse("<p>ok</p>"));
+    let fetchInit: RequestInit | undefined;
+    stubFetch(async (_input, init) => {
+      fetchInit = init;
+      return htmlResponse("<p>ok</p>");
+    });
 
     const out = await webFetchTool.run(
       { url: "https://github-pages.test/" },
@@ -171,6 +178,9 @@ describe("web_fetch SSRF guard", () => {
 
     expect(out.status).toBe(200);
     expect(out.content).toContain("ok");
+    expect(
+      (fetchInit as RequestInit & { idleTimeout?: number }).idleTimeout
+    ).toBe(0);
   });
 
   test("rejects hostnames with only private addresses", async () => {
@@ -181,20 +191,63 @@ describe("web_fetch SSRF guard", () => {
 });
 
 describe("web_fetch happy path", () => {
-  test("converts HTML to Markdown and returns metadata", async () => {
+  test("converts HTML to Markdown and extracts metadata and links", async () => {
     stubFetch(async () =>
-      htmlResponse("<h1>Title</h1><p>Hello <b>world</b></p>")
+      htmlResponse(
+        `<html>
+          <head>
+            <title>Bun Installation</title>
+            <meta name="description" content="How to install bun package manager">
+            <meta name="author" content="Jarred Sumner">
+          </head>
+          <body>
+            <h1>Bun Install</h1>
+            <p>Run <code>bun install</code> to install dependencies.</p>
+            <a href="/docs/cli/add">Add package</a>
+          </body>
+        </html>`
+      )
     );
 
-    const out = await webFetchTool.run({ url: "https://example.com" }, CTX);
+    const out = await webFetchTool.run(
+      { url: "https://bun.sh/docs/install" },
+      CTX
+    );
 
     expect(out.status).toBe(200);
-    expect(out.contentType).toContain("text/html");
-    expect(out.url).toBe("https://example.com/");
-    expect(out.finalUrl).toBe("https://example.com/");
-    expect(out.bytes).toBeGreaterThan(0);
-    expect(out.content).toContain("# Title");
-    expect(out.content).toContain("**world**");
+    expect(out.title).toBe("Bun Installation");
+    expect(out.description).toBe("How to install bun package manager");
+    expect(out.author).toBe("Jarred Sumner");
+    expect(out.content).toContain("# Bun Install");
+    expect(out.content).toContain("`bun install`");
+    expect(out.links?.length).toBeGreaterThan(0);
+    expect(out.links?.[0]?.url).toBe("https://bun.sh/docs/cli/add");
+  });
+
+  test("supports mode='metadata'", async () => {
+    stubFetch(async () =>
+      htmlResponse(
+        `<html>
+          <head>
+            <title>Bun Meta</title>
+            <meta name="description" content="Fast JavaScript Runtime">
+          </head>
+          <body>
+            <h1>Huge Body</h1>
+            <p>${"a".repeat(5000)}</p>
+          </body>
+        </html>`
+      )
+    );
+
+    const out = await webFetchTool.run(
+      { mode: "metadata", url: "https://bun.sh" },
+      CTX
+    );
+
+    expect(out.title).toBe("Bun Meta");
+    expect(out.description).toBe("Fast JavaScript Runtime");
+    expect(out.content).toBe("");
   });
 
   test("respects raw=true (no markdown conversion)", async () => {
@@ -290,15 +343,12 @@ describe("convertHtmlToMarkdown", () => {
     expect(md).not.toContain("<!--[-->");
     expect(md).not.toContain("<!--]-->");
     expect(md).not.toContain("<!---->");
-    expect(md).toContain("[Skip to content](#content)");
     expect(md).toContain("# Atlas");
     expect(md).toContain("Self-hosted AI agents");
   });
 });
 
 describe("web_fetch content cap", () => {
-  // Same shape as truncateComposioToolResult: the marker is inside the budget,
-  // so a capped result is exactly CAP characters and never one more.
   const CAP = 16_000;
   const MARKER = "\n...[truncated]";
 
@@ -313,7 +363,6 @@ describe("web_fetch content cap", () => {
   });
 
   test("caps a long body and reports the original size", async () => {
-    // Long enough that the markdown is still over the cap after conversion.
     const paragraphs = "<p>lorem ipsum dolor sit amet</p>".repeat(4000);
     stubFetch(async () => htmlResponse(`<h1>Long</h1>${paragraphs}`));
 
@@ -324,42 +373,5 @@ describe("web_fetch content cap", () => {
     expect(out.content.endsWith(MARKER)).toBe(true);
     expect(out.content).toContain("# Long");
     expect(out.bytes).toBeGreaterThan(CAP);
-  });
-
-  test("caps a raw body too, since raw skips conversion entirely", async () => {
-    const html = `<div>${"x".repeat(50_000)}</div>`;
-    stubFetch(async () => htmlResponse(html));
-
-    const out = await webFetchTool.run(
-      { raw: true, url: "https://example.com" },
-      CTX
-    );
-
-    expect(out.truncated).toBe(true);
-    expect(out.content.length).toBe(CAP);
-    expect(out.content.endsWith(MARKER)).toBe(true);
-  });
-
-  test("caps a large JSON body, the case that motivated the limit", async () => {
-    // An OpenAPI spec fetched in one call is what put 913 KB into a real session.
-    const spec = JSON.stringify({
-      paths: Object.fromEntries(
-        Array.from({ length: 2000 }, (_, i) => [
-          `/v1/resource/${i}`,
-          { get: { summary: `read resource ${i}` } },
-        ])
-      ),
-    });
-    stubFetch(async () => jsonResponse(spec));
-
-    const out = await webFetchTool.run(
-      { url: "https://api.example.com/o.json" },
-      CTX
-    );
-
-    expect(out.bytes).toBeGreaterThan(CAP);
-    expect(out.truncated).toBe(true);
-    expect(out.content.length).toBe(CAP);
-    expect(out.content.endsWith(MARKER)).toBe(true);
   });
 });

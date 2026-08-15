@@ -7,9 +7,20 @@ import { convertDocxToMarkdown } from "../docx-text";
 import { markdownToDocx } from "../docx-write";
 import { pathExists } from "../fs";
 import { isOmniEnabled, omniRetrieveTool } from "../omni";
+import { createPptxBuffer } from "../presentation-engine";
 import { getProfileSoulDir } from "../soul/resolve";
+import { browserTool } from "./browser-tool";
+import { calculatorTool } from "./calculator";
+import { deepResearchTool } from "./deep-research";
 import { emailTool } from "./email";
 import { extractDocumentTextTool } from "./extract-document-text";
+import {
+  copyFileTool,
+  createDirectoryTool,
+  fileStatTool,
+  listDirectoryTool,
+  moveFileTool,
+} from "./filesystem";
 import { knowledgeBaseSearchTool } from "./knowledge-base-search";
 import {
   getCustomToolsDir,
@@ -26,8 +37,10 @@ import {
   trimmedOptionalString,
 } from "./schema";
 import { searchFilesTool } from "./search-files";
+import { spreadsheetTool } from "./spreadsheet";
 import { webFetchTool } from "./web-fetch";
 import { webSearchTool } from "./web-search";
+import { writePptxInputSchema, writePptxTool } from "./write-pptx";
 
 export const writeFileInputSchema = z
   .object({
@@ -244,12 +257,21 @@ function buildFileGuardOptions(
   const { orgId, profileId } = requireProfileScope(context);
   const workspaceRoot =
     options.workspaceRoot ?? getProfileSoulDir(orgId, profileId);
+  assertAbsoluteWorkspaceRoot(workspaceRoot);
 
   return {
     ...defaultGuardOptions,
     allowedDirs: [workspaceRoot, getCustomToolsDir()],
     cwd: workspaceRoot,
   };
+}
+
+function assertAbsoluteWorkspaceRoot(workspaceRoot: string): void {
+  if (!path.isAbsolute(workspaceRoot)) {
+    throw new Error(
+      "workspaceRoot must be an absolute path; relative roots resolve against process.cwd() and break profile isolation."
+    );
+  }
 }
 
 export const writeFileTool: ToolDefinition<WriteFileInput, WriteFileOutput> = {
@@ -380,6 +402,49 @@ export async function runWriteDocx(
   await writeFile(filePath, bytes);
 
   return { bytesWritten: bytes.length, path: filePath };
+}
+
+export async function runWritePptx(
+  input: unknown,
+  context: ToolContext,
+  options: FileToolRunOptions = {}
+): Promise<{ bytesWritten: number; path: string; slideCount: number }> {
+  const parsed = parseToolInput(writePptxInputSchema, input);
+
+  if (!parsed.path.toLowerCase().endsWith(".pptx")) {
+    throw new Error("write_pptx requires a path ending in .pptx");
+  }
+
+  const bytes = await createPptxBuffer({
+    author: parsed.author,
+    company: parsed.company,
+    slides: parsed.slides,
+    themeColor: parsed.themeColor || "3B82F6",
+    title: parsed.title,
+  });
+
+  const guardOptions = buildFileGuardOptions(context, options);
+  const guarded = await guardFilePath(
+    parsed.path,
+    parsed.cwd ?? null,
+    bytes.length,
+    guardOptions
+  );
+  refuseProfileSkillMarkdownWrite(context, guarded.resolved);
+  refuseSkillLocalToolFileWrite(guarded.resolved);
+
+  const filePath = isArtifactPath(parsed.path)
+    ? await uniqueArtifactPath(guarded.resolved)
+    : guarded.resolved;
+
+  await mkdir(path.dirname(filePath), { recursive: true });
+  await writeFile(filePath, bytes);
+
+  return {
+    bytesWritten: bytes.length,
+    path: filePath,
+    slideCount: parsed.slides.length,
+  };
 }
 
 export const deleteFileTool: ToolDefinition<DeleteFileInput, DeleteFileOutput> =
@@ -731,6 +796,12 @@ function assertNoOverlappingEdits(plans: PlannedEdit[]): void {
     const previous = plans[index - 1]!;
     const current = plans[index]!;
 
+    if (current.start < previous.start) {
+      throw new Error(
+        "Edit plans must be sorted by start offset before applying."
+      );
+    }
+
     if (current.start < previous.end) {
       throw new Error(
         `Edit ${current.index + 1} overlaps with edit ${previous.index + 1}.`
@@ -854,15 +925,25 @@ export async function runReadFile(
 }
 
 export const builtinTools: ToolDefinition[] = [
+  calculatorTool,
   writeFileTool,
   writeDocxTool,
+  writePptxTool,
   deleteFileTool,
   editFileTool,
   readFileTool,
+  listDirectoryTool,
+  fileStatTool,
+  copyFileTool,
+  moveFileTool,
+  createDirectoryTool,
+  spreadsheetTool,
   searchFilesTool,
   knowledgeBaseSearchTool,
   webSearchTool,
   webFetchTool,
+  browserTool,
+  deepResearchTool,
   emailTool,
   extractDocumentTextTool,
   // Gated on the server-wide env var, not the per-org toggle: the env var says

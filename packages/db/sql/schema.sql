@@ -503,3 +503,22 @@ CREATE UNIQUE INDEX IF NOT EXISTS artifact_shares_token_hash_unique ON artifact_
 CREATE UNIQUE INDEX IF NOT EXISTS artifact_shares_active_path_unique
   ON artifact_shares (org_id, profile_id, source_path)
   WHERE revoked_at IS NULL;
+
+CREATE TABLE IF NOT EXISTS memories (
+  id TEXT PRIMARY KEY NOT NULL,
+  org_id TEXT NOT NULL,
+  scope TEXT NOT NULL,
+  owner_id TEXT NOT NULL,
+  subject TEXT,
+  content TEXT NOT NULL,
+  confidence REAL DEFAULT 1.0 NOT NULL,
+  importance INTEGER DEFAULT 1 NOT NULL,
+  source TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS memories_org_scope_owner
+  ON memories (org_id, scope, owner_id);
+

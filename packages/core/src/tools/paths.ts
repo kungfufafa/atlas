@@ -35,6 +35,9 @@ export class PathGuardError extends Error {
   }
 }
 
+const WORKSPACE_REQUIRED_MESSAGE =
+  "A workspace root or allowed directories list is required for path guarding.";
+
 const WORKSPACE_TRAVERSAL_MESSAGE =
   "Path outside allowed directories. Use a relative path under the active profile workspace (e.g. SOUL.md or skills/<name>/SKILL.md). Bundled skills are listed in the system prompt and are not readable as arbitrary files.";
 
@@ -44,10 +47,22 @@ export async function guardFilePath(
   rawContentLength: number | undefined,
   options: PathGuardOptions = {}
 ): Promise<{ resolved: string; allowed: true }> {
-  const rawAllowedDirs = options.allowedDirs ?? [options.cwd ?? process.cwd()];
+  const cwdOption = options.cwd?.trim() || null;
+  const allowedOption = options.allowedDirs?.filter((dir) => dir.trim()) ?? [];
+
+  let rawAllowedDirs: string[];
+  if (allowedOption.length > 0) {
+    rawAllowedDirs = allowedOption;
+  } else if (cwdOption) {
+    rawAllowedDirs = [cwdOption];
+  } else {
+    throw new PathGuardError(WORKSPACE_REQUIRED_MESSAGE, "TRAVERSAL");
+  }
+
   const allowedDirs = await resolveAllowedDirs(rawAllowedDirs);
   const maxBytes = options.maxFileBytes ?? DEFAULT_MAX_FILE_BYTES;
-  const defaultCwd = await resolveDirectoryPath(options.cwd ?? process.cwd());
+  // rawAllowedDirs is non-empty: either allowedOption or [cwdOption] from above.
+  const defaultCwd = await resolveDirectoryPath(cwdOption ?? rawAllowedDirs[0]);
 
   if (rawPath.includes("\0")) {
     throw new PathGuardError("Path contains null byte", "NULL_BYTE");

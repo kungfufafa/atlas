@@ -52,8 +52,36 @@ import {
 
 const MAX_TOOL_ITERATIONS = 100;
 
+import type {
+  ActivityEvent,
+  ApprovalRequest,
+  Artifact,
+  Citation,
+  ExecutionPolicy,
+  SourceItem,
+} from "@atlas/core";
+import {
+  evaluateActionRisk,
+  mapToolCallToActivity,
+  resolveExecutionPolicy,
+  updateActivityCompletion,
+} from "@atlas/core";
+
 export interface StreamHandlers {
+  onActivityComplete?: (activity: ActivityEvent) => void;
+  onActivityStart?: (activity: ActivityEvent) => void;
+  onActivityUpdate?: (activity: ActivityEvent) => void;
+  onApprovalRequested?: (approval: ApprovalRequest) => void;
+  onArtifactCreated?: (artifact: Artifact) => void;
   onChunk: (delta: string) => void;
+  onCitationCreated?: (citation: Citation, source?: SourceItem) => void;
+  onMemorySaved?: (summary: string) => void;
+  onPolicyResolved?: (policy: ExecutionPolicy) => void;
+  onSourcesUpdated?: (event: {
+    sources: SourceItem[];
+    citedCount: number;
+    reviewedCount: number;
+  }) => void;
   onSubAgentActivity?: (event: {
     parentToolCallId: string;
     label: string;
@@ -368,6 +396,17 @@ async function sendMessage(
   }
 
   const userMessage = getUserMessageText(userContent);
+  const resolvedPolicy = resolveExecutionPolicy({
+    documents: input.documents,
+    images: input.images,
+    prompt: userMessage,
+    userPolicy: input.policy,
+  });
+
+  if (mode === "stream" && options.handlers) {
+    options.handlers.onPolicyResolved?.(resolvedPolicy);
+  }
+
   history.push({ content: userContent, role: "user" });
   const multimodalTurn =
     messageContentHasImages(userContent) ||
@@ -501,6 +540,8 @@ async function runConversation(
   ) => void,
   signal?: AbortSignal
 ): Promise<string> {
+  const toolCallSignatures: string[] = [];
+
   for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration += 1) {
     signal?.throwIfAborted();
 
@@ -556,6 +597,22 @@ async function runConversation(
       return result.content;
     }
 
+    // Loop Guard: Detect identical repetitive tool calls without progress
+    const signature = result.toolCalls
+      .map((c) => `${c.name}:${JSON.stringify(c.arguments)}`)
+      .sort()
+      .join("|");
+
+    toolCallSignatures.push(signature);
+    const repeatedCount = toolCallSignatures.filter(
+      (sig) => sig === signature
+    ).length;
+
+    if (repeatedCount >= 4) {
+      // Break out of loop to avoid runaway token burn on hallucinated repeats
+      break;
+    }
+
     await executeToolCalls(
       tools,
       result.toolCalls,
@@ -598,25 +655,95 @@ async function executeToolCalls(
   };
 
   if (canRunToolCallsInParallel(tools, toolCalls)) {
-    const results = await Promise.all(
-      toolCalls.map(async (call) => {
-        handlers?.onToolStart?.({
-          input: call.arguments,
-          tool: call.name,
-          toolCallId: call.id,
-        });
-
-        const result = await executeToolCall(tools, call, contextForCall(call));
-
-        handlers?.onToolEnd?.({
-          result,
-          tool: call.name,
-          toolCallId: call.id,
-        });
-
-        return { call, result };
-      })
+    const MAX_PARALLEL_CONCURRENCY = 5;
+    const results: Array<{ call: ToolCall; result: unknown }> = new Array(
+      toolCalls.length
     );
+    let currentIndex = 0;
+
+    const workers = Array.from(
+      { length: Math.min(MAX_PARALLEL_CONCURRENCY, toolCalls.length) },
+      async () => {
+        while (currentIndex < toolCalls.length) {
+          const idx = currentIndex;
+          currentIndex += 1;
+          const call = toolCalls[idx]!;
+
+          const activity = mapToolCallToActivity(
+            call.id,
+            call.name,
+            call.arguments
+          );
+          handlers?.onActivityStart?.(activity);
+
+          const risk = evaluateActionRisk(call.name, call.arguments);
+          if (risk.requiresApproval) {
+            handlers?.onApprovalRequested?.({
+              consequenceSummary: risk.consequenceSummary,
+              createdAt: new Date().toISOString(),
+              details: call.arguments,
+              id: `app_${call.id}`,
+              status: "pending",
+              title: risk.title,
+              tool: call.name,
+              toolCallId: call.id,
+            });
+          }
+
+          handlers?.onToolStart?.({
+            input: call.arguments,
+            tool: call.name,
+            toolCallId: call.id,
+          });
+
+          const result = await executeToolCall(
+            tools,
+            call,
+            contextForCall(call)
+          );
+
+          handlers?.onToolEnd?.({
+            result,
+            tool: call.name,
+            toolCallId: call.id,
+          });
+
+          handlers?.onActivityComplete?.(
+            updateActivityCompletion(activity, true)
+          );
+
+          if (
+            call.name === "deep_research" &&
+            typeof result === "object" &&
+            result !== null
+          ) {
+            const r = result as Record<string, unknown>;
+            if (Array.isArray(r.sources) && r.sources.length > 0) {
+              handlers?.onSourcesUpdated?.({
+                citedCount: Array.isArray(r.citations)
+                  ? r.citations.length
+                  : r.sources.length,
+                reviewedCount: r.sources.length,
+                sources: r.sources as SourceItem[],
+              });
+            }
+          }
+
+          if (
+            (call.name === "memory_write" ||
+              call.name === "update_profile_memory") &&
+            typeof result === "object" &&
+            result !== null
+          ) {
+            handlers?.onMemorySaved?.("Remembered");
+          }
+
+          results[idx] = { call, result };
+        }
+      }
+    );
+
+    await Promise.all(workers);
 
     const resultsByCallId = new Map(
       results.map((entry) => [entry.call.id, entry.result])
@@ -635,6 +762,23 @@ async function executeToolCalls(
   }
 
   for (const call of toolCalls) {
+    const activity = mapToolCallToActivity(call.id, call.name, call.arguments);
+    handlers?.onActivityStart?.(activity);
+
+    const risk = evaluateActionRisk(call.name, call.arguments);
+    if (risk.requiresApproval) {
+      handlers?.onApprovalRequested?.({
+        consequenceSummary: risk.consequenceSummary,
+        createdAt: new Date().toISOString(),
+        details: call.arguments,
+        id: `app_${call.id}`,
+        status: "pending",
+        title: risk.title,
+        tool: call.name,
+        toolCallId: call.id,
+      });
+    }
+
     handlers?.onToolStart?.({
       input: call.arguments,
       tool: call.name,
@@ -648,6 +792,33 @@ async function executeToolCalls(
       tool: call.name,
       toolCallId: call.id,
     });
+
+    handlers?.onActivityComplete?.(updateActivityCompletion(activity, true));
+
+    if (
+      call.name === "deep_research" &&
+      typeof result === "object" &&
+      result !== null
+    ) {
+      const r = result as Record<string, unknown>;
+      if (Array.isArray(r.sources) && r.sources.length > 0) {
+        handlers?.onSourcesUpdated?.({
+          citedCount: Array.isArray(r.citations)
+            ? r.citations.length
+            : r.sources.length,
+          reviewedCount: r.sources.length,
+          sources: r.sources as SourceItem[],
+        });
+      }
+    }
+
+    if (
+      (call.name === "memory_write" || call.name === "update_profile_memory") &&
+      typeof result === "object" &&
+      result !== null
+    ) {
+      handlers?.onMemorySaved?.("Remembered");
+    }
 
     history.push({
       content: serializeToolResult(result),

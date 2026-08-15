@@ -140,7 +140,7 @@ export function AutomationListItem({
             {unreadCount > 0 ? (
               <span
                 aria-label={`${unreadCount} unread run${unreadCount === 1 ? "" : "s"}`}
-                className="inline-flex min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 font-semibold text-[10px] text-primary-foreground tabular-nums"
+                className="inline-flex min-w-5 shrink-0 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 font-semibold text-2xs text-primary-foreground tabular-nums"
               >
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
@@ -151,7 +151,7 @@ export function AutomationListItem({
           </p>
           <div className="flex items-center gap-2">
             <AutomationStateDot enabled={automation.enabled} />
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-2xs text-muted-foreground">
               {automation.nextRunAt
                 ? `Next ${formatFutureRelativeTime(automation.nextRunAt)}`
                 : automation.lastRunAt
@@ -468,11 +468,15 @@ export function AutomationsEmptyState() {
 export function RunHistoryList({
   runs,
   busy,
+  running,
   onDeleteRun,
+  onRerun,
 }: {
   runs: AutomationRunRecord[];
   busy: boolean;
+  running: boolean;
   onDeleteRun: (run: AutomationRunRecord) => void;
+  onRerun: () => void;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(
     () => runs.find((run) => run.status === "running")?.id ?? null
@@ -502,12 +506,14 @@ export function RunHistoryList({
                 expanded={expandedId === run.id}
                 key={run.id}
                 onDelete={() => onDeleteRun(run)}
+                onRerun={onRerun}
                 onToggle={() => {
                   setExpandedId((current) =>
                     current === run.id ? null : run.id
                   );
                 }}
                 run={run}
+                running={running}
               />
             ))}
           </ul>
@@ -521,21 +527,26 @@ function RunHistoryItem({
   run,
   expanded,
   busy,
+  running,
   onToggle,
   onDelete,
+  onRerun,
 }: {
   run: AutomationRunRecord;
   expanded: boolean;
   busy: boolean;
+  running: boolean;
   onToggle: () => void;
   onDelete: () => void;
+  onRerun: () => void;
 }) {
   const isRunning = run.status === "running";
+  const isFailed = run.status === "failed";
   const isUnread = run.read === false;
   const hasOutput = Boolean(run.output?.trim());
   const hasError = Boolean(run.error?.trim());
   const hasDeliveryError = Boolean(run.deliveryError?.trim());
-  const hasBody = hasOutput || hasError || isRunning;
+  const hasBody = hasOutput || hasError || isRunning || isFailed;
   const previewText = runPreviewText(run);
   const duration = formatRunDuration(run.startedAt, run.completedAt);
   const statusLabel =
@@ -624,7 +635,7 @@ function RunHistoryItem({
             <ArrowRight01Icon
               aria-hidden
               className={cn(
-                "mt-0.5 size-4 shrink-0 text-muted-foreground/70 transition-transform duration-200",
+                "mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform duration-200",
                 expanded && "rotate-90"
               )}
             />
@@ -658,21 +669,43 @@ function RunHistoryItem({
                   ? " · running"
                   : ""}
             </p>
-            {copyText ? (
-              <Button
-                className="h-7 gap-1.5 px-2 text-muted-foreground text-xs"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  void handleCopy();
-                }}
-                size="sm"
-                type="button"
-                variant="ghost"
-              >
-                <Copy01Icon aria-hidden className="size-3.5" />
-                Copy
-              </Button>
-            ) : null}
+            <div className="flex items-center gap-1">
+              {isFailed ? (
+                <Button
+                  className="h-7 gap-1.5 px-2 text-muted-foreground text-xs"
+                  disabled={busy || running}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onRerun();
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  {running ? (
+                    <Spinner className="size-3.5" />
+                  ) : (
+                    <PlayIcon aria-hidden className="ml-px size-3.5" />
+                  )}
+                  Run again
+                </Button>
+              ) : null}
+              {copyText ? (
+                <Button
+                  className="h-7 gap-1.5 px-2 text-muted-foreground text-xs"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void handleCopy();
+                  }}
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <Copy01Icon aria-hidden className="size-3.5" />
+                  Copy
+                </Button>
+              ) : null}
+            </div>
           </div>
 
           {hasDeliveryError ? (
@@ -836,7 +869,7 @@ export function AutomationStateBadge({ enabled }: { enabled: boolean }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium text-[11px]",
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium text-2xs",
         enabled
           ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
           : "bg-muted text-muted-foreground"
@@ -845,7 +878,7 @@ export function AutomationStateBadge({ enabled }: { enabled: boolean }) {
       <span
         className={cn(
           "size-1.5 rounded-full",
-          enabled ? "bg-emerald-500" : "bg-muted-foreground/70"
+          enabled ? "bg-emerald-500" : "bg-muted-foreground"
         )}
       />
       {enabled ? "Enabled" : "Disabled"}
@@ -875,7 +908,7 @@ export function SoftPill({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2 py-1 font-medium text-[11px]",
+        "inline-flex items-center rounded-full px-2 py-1 font-medium text-2xs",
         tone === "default" && "bg-muted text-muted-foreground",
         tone === "success" &&
           "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",

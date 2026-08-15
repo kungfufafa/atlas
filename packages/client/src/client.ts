@@ -21,6 +21,8 @@ import type {
   BranchSessionRequest,
   BranchSessionResponse,
   ChangePasswordRequest,
+  CloneProfileRequest,
+  CloneProfileResponse,
   CompactionResponse,
   ComposioConnectRequest,
   ComposioConnectResponse,
@@ -190,6 +192,7 @@ import {
   readStreamEvents,
   resolveSendMessageBody,
   retryWhileTurnIsStopping,
+  withStreamFetchIdle,
 } from "./stream";
 import type {
   AtlasClientOptions,
@@ -571,6 +574,19 @@ export class AtlasClient {
       body: JSON.stringify(request),
       method: "POST",
     });
+  }
+
+  async cloneProfile(
+    sourceProfileId: string,
+    body: CloneProfileRequest = {}
+  ): Promise<CloneProfileResponse> {
+    return this.request<CloneProfileResponse>(
+      `/v1/profiles/${encodeURIComponent(sourceProfileId)}/clone`,
+      {
+        body: JSON.stringify(body),
+        method: "POST",
+      }
+    );
   }
 
   async updateProfile(
@@ -1216,7 +1232,7 @@ export class AtlasClient {
   async runAutomation(automationId: string): Promise<AutomationRunRecord> {
     const response = await this.request<RunAutomationResponse>(
       `/v1/automations/${encodeURIComponent(automationId)}/run`,
-      { method: "POST" }
+      withStreamFetchIdle({ method: "POST" })
     );
     return response.run;
   }
@@ -1230,9 +1246,9 @@ export class AtlasClient {
   async runAutomationInternal(automationId: string): Promise<void> {
     await this.request(
       `/v1/internal/automations/${encodeURIComponent(automationId)}/run`,
-      {
+      withStreamFetchIdle({
         method: "POST",
-      }
+      })
     );
   }
 

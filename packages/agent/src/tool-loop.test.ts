@@ -86,6 +86,9 @@ describe("tool-loop", () => {
       name: "fail",
     });
 
-    expect(result).toEqual({ error: "boom" });
+    expect(result).toEqual({
+      error: "boom",
+      errorCode: "INTERNAL_ERROR",
+    });
   });
 });

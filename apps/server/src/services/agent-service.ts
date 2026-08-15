@@ -17,6 +17,7 @@ import type {
   BranchSessionResponse,
   ChatContextUsage,
   ChatMessage,
+  CloneProfileRequest,
   CompactionResponse,
   ComposioSettingsResponse,
   ConfigureProviderRequest,
@@ -250,6 +251,7 @@ import type { LlmUsageTracker } from "./llm-usage-tracker";
 import type { McpClientManager } from "./mcp-client-manager";
 import type { McpService } from "./mcp-service";
 import { buildMcpToolDefinitions } from "./mcp-tool-bridge";
+import { MemoryService } from "./memory-service";
 import { OrgMemoryService } from "./org-memory-service";
 import { ProfileService } from "./profile-service";
 import {
@@ -275,8 +277,11 @@ import type { SkillProposalService } from "./skill-proposal-service";
 import type { SkillSuggestionService } from "./skill-suggestion-service";
 import type { SkillsService } from "./skills-service";
 import { SuperAgentSessionState } from "./super-agent-session-state";
-import type { TaskRunner } from "./task-runner";
-import { resolveProfileStoredTools } from "./tool-resolver";
+import { toolActivationService } from "./tool-activation-service";
+import {
+  resolveProfileStoredTools,
+  resolveToolsFromStorage,
+} from "./tool-resolver";
 
 interface StoredSession {
   channel: AgentChannel;
@@ -315,6 +320,7 @@ export class AgentService {
   private skillProposalService: SkillProposalService | null = null;
   private skillSuggestionService: SkillSuggestionService | null = null;
   private orgMemoryService: OrgMemoryService | null = null;
+  private readonly memoryService: MemoryService;
   private readonly sessions = new Map<string, StoredSession>();
   private readonly sessionTitleService: SessionTitleService;
   private skillPostTurnReviewService: SkillPostTurnReviewService;
@@ -332,6 +338,7 @@ export class AgentService {
   ) {
     this.userConfig = userConfig;
     this.db = db;
+    this.memoryService = new MemoryService(db);
     this.profileService = new ProfileService(db);
     this.sessionTitleService = new SessionTitleService(db, (orgId) =>
       this.getOrgUserConfig(orgId)
@@ -2916,6 +2923,14 @@ export class AgentService {
     return this.profileService.createProfile(orgId, request);
   }
 
+  async cloneProfile(
+    orgId: string,
+    sourceId: string,
+    request: CloneProfileRequest = {}
+  ): Promise<ProfileResponse> {
+    return this.profileService.cloneProfile(orgId, sourceId, request);
+  }
+
   async updateProfile(
     orgId: string,
     profileId: string,
@@ -3521,10 +3536,11 @@ export class AgentService {
     profile: StoredProfileRecord,
     options: {
       includeAutomationTools?: boolean;
-      includeTodoTools?: boolean;
       includeQuestionTools?: boolean;
-      includeSubAgentTool?: boolean;
       includeSkillManageTools?: boolean;
+      includeSubAgentTool?: boolean;
+      includeTodoTools?: boolean;
+      sessionId?: string;
       userId?: string | null;
     } = {},
     userConfig: UserConfig | null = this.userConfig
@@ -3542,6 +3558,30 @@ export class AgentService {
       options.includeSkillManageTools ?? includeAutomationTools;
 
     let resolved = [...tools];
+
+    // Inject dynamically activated session tools if any
+    if (options.sessionId) {
+      const activeToolNames = toolActivationService.getActiveTools(
+        options.sessionId
+      );
+      if (activeToolNames.length > 0) {
+        const allOrgTools = await this.db.listTools();
+        const activeStored = allOrgTools.filter((t) =>
+          activeToolNames.includes(t.name)
+        );
+        const dynamicTools = await resolveToolsFromStorage(
+          activeStored,
+          this.db,
+          [],
+          { userConfig }
+        );
+        for (const dynamicTool of dynamicTools) {
+          if (!resolved.some((r) => r.name === dynamicTool.name)) {
+            resolved.push(dynamicTool);
+          }
+        }
+      }
+    }
 
     if (this.mcpClientManager) {
       const mcpServers = await this.db.listMcpServersForProfile(profile.id);
@@ -3657,6 +3697,7 @@ export class AgentService {
       profile,
       {
         includeSkillManageTools,
+        sessionId,
         userId,
       },
       userConfig
@@ -3996,10 +4037,29 @@ export class AgentService {
       );
     }
 
+    try {
+      const activeMemories = await this.memoryService.listMemories(orgId, {
+        limit: 10,
+      });
+      if (activeMemories.length > 0) {
+        const memLines = activeMemories.map(
+          (m) =>
+            `- [${m.scope.toUpperCase()}${m.subject ? `: ${m.subject}` : ""}] ${m.content}`
+        );
+        systemPrompt = `${systemPrompt.trim()}\n\n## Active Scoped Memories\n${memLines.join("\n")}`;
+      }
+    } catch {
+      // Non-blocking
+    }
+
     return {
       soulActive: Boolean(stack),
       systemPrompt,
     };
+  }
+
+  getMemoryService(): MemoryService {
+    return this.memoryService;
   }
 
   private requireSkillsService(): SkillsService {

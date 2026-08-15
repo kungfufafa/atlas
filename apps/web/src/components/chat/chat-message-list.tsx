@@ -22,10 +22,13 @@ import {
   ConversationStickinessProvider,
 } from "@/components/ai-elements/conversation";
 import { Message, MessageContent } from "@/components/ai-elements/message";
+import { ActionApprovalDialog } from "@/components/chat/ActionApprovalDialog";
 import { ArtifactAttachmentPreview } from "@/components/chat/artifact-attachment-preview";
 import { AssistantTurnSegmentView } from "@/components/chat/assistant-tool-group";
 import { segmentAssistantTurn } from "@/components/chat/assistant-tool-group.shared";
+import { SourcesPanel } from "@/components/chat/CitationsAndSources";
 import { ImageAttachmentPreview } from "@/components/chat/image-attachment-preview";
+import { ProductArtifactCard } from "@/components/chat/ProductArtifactCard";
 import { TextAttachmentPreview } from "@/components/chat/text-attachment-preview";
 import {
   DropdownMenu,
@@ -357,8 +360,24 @@ function AssistantTurn({
   const showArtifacts = turnComplete && artifacts.length > 0;
   const showActions = !streamActive && turnComplete && anchorMessage != null;
 
+  const lastAssistantMsg = turnMessages
+    .slice()
+    .reverse()
+    .find((m) => m.role === "assistant");
+  const sources = lastAssistantMsg?.sources;
+  const approval = turnMessages.find((m) => m.approval)?.approval;
+  const memorySaved = turnMessages.find((m) => m.memorySaved)?.memorySaved;
+  const structuredArtifacts = lastAssistantMsg?.artifacts;
+
   return (
     <div className="group mr-auto ml-0 flex w-full max-w-full flex-col items-start justify-start gap-3">
+      {approval ? <ActionApprovalDialog approval={approval} /> : null}
+      {memorySaved ? (
+        <div className="fade-in inline-flex animate-in items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-600 text-xs dark:text-emerald-400">
+          <span>✓</span>
+          <span>{memorySaved}</span>
+        </div>
+      ) : null}
       {segments.map((segment) => (
         <AssistantTurnSegmentView
           key={
@@ -372,6 +391,16 @@ function AssistantTurn({
           showThinking={showThinking}
         />
       ))}
+      {sources && sources.length > 0 ? (
+        <SourcesPanel sources={sources} />
+      ) : null}
+      {structuredArtifacts && structuredArtifacts.length > 0 ? (
+        <div className="w-full space-y-2">
+          {structuredArtifacts.map((art) => (
+            <ProductArtifactCard artifact={art} key={art.id} />
+          ))}
+        </div>
+      ) : null}
       {showAwaiting ? <TurnAwaitingElapsed startedAt={turnStartedAt} /> : null}
       {profileId && showArtifacts ? (
         <div className="flex flex-wrap gap-2">

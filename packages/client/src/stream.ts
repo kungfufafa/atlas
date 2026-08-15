@@ -5,10 +5,26 @@ import type {
   SendMessageInput,
   StreamEvent,
 } from "@atlas/core/contract";
+import {
+  BUN_FETCH_DISABLE_IDLE_TIMEOUT_S,
+  withDisabledFetchIdle,
+} from "@atlas/core/fetch-idle";
 import { readBrowserOrigin } from "./browser";
 import type { SendMessageArg, StreamHandler, StreamHandlers } from "./types";
 
 const DEFAULT_STREAM_IDLE_MS = DEFAULT_CHAT_STREAM_TIMEOUT_MS;
+
+/**
+ * Bun fetch idleTimeout is in seconds (max 255). SSE tool runs can sit quiet
+ * longer than that, so stream requests disable it.
+ */
+export const STREAM_FETCH_IDLE_TIMEOUT_S = BUN_FETCH_DISABLE_IDLE_TIMEOUT_S;
+
+export type StreamFetchInit = RequestInit & { idleTimeout?: number };
+
+export function withStreamFetchIdle(init: RequestInit): StreamFetchInit {
+  return withDisabledFetchIdle(init);
+}
 
 /** How long a 409 is treated as a turn that is still stopping rather than a real conflict. */
 const TURN_CONFLICT_RETRY_MS = 3000;
@@ -111,6 +127,49 @@ export async function readStreamEvents(
           label: payload.label,
           parentToolCallId: payload.parentToolCallId,
         });
+      }
+
+      if (payload.type === "policy_resolved") {
+        handlers.onPolicyResolved?.(payload.policy);
+      }
+
+      if (payload.type === "activity_start") {
+        handlers.onActivityStart?.(payload.activity);
+      }
+
+      if (payload.type === "activity_update") {
+        handlers.onActivityUpdate?.(payload.activity);
+      }
+
+      if (payload.type === "activity_complete") {
+        handlers.onActivityComplete?.(payload.activity);
+      }
+
+      if (payload.type === "citation_created") {
+        handlers.onCitationCreated?.({
+          citation: payload.citation,
+          source: payload.source,
+        });
+      }
+
+      if (payload.type === "sources_updated") {
+        handlers.onSourcesUpdated?.({
+          citedCount: payload.citedCount,
+          reviewedCount: payload.reviewedCount,
+          sources: payload.sources,
+        });
+      }
+
+      if (payload.type === "artifact_created") {
+        handlers.onArtifactCreated?.(payload.artifact);
+      }
+
+      if (payload.type === "approval_requested") {
+        handlers.onApprovalRequested?.(payload.approval);
+      }
+
+      if (payload.type === "memory_saved") {
+        handlers.onMemorySaved?.(payload.summary);
       }
 
       if (payload.type === "todos_updated") {

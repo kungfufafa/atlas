@@ -6,62 +6,80 @@ import remarkGfm from "remark-gfm";
 import remarkStringify from "remark-stringify";
 import { unified } from "unified";
 import { z } from "zod";
+import { convertDocumentBytes, resolveAnydocFormat } from "../anydoc-text";
 import type { JsonSchema, ToolDefinition } from "../contract";
+import { withDisabledFetchIdle } from "../fetch-idle";
+import { canonicalizeUrl } from "./url-utils";
 
 export const WEB_FETCH_TOOL_NAME = "web_fetch";
 
-export interface WebFetchInput {
-  raw?: boolean;
-  url: string;
-}
-
-const HTTP_S_URL_REGEX = /^https?:\/\/.+$/i;
-
 export const webFetchInputSchema = z
   .object({
+    maxBytes: z
+      .number()
+      .int()
+      .positive()
+      .max(5 * 1024 * 1024)
+      .optional()
+      .describe(
+        "Maximum response bytes to download (up to 5MB). Defaults to 1MB."
+      ),
+    mode: z
+      .enum(["article", "raw", "metadata"])
+      .optional()
+      .describe(
+        "Extraction mode: 'article' (default, cleaned Markdown), 'raw' (unmodified text/html), or 'metadata' (metadata and outbound links only)."
+      ),
     raw: z
       .boolean()
       .optional()
       .describe(
-        "When true, return the raw response body without Markdown conversion. Defaults to false."
+        "Legacy flag: when true, equivalent to mode='raw'. Defaults to false."
       ),
     url: z
       .string()
       .min(1)
       .url()
-      .regex(HTTP_S_URL_REGEX, "url must use http: or https:")
+      .regex(/^https?:\/\/.+$/i, "url must use http: or https:")
       .describe("Absolute http: or https: URL to fetch."),
   })
   .strict();
+
+export type WebFetchInput = z.infer<typeof webFetchInputSchema>;
 
 export function webFetchParameters(): JsonSchema {
   const { $schema, ...schema } = webFetchInputSchema.toJSONSchema();
   return schema as JsonSchema;
 }
 
-export interface WebFetchOutput {
-  bytes: number;
-  content: string;
-  contentType: string;
-  finalUrl: string;
-  status: number;
-  truncated: boolean;
+export interface WebFetchLink {
+  text: string;
   url: string;
 }
 
-const MAX_BODY_BYTES = 1024 * 1024;
-/**
- * MAX_BODY_BYTES bounds the transfer; this bounds what reaches the model. Without
- * it a single fetch can spend a megabyte of context: one call in a local session
- * pulled a 913 KB OpenAPI spec, which then rides along in history on every later
- * turn. Number, marker and the subtraction below all follow
- * `truncateComposioToolResult` in apps/server/src/services/composio-tool-bridge.ts,
- * which answered the same question for Composio results.
- */
+export interface WebFetchOutput {
+  author?: string;
+  bytes: number;
+  content: string;
+  contentType: string;
+  description?: string;
+  finalUrl: string;
+  links?: WebFetchLink[];
+  metadata?: Record<string, unknown>;
+  publishedAt?: string;
+  status: number;
+  title?: string;
+  truncated: boolean;
+  updatedAt?: string;
+  url: string;
+}
+
+const DEFAULT_MAX_BODY_BYTES = 1024 * 1024;
 const MAX_CONTENT_CHARS = 16_000;
 const TRUNCATION_MARKER = "\n...[truncated]";
 const REQUEST_TIMEOUT_MS = 30_000;
 const MAX_REDIRECTS = 5;
+const MAX_LINKS = 50;
 
 /**
  * Private / reserved address ranges that indicate a local or internal target.
@@ -294,21 +312,33 @@ function contentTypeIsHtml(contentType: string): boolean {
   return /text\/html|application\/xhtml\+xml/i.test(contentType ?? "");
 }
 
+function contentTypeIsPdfOrDoc(contentType: string, urlStr: string): boolean {
+  return (
+    /application\/pdf/i.test(contentType) ||
+    urlStr.toLowerCase().endsWith(".pdf") ||
+    /application\/vnd\.openxmlformats|application\/msword/i.test(contentType)
+  );
+}
+
 async function fetchWithRedirects(
   url: URL,
   signal: AbortSignal
 ): Promise<{ response: Response; finalUrl: string }> {
   let current = url;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
-    const response = await fetch(current, {
-      headers: {
-        accept: "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.5",
-        "user-agent":
-          "atlas-web_fetch/1.0 (+https://github.com/kungfufafa/atlas)",
-      },
-      redirect: "manual",
-      signal,
-    });
+    const response = await fetch(
+      current,
+      withDisabledFetchIdle({
+        headers: {
+          accept:
+            "text/html,application/xhtml+xml,application/pdf,text/plain;q=0.9,*/*;q=0.5",
+          "user-agent":
+            "atlas-web_fetch/1.0 (+https://github.com/kungfufafa/atlas)",
+        },
+        redirect: "manual",
+        signal,
+      })
+    );
 
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.get("location");
@@ -334,11 +364,10 @@ async function fetchWithRedirects(
   throw new Error(`web_fetch: exceeded ${MAX_REDIRECTS} redirects.`);
 }
 
-async function readBoundedBody(
+async function readBoundedBytes(
   response: Response,
   maxBytes: number
-): Promise<{ body: string; truncated: boolean }> {
-  // If length is known and oversized, reject up-front.
+): Promise<{ bytes: Uint8Array; truncated: boolean }> {
   const contentLength = response.headers.get("content-length");
   if (contentLength) {
     const declared = Number(contentLength);
@@ -349,58 +378,150 @@ async function readBoundedBody(
     }
   }
 
-  const reader = response.body?.getReader();
-  if (!reader) {
-    const text = await response.text();
-    if (Buffer.byteLength(text, "utf8") > maxBytes) {
-      throw new Error(`web_fetch: response body exceeds ${maxBytes} bytes.`);
-    }
-    return { body: text, truncated: false };
-  }
-
-  const decoder = new TextDecoder("utf-8");
-  let received = 0;
-  let text = "";
-  let truncated = false;
-
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) {
-      break;
-    }
-
-    received += value.byteLength;
-    if (received > maxBytes) {
-      truncated = true;
-      text += decoder.decode(
-        value.subarray(0, value.byteLength - (received - maxBytes))
-      );
-      break;
-    }
-
-    text += decoder.decode(value, { stream: true });
-  }
-  text += decoder.decode();
-
-  if (truncated) {
+  const arrayBuffer = await response.arrayBuffer();
+  if (arrayBuffer.byteLength > maxBytes) {
     throw new Error(`web_fetch: response body exceeds ${maxBytes} bytes.`);
   }
 
-  return { body: text, truncated: false };
+  return { bytes: new Uint8Array(arrayBuffer), truncated: false };
+}
+
+export function extractHtmlMetadata(html: string): {
+  author?: string;
+  description?: string;
+  metadata: Record<string, unknown>;
+  publishedAt?: string;
+  title?: string;
+  updatedAt?: string;
+} {
+  const metadata: Record<string, unknown> = {};
+
+  const titleMatch = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html);
+  const title = titleMatch
+    ? titleMatch[1]?.replace(/<[^>]+>/g, "").trim()
+    : undefined;
+
+  const metaTagRegex = /<meta\s+([^>]+)>/gi;
+  let description: string | undefined;
+  let author: string | undefined;
+  let publishedAt: string | undefined;
+  let updatedAt: string | undefined;
+
+  let match = metaTagRegex.exec(html);
+  while (match !== null) {
+    const attrs = match[1] ?? "";
+    const nameMatch = /(?:name|property|http-equiv)=["']([^"']+)["']/i.exec(
+      attrs
+    );
+    const contentMatch = /content=["']([^"']*)["']/i.exec(attrs);
+
+    if (nameMatch && contentMatch) {
+      const key = nameMatch[1]!.toLowerCase();
+      const val = contentMatch[1]!.trim();
+      metadata[key] = val;
+
+      if (
+        key === "description" ||
+        key === "og:description" ||
+        key === "twitter:description"
+      ) {
+        description ??= val;
+      }
+      if (key === "author" || key === "article:author") {
+        author ??= val;
+      }
+      if (
+        key === "article:published_time" ||
+        key === "pubdate" ||
+        key === "date"
+      ) {
+        publishedAt ??= val;
+      }
+      if (key === "article:modified_time" || key === "lastmod") {
+        updatedAt ??= val;
+      }
+    }
+    match = metaTagRegex.exec(html);
+  }
+
+  return {
+    author,
+    description,
+    metadata,
+    publishedAt,
+    title,
+    updatedAt,
+  };
+}
+
+export function extractHtmlLinks(
+  html: string,
+  finalUrl: string,
+  maxLinks = MAX_LINKS
+): WebFetchLink[] {
+  const links: WebFetchLink[] = [];
+  const seen = new Set<string>();
+  const linkRegex = /<a\s+[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let linkMatch = linkRegex.exec(html);
+
+  while (linkMatch !== null) {
+    const rawHref = linkMatch[1]?.trim();
+    const linkText = (linkMatch[2] ?? "").replace(/<[^>]+>/g, "").trim();
+
+    if (
+      !rawHref ||
+      rawHref.startsWith("#") ||
+      rawHref.startsWith("javascript:") ||
+      rawHref.startsWith("mailto:")
+    ) {
+      linkMatch = linkRegex.exec(html);
+      continue;
+    }
+
+    try {
+      const resolved = new URL(rawHref, finalUrl).toString();
+      const canonical = canonicalizeUrl(resolved);
+      if (canonical && !seen.has(canonical)) {
+        seen.add(canonical);
+        links.push({
+          text: linkText || canonical,
+          url: canonical,
+        });
+      }
+    } catch {
+      // ignore invalid URLs
+    }
+
+    if (links.length >= maxLinks) {
+      break;
+    }
+    linkMatch = linkRegex.exec(html);
+  }
+
+  return links;
+}
+
+export function cleanHtmlNoise(html: string): string {
+  return html
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, "")
+    .replace(/<svg[\s\S]*?<\/svg>/gi, "")
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
+    .replace(/<nav[\s\S]*?<\/nav>/gi, "")
+    .replace(/<footer[\s\S]*?<\/footer>/gi, "")
+    .replace(/<aside[\s\S]*?<\/aside>/gi, "");
 }
 
 export async function convertHtmlToMarkdown(html: string): Promise<string> {
   const removeCommentNoise = (value: string) =>
     value.replace(/<!--(?:\[--|\]--|\[|\])?-->/g, "");
-  // Strip whole comments before parsing: Word's conditional comments
-  // (`<!--[if gte mso 9]>…<![endif]-->`) otherwise survive as visible text.
-  const cleanedHtml = html.replace(/<!--[\s\S]*?-->/g, "");
+  const cleanedHtml = cleanHtmlNoise(html);
   const markdown = String(
     await unified()
       .use(rehypeParse, { fragment: true })
       .use(rehypeRemark)
-      // Without GFM, remark-stringify throws on `table` nodes ("Cannot handle unknown
-      // node `table`"), so any page or document containing a table fails to convert.
       .use(remarkGfm)
       .use(remarkStringify, { bullet: "-", fences: true })
       .process(cleanedHtml)
@@ -412,15 +533,12 @@ export async function convertHtmlToMarkdown(html: string): Promise<string> {
 
 export const webFetchTool: ToolDefinition<WebFetchInput, WebFetchOutput> = {
   description:
-    "Fetch a single public HTTP(S) URL and return its content. HTML pages are converted to Markdown. " +
-    `Content is capped at ${MAX_CONTENT_CHARS} characters; when truncated is true the tail was dropped, ` +
-    "so fetch a more specific URL rather than assuming you have the whole document. " +
-    "Use for retrieving a known URL; use web_search when you need to discover sources.",
+    "Fetch a single public HTTP(S) URL and extract research-grade content with metadata and links. HTML pages are cleaned and converted to Markdown. PDFs are extracted automatically.",
   name: WEB_FETCH_TOOL_NAME,
   parallelSafe: true,
   parameters: webFetchParameters(),
   async run(input) {
-    let parsed: { url: string; raw?: boolean };
+    let parsed: WebFetchInput;
     try {
       parsed = webFetchInputSchema.parse(input);
     } catch (err) {
@@ -435,7 +553,8 @@ export const webFetchTool: ToolDefinition<WebFetchInput, WebFetchOutput> = {
       throw err instanceof Error ? err : new Error(String(err));
     }
 
-    const raw = Boolean(parsed.raw);
+    const effectiveMode = parsed.raw ? "raw" : (parsed.mode ?? "article");
+    const maxBytes = parsed.maxBytes ?? DEFAULT_MAX_BODY_BYTES;
     const url = parseUrl(parsed.url);
     await assertPublicHostname(url.hostname);
 
@@ -455,21 +574,72 @@ export const webFetchTool: ToolDefinition<WebFetchInput, WebFetchOutput> = {
       }
 
       const contentType = response.headers.get("content-type") ?? "";
-      const { body } = await readBoundedBody(response, MAX_BODY_BYTES);
-      const bytes = Buffer.byteLength(body, "utf8");
+      const { bytes } = await readBoundedBytes(response, maxBytes);
+      const totalBytes = bytes.byteLength;
 
-      let content = body;
-      const shouldConvert =
-        !raw &&
-        contentTypeIsHtml(contentType) &&
-        body.trimStart().startsWith("<");
+      // Handle PDF / Document
+      if (contentTypeIsPdfOrDoc(contentType, finalUrl)) {
+        const format = resolveAnydocFormat(finalUrl, contentType);
+        const converted = await convertDocumentBytes(bytes, {
+          filename: finalUrl.split("/").pop() || "document.pdf",
+          format,
+          mediaType: contentType,
+        });
 
-      if (shouldConvert) {
-        content = await convertHtmlToMarkdown(body);
+        let content = converted.text;
+        const truncated = content.length > MAX_CONTENT_CHARS;
+        if (truncated) {
+          content = `${content.slice(0, MAX_CONTENT_CHARS)}${TRUNCATION_MARKER}`;
+        }
+
+        return {
+          bytes: totalBytes,
+          content,
+          contentType,
+          finalUrl,
+          status: response.status,
+          title: finalUrl.split("/").pop(),
+          truncated,
+          url: url.toString(),
+        };
       }
 
-      // After conversion, so the cap applies to what the model actually reads
-      // rather than to the markup it never sees.
+      const rawText = new TextDecoder("utf-8").decode(bytes);
+      const isHtml =
+        contentTypeIsHtml(contentType) && rawText.trimStart().startsWith("<");
+
+      let metaInfo: ReturnType<typeof extractHtmlMetadata> = { metadata: {} };
+      let links: WebFetchLink[] | undefined;
+
+      if (isHtml) {
+        metaInfo = extractHtmlMetadata(rawText);
+        links = extractHtmlLinks(rawText, finalUrl);
+      }
+
+      if (effectiveMode === "metadata") {
+        return {
+          author: metaInfo.author,
+          bytes: totalBytes,
+          content: "",
+          contentType,
+          description: metaInfo.description,
+          finalUrl,
+          links,
+          metadata: metaInfo.metadata,
+          publishedAt: metaInfo.publishedAt,
+          status: response.status,
+          title: metaInfo.title,
+          truncated: false,
+          updatedAt: metaInfo.updatedAt,
+          url: url.toString(),
+        };
+      }
+
+      let content = rawText;
+      if (effectiveMode === "article" && isHtml) {
+        content = await convertHtmlToMarkdown(rawText);
+      }
+
       const truncated = content.length > MAX_CONTENT_CHARS;
       if (truncated) {
         const keep = Math.max(0, MAX_CONTENT_CHARS - TRUNCATION_MARKER.length);
@@ -477,12 +647,19 @@ export const webFetchTool: ToolDefinition<WebFetchInput, WebFetchOutput> = {
       }
 
       return {
-        bytes,
+        author: metaInfo.author,
+        bytes: totalBytes,
         content,
         contentType,
+        description: metaInfo.description,
         finalUrl,
+        links,
+        metadata: metaInfo.metadata,
+        publishedAt: metaInfo.publishedAt,
         status: response.status,
+        title: metaInfo.title,
         truncated,
+        updatedAt: metaInfo.updatedAt,
         url: url.toString(),
       };
     } catch (err) {

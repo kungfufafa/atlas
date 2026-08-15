@@ -1,5 +1,7 @@
 import {
   distillToolResult,
+  executeProtectedTool,
+  standardizeToolError,
   type ToolCall,
   type ToolContext,
   type ToolDefinition,
@@ -33,22 +35,52 @@ export async function executeToolCall(
   const tool = findTool(tools, call.name);
 
   if (!tool) {
-    return { error: `Unknown tool: ${call.name}` };
+    return {
+      error: `Unknown tool: ${call.name}`,
+    };
   }
 
   try {
-    const result = await tool.run(call.arguments, context);
+    const execution = await executeProtectedTool(tool, call.arguments, context);
+
+    if (!execution.success && execution.error) {
+      return {
+        error: execution.error.message,
+        errorCode: execution.error.code,
+      };
+    }
+
+    const rawData = execution.data;
     // The single place every tool result passes through, so the optimiser is
     // wired once rather than per tool. It returns `result` untouched unless it
     // is enabled, recognises the tool, and produces something strictly shorter.
-    return await distillToolResult(call.name, result, context);
+    const distilled = await distillToolResult(call.name, rawData, context);
+
+    if (
+      execution.artifacts &&
+      execution.artifacts.length > 0 &&
+      typeof distilled === "object" &&
+      distilled !== null
+    ) {
+      return {
+        ...(distilled as Record<string, unknown>),
+        artifacts: execution.artifacts,
+      };
+    }
+
+    return distilled;
   } catch (error) {
+    const standardized = standardizeToolError(error);
     return {
-      error: error instanceof Error ? error.message : String(error),
+      error: standardized.message,
+      errorCode: standardized.code,
     };
   }
 }
 
 export function serializeToolResult(result: unknown): string {
+  if (typeof result === "string") {
+    return result;
+  }
   return JSON.stringify(result);
 }

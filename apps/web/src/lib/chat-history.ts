@@ -267,7 +267,11 @@ export function parseChatRouteParams(params: {
 }
 
 export interface ChatListItem {
+  activities?: import("@atlas/core").ActivityEvent[];
+  approval?: import("@atlas/core").ApprovalRequest;
   artifactStreaming?: boolean;
+  artifacts?: import("@atlas/core").Artifact[];
+  citations?: import("@atlas/core").Citation[];
   content: string;
   createdAt?: string;
   documents?: Array<{ filename: string; mediaType: string }>;
@@ -279,8 +283,11 @@ export interface ChatListItem {
     description?: string | null;
   }>;
   images?: Array<{ url: string; mediaType: string }>;
+  memorySaved?: string;
+  policy?: import("@atlas/core").ExecutionPolicy;
   questionnaireAnswers?: AgentQuestionAnswer[];
   role: "user" | "assistant" | "tool";
+  sources?: import("@atlas/core").SourceItem[];
   streaming?: boolean;
   /** Live status from a running sub-agent child loop (e.g. "Reading SOUL.md"). */
   subAgentActivity?: string;

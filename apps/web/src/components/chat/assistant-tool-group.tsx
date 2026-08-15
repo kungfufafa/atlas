@@ -205,6 +205,7 @@ function ToolOnlyWorkGroup({
     return () => window.clearTimeout(timerId);
   }, [isWorkActive, tools.length]);
 
+  const allActivities = tools.flatMap((t) => t.activities || []);
   const done = !isWorkActive;
   const expanded = done ? open : true;
   const toolLabel = tools.length === 1 ? "1 tool" : `${tools.length} tools`;
@@ -224,8 +225,8 @@ function ToolOnlyWorkGroup({
       >
         {done ? (
           <span className={thinkingStyles.label}>
-            <span className={thinkingStyles.verb}>Used</span> {toolLabel} ·{" "}
-            {formatElapsedSeconds(elapsedSeconds)}
+            <span className={thinkingStyles.verb}>Completed</span> in{" "}
+            {formatElapsedSeconds(elapsedSeconds)} · Used {toolLabel}
           </span>
         ) : (
           <span className={cn(thinkingStyles.label, thinkingStyles.shimmer)}>
@@ -251,6 +252,33 @@ function ToolOnlyWorkGroup({
           </svg>
         ) : null}
       </button>
+
+      {/* Semantic Activity Timeline */}
+      {allActivities.length > 0 ? (
+        <div className="space-y-1 px-3 py-1">
+          {allActivities.map((act) => (
+            <div className="flex items-center gap-2 text-xs" key={act.id}>
+              {act.status === "completed" ? (
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  ✓
+                </span>
+              ) : act.status === "failed" ? (
+                <span className="font-bold text-red-600 dark:text-red-400">
+                  ✗
+                </span>
+              ) : (
+                <span className="size-2 shrink-0 animate-pulse rounded-full bg-primary" />
+              )}
+              <span className="font-medium text-foreground">{act.label}</span>
+              {act.detail ? (
+                <span className="max-w-[240px] truncate text-[11px] text-muted-foreground">
+                  {act.detail}
+                </span>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       <div
         className={cn(
@@ -715,7 +743,7 @@ function DetailBlock({
     >
       <div
         className={cn(
-          "border-b px-3 py-1.5 font-medium text-[10px] uppercase tracking-[0.08em]",
+          "border-b px-3 py-1.5 font-medium text-2xs uppercase tracking-[0.08em]",
           tone === "error"
             ? "border-red-300/70 text-red-600 dark:border-red-900/70 dark:text-red-400"
             : "border-border/70 text-muted-foreground"

@@ -434,7 +434,35 @@ function createStreamSenders(
 
 function buildAgentStreamHandlers(send: (event: StreamEvent) => void) {
   return {
+    onActivityComplete: (activity: import("@atlas/core").ActivityEvent) =>
+      send({ activity, type: "activity_complete" }),
+    onActivityStart: (activity: import("@atlas/core").ActivityEvent) =>
+      send({ activity, type: "activity_start" }),
+    onActivityUpdate: (activity: import("@atlas/core").ActivityEvent) =>
+      send({ activity, type: "activity_update" }),
+    onApprovalRequested: (approval: import("@atlas/core").ApprovalRequest) =>
+      send({ approval, type: "approval_requested" }),
+    onArtifactCreated: (artifact: import("@atlas/core").Artifact) =>
+      send({ artifact, type: "artifact_created" }),
     onChunk: (delta: string) => send({ delta, type: "chunk" }),
+    onCitationCreated: (
+      citation: import("@atlas/core").Citation,
+      source?: import("@atlas/core").SourceItem
+    ) => send({ citation, source, type: "citation_created" }),
+    onMemorySaved: (summary: string) => send({ summary, type: "memory_saved" }),
+    onPolicyResolved: (policy: import("@atlas/core").ExecutionPolicy) =>
+      send({ policy, type: "policy_resolved" }),
+    onSourcesUpdated: (event: {
+      sources: import("@atlas/core").SourceItem[];
+      citedCount: number;
+      reviewedCount: number;
+    }) =>
+      send({
+        citedCount: event.citedCount,
+        reviewedCount: event.reviewedCount,
+        sources: event.sources,
+        type: "sources_updated",
+      }),
     onSubAgentActivity: (event: { parentToolCallId: string; label: string }) =>
       send({
         label: event.label,
@@ -668,8 +696,15 @@ export function streamMessage(
         }
         clearInterval(keepalive);
 
+        const observedTerminal = getTerminal();
+        if (!observedTerminal) {
+          console.warn(
+            `Session ${sessionId}: Stream closed before the agent finished.`
+          );
+        }
+
         const terminal =
-          getTerminal() ??
+          observedTerminal ??
           ({
             error: "Stream closed before the agent finished.",
             type: "error",

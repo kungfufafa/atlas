@@ -22,6 +22,9 @@ import {
   resolveCodingAgentSpawnBundle,
 } from "./coding-agent-spawn-env";
 
+/** How long a timed-out child gets to honour SIGTERM before it is killed. */
+const SIGTERM_GRACE_MS = 2000;
+
 export interface CodingAgentHarnessStatus
   extends StoredCodingAgentHarnessRecord {
   authenticated: boolean | null;
@@ -693,6 +696,7 @@ async function probeHarnessVersion(command: string): Promise<{
   missing: boolean;
 }> {
   const { spawn } = await import("node:child_process");
+  const timeoutMs = 5000;
 
   return new Promise((resolve) => {
     const child = spawn(command, ["--version"], {
@@ -702,26 +706,38 @@ async function probeHarnessVersion(command: string): Promise<{
     let stdout = "";
     let stderr = "";
 
+    // The bash tool awaits this probe, so a CLI that never answers --version
+    // would otherwise hold the turn open forever. Resolve on the timer instead
+    // of waiting for close, because a child that ignores SIGTERM never emits
+    // one. `missing: false` keeps getHarnessRuntimeStatus from paying the
+    // timeout a second time on its PATH retry.
+    const timeoutId = setTimeout(() => {
+      child.kill("SIGTERM");
+      resolve({ installed: false, missing: false, version: null });
+    }, timeoutMs);
+
     child.stdout?.on("data", (chunk) => {
       stdout += chunk.toString();
     });
     child.stderr?.on("data", (chunk) => {
       stderr += chunk.toString();
     });
-    child.once("error", (error) =>
+    child.once("error", (error) => {
+      clearTimeout(timeoutId);
       resolve({
         installed: false,
         missing: (error as NodeJS.ErrnoException).code === "ENOENT",
         version: null,
-      })
-    );
-    child.once("close", (code) =>
+      });
+    });
+    child.once("close", (code) => {
+      clearTimeout(timeoutId);
       resolve({
         installed: code === 0,
         missing: false,
         version: code === 0 ? extractVersion(stdout, stderr) : null,
-      })
-    );
+      });
+    });
   });
 }
 
@@ -980,11 +996,33 @@ async function runProbeCommand(
     let stdout = "";
     let stderr = "";
     let timedOut = false;
+    let killTimeoutId: ReturnType<typeof setTimeout> | undefined;
 
     const timeoutId = setTimeout(() => {
       timedOut = true;
       child.kill("SIGTERM");
+      killTimeoutId = setTimeout(() => child.kill("SIGKILL"), SIGTERM_GRACE_MS);
+      // Resolve here rather than waiting for `close`: a child that ignores
+      // SIGTERM never emits one, so the caller would wait past the timeout it
+      // just set.
+      resolve({
+        exitCode: null,
+        stderr: stderr.trim(),
+        stdout: stdout.trim(),
+        timedOut,
+      });
     }, timeoutMs);
+
+    const finish = (result: {
+      exitCode: number | null;
+      stdout: string;
+      stderr: string;
+      timedOut: boolean;
+    }) => {
+      clearTimeout(timeoutId);
+      clearTimeout(killTimeoutId);
+      resolve(result);
+    };
 
     child.stdout?.on("data", (chunk) => {
       stdout += chunk.toString();
@@ -993,8 +1031,7 @@ async function runProbeCommand(
       stderr += chunk.toString();
     });
     child.once("error", (error) => {
-      clearTimeout(timeoutId);
-      resolve({
+      finish({
         exitCode: null,
         stderr: `${stderr}\n${String(error)}`.trim(),
         stdout,
@@ -1002,8 +1039,7 @@ async function runProbeCommand(
       });
     });
     child.once("close", (exitCode) => {
-      clearTimeout(timeoutId);
-      resolve({
+      finish({
         exitCode,
         stderr: stderr.trim(),
         stdout: stdout.trim(),
@@ -1041,10 +1077,21 @@ async function runInstallCommand(
     let timedOut = false;
     let stdoutBuffer = "";
     let stderrBuffer = "";
+    let killTimeoutId: ReturnType<typeof setTimeout> | undefined;
 
     const timeoutId = setTimeout(() => {
       timedOut = true;
       child.kill("SIGTERM");
+      killTimeoutId = setTimeout(() => child.kill("SIGKILL"), SIGTERM_GRACE_MS);
+      // Same reason as runProbeCommand: `close` never arrives from a child that
+      // ignores SIGTERM, and an install left running keeps writing to the global
+      // package dir.
+      resolve({
+        exitCode: null,
+        stderr: stderr.trim(),
+        stdout: stdout.trim(),
+        timedOut,
+      });
     }, timeoutMs);
 
     const emitLine = (prefix: "stdout" | "stderr", line: string) => {
@@ -1088,6 +1135,7 @@ async function runInstallCommand(
 
     child.once("error", (error) => {
       clearTimeout(timeoutId);
+      clearTimeout(killTimeoutId);
 
       if (stdoutBuffer.trim()) {
         emitLine("stdout", stdoutBuffer.trim());
@@ -1106,6 +1154,7 @@ async function runInstallCommand(
 
     child.once("close", (exitCode) => {
       clearTimeout(timeoutId);
+      clearTimeout(killTimeoutId);
 
       if (stdoutBuffer.trim()) {
         emitLine("stdout", stdoutBuffer.trim());

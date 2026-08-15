@@ -1,5 +1,6 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { Server } from "bun";
 import { ensureProcessPath } from "./lib/ensure-process-path";
 
 ensureProcessPath();
@@ -13,6 +14,7 @@ import {
   ensureBundledSkillFiles,
   getUserConfigDir,
   loadConfig,
+  registerBrowserHandler,
   writeRuntimeServerUrl,
 } from "@atlas/core";
 import { serverHasTaskChat } from "@atlas/core/ensure-server";
@@ -23,12 +25,14 @@ import {
   seedDatabase,
 } from "@atlas/db";
 import { createHonoApp } from "./http/app";
+import { disableBunIdleTimeoutForSse } from "./http/sse-idle-timeout";
 import { runFirstBootSeed } from "./seed";
 import { AgentService } from "./services/agent-service";
 import { AuthService } from "./services/auth-service";
 import { AutomationDeliveryService } from "./services/automation-delivery-service";
 import { AutomationRunner } from "./services/automation-runner";
 import { AutomationService } from "./services/automation-service";
+import { browserSessionService } from "./services/browser-session-service";
 import { ComposioService } from "./services/composio-service";
 import { LlmUsageTracker } from "./services/llm-usage-tracker";
 import { McpClientManager } from "./services/mcp-client-manager";
@@ -93,6 +97,13 @@ const agent = new AgentService(
   provider,
   database.adapter,
   llmUsageTracker
+);
+registerBrowserHandler((input, context) =>
+  browserSessionService.executeBrowserAction(input, {
+    orgId: context.orgId,
+    profileId: context.profileId,
+    sessionId: context.sessionId,
+  })
 );
 registerSubAgentTool(createSubAgentTool(agent));
 registerGenerateImageTool(
@@ -322,7 +333,11 @@ function startServer(options: {
   for (let port = options.preferredPort; port <= lastPort; port += 1) {
     try {
       return Bun.serve({
-        fetch: options.fetch,
+        async fetch(request, server: Server) {
+          const response = await options.fetch(request);
+          disableBunIdleTimeoutForSse(request, response, server);
+          return response;
+        },
         hostname: options.host,
         idleTimeout: 255,
         port,

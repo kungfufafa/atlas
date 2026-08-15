@@ -11,8 +11,13 @@ import {
 import { emailTool } from "@atlas/core/tools/email";
 import type { DatabaseAdapter, StoredToolRecord } from "@atlas/db";
 import { bashTool, runBash } from "../tools/bash";
+import { createConversationTools } from "../tools/conversation-tools";
+import { createMemoryTools } from "../tools/memory-tools";
+import { pythonExecuteTool } from "../tools/python-execute-tool";
+import { createToolSearchTool } from "../tools/tool-search-tool";
 import { enrichCodingAgentBashInput } from "./coding-agent-bash-env";
 import { loadJavascriptTool } from "./javascript-tool-loader";
+import { MemoryService } from "./memory-service";
 
 let registeredSubAgentTool: ToolDefinition | null = null;
 let registeredGenerateImageTool: ToolDefinition | null = null;
@@ -98,6 +103,21 @@ async function resolveStoredTool(
     return serverTools.get(record.name) ?? null;
   }
 
+  if (
+    record.handlerType === "python_execute" ||
+    record.name === "python_execute"
+  ) {
+    return serverTools.get(record.name) ?? pythonExecuteTool;
+  }
+
+  if (record.handlerType === "memory" || record.name.startsWith("memory_")) {
+    return serverTools.get(record.name) ?? null;
+  }
+
+  if (record.handlerType === "tool_search" || record.name === "tool_search") {
+    return serverTools.get(record.name) ?? null;
+  }
+
   if (record.handlerType === "javascript") {
     return loadJavascriptTool(record);
   }
@@ -111,6 +131,26 @@ function buildServerTools(
 ): Map<string, ToolDefinition> {
   const bash = db ? createCodingAgentAwareBashTool(db, userConfig) : bashTool;
   const map = new Map<string, ToolDefinition>([[bash.name, bash]]);
+  map.set(pythonExecuteTool.name, pythonExecuteTool);
+
+  if (db) {
+    const memoryService = new MemoryService(db);
+    const memoryTools = createMemoryTools(memoryService);
+    for (const tool of memoryTools) {
+      map.set(tool.name, tool);
+    }
+    const conversationTools = createConversationTools(db);
+    for (const tool of conversationTools) {
+      map.set(tool.name, tool);
+    }
+  }
+
+  const toolSearch = createToolSearchTool(async (_context) => [
+    ...builtinTools,
+    pythonExecuteTool,
+    bashTool,
+  ]);
+  map.set(toolSearch.name, toolSearch);
 
   if (registeredSubAgentTool) {
     map.set(registeredSubAgentTool.name, registeredSubAgentTool);

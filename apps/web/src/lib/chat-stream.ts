@@ -320,6 +320,52 @@ export function formatToolActionLabel(
     return `Ran ${truncateDisplay(summary.split("\n")[0] ?? summary, 96)}`;
   }
 
+  if (tool === "calculator" && typeof input?.expression === "string") {
+    return `Calculated ${truncateDisplay(input.expression, 64)}`;
+  }
+
+  if (tool === "python_execute") {
+    return "Ran Python analysis";
+  }
+
+  if (tool === "tool_search" && typeof input?.query === "string") {
+    return `Searched tools · ${truncateDisplay(input.query, 64)}`;
+  }
+
+  if (tool === "list_directory") {
+    const p = typeof input?.path === "string" ? input.path : ".";
+    return `Listed directory ${truncateDisplay(p, 48)}`;
+  }
+
+  if (tool === "file_stat" && typeof input?.path === "string") {
+    return `Inspected ${basename(input.path)}`;
+  }
+
+  if (
+    tool === "copy_file" &&
+    typeof input?.sourcePath === "string" &&
+    typeof input?.destinationPath === "string"
+  ) {
+    return `Copied ${basename(input.sourcePath)} → ${basename(input.destinationPath)}`;
+  }
+
+  if (
+    tool === "move_file" &&
+    typeof input?.sourcePath === "string" &&
+    typeof input?.destinationPath === "string"
+  ) {
+    return `Moved ${basename(input.sourcePath)} → ${basename(input.destinationPath)}`;
+  }
+
+  if (tool === "create_directory" && typeof input?.path === "string") {
+    return `Created directory ${basename(input.path)}`;
+  }
+
+  if (tool === "spreadsheet" && typeof input?.path === "string") {
+    const action = typeof input?.action === "string" ? input.action : "manage";
+    return `Spreadsheet (${action}) · ${basename(input.path)}`;
+  }
+
   if (
     (tool === "write_file" || tool === "write_docx") &&
     typeof input?.path === "string"
@@ -545,6 +591,83 @@ export function buildStreamHandlers(
   } = {}
 ): StreamHandlers {
   return {
+    onActivityComplete: (activity) => {
+      setMessages((current) =>
+        current.map((msg) => {
+          if (
+            msg.activities &&
+            msg.activities.some((a) => a.id === activity.id)
+          ) {
+            return {
+              ...msg,
+              activities: msg.activities.map((a) =>
+                a.id === activity.id ? activity : a
+              ),
+            };
+          }
+          return msg;
+        })
+      );
+    },
+    onActivityStart: (activity) => {
+      setMessages((current) => {
+        const next = [...current];
+        const last = next[next.length - 1];
+        if (last && (last.role === "assistant" || last.role === "tool")) {
+          const currentActs = last.activities || [];
+          next[next.length - 1] = {
+            ...last,
+            activities: [...currentActs, activity],
+          };
+          return next;
+        }
+        return current;
+      });
+    },
+    onActivityUpdate: (activity) => {
+      setMessages((current) =>
+        current.map((msg) => {
+          if (
+            msg.activities &&
+            msg.activities.some((a) => a.id === activity.id)
+          ) {
+            return {
+              ...msg,
+              activities: msg.activities.map((a) =>
+                a.id === activity.id ? activity : a
+              ),
+            };
+          }
+          return msg;
+        })
+      );
+    },
+    onApprovalRequested: (approval) => {
+      setMessages((current) => {
+        const next = [...current];
+        const last = next[next.length - 1];
+        if (last) {
+          next[next.length - 1] = { ...last, approval };
+          return next;
+        }
+        return current;
+      });
+    },
+    onArtifactCreated: (artifact) => {
+      setMessages((current) => {
+        const next = [...current];
+        const last = next[next.length - 1];
+        if (last) {
+          const existingArtifacts = last.artifacts || [];
+          next[next.length - 1] = {
+            ...last,
+            artifacts: [...existingArtifacts, artifact],
+          };
+          return next;
+        }
+        return current;
+      });
+    },
     onChunk: (delta) => {
       setMessages((current) => {
         const next = [...current];
@@ -569,8 +692,61 @@ export function buildStreamHandlers(
         return next;
       });
     },
+    onCitationCreated: ({ citation, source }) => {
+      setMessages((current) => {
+        const next = [...current];
+        const last = next[next.length - 1];
+        if (last && last.role === "assistant") {
+          const existingCitations = last.citations || [];
+          const existingSources = last.sources || [];
+          next[next.length - 1] = {
+            ...last,
+            citations: [...existingCitations, citation],
+            sources:
+              source && !existingSources.some((s) => s.id === source.id)
+                ? [...existingSources, source]
+                : existingSources,
+          };
+          return next;
+        }
+        return current;
+      });
+    },
     onContextUsage: options.onContextUsage,
+    onMemorySaved: (summary) => {
+      setMessages((current) => {
+        const next = [...current];
+        const last = next[next.length - 1];
+        if (last) {
+          next[next.length - 1] = { ...last, memorySaved: summary };
+          return next;
+        }
+        return current;
+      });
+    },
+    onPolicyResolved: (policy) => {
+      setMessages((current) => {
+        const next = [...current];
+        const last = next[next.length - 1];
+        if (last && last.role === "assistant") {
+          next[next.length - 1] = { ...last, policy };
+          return next;
+        }
+        return current;
+      });
+    },
     onQuestionnaireUpdated: options.onQuestionnaireUpdated,
+    onSourcesUpdated: (event) => {
+      setMessages((current) => {
+        const next = [...current];
+        const last = next[next.length - 1];
+        if (last && last.role === "assistant") {
+          next[next.length - 1] = { ...last, sources: event.sources };
+          return next;
+        }
+        return current;
+      });
+    },
     onSubAgentActivity: (event) => {
       setMessages((current) =>
         current.map((message) =>

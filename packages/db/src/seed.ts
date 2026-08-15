@@ -6,7 +6,9 @@ import {
 import { preinstalledMcpServers } from "@atlas/core/mcp/preinstalled";
 import {
   BUILTIN_TOOL_IDS,
+  PYTHON_EXECUTE_TOOL_ID,
   SUB_AGENT_TOOL_ID,
+  TOOL_SEARCH_TOOL_ID,
 } from "@atlas/core/tools/protected";
 import { ensureLocalClientAccess } from "./local-client";
 import {
@@ -35,6 +37,8 @@ const SUPPORTED_TOOL_HANDLER_TYPES = new Set([
   "javascript",
   "sub_agent",
   "generate_image",
+  "python_execute",
+  "tool_search",
 ]);
 
 export async function seedDatabase(db: DatabaseAdapter): Promise<void> {
@@ -46,6 +50,8 @@ export async function seedDatabase(db: DatabaseAdapter): Promise<void> {
   await ensureSubAgentToolDefinition(db);
   await ensureBashToolDefinition(db);
   await ensureGenerateImageToolDefinition(db);
+  await ensurePythonExecuteToolDefinition(db);
+  await ensureToolSearchToolDefinition(db);
   await ensurePreinstalledMcpServers(db);
   await ensureLocalClientAccess(db);
   await ensureOrgSuperAgentProfiles(db);
@@ -138,22 +144,19 @@ export async function ensureBuiltinToolDefinitions(
 ): Promise<void> {
   const now = new Date().toISOString();
 
-  for (const tool of builtinTools) {
-    const toolId = BUILTIN_TOOL_IDS[tool.name as keyof typeof BUILTIN_TOOL_IDS];
-
-    if (!toolId) {
-      continue;
-    }
-
+  for (const [toolName, toolId] of Object.entries(BUILTIN_TOOL_IDS)) {
+    const builtinTool = builtinTools.find((t) => t.name === toolName);
     const existing = await db.getTool(toolId);
 
     await db.upsertTool({
       createdAt: existing?.createdAt ?? now,
-      description: tool.description,
-      handlerConfig: { name: tool.name },
+      description:
+        builtinTool?.description ??
+        `Built-in tool for ${toolName.replace(/_/g, " ")}.`,
+      handlerConfig: { name: toolName },
       handlerType: "builtin",
       id: toolId,
-      name: tool.name,
+      name: toolName,
       updatedAt: now,
     });
   }
@@ -173,6 +176,42 @@ export async function ensureSubAgentToolDefinition(
     handlerType: "sub_agent",
     id: SUB_AGENT_TOOL_ID,
     name: "sub_agent",
+    updatedAt: now,
+  });
+}
+
+export async function ensurePythonExecuteToolDefinition(
+  db: DatabaseAdapter
+): Promise<void> {
+  const now = new Date().toISOString();
+  const existing = await db.getTool(PYTHON_EXECUTE_TOOL_ID);
+
+  await db.upsertTool({
+    createdAt: existing?.createdAt ?? now,
+    description:
+      "Execute Python code in an isolated workspace analysis sandbox. Useful for data analysis, CSV/Excel computation, statistics, data transformations, and generating artifacts/charts. stdout, stderr, and any newly generated files are captured.",
+    handlerConfig: {},
+    handlerType: "python_execute",
+    id: PYTHON_EXECUTE_TOOL_ID,
+    name: "python_execute",
+    updatedAt: now,
+  });
+}
+
+export async function ensureToolSearchToolDefinition(
+  db: DatabaseAdapter
+): Promise<void> {
+  const now = new Date().toISOString();
+  const existing = await db.getTool(TOOL_SEARCH_TOOL_ID);
+
+  await db.upsertTool({
+    createdAt: existing?.createdAt ?? now,
+    description:
+      "Search the available tool catalog for specific capabilities, tools, and connectors. Returns matching tool definitions.",
+    handlerConfig: {},
+    handlerType: "tool_search",
+    id: TOOL_SEARCH_TOOL_ID,
+    name: "tool_search",
     updatedAt: now,
   });
 }

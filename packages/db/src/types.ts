@@ -248,6 +248,22 @@ export interface StoredComposioToolkitRecord {
   updatedAt: string;
 }
 
+export type MemoryScope = "user" | "project" | "organization" | "agent";
+
+export interface StoredMemoryRecord {
+  confidence: number;
+  content: string;
+  createdAt: string;
+  id: string;
+  importance: number;
+  orgId: string;
+  ownerId: string;
+  scope: MemoryScope;
+  source?: string | null;
+  subject?: string | null;
+  updatedAt: string;
+}
+
 export type StoredComposioUserConnectionStatus =
   | "oauth_in_progress"
   | "connected"
@@ -551,6 +567,9 @@ export interface DatabaseAdapter {
 
   createBrowserSession(record: StoredBrowserSessionRecord): Promise<void>;
 
+  // Scoped Memory Methods
+  createMemory(record: StoredMemoryRecord): Promise<void>;
+
   createOrgInvite(record: StoredOrgInviteRecord): Promise<void>;
 
   createOrgMemoryProposal(record: StoredOrgMemoryProposal): Promise<void>;
@@ -565,6 +584,7 @@ export interface DatabaseAdapter {
   deleteComposioToolkit(id: string): Promise<boolean>;
   deleteComposioUserConnection(id: string): Promise<boolean>;
   deleteMcpServer(id: string): Promise<boolean>;
+  deleteMemory(orgId: string, id: string): Promise<boolean>;
   deleteMessagesForSession(sessionId: string): Promise<void>;
   deleteNotificationDestination(id: string): Promise<boolean>;
   deleteOrgMember(orgId: string, userId: string): Promise<boolean>;
@@ -613,11 +633,29 @@ export interface DatabaseAdapter {
   getComposioUserConnectionById(
     id: string
   ): Promise<StoredComposioUserConnectionRecord | null>;
+
+  getConversationHistory(
+    orgId: string,
+    sessionId: string,
+    options?: {
+      limit?: number;
+      offset?: number;
+      userId?: string;
+    }
+  ): Promise<{
+    createdAt: string;
+    messages: StoredConversationMessageItem[];
+    profileId: string;
+    sessionId: string;
+    title: string | null;
+    totalMessages: number;
+  } | null>;
   getDefaultProfileForOrg(orgId: string): Promise<StoredProfileRecord | null>;
 
   getLlmUsageStats(): Promise<StoredLlmUsageStatsRecord | null>;
   getMcpServer(id: string): Promise<StoredMcpServerRecord | null>;
   getMcpServerByName(name: string): Promise<StoredMcpServerRecord | null>;
+  getMemory(orgId: string, id: string): Promise<StoredMemoryRecord | null>;
   getNotificationDestination(
     id: string
   ): Promise<StoredNotificationDestinationRecord | null>;
@@ -749,6 +787,12 @@ export interface DatabaseAdapter {
   listMcpServers(): Promise<StoredMcpServerRecord[]>;
 
   listMcpServersForProfile(profileId: string): Promise<StoredMcpServerRecord[]>;
+  listMemories(
+    orgId: string,
+    scope?: string,
+    ownerId?: string,
+    limit?: number
+  ): Promise<StoredMemoryRecord[]>;
 
   listMessagesForSession(
     sessionId: string
@@ -835,6 +879,26 @@ export interface DatabaseAdapter {
     sessionTokenHash: string,
     revokedAt: string
   ): Promise<boolean>;
+
+  // Conversation Retrieval Methods
+  searchConversationMessages(
+    orgId: string,
+    query: string,
+    options?: {
+      after?: string;
+      before?: string;
+      limit?: number;
+      profileId?: string;
+      userId?: string;
+    }
+  ): Promise<StoredConversationSearchResult[]>;
+  searchMemories(
+    orgId: string,
+    query: string,
+    scope?: string,
+    ownerId?: string,
+    limit?: number
+  ): Promise<StoredMemoryRecord[]>;
   setUserContext(
     orgId: string,
     userId: string,
@@ -863,6 +927,11 @@ export interface DatabaseAdapter {
     activeOrgId: string | null
   ): Promise<void>;
   updateBrowserSessionLastUsedAt(id: string, lastUsedAt: string): Promise<void>;
+  updateMemory(
+    orgId: string,
+    id: string,
+    patch: Partial<StoredMemoryRecord>
+  ): Promise<void>;
   updateOrgMemoryProposalStatus(
     orgId: string,
     id: string,
@@ -924,4 +993,22 @@ export interface DatabaseAdapter {
   upsertTask(record: StoredTaskRecord): Promise<void>;
   upsertTool(record: StoredToolRecord): Promise<void>;
   upsertWorkspaceSettings(record: StoredWorkspaceSettingsRecord): Promise<void>;
+}
+
+export interface StoredConversationSearchResult {
+  createdAt: string;
+  matchedSnippet: string;
+  messageId: string;
+  profileId: string;
+  role: string;
+  sessionId: string;
+  sessionTitle: string | null;
+}
+
+export interface StoredConversationMessageItem {
+  createdAt: string;
+  id: string;
+  role: string;
+  seq: number;
+  text: string;
 }

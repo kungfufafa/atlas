@@ -1,4 +1,5 @@
 import type {
+  CloneProfileRequest,
   CreateProfileRequest,
   DeleteArtifactResponse,
   DeleteKnowledgeBaseResponse,
@@ -822,5 +823,60 @@ export function registerProfileRoutes(
     const profileId = decodeURIComponent(c.req.param("profileId"));
     await agent.deleteProfile(orgId, profileId);
     return new Response(null, { status: 204 });
+  });
+
+  app.openAPIRegistry.registerPath(
+    createRoute({
+      method: "post",
+      operationId: "cloneProfile",
+      path: "/v1/profiles/{profileId}/clone",
+      request: {
+        body: {
+          content: {
+            "application/json": {
+              schema: z.object({}).passthrough().openapi("CloneProfileRequest"),
+            },
+          },
+          required: false,
+        },
+        params: profileIdParam,
+      },
+      responses: {
+        201: {
+          content: {
+            "application/json": {
+              schema: z.object({}).passthrough().openapi("ProfileResponse"),
+            },
+          },
+          description: "Profile cloned",
+        },
+        400: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Error",
+        },
+        403: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Forbidden",
+        },
+        404: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Not found",
+        },
+      },
+      summary: "Clone a bot profile",
+      tags: ["Profiles"],
+    })
+  );
+  app.post("/v1/profiles/:profileId/clone", async (c) => {
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    const profileId = decodeURIComponent(c.req.param("profileId"));
+    const body = await readJson<CloneProfileRequest>(c.req.raw).catch(
+      () => ({}) as CloneProfileRequest
+    );
+    return json<ProfileResponse>(
+      await agent.cloneProfile(orgId, profileId, body),
+      201
+    );
   });
 }

@@ -23,7 +23,7 @@ WORKDIR /app
 # --build-arg OMNI_VERSION=0.7.3 to include it, then set ATLAS_OMNI=1.
 # The release is a static musl build, which runs on this glibc base, and the
 # published checksum is verified rather than the download trusted.
-ARG OMNI_VERSION=""
+ARG OMNI_VERSION="0.7.5"
 RUN if [ -n "$OMNI_VERSION" ]; then \
       set -eu; \
       apt-get update && apt-get install -y --no-install-recommends curl ca-certificates; \

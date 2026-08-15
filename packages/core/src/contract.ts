@@ -831,12 +831,102 @@ export interface DocumentAttachment {
   mediaType: string;
 }
 
+export type ExecutionPolicy =
+  | "auto"
+  | "fast"
+  | "standard"
+  | "research"
+  | "agent";
+
+export interface ActivityEvent {
+  completedAt?: string;
+  detail?: string;
+  id: string;
+  label: string;
+  startedAt?: string;
+  status: "pending" | "running" | "completed" | "failed" | "cancelled";
+  type:
+    | "search"
+    | "read"
+    | "analyze"
+    | "create"
+    | "browse"
+    | "retrieve"
+    | "connect"
+    | "verify"
+    | "write";
+}
+
+export interface Citation {
+  endOffset?: number;
+  evidenceIds: string[];
+  id: string;
+  messageId?: string;
+  sourceId: string;
+  startOffset?: number;
+}
+
+export interface SourceItem {
+  domain?: string;
+  id: string;
+  publishedDate?: string;
+  publisher?: string;
+  score?: number;
+  snippet?: string;
+  title: string;
+  type?: "primary" | "secondary" | "community";
+  url: string;
+}
+
+export interface ResearchSession {
+  citationIds: string[];
+  claims: unknown[];
+  createdAt?: string;
+  evidenceIds: string[];
+  id: string;
+  parentRevisionId?: string;
+  question: string;
+  revision?: number;
+  sourceIds: string[];
+  updatedAt: string;
+}
+
+export interface RiskAssessment {
+  actionType:
+    | "read"
+    | "search"
+    | "navigate"
+    | "local_write"
+    | "external_message"
+    | "delete"
+    | "purchase"
+    | "submit_form"
+    | "account_change";
+  consequenceSummary: string;
+  details?: Record<string, unknown>;
+  requiresApproval: boolean;
+  riskLevel: "low" | "medium" | "high";
+  title: string;
+}
+
+export interface ApprovalRequest {
+  consequenceSummary: string;
+  createdAt: string;
+  details?: Record<string, unknown>;
+  id: string;
+  status: "pending" | "approved" | "rejected";
+  title: string;
+  tool: string;
+  toolCallId: string;
+}
+
 export interface SendMessageInput {
   /** Browser origin for OAuth callbacks (e.g. window.location.origin). */
   clientOrigin?: string;
   documents?: DocumentAttachment[];
   images?: ImageAttachment[];
   message: string;
+  policy?: ExecutionPolicy;
 }
 
 export interface SendMessageRequest {
@@ -844,6 +934,7 @@ export interface SendMessageRequest {
   documents?: DocumentAttachment[];
   images?: ImageAttachment[];
   message: string;
+  policy?: ExecutionPolicy;
   stream?: boolean;
 }
 
@@ -855,6 +946,25 @@ export interface SendMessageResponse {
 export type StreamEvent =
   | { type: "chunk"; delta: string }
   | { type: "thinking"; delta: string }
+  | { type: "policy_resolved"; policy: ExecutionPolicy }
+  | { type: "activity_start"; activity: ActivityEvent }
+  | { type: "activity_update"; activity: ActivityEvent }
+  | { type: "activity_complete"; activity: ActivityEvent }
+  | { type: "citation_created"; citation: Citation; source?: SourceItem }
+  | {
+      type: "sources_updated";
+      sources: SourceItem[];
+      citedCount: number;
+      reviewedCount: number;
+    }
+  | { type: "artifact_created"; artifact: import("./artifact-types").Artifact }
+  | { type: "approval_requested"; approval: ApprovalRequest }
+  | {
+      type: "approval_resolved";
+      approvalId: string;
+      status: "approved" | "rejected";
+    }
+  | { type: "memory_saved"; summary: string }
   | {
       type: "tool_input_delta";
       toolCallId: string;
@@ -1669,6 +1779,13 @@ export interface UpdateProfileRequest {
   systemPrompt?: string;
 }
 
+export interface CloneProfileRequest {
+  id?: string;
+  name?: string;
+}
+
+export type CloneProfileResponse = ProfileResponse;
+
 export interface CreateToolRequest {
   description: string;
   handlerConfig?: unknown;
@@ -2152,3 +2269,5 @@ export interface ComposioToolErrorResult {
   error: string;
   toolkitSlug?: string;
 }
+
+export * from "./tools/execution-contract";

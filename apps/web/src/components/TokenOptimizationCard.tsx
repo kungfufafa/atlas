@@ -135,7 +135,7 @@ function DailyChart({ days }: { days: Day[] }) {
           {days.map((day, index) =>
             index % 7 === 0 || index === days.length - 1 ? (
               <span
-                className="absolute -translate-x-1/2 text-[10px] text-muted-foreground tabular-nums"
+                className="absolute -translate-x-1/2 text-2xs text-muted-foreground tabular-nums"
                 key={day.day}
                 style={{ left: `${(index + 0.5) * slot}%` }}
               >
@@ -248,7 +248,7 @@ export function TokenOptimizationCard() {
           <div className="mt-1 flex flex-wrap gap-1">
             {omni?.tools.map((tool) => (
               <span
-                className="rounded border border-border bg-muted/50 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground leading-none"
+                className="rounded border border-border bg-muted/50 px-1.5 py-0.5 font-mono text-2xs text-muted-foreground leading-none"
                 key={tool}
               >
                 {tool}

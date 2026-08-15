@@ -27,9 +27,27 @@ export interface AtlasClientOptions {
 export type StreamHandler = (delta: string) => void;
 
 export interface StreamHandlers {
+  onActivityComplete?: (activity: import("@atlas/core").ActivityEvent) => void;
+  onActivityStart?: (activity: import("@atlas/core").ActivityEvent) => void;
+  onActivityUpdate?: (activity: import("@atlas/core").ActivityEvent) => void;
+  onApprovalRequested?: (
+    approval: import("@atlas/core").ApprovalRequest
+  ) => void;
+  onArtifactCreated?: (artifact: import("@atlas/core").Artifact) => void;
   onChunk: StreamHandler;
+  onCitationCreated?: (event: {
+    citation: import("@atlas/core").Citation;
+    source?: import("@atlas/core").SourceItem;
+  }) => void;
   onContextUsage?: (usage: ChatContextUsage) => void;
+  onMemorySaved?: (summary: string) => void;
+  onPolicyResolved?: (policy: import("@atlas/core").ExecutionPolicy) => void;
   onQuestionnaireUpdated?: (questionnaire: AgentQuestionnaire | null) => void;
+  onSourcesUpdated?: (event: {
+    sources: import("@atlas/core").SourceItem[];
+    citedCount: number;
+    reviewedCount: number;
+  }) => void;
   onSubAgentActivity?: (event: {
     parentToolCallId: string;
     label: string;

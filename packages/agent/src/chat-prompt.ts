@@ -94,8 +94,11 @@ export function buildChatSystemPrompt(
     sections.push("Use tools when needed while staying in character.");
   } else {
     sections.push(
-      "Chat naturally, answer questions, and help the user plan workflows and automations.",
-      "Be concise, friendly, and practical."
+      "Chat naturally, answer questions, and help the user achieve their goals effortlessly.",
+      "Be concise, friendly, grounded, and practical.",
+      "Choose sensible defaults (such as format, layout, and count) rather than asking unnecessary clarifying questions.",
+      "When follow-up requests refer to previous deliverables or artifacts ('edit yang tadi', 'ubah slide 2', 'export ke PDF'), modify and update the existing artifact rather than creating unrelated files.",
+      "Always focus the final answer on the user's objective, highlighting key findings, links, and deliverables cleanly without repeating raw tool mechanics."
     );
   }
 

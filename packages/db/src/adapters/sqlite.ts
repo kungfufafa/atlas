@@ -7,6 +7,7 @@ import { ensureDatabaseDirectory, resolveDatabasePath } from "../database-url";
 import { migrateDatabase } from "../migrate";
 import type {
   DatabaseAdapter,
+  MemoryScope,
   OrgMemoryProposalStatus,
   StoredArtifactShareRecord,
   StoredAttachmentRecord,
@@ -15,9 +16,11 @@ import type {
   StoredBrowserSessionRecord,
   StoredComposioToolkitRecord,
   StoredComposioUserConnectionRecord,
+  StoredConversationMessageItem,
   StoredLlmUsageModelStatsRecord,
   StoredLlmUsageStatsRecord,
   StoredMcpServerRecord,
+  StoredMemoryRecord,
   StoredNotificationDestinationRecord,
   StoredOrganizationRecord,
   StoredOrgInviteRecord,
@@ -247,6 +250,20 @@ interface ComposioUserConnectionRow {
   toolkit_id: string;
   updated_at: string;
   user_id: string;
+}
+
+interface MemoryRow {
+  confidence: number;
+  content: string;
+  created_at: string;
+  id: string;
+  importance: number;
+  org_id: string;
+  owner_id: string;
+  scope: string;
+  source: string | null;
+  subject: string | null;
+  updated_at: string;
 }
 
 interface SkillRow {
@@ -1525,6 +1542,30 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     WHERE org_id = ? AND user_id = ?
   `);
 
+  const createMemoryStmt = db.prepare(`
+    INSERT INTO memories (
+      id, org_id, scope, owner_id, subject, content, confidence, importance, source, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      subject = excluded.subject,
+      content = excluded.content,
+      confidence = excluded.confidence,
+      importance = excluded.importance,
+      source = excluded.source,
+      updated_at = excluded.updated_at
+  `);
+
+  const getMemoryStmt = db.prepare(`
+    SELECT * FROM memories
+    WHERE org_id = ? AND id = ?
+    LIMIT 1
+  `);
+
+  const deleteMemoryStmt = db.prepare(`
+    DELETE FROM memories
+    WHERE org_id = ? AND id = ?
+  `);
+
   return {
     async appendMessagesForSession(sessionId, messages) {
       for (const message of messages) {
@@ -1620,6 +1661,22 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.revokedAt,
         record.lastUsedAt,
         record.activeOrgId ?? null
+      );
+    },
+
+    async createMemory(record) {
+      createMemoryStmt.run(
+        record.id,
+        record.orgId,
+        record.scope,
+        record.ownerId,
+        record.subject ?? null,
+        record.content,
+        record.confidence ?? 1.0,
+        record.importance ?? 1,
+        record.source ?? null,
+        record.createdAt,
+        record.updatedAt
       );
     },
 
@@ -1734,6 +1791,11 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
 
     async deleteMcpServer(id) {
       const result = deleteMcpServerStmt.run(id);
+      return result.changes > 0;
+    },
+
+    async deleteMemory(orgId, id) {
+      const result = deleteMemoryStmt.run(orgId, id);
       return result.changes > 0;
     },
 
@@ -1867,6 +1929,74 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       return row ? toComposioUserConnectionRecord(row) : null;
     },
 
+    async getConversationHistory(orgId, sessionId, options = {}) {
+      const sessionRow = db
+        .prepare(
+          "SELECT id, title, profile_id, created_at FROM sessions WHERE org_id = ? AND id = ?"
+        )
+        .get(orgId, sessionId) as {
+        created_at: string;
+        id: string;
+        profile_id: string;
+        title: string | null;
+      } | null;
+
+      if (!sessionRow) {
+        return null;
+      }
+
+      const countRow = db
+        .prepare(
+          "SELECT COUNT(*) AS count FROM session_messages WHERE session_id = ?"
+        )
+        .get(sessionId) as { count: number };
+
+      const limit = Math.min(100, options.limit ?? 50);
+      const offset = options.offset ?? 0;
+
+      const messageRows = db
+        .prepare(
+          "SELECT id, seq, payload, created_at FROM session_messages WHERE session_id = ? ORDER BY seq ASC LIMIT ? OFFSET ?"
+        )
+        .all(sessionId, limit, offset) as Array<{
+        created_at: string;
+        id: string;
+        payload: string;
+        seq: number;
+      }>;
+
+      const messages: StoredConversationMessageItem[] = messageRows.map((m) => {
+        let text = "";
+        let role = "user";
+        try {
+          const parsed = JSON.parse(m.payload);
+          role = parsed.role || "user";
+          text =
+            typeof parsed.content === "string"
+              ? parsed.content
+              : JSON.stringify(parsed.content || "");
+        } catch {
+          text = m.payload;
+        }
+        return {
+          createdAt: m.created_at,
+          id: m.id,
+          role,
+          seq: m.seq,
+          text: text.slice(0, 4000), // bounded transcript text per message
+        };
+      });
+
+      return {
+        createdAt: sessionRow.created_at,
+        messages,
+        profileId: sessionRow.profile_id,
+        sessionId: sessionRow.id,
+        title: sessionRow.title,
+        totalMessages: countRow.count,
+      };
+    },
+
     async getDefaultProfileForOrg(orgId) {
       const row = getDefaultProfileForOrgStmt.get(orgId) as ProfileRow | null;
       return row ? toProfileRecord(row) : null;
@@ -1887,6 +2017,11 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     async getMcpServerByName(name) {
       const row = getMcpServerByNameStmt.get(name) as McpServerRow | null;
       return row ? toMcpServerRecord(row) : null;
+    },
+
+    async getMemory(orgId, id) {
+      const row = getMemoryStmt.get(orgId, id) as MemoryRow | null;
+      return row ? toMemoryRecord(row) : null;
     },
 
     async getNotificationDestination(id) {
@@ -2310,6 +2445,23 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         .map((row) => toMcpServerRecord(row as McpServerRow));
     },
 
+    async listMemories(orgId, scope, ownerId, limit = 50) {
+      let query = "SELECT * FROM memories WHERE org_id = ?";
+      const params: (string | number)[] = [orgId];
+      if (scope) {
+        query += " AND scope = ?";
+        params.push(scope);
+      }
+      if (ownerId) {
+        query += " AND owner_id = ?";
+        params.push(ownerId);
+      }
+      query += " ORDER BY updated_at DESC LIMIT ?";
+      params.push(limit);
+      const rows = db.prepare(query).all(...params) as MemoryRow[];
+      return rows.map(toMemoryRecord);
+    },
+
     async listMessagesForSession(sessionId) {
       return listMessagesForSessionStmt
         .all(sessionId)
@@ -2605,6 +2757,111 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       return result.changes > 0;
     },
 
+    async searchConversationMessages(orgId, queryText, options = {}) {
+      const clean = queryText.trim();
+      if (!clean) {
+        return [];
+      }
+
+      let sql = `
+        SELECT
+          m.id AS message_id,
+          m.session_id,
+          m.payload,
+          m.created_at,
+          s.title AS session_title,
+          s.profile_id
+        FROM session_messages m
+        INNER JOIN sessions s ON s.id = m.session_id
+        WHERE s.org_id = ?
+      `;
+      const params: (string | number)[] = [orgId];
+
+      if (options.profileId) {
+        sql += " AND s.profile_id = ?";
+        params.push(options.profileId);
+      }
+      if (options.userId) {
+        sql += " AND s.user_id = ?";
+        params.push(options.userId);
+      }
+      if (options.after) {
+        sql += " AND m.created_at >= ?";
+        params.push(options.after);
+      }
+      if (options.before) {
+        sql += " AND m.created_at <= ?";
+        params.push(options.before);
+      }
+
+      sql += " AND m.payload LIKE ?";
+      params.push(`%${clean}%`);
+
+      sql += " ORDER BY m.created_at DESC LIMIT ?";
+      params.push(options.limit ?? 20);
+
+      const rows = db.prepare(sql).all(...params) as Array<{
+        created_at: string;
+        message_id: string;
+        payload: string;
+        profile_id: string;
+        session_id: string;
+        session_title: string | null;
+      }>;
+
+      return rows.map((r) => {
+        let text = "";
+        let role = "user";
+        try {
+          const parsed = JSON.parse(r.payload);
+          role = parsed.role || "user";
+          text =
+            typeof parsed.content === "string"
+              ? parsed.content
+              : JSON.stringify(parsed.content || "");
+        } catch {
+          text = r.payload;
+        }
+
+        const idx = text.toLowerCase().indexOf(clean.toLowerCase());
+        const start = Math.max(0, idx - 80);
+        const end = Math.min(text.length, idx + clean.length + 80);
+        const snippet =
+          idx === -1
+            ? text.slice(0, 150)
+            : `...${text.slice(start, end).trim()}...`;
+
+        return {
+          createdAt: r.created_at,
+          matchedSnippet: snippet,
+          messageId: r.message_id,
+          profileId: r.profile_id,
+          role,
+          sessionId: r.session_id,
+          sessionTitle: r.session_title,
+        };
+      });
+    },
+
+    async searchMemories(orgId, queryText, scope, ownerId, limit = 20) {
+      let query = "SELECT * FROM memories WHERE org_id = ?";
+      const params: (string | number)[] = [orgId];
+      if (scope) {
+        query += " AND scope = ?";
+        params.push(scope);
+      }
+      if (ownerId) {
+        query += " AND owner_id = ?";
+        params.push(ownerId);
+      }
+      query += " AND (content LIKE ? OR subject LIKE ?)";
+      params.push(`%${queryText}%`, `%${queryText}%`);
+      query += " ORDER BY importance DESC, updated_at DESC LIMIT ?";
+      params.push(limit);
+      const rows = db.prepare(query).all(...params) as MemoryRow[];
+      return rows.map(toMemoryRecord);
+    },
+
     async setUserContext(orgId, userId, content, _updatedAt) {
       setUserContextStmt.run(content, orgId, userId);
     },
@@ -2652,6 +2909,19 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
 
     async updateBrowserSessionLastUsedAt(id, lastUsedAt) {
       updateBrowserSessionLastUsedAtStmt.run(lastUsedAt, id);
+    },
+
+    async updateMemory(orgId, id, patch) {
+      const existing = await this.getMemory(orgId, id);
+      if (!existing) {
+        return;
+      }
+      const updated: StoredMemoryRecord = {
+        ...existing,
+        ...patch,
+        updatedAt: patch.updatedAt ?? new Date().toISOString(),
+      };
+      await this.createMemory(updated);
     },
 
     async updateOrgMemoryProposalStatus(orgId, id, update) {
@@ -3623,6 +3893,22 @@ function toBrowserSessionRecord(
     revokedAt: row.revoked_at,
     sessionTokenHash: row.session_token_hash,
     userId: row.user_id,
+  };
+}
+
+function toMemoryRecord(row: MemoryRow): StoredMemoryRecord {
+  return {
+    confidence: row.confidence,
+    content: row.content,
+    createdAt: row.created_at,
+    id: row.id,
+    importance: row.importance,
+    orgId: row.org_id,
+    ownerId: row.owner_id,
+    scope: row.scope as MemoryScope,
+    source: row.source,
+    subject: row.subject,
+    updatedAt: row.updated_at,
   };
 }
 

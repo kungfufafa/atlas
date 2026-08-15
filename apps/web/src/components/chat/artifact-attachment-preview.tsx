@@ -388,7 +388,7 @@ export function ArtifactAttachmentPreview({
           <p className="truncate font-medium text-foreground text-xs">
             {artifact.filename}
           </p>
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-2xs text-muted-foreground">
             {artifact.sizeBytes > 0
               ? `${formatBytes(artifact.sizeBytes)} · `
               : null}
@@ -419,7 +419,7 @@ export function ArtifactAttachmentPreview({
         <p className="truncate font-medium text-foreground text-xs">
           {artifact.filename}
         </p>
-        <p className="text-[10px] text-muted-foreground">
+        <p className="text-2xs text-muted-foreground">
           {artifact.sizeBytes > 0
             ? `${formatBytes(artifact.sizeBytes)} · `
             : null}
