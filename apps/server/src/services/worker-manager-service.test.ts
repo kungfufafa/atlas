@@ -574,4 +574,138 @@ describe("WorkerManagerService", () => {
       );
     });
   });
+
+  describe("Native process management (without PM2)", () => {
+    test("returns managed: true and stopped status by default", async () => {
+      const service = new WorkerManagerService(projectRoot);
+
+      const status = await service.getWorkerStatus("telegram");
+      expect(status).toEqual({
+        cpuPercent: null,
+        managed: true,
+        memoryMb: null,
+        status: "stopped",
+        uptimeSeconds: null,
+      });
+    });
+
+    test("returns managed: true for all workers in getAllWorkerStatuses", async () => {
+      const service = new WorkerManagerService(projectRoot);
+
+      const statuses = await service.getAllWorkerStatuses();
+      expect(statuses.telegram?.managed).toBe(true);
+      expect(statuses.telegram?.status).toBe("stopped");
+      expect(statuses.whatsapp?.managed).toBe(true);
+      expect(statuses.automation?.managed).toBe(true);
+      expect(statuses.discord?.managed).toBe(true);
+    });
+
+    test("reads and clears native logs", async () => {
+      const service = new WorkerManagerService(projectRoot);
+      const logDir = join(configDir!, "logs", "workers");
+      await mkdir(logDir, { recursive: true });
+      await writeFile(join(logDir, "telegram.out.log"), "hello\nworld\n");
+      await writeFile(join(logDir, "telegram.err.log"), "warn\nerror\n");
+
+      const logs = await service.getWorkerLogs("telegram", 5);
+      expect(logs.stdout).toBe("hello\nworld");
+      expect(logs.stderr).toBe("warn\nerror");
+
+      await service.clearWorkerLogs("telegram");
+      const clearedLogs = await service.getWorkerLogs("telegram", 5);
+      expect(clearedLogs.stdout).toBe("");
+      expect(clearedLogs.stderr).toBe("");
+    });
+
+    test("reads and clears native logs for workspace worker", async () => {
+      const service = new WorkerManagerService(projectRoot);
+      const logDir = join(configDir!, "logs", "workers");
+      await mkdir(logDir, { recursive: true });
+      await writeFile(
+        join(logDir, "whatsapp--org_test.out.log"),
+        "ws line 1\nws line 2\n"
+      );
+      await writeFile(join(logDir, "whatsapp--org_test.err.log"), "ws err 1\n");
+
+      const logs = await service.getWorkerLogs("whatsapp", 5, "org_test");
+      expect(logs.stdout).toBe("ws line 1\nws line 2");
+      expect(logs.stderr).toBe("ws err 1");
+
+      await service.clearWorkerLogs("whatsapp", "org_test");
+      const clearedLogs = await service.getWorkerLogs(
+        "whatsapp",
+        5,
+        "org_test"
+      );
+      expect(clearedLogs.stdout).toBe("");
+      expect(clearedLogs.stderr).toBe("");
+    });
+
+    test("starts, restarts and stops a workspace worker natively", async () => {
+      const tmpProject = await mkdtemp(join(tmpdir(), "atlas-native-ws-test-"));
+      const scriptPath = join(
+        tmpProject,
+        "apps/platform/whatsapp/src/index.ts"
+      );
+      await mkdir(join(tmpProject, "apps/platform/whatsapp/src"), {
+        recursive: true,
+      });
+      await writeFile(scriptPath, "setTimeout(() => {}, 10000);");
+
+      const service = new WorkerManagerService(tmpProject);
+      await service.startWorkspaceWorker("whatsapp", "org_test");
+
+      const statusRunning = await service.getWorkspaceWorkerStatus(
+        "whatsapp",
+        "org_test"
+      );
+      expect(statusRunning?.managed).toBe(true);
+      expect(statusRunning?.status).toBe("online");
+
+      await service.restartWorkspaceWorker("whatsapp", "org_test");
+      const statusRestarted = await service.getWorkspaceWorkerStatus(
+        "whatsapp",
+        "org_test"
+      );
+      expect(statusRestarted?.status).toBe("online");
+
+      await service.stopWorkspaceWorker("whatsapp", "org_test");
+
+      const statusStopped = await service.getWorkspaceWorkerStatus(
+        "whatsapp",
+        "org_test"
+      );
+      expect(statusStopped?.managed).toBe(true);
+      expect(statusStopped?.status).toBe("stopped");
+
+      await rm(tmpProject, { force: true, recursive: true });
+    });
+
+    test("starts and stops a worker natively", async () => {
+      const tmpProject = await mkdtemp(join(tmpdir(), "atlas-native-test-"));
+      const scriptPath = join(
+        tmpProject,
+        "apps/platform/telegram/src/index.ts"
+      );
+      await mkdir(join(tmpProject, "apps/platform/telegram/src"), {
+        recursive: true,
+      });
+      await writeFile(scriptPath, "setTimeout(() => {}, 10000);");
+
+      const service = new WorkerManagerService(tmpProject);
+      await service.startWorker("telegram");
+
+      const statusRunning = await service.getWorkerStatus("telegram");
+      expect(statusRunning?.managed).toBe(true);
+      expect(statusRunning?.status).toBe("online");
+
+      await service.stopWorker("telegram");
+
+      const statusStopped = await service.getWorkerStatus("telegram");
+      expect(statusStopped?.managed).toBe(true);
+      expect(statusStopped?.status).toBe("stopped");
+
+      await rm(tmpProject, { force: true, recursive: true });
+    });
+  });
 });

@@ -109,47 +109,35 @@ export class SystemStatusService {
 
   private async resolveWorkerStatus(
     name: "telegram" | "whatsapp" | "discord",
-    pm2Status: WorkerProcessInfo | null,
+    processStatus: WorkerProcessInfo | null,
     orgId?: string
   ) {
-    if (pm2Status?.managed) {
-      const running = pm2Status.status === "online";
+    const isOnline = processStatus?.status === "online";
 
-      if (name === "telegram") {
-        const heartbeat = await getTelegramWorkerStatus(orgId);
-        return {
-          ...heartbeat,
-          process: pm2Status,
-          running,
-        };
-      }
-
-      if (name === "discord") {
-        const heartbeat = await getDiscordWorkerStatus(orgId);
-        return {
-          ...heartbeat,
-          process: pm2Status,
-          running,
-        };
-      }
-
-      const heartbeat = await getWhatsAppWorkerStatus(orgId);
+    if (name === "telegram") {
+      const heartbeat = await getTelegramWorkerStatus(orgId);
       return {
         ...heartbeat,
-        process: pm2Status,
-        running,
+        process: processStatus ?? undefined,
+        running: isOnline || heartbeat.running,
       };
     }
 
-    if (name === "telegram") {
-      return getTelegramWorkerStatus(orgId);
-    }
-
     if (name === "discord") {
-      return getDiscordWorkerStatus(orgId);
+      const heartbeat = await getDiscordWorkerStatus(orgId);
+      return {
+        ...heartbeat,
+        process: processStatus ?? undefined,
+        running: isOnline || heartbeat.running,
+      };
     }
 
-    return getWhatsAppWorkerStatus(orgId);
+    const heartbeat = await getWhatsAppWorkerStatus(orgId);
+    return {
+      ...heartbeat,
+      process: processStatus ?? undefined,
+      running: isOnline || heartbeat.running,
+    };
   }
 
   private getLlmUsage(

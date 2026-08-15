@@ -41,10 +41,11 @@ const iconTileClass =
 
 export function StatusPage({ embedded = false }: { embedded?: boolean } = {}) {
   const { data: status, error, isLoading } = useSystemStatusQuery();
-  const { user } = useAuth();
+  const { activeOrg, user } = useAuth();
   const refreshSystemStatus = useRefreshSystemStatus();
   const errorMessage = error ? formatError(error) : null;
-  const canManageWorkers = user?.isPlatformAdmin === true;
+  const canManageWorkers =
+    user?.isPlatformAdmin === true || activeOrg?.role === "admin";
 
   return (
     <div
@@ -694,7 +695,7 @@ function WorkerServiceRow({
         )}
       </td>
       <td className="border-border border-b px-5 py-3">
-        {canManage && pm2Managed ? (
+        {canManage ? (
           <WorkerViewLogsButton workerName={workerName} />
         ) : (
           <span className="text-muted-foreground text-xs">—</span>

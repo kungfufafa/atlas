@@ -800,14 +800,26 @@ describe("createHonoApp", () => {
     });
   });
 
-  test("requires platform admin to control messaging workers", async () => {
+  test("requires platform admin to control automation worker and allows workspace admin for channel workers", async () => {
     const options = createServerOptions();
     const calls: string[] = [];
     options.workerManager.startWorker = async (name: string) => {
       calls.push(`start:${name}`);
     };
+    options.workerManager.startWorkspaceWorker = async (
+      name: string,
+      orgId: string
+    ) => {
+      calls.push(`start:${name}:${orgId}`);
+    };
     options.workerManager.stopWorker = async (name: string) => {
       calls.push(`stop:${name}`);
+    };
+    options.workerManager.stopWorkspaceWorker = async (
+      name: string,
+      orgId: string
+    ) => {
+      calls.push(`stop:${name}:${orgId}`);
     };
     const app = createHonoApp(options);
     const platformSession = await setupFreshInstallSession(
@@ -837,7 +849,7 @@ describe("createHonoApp", () => {
       platformSession.orgId
     );
     const denied = await app.fetch(
-      new Request("http://localhost:4310/v1/workers/whatsapp/start", {
+      new Request("http://localhost:4310/v1/workers/automation/start", {
         headers: orgAdminSession.headers({
           "X-CSRF-Token": orgAdminSession.csrfToken,
         }),
@@ -849,16 +861,16 @@ describe("createHonoApp", () => {
     expect(calls).toEqual([]);
 
     const allowed = await app.fetch(
-      new Request("http://localhost:4310/v1/workers/telegram/stop", {
-        headers: platformSession.headers({
-          "X-CSRF-Token": platformSession.csrfToken,
+      new Request("http://localhost:4310/v1/workers/whatsapp/start", {
+        headers: orgAdminSession.headers({
+          "X-CSRF-Token": orgAdminSession.csrfToken,
         }),
         method: "POST",
       })
     );
 
     expect(allowed.status).toBe(200);
-    expect(calls).toEqual(["stop:telegram"]);
+    expect(calls).toEqual([`start:whatsapp:${platformSession.orgId}`]);
   });
 
   test("creates and lists sessions through Hono routes", async () => {

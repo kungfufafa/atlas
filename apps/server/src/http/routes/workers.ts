@@ -4,18 +4,30 @@ import type { Context } from "hono";
 import type { ServerOptions } from "../context";
 import {
   requireNotViewerFromContext,
+  requireOrgAdminOrPlatformAdminFromContext,
   requirePlatformAdminFromContext,
 } from "../org-guards";
-import { errorResponse, json } from "../shared";
+import { errorResponse, getRequestAuth, json } from "../shared";
 import type { AppEnv, HonoApp } from "../types";
 
-const PLATFORM_ADMIN_WORKERS = new Set(["telegram", "whatsapp", "discord"]);
+const WORKSPACE_WORKER_NAMES = new Set(["telegram", "whatsapp", "discord"]);
+
+function isWorkspaceWorkerName(
+  workerManager: ServerOptions["workerManager"],
+  name: string
+): boolean {
+  if (typeof workerManager.isWorkspaceWorker === "function") {
+    return workerManager.isWorkspaceWorker(name);
+  }
+  return WORKSPACE_WORKER_NAMES.has(name);
+}
 
 function requireWorkerAuthorization(c: Context<AppEnv>, name: string): void {
-  if (PLATFORM_ADMIN_WORKERS.has(name)) {
+  requireNotViewerFromContext(c);
+  if (name === "automation") {
     requirePlatformAdminFromContext(c);
   } else {
-    requireNotViewerFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
   }
 }
 
@@ -130,8 +142,30 @@ export function registerWorkerRoutes(
       return errorResponse(`Unknown worker: ${name}`, 400);
     }
 
+    const orgId = getRequestAuth(c).activeOrgId?.trim();
+
     try {
-      if (action === "start") {
+      if (orgId && isWorkspaceWorkerName(workerManager, name)) {
+        if (action === "start") {
+          if (typeof workerManager.startWorkspaceWorker === "function") {
+            await workerManager.startWorkspaceWorker(name as any, orgId);
+          } else {
+            await workerManager.startWorker(name);
+          }
+        } else if (action === "stop") {
+          if (typeof workerManager.stopWorkspaceWorker === "function") {
+            await workerManager.stopWorkspaceWorker(name as any, orgId);
+          } else {
+            await workerManager.stopWorker(name);
+          }
+        } else if (typeof workerManager.restartWorkspaceWorker === "function") {
+          await workerManager.restartWorkspaceWorker(name as any, orgId);
+        } else if (typeof workerManager.restartWorker === "function") {
+          await workerManager.restartWorker(name);
+        } else {
+          await workerManager.startWorker(name);
+        }
+      } else if (action === "start") {
         await workerManager.startWorker(name);
       } else if (action === "stop") {
         await workerManager.stopWorker(name);
@@ -154,6 +188,7 @@ export function registerWorkerRoutes(
       return errorResponse(`Unknown worker: ${name}`, 400);
     }
 
+    const orgId = getRequestAuth(c).activeOrgId?.trim();
     const linesParam = c.req.query("lines");
     const lines = Math.min(
       Math.max(1, linesParam ? Number.parseInt(linesParam, 10) : 200),
@@ -161,7 +196,7 @@ export function registerWorkerRoutes(
     );
 
     try {
-      const logs = await workerManager.getWorkerLogs(name, lines);
+      const logs = await workerManager.getWorkerLogs(name, lines, orgId);
       return json<WorkerLogsResponse>(logs);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -177,8 +212,10 @@ export function registerWorkerRoutes(
       return errorResponse(`Unknown worker: ${name}`, 400);
     }
 
+    const orgId = getRequestAuth(c).activeOrgId?.trim();
+
     try {
-      await workerManager.clearWorkerLogs(name);
+      await workerManager.clearWorkerLogs(name, orgId);
       return json({ ok: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

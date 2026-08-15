@@ -59,13 +59,13 @@ function ActionGlyph({
 
 export function WorkerActionBar({
   running,
-  pm2Managed,
+  pm2Managed: _pm2Managed,
   workerName,
   className,
   showLogs = true,
 }: {
   running: boolean;
-  pm2Managed: boolean;
+  pm2Managed?: boolean;
   workerName: string;
   className?: string;
   showLogs?: boolean;
@@ -81,14 +81,6 @@ export function WorkerActionBar({
   const restarting =
     restartWorker.isPending && restartWorker.variables === workerName;
   const isBusy = starting || stopping || restarting;
-
-  if (!pm2Managed) {
-    return (
-      <span className={cn("text-muted-foreground text-xs", className)}>
-        PM2 not available
-      </span>
-    );
-  }
 
   return (
     <>
