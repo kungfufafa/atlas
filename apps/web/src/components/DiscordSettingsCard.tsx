@@ -1,9 +1,13 @@
-import type { UpdateDiscordSettingsRequest } from "@atlas/core/contract";
+import type {
+  ChannelAccessMode,
+  UpdateDiscordSettingsRequest,
+} from "@atlas/core/contract";
 import { useEffect, useRef, useState } from "react";
 import {
   type AllowedDiscordUser,
   DiscordAllowedUsersDialog,
 } from "@/components/DiscordAllowedUsersDialog";
+import { DiscordBlockedUsersDialog } from "@/components/DiscordBlockedUsersDialog";
 import { DiscordSettingsCardContent } from "@/components/discord-settings-card-content";
 import { SETTINGS_CARD_LOADING_SKELETON } from "@/components/integration-settings.shared";
 import { useProfilesQuery } from "@/hooks/use-app-queries";
@@ -35,8 +39,11 @@ export function DiscordSettingsCard({
   const [botToken, setBotToken] = useState("");
   const [showBotToken, setShowBotToken] = useState(false);
   const [profileId, setProfileId] = useState("default");
+  const [accessMode, setAccessMode] = useState<ChannelAccessMode>("pairing");
   const [allowedUsers, setAllowedUsers] = useState<AllowedDiscordUser[]>([]);
+  const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
   const [allowedUsersOpen, setAllowedUsersOpen] = useState(false);
+  const [blockedUsersOpen, setBlockedUsersOpen] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -47,16 +54,25 @@ export function DiscordSettingsCard({
       return;
     }
 
-    setProfileId(settings.profileId);
+    if (settings.profileId && settings.profileId !== "default") {
+      setProfileId(settings.profileId);
+    } else if (profiles.length > 0) {
+      const defaultProfile = profiles.find((p) => p.isDefault) ?? profiles[0];
+      if (defaultProfile) {
+        setProfileId(defaultProfile.id);
+      }
+    }
+    setAccessMode(settings.accessMode ?? "pairing");
     setBotToken("");
+    setBlockedUserIds(settings.blockedUserIds ?? []);
     setAllowedUsers((current) => {
       const existing = new Map(current.map((user) => [user.id, user]));
-      return settings.allowedUserIds.map((id) => {
+      return (settings.allowedUserIds ?? []).map((id) => {
         const stringId = String(id);
         return existing.get(stringId) ?? { id: stringId };
       });
     });
-  }, [settings]);
+  }, [settings, profiles]);
 
   const pairingCode = settings?.handshakeCode ?? null;
 
@@ -84,6 +100,10 @@ export function DiscordSettingsCard({
     allowedUsers.length === 0
       ? "No manual users"
       : `${allowedUsers.length} user${allowedUsers.length === 1 ? "" : "s"}`;
+  const blockedUserSummary =
+    blockedUserIds.length === 0
+      ? "No blocked users"
+      : `${blockedUserIds.length} blocked user${blockedUserIds.length === 1 ? "" : "s"}`;
 
   const statusLine =
     hint ??
@@ -133,7 +153,9 @@ export function DiscordSettingsCard({
     setHint(null);
 
     const request: UpdateDiscordSettingsRequest = {
+      accessMode,
       allowedUserIds: allowedUsers.map((user) => user.id).join(","),
+      blockedUserIds: blockedUserIds.join(","),
       profileId: profileId.trim() || "default",
     };
 
@@ -163,6 +185,18 @@ export function DiscordSettingsCard({
     });
   }
 
+  function handleAccessModeChange(nextMode: ChannelAccessMode) {
+    setAccessMode(nextMode);
+    setHint(null);
+    setFormError(null);
+  }
+
+  function handleBlockedUsersChange(nextBlocked: string[]) {
+    setBlockedUserIds(nextBlocked);
+    setHint(null);
+    setFormError(null);
+  }
+
   function handleRegenerateHandshake() {
     setFormError(null);
     setHint(null);
@@ -187,11 +221,14 @@ export function DiscordSettingsCard({
 
   const content = (
     <DiscordSettingsCardContent
+      accessMode={accessMode}
       allowedUserSummary={allowedUserSummary}
+      blockedUserSummary={blockedUserSummary}
       botToken={botToken}
       formError={formError}
       headerSubtitle={headerSubtitle}
       loadError={loadError}
+      onAccessModeChange={handleAccessModeChange}
       onBotTokenChange={(value) => {
         setBotToken(value);
         setHint(null);
@@ -201,6 +238,7 @@ export function DiscordSettingsCard({
       }}
       onCopyHandshakeCode={() => void copyHandshakeCode()}
       onManageAllowedUsers={() => setAllowedUsersOpen(true)}
+      onManageBlockedUsers={() => setBlockedUsersOpen(true)}
       onProfileChange={(value) => {
         setProfileId(value);
         setHint(null);
@@ -246,6 +284,15 @@ export function DiscordSettingsCard({
     />
   );
 
+  const blockedUsersDialog = (
+    <DiscordBlockedUsersDialog
+      blockedUserIds={blockedUserIds}
+      onBlockedUserIdsChange={handleBlockedUsersChange}
+      onOpenChange={setBlockedUsersOpen}
+      open={blockedUsersOpen}
+    />
+  );
+
   if (embedded) {
     return (
       <>
@@ -254,6 +301,7 @@ export function DiscordSettingsCard({
           {content}
         </div>
         {allowedUsersDialog}
+        {blockedUsersDialog}
       </>
     );
   }
@@ -262,6 +310,7 @@ export function DiscordSettingsCard({
     <>
       {content}
       {allowedUsersDialog}
+      {blockedUsersDialog}
     </>
   );
 }

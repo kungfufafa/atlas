@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { join } from "node:path";
+import type { ChannelAccessMode } from "./contract";
 import { parseIni, readTextOrNull, writePrivateTextFile } from "./fs";
 import { getWorkspaceChannelDir } from "./workspace-channel-paths";
 
@@ -8,7 +9,9 @@ export const DEFAULT_DISCORD_PROFILE_ID = "default";
 const SNOWFLAKE_PATTERN = /^\d{17,20}$/;
 
 export interface DiscordConfigFile {
+  accessMode: ChannelAccessMode;
   allowedUserIds: string[];
+  blockedUserIds: string[];
   botToken: string;
   handshakeCode: string | null;
   pairedUserIds: string[];
@@ -16,7 +19,9 @@ export interface DiscordConfigFile {
 }
 
 export interface DiscordSettingsPublic {
+  accessMode: ChannelAccessMode;
   allowedUserIds: string[];
+  blockedUserIds: string[];
   botTokenMasked: string | null;
   configured: boolean;
   handshakeCode: string | null;
@@ -26,7 +31,9 @@ export interface DiscordSettingsPublic {
 }
 
 export interface UpdateDiscordSettingsInput {
+  accessMode?: ChannelAccessMode;
   allowedUserIds?: string;
+  blockedUserIds?: string;
   botToken?: string;
   profileId?: string;
 }
@@ -163,11 +170,35 @@ export function parseAllowedUserIds(raw: string): string[] {
 
 export function isDiscordUserAuthorized(
   userId: string,
-  config: Pick<DiscordConfigFile, "pairedUserIds" | "allowedUserIds">
+  config: Pick<
+    DiscordConfigFile,
+    "accessMode" | "pairedUserIds" | "allowedUserIds" | "blockedUserIds"
+  >
 ): boolean {
+  const accessMode = config.accessMode || "pairing";
+
+  if (accessMode === "open") {
+    return true;
+  }
+
+  if (accessMode === "allowlist") {
+    return (
+      (config.allowedUserIds?.includes(userId) ?? false) ||
+      (config.pairedUserIds?.includes(userId) ?? false)
+    );
+  }
+
+  if (accessMode === "denylist") {
+    if (config.blockedUserIds?.includes(userId)) {
+      return false;
+    }
+    return true;
+  }
+
+  // "pairing" mode
   return (
-    config.pairedUserIds.includes(userId) ||
-    config.allowedUserIds.includes(userId)
+    (config.pairedUserIds?.includes(userId) ?? false) ||
+    (config.allowedUserIds?.includes(userId) ?? false)
   );
 }
 
@@ -186,13 +217,24 @@ async function loadDiscordConfigFile(
   const handshakeCode = values.handshake_code?.trim() || null;
   const pairedRaw = values.paired_user_ids?.trim() ?? "";
   const allowlistRaw = values.allowed_user_ids?.trim() ?? "";
+  const denylistRaw = values.blocked_user_ids?.trim() ?? "";
+
+  const accessModeRaw = values.access_mode?.trim()?.toLowerCase();
+  const accessMode: ChannelAccessMode =
+    accessModeRaw === "open" ||
+    accessModeRaw === "allowlist" ||
+    accessModeRaw === "denylist"
+      ? accessModeRaw
+      : "pairing";
 
   if (!botToken) {
     return null;
   }
 
   return {
+    accessMode,
     allowedUserIds: allowlistRaw ? parseAllowedUserIds(allowlistRaw) : [],
+    blockedUserIds: denylistRaw ? parseAllowedUserIds(denylistRaw) : [],
     botToken,
     handshakeCode,
     pairedUserIds: pairedRaw ? parseAllowedUserIds(pairedRaw) : [],
@@ -207,7 +249,9 @@ export function toDiscordSettingsPublic(
 ): DiscordSettingsPublic {
   if (!file) {
     return {
+      accessMode: "pairing",
       allowedUserIds: [],
+      blockedUserIds: [],
       botTokenMasked: null,
       configured: false,
       handshakeCode: null,
@@ -218,12 +262,14 @@ export function toDiscordSettingsPublic(
   }
 
   return {
-    allowedUserIds: file.allowedUserIds,
+    accessMode: file.accessMode || "pairing",
+    allowedUserIds: file.allowedUserIds || [],
+    blockedUserIds: file.blockedUserIds || [],
     botTokenMasked: maskBotToken(file.botToken),
     configured: Boolean(file.botToken.trim()),
     handshakeCode: file.handshakeCode,
     inviteUrl: null,
-    pairedUserIds: file.pairedUserIds,
+    pairedUserIds: file.pairedUserIds || [],
     profileId: file.profileId,
   };
 }
@@ -244,12 +290,16 @@ async function writeDiscordConfigFile(
     "# Atlas Discord bridge",
     `bot_token=${config.botToken}`,
     `profile_id=${config.profileId}`,
+    `access_mode=${config.accessMode}`,
     ...(config.handshakeCode ? [`handshake_code=${config.handshakeCode}`] : []),
     ...(config.pairedUserIds.length > 0
       ? [`paired_user_ids=${config.pairedUserIds.join(",")}`]
       : []),
     ...(config.allowedUserIds.length > 0
       ? [`allowed_user_ids=${config.allowedUserIds.join(",")}`]
+      : []),
+    ...(config.blockedUserIds.length > 0
+      ? [`blocked_user_ids=${config.blockedUserIds.join(",")}`]
       : []),
     "",
   ];
@@ -289,6 +339,18 @@ function resolveAllowedUserIdsInput(
   return raw ? parseAllowedUserIds(raw) : [];
 }
 
+function resolveBlockedUserIdsInput(
+  input: UpdateDiscordSettingsInput,
+  existing: DiscordConfigFile | null
+): string[] {
+  const raw =
+    input.blockedUserIds === undefined
+      ? (existing?.blockedUserIds?.join(",") ?? "")
+      : input.blockedUserIds.trim();
+
+  return raw ? parseAllowedUserIds(raw) : [];
+}
+
 function resolveHandshakeCode(
   existing: DiscordConfigFile | null,
   allowedUserIds: string[]
@@ -314,14 +376,52 @@ function buildSavedDiscordConfig(
   }
 
   const allowedUserIds = resolveAllowedUserIdsInput(input, existing);
+  const blockedUserIds = resolveBlockedUserIdsInput(input, existing);
+  const accessMode = input.accessMode ?? existing?.accessMode ?? "pairing";
 
   return {
+    accessMode,
     allowedUserIds,
+    blockedUserIds,
     botToken,
     handshakeCode: resolveHandshakeCode(existing, allowedUserIds),
     pairedUserIds: existing?.pairedUserIds ?? [],
     profileId: resolveDiscordProfileId(input, existing),
   };
+}
+
+export async function addDiscordAllowedUserId(
+  userId: string,
+  orgId?: string | null
+): Promise<
+  | { ok: true; alreadyAllowed: boolean; userId: string }
+  | { ok: false; message: string }
+> {
+  const trimmed = userId.trim();
+  if (!SNOWFLAKE_PATTERN.test(trimmed)) {
+    return { message: "Invalid Discord user ID.", ok: false };
+  }
+
+  const existing = await loadDiscordConfigFile(orgId);
+
+  if (!existing) {
+    return {
+      message: "Discord is not configured on the server yet.",
+      ok: false,
+    };
+  }
+
+  if (existing.allowedUserIds.includes(trimmed)) {
+    return { alreadyAllowed: true, ok: true, userId: trimmed };
+  }
+
+  const next: DiscordConfigFile = {
+    ...existing,
+    allowedUserIds: [...existing.allowedUserIds, trimmed],
+  };
+
+  await writeDiscordConfigFile(next, orgId);
+  return { alreadyAllowed: false, ok: true, userId: trimmed };
 }
 
 export async function saveDiscordConfig(
@@ -330,60 +430,10 @@ export async function saveDiscordConfig(
 ): Promise<DiscordSettingsPublic> {
   const existing = await loadDiscordConfigFile(orgId);
   const next = buildSavedDiscordConfig(input, existing);
-
-  if (
-    existing?.botToken.trim() &&
-    existing.botToken.trim() !== next.botToken.trim()
-  ) {
-    clearDiscordApplicationIdCache(existing.botToken);
-  }
-
+  clearDiscordApplicationIdCache(next.botToken);
   await writeDiscordConfigFile(next, orgId);
-  return withDiscordInviteUrl(toDiscordSettingsPublic(next), next.botToken);
-}
-
-export async function addDiscordAllowedUserId(
-  userId: string,
-  orgId?: string | null
-): Promise<
-  | { alreadyAllowed: boolean; ok: true; userId: string }
-  | { message: string; ok: false }
-> {
-  const trimmed = userId.trim();
-
-  if (!SNOWFLAKE_PATTERN.test(trimmed)) {
-    return { message: "Invalid Discord user ID.", ok: false };
-  }
-
-  const config = await loadDiscordConfigFile(orgId);
-
-  if (!config) {
-    return {
-      message: "Discord is not configured on the server yet.",
-      ok: false,
-    };
-  }
-
-  if (config.allowedUserIds.includes(trimmed)) {
-    return { alreadyAllowed: true, ok: true, userId: trimmed };
-  }
-
-  try {
-    await writeDiscordConfigFile(
-      {
-        ...config,
-        allowedUserIds: [...config.allowedUserIds, trimmed],
-      },
-      orgId
-    );
-  } catch {
-    return {
-      message: "Could not update the Discord allowed list.",
-      ok: false,
-    };
-  }
-
-  return { alreadyAllowed: false, ok: true, userId: trimmed };
+  const base = toDiscordSettingsPublic(next);
+  return withDiscordInviteUrl(base, next.botToken);
 }
 
 export async function regenerateDiscordHandshake(
@@ -401,7 +451,8 @@ export async function regenerateDiscordHandshake(
   };
 
   await writeDiscordConfigFile(next, orgId);
-  return withDiscordInviteUrl(toDiscordSettingsPublic(next), next.botToken);
+  const base = toDiscordSettingsPublic(next);
+  return withDiscordInviteUrl(base, next.botToken);
 }
 
 export async function verifyAndPairDiscordUser(
@@ -474,16 +525,21 @@ export function resolveDiscordConfigFromSources(options: {
   }
 
   const envAllowlist = env.DISCORD_ALLOWED_USER_IDS?.trim();
+  const envDenylist = env.DISCORD_BLOCKED_USER_IDS?.trim();
 
   return {
+    accessMode: file?.accessMode ?? "pairing",
     allowedUserIds: envAllowlist
       ? parseAllowedUserIds(envAllowlist)
       : (file?.allowedUserIds ?? []),
+    blockedUserIds: envDenylist
+      ? parseAllowedUserIds(envDenylist)
+      : (file?.blockedUserIds ?? []),
     botToken,
     handshakeCode: file?.handshakeCode ?? null,
     pairedUserIds: file?.pairedUserIds ?? [],
     profileId:
-      env.atlas_DISCORD_PROFILE_ID?.trim() ||
+      env.ATLAS_DISCORD_PROFILE_ID?.trim() ||
       file?.profileId?.trim() ||
       DEFAULT_DISCORD_PROFILE_ID,
   };

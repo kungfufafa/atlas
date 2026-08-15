@@ -860,4 +860,77 @@ describe("bridge API integration", () => {
       ).toBe(true);
     });
   });
+
+  test("auto-authorizes incoming callers in open mode without pairing code", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        accessMode: "open",
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        fixedWorkspaceId: "org_a",
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({
+        jid: "6289999999@s.whatsapp.net",
+        text: "Customer question",
+      });
+      expect(calls.createSession).toBe(1);
+      expect(calls.sendStream).toBe(1);
+    });
+  });
+
+  test("rejects messages exceeding max character length", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        accessMode: "open",
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        fixedWorkspaceId: "org_a",
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      const longMessage = "a".repeat(2001);
+      await handleMessage({
+        jid: "6289999999@s.whatsapp.net",
+        text: longMessage,
+      });
+      expect(calls.sendStream).toBe(0);
+      expect(sent.some((m) => m.text.includes("Message is too long"))).toBe(
+        true
+      );
+    });
+  });
 });

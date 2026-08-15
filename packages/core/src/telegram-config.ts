@@ -1,12 +1,15 @@
 import { randomBytes } from "node:crypto";
 import { join } from "node:path";
+import type { ChannelAccessMode } from "./contract";
 import { parseIni, readTextOrNull, writePrivateTextFile } from "./fs";
 import { getWorkspaceChannelDir } from "./workspace-channel-paths";
 
 export const DEFAULT_TELEGRAM_PROFILE_ID = "default";
 
 export interface TelegramConfigFile {
+  accessMode: ChannelAccessMode;
   allowedUserIds: number[];
+  blockedUserIds: number[];
   botToken: string;
   handshakeCode: string | null;
   pairedUserIds: number[];
@@ -14,7 +17,9 @@ export interface TelegramConfigFile {
 }
 
 export interface TelegramSettingsPublic {
+  accessMode: ChannelAccessMode;
   allowedUserIds: number[];
+  blockedUserIds: number[];
   botTokenMasked: string | null;
   configured: boolean;
   handshakeCode: string | null;
@@ -23,7 +28,9 @@ export interface TelegramSettingsPublic {
 }
 
 export interface UpdateTelegramSettingsInput {
+  accessMode?: ChannelAccessMode;
   allowedUserIds?: string;
+  blockedUserIds?: string;
   botToken?: string;
   profileId?: string;
 }
@@ -84,11 +91,35 @@ export function parseAllowedUserIds(raw: string): number[] {
 
 export function isTelegramUserAuthorized(
   userId: number,
-  config: Pick<TelegramConfigFile, "pairedUserIds" | "allowedUserIds">
+  config: Pick<
+    TelegramConfigFile,
+    "accessMode" | "pairedUserIds" | "allowedUserIds" | "blockedUserIds"
+  >
 ): boolean {
+  const accessMode = config.accessMode || "pairing";
+
+  if (accessMode === "open") {
+    return true;
+  }
+
+  if (accessMode === "allowlist") {
+    return (
+      (config.allowedUserIds?.includes(userId) ?? false) ||
+      (config.pairedUserIds?.includes(userId) ?? false)
+    );
+  }
+
+  if (accessMode === "denylist") {
+    if (config.blockedUserIds?.includes(userId)) {
+      return false;
+    }
+    return true;
+  }
+
+  // "pairing" mode
   return (
-    config.pairedUserIds.includes(userId) ||
-    config.allowedUserIds.includes(userId)
+    (config.pairedUserIds?.includes(userId) ?? false) ||
+    (config.allowedUserIds?.includes(userId) ?? false)
   );
 }
 
@@ -107,13 +138,24 @@ export async function loadTelegramConfigFile(
   const handshakeCode = values.handshake_code?.trim() || null;
   const pairedRaw = values.paired_user_ids?.trim() ?? "";
   const allowlistRaw = values.allowed_user_ids?.trim() ?? "";
+  const denylistRaw = values.blocked_user_ids?.trim() ?? "";
+
+  const accessModeRaw = values.access_mode?.trim()?.toLowerCase();
+  const accessMode: ChannelAccessMode =
+    accessModeRaw === "open" ||
+    accessModeRaw === "allowlist" ||
+    accessModeRaw === "denylist"
+      ? accessModeRaw
+      : "pairing";
 
   if (!botToken) {
     return null;
   }
 
   return {
+    accessMode,
     allowedUserIds: allowlistRaw ? parseAllowedUserIds(allowlistRaw) : [],
+    blockedUserIds: denylistRaw ? parseAllowedUserIds(denylistRaw) : [],
     botToken,
     handshakeCode,
     pairedUserIds: pairedRaw ? parseAllowedUserIds(pairedRaw) : [],
@@ -126,7 +168,9 @@ export function toTelegramSettingsPublic(
 ): TelegramSettingsPublic {
   if (!file) {
     return {
+      accessMode: "pairing",
       allowedUserIds: [],
+      blockedUserIds: [],
       botTokenMasked: null,
       configured: false,
       handshakeCode: null,
@@ -136,11 +180,13 @@ export function toTelegramSettingsPublic(
   }
 
   return {
-    allowedUserIds: file.allowedUserIds,
+    accessMode: file.accessMode || "pairing",
+    allowedUserIds: file.allowedUserIds || [],
+    blockedUserIds: file.blockedUserIds || [],
     botTokenMasked: maskBotToken(file.botToken),
     configured: Boolean(file.botToken.trim()),
     handshakeCode: file.handshakeCode,
-    pairedUserIds: file.pairedUserIds,
+    pairedUserIds: file.pairedUserIds || [],
     profileId: file.profileId,
   };
 }
@@ -159,12 +205,16 @@ async function writeTelegramConfigFile(
     "# Atlas Telegram bridge",
     `bot_token=${config.botToken}`,
     `profile_id=${config.profileId}`,
+    `access_mode=${config.accessMode}`,
     ...(config.handshakeCode ? [`handshake_code=${config.handshakeCode}`] : []),
     ...(config.pairedUserIds.length > 0
       ? [`paired_user_ids=${config.pairedUserIds.join(",")}`]
       : []),
     ...(config.allowedUserIds.length > 0
       ? [`allowed_user_ids=${config.allowedUserIds.join(",")}`]
+      : []),
+    ...(config.blockedUserIds.length > 0
+      ? [`blocked_user_ids=${config.blockedUserIds.join(",")}`]
       : []),
     "",
   ];
@@ -206,6 +256,18 @@ function resolveAllowedUserIdsInput(
   return raw ? parseAllowedUserIds(raw) : [];
 }
 
+function resolveBlockedUserIdsInput(
+  input: UpdateTelegramSettingsInput,
+  existing: TelegramConfigFile | null
+): number[] {
+  const raw =
+    input.blockedUserIds === undefined
+      ? (existing?.blockedUserIds?.join(",") ?? "")
+      : input.blockedUserIds.trim();
+
+  return raw ? parseAllowedUserIds(raw) : [];
+}
+
 function resolveHandshakeCode(
   existing: TelegramConfigFile | null,
   allowedUserIds: number[]
@@ -231,9 +293,13 @@ function buildSavedTelegramConfig(
   }
 
   const allowedUserIds = resolveAllowedUserIdsInput(input, existing);
+  const blockedUserIds = resolveBlockedUserIdsInput(input, existing);
+  const accessMode = input.accessMode ?? existing?.accessMode ?? "pairing";
 
   return {
+    accessMode,
     allowedUserIds,
+    blockedUserIds,
     botToken,
     handshakeCode: resolveHandshakeCode(existing, allowedUserIds),
     pairedUserIds: existing?.pairedUserIds ?? [],
@@ -339,16 +405,21 @@ export function resolveTelegramConfigFromSources(options: {
   }
 
   const envAllowlist = env.TELEGRAM_ALLOWED_USER_IDS?.trim();
+  const envDenylist = env.TELEGRAM_BLOCKED_USER_IDS?.trim();
 
   return {
+    accessMode: file?.accessMode ?? "pairing",
     allowedUserIds: envAllowlist
       ? parseAllowedUserIds(envAllowlist)
       : (file?.allowedUserIds ?? []),
+    blockedUserIds: envDenylist
+      ? parseAllowedUserIds(envDenylist)
+      : (file?.blockedUserIds ?? []),
     botToken,
     handshakeCode: file?.handshakeCode ?? null,
     pairedUserIds: file?.pairedUserIds ?? [],
     profileId:
-      env.atlas_TELEGRAM_PROFILE_ID?.trim() ||
+      env.ATLAS_TELEGRAM_PROFILE_ID?.trim() ||
       file?.profileId?.trim() ||
       DEFAULT_TELEGRAM_PROFILE_ID,
   };

@@ -1,4 +1,7 @@
-import type { UpdateWhatsAppSettingsRequest } from "@atlas/core/contract";
+import type {
+  ChannelAccessMode,
+  UpdateWhatsAppSettingsRequest,
+} from "@atlas/core/contract";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { SETTINGS_CARD_LOADING_SKELETON } from "@/components/integration-settings.shared";
@@ -35,18 +38,47 @@ export function WhatsAppSettingsCard({
 
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [profileId, setProfileId] = useState("default");
+  const [accessMode, setAccessMode] = useState<ChannelAccessMode>("pairing");
+  const [allowedNumbers, setAllowedNumbers] = useState<string[]>([]);
+  const [blockedNumbers, setBlockedNumbers] = useState<string[]>([]);
   const [hint, setHint] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [qrWasVisible, setQrWasVisible] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const settingsProfileId = settings?.profileId;
+  const settingsAccessMode = settings?.accessMode;
+  const settingsAllowedNumbers = settings?.allowedNumbers;
+  const settingsBlockedNumbers = settings?.blockedNumbers;
 
   useEffect(() => {
-    if (settingsProfileId !== undefined) {
-      setProfileId(settingsProfileId);
+    if (saveMutation.isPending) {
+      return;
     }
-  }, [settingsProfileId]);
+    if (settingsProfileId !== undefined && settingsProfileId !== "default") {
+      setProfileId(settingsProfileId);
+    } else if (profiles.length > 0) {
+      const defaultProfile = profiles.find((p) => p.isDefault) ?? profiles[0];
+      if (defaultProfile) {
+        setProfileId(defaultProfile.id);
+      }
+    }
+    if (settingsAccessMode !== undefined) {
+      setAccessMode(settingsAccessMode);
+    }
+    if (settingsAllowedNumbers !== undefined) {
+      setAllowedNumbers(settingsAllowedNumbers);
+    }
+    if (settingsBlockedNumbers !== undefined) {
+      setBlockedNumbers(settingsBlockedNumbers);
+    }
+  }, [
+    saveMutation.isPending,
+    settingsProfileId,
+    settingsAccessMode,
+    settingsAllowedNumbers,
+    settingsBlockedNumbers,
+  ]);
 
   const configured = settings?.configured === true;
   const worker = status?.whatsappWorker;
@@ -114,7 +146,14 @@ export function WhatsAppSettingsCard({
   const linkingAfterScan =
     configured && !paired && running && !qrCode && (qrWasVisible || connected);
   const showReconnect = configured && !showQr && !awaitingQr;
-  const canSave = !configured || profileId !== settings?.profileId;
+  const canSave =
+    !configured ||
+    profileId !== settings?.profileId ||
+    accessMode !== (settings?.accessMode ?? "pairing") ||
+    JSON.stringify(allowedNumbers) !==
+      JSON.stringify(settings?.allowedNumbers ?? []) ||
+    JSON.stringify(blockedNumbers) !==
+      JSON.stringify(settings?.blockedNumbers ?? []);
   const actionLabel = submitLabel ?? (configured ? "Save" : "Enable WhatsApp");
 
   const statusLine =
@@ -181,6 +220,9 @@ export function WhatsAppSettingsCard({
     setHint(null);
 
     const request: UpdateWhatsAppSettingsRequest = {
+      accessMode,
+      allowedNumbers: allowedNumbers.join(","),
+      blockedNumbers: blockedNumbers.join(","),
       profileId: profileId.trim() || "default",
     };
 
@@ -240,22 +282,24 @@ export function WhatsAppSettingsCard({
     setProfileId(nextProfileId);
     setHint(null);
     setFormError(null);
+  }
 
-    if (!configured || nextProfileId === settings?.profileId) {
-      return;
-    }
+  function handleAccessModeChange(nextMode: ChannelAccessMode) {
+    setAccessMode(nextMode);
+    setHint(null);
+    setFormError(null);
+  }
 
-    saveMutation.mutate(
-      { profileId: nextProfileId.trim() || "default" },
-      {
-        onError: (error) => {
-          setFormError(formatError(error));
-        },
-        onSuccess: () => {
-          setHint("Reply profile saved.");
-        },
-      }
-    );
+  function handleAllowedNumbersChange(nextNumbers: string[]) {
+    setAllowedNumbers(nextNumbers);
+    setHint(null);
+    setFormError(null);
+  }
+
+  function handleBlockedNumbersChange(nextNumbers: string[]) {
+    setBlockedNumbers(nextNumbers);
+    setHint(null);
+    setFormError(null);
   }
 
   if (isLoading) {
@@ -268,8 +312,11 @@ export function WhatsAppSettingsCard({
 
   const content = (
     <WhatsAppSettingsCardContent
+      accessMode={accessMode}
       actionLabel={actionLabel}
+      allowedNumbers={allowedNumbers}
       awaitingQr={awaitingQr}
+      blockedNumbers={blockedNumbers}
       bridgeStarting={bridgeStarting}
       canSave={canSave}
       configured={configured}
@@ -280,6 +327,9 @@ export function WhatsAppSettingsCard({
       linkedNumber={linkedNumber}
       linkingAfterScan={linkingAfterScan}
       loadError={loadError}
+      onAccessModeChange={handleAccessModeChange}
+      onAllowedNumbersChange={handleAllowedNumbersChange}
+      onBlockedNumbersChange={handleBlockedNumbersChange}
       onCopyPairingCode={() => void copyPairingCode()}
       onProfileChange={handleProfileChange}
       onReconnect={handleReconnect}

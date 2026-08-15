@@ -23,9 +23,9 @@ export function useSaveWhatsAppSettings() {
   return useMutation({
     mutationFn: (request: UpdateWhatsAppSettingsRequest) =>
       client.setWhatsAppSettings(request),
-    onSuccess: async (saved) => {
+    onSuccess: (saved) => {
       queryClient.setQueryData(queryKeys.whatsapp.settings, saved);
-      await queryClient.invalidateQueries({ queryKey: queryKeys.systemStatus });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.systemStatus });
     },
   });
 }
@@ -35,9 +35,9 @@ export function useRegenerateWhatsAppPairingCode() {
 
   return useMutation({
     mutationFn: () => client.regenerateWhatsAppPairingCode(),
-    onSuccess: async (saved) => {
+    onSuccess: (saved) => {
       queryClient.setQueryData(queryKeys.whatsapp.settings, saved);
-      await queryClient.invalidateQueries({ queryKey: queryKeys.systemStatus });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.systemStatus });
     },
   });
 }
@@ -47,9 +47,9 @@ export function useReconnectWhatsApp() {
 
   return useMutation({
     mutationFn: () => client.reconnectWhatsApp(),
-    onSuccess: async (saved) => {
+    onSuccess: (saved) => {
       queryClient.setQueryData(queryKeys.whatsapp.settings, saved);
-      await queryClient.invalidateQueries({ queryKey: queryKeys.systemStatus });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.systemStatus });
     },
   });
 }

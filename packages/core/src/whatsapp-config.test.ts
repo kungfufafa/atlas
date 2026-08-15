@@ -8,6 +8,7 @@ import {
   loadWhatsAppConfigFile,
   maskPhoneNumber,
   normalizePairingCode,
+  normalizePhoneNumberDigits,
   resetWhatsAppSessionForReconnect,
   resolveWhatsAppConfigFromSources,
   saveWhatsAppConfig,
@@ -284,6 +285,9 @@ describe("resolveWhatsAppConfigFromSources", () => {
     });
 
     expect(resolved).toEqual({
+      accessMode: "pairing",
+      allowedNumbers: [],
+      blockedNumbers: [],
       pairedJid: null,
       pairedLid: null,
       pairingCode: null,
@@ -398,5 +402,107 @@ describe("syncWhatsAppOwnerPairing", () => {
       expect(saved?.pairedJid).toBe("6281379292556@s.whatsapp.net");
       expect(saved?.pairedLid).toBe("104784384290844@lid");
     });
+  });
+
+  test("defaults accessMode to pairing for legacy configs without access_mode", async () => {
+    await withTempHomedir("atlas-core-wa-legacy-", async (tempHome) => {
+      const dir = path.join(tempHome, ".atlas", "whatsapp");
+      await mkdir(dir, { recursive: true });
+      await writeFile(
+        path.join(dir, "config.ini"),
+        [
+          "# Atlas WhatsApp bridge legacy",
+          "phone_number=6281379292556",
+          "profile_id=default",
+          "paired_jid=6281379292556@s.whatsapp.net",
+          "",
+        ].join("\n"),
+        "utf8"
+      );
+
+      const saved = await loadWhatsAppConfigFile();
+      expect(saved?.accessMode).toBe("pairing");
+      expect(saved?.allowedNumbers).toEqual([]);
+      expect(saved?.blockedNumbers).toEqual([]);
+    });
+  });
+
+  test("saves and loads open, allowlist, and denylist modes", async () => {
+    await withTempHomedir("atlas-core-wa-modes-", async (tempHome) => {
+      await saveWhatsAppConfig({
+        accessMode: "open",
+        allowedNumbers: ["+62 812-3456-7890", "0811223344"],
+        blockedNumbers: ["6289999999"],
+        phoneNumber: "+62 812-3456-7890",
+      });
+
+      const saved = await loadWhatsAppConfigFile();
+      expect(saved?.accessMode).toBe("open");
+      expect(saved?.allowedNumbers).toEqual(["6281234567890", "62811223344"]);
+      expect(saved?.blockedNumbers).toEqual(["6289999999"]);
+    });
+  });
+});
+
+describe("normalizePhoneNumberDigits & parsePhoneNumberList", () => {
+  test("handles various international and local phone number formats", () => {
+    expect(normalizePhoneNumberDigits("+62 812-3456-7890")).toBe(
+      "6281234567890"
+    );
+    expect(normalizePhoneNumberDigits("081234567890")).toBe("6281234567890");
+    expect(normalizePhoneNumberDigits("+1 (555) 123-4567")).toBe("15551234567");
+    expect(normalizePhoneNumberDigits("6281234567890")).toBe("6281234567890");
+    expect(normalizePhoneNumberDigits("")).toBe("");
+  });
+});
+
+describe("isWhatsAppUserAuthorized with access modes", () => {
+  test("open mode authorizes any caller", () => {
+    expect(
+      isWhatsAppUserAuthorized("999999999@s.whatsapp.net", {
+        accessMode: "open",
+        allowedNumbers: [],
+        blockedNumbers: [],
+        pairedJid: null,
+        pairedLid: null,
+      })
+    ).toBe(true);
+  });
+
+  test("allowlist mode authorizes only listed numbers or paired owner", () => {
+    const config = {
+      accessMode: "allowlist" as const,
+      allowedNumbers: ["6281234567890"],
+      blockedNumbers: [],
+      pairedJid: "6289999999@s.whatsapp.net",
+      pairedLid: null,
+    };
+
+    expect(
+      isWhatsAppUserAuthorized("6281234567890@s.whatsapp.net", config)
+    ).toBe(true);
+    expect(isWhatsAppUserAuthorized("6289999999@s.whatsapp.net", config)).toBe(
+      true
+    );
+    expect(isWhatsAppUserAuthorized("62811111111@s.whatsapp.net", config)).toBe(
+      false
+    );
+  });
+
+  test("denylist mode blocks listed numbers and authorizes everyone else", () => {
+    const config = {
+      accessMode: "denylist" as const,
+      allowedNumbers: [],
+      blockedNumbers: ["6286666666"],
+      pairedJid: null,
+      pairedLid: null,
+    };
+
+    expect(isWhatsAppUserAuthorized("6286666666@s.whatsapp.net", config)).toBe(
+      false
+    );
+    expect(isWhatsAppUserAuthorized("62811111111@s.whatsapp.net", config)).toBe(
+      true
+    );
   });
 });

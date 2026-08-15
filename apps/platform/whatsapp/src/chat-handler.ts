@@ -6,6 +6,7 @@ import {
   formatOrgSwitchConfirmation,
   prepareChannelOrgContext,
 } from "@atlas/core/channel-org";
+import { ChannelRateLimiter } from "@atlas/core/channel-rate-limiter";
 import type { SendMessageInput } from "@atlas/core/contract";
 import { pickProfileForOrg } from "@atlas/core/profiles";
 import {
@@ -32,6 +33,9 @@ import { WhatsAppTodoStatusMessage } from "./todo-status-message";
 import { createTypingLoop } from "./typing-indicator";
 
 const chatLocks = new Map<string, Promise<void>>();
+const rateLimiter = new ChannelRateLimiter();
+const MAX_MESSAGE_LENGTH = 2000;
+const LOCK_TIMEOUT_MS = 120_000;
 
 const PAIRING_PROMPT =
   "Atlas has not authorized this chat yet.\n\n" +
@@ -85,6 +89,24 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
+    if (trimmed.length > MAX_MESSAGE_LENGTH) {
+      await sendText(
+        jid,
+        "Message is too long (maximum 2,000 characters). Please shorten your message."
+      );
+      return;
+    }
+
+    if (!rateLimiter.isAllowed(jid)) {
+      if (rateLimiter.shouldSendCooldownNotice(jid)) {
+        await sendText(
+          jid,
+          "You are sending messages too quickly. Please wait a moment before trying again."
+        );
+      }
+      return;
+    }
+
     await withChatLock(jid, async () => {
       await authStore.reload();
       const fileConfig = authStore.getConfig();
@@ -102,6 +124,20 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       }
 
       if (!authorized) {
+        if (
+          fileConfig?.accessMode === "allowlist" ||
+          fileConfig?.accessMode === "denylist"
+        ) {
+          const command = parseCommand(trimmed);
+          if (command === "/start" || command === "/help") {
+            await sendText(
+              jid,
+              "This assistant is restricted and not authorized for this chat."
+            );
+          }
+          return;
+        }
+
         await handlePairing(jid, trimmed);
         return;
       }
@@ -477,6 +513,7 @@ function looksLikePairingCodeAttempt(text: string): boolean {
 
 export function resetChatLocksForTests(): void {
   chatLocks.clear();
+  rateLimiter.reset();
 }
 
 async function withChatLock(
@@ -491,10 +528,21 @@ async function withChatLock(
   const chain = previous.then(() => current);
   chatLocks.set(jid, chain);
 
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<void>((_, reject) => {
+    timeoutId = setTimeout(
+      () => reject(new Error("Chat lock timeout")),
+      LOCK_TIMEOUT_MS
+    );
+  });
+
   try {
-    await previous;
+    await Promise.race([previous, timeoutPromise]).catch(() => {});
     await fn();
   } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
     release();
     if (chatLocks.get(jid) === chain) {
       chatLocks.delete(jid);

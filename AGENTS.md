@@ -24,9 +24,13 @@ LLM_VCR_MODE=record bun test path/to/foo.llm.test.ts  # re-record (needs provide
 
 Use `gh` for issues, PRs, checks, reviews, releases, and any GitHub URL. Run the gh cli command outside the sandbox so that the auth can works.
 
-## Browser automation
+## Browser automation & QA Verification
 
-Use `agent-browser` cli to do browser automation, screenshot etc. Run the docker first when you need to debug with first installation, for just quick test or screenshot use local dev server that already running.
+Mandatory QA step for UI / web changes:
+1. Use `agent-browser` (or browser subagent) to verify the live UI against real user flows.
+2. Verify interactive form states, dropdowns, modal dialogs, and save flows to catch race conditions, spinner lockups, and caching bugs that unit tests cannot detect.
+3. Take screenshots of before/after UI states to confirm visual correctness.
+4. Run against local dev server (`http://localhost:3000` or `http://localhost:4310`).
 
 ## Documentation (`docs/website`)
 

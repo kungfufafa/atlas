@@ -8,6 +8,7 @@ import {
   formatOrgSwitchConfirmation,
   prepareChannelOrgContext,
 } from "@atlas/core/channel-org";
+import { ChannelRateLimiter } from "@atlas/core/channel-rate-limiter";
 import type {
   AgentQuestionnaire,
   SendMessageInput,
@@ -72,6 +73,8 @@ import { DiscordTodoStatusMessage } from "./todo-status-message";
 import { createTypingLoop } from "./typing-indicator";
 
 const chatLocks = new Map<string, Promise<void>>();
+const rateLimiter = new ChannelRateLimiter();
+const MAX_MESSAGE_LENGTH = 2000;
 const pendingQuestionnaires = new Map<string, AgentQuestionnaire>();
 const THREAD_OWNERSHIP_LOCK_KEY = "__discord_thread_ownership__";
 
@@ -163,6 +166,22 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
+    if (text && text.length > MAX_MESSAGE_LENGTH) {
+      await messenger.send(
+        "Message is too long (maximum 2,000 characters). Please shorten your message."
+      );
+      return;
+    }
+
+    if (!rateLimiter.isAllowed(userId)) {
+      if (rateLimiter.shouldSendCooldownNotice(userId)) {
+        await messenger.send(
+          "You are sending messages too quickly. Please wait a moment before trying again."
+        );
+      }
+      return;
+    }
+
     if (isThread && groupDecision?.reason === "claim-thread") {
       await trackOwnedThread(channelId);
       console.log("[discord] claimed thread", channelId);
@@ -200,6 +219,19 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     if (!isAuthorized) {
       console.log("[discord] unauthorized", userId);
+      const fileConfig = authStore.getConfig();
+      if (
+        fileConfig?.accessMode === "allowlist" ||
+        fileConfig?.accessMode === "denylist"
+      ) {
+        if (!isGuild) {
+          await messenger.send(
+            "This assistant is restricted and not authorized for this chat."
+          );
+        }
+        return;
+      }
+
       if (isGuild) {
         await messenger.send(LINK_IN_PRIVATE_REPLY);
         return;
@@ -1306,7 +1338,8 @@ export async function withChatLock(
   }
 }
 
-/** @internal Test helper — clears the in-process chat lock map. */
+/** @internal Test helper — clears the in-process chat lock map and rate limiter. */
 export function resetChatLocksForTests(): void {
   chatLocks.clear();
+  rateLimiter.reset();
 }

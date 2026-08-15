@@ -1,4 +1,4 @@
-import type { ProfileSummary } from "@atlas/core/contract";
+import type { ChannelAccessMode, ProfileSummary } from "@atlas/core/contract";
 import {
   Copy01Icon,
   RefreshIcon,
@@ -119,11 +119,15 @@ export function TelegramSettingsCardContent({
   botToken,
   onBotTokenChange,
   onToggleShowBotToken,
+  accessMode,
+  onAccessModeChange,
   pairingCode,
   onCopyHandshakeCode,
   onRegenerateHandshake,
   allowedUserSummary,
   onManageAllowedUsers,
+  blockedUserSummary,
+  onManageBlockedUsers,
   profileId,
   profiles,
   onProfileChange,
@@ -134,27 +138,31 @@ export function TelegramSettingsCardContent({
   submitLabel,
   onSave,
 }: {
-  view: TelegramSettingsCardView;
-  headerSubtitle: string;
-  statusBadge: string;
-  settings: { botTokenMasked?: string | null } | null | undefined;
+  accessMode: ChannelAccessMode;
+  allowedUserSummary: string;
+  blockedUserSummary: string;
   botToken: string;
+  formError: string | null;
+  headerSubtitle: string;
+  loadError: unknown;
+  onAccessModeChange: (mode: ChannelAccessMode) => void;
   onBotTokenChange: (value: string) => void;
+  onCopyHandshakeCode: () => void;
+  onManageAllowedUsers: () => void;
+  onManageBlockedUsers: () => void;
+  onProfileChange: (profileId: string) => void;
+  onRegenerateHandshake: () => void;
+  onSave: () => void;
   onToggleShowBotToken: () => void;
   pairingCode: string | null;
-  onCopyHandshakeCode: () => void;
-  onRegenerateHandshake: () => void;
-  allowedUserSummary: string;
-  onManageAllowedUsers: () => void;
   profileId: string;
   profiles: ProfileSummary[];
-  onProfileChange: (profileId: string) => void;
-  worker: { process?: { managed?: boolean } } | null | undefined;
+  settings: { botTokenMasked?: string | null } | null | undefined;
+  statusBadge: string;
   statusLine: string | null;
-  formError: string | null;
-  loadError: unknown;
   submitLabel: string;
-  onSave: () => void;
+  view: TelegramSettingsCardView;
+  worker: { process?: { managed?: boolean } } | null | undefined;
 }) {
   const {
     embedded,
@@ -219,7 +227,36 @@ export function TelegramSettingsCardContent({
         </InputGroup>
       </SettingsRow>
 
-      {configured ? (
+      <SettingsRow
+        className={paneItemClass}
+        description="Controls who is permitted to chat with the assistant"
+        label="Access mode"
+      >
+        <Select
+          disabled={savePending}
+          onValueChange={(value) => {
+            if (value) {
+              onAccessModeChange(value as ChannelAccessMode);
+            }
+          }}
+          value={accessMode}
+        >
+          <SelectTrigger
+            className="w-[11rem] sm:w-[13rem]"
+            id="telegram-access-mode"
+          >
+            <SelectValue placeholder="Access mode" />
+          </SelectTrigger>
+          <SelectContent align="end">
+            <SelectItem value="open">Open</SelectItem>
+            <SelectItem value="allowlist">Allowed list only</SelectItem>
+            <SelectItem value="denylist">Blocked list filter</SelectItem>
+            <SelectItem value="pairing">Pairing code</SelectItem>
+          </SelectContent>
+        </Select>
+      </SettingsRow>
+
+      {configured && accessMode === "pairing" ? (
         <div className={cn("space-y-4", !isPaired && "bg-muted/20")}>
           <SettingsRow
             className={paneItemClass}
@@ -305,7 +342,7 @@ export function TelegramSettingsCardContent({
         </div>
       ) : null}
 
-      {configured ? (
+      {configured && accessMode === "allowlist" ? (
         <SettingsRow
           className={paneItemClass}
           description="Telegram user IDs that can use this bot"
@@ -318,6 +355,29 @@ export function TelegramSettingsCardContent({
             <Button
               disabled={savePending}
               onClick={onManageAllowedUsers}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Manage
+            </Button>
+          </div>
+        </SettingsRow>
+      ) : null}
+
+      {configured && accessMode === "denylist" ? (
+        <SettingsRow
+          className={paneItemClass}
+          description="Telegram user IDs blocked from chatting"
+          label="Blocked users"
+        >
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <span className="text-muted-foreground text-xs">
+              {blockedUserSummary}
+            </span>
+            <Button
+              disabled={savePending}
+              onClick={onManageBlockedUsers}
               size="sm"
               type="button"
               variant="outline"

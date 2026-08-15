@@ -261,6 +261,9 @@ export async function writeWhatsAppConfigIni(
     profileId?: string;
     pairingCode?: string | null;
     pairedJid?: string | null;
+    accessMode?: string;
+    allowedNumbers?: string[];
+    blockedNumbers?: string[];
   }
 ): Promise<void> {
   const dir = path.join(homeDir, ".atlas", "whatsapp");
@@ -271,6 +274,18 @@ export async function writeWhatsAppConfigIni(
     `phone_number=${config.phoneNumber}`,
     `profile_id=${config.profileId ?? "default"}`,
   ];
+
+  if (config.accessMode) {
+    lines.push(`access_mode=${config.accessMode}`);
+  }
+
+  if (config.allowedNumbers?.length) {
+    lines.push(`allowed_numbers=${config.allowedNumbers.join(",")}`);
+  }
+
+  if (config.blockedNumbers?.length) {
+    lines.push(`blocked_numbers=${config.blockedNumbers.join(",")}`);
+  }
 
   if (config.pairingCode) {
     lines.push(`pairing_code=${config.pairingCode}`);

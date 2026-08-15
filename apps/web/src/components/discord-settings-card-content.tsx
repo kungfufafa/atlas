@@ -1,4 +1,4 @@
-import type { ProfileSummary } from "@atlas/core/contract";
+import type { ChannelAccessMode, ProfileSummary } from "@atlas/core/contract";
 import { ViewIcon, ViewOffIcon } from "hugeicons-react";
 import { SettingsRow } from "@/components/discord-settings-card.shared";
 import {
@@ -42,11 +42,15 @@ export function DiscordSettingsCardContent({
   botToken,
   onBotTokenChange,
   onToggleShowBotToken,
+  accessMode,
+  onAccessModeChange,
   pairingCode,
   onCopyHandshakeCode,
   onRegenerateHandshake,
   allowedUserSummary,
   onManageAllowedUsers,
+  blockedUserSummary,
+  onManageBlockedUsers,
   profileId,
   profiles,
   onProfileChange,
@@ -57,9 +61,25 @@ export function DiscordSettingsCardContent({
   submitLabel,
   onSave,
 }: {
-  view: DiscordSettingsCardView;
+  accessMode: ChannelAccessMode;
+  allowedUserSummary: string;
+  blockedUserSummary: string;
+  botToken: string;
+  formError: string | null;
   headerSubtitle: string;
-  statusBadge: string;
+  loadError: unknown;
+  onAccessModeChange: (mode: ChannelAccessMode) => void;
+  onBotTokenChange: (value: string) => void;
+  onCopyHandshakeCode: () => void;
+  onManageAllowedUsers: () => void;
+  onManageBlockedUsers: () => void;
+  onProfileChange: (profileId: string) => void;
+  onRegenerateHandshake: () => void;
+  onSave: () => void;
+  onToggleShowBotToken: () => void;
+  pairingCode: string | null;
+  profileId: string;
+  profiles: ProfileSummary[];
   settings:
     | {
         botTokenMasked?: string | null;
@@ -67,23 +87,11 @@ export function DiscordSettingsCardContent({
       }
     | null
     | undefined;
-  botToken: string;
-  onBotTokenChange: (value: string) => void;
-  onToggleShowBotToken: () => void;
-  pairingCode: string | null;
-  onCopyHandshakeCode: () => void;
-  onRegenerateHandshake: () => void;
-  allowedUserSummary: string;
-  onManageAllowedUsers: () => void;
-  profileId: string;
-  profiles: ProfileSummary[];
-  onProfileChange: (profileId: string) => void;
-  worker: { process?: { managed?: boolean } } | null | undefined;
+  statusBadge: string;
   statusLine: string | null;
-  formError: string | null;
-  loadError: unknown;
   submitLabel: string;
-  onSave: () => void;
+  view: DiscordSettingsCardView;
+  worker: { process?: { managed?: boolean } } | null | undefined;
 }) {
   const {
     embedded,
@@ -172,7 +180,7 @@ export function DiscordSettingsCardContent({
         </InputGroup>
       </SettingsRow>
 
-      {configured ? (
+      {configured && accessMode === "pairing" ? (
         <DiscordSettingsPairingSection
           compact={!embedded}
           copied={copied}
@@ -189,8 +197,12 @@ export function DiscordSettingsCardContent({
 
       {configured ? (
         <DiscordSettingsConfiguredRows
+          accessMode={accessMode}
           allowedUserSummary={allowedUserSummary}
+          blockedUserSummary={blockedUserSummary}
+          onAccessModeChange={onAccessModeChange}
           onManageAllowedUsers={onManageAllowedUsers}
+          onManageBlockedUsers={onManageBlockedUsers}
           onProfileChange={onProfileChange}
           profileId={profileId}
           profiles={profiles}

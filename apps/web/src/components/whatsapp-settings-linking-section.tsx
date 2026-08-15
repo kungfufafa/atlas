@@ -24,6 +24,7 @@ export function WhatsAppSettingsLinkingSection({
   bridgeStarting,
   awaitingQr,
   showReconnect,
+  showPairingSection = true,
   reconnectPending,
   onReconnect,
   rowClassName,
@@ -42,6 +43,7 @@ export function WhatsAppSettingsLinkingSection({
   bridgeStarting: boolean;
   awaitingQr: boolean;
   showReconnect: boolean;
+  showPairingSection?: boolean;
   reconnectPending: boolean;
   onReconnect: () => void;
   rowClassName?: string;
@@ -49,102 +51,106 @@ export function WhatsAppSettingsLinkingSection({
 }) {
   return (
     <div className={cn("space-y-4", !paired && "bg-muted/20")}>
-      <SettingsRow
-        className={rowClassName}
-        description={
-          pairingCode
-            ? "Send this code in the WhatsApp chat you want to authorize."
-            : paired
-              ? "Generate a one-time code to authorize a WhatsApp chat."
-              : "Connect WhatsApp before authorizing chats."
-        }
-        label="Chat access code"
-      >
-        {pairingCode ? (
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <code className="rounded-md border border-border bg-background px-2.5 py-1 text-sm tracking-widest">
-              {pairingCode}
-            </code>
-            <Button
-              onClick={onCopyPairingCode}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              {copied ? (
-                <CheckmarkCircle01Icon
-                  aria-hidden
-                  className="size-3.5 text-emerald-600 dark:text-emerald-400"
-                />
-              ) : (
-                <Copy01Icon aria-hidden className="size-3.5" />
-              )}
-              {copied ? "Copied" : "Copy"}
-            </Button>
-            <Button
-              disabled={regeneratePending || savePending}
-              onClick={onRegeneratePairingCode}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              {regeneratePending ? (
-                <Spinner />
-              ) : (
-                <>
-                  <RefreshIcon aria-hidden="true" className="size-3.5" />
-                  Generate new code
-                </>
-              )}
-            </Button>
-          </div>
-        ) : paired ? (
-          <Button
-            disabled={!paired || regeneratePending || savePending}
-            onClick={onRegeneratePairingCode}
-            size="sm"
-            type="button"
-            variant="outline"
+      {showPairingSection ? (
+        <>
+          <SettingsRow
+            className={rowClassName}
+            description={
+              pairingCode
+                ? "Send this code in the WhatsApp chat you want to authorize."
+                : paired
+                  ? "Generate a one-time code to authorize a WhatsApp chat."
+                  : "Connect WhatsApp before authorizing chats."
+            }
+            label="Chat access code"
           >
-            {regeneratePending ? (
-              <Spinner />
+            {pairingCode ? (
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <code className="rounded-md border border-border bg-background px-2.5 py-1 text-sm tracking-widest">
+                  {pairingCode}
+                </code>
+                <Button
+                  onClick={onCopyPairingCode}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  {copied ? (
+                    <CheckmarkCircle01Icon
+                      aria-hidden
+                      className="size-3.5 text-emerald-600 dark:text-emerald-400"
+                    />
+                  ) : (
+                    <Copy01Icon aria-hidden className="size-3.5" />
+                  )}
+                  {copied ? "Copied" : "Copy"}
+                </Button>
+                <Button
+                  disabled={regeneratePending || savePending}
+                  onClick={onRegeneratePairingCode}
+                  size="sm"
+                  type="button"
+                  variant="outline"
+                >
+                  {regeneratePending ? (
+                    <Spinner />
+                  ) : (
+                    <>
+                      <RefreshIcon aria-hidden="true" className="size-3.5" />
+                      Generate new code
+                    </>
+                  )}
+                </Button>
+              </div>
+            ) : paired ? (
+              <Button
+                disabled={!paired || regeneratePending || savePending}
+                onClick={onRegeneratePairingCode}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                {regeneratePending ? (
+                  <Spinner />
+                ) : (
+                  <>
+                    <RefreshIcon aria-hidden="true" className="size-3.5" />
+                    Generate code
+                  </>
+                )}
+              </Button>
             ) : (
-              <>
-                <RefreshIcon aria-hidden="true" className="size-3.5" />
-                Generate code
-              </>
+              <Button
+                disabled={!paired || regeneratePending || savePending}
+                onClick={onRegeneratePairingCode}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                {regeneratePending ? (
+                  <>
+                    <Spinner className="size-3" />
+                    Generating…
+                  </>
+                ) : (
+                  "Connect WhatsApp first"
+                )}
+              </Button>
             )}
-          </Button>
-        ) : (
-          <Button
-            disabled={!paired || regeneratePending || savePending}
-            onClick={onRegeneratePairingCode}
-            size="sm"
-            type="button"
-            variant="outline"
-          >
-            {regeneratePending ? (
-              <>
-                <Spinner className="size-3" />
-                Generating…
-              </>
-            ) : (
-              "Connect WhatsApp first"
-            )}
-          </Button>
-        )}
-      </SettingsRow>
+          </SettingsRow>
 
-      {pairingCode ? (
-        <ol
-          className={cn(
-            "list-decimal space-y-1 pl-5 text-muted-foreground text-xs",
-            !compact && "px-4 py-3 pl-8"
-          )}
-        >
-          <li>Open a private chat with the connected WhatsApp account</li>
-          <li>Send the code as a message</li>
-        </ol>
+          {pairingCode ? (
+            <ol
+              className={cn(
+                "list-decimal space-y-1 pl-5 text-muted-foreground text-xs",
+                !compact && "px-4 py-3 pl-8"
+              )}
+            >
+              <li>Open a private chat with the connected WhatsApp account</li>
+              <li>Send the code as a message</li>
+            </ol>
+          ) : null}
+        </>
       ) : null}
 
       {showQr ? (

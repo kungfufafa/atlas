@@ -86,6 +86,15 @@ bun test path/to/foo.llm.test.ts
 LLM_VCR_MODE=record bun test path/to/foo.llm.test.ts
 ```
 
+## QA & Browser Testing
+
+Automated unit tests only test backend contracts and isolated units. For any UI/web modifications or settings flows, perform live browser verification:
+
+1. **Verify user flows**: Run against local dev server (`http://localhost:3000` or `http://localhost:4310`).
+2. **Form & state responsiveness**: Test dropdowns, inputs, modal dialogs, and save flows to catch race conditions, spinner lockups, and caching bugs that unit tests cannot detect.
+3. **Data persistence**: Reload the page after saving to verify the settings persisted in the database and loaded correctly.
+4. **Console inspection**: Ensure no unhandled errors or stuck network requests exist in the browser console.
+
 ## Docs contributions
 
 User docs live in `docs/website/content/docs/` (MDX). Audience is operators and chat users — prefer why / value / how to use; keep contributor internals in this file or `AGENTS.md` unless the page is explicitly for integrators.

@@ -1480,7 +1480,11 @@ export function registerModelRoutes(
 
     try {
       const settings = await agent.setTelegramSettings(orgId, body);
-      await workerManager.startWorkspaceWorker("telegram", orgId);
+      void workerManager
+        .startWorkspaceWorker("telegram", orgId)
+        .catch((workerError) => {
+          console.warn("Could not start Telegram worker:", workerError);
+        });
       return json<TelegramSettingsResponse>(settings);
     } catch (error) {
       if (error instanceof AtlasApiError) {
@@ -1517,7 +1521,11 @@ export function registerModelRoutes(
 
     try {
       const settings = await agent.setDiscordSettings(orgId, body);
-      await workerManager.startWorkspaceWorker("discord", orgId);
+      void workerManager
+        .startWorkspaceWorker("discord", orgId)
+        .catch((workerError) => {
+          console.warn("Could not start Discord worker:", workerError);
+        });
       return json<DiscordSettingsResponse>(settings);
     } catch (error) {
       if (error instanceof AtlasApiError) {
@@ -1577,7 +1585,11 @@ export function registerModelRoutes(
 
     try {
       const settings = await agent.setWhatsAppSettings(orgId, body);
-      await workerManager.startWorkspaceWorker("whatsapp", orgId);
+      void workerManager
+        .startWorkspaceWorker("whatsapp", orgId)
+        .catch((workerError) => {
+          console.warn("Could not start WhatsApp worker:", workerError);
+        });
       return json<WhatsAppSettingsResponse>(settings);
     } catch (error) {
       if (error instanceof AtlasApiError) {

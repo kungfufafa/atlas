@@ -6,6 +6,7 @@ import {
   formatOrgSwitchConfirmation,
   prepareChannelOrgContext,
 } from "@atlas/core/channel-org";
+import { ChannelRateLimiter } from "@atlas/core/channel-rate-limiter";
 import type { SendMessageInput } from "@atlas/core/contract";
 import {
   filterProfilesForChatAccess,
@@ -64,6 +65,9 @@ import { TelegramTodoStatusMessage } from "./todo-status-message";
 import { createTypingLoop } from "./typing-indicator";
 
 const chatLocks = new Map<string, Promise<void>>();
+const rateLimiter = new ChannelRateLimiter();
+const MAX_MESSAGE_LENGTH = 2000;
+const LOCK_TIMEOUT_MS = 120_000;
 
 const GROUP_MESSAGE_PREFIX =
   "[Telegram group — your reply is visible to everyone in this group.]\n";
@@ -147,11 +151,40 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
+    if (text && text.length > MAX_MESSAGE_LENGTH) {
+      await telegram.send(
+        "Message is too long (maximum 2,000 characters). Please shorten your message."
+      );
+      return;
+    }
+
+    if (!rateLimiter.isAllowed(String(userId))) {
+      if (rateLimiter.shouldSendCooldownNotice(String(userId))) {
+        await telegram.send(
+          "You are sending messages too quickly. Please wait a moment before trying again."
+        );
+      }
+      return;
+    }
+
     await withChatLock(conversationKey, async () => {
       await authStore.reload();
       const isAuthorized = authStore.isAuthorized(userId);
 
       if (!isAuthorized) {
+        const fileConfig = authStore.getConfig();
+        if (
+          fileConfig?.accessMode === "allowlist" ||
+          fileConfig?.accessMode === "denylist"
+        ) {
+          if (!isGroup) {
+            await telegram.send(
+              "This assistant is restricted and not authorized for this chat."
+            );
+          }
+          return;
+        }
+
         if (isGroup) {
           await telegram.send(LINK_IN_PRIVATE_REPLY);
           return;
@@ -921,6 +954,11 @@ function isStopCommand(text: string): boolean {
   return parseTelegramCommand(text) === "/stop";
 }
 
+export function resetChatLocksForTests(): void {
+  chatLocks.clear();
+  rateLimiter.reset();
+}
+
 async function withChatLock(
   chatId: string,
   fn: () => Promise<void>
@@ -933,10 +971,21 @@ async function withChatLock(
   const chain = previous.then(() => current);
   chatLocks.set(chatId, chain);
 
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<void>((_, reject) => {
+    timeoutId = setTimeout(
+      () => reject(new Error("Chat lock timeout")),
+      LOCK_TIMEOUT_MS
+    );
+  });
+
   try {
-    await previous;
+    await Promise.race([previous, timeoutPromise]).catch(() => {});
     await fn();
   } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
     release();
     if (chatLocks.get(chatId) === chain) {
       chatLocks.delete(chatId);

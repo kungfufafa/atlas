@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { rm } from "node:fs/promises";
 import { join } from "node:path";
+import type { ChannelAccessMode } from "./contract";
 import {
   parseIni,
   pathExists,
@@ -13,6 +14,9 @@ import { getWorkspaceChannelDir } from "./workspace-channel-paths";
 export const DEFAULT_WHATSAPP_PROFILE_ID = "default";
 
 export interface WhatsAppConfigFile {
+  accessMode: ChannelAccessMode;
+  allowedNumbers: string[];
+  blockedNumbers: string[];
   outboundPort?: string | null;
   pairedJid: string | null;
   pairedLid: string | null;
@@ -22,6 +26,9 @@ export interface WhatsAppConfigFile {
 }
 
 export interface WhatsAppSettingsPublic {
+  accessMode: ChannelAccessMode;
+  allowedNumbers: string[];
+  blockedNumbers: string[];
   configured: boolean;
   pairedJid: string | null;
   pairingCode: string | null;
@@ -30,6 +37,9 @@ export interface WhatsAppSettingsPublic {
 }
 
 export interface UpdateWhatsAppSettingsInput {
+  accessMode?: ChannelAccessMode;
+  allowedNumbers?: string[] | string;
+  blockedNumbers?: string[] | string;
   phoneNumber?: string;
   profileId?: string;
 }
@@ -66,6 +76,38 @@ export function normalizePairingCode(input: string): string {
   return input.trim().replace(/\s+/g, "").toUpperCase();
 }
 
+export function normalizePhoneNumberDigits(phone: string): string {
+  const trimmed = phone.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  // Strip all non-digits
+  let digits = trimmed.replace(/\D/g, "");
+  // Normalize Indonesian local format 08... to 628...
+  if (digits.startsWith("08")) {
+    digits = `62${digits.slice(1)}`;
+  }
+
+  return digits;
+}
+
+export function parsePhoneNumberList(raw: string | string[]): string[] {
+  if (Array.isArray(raw)) {
+    return raw.map((item) => normalizePhoneNumberDigits(item)).filter(Boolean);
+  }
+
+  const items = new Set<string>();
+  for (const part of raw.split(/[,\s\n]+/)) {
+    const digits = normalizePhoneNumberDigits(part);
+    if (digits) {
+      items.add(digits);
+    }
+  }
+
+  return [...items];
+}
+
 function phoneDigits(phone: string): string {
   return phone.replace(/\D/g, "");
 }
@@ -75,7 +117,7 @@ function phoneToWhatsAppJid(phone: string): string {
 }
 
 export function whatsAppUserDigits(jid: string): string {
-  return phoneDigits(jid.split("@")[0]?.split(":")[0] ?? "");
+  return normalizePhoneNumberDigits(jid.split("@")[0]?.split(":")[0] ?? "");
 }
 
 function maskPhoneNumberFromJid(jid: string | null): string | null {
@@ -125,12 +167,48 @@ function isSameWhatsAppUserJid(left: string, right: string): boolean {
 
 export function isWhatsAppUserAuthorized(
   jid: string,
-  config: Pick<WhatsAppConfigFile, "pairedJid" | "pairedLid">
+  config: Pick<
+    WhatsAppConfigFile,
+    | "accessMode"
+    | "allowedNumbers"
+    | "blockedNumbers"
+    | "pairedJid"
+    | "pairedLid"
+  >
 ): boolean {
-  if (!(config.pairedJid || config.pairedLid)) {
+  const accessMode = config.accessMode || "pairing";
+  const userDigits = whatsAppUserDigits(jid);
+
+  if (accessMode === "open") {
+    return true;
+  }
+
+  if (accessMode === "allowlist") {
+    if (config.allowedNumbers && config.allowedNumbers.includes(userDigits)) {
+      return true;
+    }
+
+    if (
+      (config.pairedJid
+        ? isSameWhatsAppUserJid(jid, config.pairedJid)
+        : false) ||
+      (config.pairedLid ? isSameWhatsAppUserJid(jid, config.pairedLid) : false)
+    ) {
+      return true;
+    }
+
     return false;
   }
 
+  if (accessMode === "denylist") {
+    if (config.blockedNumbers && config.blockedNumbers.includes(userDigits)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  // "pairing" mode: strictly requires pairedJid / pairedLid
   if (
     (config.pairedJid ? isSameWhatsAppUserJid(jid, config.pairedJid) : false) ||
     (config.pairedLid ? isSameWhatsAppUserJid(jid, config.pairedLid) : false)
@@ -158,7 +236,25 @@ export async function loadWhatsAppConfigFile(
   const pairedLid = values.paired_lid?.trim() || null;
   const outboundPort = values.outbound_port?.trim() || null;
 
+  const accessModeRaw = values.access_mode?.trim()?.toLowerCase();
+  const accessMode: ChannelAccessMode =
+    accessModeRaw === "open" ||
+    accessModeRaw === "allowlist" ||
+    accessModeRaw === "denylist"
+      ? accessModeRaw
+      : "pairing";
+
+  const allowedNumbers = values.allowed_numbers
+    ? parsePhoneNumberList(values.allowed_numbers)
+    : [];
+  const blockedNumbers = values.blocked_numbers
+    ? parsePhoneNumberList(values.blocked_numbers)
+    : [];
+
   return {
+    accessMode,
+    allowedNumbers,
+    blockedNumbers,
     outboundPort,
     pairedJid,
     pairedLid,
@@ -173,6 +269,9 @@ export function toWhatsAppSettingsPublic(
 ): WhatsAppSettingsPublic {
   if (!file) {
     return {
+      accessMode: "pairing",
+      allowedNumbers: [],
+      blockedNumbers: [],
       configured: false,
       pairedJid: null,
       pairingCode: null,
@@ -182,6 +281,9 @@ export function toWhatsAppSettingsPublic(
   }
 
   return {
+    accessMode: file.accessMode || "pairing",
+    allowedNumbers: file.allowedNumbers || [],
+    blockedNumbers: file.blockedNumbers || [],
     configured: true,
     pairedJid: file.pairedJid,
     pairingCode: file.pairingCode,
@@ -205,6 +307,13 @@ async function writeWhatsAppConfigFile(
   const lines = [
     "# Atlas WhatsApp bridge",
     `profile_id=${config.profileId}`,
+    `access_mode=${config.accessMode}`,
+    ...(config.allowedNumbers.length > 0
+      ? [`allowed_numbers=${config.allowedNumbers.join(",")}`]
+      : []),
+    ...(config.blockedNumbers.length > 0
+      ? [`blocked_numbers=${config.blockedNumbers.join(",")}`]
+      : []),
     ...(config.phoneNumber.trim()
       ? [`phone_number=${config.phoneNumber}`]
       : []),
@@ -257,8 +366,21 @@ function buildSavedWhatsAppConfig(
 ): WhatsAppConfigFile {
   const phoneNumber = resolvePhoneNumber(input, existing);
   const pairedJid = existing?.pairedJid ?? null;
+  const accessMode = input.accessMode ?? existing?.accessMode ?? "pairing";
+  const allowedNumbers =
+    input.allowedNumbers === undefined
+      ? (existing?.allowedNumbers ?? [])
+      : parsePhoneNumberList(input.allowedNumbers);
+  const blockedNumbers =
+    input.blockedNumbers === undefined
+      ? (existing?.blockedNumbers ?? [])
+      : parsePhoneNumberList(input.blockedNumbers);
 
   return {
+    accessMode,
+    allowedNumbers,
+    blockedNumbers,
+    outboundPort: existing?.outboundPort ?? null,
     pairedJid,
     pairedLid: existing?.pairedLid ?? null,
     pairingCode: resolvePairingCode(existing, pairedJid),
@@ -356,7 +478,7 @@ export async function verifyAndPairWhatsAppUser(
   if (!expected) {
     return {
       message:
-        "No chat access code is active. Generate one in Integrations \u2192 WhatsApp, then send it here.",
+        "No chat access code is active. Generate one in Integrations → WhatsApp, then send it here.",
       ok: false,
     };
   }
@@ -366,7 +488,7 @@ export async function verifyAndPairWhatsAppUser(
   ) {
     return {
       message:
-        "That chat access code is invalid. Copy the current code from Integrations \u2192 WhatsApp and try again.",
+        "That chat access code is invalid. Copy the current code from Integrations → WhatsApp and try again.",
       ok: false,
     };
   }
@@ -463,13 +585,16 @@ export function resolveWhatsAppConfigFromSources(options: {
   }
 
   return {
+    accessMode: file?.accessMode ?? "pairing",
+    allowedNumbers: file?.allowedNumbers ?? [],
+    blockedNumbers: file?.blockedNumbers ?? [],
     pairedJid: file?.pairedJid ?? null,
     pairedLid: file?.pairedLid ?? null,
     pairingCode: file?.pairingCode ?? null,
     phoneNumber:
       env.WHATSAPP_PHONE_NUMBER?.trim() || file?.phoneNumber?.trim() || "",
     profileId:
-      env.atlas_WHATSAPP_PROFILE_ID?.trim() ||
+      env.ATLAS_WHATSAPP_PROFILE_ID?.trim() ||
       file?.profileId?.trim() ||
       DEFAULT_WHATSAPP_PROFILE_ID,
   };

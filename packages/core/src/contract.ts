@@ -1103,8 +1103,12 @@ export interface RotateLocalAuthTokenResponse {
   token: string;
 }
 
+export type ChannelAccessMode = "open" | "allowlist" | "denylist" | "pairing";
+
 export interface TelegramSettingsResponse {
+  accessMode: ChannelAccessMode;
   allowedUserIds: number[];
+  blockedUserIds: number[];
   botTokenMasked: string | null;
   configured: boolean;
   handshakeCode: string | null;
@@ -1113,13 +1117,17 @@ export interface TelegramSettingsResponse {
 }
 
 export interface UpdateTelegramSettingsRequest {
+  accessMode?: ChannelAccessMode;
   allowedUserIds?: string;
+  blockedUserIds?: string;
   botToken?: string;
   profileId?: string;
 }
 
 export interface DiscordSettingsResponse {
+  accessMode: ChannelAccessMode;
   allowedUserIds: string[];
+  blockedUserIds: string[];
   botTokenMasked: string | null;
   configured: boolean;
   handshakeCode: string | null;
@@ -1129,7 +1137,9 @@ export interface DiscordSettingsResponse {
 }
 
 export interface UpdateDiscordSettingsRequest {
+  accessMode?: ChannelAccessMode;
   allowedUserIds?: string;
+  blockedUserIds?: string;
   botToken?: string;
   profileId?: string;
 }
@@ -1264,6 +1274,9 @@ export type AgentBrowserInstallEvent =
     };
 
 export interface WhatsAppSettingsResponse {
+  accessMode: ChannelAccessMode;
+  allowedNumbers: string[];
+  blockedNumbers: string[];
   configured: boolean;
   pairedJid: string | null;
   pairingCode: string | null;
@@ -1272,6 +1285,9 @@ export interface WhatsAppSettingsResponse {
 }
 
 export interface UpdateWhatsAppSettingsRequest {
+  accessMode?: ChannelAccessMode;
+  allowedNumbers?: string[] | string;
+  blockedNumbers?: string[] | string;
   phoneNumber?: string;
   profileId?: string;
 }

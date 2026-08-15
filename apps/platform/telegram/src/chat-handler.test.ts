@@ -1,5 +1,6 @@
 import {
   afterEach,
+  beforeEach,
   describe,
   expect,
   setDefaultTimeout,
@@ -13,7 +14,7 @@ import {
   UNSUPPORTED_MEDIA_REPLY,
 } from "./attachments";
 import { TelegramAuthStore } from "./auth-store";
-import { createChatHandler } from "./chat-handler";
+import { createChatHandler, resetChatLocksForTests } from "./chat-handler";
 import { SessionStore } from "./session-store";
 import {
   createMessageContext,
@@ -28,6 +29,10 @@ import {
 // These handler tests run in ~0.2s locally but occasionally exceed the 5000ms
 // default under CI's concurrent all-workspace load. Give them more headroom.
 setDefaultTimeout(10_000);
+
+beforeEach(() => {
+  resetChatLocksForTests();
+});
 
 async function waitForCondition(
   condition: () => boolean,

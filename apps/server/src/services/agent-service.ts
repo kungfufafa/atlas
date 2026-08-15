@@ -319,6 +319,7 @@ export class AgentService {
   private readonly sessionTitleService: SessionTitleService;
   private skillPostTurnReviewService: SkillPostTurnReviewService;
   private _providerConfigured: boolean;
+  private providerSettingsPromise: Promise<void> | null = null;
   private visionSettingsPromise: Promise<void> | null = null;
   private transcriptionSettingsPromise: Promise<void> | null = null;
   private imageGenerationSettingsPromise: Promise<void> | null = null;
@@ -1065,6 +1066,44 @@ export class AgentService {
     return { model: this.userConfig?.imageModel ?? null };
   }
 
+  async ensureProviderSettingsLoaded(): Promise<void> {
+    if (!this.providerSettingsPromise) {
+      this.providerSettingsPromise = this.loadProviderSettings();
+    }
+
+    await this.providerSettingsPromise;
+  }
+
+  private async loadProviderSettings(): Promise<void> {
+    if (this._providerConfigured) {
+      return;
+    }
+
+    this._providerConfigured = await this.checkAnyProviderConfigured();
+  }
+
+  private async checkAnyProviderConfigured(): Promise<boolean> {
+    if (isProviderConfigured(this.userConfig)) {
+      return true;
+    }
+
+    for (const config of this.orgUserConfigs.values()) {
+      if (isProviderConfigured(config)) {
+        return true;
+      }
+    }
+
+    const organizations = await this.db.listOrganizations();
+    for (const org of organizations) {
+      const config = await this.getOrgUserConfig(org.id);
+      if (isProviderConfigured(config)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   async ensureVisionSettingsLoaded(): Promise<void> {
     if (!this.visionSettingsPromise) {
       this.visionSettingsPromise = this.loadVisionSettingsFromDatabase();
@@ -1179,21 +1218,44 @@ export class AgentService {
     }
 
     const profileId = input.profileId?.trim();
+    let resolvedProfileId = profileId;
     if (profileId) {
-      await this.requireProfile(orgId, profileId);
+      const profile = await this.requireProfile(orgId, profileId);
+      resolvedProfileId = profile.id;
+    }
+
+    if (input.accessMode && input.accessMode !== existing.accessMode) {
+      console.log(
+        JSON.stringify({
+          action: "channel_access_mode_changed",
+          channel: "telegram",
+          nextMode: input.accessMode,
+          orgId,
+          previousMode: existing.accessMode,
+          timestamp: new Date().toISOString(),
+        })
+      );
     }
 
     return saveTelegramConfig(
       {
+        ...(input.accessMode === undefined
+          ? {}
+          : { accessMode: input.accessMode }),
         ...(botToken ? { botToken } : {}),
         ...(input.allowedUserIds === undefined
           ? existing.allowedUserIds.length > 0
             ? { allowedUserIds: existing.allowedUserIds.join(",") }
             : {}
           : { allowedUserIds: input.allowedUserIds }),
+        ...(input.blockedUserIds === undefined
+          ? existing.blockedUserIds.length > 0
+            ? { blockedUserIds: existing.blockedUserIds.join(",") }
+            : {}
+          : { blockedUserIds: input.blockedUserIds }),
         ...(input.profileId === undefined
           ? {}
-          : { profileId: input.profileId }),
+          : { profileId: resolvedProfileId }),
       },
       orgId
     );
@@ -1227,21 +1289,44 @@ export class AgentService {
     }
 
     const profileId = input.profileId?.trim();
+    let resolvedProfileId = profileId;
     if (profileId) {
-      await this.requireProfile(orgId, profileId);
+      const profile = await this.requireProfile(orgId, profileId);
+      resolvedProfileId = profile.id;
+    }
+
+    if (input.accessMode && input.accessMode !== existing.accessMode) {
+      console.log(
+        JSON.stringify({
+          action: "channel_access_mode_changed",
+          channel: "discord",
+          nextMode: input.accessMode,
+          orgId,
+          previousMode: existing.accessMode,
+          timestamp: new Date().toISOString(),
+        })
+      );
     }
 
     return saveDiscordConfig(
       {
+        ...(input.accessMode === undefined
+          ? {}
+          : { accessMode: input.accessMode }),
         ...(botToken ? { botToken } : {}),
         ...(input.allowedUserIds === undefined
           ? existing.allowedUserIds.length > 0
             ? { allowedUserIds: existing.allowedUserIds.join(",") }
             : {}
           : { allowedUserIds: input.allowedUserIds }),
+        ...(input.blockedUserIds === undefined
+          ? existing.blockedUserIds.length > 0
+            ? { blockedUserIds: existing.blockedUserIds.join(",") }
+            : {}
+          : { blockedUserIds: input.blockedUserIds }),
         ...(input.profileId === undefined
           ? {}
-          : { profileId: input.profileId }),
+          : { profileId: resolvedProfileId }),
       },
       orgId
     );
@@ -1337,19 +1422,44 @@ export class AgentService {
     input: UpdateWhatsAppSettingsRequest
   ): Promise<WhatsAppSettingsResponse> {
     await this.ensureLegacyChannelMigrated("whatsapp", orgId);
+    const existing = await loadWhatsAppSettingsPublic(orgId);
     const profileId = input.profileId?.trim();
+    let resolvedProfileId = profileId;
     if (profileId) {
-      await this.requireProfile(orgId, profileId);
+      const profile = await this.requireProfile(orgId, profileId);
+      resolvedProfileId = profile.id;
+    }
+
+    if (input.accessMode && input.accessMode !== existing.accessMode) {
+      console.log(
+        JSON.stringify({
+          action: "channel_access_mode_changed",
+          channel: "whatsapp",
+          nextMode: input.accessMode,
+          orgId,
+          previousMode: existing.accessMode,
+          timestamp: new Date().toISOString(),
+        })
+      );
     }
 
     return saveWhatsAppConfig(
       {
+        ...(input.accessMode === undefined
+          ? {}
+          : { accessMode: input.accessMode }),
+        ...(input.allowedNumbers === undefined
+          ? {}
+          : { allowedNumbers: input.allowedNumbers }),
+        ...(input.blockedNumbers === undefined
+          ? {}
+          : { blockedNumbers: input.blockedNumbers }),
         ...(input.phoneNumber === undefined
           ? {}
           : { phoneNumber: input.phoneNumber.trim() }),
         ...(input.profileId === undefined
           ? {}
-          : { profileId: input.profileId }),
+          : { profileId: resolvedProfileId }),
       },
       orgId
     );
@@ -2695,6 +2805,11 @@ export class AgentService {
       updatedAt: new Date().toISOString(),
     });
     this.orgUserConfigs.set(orgId, config);
+    if (isProviderConfigured(config)) {
+      this._providerConfigured = true;
+    } else {
+      this._providerConfigured = await this.checkAnyProviderConfigured();
+    }
     this.sessions.clear();
   }
 
@@ -2780,8 +2895,10 @@ export class AgentService {
     await this.llmUsageTracker?.reloadFromDatabase();
     this.visionSettingsPromise = null;
     this.transcriptionSettingsPromise = null;
+    this.providerSettingsPromise = null;
     await this.ensureVisionSettingsLoaded();
     await this.ensureTranscriptionSettingsLoaded();
+    await this.ensureProviderSettingsLoaded();
   }
 
   async listProfiles(orgId: string): Promise<ListProfilesResponse> {
@@ -3354,9 +3471,20 @@ export class AgentService {
     orgId: string,
     profileId: string
   ): Promise<StoredProfileRecord> {
+    if (profileId === "default" || !profileId.trim()) {
+      const defaultProfile = await this.db.getDefaultProfileForOrg(orgId);
+      if (defaultProfile) {
+        return defaultProfile;
+      }
+    }
+
     const profile = await this.db.getProfileForOrg(profileId, orgId);
 
     if (!profile) {
+      const defaultProfile = await this.db.getDefaultProfileForOrg(orgId);
+      if (defaultProfile) {
+        return defaultProfile;
+      }
       throw new Error("Profile not found.");
     }
 

@@ -315,7 +315,9 @@ export function describeSharedChannelConfigTests<TId extends string | number>(
         });
 
         expect(resolved).toEqual({
+          accessMode: "pairing",
           allowedUserIds: tc.env.allowlistParsed,
+          blockedUserIds: [],
           botToken: "env-token",
           handshakeCode: "ABCD1234",
           pairedUserIds: tc.resolveFile.pairedUserIds,

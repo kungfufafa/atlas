@@ -1,10 +1,12 @@
-import type { ProfileSummary } from "@atlas/core/contract";
+import type { ChannelAccessMode, ProfileSummary } from "@atlas/core/contract";
+import { useState } from "react";
 import {
   IntegrationSettingsFooter,
   IntegrationStatusHeader,
   SettingsRow,
 } from "@/components/integration-settings.shared";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -12,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { WhatsAppNumbersDialog } from "@/components/WhatsAppNumbersDialog";
 import { WorkerActionBar } from "@/components/WorkerActionBar";
 import { WhatsAppSettingsLinkingSection } from "@/components/whatsapp-settings-linking-section";
 import { cn } from "@/lib/utils";
@@ -25,6 +28,12 @@ export function WhatsAppSettingsCardContent({
   running,
   showQr,
   linkedNumber,
+  accessMode,
+  onAccessModeChange,
+  allowedNumbers,
+  onAllowedNumbersChange,
+  blockedNumbers,
+  onBlockedNumbersChange,
   profileId,
   profiles,
   savePending,
@@ -49,39 +58,47 @@ export function WhatsAppSettingsCardContent({
   actionLabel,
   onSave,
 }: {
-  embedded: boolean;
-  headerSubtitle: string;
-  statusBadge: string;
+  actionLabel: string;
+  allowedNumbers: string[];
+  accessMode: ChannelAccessMode;
+  awaitingQr: boolean;
+  blockedNumbers: string[];
+  bridgeStarting: boolean;
+  canSave: boolean;
   configured: boolean;
-  paired: boolean;
-  running: boolean;
-  showQr: boolean;
+  copied: boolean;
+  embedded: boolean;
+  formError: string | null;
+  headerSubtitle: string;
   linkedNumber: string | null;
+  linkingAfterScan: boolean;
+  loadError: unknown;
+  onAccessModeChange: (mode: ChannelAccessMode) => void;
+  onAllowedNumbersChange: (numbers: string[]) => void;
+  onBlockedNumbersChange: (numbers: string[]) => void;
+  onCopyPairingCode: () => void;
+  onProfileChange: (profileId: string) => void;
+  onReconnect: () => void;
+  onRegeneratePairingCode: () => void;
+  onSave: () => void;
+  paired: boolean;
+  pairingCode: string | null;
   profileId: string;
   profiles: ProfileSummary[];
-  savePending: boolean;
-  onProfileChange: (profileId: string) => void;
-  pairingCode: string | null;
-  copied: boolean;
-  onCopyPairingCode: () => void;
-  onRegeneratePairingCode: () => void;
-  regeneratePending: boolean;
   qrCode: string | null;
-  linkingAfterScan: boolean;
-  bridgeStarting: boolean;
-  awaitingQr: boolean;
-  showReconnect: boolean;
-  onReconnect: () => void;
   reconnectPending: boolean;
-  worker: { process?: { managed?: boolean } } | null | undefined;
+  regeneratePending: boolean;
+  running: boolean;
+  savePending: boolean;
+  showQr: boolean;
+  showReconnect: boolean;
+  statusBadge: string;
   statusLine: string | null;
-  formError: string | null;
-  loadError: unknown;
-  canSave: boolean;
-  actionLabel: string;
-  onSave: () => void;
+  worker: { process?: { managed?: boolean } } | null | undefined;
 }) {
   const paneItemClass = embedded ? undefined : "px-0 py-0";
+  const [allowlistOpen, setAllowlistOpen] = useState(false);
+  const [denylistOpen, setDenylistOpen] = useState(false);
 
   return (
     <div className={cn(!embedded && "space-y-4 py-4")}>
@@ -112,7 +129,7 @@ export function WhatsAppSettingsCardContent({
         label="Reply as"
       >
         <Select
-          disabled={savePending || profiles.length === 0}
+          disabled={profiles.length === 0}
           onValueChange={(value) => {
             if (value) {
               onProfileChange(String(value));
@@ -141,6 +158,78 @@ export function WhatsAppSettingsCardContent({
         </Select>
       </SettingsRow>
 
+      <SettingsRow
+        className={paneItemClass}
+        description="Controls who is permitted to chat with the assistant"
+        label="Access mode"
+      >
+        <div className="flex items-center gap-2">
+          <Select
+            onValueChange={(value) => {
+              if (value) {
+                onAccessModeChange(value as ChannelAccessMode);
+              }
+            }}
+            value={accessMode}
+          >
+            <SelectTrigger
+              className="w-[11rem] sm:w-[13rem]"
+              id="whatsapp-access-mode"
+            >
+              <SelectValue placeholder="Access mode" />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="open">Open</SelectItem>
+              <SelectItem value="allowlist">Allowed list only</SelectItem>
+              <SelectItem value="denylist">Blocked list filter</SelectItem>
+              <SelectItem value="pairing">Pairing code</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {accessMode === "allowlist" ? (
+            <Button
+              onClick={() => setAllowlistOpen(true)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              {allowedNumbers.length === 0
+                ? "Configure allowed list"
+                : `${allowedNumbers.length} allowed`}
+            </Button>
+          ) : null}
+
+          {accessMode === "denylist" ? (
+            <Button
+              onClick={() => setDenylistOpen(true)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              {blockedNumbers.length === 0
+                ? "Configure blocked list"
+                : `${blockedNumbers.length} blocked`}
+            </Button>
+          ) : null}
+        </div>
+      </SettingsRow>
+
+      <WhatsAppNumbersDialog
+        numbers={allowedNumbers}
+        onNumbersChange={onAllowedNumbersChange}
+        onOpenChange={setAllowlistOpen}
+        open={allowlistOpen}
+        title="Allowed Phone Numbers"
+      />
+
+      <WhatsAppNumbersDialog
+        numbers={blockedNumbers}
+        onNumbersChange={onBlockedNumbersChange}
+        onOpenChange={setDenylistOpen}
+        open={denylistOpen}
+        title="Blocked Phone Numbers"
+      />
+
       {configured ? (
         <WhatsAppSettingsLinkingSection
           awaitingQr={awaitingQr}
@@ -158,6 +247,7 @@ export function WhatsAppSettingsCardContent({
           regeneratePending={regeneratePending}
           rowClassName={paneItemClass}
           savePending={savePending}
+          showPairingSection={accessMode === "pairing"}
           showQr={showQr}
           showReconnect={showReconnect}
         />

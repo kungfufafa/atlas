@@ -15,6 +15,7 @@ export * from "./bridge-api";
 export * from "./channel-artifact-delivery";
 export * from "./channel-artifacts";
 export * from "./channel-org";
+export * from "./channel-rate-limiter";
 export * from "./channels";
 export * from "./compatible-provider-config";
 export * from "./composio";
@@ -32,6 +33,7 @@ export {
 // isHeartbeatAlive, isProcessAlive). Import those from @atlas/core/discord-config
 // or @atlas/core/discord-worker when the Discord-specific variant is required.
 export {
+  addDiscordAllowedUserId,
   buildDiscordInviteUrl,
   DEFAULT_DISCORD_PROFILE_ID,
   type DiscordConfigFile,

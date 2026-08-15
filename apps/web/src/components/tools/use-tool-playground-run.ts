@@ -14,10 +14,10 @@ export type ToolPlaygroundRunState =
 export interface ToolPlaygroundRunControls {
   actionError: string | null;
   assistPrompt: string;
-  handleAssist: () => Promise<void>;
   handleFixWithSuperAgent: () => void;
   handleReset: () => void;
   handleRun: () => Promise<void>;
+  handleSuggestParams: () => Promise<void>;
   jsonError: string | null;
   parametersJson: string;
   running: boolean;
@@ -76,7 +76,7 @@ export function useToolPlaygroundRun(
     setRunState({ status: "running" });
 
     try {
-      const response = await client.runToolPlayground(tool.id, parsed);
+      const response = await client.runTool(tool.id, { parameters: parsed });
 
       if (response.error) {
         setRunState({
@@ -107,7 +107,7 @@ export function useToolPlaygroundRun(
     setParametersJsonState(buildExampleParametersJson(tool.parameters));
   }
 
-  async function handleAssist() {
+  async function handleSuggestParams() {
     if (!assistPrompt.trim()) {
       return;
     }
@@ -116,10 +116,9 @@ export function useToolPlaygroundRun(
     setSuggesting(true);
 
     try {
-      const response = await client.suggestToolPlaygroundParams(
-        tool.id,
-        assistPrompt.trim()
-      );
+      const response = await client.suggestToolParams(tool.id, {
+        prompt: assistPrompt.trim(),
+      });
       setParametersJsonState(JSON.stringify(response.parameters, null, 2));
       setJsonError(null);
     } catch (error) {
@@ -151,10 +150,10 @@ export function useToolPlaygroundRun(
   return {
     actionError,
     assistPrompt,
-    handleAssist,
     handleFixWithSuperAgent,
     handleReset,
     handleRun,
+    handleSuggestParams,
     jsonError,
     parametersJson,
     running,
