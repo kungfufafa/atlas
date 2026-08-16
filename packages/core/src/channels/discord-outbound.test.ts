@@ -6,13 +6,13 @@ import { getDiscordConfigDir, getDiscordConfigPath } from "../discord-config";
 import { createDiscordOutboundAdapter } from "./discord-outbound";
 
 describe("createDiscordOutboundAdapter", () => {
-  const previousConfigDir = process.env.NAKAMA_CONFIG_DIR;
+  const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
 
   afterEach(async () => {
     if (previousConfigDir === undefined) {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
     } else {
-      process.env.NAKAMA_CONFIG_DIR = previousConfigDir;
+      process.env.ATLAS_CONFIG_DIR = previousConfigDir;
     }
   });
 
@@ -21,7 +21,7 @@ describe("createDiscordOutboundAdapter", () => {
     run: () => Promise<void>
   ): Promise<void> {
     const configDir = await mkdtemp(join(tmpdir(), "atlas-discord-outbound-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
     await mkdir(getDiscordConfigDir(), { recursive: true });
     await writeFile(getDiscordConfigPath(), ini, "utf8");
 

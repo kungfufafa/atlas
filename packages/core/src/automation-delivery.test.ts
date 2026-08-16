@@ -138,13 +138,13 @@ describe("shouldDeliverForRun", () => {
 });
 
 describe("validateAutomationDelivery", () => {
-  const previousConfigDir = process.env.NAKAMA_CONFIG_DIR;
+  const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
 
   afterEach(async () => {
     if (previousConfigDir === undefined) {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
     } else {
-      process.env.NAKAMA_CONFIG_DIR = previousConfigDir;
+      process.env.ATLAS_CONFIG_DIR = previousConfigDir;
     }
   });
 
@@ -155,7 +155,7 @@ describe("validateAutomationDelivery", () => {
   });
 
   test("rejects discord without a bot token", async () => {
-    process.env.NAKAMA_CONFIG_DIR = await mkdtemp(
+    process.env.ATLAS_CONFIG_DIR = await mkdtemp(
       join(tmpdir(), "atlas-discord-delivery-")
     );
 
@@ -165,12 +165,12 @@ describe("validateAutomationDelivery", () => {
       "Discord is not configured. Set up Integrations → Discord first."
     );
 
-    await rm(process.env.NAKAMA_CONFIG_DIR, { force: true, recursive: true });
+    await rm(process.env.ATLAS_CONFIG_DIR, { force: true, recursive: true });
   });
 
   test("rejects discord without pairing when channelId is omitted", async () => {
     const configDir = await mkdtemp(join(tmpdir(), "atlas-discord-delivery-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
     const { mkdir } = await import("node:fs/promises");
     await mkdir(getDiscordConfigDir(), { recursive: true });
     await writeFile(getDiscordConfigPath(), "bot_token=test-token\n", "utf8");
@@ -186,7 +186,7 @@ describe("validateAutomationDelivery", () => {
 
   test("accepts discord with token and pairing", async () => {
     const configDir = await mkdtemp(join(tmpdir(), "atlas-discord-delivery-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
     const { mkdir } = await import("node:fs/promises");
     await mkdir(getDiscordConfigDir(), { recursive: true });
     await writeFile(
@@ -204,7 +204,7 @@ describe("validateAutomationDelivery", () => {
 
   test("accepts discord with token and channelId without pairing", async () => {
     const configDir = await mkdtemp(join(tmpdir(), "atlas-discord-delivery-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
     const { mkdir } = await import("node:fs/promises");
     await mkdir(getDiscordConfigDir(), { recursive: true });
     await writeFile(getDiscordConfigPath(), "bot_token=test-token\n", "utf8");

@@ -329,19 +329,19 @@ describe("list_previous_automation_runs tool", () => {
 });
 
 describe("create_automation tool", () => {
-  const previousConfigDir = process.env.NAKAMA_CONFIG_DIR;
+  const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
 
   afterEach(async () => {
     if (previousConfigDir === undefined) {
-      delete process.env.NAKAMA_CONFIG_DIR;
+      delete process.env.ATLAS_CONFIG_DIR;
     } else {
-      process.env.NAKAMA_CONFIG_DIR = previousConfigDir;
+      process.env.ATLAS_CONFIG_DIR = previousConfigDir;
     }
   });
 
   test("persists discord delivery and optional channelId", async () => {
     const configDir = await mkdtemp(join(tmpdir(), "atlas-discord-tool-"));
-    process.env.NAKAMA_CONFIG_DIR = configDir;
+    process.env.ATLAS_CONFIG_DIR = configDir;
     await mkdir(getDiscordConfigDir(), { recursive: true });
     await writeFile(
       getDiscordConfigPath(),
