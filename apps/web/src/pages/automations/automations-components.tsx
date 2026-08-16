@@ -777,6 +777,20 @@ function RunStatusIcon({ status }: { status: AutomationRunStatus }) {
   );
 }
 
+const DELIVERY_CHANNEL_LABELS: Record<string, string> = {
+  discord: "Discord",
+  email: "Email",
+  none: "None (run history only)",
+  telegram: "Telegram",
+  whatsapp: "WhatsApp",
+};
+
+const NOTIFY_ON_LABELS: Record<string, string> = {
+  both: "Success and failure",
+  failure: "Failed runs",
+  success: "Successful runs",
+};
+
 function DeliverySettingsFields({
   delivery,
   busy,
@@ -817,7 +831,9 @@ function DeliverySettingsFields({
             value={channel}
           >
             <SelectTrigger className="w-full">
-              <SelectValue />
+              <SelectValue>
+                {DELIVERY_CHANNEL_LABELS[channel] ?? channel}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">None (run history only)</SelectItem>
@@ -842,7 +858,10 @@ function DeliverySettingsFields({
               value={delivery.notifyOn ?? "success"}
             >
               <SelectTrigger className="w-full">
-                <SelectValue />
+                <SelectValue>
+                  {NOTIFY_ON_LABELS[delivery.notifyOn ?? "success"] ??
+                    delivery.notifyOn}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="success">Successful runs</SelectItem>

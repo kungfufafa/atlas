@@ -123,6 +123,12 @@ export function WhatsAppSettingsCard({
     setCopied(false);
   }, [pairingCode]);
 
+  // The enable/stop hints go stale the moment the worker state flips; the
+  // live subtitle already covers those cases, so drop the hint then.
+  useEffect(() => {
+    setHint(null);
+  }, [running]);
+
   useEffect(
     () => () => {
       if (copyTimeoutRef.current) {
@@ -132,7 +138,7 @@ export function WhatsAppSettingsCard({
     []
   );
 
-  const showQr = configured && running && Boolean(qrCode);
+  const showQr = configured && running && !paired && Boolean(qrCode);
   const awaitingQr =
     configured &&
     !paired &&
@@ -162,37 +168,41 @@ export function WhatsAppSettingsCard({
     (loadError ? formatError(loadError) : null);
 
   const headerSubtitle = configured
-    ? paired && running && !showQr
+    ? paired && running
       ? "WhatsApp is connected and ready to receive messages"
       : paired && !running
         ? "WhatsApp is linked. Start the bridge to receive messages"
-        : showQr
-          ? "Scan the QR code in WhatsApp to link this device"
-          : linkingAfterScan
-            ? "Connecting WhatsApp…"
-            : bridgeStarting
-              ? "Preparing QR code…"
-              : awaitingQr
+        : running
+          ? showQr
+            ? "Scan the QR code in WhatsApp to link this device"
+            : linkingAfterScan
+              ? "Connecting WhatsApp…"
+              : bridgeStarting
                 ? "Preparing QR code…"
-                : "Scan the QR code in WhatsApp to connect"
+                : awaitingQr
+                  ? "Preparing QR code…"
+                  : "Scan the QR code in WhatsApp to connect"
+          : "Bridge stopped — start it to get a QR code"
     : "Choose a reply profile, then enable WhatsApp";
 
   const statusBadge = configured
-    ? paired && running && !showQr
+    ? paired && running
       ? "Connected"
       : paired && !running
         ? "Bridge stopped"
-        : linkingAfterScan
-          ? "Connecting"
-          : bridgeStarting
-            ? "Starting…"
-            : showQr
-              ? "Awaiting scan"
-              : awaitingQr
-                ? "Starting…"
-                : pairingCode
-                  ? "Awaiting link"
-                  : "Not connected"
+        : running
+          ? linkingAfterScan
+            ? "Connecting"
+            : bridgeStarting
+              ? "Starting…"
+              : showQr
+                ? "Awaiting scan"
+                : awaitingQr
+                  ? "Starting…"
+                  : pairingCode
+                    ? "Awaiting link"
+                    : "Not connected"
+          : "Stopped"
     : "Not set up";
 
   async function copyPairingCode() {
@@ -240,7 +250,7 @@ export function WhatsAppSettingsCard({
         } else if (configured) {
           setHint("Saved.");
         } else {
-          setHint("Enabled. Start the bridge and scan the QR code.");
+          setHint("Enabled. Scan the QR code when it appears.");
         }
         onSaveSuccess?.();
       },

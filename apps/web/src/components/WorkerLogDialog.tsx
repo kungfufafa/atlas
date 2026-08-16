@@ -46,6 +46,7 @@ export function WorkerLogDialog({
     setActiveTab(tab);
     setCopied(false);
     setConfirmClear(false);
+    void refetch();
   }
 
   async function copyLogs() {

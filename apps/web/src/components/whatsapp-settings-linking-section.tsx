@@ -27,6 +27,7 @@ export function WhatsAppSettingsLinkingSection({
   showPairingSection = true,
   reconnectPending,
   onReconnect,
+  running,
   rowClassName,
   compact = false,
 }: {
@@ -46,6 +47,7 @@ export function WhatsAppSettingsLinkingSection({
   showPairingSection?: boolean;
   reconnectPending: boolean;
   onReconnect: () => void;
+  running: boolean;
   rowClassName?: string;
   compact?: boolean;
 }) {
@@ -60,7 +62,7 @@ export function WhatsAppSettingsLinkingSection({
                 ? "Send this code in the WhatsApp chat you want to authorize."
                 : paired
                   ? "Generate a one-time code to authorize a WhatsApp chat."
-                  : "Connect WhatsApp before authorizing chats."
+                  : "Scan the QR code to link WhatsApp before authorizing chats."
             }
             label="Chat access code"
           >
@@ -133,7 +135,7 @@ export function WhatsAppSettingsLinkingSection({
                     Generating…
                   </>
                 ) : (
-                  "Connect WhatsApp first"
+                  "Link a device first"
                 )}
               </Button>
             )}
@@ -212,7 +214,9 @@ export function WhatsAppSettingsLinkingSection({
           description={
             paired
               ? "Unlinks the current session so you can scan a new QR code"
-              : "Clears a stuck session so you can link again with a QR code"
+              : running
+                ? "Clears a stuck session so you can link again with a QR code"
+                : "Starts the bridge and shows a fresh QR code to link"
           }
           label="Reconnect"
         >
