@@ -36,7 +36,7 @@ const INTEGRATION_SECTIONS = [
     label: "WhatsApp",
   },
   {
-    description: "Bot and pairing",
+    description: "Bot and chat access",
     icon: HashtagIcon,
     id: "discord",
     label: "Discord",
