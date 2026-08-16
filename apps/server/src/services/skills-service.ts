@@ -13,6 +13,7 @@ import type {
   ToolDefinition,
 } from "@atlas/core";
 import {
+  AtlasApiError,
   assertNotBundledSkillName,
   assertValidSkillName,
   BUNDLED_SKILL_NAMES,
@@ -33,7 +34,6 @@ import {
   isPathWithinProfileSkillsDir,
   loadSkillTools,
   matchSkillsForMessage,
-  AtlasApiError,
   parseRawProfileSkillContent,
   parseSkillMarkdown,
   patchSkillFile,
