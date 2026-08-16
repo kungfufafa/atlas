@@ -736,6 +736,17 @@ export function buildStreamHandlers(
       });
     },
     onQuestionnaireUpdated: options.onQuestionnaireUpdated,
+    onRelatedQuestions: (questions) => {
+      setMessages((current) => {
+        const next = [...current];
+        const last = next[next.length - 1];
+        if (last && last.role === "assistant") {
+          next[next.length - 1] = { ...last, relatedQuestions: questions };
+          return next;
+        }
+        return current;
+      });
+    },
     onSourcesUpdated: (event) => {
       setMessages((current) => {
         const next = [...current];

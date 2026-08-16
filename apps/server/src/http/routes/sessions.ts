@@ -147,6 +147,7 @@ export function registerSessionRoutes(
       policy: z
         .enum(["auto", "fast", "standard", "research", "agent"])
         .optional(),
+      relatedQuestions: z.boolean().optional(),
       stream: z.boolean().optional(),
     })
     .openapi("SendMessageRequest");
@@ -509,6 +510,7 @@ export function registerSessionRoutes(
       images: body.images,
       message: body.message ?? "",
       policy: body.policy,
+      relatedQuestions: body.relatedQuestions === true,
       ...(clientOrigin ? { clientOrigin } : {}),
     };
     const wantsStream =

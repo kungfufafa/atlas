@@ -43,6 +43,7 @@ export interface StreamHandlers {
   onMemorySaved?: (summary: string) => void;
   onPolicyResolved?: (policy: import("@atlas/core").ExecutionPolicy) => void;
   onQuestionnaireUpdated?: (questionnaire: AgentQuestionnaire | null) => void;
+  onRelatedQuestions?: (questions: string[]) => void;
   onSourcesUpdated?: (event: {
     sources: import("@atlas/core").SourceItem[];
     citedCount: number;

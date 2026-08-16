@@ -286,6 +286,7 @@ export interface ChatListItem {
   memorySaved?: string;
   policy?: import("@atlas/core").ExecutionPolicy;
   questionnaireAnswers?: AgentQuestionAnswer[];
+  relatedQuestions?: string[];
   role: "user" | "assistant" | "tool";
   sources?: import("@atlas/core").SourceItem[];
   streaming?: boolean;
@@ -433,6 +434,9 @@ export function chatMessagesToListItems(
         historyIndex: index,
         id: `history-${index}`,
         role: "assistant",
+        ...(message.relatedQuestions?.length
+          ? { relatedQuestions: message.relatedQuestions }
+          : {}),
         ...(thinking ? { thinking } : {}),
       });
       continue;

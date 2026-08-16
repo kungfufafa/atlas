@@ -79,6 +79,7 @@ export interface StreamHandlers {
   onCitationCreated?: (citation: Citation, source?: SourceItem) => void;
   onMemorySaved?: (summary: string) => void;
   onPolicyResolved?: (policy: ExecutionPolicy) => void;
+  onRelatedQuestions?: (questions: string[]) => void;
   onSourcesUpdated?: (event: {
     sources: SourceItem[];
     citedCount: number;
@@ -497,6 +498,27 @@ async function sendMessage(
       options.signal
     );
 
+    if (
+      input.relatedQuestions &&
+      mode === "stream" &&
+      !options.signal?.aborted
+    ) {
+      const questions = await generateRelatedQuestions(
+        dependencies.provider,
+        userMessage,
+        reply
+      );
+      if (questions) {
+        const lastAssistant = [...history]
+          .reverse()
+          .find((message) => message.role === "assistant");
+        if (lastAssistant && lastAssistant.role === "assistant") {
+          lastAssistant.relatedQuestions = questions;
+        }
+        options.handlers?.onRelatedQuestions?.(questions);
+      }
+    }
+
     const durationMs = Date.now() - executionStartMs;
     metrics.executionDurationMs.observe(durationMs, {
       policy: resolvedPolicy.policy,
@@ -876,6 +898,84 @@ function formatCurrentDate(): string {
   });
 }
 
+const RELATED_QUESTIONS_TIMEOUT_MS = 12_000;
+const RELATED_QUESTIONS_MIN_REPLY_CHARS = 200;
+const RELATED_QUESTIONS_MAX = 3;
+const RELATED_QUESTIONS_MAX_QUESTION_CHARS = 120;
+
+const RELATED_QUESTIONS_SYSTEM_PROMPT = [
+  "You suggest follow-up questions for a chat assistant reply.",
+  'Return ONLY a JSON object: {"questions": ["...", "..."]}.',
+  "Rules: at most 3 questions; each concrete and specific to the reply; write them in the same language as the user's message; never ask something the reply already answered; no numbering, no explanations.",
+].join(" ");
+
+/**
+ * Follow-up suggestions shown under the finished reply. Runs after the last
+ * chunk but before the turn resolves, so the stream still delivers them ahead
+ * of `done`. Any failure or timeout quietly skips the feature: it must never
+ * break or visibly delay a turn.
+ */
+export async function generateRelatedQuestions(
+  provider: ProviderClient | undefined,
+  userMessage: string,
+  reply: string
+): Promise<string[] | null> {
+  if (!provider || reply.trim().length < RELATED_QUESTIONS_MIN_REPLY_CHARS) {
+    return null;
+  }
+
+  try {
+    const completion = await Promise.race([
+      provider.generateText({
+        format: "json",
+        prompt: [
+          `User message: ${userMessage.slice(0, 2000)}`,
+          "",
+          `Assistant reply: ${reply.slice(0, 6000)}`,
+          "",
+          "Generate follow-up question suggestions for this reply.",
+        ].join("\n"),
+        system: RELATED_QUESTIONS_SYSTEM_PROMPT,
+      }),
+      new Promise<null>((resolve) =>
+        setTimeout(() => resolve(null), RELATED_QUESTIONS_TIMEOUT_MS)
+      ),
+    ]);
+    if (!completion) {
+      return null;
+    }
+    return parseRelatedQuestions(completion.content);
+  } catch {
+    return null;
+  }
+}
+
+export function parseRelatedQuestions(raw: string): string[] | null {
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start < 0 || end <= start) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(raw.slice(start, end + 1)) as {
+      questions?: unknown;
+    };
+    if (!Array.isArray(parsed.questions)) {
+      return null;
+    }
+    const questions = parsed.questions
+      .filter((q): q is string => typeof q === "string")
+      .map((q) => q.trim())
+      .filter(
+        (q) => q.length > 0 && q.length <= RELATED_QUESTIONS_MAX_QUESTION_CHARS
+      )
+      .slice(0, RELATED_QUESTIONS_MAX);
+    return questions.length > 0 ? questions : null;
+  } catch {
+    return null;
+  }
+}
+
 async function generateReply(
   provider: ProviderClient,
   systemPrompt: string,
@@ -890,10 +990,15 @@ async function generateReply(
   signal?: AbortSignal
 ) {
   const dateLine = `Today is ${formatCurrentDate()}.`;
+  const replaySafeHistory = history.map((message) =>
+    message.role === "assistant" && message.relatedQuestions
+      ? { ...message, relatedQuestions: undefined }
+      : message
+  );
   const messages =
     rehydrateMessagesForProvider === undefined
-      ? history
-      : await rehydrateMessagesForProvider(history);
+      ? replaySafeHistory
+      : await rehydrateMessagesForProvider(replaySafeHistory);
   const input = {
     messages,
     providerOptions,

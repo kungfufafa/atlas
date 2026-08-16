@@ -87,15 +87,312 @@ export function partitionTools(tools: ToolDefinition[]): PartitionedTools {
   };
 }
 
+type RawSearchResult = {
+  publishedAt?: string;
+  snippet?: string;
+  title: string;
+  url: string;
+};
+
+export type WebSearchProviderId = "tavily" | "brave" | "searxng" | "duckduckgo";
+
+const SEARCH_CACHE_TTL_MS = 10 * 60 * 1000;
+const SEARCH_CACHE_MAX_ENTRIES = 200;
+
+const searchCache = new Map<
+  string,
+  { expiresAt: number; value: WebSearchOutput }
+>();
+
+export function clearWebSearchCache(): void {
+  searchCache.clear();
+}
+
+function readCachedSearch(cacheKey: string): WebSearchOutput | null {
+  const entry = searchCache.get(cacheKey);
+  if (!entry) {
+    return null;
+  }
+  if (entry.expiresAt <= Date.now()) {
+    searchCache.delete(cacheKey);
+    return null;
+  }
+  return entry.value;
+}
+
+function writeCachedSearch(cacheKey: string, value: WebSearchOutput): void {
+  if (searchCache.size >= SEARCH_CACHE_MAX_ENTRIES) {
+    const now = Date.now();
+    for (const [key, entry] of searchCache) {
+      if (entry.expiresAt <= now) {
+        searchCache.delete(key);
+      }
+    }
+    if (searchCache.size >= SEARCH_CACHE_MAX_ENTRIES) {
+      const oldestKey = searchCache.keys().next().value;
+      if (oldestKey !== undefined) {
+        searchCache.delete(oldestKey);
+      }
+    }
+  }
+  searchCache.set(cacheKey, {
+    expiresAt: Date.now() + SEARCH_CACHE_TTL_MS,
+    value,
+  });
+}
+
 /**
- * Perform raw search via DuckDuckGo HTML / Lite endpoint with fallbacks.
+ * Picks the strongest configured provider. API-key services (Tavily, Brave)
+ * beat self-hosted SearXNG, which beats the unauthenticated DuckDuckGo HTML
+ * scrape used as an always-available fallback.
+ */
+export function resolveWebSearchProvider(
+  env: Record<string, string | undefined> = process.env
+): WebSearchProviderId {
+  if (env.TAVILY_API_KEY) {
+    return "tavily";
+  }
+  if (env.BRAVE_API_KEY) {
+    return "brave";
+  }
+  if (env.SEARXNG_URL) {
+    return "searxng";
+  }
+  return "duckduckgo";
+}
+
+type RecencyBucket = "day" | "week" | "month" | "year";
+
+function recencyBucket(days: number): RecencyBucket {
+  if (days <= 1) {
+    return "day";
+  }
+  if (days <= 7) {
+    return "week";
+  }
+  if (days <= 30) {
+    return "month";
+  }
+  return "year";
+}
+
+function isWithinRecency(
+  publishedAt: string | undefined,
+  recencyDays: number,
+  now = Date.now()
+): boolean {
+  if (!publishedAt) {
+    return true;
+  }
+  const timestamp = Date.parse(publishedAt);
+  if (Number.isNaN(timestamp)) {
+    return true;
+  }
+  return now - timestamp <= recencyDays * 24 * 60 * 60 * 1000;
+}
+
+async function fetchTavilyResults(
+  query: string,
+  options: {
+    country?: string;
+    env: Record<string, string | undefined>;
+    limit: number;
+    recencyDays?: number;
+    signal?: AbortSignal;
+  }
+): Promise<RawSearchResult[]> {
+  const response = await fetch(
+    "https://api.tavily.com/search",
+    withDisabledFetchIdle({
+      body: JSON.stringify({
+        max_results: Math.min(options.limit + 5, 20),
+        query,
+      }),
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": options.env.TAVILY_API_KEY ?? "",
+      },
+      method: "POST",
+      signal: options.signal,
+    })
+  );
+
+  if (!response.ok) {
+    throw new Error(`Tavily returned HTTP ${response.status}`);
+  }
+
+  const data = (await response.json()) as {
+    results?: Array<{
+      content?: string;
+      published_date?: string;
+      title?: string;
+      url?: string;
+    }>;
+  };
+
+  return (data.results ?? []).flatMap((item) =>
+    item.title && item.url
+      ? [
+          {
+            publishedAt: item.published_date,
+            snippet: item.content,
+            title: item.title,
+            url: item.url,
+          },
+        ]
+      : []
+  );
+}
+
+async function fetchBraveResults(
+  query: string,
+  options: {
+    country?: string;
+    env: Record<string, string | undefined>;
+    language?: string;
+    limit: number;
+    recencyDays?: number;
+    signal?: AbortSignal;
+  }
+): Promise<RawSearchResult[]> {
+  const params = new URLSearchParams({ q: query });
+  // Fetch extra so post-filter domain/recency rules can still fill the limit.
+  params.set("count", String(Math.min(options.limit + 5, 20)));
+  if (options.country) {
+    params.set("country", options.country);
+  }
+  if (options.language) {
+    params.set("search_lang", options.language);
+  }
+  if (options.recencyDays) {
+    const bucket = recencyBucket(options.recencyDays);
+    const freshness = { day: "pd", month: "pm", week: "pw", year: "py" }[
+      bucket
+    ];
+    params.set("freshness", freshness);
+  }
+
+  const response = await fetch(
+    `https://api.search.brave.com/res/v1/web/search?${params.toString()}`,
+    withDisabledFetchIdle({
+      headers: {
+        accept: "application/json",
+        "x-subscription-token": options.env.BRAVE_API_KEY ?? "",
+      },
+      signal: options.signal,
+    })
+  );
+
+  if (!response.ok) {
+    throw new Error(`Brave returned HTTP ${response.status}`);
+  }
+
+  const data = (await response.json()) as {
+    web?: {
+      results?: Array<{
+        description?: string;
+        page_age?: string;
+        title?: string;
+        url?: string;
+      }>;
+    };
+  };
+
+  return (data.web?.results ?? []).flatMap((item) =>
+    item.title && item.url
+      ? [
+          {
+            publishedAt: item.page_age,
+            snippet: item.description
+              ? item.description.replace(/<[^>]+>/g, "")
+              : undefined,
+            title: item.title.replace(/<[^>]+>/g, ""),
+            url: item.url,
+          },
+        ]
+      : []
+  );
+}
+
+async function fetchSearXngResults(
+  query: string,
+  options: {
+    country?: string;
+    env: Record<string, string | undefined>;
+    language?: string;
+    recencyDays?: number;
+    signal?: AbortSignal;
+  }
+): Promise<RawSearchResult[]> {
+  const params = new URLSearchParams({
+    format: "json",
+    q: query,
+  });
+  const languageParts = [options.language, options.country].filter(
+    (part): part is string => Boolean(part)
+  );
+  if (languageParts.length > 0) {
+    params.set("language", languageParts.join("-"));
+  }
+  if (options.recencyDays) {
+    params.set("time_range", recencyBucket(options.recencyDays));
+  }
+
+  const baseUrl = (options.env.SEARXNG_URL ?? "").replace(/\/+$/, "");
+  const response = await fetch(
+    `${baseUrl}/search?${params.toString()}`,
+    withDisabledFetchIdle({ signal: options.signal })
+  );
+
+  if (!response.ok) {
+    throw new Error(`SearXNG returned HTTP ${response.status}`);
+  }
+
+  const data = (await response.json()) as {
+    results?: Array<{
+      content?: string;
+      publishedDate?: string;
+      title?: string;
+      url?: string;
+    }>;
+  };
+
+  return (data.results ?? []).flatMap((item) =>
+    item.title && item.url
+      ? [
+          {
+            publishedAt: item.publishedDate,
+            snippet: item.content,
+            title: item.title,
+            url: item.url,
+          },
+        ]
+      : []
+  );
+}
+
+/**
+ * Perform raw search via DuckDuckGo HTML endpoint with fallbacks.
  */
 async function fetchDuckDuckGoResults(
   query: string,
-  signal?: AbortSignal
-): Promise<Array<{ title: string; url: string; snippet: string }>> {
-  const encodedQuery = encodeURIComponent(query);
-  const searchUrl = `https://html.duckduckgo.com/html/?q=${encodedQuery}`;
+  options: {
+    country?: string;
+    language?: string;
+    recencyDays?: number;
+    signal?: AbortSignal;
+  } = {}
+): Promise<RawSearchResult[]> {
+  const params = new URLSearchParams({ q: query });
+  if (options.country || options.language) {
+    params.set("kl", `${options.country || "us"}-${options.language || "en"}`);
+  }
+  if (options.recencyDays) {
+    const bucket = recencyBucket(options.recencyDays);
+    params.set("df", { day: "d", month: "m", week: "w", year: "y" }[bucket]);
+  }
+
+  const searchUrl = `https://html.duckduckgo.com/html/?${params.toString()}`;
 
   const response = await fetch(
     searchUrl,
@@ -106,7 +403,7 @@ async function fetchDuckDuckGoResults(
         "user-agent":
           "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       },
-      signal,
+      signal: options.signal,
     })
   );
 
@@ -115,7 +412,7 @@ async function fetchDuckDuckGoResults(
   }
 
   const html = await response.text();
-  const rawResults: Array<{ title: string; url: string; snippet: string }> = [];
+  const rawResults: RawSearchResult[] = [];
 
   // Parse results from DuckDuckGo HTML output
   // Result links have class "result__a" and snippets have class "result__snippet"
@@ -167,6 +464,7 @@ export function normalizeAndDedupeSearchResults(
     domains?: string[];
     excludeDomains?: string[];
     limit?: number;
+    recencyDays?: number;
   } = {}
 ): WebSearchResult[] {
   const limit = options.limit ?? 5;
@@ -180,6 +478,13 @@ export function normalizeAndDedupeSearchResults(
 
   for (const item of rawResults) {
     if (!(item.url && item.title)) {
+      continue;
+    }
+
+    if (
+      options.recencyDays &&
+      !isWithinRecency(item.publishedAt, options.recencyDays)
+    ) {
       continue;
     }
 
@@ -256,6 +561,52 @@ export function normalizeAndDedupeSearchResults(
   return processed;
 }
 
+async function fetchProviderResults(
+  parsed: WebSearchInput,
+  signal?: AbortSignal
+): Promise<RawSearchResult[]> {
+  const provider = resolveWebSearchProvider();
+  const limit = parsed.limit ?? 5;
+
+  if (provider === "tavily") {
+    return fetchTavilyResults(parsed.query, {
+      country: parsed.country,
+      env: process.env,
+      limit,
+      recencyDays: parsed.recencyDays,
+      signal,
+    });
+  }
+
+  if (provider === "brave") {
+    return fetchBraveResults(parsed.query, {
+      country: parsed.country,
+      env: process.env,
+      language: parsed.language,
+      limit,
+      recencyDays: parsed.recencyDays,
+      signal,
+    });
+  }
+
+  if (provider === "searxng") {
+    return fetchSearXngResults(parsed.query, {
+      country: parsed.country,
+      env: process.env,
+      language: parsed.language,
+      recencyDays: parsed.recencyDays,
+      signal,
+    });
+  }
+
+  return fetchDuckDuckGoResults(parsed.query, {
+    country: parsed.country,
+    language: parsed.language,
+    recencyDays: parsed.recencyDays,
+    signal,
+  });
+}
+
 export const webSearchTool: ToolDefinition<WebSearchInput, WebSearchOutput> = {
   description:
     "Search the web for current, factual information using search queries. Returns canonicalized, deduplicated results with source authority rankings and extracted snippets.",
@@ -266,22 +617,45 @@ export const webSearchTool: ToolDefinition<WebSearchInput, WebSearchOutput> = {
     const parsed = webSearchInputSchema.parse(input);
     const limit = parsed.limit ?? 5;
 
+    const cacheKey = JSON.stringify([resolveWebSearchProvider(), parsed]);
+
+    const cached = readCachedSearch(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     try {
-      const rawResults = await fetchDuckDuckGoResults(
-        parsed.query,
-        context?.signal
-      );
+      let rawResults: RawSearchResult[];
+      try {
+        rawResults = await fetchProviderResults(parsed, context?.signal);
+      } catch (providerError) {
+        // Configured providers can fail (quota, network, upstream 5xx);
+        // DuckDuckGo stays available without credentials.
+        if (resolveWebSearchProvider() === "duckduckgo") {
+          throw providerError;
+        }
+        rawResults = await fetchDuckDuckGoResults(parsed.query, {
+          country: parsed.country,
+          language: parsed.language,
+          recencyDays: parsed.recencyDays,
+          signal: context?.signal,
+        });
+      }
+
       const results = normalizeAndDedupeSearchResults(rawResults, {
         domains: parsed.domains,
         excludeDomains: parsed.excludeDomains,
         limit,
+        recencyDays: parsed.recencyDays,
       });
 
-      return {
+      const output: WebSearchOutput = {
         query: parsed.query,
         results,
         totalResults: results.length,
       };
+      writeCachedSearch(cacheKey, output);
+      return output;
     } catch (err) {
       if ((err as Error).name === "AbortError") {
         throw new Error("web_search was cancelled.");

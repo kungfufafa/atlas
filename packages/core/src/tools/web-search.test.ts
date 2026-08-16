@@ -1,9 +1,11 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 import type { ToolDefinition } from "../contract";
 import { canonicalizeUrl, classifySourceType } from "./url-utils";
 import {
+  clearWebSearchCache,
   normalizeAndDedupeSearchResults,
   partitionTools,
+  resolveWebSearchProvider,
   webSearchInputSchema,
   webSearchTool,
 } from "./web-search";
@@ -155,5 +157,116 @@ describe("partitionTools", () => {
       hasWebSearch: true,
       localTools: [],
     });
+  });
+});
+
+describe("resolveWebSearchProvider", () => {
+  test("prefers API-key providers over self-hosted over fallback", () => {
+    expect(resolveWebSearchProvider({})).toBe("duckduckgo");
+    expect(
+      resolveWebSearchProvider({ SEARXNG_URL: "http://localhost:8888" })
+    ).toBe("searxng");
+    expect(
+      resolveWebSearchProvider({
+        BRAVE_API_KEY: "x",
+        SEARXNG_URL: "http://localhost:8888",
+      })
+    ).toBe("brave");
+    expect(
+      resolveWebSearchProvider({ BRAVE_API_KEY: "x", TAVILY_API_KEY: "y" })
+    ).toBe("tavily");
+  });
+});
+
+describe("recency filtering", () => {
+  test("drops results older than recencyDays but keeps undated ones", () => {
+    const oldDate = new Date(
+      Date.now() - 40 * 24 * 60 * 60 * 1000
+    ).toISOString();
+    const freshDate = new Date(
+      Date.now() - 2 * 24 * 60 * 60 * 1000
+    ).toISOString();
+    const raw = [
+      { publishedAt: oldDate, title: "Old Article", url: "https://old.com/a" },
+      {
+        publishedAt: freshDate,
+        title: "Fresh Article",
+        url: "https://fresh.com/a",
+      },
+      { title: "Undated Article", url: "https://undated.com/a" },
+    ];
+
+    const results = normalizeAndDedupeSearchResults(raw, {
+      limit: 5,
+      recencyDays: 7,
+    });
+
+    expect(results.map((r) => r.domain)).toEqual(["fresh.com", "undated.com"]);
+  });
+});
+
+describe("web_search caching", () => {
+  const originalFetch = globalThis.fetch;
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    clearWebSearchCache();
+  });
+
+  test("serves repeated queries from cache without a second network call", async () => {
+    clearWebSearchCache();
+    const fetchMock = mock(
+      async () =>
+        new Response(
+          '<a class="result__a" href="https://bun.sh/docs">Bun Docs</a>' +
+            '<div class="result__snippet">Bun is a runtime</div>',
+          { headers: { "content-type": "text/html" } }
+        )
+    );
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const first = await webSearchTool.run(
+      { limit: 5, query: "bun javascript runtime" },
+      undefined
+    );
+    const second = await webSearchTool.run(
+      { limit: 5, query: "bun javascript runtime" },
+      undefined
+    );
+
+    expect(first.results[0]?.url).toBe("https://bun.sh/docs");
+    expect(second.results[0]?.url).toBe("https://bun.sh/docs");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  test("falls back to DuckDuckGo when the configured provider errors", async () => {
+    clearWebSearchCache();
+    process.env.TAVILY_API_KEY = "test-key";
+    try {
+      let call = 0;
+      const fetchMock = mock(async (input: unknown) => {
+        call += 1;
+        if (call === 1) {
+          return new Response("quota exceeded", { status: 429 });
+        }
+        const ddgHtml =
+          '<a class="result__a" href="https://bun.sh/docs">Bun Docs</a>' +
+          '<div class="result__snippet">Bun is a runtime</div>';
+        return new Response(ddgHtml, {
+          headers: { "content-type": "text/html" },
+        });
+      });
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+      const output = await webSearchTool.run(
+        { limit: 5, query: "bun javascript runtime" },
+        undefined
+      );
+
+      expect(output.results[0]?.url).toBe("https://bun.sh/docs");
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    } finally {
+      delete process.env.TAVILY_API_KEY;
+    }
   });
 });

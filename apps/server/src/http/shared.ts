@@ -452,6 +452,8 @@ function buildAgentStreamHandlers(send: (event: StreamEvent) => void) {
     onMemorySaved: (summary: string) => send({ summary, type: "memory_saved" }),
     onPolicyResolved: (policy: import("@atlas/core").ExecutionPolicy) =>
       send({ policy, type: "policy_resolved" }),
+    onRelatedQuestions: (questions: string[]) =>
+      send({ questions, type: "related_questions" }),
     onSourcesUpdated: (event: {
       sources: import("@atlas/core").SourceItem[];
       citedCount: number;

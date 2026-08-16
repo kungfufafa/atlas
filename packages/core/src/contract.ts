@@ -933,6 +933,8 @@ export interface SendMessageInput {
   images?: ImageAttachment[];
   message: string;
   policy?: ExecutionPolicy;
+  /** Ask the model for follow-up question suggestions after the reply. */
+  relatedQuestions?: boolean;
 }
 
 export interface SendMessageRequest {
@@ -941,6 +943,7 @@ export interface SendMessageRequest {
   images?: ImageAttachment[];
   message: string;
   policy?: ExecutionPolicy;
+  relatedQuestions?: boolean;
   stream?: boolean;
 }
 
@@ -997,6 +1000,7 @@ export type StreamEvent =
       parentToolCallId: string;
       label: string;
     }
+  | { type: "related_questions"; questions: string[] }
   | { type: "done"; reply: string; contextUsage?: ChatContextUsage }
   | { type: "error"; error: string };
 
@@ -2052,6 +2056,11 @@ export type ChatMessage =
   | {
       role: "assistant";
       content: string;
+      /**
+       * Follow-up question suggestions shown under the reply. UI-only: providers
+       * must not send it back, and it is stripped before provider replay.
+       */
+      relatedQuestions?: string[];
       /** Model reasoning trace for display; not sent as plain assistant text to providers. */
       thinking?: string;
       summary?: boolean;

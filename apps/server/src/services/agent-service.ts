@@ -194,6 +194,7 @@ import { isAllowedImageGenerationSelection } from "../providers/models";
 import { wrapProviderForNonVision } from "../providers/non-vision-wrap";
 import { wrapProviderWithUsageTracking } from "../providers/usage-tracking";
 import { createAskUserQuestionTools } from "../tools/ask-user-question-tool";
+import { createDeepResearchServerTool } from "../tools/deep-research-server";
 import { createOrgMemoryTools } from "../tools/org-memory-tools";
 import { createSendDiscordArtifactTools } from "../tools/send-discord-artifact-tool";
 import { createSkillManageTools } from "../tools/skill-manage-tool";
@@ -3677,9 +3678,18 @@ export class AgentService {
     userConfig: UserConfig | null = this.userConfig
   ): Promise<ToolDefinition[]> {
     const storedTools = await this.db.listToolsForProfile(profile.id);
-    const tools = await resolveProfileStoredTools(storedTools, this.db, [], {
-      userConfig,
+    const deepResearchOverride = createDeepResearchServerTool({
+      resolveProvider: () =>
+        this.resolveProviderClientForProfile(profile, userConfig),
     });
+    const tools = await resolveProfileStoredTools(
+      storedTools,
+      this.db,
+      [deepResearchOverride],
+      {
+        userConfig,
+      }
+    );
     const includeAutomationTools = options.includeAutomationTools ?? true;
     const includeTodoTools = options.includeTodoTools ?? true;
     const includeQuestionTools = options.includeQuestionTools ?? true;
@@ -4199,6 +4209,23 @@ export class AgentService {
     }
 
     return this.skillsService;
+  }
+
+  private resolveProviderClientForProfile(
+    profile: StoredProfileRecord,
+    userConfig: UserConfig | null = this.userConfig
+  ): ProviderClient | null {
+    const resolved = resolveProfileProviderSelection({
+      defaultProviderId: userConfig?.defaultProviderId,
+      profileModel: profile.model,
+      providers: userConfig?.providers ?? [],
+    });
+
+    if (!resolved) {
+      return null;
+    }
+
+    return createProviderForInstance(resolved.instance, resolved.model);
   }
 
   private createHarnessForProfile(

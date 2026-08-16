@@ -2,6 +2,8 @@ import { z } from "zod";
 import type { ToolContext, ToolDefinition } from "../contract";
 import { ResearchEngine } from "../research-engine";
 import { jsonSchemaFromZod } from "./schema";
+import { webFetchTool } from "./web-fetch";
+import { webSearchTool } from "./web-search";
 
 export const deepResearchInputSchema = z.object({
   depth: z
@@ -32,14 +34,29 @@ export const deepResearchTool: ToolDefinition = {
   name: "deep_research",
   parallelSafe: false,
   parameters: jsonSchemaFromZod(deepResearchInputSchema),
-  async run(input: unknown, _context: ToolContext) {
+  async run(input: unknown, context: ToolContext) {
     const parsed = deepResearchInputSchema.parse(input);
     const engine = new ResearchEngine();
-    const result = await engine.executeResearch(parsed.topic, {
-      depth: parsed.depth,
-      focusAreas: parsed.focusAreas,
-      maxSources: parsed.maxSources,
-    });
+    const result = await engine.executeResearch(
+      parsed.topic,
+      {
+        depth: parsed.depth,
+        focusAreas: parsed.focusAreas,
+        maxSources: parsed.maxSources,
+      },
+      {
+        web_fetch: (fetchInput) =>
+          webFetchTool.run(
+            { mode: fetchInput.mode ?? "article", url: fetchInput.url },
+            context
+          ),
+        web_search: (searchInput) =>
+          webSearchTool.run(
+            { limit: searchInput.limit ?? 4, query: searchInput.query },
+            context
+          ),
+      }
+    );
 
     return {
       citationsCount: result.citations.length,

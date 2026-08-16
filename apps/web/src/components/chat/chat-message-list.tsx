@@ -102,6 +102,7 @@ interface ChatMessageListProps {
   modelLabel?: string | null;
   onBranchMessage?: (message: ChatListItem) => void;
   onRetryMessage?: (message: ChatListItem) => void;
+  onSuggestedQuestion?: (question: string) => void;
   profileId?: string | null;
   showThinking?: boolean;
   /** True while the assistant reply SSE stream is in flight. */
@@ -125,6 +126,7 @@ function ChatMessageListSession({
   turnStartedAt = null,
   onBranchMessage,
   onRetryMessage,
+  onSuggestedQuestion,
   emptyMessage,
   className,
   contentClassName,
@@ -251,10 +253,12 @@ function ChatMessageListSession({
             modelLabel={modelLabel}
             onBranchMessage={onBranchMessage}
             onRetryMessage={onRetryMessage}
+            onSuggestedQuestion={onSuggestedQuestion}
             profileId={profileId}
             showAwaiting={
               turnIndex === turns.length - 1 && awaitingLabel === "Working…"
             }
+            showRelatedQuestions={turnIndex === turns.length - 1}
             showThinking={showThinking}
             streamActive={streamActive}
             turnStartedAt={turnStartedAt}
@@ -270,6 +274,7 @@ function ChatMessageListSession({
       modelLabel,
       onBranchMessage,
       onRetryMessage,
+      onSuggestedQuestion,
       profileId,
       showThinking,
       streamActive,
@@ -337,6 +342,8 @@ function AssistantTurn({
   turnStartedAt,
   onBranchMessage,
   onRetryMessage,
+  onSuggestedQuestion,
+  showRelatedQuestions,
 }: {
   messages: IndexedMessage[];
   profileId?: string | null;
@@ -349,6 +356,8 @@ function AssistantTurn({
   turnStartedAt?: string | null;
   onBranchMessage?: (message: ChatListItem) => void;
   onRetryMessage?: (message: ChatListItem) => void;
+  onSuggestedQuestion?: (question: string) => void;
+  showRelatedQuestions?: boolean;
 }) {
   const turnMessages = messages.map(({ message }) => message);
   const segments = segmentAssistantTurn(turnMessages);
@@ -431,6 +440,24 @@ function AssistantTurn({
           onBranchMessage={onBranchMessage}
           onRetryMessage={onRetryMessage}
         />
+      ) : null}
+      {showRelatedQuestions &&
+      showActions &&
+      lastAssistantMsg?.relatedQuestions?.length &&
+      onSuggestedQuestion ? (
+        <div className="flex w-full flex-wrap gap-2 pt-1">
+          {lastAssistantMsg.relatedQuestions.map((question) => (
+            <button
+              className="rounded-full border border-border bg-background px-3 py-1.5 text-foreground/90 text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+              disabled={actionsDisabled}
+              key={question}
+              onClick={() => onSuggestedQuestion(question)}
+              type="button"
+            >
+              {question}
+            </button>
+          ))}
+        </div>
       ) : null}
     </div>
   );

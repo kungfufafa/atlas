@@ -1,16 +1,47 @@
 import { describe, expect, it } from "bun:test";
-import { ResearchEngine, validateCitationIntegrity } from "./research-engine";
+import {
+  ResearchEngine,
+  type ResearchTools,
+  validateCitationIntegrity,
+} from "./research-engine";
+
+function mockTools(overrides: Partial<ResearchTools> = {}): ResearchTools {
+  return {
+    web_search: async () => ({
+      results: [
+        {
+          domain: "bun.sh",
+          snippet: "Bun is a fast all-in-one JavaScript runtime.",
+          title: "Bun — Documentation",
+          url: "https://bun.sh/docs",
+        },
+        {
+          domain: "example.com",
+          snippet: "Comparison of JavaScript runtimes and their tradeoffs.",
+          title: "Runtime Comparison",
+          url: "https://example.com/runtimes",
+        },
+      ],
+    }),
+    ...overrides,
+  };
+}
 
 describe("Research Engine, Delta Research & Citation Integrity", () => {
   const engine = new ResearchEngine();
 
-  it("Executes initial research and produces structured citations and sources", async () => {
-    const result = await engine.executeResearch("Vector Database Indexing");
+  it("Gathers evidence from provided search tools and keeps citation integrity", async () => {
+    const result = await engine.executeResearch(
+      "JavaScript runtimes",
+      {},
+      mockTools()
+    );
 
-    expect(result.sourcesCount).toBeGreaterThan(0);
-    expect(result.evidence.length).toBeGreaterThan(0);
-    expect(result.structuredCitations?.length).toBeGreaterThan(0);
-    expect(result.researchSession?.revision).toBe(1);
+    expect(result.sourcesCount).toBe(2);
+    expect(result.evidence.length).toBe(2);
+    expect(result.citations[0]?.url).toBe("https://bun.sh/docs");
+    expect(result.markdown).toContain("## References & Citations");
+    expect(result.markdown).toContain("[^1]:");
 
     const integrity = validateCitationIntegrity(
       result.structuredCitations || [],
@@ -18,11 +49,83 @@ describe("Research Engine, Delta Research & Citation Integrity", () => {
       result.sources
     );
     expect(integrity.valid).toBe(true);
-    expect(integrity.errors.length).toBe(0);
+  });
+
+  it("Reports honestly when no tools and no evidence are available", async () => {
+    const result = await engine.executeResearch("Vector Database Indexing");
+
+    expect(result.sourcesCount).toBe(0);
+    expect(result.evidence.length).toBe(0);
+    expect(result.markdown).toContain("No sources could be retrieved");
+
+    const integrity = validateCitationIntegrity(
+      result.structuredCitations || [],
+      result.evidence,
+      result.sources
+    );
+    expect(integrity.valid).toBe(true);
+  });
+
+  it("Uses the injected synthesizer for the report and appends missing references", async () => {
+    const result = await engine.executeResearch(
+      "JavaScript runtimes",
+      {},
+      mockTools({
+        synthesize: async () => ({
+          contradictions: [],
+          markdown:
+            "# Research Report: JavaScript runtimes\n\nBun is fast[^1]. Example compares runtimes[^2].",
+          summary: "Synthesized summary.",
+        }),
+      })
+    );
+
+    expect(result.summary).toBe("Synthesized summary.");
+    expect(result.markdown).toContain("Bun is fast[^1].");
+    // The synthesizer omitted footnote definitions; the engine must add them.
+    expect(result.markdown).toContain("[^1]: [Bun — Documentation]");
+    expect(result.markdown).toContain("[^2]: [Runtime Comparison]");
+  });
+
+  it("Falls back to the extract draft when the synthesizer throws", async () => {
+    const result = await engine.executeResearch(
+      "JavaScript runtimes",
+      {},
+      mockTools({
+        synthesize: async () => {
+          throw new Error("provider unavailable");
+        },
+      })
+    );
+
+    expect(result.summary).toContain("Extract-based research draft");
+    expect(result.markdown).toContain("## Key Findings");
+  });
+
+  it("Enriches evidence snippets via web_fetch", async () => {
+    const result = await engine.executeResearch(
+      "JavaScript runtimes",
+      { depth: "standard" },
+      mockTools({
+        web_fetch: async () => ({
+          content: "Full article body about Bun's architecture.".repeat(50),
+        }),
+      })
+    );
+
+    const enriched = result.evidence.find(
+      (e) => e.sourceUrl === "https://bun.sh/docs"
+    );
+    expect(enriched?.snippet).toContain("Full article body");
   });
 
   it("Delta Research: reuses previous evidence, increments revision, and maintains provenance", async () => {
-    const initialResult = await engine.executeResearch("OpenAI vs Anthropic");
+    const tools = mockTools();
+    const initialResult = await engine.executeResearch(
+      "OpenAI vs Anthropic",
+      {},
+      tools
+    );
     const priorSession = initialResult.researchSession;
 
     expect(priorSession).toBeDefined();
@@ -30,9 +133,8 @@ describe("Research Engine, Delta Research & Citation Integrity", () => {
       return;
     }
 
-    // Follow-up research: "Add Gemini"
     const deltaResult = await engine.executeResearch("Add Gemini", {
-      focusAreas: ["Gemini 1.5 Pro multimodal capabilities"],
+      focusAreas: ["Gemini multimodal capabilities"],
       priorSession,
     });
 
@@ -40,7 +142,6 @@ describe("Research Engine, Delta Research & Citation Integrity", () => {
     expect(deltaResult.researchSession?.parentRevisionId).toBe(priorSession.id);
     expect(deltaResult.evidence.length).toBeGreaterThan(0);
 
-    // Verify citation integrity of the delta session
     const integrity = validateCitationIntegrity(
       deltaResult.structuredCitations || [],
       deltaResult.evidence,

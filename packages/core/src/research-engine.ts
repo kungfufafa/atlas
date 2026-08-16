@@ -47,10 +47,53 @@ export interface ResearchResult {
   topic: string;
 }
 
+/** Everything an LLM (or any synthesizer) needs to write the final report. */
+export interface ResearchSynthesisInput {
+  citations: CitationItem[];
+  depth: "brief" | "standard" | "comprehensive";
+  evidence: EvidenceItem[];
+  focusAreas?: string[];
+  subQuestions: string[];
+  topic: string;
+}
+
+export interface ResearchSynthesis {
+  contradictions: ContradictionItem[];
+  markdown: string;
+  summary: string;
+}
+
+/**
+ * Produces the cited markdown report from gathered evidence. Injected by the
+ * host so packages/core stays provider-agnostic; when absent the engine falls
+ * back to a deterministic, extract-based draft.
+ */
+export type SynthesizeReport = (
+  input: ResearchSynthesisInput
+) => Promise<ResearchSynthesis>;
+
 export interface ResearchTools {
-  web_fetch?: (input: { url: string; mode?: string }) => Promise<any>;
+  synthesize?: SynthesizeReport;
+  web_fetch?: (input: {
+    mode?: "article" | "metadata" | "raw";
+    url: string;
+  }) => Promise<any>;
   web_search?: (input: { query: string; limit?: number }) => Promise<any>;
 }
+
+const DEPTH_QUERY_COUNT: Record<string, number> = {
+  brief: 2,
+  comprehensive: 4,
+  standard: 3,
+};
+
+const DEPTH_FETCH_COUNT: Record<string, number> = {
+  brief: 0,
+  comprehensive: 4,
+  standard: 2,
+};
+
+const SNIPPET_EXCERPT_CHARS = 1500;
 
 export class ResearchEngine {
   async executeResearch(
@@ -64,7 +107,11 @@ export class ResearchEngine {
 
     // 1. Decompose topic into sub-questions and targeted queries
     const subQuestions = this.generateSubQuestions(topic, options.focusAreas);
-    const searchQueries = this.generateSearchQueries(topic, subQuestions);
+    const searchQueries = this.generateSearchQueries(
+      topic,
+      subQuestions,
+      options.focusAreas
+    );
 
     // 2. Multi-source Search & Evidence Gathering (with Delta Research reuse)
     const evidence: EvidenceItem[] = [];
@@ -101,9 +148,13 @@ export class ResearchEngine {
     }
 
     if (tools?.web_search) {
-      for (const query of searchQueries.slice(0, 4)) {
+      const queryCount = DEPTH_QUERY_COUNT[depth] ?? 3;
+      for (const query of searchQueries.slice(0, queryCount)) {
+        if (seenUrls.size >= maxSources) {
+          break;
+        }
         try {
-          const searchRes = await tools.web_search({ limit: 3, query });
+          const searchRes = await tools.web_search({ limit: 4, query });
           const results = Array.isArray(searchRes?.results)
             ? searchRes.results
             : [];
@@ -121,7 +172,7 @@ export class ResearchEngine {
             const citationIndex = citations.length + 1;
             citations.push({
               index: citationIndex,
-              publisher: res.domain || new URL(res.url).hostname,
+              publisher: res.domain || safeHostname(res.url),
               title: res.title || `Source ${citationIndex}`,
               url: res.url,
             });
@@ -129,7 +180,7 @@ export class ResearchEngine {
             evidence.push({
               claim: res.snippet || res.title || topic,
               id: `ev-${citationIndex}`,
-              publisher: res.domain || new URL(res.url).hostname,
+              publisher: res.domain || safeHostname(res.url),
               relevanceScore: 0.9,
               snippet: res.snippet || "",
               sourceTitle: res.title || `Source ${citationIndex}`,
@@ -142,89 +193,58 @@ export class ResearchEngine {
       }
     }
 
-    // Default citations if offline or mock
-    if (citations.length === 0) {
-      citations.push(
-        {
-          index: 1,
-          publisher: "IEEE Xplore / arXiv",
-          title: "Hierarchical Navigable Small World Graphs (HNSW)",
-          url: "https://arxiv.org/abs/1603.09320",
-        },
-        {
-          index: 2,
-          publisher: "IEEE Transactions on Pattern Analysis",
-          title: "Product Quantization for Nearest Neighbor Search (IVFPQ)",
-          url: "https://hal.inria.fr/inria-00514462/document",
-        },
-        {
-          index: 3,
-          publisher: "Microsoft Research / NeurIPS",
-          title: "DiskANN: Fast Accurate Billion-point Nearest Neighbor Search",
-          url: "https://proceedings.neurips.cc/paper/2019/file/09853c7fb1d15db7a18306d642447304-Paper.pdf",
+    // 3. Evidence enrichment: fetch full page content for the top sources so
+    // synthesis is grounded in more than search-result snippets.
+    const fetchCount = DEPTH_FETCH_COUNT[depth] ?? 2;
+    if (tools?.web_fetch) {
+      for (const item of evidence
+        .filter((e) => e.id.startsWith("ev-"))
+        .slice(0, fetchCount)) {
+        try {
+          const fetched = await tools.web_fetch({
+            mode: "article",
+            url: item.sourceUrl,
+          });
+          const content: string = (fetched?.content ?? fetched?.markdown ?? "")
+            .toString()
+            .trim();
+          if (content) {
+            const excerpt = content.slice(0, SNIPPET_EXCERPT_CHARS);
+            item.snippet = item.snippet
+              ? `${item.snippet}\n\n${excerpt}`
+              : excerpt;
+          }
+        } catch {
+          // Snippet-only evidence is still usable
         }
-      );
-
-      evidence.push(
-        {
-          claim:
-            "HNSW builds a multi-layer graph offering the fastest query latency and highest recall, but requires high RAM overhead.",
-          id: "ev-1",
-          publisher: "arXiv",
-          relevanceScore: 0.95,
-          snippet:
-            "HNSW graphs provide logarithmic search complexity with high memory consumption.",
-          sourceTitle: "Hierarchical Navigable Small World Graphs",
-          sourceUrl: "https://arxiv.org/abs/1603.09320",
-        },
-        {
-          claim:
-            "IVFPQ partitions the vector space into inverted files and compresses vectors with product quantization for compact memory footprint with moderate recall.",
-          id: "ev-2",
-          publisher: "IEEE TPAMI",
-          relevanceScore: 0.9,
-          snippet:
-            "IVF-PQ delivers dramatic compression ratios at the cost of quantization errors.",
-          sourceTitle: "Product Quantization for Nearest Neighbor Search",
-          sourceUrl: "https://hal.inria.fr/inria-00514462/document",
-        },
-        {
-          claim:
-            "DiskANN leverages compressed in-memory Vamana graphs with uncompressed disk-resident vectors to scale to billions of vectors on SSDs.",
-          id: "ev-3",
-          publisher: "Microsoft Research",
-          relevanceScore: 0.92,
-          snippet:
-            "DiskANN serves billion-scale vector queries from NVMe SSDs with sub-5ms latencies.",
-          sourceTitle:
-            "DiskANN: Fast Accurate Billion-point Nearest Neighbor Search",
-          sourceUrl:
-            "https://proceedings.neurips.cc/paper/2019/file/09853c7fb1d15db7a18306d642447304-Paper.pdf",
-        }
-      );
+      }
     }
 
-    // 3. Contradiction & Tradeoff Detection
-    const contradictions: ContradictionItem[] = [
-      {
-        analysis:
-          "HNSW optimizes purely for lowest latency and highest recall in RAM, whereas DiskANN intentionally sacrifices pure RAM speed to achieve 10x cost reduction via SSD offloading.",
-        claimA:
-          "In-memory HNSW is necessary for sub-millisecond real-time queries.",
-        claimB:
-          "DiskANN SSD-resident graphs achieve acceptable latencies (3-5ms) at 1/10th the infrastructure cost.",
-        sourceA: citations[0]?.title || "HNSW",
-        sourceB: citations[2]?.title || "DiskANN",
-      },
-    ];
+    // 4. Synthesis: LLM-generated when a synthesizer is injected, otherwise a
+    // deterministic extract-based draft. Never fabricate sources either way.
+    let synthesis: ResearchSynthesis;
+    if (tools?.synthesize) {
+      try {
+        synthesis = await tools.synthesize({
+          citations,
+          depth,
+          evidence,
+          focusAreas: options.focusAreas,
+          subQuestions,
+          topic,
+        });
+      } catch {
+        synthesis = this.buildExtractDraft(topic, depth, evidence, citations);
+      }
+    } else {
+      synthesis = this.buildExtractDraft(topic, depth, evidence, citations);
+    }
 
-    // 4. Synthesize Structured Research Report with Markdown Footnotes & References
-    const markdown = this.synthesizeReport(
-      topic,
-      evidence,
-      contradictions,
-      citations
-    );
+    // Guardrails: keep references complete even if the synthesizer dropped them.
+    synthesis = {
+      ...synthesis,
+      markdown: this.ensureReferencesSection(synthesis.markdown, citations),
+    };
 
     const sources: SourceItem[] = citations.map((c, i) => {
       let domain = "";
@@ -272,30 +292,30 @@ export class ResearchEngine {
 
     return {
       citations,
-      contradictions,
+      contradictions: synthesis.contradictions,
       depth,
       evidence,
-      markdown,
+      markdown: synthesis.markdown,
       researchSession,
       sources,
       sourcesCount: citations.length,
       structuredCitations,
       subQuestions,
-      summary: `Comprehensive research report on ${topic} synthesizing ${evidence.length} evidence points across ${citations.length} verified sources.`,
+      summary: synthesis.summary,
       topic,
     };
   }
 
   private generateSubQuestions(topic: string, focusAreas?: string[]): string[] {
     const questions = [
-      `What are the core technical architectures of ${topic}?`,
-      "What are the key performance tradeoffs (latency, throughput, resource consumption)?",
-      "How do modern implementations compare across scalability and deployment requirements?",
+      `What is ${topic} and why does it matter right now?`,
+      `What are the main approaches or perspectives on ${topic}, and how do they compare?`,
+      `What are the key tradeoffs, limitations, and open questions around ${topic}?`,
     ];
     if (focusAreas && focusAreas.length > 0) {
       for (const area of focusAreas) {
         questions.push(
-          `How does ${area} impact system performance and architectural choices?`
+          `What is the current state of ${area} in relation to ${topic}?`
         );
       }
     }
@@ -304,86 +324,104 @@ export class ResearchEngine {
 
   private generateSearchQueries(
     topic: string,
-    subQuestions: string[]
+    _subQuestions: string[],
+    focusAreas?: string[]
   ): string[] {
-    return [
-      `${topic} architecture comparison`,
-      `${topic} performance benchmarks tradeoffs`,
-      ...subQuestions.map((q) => `${topic} ${q.replace(/[?]/g, "")}`),
+    const queries = [
+      topic,
+      `${topic} overview explained`,
+      `${topic} comparison tradeoffs`,
     ];
+    for (const area of focusAreas ?? []) {
+      queries.push(`${topic} ${area}`);
+    }
+    return queries;
   }
 
-  private synthesizeReport(
+  private buildExtractDraft(
     topic: string,
-    _evidence: EvidenceItem[],
-    contradictions: ContradictionItem[],
+    depth: string,
+    evidence: EvidenceItem[],
     citations: CitationItem[]
-  ): string {
-    const reportLines: string[] = [];
-
-    reportLines.push(`# Research Report: ${topic}`);
-    reportLines.push("");
-    reportLines.push("## Executive Summary");
-    reportLines.push(
-      `This report provides a systematic analysis of **${topic}**, comparing architectural principles, performance benchmarks, memory footprints, and practical tradeoffs based on verified technical literature.`
-    );
-    reportLines.push("");
-
-    reportLines.push("## Architectural & Algorithm Comparison");
-    reportLines.push(
-      "Modern vector databases and retrieval engines balance the trilemma of **latency, recall, and infrastructure cost** using distinct indexing algorithms:"
-    );
-    reportLines.push("");
-    reportLines.push(
-      "1. **HNSW (Hierarchical Navigable Small World)**[^1]: Constructs multi-layer proximity graphs. Provides the lowest search latency (sub-millisecond) and highest 99%+ recall, but requires high RAM footprint (1.5x-2x vector size) for graph connectivity."
-    );
-    reportLines.push(
-      "2. **IVFPQ (Inverted File with Product Quantization)**[^2]: Combines Voronoi cell partitioning with vector quantization. Delivers 8x–32x memory compression, enabling large datasets in RAM at the expense of recall and indexing build time."
-    );
-    reportLines.push(
-      "3. **DiskANN (Vamana SSD Graph)**[^3]: Leverages single-layer Vamana graphs with in-memory compressed vectors and SSD-stored full precision vectors. Unlocks billion-scale indexing on a single machine with 3–5ms latencies."
-    );
-    reportLines.push("");
-
-    reportLines.push("## Comparative Tradeoff Matrix");
-    reportLines.push("");
-    reportLines.push(
-      "| Algorithm | Query Latency | Recall @ 10 | RAM Footprint | Storage Layer | Best Use Case |"
-    );
-    reportLines.push("|:---|:---|:---|:---|:---|:---|");
-    reportLines.push(
-      "| **HNSW**[^1] | < 1ms (Ultra-fast) | 98-99.9% | High (Graph + Vectors in RAM) | RAM | Real-time low-latency retrieval (< 50M vectors) |"
-    );
-    reportLines.push(
-      "| **IVFPQ**[^2] | 3-10ms (Fast) | 85-95% | Low (Quantized codes) | RAM / Disk | Memory-constrained environments |"
-    );
-    reportLines.push(
-      "| **DiskANN**[^3] | 3-5ms (Moderate) | 95-99% | Minimal (Compressed graph in RAM) | NVMe SSD | Billion-scale cost-efficient datasets |"
-    );
-    reportLines.push("");
-
-    if (contradictions.length > 0) {
-      reportLines.push("## Contradictions & Divergent Perspectives");
-      for (const item of contradictions) {
-        reportLines.push(`- **Tradeoff Divergence**: ${item.analysis}`);
-        reportLines.push(
-          `  - *Perspective A (${item.sourceA})*: ${item.claimA}`
-        );
-        reportLines.push(
-          `  - *Perspective B (${item.sourceB})*: ${item.claimB}`
-        );
-      }
-      reportLines.push("");
+  ): ResearchSynthesis {
+    if (evidence.length === 0) {
+      return {
+        contradictions: [],
+        markdown: [
+          `# Research Report: ${topic}`,
+          "",
+          "## Executive Summary",
+          "",
+          `No sources could be retrieved for **${topic}** during this run, so no findings are reported. Retry, or narrow the topic.`,
+          "",
+        ].join("\n"),
+        summary: `No sources were retrieved for ${topic}.`,
+      };
     }
 
-    reportLines.push("## References & Citations");
+    const lines: string[] = [];
+    lines.push(`# Research Report: ${topic}`);
+    lines.push("");
+    lines.push("## Executive Summary");
+    lines.push(
+      `Extract-based draft covering ${evidence.length} evidence points from ${citations.length} sources on **${topic}** (${depth} depth, no model synthesis available).`
+    );
+    lines.push("");
+    lines.push("## Key Findings");
+    for (const item of evidence) {
+      const cite = citations.find((c) => c.url === item.sourceUrl);
+      const footnote = cite ? `[^${cite.index}]` : "";
+      const snippet = (item.snippet || item.claim).replace(/\s+/g, " ").trim();
+      lines.push(`- ${snippet.slice(0, 280)}${footnote}`);
+    }
+    lines.push("");
+    lines.push("## References & Citations");
     for (const cite of citations) {
       const pub = cite.publisher ? ` (${cite.publisher})` : "";
-      reportLines.push(`[^${cite.index}]: [${cite.title}](${cite.url})${pub}`);
+      lines.push(`[^${cite.index}]: [${cite.title}](${cite.url})${pub}`);
     }
-    reportLines.push("");
+    lines.push("");
 
-    return reportLines.join("\n");
+    return {
+      contradictions: [],
+      markdown: lines.join("\n"),
+      summary: `Extract-based research draft on ${topic} synthesizing ${evidence.length} evidence points across ${citations.length} sources.`,
+    };
+  }
+
+  /**
+   * Footnote definitions are load-bearing: the UI maps [^n] badges to the
+   * sources panel. If the synthesizer omitted any, append the canonical list.
+   */
+  private ensureReferencesSection(
+    markdown: string,
+    citations: CitationItem[]
+  ): string {
+    if (citations.length === 0) {
+      return markdown;
+    }
+
+    const missing = citations.filter(
+      (c) => !markdown.includes(`[^${c.index}]:`)
+    );
+    if (missing.length === 0) {
+      return markdown;
+    }
+
+    const lines = [markdown.trimEnd(), "", "## References & Citations"];
+    for (const cite of missing) {
+      const pub = cite.publisher ? ` (${cite.publisher})` : "";
+      lines.push(`[^${cite.index}]: [${cite.title}](${cite.url})${pub}`);
+    }
+    return `${lines.join("\n")}\n`;
+  }
+}
+
+function safeHostname(url: string): string {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "";
   }
 }
 

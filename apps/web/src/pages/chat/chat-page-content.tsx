@@ -166,6 +166,7 @@ export function ChatPageContent(state: ChatPageState) {
               }
               onBranchMessage={(message) => void handleBranchMessage(message)}
               onRetryMessage={(message) => void handleTryAgainMessage(message)}
+              onSuggestedQuestion={(question) => void sendMessage(question)}
               profileId={profileId}
               showThinking={showThinking}
               streamActive={busy}

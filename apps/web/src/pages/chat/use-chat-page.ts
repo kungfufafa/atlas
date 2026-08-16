@@ -740,6 +740,7 @@ export function useChatPage() {
             documents: documents.length > 0 ? documents : undefined,
             images: images.length > 0 ? images : undefined,
             message: text,
+            relatedQuestions: true,
           },
           buildStreamHandlers(setMessages, {
             onContextUsage: setContextUsage,

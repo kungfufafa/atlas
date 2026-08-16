@@ -170,6 +170,10 @@ export async function readStreamEvents(
         });
       }
 
+      if (payload.type === "related_questions") {
+        handlers.onRelatedQuestions?.(payload.questions);
+      }
+
       if (payload.type === "artifact_created") {
         handlers.onArtifactCreated?.(payload.artifact);
       }
