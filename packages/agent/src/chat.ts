@@ -61,8 +61,10 @@ import type {
   SourceItem,
 } from "@atlas/core";
 import {
+  classifyFailure,
   evaluateActionRisk,
   mapToolCallToActivity,
+  metrics,
   resolveExecutionPolicy,
   updateActivityCompletion,
 } from "@atlas/core";
@@ -474,6 +476,10 @@ async function sendMessage(
     ? { ...baseToolContext, signal: options.signal }
     : baseToolContext;
 
+  metrics.executionActive.inc();
+  metrics.executionTotal.inc({ policy: resolvedPolicy.policy });
+  const executionStartMs = Date.now();
+
   try {
     const reply = await runConversation(
       dependencies.provider,
@@ -491,10 +497,28 @@ async function sendMessage(
       options.signal
     );
 
+    const durationMs = Date.now() - executionStartMs;
+    metrics.executionDurationMs.observe(durationMs, {
+      policy: resolvedPolicy.policy,
+    });
+    metrics.executionSuccessTotal.inc({ policy: resolvedPolicy.policy });
+
     return reply;
   } catch (error) {
+    const durationMs = Date.now() - executionStartMs;
+    metrics.executionDurationMs.observe(durationMs, {
+      policy: resolvedPolicy.policy,
+    });
+    const failure = classifyFailure(error);
+    if (failure.code === "CANCELLED") {
+      metrics.executionCancelledTotal.inc();
+    } else {
+      metrics.executionFailureTotal.inc({ failure_code: failure.code });
+    }
     rollbackFailedSend(history);
     throw error;
+  } finally {
+    metrics.executionActive.dec();
   }
 }
 
@@ -541,95 +565,109 @@ async function runConversation(
   signal?: AbortSignal
 ): Promise<string> {
   const toolCallSignatures: string[] = [];
+  let totalTurns = 0;
+  let totalToolCalls = 0;
 
-  for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration += 1) {
-    signal?.throwIfAborted();
+  try {
+    for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration += 1) {
+      signal?.throwIfAborted();
+      totalTurns += 1;
 
-    const result = await generateReply(
-      provider,
-      systemPrompt,
-      history,
-      llmTools,
-      providerOptions,
-      mode,
-      handlers,
-      rehydrateMessagesForProvider,
-      signal
-    );
-
-    const usedTokens =
-      result.usage?.inputTokens ??
-      estimateHistoryTokens(
+      const result = await generateReply(
+        provider,
+        systemPrompt,
         history,
-        `${systemPrompt}\n\nToday is ${formatCurrentDate()}.`,
-        llmTools
+        llmTools,
+        providerOptions,
+        mode,
+        handlers,
+        rehydrateMessagesForProvider,
+        signal
       );
-    onContextUsage?.(
-      usedTokens,
-      result.usage && !result.usage.estimated ? "provider" : "estimate"
-    );
 
-    // The arm is what the optimiser did in this session, not what a setting
-    // says: a session where nothing was ever shortened belongs in the control
-    // arm even with the feature switched on, or the comparison flatters itself.
-    try {
-      toolContext.recordTurnUsage?.({
-        estimated: Boolean(result.usage?.estimated ?? !result.usage),
-        inputTokens: result.usage?.inputTokens ?? 0,
-        // Overwritten by the session wrapper, which is the only scope that
-        // knows whether anything was shortened.
-        optimized: false,
-        outputTokens: result.usage?.outputTokens ?? 0,
-      });
-    } catch {
-      // never let accounting break a turn
+      const usedTokens =
+        result.usage?.inputTokens ??
+        estimateHistoryTokens(
+          history,
+          `${systemPrompt}\n\nToday is ${formatCurrentDate()}.`,
+          llmTools
+        );
+      onContextUsage?.(
+        usedTokens,
+        result.usage && !result.usage.estimated ? "provider" : "estimate"
+      );
+
+      // The arm is what the optimiser did in this session, not what a setting
+      // says: a session where nothing was ever shortened belongs in the control
+      // arm even with the feature switched on, or the comparison flatters itself.
+      try {
+        toolContext?.recordTurnUsage?.({
+          estimated: Boolean(result.usage?.estimated ?? !result.usage),
+          inputTokens: result.usage?.inputTokens ?? 0,
+          // Overwritten by the session wrapper, which is the only scope that
+          // knows whether anything was shortened.
+          optimized: false,
+          outputTokens: result.usage?.outputTokens ?? 0,
+        });
+      } catch {
+        // never let accounting break a turn
+      }
+
+      // Backstop for providers that ignore the signal. The in-flight request is
+      // aborted through GenerateChatInput.signal; this only catches the case where
+      // it returned anyway, so a cancelled turn leaves no half-written assistant
+      // message and never starts another tool batch.
+      signal?.throwIfAborted();
+
+      history.push(result.assistantMessage);
+
+      if (!enableToolLoop || result.toolCalls.length === 0) {
+        return result.content;
+      }
+
+      // Loop Guard: Detect identical repetitive tool calls without progress
+      const signature = result.toolCalls
+        .map((c) => `${c.name}:${JSON.stringify(c.arguments)}`)
+        .sort()
+        .join("|");
+
+      toolCallSignatures.push(signature);
+      const repeatedCount = toolCallSignatures.filter(
+        (sig) => sig === signature
+      ).length;
+
+      if (repeatedCount >= 4) {
+        // Break out of loop to avoid runaway token burn on hallucinated repeats
+        metrics.duplicateToolCallPreventionsTotal.inc();
+        break;
+      }
+
+      totalToolCalls += result.toolCalls.length;
+      await executeToolCalls(
+        tools,
+        result.toolCalls,
+        history,
+        handlers,
+        toolContext
+      );
+
+      if (iteration === MAX_TOOL_ITERATIONS - 1) {
+        metrics.agentLoopLimitTotal.inc();
+      }
     }
 
-    // Backstop for providers that ignore the signal. The in-flight request is
-    // aborted through GenerateChatInput.signal; this only catches the case where
-    // it returned anyway, so a cancelled turn leaves no half-written assistant
-    // message and never starts another tool batch.
-    signal?.throwIfAborted();
+    const lastAssistant = [...history]
+      .reverse()
+      .find(
+        (message): message is Extract<ChatMessage, { role: "assistant" }> =>
+          message.role === "assistant"
+      );
 
-    history.push(result.assistantMessage);
-
-    if (!enableToolLoop || result.toolCalls.length === 0) {
-      return result.content;
-    }
-
-    // Loop Guard: Detect identical repetitive tool calls without progress
-    const signature = result.toolCalls
-      .map((c) => `${c.name}:${JSON.stringify(c.arguments)}`)
-      .sort()
-      .join("|");
-
-    toolCallSignatures.push(signature);
-    const repeatedCount = toolCallSignatures.filter(
-      (sig) => sig === signature
-    ).length;
-
-    if (repeatedCount >= 4) {
-      // Break out of loop to avoid runaway token burn on hallucinated repeats
-      break;
-    }
-
-    await executeToolCalls(
-      tools,
-      result.toolCalls,
-      history,
-      handlers,
-      toolContext
-    );
+    return lastAssistant?.content ?? "";
+  } finally {
+    metrics.agentTurnsPerExecution.observe(totalTurns);
+    metrics.toolCallsPerExecution.observe(totalToolCalls);
   }
-
-  const lastAssistant = [...history]
-    .reverse()
-    .find(
-      (message): message is Extract<ChatMessage, { role: "assistant" }> =>
-        message.role === "assistant"
-    );
-
-  return lastAssistant?.content ?? "";
 }
 
 async function executeToolCalls(

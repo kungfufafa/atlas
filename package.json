@@ -8,6 +8,7 @@
     "packages/*"
   ],
   "scripts": {
+    "atlas:production-readiness": "bun run scripts/production-readiness/run.ts",
     "atlas:release-gate": "bun run scripts/release-gate/index.ts",
     "build": "bun run --workspaces --if-present build",
     "build:docs": "bun run --cwd docs/website build",

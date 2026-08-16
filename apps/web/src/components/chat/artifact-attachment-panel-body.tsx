@@ -1,5 +1,10 @@
+import type { ArtifactPreview } from "@atlas/core";
 import { CodeBlock } from "@/components/ai-elements/code-block";
 import { MessageResponse } from "@/components/ai-elements/message";
+import { DocumentViewer } from "@/components/artifacts/viewers/DocumentViewer";
+import { PdfViewer } from "@/components/artifacts/viewers/PdfViewer";
+import { PresentationViewer } from "@/components/artifacts/viewers/PresentationViewer";
+import { SpreadsheetViewer } from "@/components/artifacts/viewers/SpreadsheetViewer";
 import { Spinner } from "@/components/ui/spinner";
 import {
   ARTIFACT_HTML_IFRAME_SANDBOX,
@@ -19,6 +24,12 @@ type ArtifactPanelSharedProps = {
 };
 
 export type ArtifactAttachmentPanelBodyProps =
+  | (ArtifactPanelSharedProps & {
+      kind: "rich";
+      preview: ArtifactPreview | null;
+      downloadUrl: string;
+      onSelectSheet?: (sheetName: string, sheetIndex?: number) => void;
+    })
   | (ArtifactPanelSharedProps & {
       kind: "image";
       imagePreviewUrl?: string | null;
@@ -243,10 +254,51 @@ function ArtifactAttachmentTextBody({
   );
 }
 
+function ArtifactAttachmentRichBody({
+  loading,
+  error,
+  preview,
+  downloadUrl,
+  onSelectSheet,
+}: Extract<ArtifactAttachmentPanelBodyProps, { kind: "rich" }>) {
+  if (loading) {
+    return <LoadingState />;
+  }
+
+  if (error) {
+    return <p className="p-4 text-destructive text-sm">{error}</p>;
+  }
+
+  if (!preview) {
+    return <UnavailablePreview padded />;
+  }
+
+  switch (preview.type) {
+    case "presentation":
+      return <PresentationViewer downloadUrl={downloadUrl} preview={preview} />;
+    case "spreadsheet":
+      return (
+        <SpreadsheetViewer
+          downloadUrl={downloadUrl}
+          onSelectSheet={onSelectSheet}
+          preview={preview}
+        />
+      );
+    case "pdf":
+      return <PdfViewer downloadUrl={downloadUrl} preview={preview} />;
+    case "document":
+      return <DocumentViewer downloadUrl={downloadUrl} preview={preview} />;
+    default:
+      return <UnavailablePreview padded />;
+  }
+}
+
 export function ArtifactAttachmentPanelBody(
   props: ArtifactAttachmentPanelBodyProps
 ) {
   switch (props.kind) {
+    case "rich":
+      return <ArtifactAttachmentRichBody {...props} />;
     case "image":
       return <ArtifactAttachmentImageBody {...props} />;
     case "video":

@@ -1,6 +1,6 @@
 import type { CustomModelEntry } from "@atlas/core/contract";
 import { Add01Icon, Delete02Icon } from "hugeicons-react";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupInput } from "@/components/ui/input-group";
 import { Switch } from "@/components/ui/switch";
@@ -20,6 +20,59 @@ interface ModelListEditorProps {
 
 function emptyRow(): ModelListRow {
   return { id: "", name: "" };
+}
+
+interface ReasoningLevelsInputProps {
+  disabled?: boolean;
+  modelId?: string;
+  onChange: (values: string[] | undefined) => void;
+  value?: string[];
+}
+
+function ReasoningLevelsInput({
+  value,
+  onChange,
+  disabled,
+  modelId,
+}: ReasoningLevelsInputProps) {
+  const [text, setText] = useState(() => value?.join(", ") ?? "");
+  const [isFocused, setIsFocused] = useState(false);
+
+  useEffect(() => {
+    if (!isFocused) {
+      setText(value?.join(", ") ?? "");
+    }
+  }, [value, isFocused]);
+
+  return (
+    <InputGroupInput
+      aria-label={`Reasoning levels for ${modelId?.trim() || "model"}`}
+      disabled={disabled}
+      onBlur={() => {
+        setIsFocused(false);
+        const parts = text
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const next = parts.length > 0 ? parts : undefined;
+        onChange(next);
+        setText(next?.join(", ") ?? "");
+      }}
+      onChange={(event) => {
+        const val = event.target.value;
+        setText(val);
+        const parts = val
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        onChange(parts.length > 0 ? parts : undefined);
+      }}
+      onFocus={() => setIsFocused(true)}
+      placeholder="low, medium, high"
+      title="Comma-separated reasoning levels (e.g. low, medium, xhigh)"
+      value={text}
+    />
+  );
 }
 
 export function ModelListEditor({
@@ -74,7 +127,7 @@ export function ModelListEditor({
             {models.map((row, index) => (
               <tr
                 className="border-border/60 border-b last:border-0"
-                key={row.id.trim() || rowKeysRef.current[index]}
+                key={rowKeysRef.current[index]}
               >
                 <td className="px-2 py-1.5">
                   <InputGroup>
@@ -113,23 +166,14 @@ export function ModelListEditor({
                         size="sm"
                       />
                       {row.supportsThinking ? (
-                        <InputGroup className="w-36">
-                          <InputGroupInput
+                        <InputGroup className="w-44">
+                          <ReasoningLevelsInput
                             disabled={disabled}
-                            onChange={(event) => {
-                              const val = event.target.value;
-                              const parts = val
-                                .split(",")
-                                .map((s) => s.trim())
-                                .filter(Boolean);
-                              updateRow(index, {
-                                reasoningEffortValues:
-                                  parts.length > 0 ? parts : undefined,
-                              });
-                            }}
-                            placeholder="low, medium, high"
-                            title="Comma-separated reasoning levels (e.g. low, medium, xhigh)"
-                            value={row.reasoningEffortValues?.join(", ") ?? ""}
+                            modelId={row.id}
+                            onChange={(reasoningEffortValues) =>
+                              updateRow(index, { reasoningEffortValues })
+                            }
+                            value={row.reasoningEffortValues}
                           />
                         </InputGroup>
                       ) : null}

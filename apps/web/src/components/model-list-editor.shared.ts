@@ -10,6 +10,17 @@ export function normalizeModelListRows(
       return [];
     }
 
+    const reasoningEffortValues = Array.isArray(row.reasoningEffortValues)
+      ? row.reasoningEffortValues
+          .map((v) => (typeof v === "string" ? v.trim() : ""))
+          .filter(Boolean)
+      : typeof row.reasoningEffortValues === "string"
+        ? (row.reasoningEffortValues as string)
+            .split(",")
+            .map((v) => v.trim())
+            .filter(Boolean)
+        : undefined;
+
     return [
       {
         id,
@@ -21,6 +32,9 @@ export function normalizeModelListRows(
         ...(row.supportsVision === undefined
           ? {}
           : { supportsVision: row.supportsVision }),
+        ...(reasoningEffortValues && reasoningEffortValues.length > 0
+          ? { reasoningEffortValues }
+          : {}),
         ...(row.inputPerMillionUsd === undefined
           ? {}
           : { inputPerMillionUsd: row.inputPerMillionUsd }),

@@ -141,6 +141,9 @@ export function CatalogProviderModelFields({
         ...(model.supportsThinking === undefined
           ? {}
           : { supportsThinking: model.supportsThinking }),
+        ...(model.reasoningEffortValues?.length
+          ? { reasoningEffortValues: model.reasoningEffortValues }
+          : {}),
       },
     ]);
     setIsBrowsing(false);
@@ -198,6 +201,9 @@ export function CatalogProviderModelFields({
                     ...(model.supportsThinking === undefined
                       ? {}
                       : { supportsThinking: model.supportsThinking }),
+                    ...(model.reasoningEffortValues?.length
+                      ? { reasoningEffortValues: model.reasoningEffortValues }
+                      : {}),
                   }))
                 )
               }

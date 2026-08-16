@@ -117,6 +117,7 @@ function isUnderArtifactsDir(resolvedPath: string): boolean {
 function isArtifactMetaRelativePath(relativePath: string): boolean {
   return (
     relativePath.endsWith(ARTIFACT_META_SUFFIX) ||
+    relativePath.endsWith(".meta.json") ||
     relativePath.includes(".atlas-meta")
   );
 }
@@ -125,6 +126,7 @@ function isArtifactMetaResolvedPath(resolvedPath: string): boolean {
   return (
     isUnderArtifactsDir(resolvedPath) &&
     (resolvedPath.endsWith(ARTIFACT_META_SUFFIX) ||
+      resolvedPath.endsWith(".meta.json") ||
       resolvedPath.includes(".atlas-meta"))
   );
 }
@@ -141,7 +143,8 @@ export function isArtifactMetaSidecarTool(message: ChatListItem): boolean {
   if (
     inputPath &&
     (inputPath.includes(".atlas-meta") ||
-      inputPath.endsWith(ARTIFACT_META_SUFFIX))
+      inputPath.endsWith(ARTIFACT_META_SUFFIX) ||
+      inputPath.endsWith(".meta.json"))
   ) {
     return true;
   }
@@ -154,7 +157,8 @@ export function isArtifactMetaSidecarTool(message: ChatListItem): boolean {
   if (typeof result?.path === "string") {
     return (
       result.path.includes(".atlas-meta") ||
-      result.path.endsWith(ARTIFACT_META_SUFFIX)
+      result.path.endsWith(ARTIFACT_META_SUFFIX) ||
+      result.path.endsWith(".meta.json")
     );
   }
 
@@ -186,7 +190,14 @@ function siblingContentPath(metaResolvedPath: string): string | null {
     return null;
   }
 
-  return metaResolvedPath.slice(0, -ARTIFACT_META_SUFFIX.length);
+  if (metaResolvedPath.endsWith(ARTIFACT_META_SUFFIX)) {
+    return metaResolvedPath.slice(0, -ARTIFACT_META_SUFFIX.length);
+  }
+  if (metaResolvedPath.endsWith(".meta.json")) {
+    return metaResolvedPath.slice(0, -".meta.json".length);
+  }
+
+  return null;
 }
 
 function parseArtifactMeta(

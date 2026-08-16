@@ -1,3 +1,4 @@
+import type { ArtifactPreview } from "@atlas/core";
 import {
   File01Icon,
   Image01Icon,
@@ -155,13 +156,83 @@ export function ArtifactAttachmentPreview({
   const isWordDocument =
     isDocxFile(artifact.filename, mimeType) ||
     isLegacyDocFile(artifact.filename, mimeType);
-  const isMarkdown = isMarkdownArtifactMimeType(mimeType) || isWordDocument;
+  const isPptx =
+    artifact.filename.toLowerCase().endsWith(".pptx") ||
+    artifact.filename.toLowerCase().endsWith(".ppt");
+  const isXlsx =
+    artifact.filename.toLowerCase().endsWith(".xlsx") ||
+    artifact.filename.toLowerCase().endsWith(".xls") ||
+    artifact.filename.toLowerCase().endsWith(".csv");
+  const isPdf =
+    artifact.filename.toLowerCase().endsWith(".pdf") ||
+    mimeType === "application/pdf";
+  const isRichDoc = isPptx || isXlsx || isPdf || isWordDocument;
+
+  const [richPreview, setRichPreview] = useState<ArtifactPreview | null>(null);
+  const [richLoading, setRichLoading] = useState(false);
+  const [richError, setRichError] = useState<string | null>(null);
+  const [sheetOptions, setSheetOptions] = useState<{
+    sheet?: string;
+    sheetIndex?: number;
+  }>({});
+
+  useEffect(() => {
+    if (!(open && isRichDoc)) {
+      return;
+    }
+
+    let cancelled = false;
+    setRichLoading(true);
+    setRichError(null);
+
+    client
+      .getProfileArtifactPreview(
+        profileId,
+        artifact.path || artifact.filename,
+        {
+          sheet: sheetOptions.sheet,
+          sheetIndex: sheetOptions.sheetIndex,
+        }
+      )
+      .then((preview) => {
+        if (cancelled) {
+          return;
+        }
+        setRichPreview(preview);
+      })
+      .catch((err) => {
+        if (cancelled) {
+          return;
+        }
+        setRichError(
+          err instanceof Error ? err.message : "Failed to load preview."
+        );
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setRichLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    open,
+    isRichDoc,
+    profileId,
+    artifact.path,
+    artifact.filename,
+    sheetOptions,
+  ]);
+
+  const isMarkdown = isMarkdownArtifactMimeType(mimeType);
   const language = artifactCodeLanguage(artifact.filename);
   const canPreview =
+    isRichDoc ||
     isHtml ||
     isImage ||
     isVideo ||
-    isWordDocument ||
     isTextArtifactMimeType(mimeType) ||
     isUnknownArtifactMimeType(mimeType);
   const downloadLabel = downloadActionLabel(mimeType);
@@ -174,11 +245,11 @@ export function ArtifactAttachmentPreview({
     setContent,
   } = useArtifactPreviewContent({
     artifact,
-    canPreview,
+    canPreview: canPreview && !isRichDoc,
     isHtml,
     isImage,
     isVideo,
-    isWordDocument,
+    isWordDocument: false,
     open,
     profileId,
   });
@@ -193,6 +264,23 @@ export function ArtifactAttachmentPreview({
   }, [copied]);
 
   function buildPanelBody(loadingOverride?: boolean) {
+    if (isRichDoc) {
+      return (
+        <ArtifactAttachmentPanelBody
+          artifact={artifact}
+          canPreview={true}
+          downloadUrl={downloadUrl}
+          error={richError}
+          kind="rich"
+          loading={loadingOverride ?? richLoading}
+          onSelectSheet={(sheetName, sheetIndex) => {
+            setSheetOptions({ sheet: sheetName, sheetIndex });
+          }}
+          preview={richPreview}
+        />
+      );
+    }
+
     const panelKind = isImage
       ? "image"
       : isVideo
@@ -232,12 +320,12 @@ export function ArtifactAttachmentPreview({
             additionalMenuItems={<ArtifactShareMenuItem share={share} />}
             content={content}
             copied={copied}
-            copyDisabled={isImage || isVideo}
+            copyDisabled={isImage || isVideo || isRichDoc}
             downloadLabel={downloadLabel}
             downloadUrl={downloadUrl}
             filename={artifact.filename}
             fullscreen={fullscreen}
-            loading={loading}
+            loading={isRichDoc ? richLoading : loading}
             onCopy={() => void copyArtifact()}
             onToggleFullscreen={() => setFullscreen((current) => !current)}
           />
@@ -273,6 +361,10 @@ export function ArtifactAttachmentPreview({
     isImage,
     isVideo,
     isMarkdown,
+    isRichDoc,
+    richPreview,
+    richLoading,
+    richError,
     language,
     mimeType,
     loading,
@@ -299,10 +391,7 @@ export function ArtifactAttachmentPreview({
         const result = await client.readProfileArtifactContent(
           profileId,
           artifact.path,
-          {
-            inline: true,
-            render: isWordDocument ? "markdown" : undefined,
-          }
+          { inline: true }
         );
         text = new TextDecoder().decode(result.data);
         setContent(text);
@@ -322,12 +411,17 @@ export function ArtifactAttachmentPreview({
       ...buildPanelConfig(),
       content: buildPanelBody(
         canPreview &&
-          (isImage || isVideo
-            ? (isImage ? imagePreviewUrl : videoPreviewUrl) === null
-            : content === null) &&
-          error === null
+          (isRichDoc
+            ? richPreview === null
+            : isImage || isVideo
+              ? (isImage ? imagePreviewUrl : videoPreviewUrl) === null
+              : content === null) &&
+          error === null &&
+          richError === null
       ),
-      defaultWidth: artifactPanelDefaultWidth(artifact.filename, mimeType),
+      defaultWidth: isRichDoc
+        ? 800
+        : artifactPanelDefaultWidth(artifact.filename, mimeType),
       fullscreen: false,
       id,
       onClose: () => {

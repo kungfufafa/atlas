@@ -9,6 +9,7 @@ import {
 } from "hugeicons-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 export function PdfViewer({
   preview,
@@ -21,9 +22,57 @@ export function PdfViewer({
   const [currentPage, setCurrentPage] = useState(1);
   const [zoom, setZoom] = useState(100);
   const [showThumbnails, setShowThumbnails] = useState(false);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [loadingPdf, setLoadingPdf] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+
+  const rawPdfUrl = preview.previewUrl || downloadUrl;
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadingPdf(true);
+    setPdfError(null);
+
+    fetch(rawPdfUrl, { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Failed to load PDF (${res.status})`);
+        }
+        return res.blob();
+      })
+      .then((blob) => {
+        if (cancelled) {
+          return;
+        }
+        const objectUrl = URL.createObjectURL(
+          new Blob([blob], { type: "application/pdf" })
+        );
+        setBlobUrl(objectUrl);
+      })
+      .catch((err) => {
+        if (cancelled) {
+          return;
+        }
+        setPdfError(err?.message || "Failed to load PDF preview.");
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingPdf(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }, [rawPdfUrl]);
 
   // Sync zoom / page to embed URL
-  const pdfSource = `${preview.previewUrl || downloadUrl}#page=${currentPage}&zoom=${zoom}`;
+  const pdfSource = blobUrl
+    ? `${blobUrl}#page=${currentPage}&zoom=${zoom}`
+    : `${rawPdfUrl}#page=${currentPage}&zoom=${zoom}`;
 
   function handleZoomIn() {
     setZoom((z) => Math.min(250, z + 25));
@@ -138,13 +187,16 @@ export function PdfViewer({
           >
             <ZoomOutAreaIcon className="size-4" />
           </Button>
+
           <button
-            className="rounded px-2 py-1 font-medium text-muted-foreground text-xs hover:bg-accent hover:text-foreground"
+            aria-label="Reset zoom"
+            className="min-w-12 rounded px-1.5 py-1 text-center font-medium text-muted-foreground text-xs hover:bg-muted"
             onClick={handleResetZoom}
             type="button"
           >
             {zoom}%
           </button>
+
           <Button
             aria-label="Zoom in"
             className="size-8 p-0"
@@ -205,12 +257,31 @@ export function PdfViewer({
         {/* PDF Frame / Render Container */}
         <main className="relative min-h-0 flex-1 overflow-auto bg-muted/20 p-4">
           <div className="mx-auto flex h-full min-h-[500px] w-full max-w-5xl items-center justify-center overflow-hidden rounded-lg border border-border bg-background shadow-sm">
-            <iframe
-              className="h-full w-full border-0"
-              key={`${preview.filename}-${currentPage}-${zoom}`}
-              src={pdfSource}
-              title={`PDF Preview - ${preview.filename}`}
-            />
+            {loadingPdf ? (
+              <div className="flex flex-col items-center justify-center gap-2 p-8 text-muted-foreground">
+                <Spinner className="size-6 text-primary" />
+                <p className="font-medium text-xs">Loading document preview…</p>
+              </div>
+            ) : pdfError ? (
+              <div className="flex flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
+                <p className="text-destructive text-sm">{pdfError}</p>
+                <a
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 font-semibold text-primary-foreground text-xs shadow-xs"
+                  download={preview.filename}
+                  href={downloadUrl}
+                >
+                  <Download01Icon className="size-3.5" />
+                  Download File
+                </a>
+              </div>
+            ) : (
+              <iframe
+                className="h-full w-full border-0"
+                key={`${preview.filename}-${currentPage}-${zoom}`}
+                src={pdfSource}
+                title={`PDF Preview - ${preview.filename}`}
+              />
+            )}
           </div>
         </main>
       </div>

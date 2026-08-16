@@ -15,6 +15,7 @@ export function seedManageModelRows(
       inputPerMillionUsd: model.inputPerMillionUsd,
       name: model.name ?? model.id,
       outputPerMillionUsd: model.outputPerMillionUsd,
+      reasoningEffortValues: model.reasoningEffortValues,
       supportsThinking: model.supportsThinking,
     }));
   }
@@ -25,6 +26,7 @@ export function seedManageModelRows(
     inputPerMillionUsd: model.inputPerMillionUsd,
     name: model.name ?? model.id,
     outputPerMillionUsd: model.outputPerMillionUsd,
+    reasoningEffortValues: model.reasoningEffortValues,
     supportsThinking: model.supportsThinking,
   }));
 }
@@ -42,6 +44,7 @@ export function seedShortlistManageModelRows(
       inputPerMillionUsd: model.inputPerMillionUsd,
       name: model.name ?? model.id,
       outputPerMillionUsd: model.outputPerMillionUsd,
+      reasoningEffortValues: model.reasoningEffortValues,
       supportsThinking: model.supportsThinking,
       supportsVision: model.supportsVision,
     }));

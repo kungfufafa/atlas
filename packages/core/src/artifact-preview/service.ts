@@ -155,7 +155,6 @@ export class PreviewService {
             artifact.filename,
             artifact.mimeType
           );
-
           if (isOffice && options.strategy !== "semantic") {
             try {
               // Check cached derived asset

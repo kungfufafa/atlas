@@ -1,10 +1,12 @@
 import {
   distillToolResult,
   executeProtectedTool,
+  metrics,
   standardizeToolError,
   type ToolCall,
   type ToolContext,
   type ToolDefinition,
+  withSpan,
 } from "@atlas/core";
 
 export function findTool(
@@ -35,41 +37,62 @@ export async function executeToolCall(
   const tool = findTool(tools, call.name);
 
   if (!tool) {
+    metrics.toolCallsTotal.inc({ status: "error", tool: call.name });
+    metrics.toolFailuresTotal.inc({ tool: call.name });
     return {
       error: `Unknown tool: ${call.name}`,
     };
   }
 
+  const startMs = Date.now();
   try {
-    const execution = await executeProtectedTool(tool, call.arguments, context);
+    return await withSpan(`tool.${call.name}`, async () => {
+      const execution = await executeProtectedTool(
+        tool,
+        call.arguments,
+        context
+      );
 
-    if (!execution.success && execution.error) {
-      return {
-        error: execution.error.message,
-        errorCode: execution.error.code,
-      };
-    }
+      const durationMs = Date.now() - startMs;
+      metrics.toolLatencyMs.observe(durationMs, { tool: call.name });
 
-    const rawData = execution.data;
-    // The single place every tool result passes through, so the optimiser is
-    // wired once rather than per tool. It returns `result` untouched unless it
-    // is enabled, recognises the tool, and produces something strictly shorter.
-    const distilled = await distillToolResult(call.name, rawData, context);
+      if (!execution.success && execution.error) {
+        metrics.toolCallsTotal.inc({ status: "error", tool: call.name });
+        metrics.toolFailuresTotal.inc({ tool: call.name });
+        return {
+          error: execution.error.message,
+          errorCode: execution.error.code,
+        };
+      }
 
-    if (
-      execution.artifacts &&
-      execution.artifacts.length > 0 &&
-      typeof distilled === "object" &&
-      distilled !== null
-    ) {
-      return {
-        ...(distilled as Record<string, unknown>),
-        artifacts: execution.artifacts,
-      };
-    }
+      metrics.toolCallsTotal.inc({ status: "success", tool: call.name });
 
-    return distilled;
+      const rawData = execution.data;
+      // The single place every tool result passes through, so the optimiser is
+      // wired once rather than per tool. It returns `result` untouched unless it
+      // is enabled, recognises the tool, and produces something strictly shorter.
+      const distilled = await distillToolResult(call.name, rawData, context);
+
+      if (
+        execution.artifacts &&
+        execution.artifacts.length > 0 &&
+        typeof distilled === "object" &&
+        distilled !== null
+      ) {
+        return {
+          ...(distilled as Record<string, unknown>),
+          artifacts: execution.artifacts,
+        };
+      }
+
+      return distilled;
+    });
   } catch (error) {
+    const durationMs = Date.now() - startMs;
+    metrics.toolLatencyMs.observe(durationMs, { tool: call.name });
+    metrics.toolCallsTotal.inc({ status: "error", tool: call.name });
+    metrics.toolFailuresTotal.inc({ tool: call.name });
+
     const standardized = standardizeToolError(error);
     return {
       error: standardized.message,

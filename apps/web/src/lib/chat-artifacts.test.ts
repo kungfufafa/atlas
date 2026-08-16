@@ -148,6 +148,53 @@ describe("extractTurnArtifacts", () => {
     ).toEqual([]);
   });
 
+  test("pairs content and .meta.json sidecar into one artifact ref", () => {
+    const contentPath = `${ARTIFACTS_ROOT}/atlas-production-readiness-report.docx`;
+    const sidecarPath = `${ARTIFACTS_ROOT}/atlas-production-readiness-report.docx.meta.json`;
+    const docxMeta = JSON.stringify({
+      mimeType:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      savedAt: "2026-08-16T12:00:00.000Z",
+      sizeBytes: 15_400,
+    });
+
+    const messages: ChatListItem[] = [
+      writeFileTool(
+        "1",
+        {
+          content: "DOCX_BINARY",
+          path: "artifacts/atlas-production-readiness-report.docx",
+        },
+        {
+          bytesWritten: 15_400,
+          path: contentPath,
+        }
+      ),
+      writeFileTool(
+        "2",
+        {
+          content: docxMeta,
+          path: "artifacts/atlas-production-readiness-report.docx.meta.json",
+        },
+        {
+          bytesWritten: docxMeta.length,
+          path: sidecarPath,
+        }
+      ),
+    ];
+
+    expect(extractTurnArtifacts(messages)).toEqual([
+      {
+        filename: "atlas-production-readiness-report.docx",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        path: "atlas-production-readiness-report.docx",
+        savedAt: "2026-08-16T12:00:00.000Z",
+        sizeBytes: 15_400,
+      },
+    ]);
+  });
+
   test("falls back to content write when sidecar write fails", () => {
     const contentPath = `${ARTIFACTS_ROOT}/report.md`;
 

@@ -32,7 +32,11 @@ function getArtifactMetaPath(filePath: string): string {
 }
 
 function isArtifactMetaFile(filename: string): boolean {
-  return filename.endsWith(ARTIFACT_META_SUFFIX);
+  return (
+    filename.endsWith(ARTIFACT_META_SUFFIX) ||
+    filename.endsWith(".meta.json") ||
+    filename.includes(".atlas-meta")
+  );
 }
 
 export async function listArtifacts(
@@ -112,9 +116,15 @@ async function readArtifactMeta(
   fallbackSavedAt: string
 ): Promise<ArtifactMeta> {
   const metaPath = getArtifactMetaPath(filePath);
+  const altMetaPath = `${filePath}.meta.json`;
 
   try {
-    const raw = await readFile(metaPath, "utf8");
+    const targetPath = (await pathExists(metaPath))
+      ? metaPath
+      : (await pathExists(altMetaPath))
+        ? altMetaPath
+        : metaPath;
+    const raw = await readFile(targetPath, "utf8");
     return artifactMetaSchema.parse(JSON.parse(raw));
   } catch {
     // Artifacts written straight to disk (no `save-artifact` sidecar) still need

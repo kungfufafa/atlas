@@ -1,11 +1,21 @@
-import { ATLAS_API_VERSION, isComposioConfiguredAsync } from "@atlas/core";
+import {
+  ATLAS_API_VERSION,
+  ExecutionCostTracker,
+  ExecutionSummaryBuilder,
+  generateSafeDebugBundle,
+  isComposioConfiguredAsync,
+  metrics,
+} from "@atlas/core";
 import type { UpdateWebPublicUrlRequest } from "@atlas/core/contract";
 import { createRoute, z } from "@hono/zod-openapi";
+import { defaultExecutionQueue } from "../../services/backpressure-queue";
 import {
   getWebPublicUrlSettings,
   persistWebPublicUrl,
   resolveRequestClientOrigin,
 } from "../../services/composio-callback-url";
+import { gracefulShutdownManager } from "../../services/graceful-shutdown";
+import { stuckJobReaper } from "../../services/stuck-job-reaper";
 import type { ServerOptions } from "../context";
 import {
   requireActiveOrgIdFromContext,
@@ -186,6 +196,128 @@ export function registerSystemRoutes(
       },
       200
     );
+  });
+
+  // /health/live - Liveness probe
+  app.get("/health/live", (c) =>
+    c.json({ ok: true, status: "live", uptime: process.uptime() }, 200)
+  );
+
+  // /health/ready - Readiness probe
+  app.get("/health/ready", async (c) => {
+    if (gracefulShutdownManager.isDraining()) {
+      return c.json(
+        {
+          ok: false,
+          reason: "Server is draining / shutting down",
+          status: "not_ready",
+        },
+        503
+      );
+    }
+
+    try {
+      // Test database connectivity
+      await databaseAdapter?.countHumanUsers();
+    } catch {
+      return c.json(
+        { ok: false, reason: "Database unreachable", status: "not_ready" },
+        503
+      );
+    }
+
+    const queueStats = defaultExecutionQueue.getStats();
+    if (queueStats.queued >= queueStats.maxQueueDepth) {
+      return c.json(
+        { ok: false, reason: "Execution queue saturated", status: "not_ready" },
+        503
+      );
+    }
+
+    return c.json({ ok: true, status: "ready" }, 200);
+  });
+
+  // /health/deep - Deep health diagnostics (Admin only)
+  app.get("/health/deep", async (c) => {
+    requirePlatformAdminFromContext(c);
+
+    let dbOk = false;
+    let usersCount = 0;
+    try {
+      usersCount = (await databaseAdapter?.countHumanUsers()) ?? 0;
+      dbOk = true;
+    } catch {
+      dbOk = false;
+    }
+
+    const queueStats = defaultExecutionQueue.getStats();
+    const mem = process.memoryUsage();
+
+    return c.json(
+      {
+        database: { ok: dbOk, userCount: usersCount },
+        environment: {
+          gitSha: process.env.GIT_SHA || process.env.COMMIT_SHA || "local-dev",
+          nodeEnv: process.env.NODE_ENV || "development",
+          platform: process.platform,
+          version: ATLAS_API_VERSION,
+        },
+        memory: {
+          external: Math.round(mem.external / 1024 / 1024),
+          heapTotalMb: Math.round(mem.heapTotal / 1024 / 1024),
+          heapUsedMb: Math.round(mem.heapUsed / 1024 / 1024),
+          rssMb: Math.round(mem.rss / 1024 / 1024),
+        },
+        ok: dbOk && !gracefulShutdownManager.isDraining(),
+        queue: queueStats,
+        reaper: { activeLeases: stuckJobReaper.getActiveLeasesCount() },
+        uptimeSeconds: Math.round(process.uptime()),
+      },
+      200
+    );
+  });
+
+  // Prometheus text format metrics
+  app.get("/metrics", (c) => {
+    requirePlatformAdminFromContext(c);
+    return new Response(metrics.toPrometheus(), {
+      headers: { "Content-Type": "text/plain; version=0.0.4; charset=utf-8" },
+      status: 200,
+    });
+  });
+
+  // JSON operational metrics (Admin only)
+  app.get("/v1/system/metrics", (c) => {
+    requirePlatformAdminFromContext(c);
+    return c.json({ metrics: metrics.getAllMetrics() }, 200);
+  });
+
+  // Safe debug bundle diagnostics export (Tenant isolated)
+  app.get("/v1/system/diagnostics/debug-bundle/:sessionId", async (c) => {
+    const orgId = requireActiveOrgIdFromContext(c);
+    const sessionId = decodeURIComponent(c.req.param("sessionId"));
+
+    const session = await agent.getSessionMessages(orgId, sessionId);
+    if (!session) {
+      return errorResponse("Session not found", 404);
+    }
+
+    const builder = new ExecutionSummaryBuilder(
+      `diag_${sessionId}`,
+      sessionId,
+      orgId
+    );
+    builder.recordEvent("diagnostics.requested", "Diagnostics bundle exported");
+
+    const costSummary = new ExecutionCostTracker(
+      `diag_${sessionId}`,
+      sessionId,
+      orgId
+    ).getSummary();
+    const summary = builder.build(costSummary);
+    const bundle = generateSafeDebugBundle(summary);
+
+    return c.json(bundle, 200);
   });
 
   app.openapi(systemStatusRoute, async (c) => {
