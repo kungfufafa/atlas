@@ -1,6 +1,7 @@
 import type {
   AssignSkillRequest,
   CreateSkillRequest,
+  InstallSkillRequest,
   ListSkillsResponse,
   PatchSkillRequest,
   ProfileResponse,
@@ -48,6 +49,10 @@ export function registerSkillRoutes(
     .object({})
     .passthrough()
     .openapi("CreateSkillRequest");
+  const installSkillSchema = z
+    .object({})
+    .passthrough()
+    .openapi("InstallSkillRequest");
   const patchSkillSchema = z
     .object({})
     .passthrough()
@@ -91,6 +96,39 @@ export function registerSkillRoutes(
         },
       },
       summary: "Create a skill",
+      tags: ["Skills"],
+    })
+  );
+  app.openAPIRegistry.registerPath(
+    createRoute({
+      method: "post",
+      operationId: "installSkill",
+      path: "/v1/skills/install",
+      request: {
+        body: {
+          content: { "application/json": { schema: installSkillSchema } },
+          required: true,
+        },
+      },
+      responses: {
+        201: {
+          content: { "application/json": { schema: skillSchema } },
+          description: "Installed skill",
+        },
+        400: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Error",
+        },
+        403: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Error",
+        },
+        404: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Error",
+        },
+      },
+      summary: "Install a skill from a public GitHub SKILL.md URL",
       tags: ["Skills"],
     })
   );
@@ -231,6 +269,16 @@ export function registerSkillRoutes(
     const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<CreateSkillRequest>(c.req.raw);
     return json<SkillResponse>(await agent.createSkill(orgId, body));
+  });
+
+  app.post("/v1/skills/install", async (c) => {
+    requirePlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    const body = await readJson<InstallSkillRequest>(c.req.raw);
+    return json<SkillResponse>(
+      await agent.installSkillFromGitHub(orgId, body),
+      201
+    );
   });
 
   app.post("/v1/skills/sync", async (c) => {
