@@ -720,11 +720,22 @@ function readThinkingSettings(
   };
 }
 
+const KNOWN_THINKING_EFFORTS = new Set([
+  "none",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max",
+]);
+
 function validateThinkingEffort(
   value: ThinkingEffort | undefined
 ): ThinkingEffort {
-  const trimmed = value?.trim();
-  return trimmed || DEFAULT_THINKING_EFFORT;
+  const trimmed = value?.trim().toLowerCase();
+  return trimmed && KNOWN_THINKING_EFFORTS.has(trimmed)
+    ? trimmed
+    : DEFAULT_THINKING_EFFORT;
 }
 
 function readTimezone(values: Record<string, string>): string | undefined {

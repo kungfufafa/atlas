@@ -41,7 +41,7 @@ export function AutomationsPageLayout(state: AutomationsPageState) {
   } = state;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 p-6">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 sm:p-6">
       {error ? (
         <p
           className="shrink-0 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-destructive text-sm"
@@ -120,7 +120,7 @@ export function AutomationsPageLayout(state: AutomationsPageState) {
         <div className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[240px_minmax(0,1fr)]">
           <AutomationsListSidebar {...state} />
 
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto p-4 sm:p-5">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto p-4">
             {loading ? (
               <AutomationDetailSkeleton />
             ) : automations.length === 0 ? (

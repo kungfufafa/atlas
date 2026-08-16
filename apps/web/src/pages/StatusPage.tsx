@@ -51,7 +51,7 @@ export function StatusPage({ embedded = false }: { embedded?: boolean } = {}) {
     <div
       className={cn(
         "min-w-0",
-        embedded ? "divide-y divide-border" : "space-y-6"
+        embedded ? "divide-y divide-border" : "space-y-4"
       )}
     >
       {errorMessage ? (
@@ -160,20 +160,20 @@ function StatusDashboard({
         <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
           <thead className="text-muted-foreground text-xs">
             <tr>
-              <th className="border-border border-b px-5 py-2.5 font-medium">
+              <th className="border-border border-b px-4 py-2.5 font-medium">
                 Service
               </th>
-              <th className="border-border border-b px-5 py-2.5 font-medium">
+              <th className="border-border border-b px-4 py-2.5 font-medium">
                 Status
               </th>
-              <th className="border-border border-b px-5 py-2.5 font-medium">
+              <th className="border-border border-b px-4 py-2.5 font-medium">
                 {canManageWorkers ? (
                   "Actions"
                 ) : (
                   <span className="sr-only">Actions</span>
                 )}
               </th>
-              <th className="border-border border-b px-5 py-2.5 font-medium">
+              <th className="border-border border-b px-4 py-2.5 font-medium">
                 {canManageWorkers ? (
                   "Logs"
                 ) : (
@@ -221,7 +221,7 @@ function LlmUsageSection({
     <section
       className={cn("min-w-0 overflow-hidden", !embedded && sectionClass)}
     >
-      <div className="flex flex-wrap items-start justify-between gap-4 border-border border-b px-5 py-4">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-border border-b px-4 py-3">
         <div className="min-w-0 space-y-1">
           <div className="flex items-center gap-2">
             <h2 className="type-section-title">LLM usage</h2>
@@ -251,7 +251,7 @@ function LlmUsageSection({
 
       {usage.providerConfigured ? (
         hasUsage ? (
-          <div className="space-y-4 p-5">
+          <div className="space-y-4 p-4">
             <div className="rounded-lg border border-border bg-background/50 p-4">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
                 <CompactUsageStat
@@ -363,7 +363,7 @@ function LlmUsageSection({
         />
       )}
 
-      <div className="border-border border-t bg-muted/15 px-5 py-3 dark:bg-muted/10">
+      <div className="border-border border-t bg-muted/15 px-4 py-3 dark:bg-muted/10">
         <p className="text-muted-foreground text-xs">
           Tracking since {formatDate(usage.trackedSince)}. Figures reset when
           the server restarts.
@@ -385,7 +385,7 @@ function LlmUsageEmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="p-5">
+    <div className="p-4">
       <div className="flex flex-col items-center rounded-lg border border-border border-dashed bg-muted/15 px-6 py-10 text-center dark:bg-muted/10">
         <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-muted/50 text-muted-foreground">
           <Icon aria-hidden className="size-5" />
@@ -538,7 +538,7 @@ function SummaryStrip({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-start gap-3 border-border border-b px-5 py-4 sm:gap-4",
+        "flex flex-wrap items-start gap-3 border-border border-b px-4 py-3 sm:gap-4",
         summary.tone === "warn" &&
           "bg-amber-500/[0.04] dark:bg-amber-400/[0.05]",
         summary.tone === "bad" && "bg-destructive/5"
@@ -595,7 +595,7 @@ function QuickStat({
   return (
     <div
       className={cn(
-        "space-y-1 px-5 py-4",
+        "space-y-1 px-4 py-3",
         active && "bg-primary/5 dark:bg-primary/10"
       )}
     >
@@ -662,13 +662,13 @@ function WorkerServiceRow({
 
   return (
     <tr className="last:[&>td]:border-b-0">
-      <td className="border-border border-b px-5 py-3">
+      <td className="border-border border-b px-4 py-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <Icon aria-hidden className="size-4 shrink-0 text-muted-foreground" />
           <span className="truncate font-medium text-foreground">{title}</span>
         </div>
       </td>
-      <td className="border-border border-b px-5 py-3">
+      <td className="border-border border-b px-4 py-3">
         <div className="flex flex-wrap items-center gap-2">
           <ServiceStatusBadge status={status} tone={tone} />
           {footerLink ? (
@@ -681,7 +681,7 @@ function WorkerServiceRow({
           ) : null}
         </div>
       </td>
-      <td className="border-border border-b px-5 py-3">
+      <td className="border-border border-b px-4 py-3">
         {canManage ? (
           <WorkerActionBar
             className="w-fit"
@@ -694,7 +694,7 @@ function WorkerServiceRow({
           <span className="text-muted-foreground text-xs">—</span>
         )}
       </td>
-      <td className="border-border border-b px-5 py-3">
+      <td className="border-border border-b px-4 py-3">
         {canManage ? (
           <WorkerViewLogsButton workerName={workerName} />
         ) : (

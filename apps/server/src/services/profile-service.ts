@@ -1,4 +1,4 @@
-import { access, cp } from "node:fs/promises";
+import { access, cp, rm } from "node:fs/promises";
 import type {
   AssignMcpServerRequest,
   AssignSkillRequest,
@@ -285,6 +285,13 @@ export class ProfileService {
     if (!deleted) {
       throw new Error("Profile not found.");
     }
+
+    // The soul dir holds MEMORY.md, skills, and knowledge base files — remove
+    // it so deleted profiles do not leave workspace data behind.
+    await rm(getProfileSoulDir(orgId, profileId), {
+      force: true,
+      recursive: true,
+    });
   }
 
   async listTools(): Promise<ListToolsResponse> {

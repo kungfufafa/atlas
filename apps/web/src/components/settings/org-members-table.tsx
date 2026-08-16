@@ -50,7 +50,7 @@ export function OrgMembersTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[28rem] border-collapse text-left text-sm">
+      <table className="w-full min-w-[20rem] border-collapse text-left text-sm sm:min-w-[28rem]">
         <thead className="text-muted-foreground text-xs">
           <tr>
             <th className={headerMemberClass}>Member</th>

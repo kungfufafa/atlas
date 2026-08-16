@@ -96,8 +96,8 @@ export function ToolsTab({ embedded = false }: { embedded?: boolean } = {}) {
   }
 
   const content = (
-    <div className="min-w-0 p-4 sm:p-5">
-      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="min-w-0 p-4">
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h2 className="type-section-title text-balance">All tools</h2>
           <p className="type-body mt-1 text-pretty text-xs tabular-nums">
@@ -126,7 +126,7 @@ export function ToolsTab({ embedded = false }: { embedded?: boolean } = {}) {
           </Button>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           <ToolListSection
             busy={busy}
             canUsePlayground={canUsePlayground}
@@ -356,15 +356,28 @@ function ToolListItem({
 
   const summary = (
     <div className="min-w-0">
-      <p className="font-medium text-foreground text-sm">{tool.name}</p>
-      <p className="mt-0.5 line-clamp-2 text-pretty text-muted-foreground text-xs leading-relaxed">
+      <div className="flex min-w-0 items-center gap-2">
+        <p className="min-w-0 truncate font-medium text-foreground text-sm">
+          {tool.name}
+        </p>
+        {deletable ? (
+          <span className="scope-badge scope-badge-custom shrink-0">
+            custom
+          </span>
+        ) : (
+          <span className="scope-badge scope-badge-active shrink-0">
+            built-in
+          </span>
+        )}
+      </div>
+      <p className="mt-0.5 hidden text-pretty text-muted-foreground text-xs leading-relaxed sm:line-clamp-2 sm:block">
         {tool.description}
       </p>
     </div>
   );
 
   return (
-    <li className="group flex items-start justify-between gap-3 px-4 py-3 transition-colors duration-150 ease-out first:rounded-t-md last:rounded-b-md hover:bg-muted/40">
+    <li className="group flex items-center justify-between gap-3 px-4 py-3 transition-colors duration-150 ease-out first:rounded-t-md last:rounded-b-md hover:bg-muted/40">
       {playgroundHref ? (
         <Link
           aria-label={`Open playground for ${tool.name}`}
@@ -380,15 +393,10 @@ function ToolListItem({
         <div className="min-w-0 flex-1">{summary}</div>
       )}
 
-      <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
-        {deletable ? (
-          <span className="scope-badge scope-badge-custom">custom</span>
-        ) : (
-          <span className="scope-badge scope-badge-active">built-in</span>
-        )}
-
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         {onConfigure ? (
           <Button
+            aria-label={`Configure ${tool.name}`}
             disabled={busy}
             onClick={(event) => {
               event.stopPropagation();
@@ -404,6 +412,7 @@ function ToolListItem({
 
         {deletable ? (
           <Button
+            aria-label={`Delete ${tool.name}`}
             className="text-muted-foreground hover:text-destructive"
             disabled={busy}
             onClick={(event) => {
@@ -419,7 +428,7 @@ function ToolListItem({
               className="size-4"
               data-icon="inline-start"
             />
-            Delete
+            <span className="sm:inline">Delete</span>
           </Button>
         ) : null}
       </div>

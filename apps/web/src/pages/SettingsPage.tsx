@@ -47,7 +47,7 @@ export function SettingsPage() {
   }, [saveTimezoneMutation, timezone]);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
+    <div className="mx-auto max-w-3xl space-y-4">
       <Card className="w-full shadow-none">
         <CardContent className="divide-y divide-border p-0">
           <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">

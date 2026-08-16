@@ -1,6 +1,6 @@
-import { ArrowLeft01Icon, ArrowRight01Icon } from "hugeicons-react";
+import { ArrowLeft01Icon, ArrowRight01Icon, Menu01Icon } from "hugeicons-react";
 import type { ElementType } from "react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, Outlet, useLocation, useSearchParams } from "react-router-dom";
 import { CommandPalette } from "@/components/CommandPalette";
 import { OrgSwitcher } from "@/components/OrgSwitcher";
@@ -40,7 +40,27 @@ export function Layout() {
   const prefetchAppData = usePrefetchAppData();
   const { data: automationUnreadTotal = 0 } = useAutomationUnreadTotal();
   const { collapsed, toggle } = useSidebarCollapsed();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const isDesktop = useMinWidthMediaQuery(640);
   const activeNav = findNavItem(page);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileNavOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileNavOpen]);
+
   const navGroups = useMemo(
     () =>
       visibleNavGroups({
@@ -53,23 +73,42 @@ export function Layout() {
   return (
     <TooltipProvider delay={0}>
       <ActiveChatProfileProvider>
-        <div className="flex h-svh overflow-hidden bg-background max-sm:hidden">
-          <ProfileRail />
+        <div className="flex h-svh overflow-hidden bg-background">
+          <div className="hidden h-full sm:flex">
+            <ProfileRail />
+          </div>
+
+          {mobileNavOpen ? (
+            <button
+              aria-label="Close navigation"
+              className="fixed inset-0 z-40 bg-black/40 sm:hidden"
+              onClick={() => setMobileNavOpen(false)}
+              type="button"
+            />
+          ) : null}
 
           <aside
             aria-label="Main navigation"
-            className="sidebar-shell flex h-full shrink-0 flex-col overflow-hidden border-border/50 border-r"
-            data-collapsed={collapsed || undefined}
+            className={cn(
+              "sidebar-shell fixed inset-y-0 left-0 z-50 flex h-full shrink-0 flex-col overflow-hidden border-border/50 border-r transition-transform duration-200",
+              mobileNavOpen ? "translate-x-0" : "-translate-x-full",
+              "sm:static sm:translate-x-0 sm:transform-none sm:transition-none",
+              "motion-reduce:transition-none"
+            )}
+            data-collapsed={collapsed && isDesktop ? true : undefined}
           >
             <div className="app-shell-header">
-              {collapsed ? (
+              {collapsed && isDesktop ? (
                 <CollapsedOrgExpandControl onExpand={toggle} />
               ) : (
                 <>
                   <div className="flex min-w-0 flex-1">
                     <OrgSwitcher collapsed={false} />
                   </div>
-                  <SidebarCollapseButton onToggle={toggle} />
+                  <SidebarCollapseButton
+                    className="max-sm:hidden"
+                    onToggle={toggle}
+                  />
                 </>
               )}
             </div>
@@ -114,24 +153,53 @@ export function Layout() {
           </aside>
 
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            {page === "chat" ? null : (
-              <header className="app-shell-header gap-4 bg-card px-6">
-                {page === "automations" ? (
-                  <AgentWorkTabs />
-                ) : page === "files" ? (
-                  <FilesViewTabs />
-                ) : page === "soul" || page === "profiles" ? null : (
+            {page === "chat" ? (
+              <div className="app-shell-header gap-1 bg-card px-3 sm:hidden">
+                <Button
+                  aria-expanded={mobileNavOpen}
+                  aria-label="Open navigation"
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => setMobileNavOpen(true)}
+                  size="icon-sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <Menu01Icon className="size-4" strokeWidth={1.75} />
+                </Button>
+                <h1 className="type-brand min-w-0 flex-1 truncate">Chat</h1>
+              </div>
+            ) : (
+              <header className="app-shell-header h-auto min-h-14 flex-wrap content-center gap-2 bg-card px-3 sm:h-14 sm:flex-nowrap sm:gap-4 sm:px-6">
+                <Button
+                  aria-expanded={mobileNavOpen}
+                  aria-label="Open navigation"
+                  className="text-muted-foreground hover:text-foreground sm:hidden"
+                  onClick={() => setMobileNavOpen(true)}
+                  size="icon-sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  <Menu01Icon className="size-4" strokeWidth={1.75} />
+                </Button>
+                {page === "soul" || page === "profiles" ? (
+                  <h1 className="type-brand min-w-0 truncate sm:hidden">
+                    {activeNav?.label}
+                  </h1>
+                ) : (
                   <h1 className="type-brand min-w-0 truncate">
                     {activeNav?.label}
                   </h1>
                 )}
                 <div
-                  className={cn(
-                    "flex h-full shrink-0 items-stretch gap-2",
-                    page !== "soul" && page !== "profiles" && "ml-auto"
-                  )}
+                  className="flex w-full shrink-0 items-stretch justify-start gap-2 sm:order-none sm:ml-auto sm:h-full sm:w-auto"
                   data-page-header-actions
-                />
+                >
+                  {page === "automations" ? (
+                    <AgentWorkTabs />
+                  ) : page === "files" ? (
+                    <FilesViewTabs />
+                  ) : null}
+                </div>
               </header>
             )}
 
@@ -161,7 +229,7 @@ export function Layout() {
                   !location.pathname.startsWith(
                     `${PAGE_PATHS.soul}/playground/`
                   )
-                  ? "p-6"
+                  ? "p-4 sm:p-6"
                   : null
               )}
             >
@@ -170,34 +238,28 @@ export function Layout() {
           </div>
         </div>
 
-        <NarrowViewportNotice />
         <CommandPalette />
       </ActiveChatProfileProvider>
     </TooltipProvider>
   );
 }
 
-/**
- * The rail and sidebar cost a fixed 296px. Measured on the settings page, that
- * leaves 344px of content at 640px wide and 79px at 375px, with labels clipped
- * and the page scrolling sideways. Tablets at `sm` (640px) can use the shell;
- * below that we say so instead of rendering a layout nobody can use.
- */
-function NarrowViewportNotice() {
-  return (
-    <div className="hidden h-svh flex-col items-center justify-center gap-3 bg-background px-6 text-center max-sm:flex">
-      <h1 className="type-page-title">This console needs a wider window</h1>
-      <p className="max-w-sm text-muted-foreground text-sm">
-        Profiles, tools and integrations are laid out for a screen at least
-        640px wide. Open Atlas on a tablet or desktop browser, or widen this
-        window.
-      </p>
-      <p className="max-w-sm text-muted-foreground text-sm">
-        To chat with your agent from a phone, use the Telegram, WhatsApp or
-        Discord bridge instead.
-      </p>
-    </div>
+function useMinWidthMediaQuery(minWidthPx: number): boolean {
+  const [matches, setMatches] = useState(
+    () =>
+      typeof window === "undefined" ||
+      window.matchMedia(`(min-width: ${minWidthPx}px)`).matches
   );
+
+  useEffect(() => {
+    const media = window.matchMedia(`(min-width: ${minWidthPx}px)`);
+    const onChange = () => setMatches(media.matches);
+    onChange();
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, [minWidthPx]);
+
+  return matches;
 }
 
 function FilesViewTabs() {
@@ -260,12 +322,21 @@ function CollapsedOrgExpandControl({ onExpand }: { onExpand: () => void }) {
   );
 }
 
-function SidebarCollapseButton({ onToggle }: { onToggle: () => void }) {
+function SidebarCollapseButton({
+  className,
+  onToggle,
+}: {
+  className?: string;
+  onToggle: () => void;
+}) {
   return (
     <Button
       aria-expanded
       aria-label="Collapse sidebar"
-      className="shrink-0 self-center text-muted-foreground hover:text-foreground"
+      className={cn(
+        "shrink-0 self-center text-muted-foreground hover:text-foreground",
+        className
+      )}
       onClick={onToggle}
       size="icon-sm"
       title="Collapse sidebar"

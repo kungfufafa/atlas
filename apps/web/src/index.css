@@ -33,6 +33,7 @@
 
 @layer base {
   html {
+    overflow-x: hidden;
     font-family: var(--font-sans);
     font-size: 16px;
     -webkit-font-smoothing: antialiased;
@@ -482,6 +483,10 @@
 
   .app-shell-header {
     @apply flex h-14 shrink-0 items-center border-b border-border/50;
+  }
+
+  [data-page-header-actions]:empty {
+    display: none;
   }
 
   .sidebar-shell .app-shell-header {

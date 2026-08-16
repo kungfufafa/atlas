@@ -24,7 +24,7 @@ export function ProfileComposioSection({
   }
 
   return (
-    <div className="pt-5">
+    <div className="pt-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="type-section-title">Composio toolkits</h3>

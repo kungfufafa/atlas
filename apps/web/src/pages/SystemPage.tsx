@@ -6,6 +6,7 @@ import { ToolsTab } from "@/components/soul-tools/ToolsTab";
 import { OrganizationPanel } from "@/components/system/OrganizationPanel";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/context/use-auth";
+import { usePageHeaderActions } from "@/hooks/use-page-header-actions";
 import { canAccessSystemPage } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { StatusPage } from "@/pages/StatusPage";
@@ -23,10 +24,7 @@ export function SystemPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = resolveSystemTab(searchParams.get("tab"), isPlatformAdmin);
   const visibleTabs = visibleSystemTabs(isPlatformAdmin);
-  const pageHeaderActions =
-    typeof document === "undefined"
-      ? null
-      : document.querySelector<HTMLElement>("[data-page-header-actions]");
+  const pageHeaderActions = usePageHeaderActions();
 
   const setTab = useCallback(
     (nextTab: SystemTabId) => {

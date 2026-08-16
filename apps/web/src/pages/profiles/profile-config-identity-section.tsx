@@ -74,7 +74,7 @@ export function ProfileConfigIdentitySection({
   }
 
   return (
-    <div className="mb-3 rounded-2xl border border-border p-3 sm:p-4">
+    <div className="mb-4 rounded-2xl border border-border p-4">
       <input
         accept="image/jpeg,image/png,image/gif,image/webp"
         className="hidden"
@@ -85,35 +85,41 @@ export function ProfileConfigIdentitySection({
       />
 
       <div className="flex min-w-0 flex-col gap-3">
-        <div className="flex min-w-0 flex-wrap items-end gap-3 sm:flex-nowrap">
-          <EditableProfileAvatar
-            disabled={
-              busy ||
-              uploadAvatarMutation.isPending ||
-              deleteAvatarMutation.isPending
-            }
-            onPick={() => avatarInputRef.current?.click()}
-            onRemove={() => void handleAvatarRemove()}
-            profile={detail}
-            size="ml"
-            uploading={
-              uploadAvatarMutation.isPending || deleteAvatarMutation.isPending
-            }
-          />
-
-          <Field className="min-w-0 flex-1" htmlFor="profile-name" label="Name">
-            <Input
-              className="h-8 min-w-0 font-semibold"
-              disabled={busy}
-              id="profile-name"
-              onBlur={() => void flushSave()}
-              onChange={(event) => handleEditNameChange(event.target.value)}
-              value={editName}
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="flex min-w-0 flex-1 items-end gap-3">
+            <EditableProfileAvatar
+              disabled={
+                busy ||
+                uploadAvatarMutation.isPending ||
+                deleteAvatarMutation.isPending
+              }
+              onPick={() => avatarInputRef.current?.click()}
+              onRemove={() => void handleAvatarRemove()}
+              profile={detail}
+              size="ml"
+              uploading={
+                uploadAvatarMutation.isPending || deleteAvatarMutation.isPending
+              }
             />
-          </Field>
+
+            <Field
+              className="min-w-0 flex-1"
+              htmlFor="profile-name"
+              label="Name"
+            >
+              <Input
+                className="h-8 min-w-0 font-semibold"
+                disabled={busy}
+                id="profile-name"
+                onBlur={() => void flushSave()}
+                onChange={(event) => handleEditNameChange(event.target.value)}
+                value={editName}
+              />
+            </Field>
+          </div>
 
           <Field
-            className="w-full min-w-0 sm:w-auto sm:min-w-[12rem] sm:max-w-[14rem]"
+            className="min-w-0 sm:ml-auto sm:w-auto sm:min-w-[12rem] sm:max-w-[14rem]"
             htmlFor="profile-model"
             label="Model"
           >

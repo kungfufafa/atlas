@@ -153,6 +153,36 @@ describe("profile service createProfile", () => {
     ).resolves.toMatch(/\S/);
   });
 
+  test("removes the soul directory when a profile is deleted", async () => {
+    tempConfigDir = await mkdtemp(
+      path.join(os.tmpdir(), "atlas-profile-delete-")
+    );
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
+
+    const service = new ProfileService(createInMemoryDatabaseAdapter());
+    const created = await service.createProfile(ORG_ID, { name: "Doomed Bot" });
+    const soulDir = path.join(
+      tempConfigDir,
+      "orgs",
+      ORG_ID,
+      "profiles",
+      created.profile.id
+    );
+
+    await expect(readFile(path.join(soulDir, "SOUL.md"), "utf8")).resolves
+      .toBeTruthy;
+
+    await service.deleteProfile(ORG_ID, created.profile.id);
+
+    let dirExists = true;
+    try {
+      await readFile(path.join(soulDir, "SOUL.md"), "utf8");
+    } catch {
+      dirExists = false;
+    }
+    expect(dirExists).toBe(false);
+  });
+
   test("assigns basic tools when the built-in tools exist", async () => {
     tempConfigDir = await mkdtemp(
       path.join(os.tmpdir(), "atlas-profile-default-tools-")

@@ -17,7 +17,7 @@ export function ProfileSkillsSettingsSection({
   }
 
   return (
-    <div className="mb-3 grid grid-cols-1 divide-y divide-border rounded-md border border-border sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+    <div className="mb-4 grid grid-cols-1 divide-y divide-border rounded-md border border-border sm:grid-cols-2 sm:divide-x sm:divide-y-0">
       <div className="p-3 sm:p-4">
         <ProfileSkillsWriteApprovalField
           disabled={disabled}

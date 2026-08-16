@@ -47,7 +47,7 @@ export function SoulTabPanel({
   onOpenFile: (fileKey: keyof SoulStackFiles) => void;
 }) {
   return (
-    <div className={embedded ? undefined : "min-w-0 p-4 sm:p-5"}>
+    <div className={embedded ? undefined : "min-w-0 p-4"}>
       <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           {embedded ? null : (

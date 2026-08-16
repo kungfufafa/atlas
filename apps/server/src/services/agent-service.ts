@@ -139,6 +139,7 @@ import {
   loadUserTranscriptionSettings,
   loadUserVisionSettings,
   loadWhatsAppSettingsPublic,
+  mapArtifactReadError,
   messageContentHasImages,
   migrateLegacyChannelToWorkspace,
   nanoid,
@@ -3349,6 +3350,30 @@ export class AgentService {
     return listArtifacts(orgId, profileId, options);
   }
 
+  private async readProfileArtifactFile(
+    orgId: string,
+    profileId: string,
+    filename: string,
+    options: { render?: "markdown" } = {}
+  ): Promise<{
+    bytes: Buffer;
+    contentType: string;
+    filePath: string;
+    relativePath: string;
+  }> {
+    try {
+      return await readArtifactFile({
+        filename,
+        orgId,
+        profileId,
+        render: options.render,
+      });
+    } catch (error) {
+      const mapped = mapArtifactReadError(error, filename);
+      throw new AtlasApiError(mapped.message, mapped.status);
+    }
+  }
+
   async readProfileArtifact(
     orgId: string,
     profileId: string,
@@ -3356,12 +3381,7 @@ export class AgentService {
     options: { render?: "markdown" } = {}
   ) {
     await this.requireProfile(orgId, profileId);
-    return readArtifactFile({
-      filename,
-      orgId,
-      profileId,
-      render: options.render,
-    });
+    return this.readProfileArtifactFile(orgId, profileId, filename, options);
   }
 
   async getProfileArtifactPreview(
@@ -3371,16 +3391,13 @@ export class AgentService {
     options: PreviewOptions = {}
   ): Promise<ArtifactPreview> {
     await this.requireProfile(orgId, profileId);
-    const { bytes, contentType, filePath } = await readArtifactFile({
-      filename,
-      orgId,
-      profileId,
-    });
+    const { bytes, contentType, filePath, relativePath } =
+      await this.readProfileArtifactFile(orgId, profileId, filename);
     return previewService.generate(
       {
         filename: path.basename(filePath),
         mimeType: contentType,
-        path: filename,
+        path: relativePath,
         revision: options.revision,
         sizeBytes: bytes.length,
       },
@@ -3396,16 +3413,13 @@ export class AgentService {
     filename: string
   ): Promise<PreviewMetadata> {
     await this.requireProfile(orgId, profileId);
-    const { bytes, contentType, filePath } = await readArtifactFile({
-      filename,
-      orgId,
-      profileId,
-    });
+    const { bytes, contentType, filePath, relativePath } =
+      await this.readProfileArtifactFile(orgId, profileId, filename);
     return previewService.inspect(
       {
         filename: path.basename(filePath),
         mimeType: contentType,
-        path: filename,
+        path: relativePath,
         sizeBytes: bytes.length,
       },
       bytes,
@@ -3420,17 +3434,14 @@ export class AgentService {
     options: PreviewOptions = {}
   ): Promise<PreviewManifest> {
     await this.requireProfile(orgId, profileId);
-    const { bytes, contentType, filePath } = await readArtifactFile({
-      filename,
-      orgId,
-      profileId,
-    });
+    const { bytes, contentType, filePath, relativePath } =
+      await this.readProfileArtifactFile(orgId, profileId, filename);
     return previewService.generateManifest(
       {
-        artifactId: filename,
+        artifactId: relativePath,
         filename: path.basename(filePath),
         mimeType: contentType,
-        path: filename,
+        path: relativePath,
         revision: options.revision,
         sizeBytes: bytes.length,
       },
@@ -3451,16 +3462,13 @@ export class AgentService {
     options: PreviewOptions = {}
   ): Promise<{ bytes: Buffer; pageCount: number }> {
     await this.requireProfile(orgId, profileId);
-    const { bytes, contentType, filePath } = await readArtifactFile({
-      filename,
-      orgId,
-      profileId,
-    });
+    const { bytes, contentType, filePath, relativePath } =
+      await this.readProfileArtifactFile(orgId, profileId, filename);
     return previewService.getOrGenerateDerivedPdf(
       {
         filename: path.basename(filePath),
         mimeType: contentType,
-        path: filename,
+        path: relativePath,
         revision: options.revision,
         sizeBytes: bytes.length,
       },

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/context/use-auth";
 import { useAppNavigation } from "@/hooks/use-app-navigation";
+import { usePageHeaderActions } from "@/hooks/use-page-header-actions";
 import { useSkillProposals } from "@/hooks/use-skill-proposals";
 import { resolveSuperAgentChatProfileId } from "@/lib/profiles";
 import { cn } from "@/lib/utils";
@@ -62,10 +63,7 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
   const onAskSuperAgent = superAgentProfileId
     ? () => navigateToNewChat(superAgentProfileId)
     : undefined;
-  const pageHeaderActions =
-    typeof document === "undefined"
-      ? null
-      : document.querySelector<HTMLElement>("[data-page-header-actions]");
+  const pageHeaderActions = usePageHeaderActions();
 
   if (profilesLoading && profiles.length === 0) {
     return <PageState message="Loading profiles…" />;
@@ -124,7 +122,7 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
             <>
               <Button
                 aria-label="Clone profile"
-                className="self-center"
+                className="hidden self-center lg:inline-flex"
                 disabled={busy}
                 onClick={() => handleCloneProfile(selectedId)}
                 size="sm"
@@ -136,7 +134,7 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
               </Button>
               <Button
                 aria-label="Delete profile"
-                className="self-center text-destructive hover:text-destructive"
+                className="hidden self-center text-destructive hover:text-destructive lg:inline-flex"
                 disabled={busy}
                 onClick={() => openDeleteDialog(selectedId)}
                 size="sm"
@@ -171,7 +169,7 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
       <section
         className={cn(
           sectionClass,
-          "flex min-h-[calc(100svh-7rem)] flex-col overflow-hidden"
+          "flex flex-col lg:min-h-[calc(100svh-7rem)] lg:overflow-hidden"
         )}
       >
         <div className="flex flex-col gap-3 border-border border-b p-4 lg:hidden">
@@ -213,8 +211,36 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
               />
             ) : null}
           </div>
+
+          {selectedId && detail && !detail.isSuper ? (
+            <div className="flex items-center justify-end gap-2 lg:hidden">
+              <Button
+                aria-label="Clone profile"
+                disabled={busy}
+                onClick={() => handleCloneProfile(selectedId)}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                <Copy01Icon aria-hidden className="size-3.5" />
+                <span>Clone</span>
+              </Button>
+              <Button
+                aria-label="Delete profile"
+                className="text-destructive hover:text-destructive"
+                disabled={busy}
+                onClick={() => openDeleteDialog(selectedId)}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                <Delete02Icon aria-hidden className="size-3.5" />
+                <span>Delete</span>
+              </Button>
+            </div>
+          ) : null}
         </div>
-        <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+        <div className="flex flex-col lg:min-h-0 lg:flex-1 lg:flex-row">
           <aside className="hidden shrink-0 flex-col border-border border-b lg:flex lg:w-56 lg:border-r lg:border-b-0">
             <div className={profilePanelHeaderClass}>
               <span className={profilePanelHeaderLabelClass}>Profiles</span>
@@ -253,9 +279,9 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
             </div>
           </aside>
 
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="flex min-w-0 flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
             {profiles.length === 0 ? (
-              <div className="p-4 sm:p-5">
+              <div className="p-4">
                 <ProfilesEmptyState
                   canCreate={canCreateProfile}
                   disabled={busy}
@@ -265,12 +291,12 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
                 />
               </div>
             ) : detailLoading && !detail ? (
-              <div className="p-4 sm:p-5">
+              <div className="p-4">
                 <PageState embedded message="Loading profile…" />
               </div>
             ) : selectedId && detail ? (
               detailTab === "profile" ? (
-                <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+                <div className="no-scrollbar p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
                   <ProfileConfigTab state={state} />
                 </div>
               ) : detailTab === "proposals" &&
@@ -279,7 +305,7 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
                 selectedId ? (
                 <div
                   aria-labelledby="profile-detail-tab-proposals"
-                  className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-4 sm:p-5"
+                  className="no-scrollbar p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
                   id="profile-detail-panel-proposals"
                   role="tabpanel"
                 >
@@ -291,7 +317,7 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
               ) : detailTab === "prompt" ? (
                 <div
                   aria-labelledby="profile-detail-tab-prompt"
-                  className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-4 sm:p-5"
+                  className="no-scrollbar p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
                   id="profile-detail-panel-prompt"
                   role="tabpanel"
                 >
@@ -299,7 +325,7 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
                 </div>
               ) : null
             ) : (
-              <div className="flex min-h-48 items-center justify-center p-4 text-muted-foreground text-sm sm:p-5">
+              <div className="flex min-h-48 items-center justify-center p-4 text-muted-foreground text-sm">
                 Select a profile to edit.
               </div>
             )}

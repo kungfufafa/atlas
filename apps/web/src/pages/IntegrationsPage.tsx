@@ -140,11 +140,11 @@ export function IntegrationsPage() {
     <section
       className={cn(
         sectionClass,
-        "flex min-h-[calc(100dvh-11rem)] flex-col overflow-hidden"
+        "flex flex-col lg:min-h-[calc(100dvh-11rem)] lg:overflow-hidden"
       )}
     >
-      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <aside className="shrink-0 border-border border-b px-4 sm:px-5 md:w-56 md:border-r md:border-b-0 md:p-4">
+      <div className="flex flex-col md:flex-row lg:min-h-0 lg:flex-1">
+        <aside className="shrink-0 border-border border-b p-4 md:w-56 md:border-r md:border-b-0">
           <nav
             aria-label="Integration settings"
             className="flex gap-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] md:flex-col md:overflow-visible [&::-webkit-scrollbar]:hidden"
@@ -162,7 +162,7 @@ export function IntegrationsPage() {
           </nav>
         </aside>
 
-        <div className="min-w-0 flex-1 p-4 sm:p-5">
+        <div className="min-w-0 flex-1 p-4">
           {visibleSection === "token" ? <LocalAuthTokenCard /> : null}
 
           {visibleSection === "optimization" ? <TokenOptimizationCard /> : null}

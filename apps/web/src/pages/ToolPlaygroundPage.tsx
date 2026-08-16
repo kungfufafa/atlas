@@ -136,7 +136,7 @@ function ToolPlaygroundPageContent({
                   </PlaygroundTab>
                 </div>
 
-                <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+                <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-4">
                   {mainTab === "output" ? (
                     <div
                       aria-labelledby="tool-playground-tab-output"
@@ -160,7 +160,7 @@ function ToolPlaygroundPageContent({
                 </div>
               </div>
             ) : (
-              <div className="space-y-5 overflow-y-auto p-4 sm:p-5">
+              <div className="space-y-5 overflow-y-auto p-4">
                 <p
                   className="rounded-md border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-amber-800 text-sm dark:text-amber-200"
                   role="status"

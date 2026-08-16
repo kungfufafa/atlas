@@ -98,10 +98,14 @@ async function walkArtifacts(
       fileStat.size,
       fileStat.mtime.toISOString()
     );
+    const relativePath = path
+      .relative(rootDir, absolutePath)
+      .split(path.sep)
+      .join("/");
     files.push({
-      filename: path.relative(rootDir, absolutePath),
+      filename: relativePath,
       mimeType: metadata.mimeType,
-      path: absolutePath,
+      path: relativePath,
       sizeBytes: metadata.sizeBytes,
       updatedAt: metadata.savedAt,
     });
@@ -137,6 +141,26 @@ async function readArtifactMeta(
   }
 }
 
+/**
+ * Map artifact read failures to HTTP-shaped outcomes without leaking server
+ * filesystem paths in the message.
+ */
+export function mapArtifactReadError(
+  error: unknown,
+  filename: string
+): { message: string; status: 400 | 404 | 500 } {
+  const err = error as NodeJS.ErrnoException | undefined;
+  const message = error instanceof Error ? error.message : String(error);
+
+  if (err?.code === "ENOENT" || message.includes("Artifact not found")) {
+    return { message: `Artifact not found: ${filename}`, status: 404 };
+  }
+  if (message.includes("outside allowed directories")) {
+    return { message, status: 400 };
+  }
+  return { message: "Failed to read artifact.", status: 500 };
+}
+
 export async function readArtifactFile(input: {
   orgId: string;
   profileId: string;
@@ -146,7 +170,13 @@ export async function readArtifactFile(input: {
    * Downloads must stay byte-exact, so this is opt-in.
    */
   render?: "markdown";
-}): Promise<{ bytes: Buffer; contentType: string; filePath: string }> {
+}): Promise<{
+  bytes: Buffer;
+  contentType: string;
+  filePath: string;
+  /** Workspace-relative POSIX-style path, safe to expose in client URLs. */
+  relativePath: string;
+}> {
   const artifactsDir = getProfileArtifactsDir(input.orgId, input.profileId);
   const resolvedArtifactsDir = await realpath(artifactsDir);
   const guarded = await guardFilePath(input.filename, null, undefined, {
@@ -159,6 +189,11 @@ export async function readArtifactFile(input: {
   if (!fileStat.isFile()) {
     throw new Error(`Artifact not found: ${input.filename}`);
   }
+
+  const relativePath = path
+    .relative(resolvedArtifactsDir, filePath)
+    .split(path.sep)
+    .join("/");
 
   const metadata = await readArtifactMeta(
     filePath,
@@ -178,6 +213,7 @@ export async function readArtifactFile(input: {
       bytes: Buffer.from(markdown, "utf8"),
       contentType: "text/markdown",
       filePath,
+      relativePath,
     };
   }
 
@@ -185,6 +221,7 @@ export async function readArtifactFile(input: {
     bytes,
     contentType: metadata.mimeType,
     filePath,
+    relativePath,
   };
 }
 

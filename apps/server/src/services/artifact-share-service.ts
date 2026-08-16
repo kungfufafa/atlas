@@ -5,6 +5,7 @@ import {
   deleteArtifactShareSnapshot,
   generateArtifactShareToken,
   isBrowserExecutableArtifactMimeType,
+  mapArtifactReadError,
   readArtifactFile,
   readArtifactShareSnapshot,
   resolveArtifactMimeType,
@@ -72,11 +73,17 @@ export class ArtifactShareService {
       throw new AtlasApiError("path is required.", 400);
     }
 
-    const artifact = await readArtifactFile({
-      filename: sourcePath,
-      orgId: input.orgId,
-      profileId: input.profileId,
-    });
+    let artifact;
+    try {
+      artifact = await readArtifactFile({
+        filename: sourcePath,
+        orgId: input.orgId,
+        profileId: input.profileId,
+      });
+    } catch (error) {
+      const mapped = mapArtifactReadError(error, sourcePath);
+      throw new AtlasApiError(mapped.message, mapped.status);
+    }
 
     const filename = sourcePath.split("/").pop() ?? "artifact";
     const mimeType = resolveArtifactMimeType(artifact.contentType, filename);
