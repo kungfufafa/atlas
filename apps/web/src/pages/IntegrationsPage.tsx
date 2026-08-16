@@ -24,7 +24,7 @@ const sectionClass = "rounded-md border border-border bg-card";
 
 const INTEGRATION_SECTIONS = [
   {
-    description: "Bot and pairing",
+    description: "Bot and chat access",
     icon: TelegramIcon,
     id: "telegram",
     label: "Telegram",
@@ -36,7 +36,7 @@ const INTEGRATION_SECTIONS = [
     label: "WhatsApp",
   },
   {
-    description: "Bot and pairing",
+    description: "Bot and chat access",
     icon: HashtagIcon,
     id: "discord",
     label: "Discord",

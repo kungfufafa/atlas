@@ -6,7 +6,12 @@ import { getWorkspaceChannelDir } from "./workspace-channel-paths";
 
 export const DEFAULT_DISCORD_PROFILE_ID = "default";
 
-const SNOWFLAKE_PATTERN = /^\d{17,20}$/;
+export const SNOWFLAKE_PATTERN = /^\d{17,20}$/;
+export const DISCORD_API_BASE_URL = "https://discord.com/api/v10";
+
+export function isDiscordSnowflake(value: string): boolean {
+  return SNOWFLAKE_PATTERN.test(value);
+}
 
 export interface DiscordConfigFile {
   accessMode: ChannelAccessMode;
@@ -48,7 +53,6 @@ export function getDiscordConfigPath(orgId?: string | null): string {
   return join(getDiscordConfigDir(orgId), "config.ini");
 }
 
-const DISCORD_API_BASE_URL = "https://discord.com/api/v10";
 const DISCORD_INVITE_PERMISSIONS = 101_376; // 68608 | 32768 (Attach Files)
 const DISCORD_INVITE_SCOPES = "bot applications.commands";
 

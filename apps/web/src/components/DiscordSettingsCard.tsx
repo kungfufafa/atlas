@@ -116,8 +116,8 @@ export function DiscordSettingsCard({
       : hasLinkedUsers
         ? "Linked. Start the bridge to receive messages"
         : pairingCode
-          ? "Step 2: send your pairing code to the bot in Discord"
-          : "Step 2: generate a pairing code and send it to your bot"
+          ? "Step 2: send your chat access code to the bot in Discord"
+          : "Step 2: generate a chat access code and send it to your bot"
     : "Step 1: paste a bot token from Discord Developer Portal";
 
   const statusBadge = configured
@@ -173,11 +173,13 @@ export function DiscordSettingsCard({
           saved.pairedUserIds.length > 0 || saved.allowedUserIds.length > 0;
 
         if (saved.handshakeCode && !savedHasLinkedUsers) {
-          setHint("Saved. Send the pairing code to your bot.");
+          setHint("Saved. Send the chat access code to your bot.");
         } else if (savedHasLinkedUsers) {
           setHint("Saved.");
         } else {
-          setHint("Saved. Get a pairing code if you still need to link.");
+          setHint(
+            "Saved. Generate a chat access code if you still need to link."
+          );
         }
         afterSuccess?.();
         onSaveSuccess?.();

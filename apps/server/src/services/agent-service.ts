@@ -43,6 +43,7 @@ import type {
   ImageGenerationSettingsResponse,
   InitSoulResponse,
   InitUserContextResponse,
+  InstallSkillRequest,
   ListArtifactsOptions,
   ListArtifactsResponse,
   ListKnowledgeBaseResponse,
@@ -1222,6 +1223,29 @@ export class AgentService {
 
     if (!(botToken || existing.configured)) {
       throw new Error("Bot token is required.");
+    }
+
+    // Reject typo'd tokens at save time instead of letting the bridge crash
+    // silently after the UI already reported success.
+    if (botToken) {
+      let verification: Response;
+      try {
+        verification = await fetch(
+          `https://api.telegram.org/bot${botToken}/getMe`
+        );
+      } catch {
+        throw new AtlasApiError(
+          "Could not reach Telegram to verify the bot token. Check your network and try again.",
+          502
+        );
+      }
+
+      if (!verification.ok) {
+        throw new AtlasApiError(
+          `Telegram rejected this bot token (${verification.status}). Paste a fresh token from @BotFather.`,
+          400
+        );
+      }
     }
 
     const profileId = input.profileId?.trim();
@@ -3129,6 +3153,13 @@ export class AgentService {
     request: CreateSkillRequest
   ): Promise<SkillResponse> {
     return this.requireSkillsService().createSkill(orgId, request);
+  }
+
+  async installSkillFromGitHub(
+    orgId: string,
+    request: InstallSkillRequest
+  ): Promise<SkillResponse> {
+    return this.requireSkillsService().installSkillFromGitHub(orgId, request);
   }
 
   async patchSkill(

@@ -8,6 +8,10 @@ import {
   DiscordPairingGuide,
   SettingsRow,
 } from "@/components/discord-settings-card.shared";
+import {
+  CHANNEL_ACCESS_MODE_OPTIONS,
+  channelAccessModeLabel,
+} from "@/components/integration-settings.shared";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,7 +61,7 @@ export function DiscordSettingsPairingSection({
               ? "Discord is linked. Generate a new code to link another account."
               : "Generate a code, then message it to your bot once."
         }
-        label="Pairing code"
+        label="Chat access code"
       >
         {pairingCode ? (
           <div className="flex flex-wrap items-center justify-end gap-2">
@@ -128,7 +132,7 @@ export function DiscordSettingsPairingSection({
                 Generating…
               </>
             ) : (
-              "Generate pairing code"
+              "Generate access code"
             )}
           </Button>
         )}
@@ -190,13 +194,16 @@ export function DiscordSettingsConfiguredRows({
             className="w-[11rem] sm:w-[13rem]"
             id="discord-access-mode"
           >
-            <SelectValue placeholder="Access mode" />
+            <SelectValue placeholder="Access mode">
+              {channelAccessModeLabel(accessMode)}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent align="end">
-            <SelectItem value="open">Open</SelectItem>
-            <SelectItem value="allowlist">Allowed list only</SelectItem>
-            <SelectItem value="denylist">Blocked list filter</SelectItem>
-            <SelectItem value="pairing">Pairing code</SelectItem>
+            {CHANNEL_ACCESS_MODE_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </SettingsRow>

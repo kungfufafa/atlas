@@ -79,6 +79,7 @@ export function TelegramSettingsCard({
   const pairingCode = settings?.handshakeCode ?? null;
   const worker = status?.telegramWorker;
   const running = worker?.running === true;
+  const workerFailed = configured && worker?.ok === false && !running;
   const canSave = configured || botToken.trim().length > 0;
   const allowedUserSummary =
     allowedUsers.length === 0
@@ -94,23 +95,33 @@ export function TelegramSettingsCard({
     (formError ? formError : null) ??
     (loadError ? formatError(loadError) : null);
 
-  const headerSubtitle = configured
-    ? hasLinkedUsers && running
-      ? "Your Telegram is connected to Atlas"
-      : hasLinkedUsers
-        ? "Linked. Start the bridge to receive messages"
-        : pairingCode
-          ? "Step 2: send your pairing code to the bot in Telegram"
-          : "Step 2: generate a pairing code and send it to your bot"
-    : "Step 1: paste a bot token from @BotFather";
+  const headerSubtitle = workerFailed
+    ? "Telegram rejected the bot token — paste a valid token and save"
+    : configured
+      ? hasLinkedUsers && running
+        ? "Your Telegram is connected to Atlas"
+        : hasLinkedUsers
+          ? "Linked. Start the bridge to receive messages"
+          : accessMode === "pairing"
+            ? pairingCode
+              ? "Step 2: send your chat access code to the bot in Telegram"
+              : "Step 2: generate a chat access code and send it to your bot"
+            : accessMode === "allowlist"
+              ? "Step 2: add allowed Telegram user IDs, then start the bridge"
+              : accessMode === "denylist"
+                ? "Step 2: add blocked Telegram user IDs, then start the bridge"
+                : "Step 2: start the bridge to open the bot to everyone"
+      : "Step 1: paste a bot token from @BotFather";
 
-  const statusBadge = configured
-    ? hasLinkedUsers && running
-      ? "Connected"
-      : hasLinkedUsers
-        ? "Paired"
-        : "Awaiting link"
-    : "Not set up";
+  const statusBadge = workerFailed
+    ? "Error"
+    : configured
+      ? hasLinkedUsers && running
+        ? "Connected"
+        : hasLinkedUsers
+          ? "Paired"
+          : "Awaiting link"
+      : "Not set up";
 
   async function copyHandshakeCode() {
     if (!pairingCode) {
@@ -150,11 +161,13 @@ export function TelegramSettingsCard({
           saved.pairedUserIds.length > 0 || saved.allowedUserIds.length > 0;
 
         if (saved.handshakeCode && !savedHasLinkedUsers) {
-          setHint("Saved. Send the pairing code to your bot.");
+          setHint("Saved. Send the chat access code to your bot.");
         } else if (savedHasLinkedUsers) {
           setHint("Saved.");
         } else {
-          setHint("Saved. Get a pairing code if you still need to link.");
+          setHint(
+            "Saved. Generate a chat access code if you still need to link."
+          );
         }
         afterSuccess?.();
         onSaveSuccess?.();
@@ -240,6 +253,7 @@ export function TelegramSettingsCard({
         running,
         savePending: saveMutation.isPending,
         showBotToken,
+        workerFailed,
       }}
       worker={worker}
     />

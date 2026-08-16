@@ -90,7 +90,7 @@ export function DiscordPairingGuide({
             title="Open a DM"
           />
           <PairingStepTile
-            description="Paste the pairing code from above into that DM and send it."
+            description="Paste the chat access code from above into that DM and send it."
             step={3}
             title="Send the code"
           />
@@ -106,7 +106,7 @@ export function DiscordPairingGuide({
             className="border-border border-b"
             description="Server channels only work after you have linked your account in a private DM."
             step={1}
-            title="Finish DM pairing first"
+            title="Link in a private DM first"
           />
           <div className="grid grid-cols-1 sm:grid-cols-2">
             <PairingStepTile

@@ -6,6 +6,8 @@ import {
   ViewOffIcon,
 } from "hugeicons-react";
 import {
+  CHANNEL_ACCESS_MODE_OPTIONS,
+  channelAccessModeLabel,
   IntegrationSettingsFooter,
   IntegrationStatusHeader,
   PairingStepTile,
@@ -43,7 +45,7 @@ function TelegramPairingGuide() {
             title="Open the bot"
           />
           <PairingStepTile
-            description="Paste the pairing code and send it."
+            description="Paste the chat access code and send it."
             step={2}
             title="Send the code"
           />
@@ -109,6 +111,7 @@ export type TelegramSettingsCardView = {
   isPaired: boolean;
   regeneratePending: boolean;
   canSave: boolean;
+  workerFailed: boolean;
 };
 
 export function TelegramSettingsCardContent({
@@ -162,7 +165,7 @@ export function TelegramSettingsCardContent({
   statusLine: string | null;
   submitLabel: string;
   view: TelegramSettingsCardView;
-  worker: { process?: { managed?: boolean } } | null | undefined;
+  worker: { ok?: boolean; process?: { managed?: boolean } } | null | undefined;
 }) {
   const {
     embedded,
@@ -174,6 +177,7 @@ export function TelegramSettingsCardContent({
     isPaired,
     regeneratePending,
     canSave,
+    workerFailed,
   } = view;
 
   const paneItemClass = embedded ? undefined : "px-0 py-0";
@@ -184,12 +188,24 @@ export function TelegramSettingsCardContent({
         <IntegrationStatusHeader
           className={paneItemClass}
           configured={configured}
-          connected={hasLinkedUsers && running}
+          connected={hasLinkedUsers && running && !workerFailed}
           statusBadge={statusBadge}
           subtitle={headerSubtitle}
           title="Telegram"
         />
       )}
+
+      {configured && workerFailed ? (
+        <div
+          className="mx-4 mb-4 flex items-center gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-2 text-destructive text-xs"
+          role="alert"
+        >
+          <span>
+            The Telegram bridge is failing — the bot token was rejected. Paste a
+            valid token from @BotFather and save, then check View logs.
+          </span>
+        </div>
+      ) : null}
 
       <SettingsRow
         className={paneItemClass}
@@ -245,13 +261,16 @@ export function TelegramSettingsCardContent({
             className="w-[11rem] sm:w-[13rem]"
             id="telegram-access-mode"
           >
-            <SelectValue placeholder="Access mode" />
+            <SelectValue placeholder="Access mode">
+              {channelAccessModeLabel(accessMode)}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent align="end">
-            <SelectItem value="open">Open</SelectItem>
-            <SelectItem value="allowlist">Allowed list only</SelectItem>
-            <SelectItem value="denylist">Blocked list filter</SelectItem>
-            <SelectItem value="pairing">Pairing code</SelectItem>
+            {CHANNEL_ACCESS_MODE_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </SettingsRow>
@@ -269,7 +288,7 @@ export function TelegramSettingsCardContent({
                   ? "Linked. Generate a new code to add another account."
                   : "Generate a code, then message it to your bot once."
             }
-            label="Pairing code"
+            label="Chat access code"
           >
             {pairingCode ? (
               <div className="flex flex-wrap items-center justify-end gap-2">
@@ -332,7 +351,7 @@ export function TelegramSettingsCardContent({
                     Generating…
                   </>
                 ) : (
-                  "Generate pairing code"
+                  "Generate access code"
                 )}
               </Button>
             )}

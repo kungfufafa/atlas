@@ -1,6 +1,8 @@
 import type { ChannelAccessMode, ProfileSummary } from "@atlas/core/contract";
 import { useState } from "react";
 import {
+  CHANNEL_ACCESS_MODE_OPTIONS,
+  channelAccessModeLabel,
   IntegrationSettingsFooter,
   IntegrationStatusHeader,
   SettingsRow,
@@ -106,7 +108,7 @@ export function WhatsAppSettingsCardContent({
         <IntegrationStatusHeader
           className={paneItemClass}
           configured={configured}
-          connected={paired && running && !showQr}
+          connected={paired && running}
           statusBadge={statusBadge}
           subtitle={headerSubtitle}
           title="WhatsApp"
@@ -176,13 +178,16 @@ export function WhatsAppSettingsCardContent({
               className="w-[11rem] sm:w-[13rem]"
               id="whatsapp-access-mode"
             >
-              <SelectValue placeholder="Access mode" />
+              <SelectValue placeholder="Access mode">
+                {channelAccessModeLabel(accessMode)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent align="end">
-              <SelectItem value="open">Open</SelectItem>
-              <SelectItem value="allowlist">Allowed list only</SelectItem>
-              <SelectItem value="denylist">Blocked list filter</SelectItem>
-              <SelectItem value="pairing">Pairing code</SelectItem>
+              {CHANNEL_ACCESS_MODE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -246,6 +251,7 @@ export function WhatsAppSettingsCardContent({
           reconnectPending={reconnectPending}
           regeneratePending={regeneratePending}
           rowClassName={paneItemClass}
+          running={running}
           savePending={savePending}
           showPairingSection={accessMode === "pairing"}
           showQr={showQr}

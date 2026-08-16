@@ -2,6 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type {
   CreateSkillRequest,
+  InstallSkillRequest,
   ListSkillsResponse,
   PatchSkillRequest,
   SkillDetail,
@@ -12,6 +13,7 @@ import type {
   ToolDefinition,
 } from "@atlas/core";
 import {
+  AtlasApiError,
   assertNotBundledSkillName,
   assertValidSkillName,
   BUNDLED_SKILL_NAMES,
@@ -27,6 +29,7 @@ import {
   discoverSkillDirectory,
   discoverSkills,
   extractExplicitSkillName,
+  fetchGitHubSkillMarkdown,
   isGlobalSkillSourcePath,
   isPathWithinProfileSkillsDir,
   loadSkillTools,
@@ -231,6 +234,67 @@ export class SkillsService {
     return created;
   }
 
+  async installSkillFromGitHub(
+    orgId: string,
+    request: InstallSkillRequest
+  ): Promise<SkillResponse> {
+    const profileId = request.profileId?.trim() ?? "";
+    const url = request.url?.trim() ?? "";
+
+    if (!profileId) {
+      throw new AtlasApiError("profileId is required.", 400);
+    }
+
+    if (!url) {
+      throw new AtlasApiError("url is required.", 400);
+    }
+
+    const profile = await this.db.getProfileForOrg(profileId, orgId);
+    if (!profile) {
+      throw new AtlasApiError("Profile not found.", 404);
+    }
+
+    const content = await fetchGitHubSkillMarkdown(url);
+
+    try {
+      parseSkillMarkdown(content, url);
+    } catch (error) {
+      throw new AtlasApiError(
+        error instanceof Error
+          ? error.message
+          : "Skill file is missing or has invalid frontmatter.",
+        400
+      );
+    }
+
+    try {
+      const installed = await this.createAndAssignRawSkillToProfile(
+        orgId,
+        profileId,
+        content,
+        { createdBy: "human" }
+      );
+      return { skill: installed.skill };
+    } catch (error) {
+      if (error instanceof AtlasApiError) {
+        throw error;
+      }
+
+      const message =
+        error instanceof Error ? error.message : "Failed to install skill.";
+
+      if (
+        /already exists|already assigned|cannot be attached|bundled/i.test(
+          message
+        )
+      ) {
+        throw new AtlasApiError(message, 409);
+      }
+
+      throw new AtlasApiError(message, 400);
+    }
+  }
+
   /**
    * Single-write create/adopt path for agents: write raw SKILL.md under the profile
    * skills dir, upsert discovered metadata, and assign. Does not call createSkill
@@ -239,9 +303,11 @@ export class SkillsService {
   async createAndAssignRawSkillToProfile(
     orgId: string,
     profileId: string,
-    content: string
+    content: string,
+    options?: { createdBy?: SkillCreatedBy }
   ): Promise<SkillResponse & { created: boolean }> {
     const { name } = parseRawProfileSkillContent(content, orgId, profileId);
+    const createdBy = options?.createdBy ?? "agent";
 
     const existingByName = await this.db.getSkillByName(name);
     if (
@@ -284,7 +350,7 @@ export class SkillsService {
       written.directory,
       written.name,
       "written",
-      "agent"
+      createdBy
     );
 
     if (!isPathWithinProfileSkillsDir(orgId, profileId, record.sourcePath)) {
