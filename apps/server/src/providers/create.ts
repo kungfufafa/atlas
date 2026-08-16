@@ -11,10 +11,12 @@ import {
 import { resolveDefaultModelForInstance } from "../services/provider-instance-helpers";
 import { createAnthropicProvider } from "./anthropic";
 import { createCerebrasProvider } from "./cerebras";
-import { compatibleModelSupportsThinking } from "./compatible-models";
+import {
+  compatibleModelReasoningEffortValues,
+  compatibleModelSupportsThinking,
+} from "./compatible-models";
 import { createFireworksProvider } from "./fireworks";
 import { createGeminiProvider } from "./gemini";
-import { resolveModel } from "./models";
 import { createOllamaProvider } from "./ollama";
 import { createOpenAIProvider } from "./openai";
 import { createOpenAICompatibleProvider } from "./openai-compatible";
@@ -28,30 +30,56 @@ export interface CreateProviderOptions {
   instance?: ProviderInstance | null;
   model?: string;
   provider: ProviderName;
+  supportsThinking?: boolean;
 }
 
-function createProvider(options: CreateProviderOptions): ProviderClient {
-  const model = resolveModel(
-    options.provider,
-    options.model,
-    options.instance?.customModels
-  );
-
-  const baseUrlOverride = options.instance?.baseUrl?.trim();
+export function createProvider(options: CreateProviderOptions): ProviderClient {
+  const model = options.model
+    ? options.model
+    : resolveDefaultModelForInstance(options.instance);
+  const baseUrlOverride = options.instance?.baseUrl?.trim() || undefined;
 
   switch (options.provider) {
-    case "openai":
-      return createOpenAIProvider({
-        apiKey: options.apiKey,
-        model,
-        ...(baseUrlOverride ? { baseUrl: baseUrlOverride } : {}),
-        customModels: options.instance?.customModels,
-      });
     case "anthropic":
       return createAnthropicProvider({
         apiKey: options.apiKey,
+        baseUrl: baseUrlOverride,
         model,
-        ...(baseUrlOverride ? { baseUrl: baseUrlOverride } : {}),
+      });
+    case "cerebras":
+      return createCerebrasProvider({
+        apiKey: options.apiKey,
+        baseUrl: baseUrlOverride,
+        customModels: options.instance?.customModels,
+        model,
+      });
+    case "deepseek":
+      return createOpenAIProvider({
+        apiKey: options.apiKey,
+        baseUrl: baseUrlOverride ?? DEFAULT_DEEPSEEK_BASE_URL,
+        model,
+        providerLabel: "DeepSeek",
+        providerName: "deepseek",
+      });
+    case "fireworks":
+      return createFireworksProvider({
+        apiKey: options.apiKey,
+        baseUrl: baseUrlOverride,
+        customModels: options.instance?.customModels,
+        model,
+      });
+    case "gemini":
+      return createGeminiProvider({
+        apiKey: options.apiKey,
+        baseUrl: baseUrlOverride,
+        model,
+      });
+    case "openai":
+      return createOpenAIProvider({
+        apiKey: options.apiKey,
+        baseUrl: baseUrlOverride,
+        customModels: options.instance?.customModels,
+        model,
       });
     case "openrouter":
       return createOpenRouterProvider({
@@ -59,33 +87,10 @@ function createProvider(options: CreateProviderOptions): ProviderClient {
         customModels: options.instance?.customModels,
         model,
       });
-    case "gemini":
-      return createGeminiProvider({
-        apiKey: options.apiKey,
-        model,
-        ...(baseUrlOverride ? { baseUrl: baseUrlOverride } : {}),
-      });
-    case "deepseek":
-      return createOpenAIProvider({
-        apiKey: options.apiKey,
-        baseUrl: baseUrlOverride ?? DEFAULT_DEEPSEEK_BASE_URL,
-        model,
-        providerName: "deepseek",
-      });
     case "opencode_go":
       return createOpenCodeGoProvider({
         apiKey: options.apiKey,
-        model,
-      });
-    case "cerebras":
-      return createCerebrasProvider({
-        apiKey: options.apiKey,
-        customModels: options.instance?.customModels,
-        model,
-      });
-    case "fireworks":
-      return createFireworksProvider({
-        apiKey: options.apiKey,
+        baseUrl: baseUrlOverride,
         customModels: options.instance?.customModels,
         model,
       });
@@ -109,6 +114,10 @@ function createProvider(options: CreateProviderOptions): ProviderClient {
         baseUrl: baseUrlOverride,
         displayName,
         model,
+        reasoningEffortValues: compatibleModelReasoningEffortValues(
+          model,
+          options.instance?.customModels
+        ),
         supportsThinking: compatibleModelSupportsThinking(
           model,
           options.instance?.customModels

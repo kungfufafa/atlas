@@ -129,6 +129,7 @@ interface ChatComposerFullProps extends ChatComposerBaseProps {
   showTips?: boolean;
   thinkingEffort?: ThinkingEffort;
   thinkingEffortDisabled?: boolean;
+  thinkingEffortValues?: string[];
   thinkingEffortVisible?: boolean;
   variant?: "full";
 }
@@ -596,6 +597,7 @@ function ChatComposerFullFooter({
           <ChatThinkingEffortControl
             disabled={props.thinkingEffortDisabled}
             effort={props.thinkingEffort}
+            effortValues={props.thinkingEffortValues}
             onEffortChange={props.onThinkingEffortChange}
             visible
           />

@@ -20,10 +20,10 @@ import type {
 import { toAnthropicUserContent, WEB_SEARCH_TOOL_NAME } from "@atlas/core";
 import {
   buildTokenUsage,
-  normalizeThinkingEffort,
   notifyToolInputDelta,
   parseJsonRecord,
   readRecord,
+  resolveThinkingEffort,
 } from "../shared";
 
 const MAX_PAUSE_CONTINUATIONS = 5;
@@ -421,6 +421,13 @@ async function readAnthropicStream(
   };
 }
 
+const ANTHROPIC_REASONING_EFFORT_VALUES = [
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+] as const;
+
 function buildAnthropicThinkingRequest(
   providerOptions: GenerateChatInput["providerOptions"]
 ): Pick<MessageCreateParams, "thinking" | "output_config"> {
@@ -428,7 +435,10 @@ function buildAnthropicThinkingRequest(
     return {};
   }
 
-  const effort = normalizeThinkingEffort(providerOptions.thinking.effort);
+  const effort = resolveThinkingEffort(
+    providerOptions.thinking.effort,
+    ANTHROPIC_REASONING_EFFORT_VALUES
+  ) as "low" | "medium" | "high" | "xhigh";
 
   return {
     output_config: { effort },

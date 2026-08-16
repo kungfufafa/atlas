@@ -14,8 +14,10 @@ import {
 } from "@/components/ui/tooltip";
 import { composerSelectTriggerClass } from "@/lib/chat-stream";
 import {
-  THINKING_EFFORT_OPTIONS,
+  buildThinkingEffortOptions,
+  resolveEffortForOptions,
   thinkingEffortLabel,
+  thinkingEffortShortLabel,
 } from "@/lib/thinking-settings";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +26,7 @@ const THINKING_TOOLTIP = "Reasoning depth for the next replies.";
 export interface ChatThinkingEffortControlProps {
   disabled?: boolean;
   effort: ThinkingEffort;
+  effortValues?: string[];
   onEffortChange: (effort: ThinkingEffort) => void;
   visible: boolean;
 }
@@ -31,6 +34,7 @@ export interface ChatThinkingEffortControlProps {
 export function ChatThinkingEffortControl({
   visible,
   effort,
+  effortValues,
   disabled = false,
   onEffortChange,
 }: ChatThinkingEffortControlProps) {
@@ -38,10 +42,11 @@ export function ChatThinkingEffortControl({
     return null;
   }
 
-  const fullLabel = thinkingEffortLabel(effort);
-  const shortLabel = ({ high: "High", low: "Low", medium: "Med" } as const)[
-    effort
-  ];
+  const options = buildThinkingEffortOptions(effortValues);
+  const validValues = options.map((opt) => opt.value);
+  const resolvedEffort = resolveEffortForOptions(effort, validValues);
+  const fullLabel = thinkingEffortLabel(resolvedEffort);
+  const shortLabel = thinkingEffortShortLabel(resolvedEffort);
 
   return (
     <Tooltip>
@@ -51,11 +56,11 @@ export function ChatThinkingEffortControl({
             <PromptInputSelect
               disabled={disabled}
               onValueChange={(value) => {
-                if (value === "low" || value === "medium" || value === "high") {
-                  onEffortChange(value);
+                if (value && typeof value === "string") {
+                  onEffortChange(value as ThinkingEffort);
                 }
               }}
-              value={effort}
+              value={resolvedEffort}
             >
               <PromptInputSelectTrigger
                 aria-label="Thinking effort"
@@ -83,7 +88,7 @@ export function ChatThinkingEffortControl({
                 alignItemWithTrigger={false}
                 className="w-max min-w-[8rem] text-xs"
               >
-                {THINKING_EFFORT_OPTIONS.map((option) => (
+                {options.map((option) => (
                   <PromptInputSelectItem
                     key={option.value}
                     label={option.label}

@@ -9,7 +9,7 @@ import {
   ThinkingLevel,
   type Tool,
 } from "@google/genai";
-import { normalizeThinkingEffort } from "../shared";
+import { resolveThinkingEffort } from "../shared";
 
 export function buildGeminiGenerateConfig(options: {
   system: string;
@@ -163,7 +163,7 @@ function buildGeminiThinkingConfig(
     return;
   }
 
-  const effort = normalizeThinkingEffort(providerOptions?.thinking?.effort);
+  const effort = resolveThinkingEffort(providerOptions?.thinking?.effort);
 
   if (model.includes("gemini-3") || model.includes("3-")) {
     return {
@@ -179,11 +179,12 @@ function buildGeminiThinkingConfig(
 }
 
 function mapEffortToThinkingLevel(effort: ThinkingEffort): ThinkingLevel {
-  if (effort === "low") {
+  const resolved = resolveThinkingEffort(effort);
+  if (resolved === "low") {
     return ThinkingLevel.LOW;
   }
 
-  if (effort === "high") {
+  if (resolved === "high" || resolved === "xhigh" || resolved === "max") {
     return ThinkingLevel.HIGH;
   }
 
@@ -191,11 +192,12 @@ function mapEffortToThinkingLevel(effort: ThinkingEffort): ThinkingLevel {
 }
 
 function mapEffortToThinkingBudget(effort: ThinkingEffort): number {
-  if (effort === "low") {
+  const resolved = resolveThinkingEffort(effort);
+  if (resolved === "low") {
     return 1024;
   }
 
-  if (effort === "high") {
+  if (resolved === "high" || resolved === "xhigh" || resolved === "max") {
     return 8192;
   }
 

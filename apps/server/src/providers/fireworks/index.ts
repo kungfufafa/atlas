@@ -22,10 +22,10 @@ import {
   DEFAULT_USER_AGENT,
   extractOpenAITokenUsage,
   formatHttpErrorBody,
-  normalizeThinkingEffort,
   notifyToolInputDelta,
   parseJsonRecord,
   readSseEvents,
+  resolveThinkingEffort,
 } from "../shared";
 import { fireworksModelSupportsThinking } from "./thinking";
 
@@ -117,7 +117,7 @@ function buildThinkingBody(thinking?: ProviderChatOptions["thinking"]) {
   }
 
   return {
-    reasoning_effort: normalizeThinkingEffort(thinking.effort),
+    reasoning_effort: resolveThinkingEffort(thinking.effort),
   };
 }
 

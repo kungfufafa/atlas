@@ -27,9 +27,9 @@ import { toOpenAIMessages } from "../openai";
 import {
   buildChatCompletionResult,
   extractOpenAITokenUsage,
-  normalizeThinkingEffort,
   notifyToolInputDelta,
   parseJsonRecord,
+  resolveThinkingEffort,
 } from "../shared";
 import { openRouterModelSupportsThinking } from "./thinking";
 
@@ -184,7 +184,7 @@ function buildOpenRouterReasoningRequest(
   }
 
   const reasoning: ChatRequestReasoning = {
-    effort: normalizeThinkingEffort(providerOptions.thinking.effort),
+    effort: resolveThinkingEffort(providerOptions.thinking.effort),
     summary: "auto",
   };
 

@@ -382,41 +382,81 @@ describe("OpenAI-compatible provider", () => {
     });
   });
 
-  test("surfaces JSON provider errors on stream requests", async () => {
+  test("sends reasoning effort directly to the endpoint matching model configuration", async () => {
     const fetchMock = mock(
-      async () =>
-        new Response(
-          JSON.stringify({
-            error: {
-              message: "Rate limit exceeded. Please try again later.",
-              type: "FreeUsageLimitError",
-            },
-            type: "error",
-          }),
-          { headers: { "Content-Type": "application/json" }, status: 429 }
-        )
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const body = JSON.parse(String(init?.body ?? "{}")) as {
+          reasoning?: { effort?: string };
+          reasoning_effort?: string;
+        };
+        expect(body.reasoning).toEqual({ effort: "xhigh" });
+        expect(body.reasoning_effort).toBe("xhigh");
+        return Response.json({
+          choices: [
+            { message: { content: "Done", reasoning: "Thinking deep" } },
+          ],
+        });
+      }
     );
 
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
     const provider = createOpenAICompatibleProvider({
-      apiKey: "public",
-      baseUrl: "https://opencode.ai/zen/v1",
-      displayName: "OpenCode Zen",
-      model: "big-pickle",
-      supportsThinking: false,
+      apiKey: "tokenrouter-key",
+      baseUrl: "https://api.tokenrouter.ai/v1",
+      displayName: "Token Router",
+      model: "claude-sonnet-4-6",
+      supportsThinking: true,
     });
 
-    await expect(
-      provider.streamChat(
-        {
-          messages: [{ content: "Hi", role: "user" }],
-          system: "You are helpful.",
-        },
-        { onChunk: () => {} }
-      )
-    ).rejects.toThrow(
-      "OpenCode Zen request failed (429 FreeUsageLimitError): Rate limit exceeded. Please try again later."
+    const result = await provider.generateChat({
+      messages: [{ content: "Solve complex problem", role: "user" }],
+      providerOptions: { thinking: { effort: "xhigh", enabled: true } },
+      system: "You are an expert.",
+    });
+
+    expect(result.assistantMessage.thinking).toBe("Thinking deep");
+  });
+
+  test("streams custom reasoning effort directly to the endpoint", async () => {
+    let capturedBody: {
+      reasoning?: { effort?: string };
+      reasoning_effort?: string;
+    } = {};
+
+    const fetchMock = mock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        capturedBody = JSON.parse(String(init?.body ?? "{}"));
+        return new Response(
+          streamFromChunks([
+            'data: {"choices":[{"delta":{"content":"A"}}]}\n\n',
+            "data: [DONE]\n\n",
+          ]),
+          { headers: { "Content-Type": "text/event-stream" } }
+        );
+      }
     );
+
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    const provider = createOpenAICompatibleProvider({
+      apiKey: "tokenrouter-key",
+      baseUrl: "https://api.tokenrouter.ai/v1",
+      displayName: "Token Router",
+      model: "claude-sonnet-4-6",
+      supportsThinking: true,
+    });
+
+    await provider.streamChat(
+      {
+        messages: [{ content: "Stream please", role: "user" }],
+        providerOptions: { thinking: { effort: "xhigh", enabled: true } },
+        system: "You are helpful.",
+      },
+      { onChunk: () => {} }
+    );
+
+    expect(capturedBody.reasoning?.effort).toBe("xhigh");
+    expect(capturedBody.reasoning_effort).toBe("xhigh");
   });
 });

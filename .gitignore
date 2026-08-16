@@ -27,3 +27,6 @@ design-plans/
 tmp-repro-artifacts/
 tmp-repro-setup-auth.mjs
 .tmp-test-config/
+cookies.txt
+release-gate-report.json
+release-gate-report.md

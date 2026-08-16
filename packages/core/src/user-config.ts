@@ -723,11 +723,8 @@ function readThinkingSettings(
 function validateThinkingEffort(
   value: ThinkingEffort | undefined
 ): ThinkingEffort {
-  if (value === "low" || value === "medium" || value === "high") {
-    return value;
-  }
-
-  return DEFAULT_THINKING_EFFORT;
+  const trimmed = value?.trim();
+  return trimmed || DEFAULT_THINKING_EFFORT;
 }
 
 function readTimezone(values: Record<string, string>): string | undefined {

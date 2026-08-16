@@ -2,21 +2,97 @@ import type { ThinkingEffort, ThinkingSettings } from "@atlas/core/contract";
 
 export const DEFAULT_THINKING_EFFORT: ThinkingEffort = "medium";
 
+const KNOWN_EFFORT_LABELS: Record<string, string> = {
+  high: "High",
+  low: "Low",
+  max: "Max",
+  medium: "Medium",
+  none: "None",
+  xhigh: "Extra High",
+};
+
+const KNOWN_EFFORT_SHORT_LABELS: Record<string, string> = {
+  high: "High",
+  low: "Low",
+  max: "Max",
+  medium: "Med",
+  none: "Off",
+  xhigh: "XHigh",
+};
+
+export function thinkingEffortLabel(effort: ThinkingEffort): string {
+  if (!effort) {
+    return "";
+  }
+  const key = effort.toLowerCase();
+  return (
+    KNOWN_EFFORT_LABELS[key] ?? effort.charAt(0).toUpperCase() + effort.slice(1)
+  );
+}
+
+export function thinkingEffortShortLabel(effort: ThinkingEffort): string {
+  if (!effort) {
+    return "";
+  }
+  const key = effort.toLowerCase();
+  return KNOWN_EFFORT_SHORT_LABELS[key] ?? effort;
+}
+
+export function resolveEffortForOptions(
+  effort: ThinkingEffort | undefined,
+  validValues: readonly string[] | string[]
+): string {
+  const trimmed = effort?.trim();
+  if (trimmed) {
+    if (validValues.includes(trimmed)) {
+      return trimmed;
+    }
+    if (
+      (trimmed === "high" || trimmed === "max") &&
+      validValues.includes("xhigh")
+    ) {
+      return "xhigh";
+    }
+    if (trimmed === "xhigh" && validValues.includes("max")) {
+      return "max";
+    }
+    if (
+      (trimmed === "xhigh" || trimmed === "max") &&
+      validValues.includes("high")
+    ) {
+      return "high";
+    }
+    if (
+      (trimmed === "high" || trimmed === "xhigh") &&
+      validValues.includes("max")
+    ) {
+      return "max";
+    }
+  }
+  return (
+    validValues[Math.floor(validValues.length / 2)] ??
+    validValues[0] ??
+    DEFAULT_THINKING_EFFORT
+  );
+}
+
+export function buildThinkingEffortOptions(
+  effortValues?: string[]
+): Array<{ value: ThinkingEffort; label: string }> {
+  const values = effortValues?.length
+    ? effortValues
+    : ["low", "medium", "high"];
+
+  return values.map((value) => ({
+    label: thinkingEffortLabel(value),
+    value,
+  }));
+}
+
 export const THINKING_EFFORT_OPTIONS: Array<{
   value: ThinkingEffort;
   label: string;
-}> = [
-  { label: "Low", value: "low" },
-  { label: "Medium", value: "medium" },
-  { label: "High", value: "high" },
-];
-
-export function thinkingEffortLabel(effort: ThinkingEffort): string {
-  return (
-    THINKING_EFFORT_OPTIONS.find((option) => option.value === effort)?.label ??
-    effort
-  );
-}
+}> = buildThinkingEffortOptions();
 
 export function shouldShowThinkingEffort(
   activeModelSupportsThinking: boolean | undefined

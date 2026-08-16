@@ -397,7 +397,11 @@ function AssistantTurn({
       {structuredArtifacts && structuredArtifacts.length > 0 ? (
         <div className="w-full space-y-2">
           {structuredArtifacts.map((art) => (
-            <ProductArtifactCard artifact={art} key={art.id} />
+            <ProductArtifactCard
+              artifact={art}
+              key={art.id}
+              profileId={profileId ?? undefined}
+            />
           ))}
         </div>
       ) : null}

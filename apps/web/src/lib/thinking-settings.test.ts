@@ -1,11 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import {
   buildAutoEnableThinkingPayload,
+  buildThinkingEffortOptions,
   shouldAutoEnableThinking,
   shouldBlockThinkingEffortChange,
   shouldShowThinkingBlocks,
   shouldShowThinkingEffort,
   thinkingEffortLabel,
+  thinkingEffortShortLabel,
 } from "./thinking-settings";
 
 describe("thinking-settings helpers", () => {
@@ -70,6 +72,32 @@ describe("thinking-settings helpers", () => {
   });
 
   test("thinkingEffortLabel maps effort values", () => {
+    expect(thinkingEffortLabel("low")).toBe("Low");
     expect(thinkingEffortLabel("medium")).toBe("Medium");
+    expect(thinkingEffortLabel("high")).toBe("High");
+    expect(thinkingEffortLabel("xhigh")).toBe("Extra High");
+    expect(thinkingEffortLabel("max")).toBe("Max");
+  });
+
+  test("thinkingEffortShortLabel maps short labels", () => {
+    expect(thinkingEffortShortLabel("low")).toBe("Low");
+    expect(thinkingEffortShortLabel("medium")).toBe("Med");
+    expect(thinkingEffortShortLabel("high")).toBe("High");
+    expect(thinkingEffortShortLabel("xhigh")).toBe("XHigh");
+    expect(thinkingEffortShortLabel("max")).toBe("Max");
+  });
+
+  test("buildThinkingEffortOptions builds dynamic options list", () => {
+    expect(buildThinkingEffortOptions()).toEqual([
+      { label: "Low", value: "low" },
+      { label: "Medium", value: "medium" },
+      { label: "High", value: "high" },
+    ]);
+
+    expect(buildThinkingEffortOptions(["low", "medium", "xhigh"])).toEqual([
+      { label: "Low", value: "low" },
+      { label: "Medium", value: "medium" },
+      { label: "Extra High", value: "xhigh" },
+    ]);
   });
 });

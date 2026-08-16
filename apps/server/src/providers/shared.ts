@@ -304,14 +304,71 @@ export function readRecord(value: unknown): Record<string, unknown> {
     : {};
 }
 
-export function normalizeThinkingEffort(
-  effort: ThinkingEffort | undefined
-): ThinkingEffort {
-  if (effort === "low" || effort === "medium" || effort === "high") {
-    return effort;
+/**
+ * Default effort values for providers that don't declare their own.
+ * Matches OpenAI, OpenRouter, Fireworks, Cerebras API contracts.
+ */
+export const DEFAULT_REASONING_EFFORT_VALUES = [
+  "low",
+  "medium",
+  "high",
+] as const;
+export const DEFAULT_REASONING_EFFORT = "medium";
+
+/**
+ * Resolve the effort value to send to a provider API.
+ *
+ * @param effort  - The user-selected effort string (from profile settings).
+ * @param validValues - The ordered list of values this provider/model accepts
+ *   (from `ProviderModelOption.reasoningEffortValues` or a hardcoded per-provider
+ *   constant). When omitted, falls back to DEFAULT_REASONING_EFFORT_VALUES.
+ *
+ * Fallback strategy:
+ *   1. If the effort is in validValues → return as-is.
+ *   2. Otherwise pick the median value (represents "medium" intent).
+ */
+export function resolveThinkingEffort(
+  effort: ThinkingEffort | undefined,
+  validValues?: readonly string[] | string[]
+): string {
+  const valid = validValues ?? DEFAULT_REASONING_EFFORT_VALUES;
+  const trimmed = effort?.trim();
+
+  if (trimmed) {
+    if (valid.includes(trimmed)) {
+      return trimmed;
+    }
+
+    // Semantic aliases for cross-provider compatibility:
+    if ((trimmed === "high" || trimmed === "max") && valid.includes("xhigh")) {
+      return "xhigh";
+    }
+    if (trimmed === "xhigh" && valid.includes("max")) {
+      return "max";
+    }
+    if ((trimmed === "xhigh" || trimmed === "max") && valid.includes("high")) {
+      return "high";
+    }
+    if ((trimmed === "high" || trimmed === "xhigh") && valid.includes("max")) {
+      return "max";
+    }
   }
 
-  return "medium";
+  // Pick the middle index as the "medium" fallback.
+  return (
+    valid[Math.floor(valid.length / 2)] ?? valid[0] ?? DEFAULT_REASONING_EFFORT
+  );
+}
+
+/**
+ * @deprecated Use resolveThinkingEffort() instead.
+ * Kept for backward compatibility — delegates to resolveThinkingEffort with the
+ * standard three-value scale.
+ */
+export function normalizeThinkingEffort(
+  effort: ThinkingEffort | undefined
+): string {
+  return resolveThinkingEffort(effort);
 }
 
 export function formatHttpErrorBody(

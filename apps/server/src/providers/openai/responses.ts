@@ -15,10 +15,10 @@ import {
 import {
   buildTokenUsage,
   DEFAULT_USER_AGENT,
-  normalizeThinkingEffort,
   parseJsonRecord,
   readRecord,
   readSseEvents,
+  resolveThinkingEffort,
 } from "../shared";
 import { openAIModelSupportsThinking } from "./thinking";
 
@@ -115,7 +115,7 @@ function buildOpenAIReasoningRequest(
 
   return {
     reasoning: {
-      effort: normalizeThinkingEffort(input.providerOptions.thinking.effort),
+      effort: resolveThinkingEffort(input.providerOptions.thinking.effort),
       summary: "auto",
     },
   };

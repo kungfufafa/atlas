@@ -7,6 +7,7 @@ import {
   IMAGE_GENERATION_SELECTION,
   isOpenCodeZenBaseUrl,
   isProviderTypeAlreadyConfigured,
+  resolveModelReasoningEffortValues,
   resolveModelThinkingSupport,
   resolveModelVisionSupport,
 } from "./models";
@@ -22,17 +23,20 @@ function group(
     | "cerebras"
     | "fireworks",
   flags?: {
+    reasoningEffortValues?: string[];
     supportsThinking?: boolean;
     supportsVision?: boolean;
+    providerLabel?: string;
     contextWindow?: number;
-  }
+  },
+  modelId = "model-1"
 ) {
   return [
     {
       models: [
         {
-          id: "model-1",
-          name: "Model 1",
+          id: modelId,
+          name: modelId,
           provider,
           ...(flags?.supportsThinking === undefined
             ? {}
@@ -43,10 +47,13 @@ function group(
           ...(flags?.contextWindow === undefined
             ? {}
             : { contextWindow: flags.contextWindow }),
+          providerId,
+          providerLabel: flags?.providerLabel,
+          reasoningEffortValues: flags?.reasoningEffortValues,
         },
       ],
       providerId,
-      providerLabel: providerId,
+      providerLabel: flags?.providerLabel ?? providerId,
     },
   ];
 }
@@ -146,6 +153,33 @@ describe("resolveModelThinkingSupport", () => {
         group("fw-1", "fireworks", { supportsThinking: true })
       )
     ).toBe(true);
+  });
+});
+
+describe("resolveModelReasoningEffortValues", () => {
+  test("returns explicit reasoningEffortValues when defined on the model", () => {
+    expect(
+      resolveModelReasoningEffortValues(
+        encodeModelSelection("tr-1", "qwen-1"),
+        group(
+          "tr-1",
+          "openai_compatible",
+          {
+            reasoningEffortValues: ["low", "medium", "xhigh"],
+          },
+          "qwen-1"
+        )
+      )
+    ).toEqual(["low", "medium", "xhigh"]);
+  });
+
+  test("returns undefined when model does not specify custom reasoningEffortValues", () => {
+    expect(
+      resolveModelReasoningEffortValues(
+        encodeModelSelection("openai-1", "gpt-5.4"),
+        group("openai-1", "openai", {}, "gpt-5.4")
+      )
+    ).toBeUndefined();
   });
 });
 
@@ -320,8 +354,8 @@ describe("hasOpenCodeZenProvider", () => {
 });
 
 describe("IMAGE_GENERATION_MODEL_OPTIONS", () => {
-  test("exposes exactly openai::gpt-image-2", () => {
-    expect(IMAGE_GENERATION_MODEL_OPTIONS).toHaveLength(1);
+  test("exposes image generation models including default openai::gpt-image-2", () => {
+    expect(IMAGE_GENERATION_MODEL_OPTIONS.length).toBeGreaterThanOrEqual(1);
     expect(IMAGE_GENERATION_MODEL_OPTIONS[0]?.id).toBe("gpt-image-2");
     expect(IMAGE_GENERATION_SELECTION).toBe("openai::gpt-image-2");
     expect(

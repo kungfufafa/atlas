@@ -9,6 +9,7 @@ import type {
   ApproveOrgMemoryProposalRequest,
   ArchiveOrgMemoryRequest,
   ArchiveOrgMemoryResponse,
+  ArtifactPreview,
   ArtifactShareStatusResponse,
   AssignMcpServerRequest,
   AssignSkillRequest,
@@ -100,6 +101,10 @@ import type {
   PatchSkillRequest,
   PinOrgMemoryRequest,
   PreviewDataImportRequest,
+  PreviewJob,
+  PreviewManifest,
+  PreviewMetadata,
+  PreviewOptions,
   ProfileResponse,
   PublishArtifactShareRequest,
   PublishArtifactShareResponse,
@@ -992,6 +997,159 @@ export class AtlasClient {
         response.headers.get("Content-Type") ?? "application/octet-stream",
       data: await response.arrayBuffer(),
     };
+  }
+
+  async getProfileArtifactPreview(
+    profileId: string,
+    artifactPath: string,
+    options: PreviewOptions = {}
+  ): Promise<ArtifactPreview> {
+    const query = new URLSearchParams({ path: artifactPath });
+    if (options.sheet) {
+      query.set("sheet", options.sheet);
+    }
+    if (options.sheetIndex !== undefined) {
+      query.set("sheetIndex", String(options.sheetIndex));
+    }
+    if (options.range) {
+      query.set("range", options.range);
+    }
+    if (options.revision !== undefined) {
+      query.set("revision", String(options.revision));
+    }
+
+    return this.request<ArtifactPreview>(
+      `/v1/profiles/${encodeURIComponent(profileId)}/artifacts/preview?${query.toString()}`
+    );
+  }
+
+  async inspectProfileArtifact(
+    profileId: string,
+    artifactPath: string
+  ): Promise<PreviewMetadata> {
+    const query = new URLSearchParams({ path: artifactPath });
+    return this.request<PreviewMetadata>(
+      `/v1/profiles/${encodeURIComponent(profileId)}/artifacts/inspect?${query.toString()}`
+    );
+  }
+
+  getProfileArtifactDownloadUrl(
+    profileId: string,
+    artifactPath: string
+  ): string {
+    const query = new URLSearchParams({ path: artifactPath });
+    return `${this.baseUrl}/v1/profiles/${encodeURIComponent(profileId)}/artifacts/content?${query.toString()}`;
+  }
+
+  async getArtifactPreview(
+    artifactId: string,
+    options: PreviewOptions = {}
+  ): Promise<ArtifactPreview> {
+    const query = new URLSearchParams();
+    if (options.sheet) {
+      query.set("sheet", options.sheet);
+    }
+    if (options.sheetIndex !== undefined) {
+      query.set("sheetIndex", String(options.sheetIndex));
+    }
+    if (options.range) {
+      query.set("range", options.range);
+    }
+    if (options.revision !== undefined) {
+      query.set("revision", String(options.revision));
+    }
+    const queryStr = query.toString();
+    const endpoint = `/v1/artifacts/${encodeURIComponent(artifactId)}/preview${queryStr ? `?${queryStr}` : ""}`;
+    return this.request<ArtifactPreview>(endpoint);
+  }
+
+  async getArtifactMetadata(artifactId: string): Promise<PreviewMetadata> {
+    return this.request<PreviewMetadata>(
+      `/v1/artifacts/${encodeURIComponent(artifactId)}`
+    );
+  }
+
+  async getArtifactManifest(
+    artifactId: string,
+    options: PreviewOptions = {}
+  ): Promise<PreviewManifest> {
+    const query = new URLSearchParams();
+    if (options.sheet) {
+      query.set("sheet", options.sheet);
+    }
+    if (options.sheetIndex !== undefined) {
+      query.set("sheetIndex", String(options.sheetIndex));
+    }
+    if (options.range) {
+      query.set("range", options.range);
+    }
+    if (options.revision !== undefined) {
+      query.set("revision", String(options.revision));
+    }
+    const queryStr = query.toString();
+    const endpoint = `/v1/artifacts/${encodeURIComponent(artifactId)}/manifest${queryStr ? `?${queryStr}` : ""}`;
+    return this.request<PreviewManifest>(endpoint);
+  }
+
+  async getProfileArtifactManifest(
+    profileId: string,
+    artifactPath: string,
+    options: PreviewOptions = {}
+  ): Promise<PreviewManifest> {
+    const query = new URLSearchParams({ path: artifactPath });
+    if (options.sheet) {
+      query.set("sheet", options.sheet);
+    }
+    if (options.sheetIndex !== undefined) {
+      query.set("sheetIndex", String(options.sheetIndex));
+    }
+    if (options.range) {
+      query.set("range", options.range);
+    }
+    if (options.revision !== undefined) {
+      query.set("revision", String(options.revision));
+    }
+    return this.request<PreviewManifest>(
+      `/v1/profiles/${encodeURIComponent(profileId)}/artifacts/manifest?${query.toString()}`
+    );
+  }
+
+  getProfileArtifactDerivedPdfUrl(
+    profileId: string,
+    artifactPath: string,
+    options: { revision?: number } = {}
+  ): string {
+    const query = new URLSearchParams({ inline: "1", path: artifactPath });
+    if (options.revision !== undefined) {
+      query.set("revision", String(options.revision));
+    }
+    return `${this.baseUrl}/v1/profiles/${encodeURIComponent(profileId)}/artifacts/derived-pdf?${query.toString()}`;
+  }
+
+  getArtifactDerivedPdfUrl(
+    artifactId: string,
+    options: { revision?: number } = {}
+  ): string {
+    const query = new URLSearchParams({ inline: "1" });
+    if (options.revision !== undefined) {
+      query.set("revision", String(options.revision));
+    }
+    return `${this.baseUrl}/v1/artifacts/${encodeURIComponent(artifactId)}/derived-pdf?${query.toString()}`;
+  }
+
+  async getPreviewJob(jobId: string): Promise<PreviewJob> {
+    return this.request<PreviewJob>(
+      `/v1/artifacts/jobs/${encodeURIComponent(jobId)}`
+    );
+  }
+
+  getArtifactDownloadUrl(artifactId: string): string {
+    return `${this.baseUrl}/v1/artifacts/${encodeURIComponent(artifactId)}/download`;
+  }
+
+  getArtifactContentUrl(artifactId: string, inline = false): string {
+    const query = inline ? "?inline=1" : "";
+    return `${this.baseUrl}/v1/artifacts/${encodeURIComponent(artifactId)}/content${query}`;
   }
 
   async listKnowledgeBase(

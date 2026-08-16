@@ -171,6 +171,46 @@ test("readProfileArtifactContent fetches artifact bytes with inline query", asyn
   expect(new TextDecoder().decode(result.data)).toBe("# Report");
 });
 
+test("getProfileArtifactPreview and inspectProfileArtifact query preview endpoints", async () => {
+  const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
+    [];
+  const client = createClient({
+    authToken: "local-auth-token",
+    baseUrl: "http://localhost:4310",
+    fetch: async (input, init) => {
+      fetchCalls.push({ init, input });
+      return new Response(
+        JSON.stringify({ status: "available", type: "pdf" }),
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    },
+    orgId: "org_test",
+  });
+
+  const preview = await client.getProfileArtifactPreview(
+    "profile_1",
+    "doc.pdf",
+    {
+      sheet: "Sheet1",
+    }
+  );
+
+  expect(preview.type).toBe("pdf");
+  expect(fetchCalls[0]!.input.toString()).toBe(
+    "http://localhost:4310/v1/profiles/profile_1/artifacts/preview?path=doc.pdf&sheet=Sheet1"
+  );
+
+  const downloadUrl = client.getProfileArtifactDownloadUrl(
+    "profile_1",
+    "doc.pdf"
+  );
+  expect(downloadUrl).toBe(
+    "http://localhost:4310/v1/profiles/profile_1/artifacts/content?path=doc.pdf"
+  );
+});
+
 test("data import helpers upload base64 archive data", async () => {
   const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
     [];

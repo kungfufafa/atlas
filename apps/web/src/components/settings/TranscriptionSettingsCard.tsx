@@ -15,10 +15,11 @@ import {
 import { formatError } from "@/lib/client";
 import {
   encodeModelSelection,
+  GEMINI_TRANSCRIPTION_MODEL_OPTIONS,
   groupModelsByProvider,
+  OPENAI_TRANSCRIPTION_MODEL_OPTIONS,
   profileModelLabel,
   profileModelSelectionValue,
-  TRANSCRIPTION_MODEL_OPTIONS,
 } from "@/lib/models";
 
 const CLEAR_TRANSCRIPTION_MODEL_VALUE = "__transcription_unset__";
@@ -43,10 +44,37 @@ export function TranscriptionSettingsCard() {
       if (group.models.some((model) => model.provider === "openai")) {
         groups.push({
           ...group,
-          models: TRANSCRIPTION_MODEL_OPTIONS.map((option) => ({
+          models: OPENAI_TRANSCRIPTION_MODEL_OPTIONS.map((option) => ({
             id: option.id,
             name: option.name,
             provider: "openai" as const,
+          })),
+        });
+      } else if (group.models.some((model) => model.provider === "gemini")) {
+        groups.push({
+          ...group,
+          models: GEMINI_TRANSCRIPTION_MODEL_OPTIONS.map((option) => ({
+            id: option.id,
+            name: option.name,
+            provider: "gemini" as const,
+          })),
+        });
+      } else if (
+        group.models.some(
+          (model) =>
+            model.provider === "openai_compatible" ||
+            model.provider === "openrouter" ||
+            model.provider === "cerebras" ||
+            model.provider === "fireworks" ||
+            model.provider === "ollama"
+        )
+      ) {
+        groups.push({
+          ...group,
+          models: group.models.map((m) => ({
+            id: m.id,
+            name: m.name,
+            provider: m.provider,
           })),
         });
       }
@@ -145,7 +173,7 @@ export function TranscriptionSettingsCard() {
             {selection
               ? profileModelLabel(selection, transcriptionModelGroups)
               : transcriptionUnavailable
-                ? "No OpenAI provider"
+                ? "No audio providers"
                 : "Not configured"}
           </SelectValue>
         </SelectTrigger>

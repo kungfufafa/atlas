@@ -1,16 +1,18 @@
 import {
   AtlasApiError,
   findProviderInstance,
+  normalizeBaseUrl,
   type ProviderInstance,
   type UserConfig,
 } from "@atlas/core";
+import { GoogleGenAI } from "@google/genai";
 import { readApiKeyForInstance } from "../providers/create";
 import {
   IMAGE_GENERATION_MODEL_ID,
-  IMAGE_GENERATION_SELECTION,
   isAllowedImageGenerationSelection,
   modelSupportsImageGeneration,
 } from "../providers/models";
+import { decodeStoredModelSelection } from "./provider-instance-helpers";
 
 export const IMAGE_MODEL_REQUIRED_MESSAGE =
   "Configure an image generation model in Settings before generating images.";
@@ -32,8 +34,8 @@ const OPENAI_IMAGES_GENERATIONS_URL =
 export interface ResolvedImageGenerationSelection {
   apiKey: string;
   instance: ProviderInstance;
-  model: typeof IMAGE_GENERATION_MODEL_ID;
-  selection: typeof IMAGE_GENERATION_SELECTION;
+  model: string;
+  selection: string;
 }
 
 export interface ImageGenerationUsage {
@@ -52,16 +54,12 @@ export interface GenerateImageResult {
 
 export interface GenerateImageInput {
   apiKey: string;
+  baseUrl?: string;
   model?: string;
   prompt: string;
   size?: string;
 }
 
-/**
- * Fallback token estimate when the Images API omits `usage`.
- * Input ≈ prompt chars/4; output is a low-quality floor for the chosen size
- * so estimated cost is still non-zero with catalog pricing.
- */
 export function fallbackImageGenerationTokens(
   prompt: string,
   size: string
@@ -129,30 +127,36 @@ export function resolveImageGenerationSelection(
     );
   }
 
-  const openaiInstances = (userConfig?.providers ?? []).filter(
-    (provider) => provider.type === "openai"
-  );
-  const preferredId = userConfig?.defaultProviderId?.trim();
-  const preferred =
-    preferredId &&
-    openaiInstances.some((instance) => instance.id === preferredId)
-      ? findProviderInstance(
-          { providers: userConfig?.providers ?? [] },
-          preferredId
-        )
-      : null;
-  const instance = preferred ?? openaiInstances[0] ?? null;
+  const decoded = decodeStoredModelSelection(imageModel);
+  const providers = userConfig?.providers ?? [];
+  let instance: ProviderInstance | null = null;
+  let model = IMAGE_GENERATION_MODEL_ID;
 
-  if (!instance || instance.type !== "openai") {
+  if (decoded && decoded.providerId !== "__unknown__") {
+    instance =
+      findProviderInstance({ providers }, decoded.providerId) ??
+      providers.find((p) => p.type === decoded.providerId) ??
+      null;
+    model = decoded.modelId || IMAGE_GENERATION_MODEL_ID;
+  } else {
+    const preferredId = userConfig?.defaultProviderId?.trim();
+    instance =
+      (preferredId ? findProviderInstance({ providers }, preferredId) : null) ??
+      providers.find((p) => p.type === "openai" || p.type === "gemini") ??
+      providers[0] ??
+      null;
+  }
+
+  if (!instance) {
     throw new AtlasApiError(
-      "Image generation requires an OpenAI provider. Add one in Settings.",
+      "Image generation provider is missing. Add or update one in Settings.",
       400
     );
   }
 
-  if (!modelSupportsImageGeneration(IMAGE_GENERATION_MODEL_ID, instance.type)) {
+  if (!modelSupportsImageGeneration(model, instance.type)) {
     throw new AtlasApiError(
-      `Configured image generation model "${IMAGE_GENERATION_MODEL_ID}" is not supported.`,
+      `Configured image generation model "${model}" is not supported for provider "${instance.type}".`,
       400
     );
   }
@@ -161,7 +165,7 @@ export function resolveImageGenerationSelection(
 
   if (!apiKey) {
     throw new AtlasApiError(
-      "OpenAI API key is missing. Configure an OpenAI provider or set OPENAI_API_KEY.",
+      `API key for "${instance.label || instance.type}" is missing. Configure it in Settings.`,
       400
     );
   }
@@ -169,8 +173,8 @@ export function resolveImageGenerationSelection(
   return {
     apiKey,
     instance,
-    model: IMAGE_GENERATION_MODEL_ID,
-    selection: IMAGE_GENERATION_SELECTION,
+    model,
+    selection: imageModel,
   };
 }
 
@@ -184,31 +188,27 @@ export async function generateImageWithOpenAI(
   }
 
   const model = (input.model?.trim() || IMAGE_GENERATION_MODEL_ID) as string;
-
-  if (model !== IMAGE_GENERATION_MODEL_ID) {
-    throw new AtlasApiError(
-      `Image generation model "${model}" is not supported.`,
-      400
-    );
-  }
-
   const size = normalizeImageGenerationSize(input.size);
   const apiKey = input.apiKey?.trim();
 
   if (!apiKey) {
     throw new AtlasApiError(
-      "OpenAI API key is missing. Configure an OpenAI provider or set OPENAI_API_KEY.",
+      "API key is missing. Configure a provider in Settings.",
       400
     );
   }
 
-  const response = await fetch(OPENAI_IMAGES_GENERATIONS_URL, {
+  const baseUrl = input.baseUrl
+    ? `${normalizeBaseUrl(input.baseUrl)}/images/generations`
+    : OPENAI_IMAGES_GENERATIONS_URL;
+
+  const response = await fetch(baseUrl, {
     body: JSON.stringify({
       model,
       n: 1,
-      // gpt-image models return b64_json; request explicitly for clarity.
       output_format: "png",
       prompt,
+      response_format: "b64_json",
       size,
     }),
     headers: {
@@ -227,20 +227,31 @@ export async function generateImageWithOpenAI(
   }
 
   const payload = (await response.json()) as {
-    data?: Array<{ b64_json?: string; revised_prompt?: string }>;
+    data?: Array<{ b64_json?: string; revised_prompt?: string; url?: string }>;
     output_format?: string;
     usage?: { input_tokens?: number; output_tokens?: number };
   };
 
   const first = payload.data?.[0];
-  const b64 = first?.b64_json?.trim();
+  let b64 = first?.b64_json?.trim();
+
+  if (!b64 && first?.url) {
+    try {
+      const imgRes = await fetch(first.url);
+      if (imgRes.ok) {
+        const ab = await imgRes.arrayBuffer();
+        b64 = Buffer.from(ab).toString("base64");
+      }
+    } catch {
+      // Fallthrough to empty check
+    }
+  }
 
   if (!b64) {
     throw new AtlasApiError("Image generation returned no image data.", 502);
   }
 
   let bytes: Uint8Array;
-
   try {
     bytes = Uint8Array.from(Buffer.from(b64, "base64"));
   } catch {
@@ -266,9 +277,87 @@ export async function generateImageWithOpenAI(
     mediaType,
     model,
     size,
-    ...(first.revised_prompt?.trim()
+    ...(first?.revised_prompt?.trim()
       ? { revisedPrompt: first.revised_prompt.trim() }
       : {}),
     usage: resolveImageGenerationTokens(prompt, size, payload.usage),
   };
+}
+
+export async function generateImageWithGemini(
+  input: GenerateImageInput
+): Promise<GenerateImageResult> {
+  const prompt = input.prompt?.trim();
+  if (!prompt) {
+    throw new AtlasApiError("Image prompt is required.", 400);
+  }
+
+  const model = input.model?.trim() || "imagen-3.0-generate-002";
+  const apiKey = input.apiKey?.trim();
+  if (!apiKey) {
+    throw new AtlasApiError("Gemini API key is missing.", 400);
+  }
+
+  const ai = new GoogleGenAI({
+    apiKey,
+    ...(input.baseUrl ? { httpOptions: { baseUrl: input.baseUrl } } : {}),
+  });
+
+  try {
+    const response = await ai.models.generateImages({
+      config: {
+        numberOfImages: 1,
+        outputMimeType: "image/png",
+      },
+      model,
+      prompt,
+    });
+
+    const generated = response.generatedImages?.[0]?.image;
+    const b64 = generated?.imageBytes;
+    if (!b64) {
+      throw new AtlasApiError(
+        "Gemini image generation returned no image data.",
+        502
+      );
+    }
+
+    const bytes = Uint8Array.from(Buffer.from(b64, "base64"));
+    return {
+      data: bytes,
+      mediaType: "image/png",
+      model,
+      size: "1024x1024",
+      usage: fallbackImageGenerationTokens(prompt, "1024x1024"),
+    };
+  } catch (error) {
+    if (error instanceof AtlasApiError) {
+      throw error;
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    throw new AtlasApiError(`Gemini image generation failed: ${message}`, 502);
+  }
+}
+
+export async function generateImage(
+  selection: ResolvedImageGenerationSelection,
+  input: { prompt: string; size?: string }
+): Promise<GenerateImageResult> {
+  if (selection.instance.type === "gemini") {
+    return generateImageWithGemini({
+      apiKey: selection.apiKey,
+      baseUrl: selection.instance.baseUrl,
+      model: selection.model,
+      prompt: input.prompt,
+      size: input.size,
+    });
+  }
+
+  return generateImageWithOpenAI({
+    apiKey: selection.apiKey,
+    baseUrl: selection.instance.baseUrl,
+    model: selection.model,
+    prompt: input.prompt,
+    size: input.size,
+  });
 }

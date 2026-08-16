@@ -1,3 +1,4 @@
+import path from "node:path";
 import {
   type AgentChatSession,
   type AgentHarness,
@@ -12,6 +13,7 @@ import type {
   AgentChannel,
   AgentQuestionnaire,
   AgentTodo,
+  ArtifactPreview,
   AssignSkillRequest,
   AssignToolRequest,
   BranchSessionResponse,
@@ -51,6 +53,10 @@ import type {
   ListToolsResponse,
   ModelsResponse,
   PatchSkillRequest,
+  PreviewJob,
+  PreviewManifest,
+  PreviewMetadata,
+  PreviewOptions,
   ProfileResponse,
   ProviderChatOptions,
   ProviderClient,
@@ -139,6 +145,7 @@ import {
   type OrgRole,
   ollamaRequiresApiKey,
   persistInlineAttachmentsInContent,
+  previewService,
   readArtifactFile,
   readBundledSkillBody,
   readEnvValue,
@@ -212,7 +219,7 @@ import {
 import {
   resolveTranscriptionProviderSelection,
   TRANSCRIPTION_MODEL_REQUIRED_MESSAGE,
-  transcribeAudioWithOpenAI,
+  transcribeAudio,
 } from "./audio-transcription";
 import type { AutomationRunner } from "./automation-runner";
 import {
@@ -231,7 +238,7 @@ import {
   buildComposioToolDefinitions,
 } from "./composio-tool-bridge";
 import {
-  generateImageWithOpenAI,
+  generateImage,
   IMAGE_MODEL_REQUIRED_MESSAGE,
   resolveImageGenerationSelection,
 } from "./image-generation";
@@ -877,16 +884,11 @@ export class AgentService {
       throw new AtlasApiError(TRANSCRIPTION_MODEL_REQUIRED_MESSAGE, 400);
     }
 
-    const text = await transcribeAudioWithOpenAI(
-      selection.instance.apiKey,
-      selection.instance.baseUrl,
-      selection.model,
-      {
-        bytes,
-        filename: input.filename?.trim() || "audio.ogg",
-        mediaType,
-      }
-    );
+    const text = await transcribeAudio(selection.instance, selection.model, {
+      bytes,
+      filename: input.filename?.trim() || "audio.ogg",
+      mediaType,
+    });
 
     return { text };
   }
@@ -1000,9 +1002,7 @@ export class AgentService {
       throw new AtlasApiError(IMAGE_MODEL_REQUIRED_MESSAGE, 400);
     }
 
-    const result = await generateImageWithOpenAI({
-      apiKey: selection.apiKey,
-      model: selection.model,
+    const result = await generateImage(selection, {
       prompt,
       size: input.size,
     });
@@ -2846,16 +2846,11 @@ export class AgentService {
     if (!selection) {
       throw new AtlasApiError(TRANSCRIPTION_MODEL_REQUIRED_MESSAGE, 400);
     }
-    const text = await transcribeAudioWithOpenAI(
-      selection.instance.apiKey,
-      selection.instance.baseUrl,
-      selection.model,
-      {
-        bytes,
-        filename: input.filename?.trim() || "audio.ogg",
-        mediaType,
-      }
-    );
+    const text = await transcribeAudio(selection.instance, selection.model, {
+      bytes,
+      filename: input.filename?.trim() || "audio.ogg",
+      mediaType,
+    });
     return { text };
   }
 
@@ -2871,9 +2866,7 @@ export class AgentService {
     if (!selection) {
       throw new AtlasApiError(IMAGE_MODEL_REQUIRED_MESSAGE, 400);
     }
-    const result = await generateImageWithOpenAI({
-      apiKey: selection.apiKey,
-      model: selection.model,
+    const result = await generateImage(selection, {
       prompt,
       size: input.size,
     });
@@ -3339,12 +3332,119 @@ export class AgentService {
     });
   }
 
+  async getProfileArtifactPreview(
+    orgId: string,
+    profileId: string,
+    filename: string,
+    options: PreviewOptions = {}
+  ): Promise<ArtifactPreview> {
+    await this.requireProfile(orgId, profileId);
+    const { bytes, contentType, filePath } = await readArtifactFile({
+      filename,
+      orgId,
+      profileId,
+    });
+    return previewService.generate(
+      {
+        filename: path.basename(filePath),
+        mimeType: contentType,
+        path: filename,
+        revision: options.revision,
+        sizeBytes: bytes.length,
+      },
+      bytes,
+      options,
+      { orgId, profileId }
+    );
+  }
+
+  async inspectProfileArtifactPreview(
+    orgId: string,
+    profileId: string,
+    filename: string
+  ): Promise<PreviewMetadata> {
+    await this.requireProfile(orgId, profileId);
+    const { bytes, contentType, filePath } = await readArtifactFile({
+      filename,
+      orgId,
+      profileId,
+    });
+    return previewService.inspect(
+      {
+        filename: path.basename(filePath),
+        mimeType: contentType,
+        path: filename,
+        sizeBytes: bytes.length,
+      },
+      bytes,
+      { orgId, profileId }
+    );
+  }
+
+  async getProfileArtifactManifest(
+    orgId: string,
+    profileId: string,
+    filename: string,
+    options: PreviewOptions = {}
+  ): Promise<PreviewManifest> {
+    await this.requireProfile(orgId, profileId);
+    const { bytes, contentType, filePath } = await readArtifactFile({
+      filename,
+      orgId,
+      profileId,
+    });
+    return previewService.generateManifest(
+      {
+        artifactId: filename,
+        filename: path.basename(filePath),
+        mimeType: contentType,
+        path: filename,
+        revision: options.revision,
+        sizeBytes: bytes.length,
+      },
+      bytes,
+      options,
+      { orgId, profileId }
+    );
+  }
+
+  getPreviewJob(jobId: string): PreviewJob | undefined {
+    return previewService.getJob(jobId);
+  }
+
+  async getProfileArtifactDerivedPdf(
+    orgId: string,
+    profileId: string,
+    filename: string,
+    options: PreviewOptions = {}
+  ): Promise<{ bytes: Buffer; pageCount: number }> {
+    await this.requireProfile(orgId, profileId);
+    const { bytes, contentType, filePath } = await readArtifactFile({
+      filename,
+      orgId,
+      profileId,
+    });
+    return previewService.getOrGenerateDerivedPdf(
+      {
+        filename: path.basename(filePath),
+        mimeType: contentType,
+        path: filename,
+        revision: options.revision,
+        sizeBytes: bytes.length,
+      },
+      bytes,
+      options,
+      { orgId, profileId }
+    );
+  }
+
   async deleteProfileArtifact(
     orgId: string,
     profileId: string,
     filename: string
   ): Promise<DeleteArtifactResponse> {
     await this.requireProfile(orgId, profileId);
+    previewService.invalidate(orgId, profileId, filename);
     return deleteArtifactFile({ filename, orgId, profileId });
   }
 

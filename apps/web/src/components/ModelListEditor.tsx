@@ -52,14 +52,14 @@ export function ModelListEditor({
     <div className="space-y-2">
       <div className="overflow-x-auto rounded-lg border border-border">
         <table
-          className={`w-full text-left text-xs ${showThinking ? "min-w-[40rem]" : "min-w-[32rem]"}`}
+          className={`w-full text-left text-xs ${showThinking ? "min-w-[48rem]" : "min-w-[32rem]"}`}
         >
           <thead className="border-border border-b bg-muted/30 text-muted-foreground">
             <tr>
               <th className="px-2 py-2 font-medium">Model ID</th>
               <th className="px-2 py-2 font-medium">Display name</th>
               {showThinking ? (
-                <th className="px-2 py-2 font-medium">Reasoning</th>
+                <th className="px-2 py-2 font-medium">Reasoning / Levels</th>
               ) : null}
               {showPricing ? (
                 <>
@@ -102,15 +102,38 @@ export function ModelListEditor({
                 </td>
                 {showThinking ? (
                   <td className="px-2 py-1.5">
-                    <Switch
-                      aria-label={`Reasoning for ${row.id.trim() || "model"}`}
-                      checked={row.supportsThinking === true}
-                      disabled={disabled}
-                      onCheckedChange={(checked) =>
-                        updateRow(index, { supportsThinking: checked })
-                      }
-                      size="sm"
-                    />
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        aria-label={`Reasoning for ${row.id.trim() || "model"}`}
+                        checked={row.supportsThinking === true}
+                        disabled={disabled}
+                        onCheckedChange={(checked) =>
+                          updateRow(index, { supportsThinking: checked })
+                        }
+                        size="sm"
+                      />
+                      {row.supportsThinking ? (
+                        <InputGroup className="w-36">
+                          <InputGroupInput
+                            disabled={disabled}
+                            onChange={(event) => {
+                              const val = event.target.value;
+                              const parts = val
+                                .split(",")
+                                .map((s) => s.trim())
+                                .filter(Boolean);
+                              updateRow(index, {
+                                reasoningEffortValues:
+                                  parts.length > 0 ? parts : undefined,
+                              });
+                            }}
+                            placeholder="low, medium, high"
+                            title="Comma-separated reasoning levels (e.g. low, medium, xhigh)"
+                            value={row.reasoningEffortValues?.join(", ") ?? ""}
+                          />
+                        </InputGroup>
+                      ) : null}
+                    </div>
                   </td>
                 ) : null}
                 {showPricing ? (

@@ -102,7 +102,12 @@ export function evaluateActionRisk(
     normalizedTool.includes("order") ||
     normalizedTool.includes("buy") ||
     args.isPurchase === true ||
-    typeof args.amount === "number"
+    typeof args.amount === "number" ||
+    (typeof args.action === "string" &&
+      (args.action.includes("order") ||
+        args.action.includes("buy") ||
+        args.action.includes("purchase") ||
+        args.action.includes("checkout")))
   ) {
     const amount = typeof args.amount === "number" ? args.amount : 129;
     const currency = typeof args.currency === "string" ? args.currency : "USD";

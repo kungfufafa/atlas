@@ -21,10 +21,10 @@ import {
   buildChatCompletionResult,
   DEFAULT_USER_AGENT,
   extractOpenAITokenUsage,
-  normalizeThinkingEffort,
   notifyToolInputDelta,
   parseJsonRecord,
   readSseEvents,
+  resolveThinkingEffort,
   sanitizeToolCallHistory,
 } from "../shared";
 import { generateOpenAIResponsesChat } from "./responses";
@@ -378,9 +378,11 @@ function buildDeepSeekThinkingBody(
     return {};
   }
 
-  const effort = normalizeThinkingEffort(thinking.effort);
-  // DeepSeek accepts low/high/max; map medium → high for compatibility.
-  const reasoningEffort = effort === "medium" ? "high" : effort;
+  const reasoningEffort = resolveThinkingEffort(thinking.effort, [
+    "low",
+    "high",
+    "max",
+  ]);
 
   return {
     reasoning_effort: reasoningEffort,

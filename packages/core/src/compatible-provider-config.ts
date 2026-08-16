@@ -116,6 +116,17 @@ export function validateCustomModels(entries: unknown): CustomModelEntry[] {
       record.outputPerMillionUsd
     );
 
+    const reasoningEffortValues = Array.isArray(record.reasoningEffortValues)
+      ? record.reasoningEffortValues
+          .map((v) => (typeof v === "string" ? v.trim() : ""))
+          .filter(Boolean)
+      : typeof record.reasoningEffortValues === "string"
+        ? record.reasoningEffortValues
+            .split(",")
+            .map((v) => v.trim())
+            .filter(Boolean)
+        : undefined;
+
     if (
       (inputPerMillionUsd !== undefined && outputPerMillionUsd === undefined) ||
       (inputPerMillionUsd === undefined && outputPerMillionUsd !== undefined)
@@ -131,6 +142,7 @@ export function validateCustomModels(entries: unknown): CustomModelEntry[] {
       ...(isDefault ? { default: true } : {}),
       ...(supportsThinking === undefined ? {} : { supportsThinking }),
       ...(supportsVision === undefined ? {} : { supportsVision }),
+      ...(reasoningEffortValues?.length ? { reasoningEffortValues } : {}),
       ...(inputPerMillionUsd === undefined ? {} : { inputPerMillionUsd }),
       ...(outputPerMillionUsd === undefined ? {} : { outputPerMillionUsd }),
     });

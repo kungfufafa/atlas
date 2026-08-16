@@ -23,7 +23,6 @@ import {
   DEFAULT_USER_AGENT,
   extractOpenAITokenUsage,
   formatHttpErrorBody,
-  normalizeThinkingEffort,
   notifyToolInputDelta,
   parseJsonRecord,
   readSseEvents,
@@ -35,6 +34,7 @@ export interface OpenAICompatibleProviderOptions {
   displayName: string;
   model: string;
   providerName?: ProviderClient["name"];
+  reasoningEffortValues?: string[];
   supportsThinking: boolean;
 }
 
@@ -51,6 +51,7 @@ export function createOpenAICompatibleProvider(
   const model = options.model;
   const baseUrl = normalizeBaseUrl(options.baseUrl);
   const apiKey = options.apiKey || "not-needed";
+
   const client = new OpenAI({
     apiKey,
     baseURL: baseUrl,
@@ -76,20 +77,22 @@ export function createOpenAICompatibleProvider(
     },
     generateText(input: GenerateTextInput) {
       const useJson = (input.format ?? "json") === "json";
-      const system = useJson
-        ? input.system
-        : `${input.system}\n\nReturn only the requested text. No JSON, keys, labels, markdown fences, or surrounding quotes.`;
-
-      return requestCompletion(client, label, {
-        messages: [
-          { content: system, role: "system" },
-          { content: input.prompt, role: "user" },
-        ],
+      return requestChatCompletion(client, label, {
+        messages: [{ content: input.prompt, role: "user" }],
         model,
-        responseFormat: useJson ? { type: "json_object" } : undefined,
-      });
+        signal: input.signal,
+        system: input.system ?? "",
+        thinking: options.supportsThinking
+          ? input.providerOptions?.thinking
+          : undefined,
+      }).then((result) => ({
+        content: result.content,
+        data: useJson ? parseJsonRecord(result.content) : result.content,
+        usage: result.usage,
+      }));
     },
-    name: options.providerName ?? "openai_compatible",
+    name: (options.providerName ??
+      "openai_compatible") as ProviderClient["name"],
     streamChat(input: GenerateChatInput, handlers: StreamChatHandlers) {
       return streamChatCompletion({
         apiKey,
@@ -167,8 +170,11 @@ function readReasoningText(
 }
 
 function buildThinkingBody(
-  thinking: ProviderChatOptions["thinking"] | undefined,
-  options: { model: string; hasTools: boolean }
+  thinking: ProviderChatOptions["thinking"],
+  options: {
+    model: string;
+    hasTools: boolean;
+  }
 ) {
   // OpenAI gpt-5.4+ chat/completions rejects tools + non-none reasoning_effort
   // (including when the API would default effort). Force none whenever tools are present.
@@ -183,11 +189,11 @@ function buildThinkingBody(
     return {};
   }
 
-  const effort = normalizeThinkingEffort(thinking.effort);
+  const effort = thinking.effort?.trim() || "medium";
 
   return {
     reasoning: { effort },
-    // Rapid MLX and other local OpenAI-compatible servers use top-level reasoning_effort.
+    // OpenAI-compatible servers use top-level reasoning_effort.
     reasoning_effort: effort,
   };
 }

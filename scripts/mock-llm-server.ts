@@ -50,7 +50,9 @@ const server = serve({
           content.includes("bun.sh") ||
           content.includes("bun add") ||
           content.includes("web_search") ||
-          content.includes("install package")
+          content.includes("install package") ||
+          content.includes("Bun") ||
+          content.includes("results")
         ) {
           responseContent =
             "According to the official Bun documentation [1], the command to install a package is `bun add <package>`.";
@@ -98,27 +100,31 @@ const server = serve({
         } else if (
           content.includes("memory_write") ||
           content.includes("Saved user memory") ||
-          content.includes("explanation_style") ||
+          content.includes("presentation_style") ||
+          content.includes("executive-friendly") ||
           content.includes("concise")
         ) {
           responseContent =
-            "I have saved your preference for concise technical answers into durable memory.";
+            "I have saved your preference for concise, executive-friendly deliverables into durable memory.";
         } else if (
+          content.includes("competitive_analysis.pptx") ||
+          content.includes("atlas_overview_v2.pptx") ||
           content.includes("atlas_overview.pptx") ||
-          content.includes("pptx") ||
-          content.includes("slide")
+          content.includes("write_pptx")
         ) {
           responseContent =
-            "I have created the presentation 'atlas_overview.pptx' covering Atlas Architecture, Tool Platform, and Research Capability.";
+            "I have generated the board-ready presentation deck with executive summary, architecture comparison, and verified citations.";
         } else if (
+          content.includes("financial_model_v2.xlsx") ||
+          content.includes("financial_model.xlsx") ||
           content.includes("sales_report.xlsx") ||
-          content.includes("xlsx") ||
-          content.includes("revenue")
+          content.includes("spreadsheet")
         ) {
           responseContent =
-            "Sales Analysis Complete: Total revenue reached $70 with a strong upward trend across Apple and Banana categories.";
+            "Financial model generated successfully with scenario projections, formula calculations, and revenue breakdowns.";
         } else if (
           content.includes("browser") ||
+          content.includes("pricing.example.com") ||
           content.includes("Atlas Test Store") ||
           content.includes("Product Catalog") ||
           content.includes("Search Results") ||
@@ -133,9 +139,15 @@ const server = serve({
           ) {
             responseContent =
               "Order successfully placed for Atlas Pro ($129.00). Confirmation #ORD-9821.";
+          } else if (
+            lastMsg?.content?.includes("pricing page") ||
+            lastMsg?.content?.includes("SSO")
+          ) {
+            responseContent =
+              "Based on the pricing page, the **Enterprise Plan** includes SAML/SSO authentication, SIEM audit logs, and dedicated VPC support.";
           } else {
             responseContent =
-              "I navigated the test shop and found Atlas Pro listed at $129.00.";
+              "I navigated the store and found Atlas Pro listed at $129.00.";
           }
         } else {
           responseContent =
@@ -145,28 +157,44 @@ const server = serve({
         const prompt =
           typeof lastMsg?.content === "string" ? lastMsg.content : "";
         if (
+          prompt.includes("Explain what a vector database is") ||
+          prompt.includes("explain what a vector database is") ||
+          prompt.includes("what a vector database is")
+        ) {
+          responseContent =
+            "A **vector database** is a specialized database designed to store, index, and query high-dimensional vector embeddings. Unlike traditional relational databases that match exact keywords or scalar values, vector databases perform **approximate nearest neighbor (ANN)** search based on semantic distance metrics such as cosine similarity, dot product, or Euclidean distance.\n\nKey features include:\n- **High-Dimensional Indexing**: Uses algorithms like HNSW (Hierarchical Navigable Small World) or IVF-PQ to search millions of vectors in milliseconds.\n- **Semantic Retrieval**: Enables retrieval-augmented generation (RAG), recommendation engines, and multimodal similarity search.\n- **Metadata Filtering**: Allows combined scalar and vector filtering in a single query.";
+        } else if (
           prompt.includes("deep research") ||
           prompt.includes("agentic coding") ||
+          prompt.includes("Research three competitors") ||
+          prompt.includes("research three competitors") ||
           prompt.includes("vector database indexing algorithms") ||
           prompt.includes("HNSW vs IVFPQ")
         ) {
           toolCall = {
             args: {
               depth: "comprehensive",
-              focusAreas: ["latency", "recall", "memory footprint"],
-              topic: "Agentic coding platforms (OpenAI vs Anthropic vs Gemini)",
+              focusAreas: [
+                "pricing",
+                "security",
+                "integrations",
+                "enterprise positioning",
+              ],
+              topic:
+                "Competitor Analysis: Enterprise AI Coding Agents & Platforms",
             },
             name: "deep_research",
           };
         } else if (
           prompt.includes("pricing comparison") ||
-          prompt.includes("Add pricing")
+          prompt.includes("Add pricing") ||
+          prompt.includes("enterprise pricing recently")
         ) {
           toolCall = {
             args: {
               depth: "standard",
-              focusAreas: ["pricing", "tokens per dollar"],
-              topic: "Pricing comparison for agentic coding models",
+              focusAreas: ["enterprise pricing", "seat tiers", "sso"],
+              topic: "Enterprise pricing changes for AI coding platforms",
             },
             name: "deep_research",
           };
@@ -180,6 +208,15 @@ const server = serve({
             name: "mcp__github__search_issues",
           };
         } else if (
+          prompt.includes("enterprise pricing") ||
+          prompt.includes("decide before about") ||
+          prompt.includes("decided before about")
+        ) {
+          toolCall = {
+            args: { query: "enterprise pricing decision" },
+            name: "search_chats",
+          };
+        } else if (
           prompt.includes("Apollo launch") ||
           prompt.includes("Apollo launches") ||
           prompt.includes("Apollo")
@@ -190,6 +227,7 @@ const server = serve({
           };
         } else if (
           prompt.includes("Place the order") ||
+          prompt.includes("place the order") ||
           prompt.includes("submit order")
         ) {
           toolCall = {
@@ -197,6 +235,18 @@ const server = serve({
               action: "submit_order",
               amount: "$129.00",
               item: "Atlas Pro",
+            },
+            name: "browser",
+          };
+        } else if (
+          prompt.includes("Open the pricing page") ||
+          prompt.includes("pricing page and check") ||
+          prompt.includes("check which plan has SSO")
+        ) {
+          toolCall = {
+            args: {
+              action: "open",
+              url: "https://pricing.example.com/plans",
             },
             name: "browser",
           };
@@ -212,6 +262,50 @@ const server = serve({
             name: "browser",
           };
         } else if (
+          prompt.includes("Add a downside case") ||
+          prompt.includes("downside case")
+        ) {
+          toolCall = {
+            args: {
+              action: "update",
+              columns: ["Scenario", "Revenue", "EBITDA", "Cash Flow"],
+              data: [
+                ["Base Case", "$120,000", "$45,000", "$38,000"],
+                ["Downside Case (-25%)", "$90,000", "$18,000", "$12,000"],
+              ],
+              parentPath: "financial_model.xlsx",
+              path: "financial_model_v2.xlsx",
+              revision: 2,
+              sheetName: "Scenarios",
+            },
+            name: "spreadsheet",
+          };
+        } else if (
+          prompt.includes("financial model") ||
+          prompt.includes("financial model from these assumptions")
+        ) {
+          toolCall = {
+            args: {
+              action: "create",
+              columns: [
+                "Period",
+                "Revenue",
+                "COGS",
+                "Gross Profit",
+                "Net Margin",
+              ],
+              data: [
+                ["Q1", 100_000, 40_000, "=B2-C2", "=D2/B2"],
+                ["Q2", 125_000, 48_000, "=B3-C3", "=D3/B3"],
+                ["Q3", 160_000, 58_000, "=B4-C4", "=D4/B4"],
+                ["Q4", 210_000, 72_000, "=B5-C5", "=D5/B5"],
+              ],
+              path: "financial_model.xlsx",
+              sheetName: "Projections",
+            },
+            name: "spreadsheet",
+          };
+        } else if (
           prompt.includes("sales_report.xlsx") ||
           prompt.includes("Analyze revenue")
         ) {
@@ -223,6 +317,8 @@ const server = serve({
             name: "spreadsheet",
           };
         } else if (
+          prompt.includes("Make slide 4 more visual") ||
+          prompt.includes("slide 4") ||
           prompt.includes("Make slide 2 simpler") ||
           prompt.includes("slide 2")
         ) {
@@ -231,13 +327,28 @@ const server = serve({
               parentPath: "atlas_overview.pptx",
               path: "atlas_overview_v2.pptx",
               revision: 2,
-              title: "Atlas Overview v2",
+              title: "Competitive Analysis & Strategy Deck (v2)",
+            },
+            name: "write_pptx",
+          };
+        } else if (
+          prompt.includes("board-ready 8-slide presentation") ||
+          prompt.includes("Turn that research into") ||
+          prompt.includes("8-slide presentation")
+        ) {
+          toolCall = {
+            args: {
+              path: "competitive_analysis.pptx",
+              revision: 1,
+              slideCount: 8,
+              title: "Enterprise AI Coding Agents: Competitive Landscape",
             },
             name: "write_pptx",
           };
         } else if (
           prompt.includes("presentation") ||
-          prompt.includes("make a presentation")
+          prompt.includes("make a presentation") ||
+          prompt.includes("strategy deck")
         ) {
           toolCall = {
             args: {
@@ -249,12 +360,14 @@ const server = serve({
           };
         } else if (
           prompt.includes("Remember that I prefer") ||
+          prompt.includes("executive-friendly") ||
           prompt.includes("concise technical")
         ) {
           toolCall = {
             args: {
-              content: "User prefers concise technical answers.",
-              subject: "explanation_style",
+              content:
+                "User prefers concise, executive-friendly deliverables with structured key points and clear business impact.",
+              subject: "presentation_style",
             },
             name: "memory_write",
           };
@@ -300,63 +413,14 @@ const server = serve({
             name: "search_chats",
           };
         } else if (
-          prompt.includes("Remember that I prefer") ||
-          prompt.includes("prefer technical answers")
-        ) {
-          toolCall = {
-            args: {
-              content: "User prefers technical answers with concise examples.",
-              importance: 4,
-              scope: "user",
-              subject: "explanation_style",
-            },
-            name: "memory_write",
-          };
-        } else if (
           prompt.includes("present technical explanations") ||
           prompt.includes("How should you present")
         ) {
           responseContent =
             "Based on your saved preferences, I will present technical explanations with concise examples and direct technical depth.";
         } else if (
-          prompt.includes("presentation") ||
-          prompt.includes("3-slide") ||
-          prompt.includes("slide deck")
-        ) {
-          toolCall = {
-            args: {
-              path: "atlas_overview.pptx",
-              slides: [
-                {
-                  layout: "title",
-                  subtitle: "Autonomous Agent Capability Platform",
-                  title: "Atlas Architecture",
-                },
-                {
-                  bulletPoints: [
-                    "Web search and fetch primitives",
-                    "Interactive browser tool",
-                    "Rich artifact engine",
-                  ],
-                  title: "Tool Platform",
-                },
-                {
-                  bulletPoints: [
-                    "Multi-source evidence extraction",
-                    "Contradiction detection",
-                    "Inline verified citations",
-                  ],
-                  title: "Research Capability",
-                },
-              ],
-              title: "Atlas Overview",
-            },
-            name: "write_pptx",
-          };
-        } else if (
           prompt.includes("Open the test store") ||
-          prompt.includes("test store") ||
-          prompt.includes("Atlas Pro")
+          prompt.includes("test store")
         ) {
           toolCall = {
             args: {
@@ -364,18 +428,6 @@ const server = serve({
               url: "http://127.0.0.1:8089/",
             },
             name: "browser",
-          };
-        } else if (
-          prompt.includes("Search the web") ||
-          prompt.includes("Bun documentation") ||
-          prompt.includes("install a package")
-        ) {
-          toolCall = {
-            args: {
-              domains: ["bun.sh"],
-              query: "official Bun documentation install package command",
-            },
-            name: "web_search",
           };
         } else if (
           prompt.includes("Calculate") ||
@@ -400,23 +452,6 @@ const server = serve({
           toolCall = {
             args: { code: "print(2**16)" },
             name: "python_execute",
-          };
-        } else if (
-          prompt.includes("spreadsheet") ||
-          prompt.includes("sales_report.xlsx")
-        ) {
-          toolCall = {
-            args: {
-              action: "create",
-              columns: ["Item", "Qty", "Price", "Total"],
-              data: [
-                ["Apples", 10, 3, "=B2*C2"],
-                ["Bananas", 20, 2, "=B3*C3"],
-              ],
-              path: "sales_report.xlsx",
-              sheetName: "Sales",
-            },
-            name: "spreadsheet",
           };
         } else if (
           prompt.includes("tool_search") ||

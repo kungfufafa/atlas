@@ -14,10 +14,12 @@ import {
 } from "@/hooks/use-image-generation-settings";
 import { formatError } from "@/lib/client";
 import {
+  encodeModelSelection,
+  GEMINI_IMAGE_GENERATION_MODEL_OPTIONS,
   groupModelsByProvider,
-  IMAGE_GENERATION_MODEL_OPTIONS,
-  IMAGE_GENERATION_SELECTION,
+  OPENAI_IMAGE_GENERATION_MODEL_OPTIONS,
   profileModelLabel,
+  profileModelSelectionValue,
 } from "@/lib/models";
 
 const CLEAR_IMAGE_GENERATION_MODEL_VALUE = "__image_generation_unset__";
@@ -35,33 +37,62 @@ export function ImageGenerationSettingsCard() {
     [modelsResponse?.models]
   );
 
-  const openaiAvailable = useMemo(
-    () =>
-      providerModelGroups.some((group) =>
-        group.models.some((model) => model.provider === "openai")
-      ),
-    [providerModelGroups]
-  );
-
   const imageModelGroups = useMemo(() => {
-    if (!openaiAvailable) {
-      return [] as typeof providerModelGroups;
+    const groups: typeof providerModelGroups = [];
+
+    for (const group of providerModelGroups) {
+      if (group.models.some((model) => model.provider === "openai")) {
+        groups.push({
+          ...group,
+          models: OPENAI_IMAGE_GENERATION_MODEL_OPTIONS.map((option) => ({
+            id: option.id,
+            name: option.name,
+            provider: "openai" as const,
+          })),
+        });
+      } else if (group.models.some((model) => model.provider === "gemini")) {
+        groups.push({
+          ...group,
+          models: GEMINI_IMAGE_GENERATION_MODEL_OPTIONS.map((option) => ({
+            id: option.id,
+            name: option.name,
+            provider: "gemini" as const,
+          })),
+        });
+      } else if (
+        group.models.some(
+          (model) =>
+            model.provider === "openai_compatible" ||
+            model.provider === "openrouter" ||
+            model.provider === "fireworks"
+        )
+      ) {
+        groups.push({
+          ...group,
+          models: group.models.map((m) => ({
+            id: m.id,
+            name: m.name,
+            provider: m.provider,
+          })),
+        });
+      }
     }
 
-    return [
-      {
-        models: IMAGE_GENERATION_MODEL_OPTIONS.map((option) => ({
-          id: option.id,
-          name: option.name,
-          provider: "openai" as const,
-        })),
-        providerId: "openai",
-        providerLabel: "OpenAI",
-      },
-    ];
-  }, [openaiAvailable]);
+    return groups;
+  }, [providerModelGroups]);
 
-  const selectionValue = selection || CLEAR_IMAGE_GENERATION_MODEL_VALUE;
+  const imageUnavailable = imageModelGroups.length === 0;
+
+  const selectionValue = useMemo(() => {
+    if (!selection) {
+      return CLEAR_IMAGE_GENERATION_MODEL_VALUE;
+    }
+
+    return (
+      profileModelSelectionValue(selection, imageModelGroups) ||
+      CLEAR_IMAGE_GENERATION_MODEL_VALUE
+    );
+  }, [selection, imageModelGroups]);
 
   useEffect(() => {
     setSelection(imageGenerationSettings?.model ?? "");
@@ -100,7 +131,7 @@ export function ImageGenerationSettingsCard() {
       title="Image generation model"
     >
       <Select
-        disabled={saveImageGenerationMutation.isPending || !openaiAvailable}
+        disabled={saveImageGenerationMutation.isPending || imageUnavailable}
         onValueChange={(value) => {
           if (!value) {
             return;
@@ -137,9 +168,9 @@ export function ImageGenerationSettingsCard() {
           <SelectValue placeholder="Select image generation model">
             {selection
               ? profileModelLabel(selection, imageModelGroups)
-              : openaiAvailable
-                ? "Not configured"
-                : "No OpenAI provider"}
+              : imageUnavailable
+                ? "No image providers"
+                : "Not configured"}
           </SelectValue>
         </SelectTrigger>
         <SelectContent
@@ -149,11 +180,16 @@ export function ImageGenerationSettingsCard() {
           <SelectItem value={CLEAR_IMAGE_GENERATION_MODEL_VALUE}>
             Not configured
           </SelectItem>
-          {openaiAvailable ? (
-            <SelectItem value={IMAGE_GENERATION_SELECTION}>
-              OpenAI: {IMAGE_GENERATION_MODEL_OPTIONS[0].name}
-            </SelectItem>
-          ) : null}
+          {imageModelGroups.flatMap((group) =>
+            group.models.map((model) => (
+              <SelectItem
+                key={`${group.providerId}:${model.id}`}
+                value={encodeModelSelection(group.providerId, model.id)}
+              >
+                {group.providerLabel}: {model.name}
+              </SelectItem>
+            ))
+          )}
         </SelectContent>
       </Select>
     </SettingsModelTile>

@@ -32,6 +32,9 @@ export function openRouterCustomModelsToCatalog(
     provider: "openrouter" as const,
     supportsThinking: resolveOpenRouterCatalogThinking(entry),
     ...(entry.default ? { default: true } : {}),
+    ...(entry.reasoningEffortValues
+      ? { reasoningEffortValues: entry.reasoningEffortValues }
+      : {}),
     ...(entry.inputPerMillionUsd === undefined
       ? {}
       : { inputPerMillionUsd: entry.inputPerMillionUsd }),
@@ -63,6 +66,9 @@ export function cerebrasCustomModelsToCatalog(
       ? {}
       : { supportsVision: entry.supportsVision }),
     ...(entry.default ? { default: true } : {}),
+    ...(entry.reasoningEffortValues
+      ? { reasoningEffortValues: entry.reasoningEffortValues }
+      : {}),
     ...(entry.inputPerMillionUsd === undefined
       ? {}
       : { inputPerMillionUsd: entry.inputPerMillionUsd }),
@@ -132,6 +138,9 @@ export function catalogCustomModelsToCatalog(
     } else if (provider === "deepseek") {
       model.supportsThinking = false;
     }
+    if (entry.reasoningEffortValues !== undefined) {
+      model.reasoningEffortValues = entry.reasoningEffortValues;
+    }
     if (entry.inputPerMillionUsd !== undefined) {
       model.inputPerMillionUsd = entry.inputPerMillionUsd;
     }
@@ -174,6 +183,9 @@ export function mergeOpenRouterCatalog(
         : existing?.default
           ? { default: true }
           : {}),
+      ...(entry.reasoningEffortValues
+        ? { reasoningEffortValues: entry.reasoningEffortValues }
+        : {}),
       ...(entry.inputPerMillionUsd === undefined
         ? {}
         : { inputPerMillionUsd: entry.inputPerMillionUsd }),
@@ -186,6 +198,43 @@ export function mergeOpenRouterCatalog(
   return [...byId.values()].sort((left, right) =>
     left.name.localeCompare(right.name)
   );
+}
+
+export function inferReasoningEffortValues(
+  modelId: string,
+  provider?: ProviderName,
+  providerLabel?: string,
+  baseUrl?: string
+): string[] {
+  const mid = modelId.toLowerCase();
+  const plabel = (providerLabel ?? "").toLowerCase();
+  const url = (baseUrl ?? "").toLowerCase();
+
+  if (mid.includes("claude") || provider === "anthropic") {
+    return ["low", "medium", "high", "xhigh"];
+  }
+
+  if (mid.includes("deepseek") || provider === "deepseek") {
+    return ["low", "high", "max"];
+  }
+
+  if (
+    plabel === "tr" ||
+    plabel.startsWith("tr ") ||
+    plabel.endsWith(" tr") ||
+    plabel.includes("tokenrouter") ||
+    plabel.includes("token router") ||
+    plabel.includes("token-router") ||
+    url.includes("tokenrouter") ||
+    url.includes("token-router") ||
+    mid.includes("tokenrouter") ||
+    (provider === "openai_compatible" &&
+      (mid.includes("qwen") || mid.includes("kimi") || mid.includes("glm")))
+  ) {
+    return ["low", "medium", "xhigh"];
+  }
+
+  return ["low", "medium", "high"];
 }
 
 export function customModelsToCatalog(
@@ -206,6 +255,9 @@ export function customModelsToCatalog(
     }
     if (entry.supportsThinking !== undefined) {
       model.supportsThinking = entry.supportsThinking;
+    }
+    if (entry.reasoningEffortValues !== undefined) {
+      model.reasoningEffortValues = entry.reasoningEffortValues;
     }
     if (entry.supportsVision !== undefined) {
       model.supportsVision = entry.supportsVision;
@@ -260,12 +312,15 @@ export function getModelsForProviderInstance(
 
   if (instance.type === "openai_compatible") {
     const entries = instance.customModels ?? [];
+    const models = customModelsToCatalog(
+      entries,
+      "openai_compatible",
+      instance.label,
+      instance.baseUrl
+    );
+
     return annotate(
-      ensureCurrentModelInCatalog(
-        customModelsToCatalog(entries),
-        currentModel,
-        "openai_compatible"
-      )
+      ensureCurrentModelInCatalog(models, currentModel, "openai_compatible")
     );
   }
 
@@ -550,4 +605,11 @@ export function compatibleModelSupportsVision(
   customModels: CustomModelEntry[] | undefined
 ): boolean {
   return findCustomModel(customModels, modelId)?.supportsVision === true;
+}
+
+export function compatibleModelReasoningEffortValues(
+  modelId: string,
+  customModels: CustomModelEntry[] | undefined
+): string[] | undefined {
+  return findCustomModel(customModels, modelId)?.reasoningEffortValues;
 }

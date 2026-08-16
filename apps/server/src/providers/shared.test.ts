@@ -6,6 +6,7 @@ import {
   parseJsonRecord,
   readRecord,
   readSseEvents,
+  resolveThinkingEffort,
   sanitizeToolCallHistory,
 } from "./shared";
 
@@ -81,6 +82,36 @@ describe("provider shared helpers", () => {
     expect(normalizeThinkingEffort("low")).toBe("low");
     expect(normalizeThinkingEffort("high")).toBe("high");
     expect(normalizeThinkingEffort(undefined)).toBe("medium");
+  });
+
+  test("resolveThinkingEffort respects custom valid values and semantic aliases", () => {
+    expect(resolveThinkingEffort("low")).toBe("low");
+    expect(resolveThinkingEffort("medium")).toBe("medium");
+    expect(resolveThinkingEffort("high")).toBe("high");
+    expect(resolveThinkingEffort(undefined)).toBe("medium");
+
+    // Semantic alias: high -> xhigh for providers with xhigh
+    expect(resolveThinkingEffort("high", ["low", "medium", "xhigh"])).toBe(
+      "xhigh"
+    );
+    expect(resolveThinkingEffort("xhigh", ["low", "medium", "xhigh"])).toBe(
+      "xhigh"
+    );
+
+    // Semantic alias: xhigh -> high for providers with high
+    expect(resolveThinkingEffort("xhigh", ["low", "medium", "high"])).toBe(
+      "high"
+    );
+
+    // Semantic alias: high/xhigh -> max for DeepSeek
+    expect(resolveThinkingEffort("high", ["low", "high", "max"])).toBe("high");
+    expect(resolveThinkingEffort("xhigh", ["low", "high", "max"])).toBe("max");
+    expect(resolveThinkingEffort("max", ["low", "high", "max"])).toBe("max");
+
+    // Unknown value falls back to median
+    expect(resolveThinkingEffort("unknown", ["low", "medium", "high"])).toBe(
+      "medium"
+    );
   });
 
   test("formatHttpErrorBody extracts OpenCode-style JSON errors", () => {

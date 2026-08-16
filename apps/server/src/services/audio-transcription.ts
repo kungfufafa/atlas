@@ -2,8 +2,10 @@ import {
   AtlasApiError,
   findProviderInstance,
   normalizeBaseUrl,
+  type ProviderInstance,
   type UserConfig,
 } from "@atlas/core";
+import { GoogleGenAI } from "@google/genai";
 import { modelSupportsTranscription } from "../providers/models";
 import {
   decodeStoredModelSelection,
@@ -45,7 +47,7 @@ export function resolveTranscriptionProviderSelection(
 
   if (instance.type !== "openai") {
     throw new AtlasApiError(
-      "Audio transcription requires an OpenAI provider. Update it in Settings.",
+      "Audio transcription requires an OpenAI provider.",
       400
     );
   }
@@ -103,4 +105,78 @@ export async function transcribeAudioWithOpenAI(
   }
 
   return text;
+}
+
+export async function transcribeAudioWithGemini(
+  apiKey: string,
+  baseUrl: string | undefined,
+  model: string,
+  audio: { bytes: Uint8Array; filename: string; mediaType: string }
+): Promise<string> {
+  const trimmed = baseUrl?.trim();
+  const ai = new GoogleGenAI({
+    apiKey,
+    ...(trimmed ? { httpOptions: { baseUrl: trimmed } } : {}),
+  });
+  const base64 = Buffer.from(audio.bytes).toString("base64");
+  const modelName = model || "gemini-2.0-flash";
+
+  try {
+    const response = await ai.models.generateContent({
+      contents: [
+        {
+          parts: [
+            {
+              inlineData: {
+                data: base64,
+                mimeType: audio.mediaType || "audio/mp3",
+              },
+            },
+            {
+              text: "Please provide an accurate, verbatim transcription of the provided audio file. Output only the transcribed text with no extra commentary, explanations, or formatting.",
+            },
+          ],
+          role: "user",
+        },
+      ],
+      model: modelName,
+    });
+
+    const text = response.text?.trim();
+    if (!text) {
+      throw new AtlasApiError("Audio transcription returned empty text.", 502);
+    }
+    return text;
+  } catch (error) {
+    if (error instanceof AtlasApiError) {
+      throw error;
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    throw new AtlasApiError(
+      `Gemini audio transcription failed: ${message}`,
+      502
+    );
+  }
+}
+
+export async function transcribeAudio(
+  instance: ProviderInstance,
+  model: string,
+  audio: { bytes: Uint8Array; filename: string; mediaType: string }
+): Promise<string> {
+  if (instance.type === "gemini") {
+    return transcribeAudioWithGemini(
+      instance.apiKey,
+      instance.baseUrl,
+      model,
+      audio
+    );
+  }
+
+  return transcribeAudioWithOpenAI(
+    instance.apiKey,
+    instance.baseUrl,
+    model,
+    audio
+  );
 }

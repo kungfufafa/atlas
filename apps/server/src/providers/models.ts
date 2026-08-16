@@ -44,6 +44,7 @@ export const AVAILABLE_MODELS: ProviderModelOption[] = withVisionDefaults([
     name: "Sonnet 4.6",
     outputPerMillionUsd: 15,
     provider: "anthropic",
+    reasoningEffortValues: ["low", "medium", "high", "xhigh"],
   },
   {
     contextWindow: 200_000,
@@ -53,6 +54,7 @@ export const AVAILABLE_MODELS: ProviderModelOption[] = withVisionDefaults([
     name: "Opus 4.6",
     outputPerMillionUsd: 75,
     provider: "anthropic",
+    reasoningEffortValues: ["low", "medium", "high", "xhigh"],
   },
   {
     contextWindow: 128_000,
@@ -62,6 +64,7 @@ export const AVAILABLE_MODELS: ProviderModelOption[] = withVisionDefaults([
     name: "GPT-5.5",
     outputPerMillionUsd: 10,
     provider: "openai",
+    reasoningEffortValues: ["low", "medium", "high"],
   },
   {
     contextWindow: 128_000,
@@ -72,6 +75,7 @@ export const AVAILABLE_MODELS: ProviderModelOption[] = withVisionDefaults([
     name: "GPT-5.4",
     outputPerMillionUsd: 8,
     provider: "openai",
+    reasoningEffortValues: ["low", "medium", "high"],
   },
   {
     contextWindow: 128_000,
@@ -81,6 +85,7 @@ export const AVAILABLE_MODELS: ProviderModelOption[] = withVisionDefaults([
     name: "GPT-5.3 Codex",
     outputPerMillionUsd: 6,
     provider: "openai",
+    reasoningEffortValues: ["low", "medium", "high"],
   },
   {
     contextWindow: 128_000,
@@ -101,6 +106,7 @@ export const AVAILABLE_MODELS: ProviderModelOption[] = withVisionDefaults([
     name: "Gemini 3 Flash",
     outputPerMillionUsd: 3.0,
     provider: "gemini",
+    reasoningEffortValues: ["low", "medium", "high"],
     supportsThinking: true,
   },
   {
@@ -111,6 +117,7 @@ export const AVAILABLE_MODELS: ProviderModelOption[] = withVisionDefaults([
     name: "Gemini 3.1 Flash Lite",
     outputPerMillionUsd: 1.5,
     provider: "gemini",
+    reasoningEffortValues: ["low", "medium", "high"],
     supportsThinking: true,
   },
   {
@@ -121,6 +128,7 @@ export const AVAILABLE_MODELS: ProviderModelOption[] = withVisionDefaults([
     name: "Gemini 3.5 Flash",
     outputPerMillionUsd: 9.0,
     provider: "gemini",
+    reasoningEffortValues: ["low", "medium", "high"],
     supportsThinking: true,
   },
   {
@@ -132,6 +140,7 @@ export const AVAILABLE_MODELS: ProviderModelOption[] = withVisionDefaults([
     name: "DeepSeek V4 Flash",
     outputPerMillionUsd: 0.28,
     provider: "deepseek",
+    reasoningEffortValues: ["low", "high", "max"],
     supportsThinking: true,
   },
   {
@@ -142,6 +151,7 @@ export const AVAILABLE_MODELS: ProviderModelOption[] = withVisionDefaults([
     name: "DeepSeek V4 Pro",
     outputPerMillionUsd: 0.87,
     provider: "deepseek",
+    reasoningEffortValues: ["low", "high", "max"],
     supportsThinking: true,
   },
   {
@@ -654,40 +664,91 @@ export const TRANSCRIPTION_MODEL_IDS = new Set([
   "whisper-1",
   "gpt-4o-transcribe",
   "gpt-4o-mini-transcribe",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+  "gemini-1.5-pro",
 ]);
 
 export function modelSupportsTranscription(
   modelId: string,
   provider: ProviderName
 ): boolean {
-  if (provider !== "openai") {
-    return false;
+  const trimmed = modelId.trim();
+  if (provider === "openai") {
+    return (
+      TRANSCRIPTION_MODEL_IDS.has(trimmed) ||
+      trimmed.startsWith("whisper") ||
+      trimmed.includes("transcribe")
+    );
   }
 
-  return TRANSCRIPTION_MODEL_IDS.has(modelId.trim());
+  if (provider === "gemini") {
+    return TRANSCRIPTION_MODEL_IDS.has(trimmed) || trimmed.startsWith("gemini");
+  }
+
+  if (
+    provider === "openai_compatible" ||
+    provider === "openrouter" ||
+    provider === "groq" ||
+    provider === "ollama" ||
+    provider === "fireworks" ||
+    provider === "cerebras"
+  ) {
+    return Boolean(trimmed);
+  }
+
+  return false;
 }
 
-/** Sole v1 image-generation model id (OpenAI Images API). */
 export const IMAGE_GENERATION_MODEL_ID = "gpt-image-2";
-
-/** Sole allowlisted workspace selection: provider type + model id. */
 export const IMAGE_GENERATION_SELECTION = `openai::${IMAGE_GENERATION_MODEL_ID}`;
 
-export const IMAGE_GENERATION_MODEL_IDS = new Set([IMAGE_GENERATION_MODEL_ID]);
+export const IMAGE_GENERATION_MODEL_IDS = new Set([
+  "gpt-image-2",
+  "dall-e-3",
+  "dall-e-2",
+  "imagen-3.0-generate-002",
+  "imagen-3",
+]);
 
 export function modelSupportsImageGeneration(
   modelId: string,
   provider: ProviderName
 ): boolean {
-  if (provider !== "openai") {
-    return false;
+  const trimmed = modelId.trim();
+  if (provider === "openai") {
+    return (
+      IMAGE_GENERATION_MODEL_IDS.has(trimmed) ||
+      trimmed.startsWith("dall-e") ||
+      trimmed.startsWith("gpt-image")
+    );
   }
 
-  return IMAGE_GENERATION_MODEL_IDS.has(modelId.trim());
+  if (provider === "gemini") {
+    return (
+      IMAGE_GENERATION_MODEL_IDS.has(trimmed) || trimmed.startsWith("imagen")
+    );
+  }
+
+  if (
+    provider === "openai_compatible" ||
+    provider === "openrouter" ||
+    provider === "fireworks" ||
+    provider === "ollama"
+  ) {
+    return Boolean(trimmed);
+  }
+
+  return false;
 }
 
 export function isAllowedImageGenerationSelection(
   value: string | null | undefined
 ): boolean {
-  return value?.trim() === IMAGE_GENERATION_SELECTION;
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  return trimmed === IMAGE_GENERATION_SELECTION;
 }

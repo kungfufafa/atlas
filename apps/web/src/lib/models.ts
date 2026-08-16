@@ -699,10 +699,11 @@ export function groupModelsByProvider(models: ProviderModelOption[]): Array<{
     { providerId: string; providerLabel: string; models: ProviderModelOption[] }
   >();
 
-  for (const model of models) {
-    const providerId = model.providerId ?? model.provider;
+  for (const rawModel of models) {
+    const providerId = rawModel.providerId ?? rawModel.provider;
     const providerLabel =
-      model.providerLabel ?? formatProviderLabel(model.provider);
+      rawModel.providerLabel ?? formatProviderLabel(rawModel.provider);
+    const model = { ...rawModel, providerId, providerLabel };
     const existing = groups.get(providerId);
 
     if (existing) {
@@ -758,7 +759,7 @@ export function profileModelLabel(
   groups: ReturnType<typeof groupModelsByProvider>
 ): string {
   if (!modelId) {
-    return "Select model";
+    return "";
   }
 
   const decoded = decodeModelSelection(modelId);
@@ -769,16 +770,15 @@ export function profileModelLabel(
       (entry) => entry.providerId === decoded.providerId
     );
     const match = group?.models.find((model) => model.id === resolvedModelId);
-
     if (match) {
-      return match.name;
+      return match.name || match.id;
     }
   }
 
   for (const group of groups) {
     const match = group.models.find((model) => model.id === resolvedModelId);
     if (match) {
-      return match.name;
+      return match.name || match.id;
     }
   }
 
@@ -800,12 +800,18 @@ export function resolveModelThinkingSupport(
   selection: string | null | undefined,
   groups: ReturnType<typeof groupModelsByProvider>
 ): boolean | undefined {
-  if (!selection) {
+  const effectiveSelection =
+    selection ||
+    (groups[0]?.models[0]
+      ? encodeModelSelection(groups[0].providerId, groups[0].models[0].id)
+      : undefined);
+
+  if (!effectiveSelection) {
     return;
   }
 
-  const decoded = decodeModelSelection(selection);
-  const resolvedModelId = decoded?.modelId ?? selection;
+  const decoded = decodeModelSelection(effectiveSelection);
+  const resolvedModelId = decoded?.modelId ?? effectiveSelection;
 
   const findModel = () => {
     if (decoded && decoded.providerId !== "__unknown__") {
@@ -843,6 +849,46 @@ export function resolveModelThinkingSupport(
   }
 
   return model.supportsThinking !== false;
+}
+
+export function resolveModelReasoningEffortValues(
+  selection: string | null | undefined,
+  groups: ReturnType<typeof groupModelsByProvider>
+): string[] | undefined {
+  const effectiveSelection =
+    selection ||
+    (groups[0]?.models[0]
+      ? encodeModelSelection(groups[0].providerId, groups[0].models[0].id)
+      : undefined);
+
+  if (!effectiveSelection) {
+    return;
+  }
+
+  const decoded = decodeModelSelection(effectiveSelection);
+  const resolvedModelId = decoded?.modelId ?? effectiveSelection;
+
+  const findModel = () => {
+    if (decoded && decoded.providerId !== "__unknown__") {
+      const group = groups.find(
+        (entry) => entry.providerId === decoded.providerId
+      );
+      const match = group?.models.find((model) => model.id === resolvedModelId);
+      if (match) {
+        return match;
+      }
+    }
+
+    for (const group of groups) {
+      const match = group.models.find((model) => model.id === resolvedModelId);
+      if (match) {
+        return match;
+      }
+    }
+  };
+
+  const model = findModel();
+  return model?.reasoningEffortValues;
 }
 
 export function resolveModelVisionSupport(
@@ -894,20 +940,40 @@ export function resolveModelVisionSupport(
   return model.supportsVision !== false;
 }
 
-export const TRANSCRIPTION_MODEL_OPTIONS = [
+export const OPENAI_TRANSCRIPTION_MODEL_OPTIONS = [
   { id: "whisper-1", name: "Whisper" },
   { id: "gpt-4o-transcribe", name: "GPT-4o Transcribe" },
   { id: "gpt-4o-mini-transcribe", name: "GPT-4o mini Transcribe" },
 ] as const;
 
-/** Sole v1 image-generation model option (matches server allowlist). */
-export const IMAGE_GENERATION_MODEL_OPTIONS = [
+export const GEMINI_TRANSCRIPTION_MODEL_OPTIONS = [
+  { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash (Audio)" },
+  { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash (Audio)" },
+  { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro (Audio)" },
+] as const;
+
+export const TRANSCRIPTION_MODEL_OPTIONS = [
+  ...OPENAI_TRANSCRIPTION_MODEL_OPTIONS,
+  ...GEMINI_TRANSCRIPTION_MODEL_OPTIONS,
+] as const;
+
+export const OPENAI_IMAGE_GENERATION_MODEL_OPTIONS = [
   { id: "gpt-image-2", name: "GPT Image 2" },
+  { id: "dall-e-3", name: "DALL-E 3" },
+] as const;
+
+export const GEMINI_IMAGE_GENERATION_MODEL_OPTIONS = [
+  { id: "imagen-3.0-generate-002", name: "Google Imagen 3" },
+] as const;
+
+export const IMAGE_GENERATION_MODEL_OPTIONS = [
+  ...OPENAI_IMAGE_GENERATION_MODEL_OPTIONS,
+  ...GEMINI_IMAGE_GENERATION_MODEL_OPTIONS,
 ] as const;
 
 /** Workspace selection string accepted by `/v1/settings/image-generation`. */
 export const IMAGE_GENERATION_SELECTION =
-  `openai::${IMAGE_GENERATION_MODEL_OPTIONS[0].id}` as const;
+  `openai::${OPENAI_IMAGE_GENERATION_MODEL_OPTIONS[0].id}` as const;
 
 export function modelsFromCustomRows(
   rows: Array<{

@@ -1133,7 +1133,16 @@ export interface UpdateTimezoneRequest {
   timezone: string;
 }
 
-export type ThinkingEffort = "low" | "medium" | "high";
+/**
+ * Effort level sent to the provider's reasoning/thinking API.
+ * Kept as `string` so each provider can declare its own valid values
+ * (e.g. "low"/"medium"/"high" for OpenAI/OpenRouter/Fireworks,
+ *  "low"/"medium"/"xhigh" for Anthropic & token-router,
+ *  "low"/"high"/"max" for DeepSeek, etc.).
+ * Use the model's `reasoningEffortValues` array (from the catalog) to
+ * build the UI options list and validate user input.
+ */
+export type ThinkingEffort = string;
 
 export interface ThinkingSettings {
   effort: ThinkingEffort;
@@ -1441,6 +1450,16 @@ export interface CustomModelEntry {
   inputPerMillionUsd?: number;
   name?: string;
   outputPerMillionUsd?: number;
+  /**
+   * Ordered list of effort values this model/provider accepts for reasoning.
+   * Drives the UI dropdown dynamically — omit to fall back to the provider
+   * default (usually ["low", "medium", "high"]).
+   * Examples:
+   *   Anthropic claude:  ["low", "medium", "xhigh"]
+   *   DeepSeek:          ["low", "high", "max"]
+   *   Token-router:      ["low", "medium", "xhigh"]
+   */
+  reasoningEffortValues?: string[];
   supportsThinking?: boolean;
   supportsVision?: boolean;
 }
@@ -1456,6 +1475,8 @@ export interface ProviderModelOption {
   provider: ProviderName;
   providerId?: string;
   providerLabel?: string;
+  /** Propagated from CustomModelEntry or static catalog — drives the UI effort picker. */
+  reasoningEffortValues?: string[];
   supportsThinking?: boolean;
   supportsVision?: boolean;
 }
@@ -1911,6 +1932,8 @@ export interface PublicArtifactShareResponse {
   mimeType: string;
   sizeBytes: number;
 }
+
+export type * from "./artifact-preview/types";
 
 export type KnowledgeBaseDocumentStatus = "ready" | "failed";
 

@@ -5,6 +5,7 @@ import { createAuthMiddleware } from "./auth-middleware";
 import type { ServerOptions } from "./context";
 import { serializeHttpOpenApiSpec } from "./openapi";
 import { createOrgContextMiddleware } from "./org-middleware";
+import { registerArtifactPreviewRoutes } from "./routes/artifact-preview";
 import { registerArtifactShareRoutes } from "./routes/artifact-shares";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerAutomationRoutes } from "./routes/automations";
@@ -111,6 +112,7 @@ export function createHonoApp(options: ServerOptions) {
   registerSessionRoutes(app, options);
   registerProfileRoutes(app, options);
   registerArtifactShareRoutes(app, options);
+  registerArtifactPreviewRoutes(app, options);
   registerMcpRoutes(app, options);
   registerSkillRoutes(app, options);
   registerToolRoutes(app, options);
