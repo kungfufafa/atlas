@@ -29,3 +29,7 @@ export interface WhatsAppOutboundAdapter {
     text: string;
   }): Promise<ChannelSendResult>;
 }
+
+export interface DiscordOutboundAdapter {
+  send(input: { text: string; channelId?: string }): Promise<ChannelSendResult>;
+}
