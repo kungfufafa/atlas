@@ -785,15 +785,29 @@ export function profileModelLabel(
   return resolvedModelId;
 }
 
+export function firstAvailableModelSelection(
+  groups: ReturnType<typeof groupModelsByProvider>
+): string | null {
+  const group = groups[0];
+  const model =
+    group?.models.find((entry) => entry.default === true) ?? group?.models[0];
+
+  if (!(group && model)) {
+    return null;
+  }
+
+  return encodeModelSelection(group.providerId, model.id);
+}
+
 export function effectiveProfileModelSelection(
   profileModel: string | null | undefined,
   groups: ReturnType<typeof groupModelsByProvider>
 ): string | null {
-  if (!profileModel) {
-    return null;
+  if (profileModel) {
+    return profileModelSelectionValue(profileModel, groups);
   }
 
-  return profileModelSelectionValue(profileModel, groups);
+  return firstAvailableModelSelection(groups);
 }
 
 export function resolveModelThinkingSupport(

@@ -23,6 +23,7 @@ import {
 } from "@/lib/files-page.shared";
 import { FilesArtifactViews } from "@/pages/files/files-artifact-views";
 import { FilesDeleteDialog } from "@/pages/files/files-delete-dialog";
+import { FilesPreviewPanel } from "@/pages/files/files-preview-panel";
 import { FilesSearchRow } from "@/pages/files/files-search-row";
 import { FilesToolbar } from "@/pages/files/files-toolbar";
 
@@ -37,6 +38,7 @@ export function FilesPage() {
     searchParams.get("tab") === "knowledge" ? "knowledge" : "artifacts";
 
   const [deleteTarget, setDeleteTarget] = useState<ArtifactFile | null>(null);
+  const [previewTarget, setPreviewTarget] = useState<ArtifactFile | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<ArtifactTypeFilter>("all");
   const [viewMode, setViewMode] = useState<FilesViewMode>(() =>
@@ -112,6 +114,9 @@ export function FilesPage() {
       filename: deleteTarget.filename,
       profileId,
     });
+    if (previewTarget?.filename === deleteTarget.filename) {
+      setPreviewTarget(null);
+    }
     setDeleteTarget(null);
   }
 
@@ -134,59 +139,70 @@ export function FilesPage() {
 
   return (
     <ChatAttachmentPanelProvider presentation="overlay">
-      <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto p-4 sm:p-6">
-        <div className="space-y-4">
-          {view === "artifacts" ? (
-            <div
-              aria-labelledby="files-page-tab-artifacts"
-              className="space-y-4"
-              id="files-page-panel-artifacts"
-              role="tabpanel"
-            >
-              <FilesToolbar
-                isFetching={isFetching}
-                onRefresh={() => void refetch()}
-                onViewModeChange={handleViewModeChange}
-                showViewModeToggle={totalCount > 0}
-                viewMode={viewMode}
-              />
-
-              {totalCount > 0 ? (
-                <FilesSearchRow
-                  onSearchQueryChange={setSearchQuery}
-                  onTypeFilterChange={setTypeFilter}
-                  searchQuery={searchQuery}
-                  typeFilter={effectiveTypeFilter}
-                  typeOptions={typeOptions}
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        <div className="no-scrollbar min-h-0 min-w-0 flex-1 overflow-y-auto p-4 sm:p-6">
+          <div className="space-y-4">
+            {view === "artifacts" ? (
+              <div
+                aria-labelledby="files-page-tab-artifacts"
+                className="space-y-4"
+                id="files-page-panel-artifacts"
+                role="tabpanel"
+              >
+                <FilesToolbar
+                  isFetching={isFetching}
+                  onRefresh={() => void refetch()}
+                  onViewModeChange={handleViewModeChange}
+                  showViewModeToggle={totalCount > 0}
+                  viewMode={viewMode}
                 />
-              ) : null}
 
-              <FilesArtifactViews
-                artifacts={artifacts}
-                deletePending={deleteMutation.isPending}
-                emptyFilterMessage={emptyFilterMessage}
-                error={error}
-                filteredArtifacts={filteredArtifacts}
-                hasMore={hasNextPage ?? false}
-                isLoading={isLoading}
-                isLoadingMore={isFetchingNextPage}
-                onDelete={setDeleteTarget}
-                onShowMore={() => void fetchNextPage()}
-                profileId={profileId}
-                remainingCount={remainingCount}
-                viewMode={viewMode}
-              />
-            </div>
-          ) : (
-            <div
-              aria-labelledby="files-page-tab-knowledge"
-              id="files-page-panel-knowledge"
-              role="tabpanel"
-            >
-              <KnowledgeTab profileId={profileId} />
-            </div>
-          )}
+                {totalCount > 0 ? (
+                  <FilesSearchRow
+                    onSearchQueryChange={setSearchQuery}
+                    onTypeFilterChange={setTypeFilter}
+                    searchQuery={searchQuery}
+                    typeFilter={effectiveTypeFilter}
+                    typeOptions={typeOptions}
+                  />
+                ) : null}
+
+                <FilesArtifactViews
+                  artifacts={artifacts}
+                  deletePending={deleteMutation.isPending}
+                  emptyFilterMessage={emptyFilterMessage}
+                  error={error}
+                  filteredArtifacts={filteredArtifacts}
+                  hasMore={hasNextPage ?? false}
+                  isLoading={isLoading}
+                  isLoadingMore={isFetchingNextPage}
+                  onDelete={setDeleteTarget}
+                  onPreview={setPreviewTarget}
+                  onShowMore={() => void fetchNextPage()}
+                  profileId={profileId}
+                  remainingCount={remainingCount}
+                  viewMode={viewMode}
+                />
+              </div>
+            ) : (
+              <div
+                aria-labelledby="files-page-tab-knowledge"
+                id="files-page-panel-knowledge"
+                role="tabpanel"
+              >
+                <KnowledgeTab profileId={profileId} />
+              </div>
+            )}
+          </div>
         </div>
+        {view === "artifacts" && previewTarget ? (
+          <FilesPreviewPanel
+            artifact={previewTarget}
+            artifacts={artifacts}
+            onClose={() => setPreviewTarget(null)}
+            profileId={profileId}
+          />
+        ) : null}
       </div>
 
       <FilesDeleteDialog

@@ -64,6 +64,39 @@ describe("seedOrgDefaultProfile", () => {
     expect(await db.listProfilesForOrg("org_a")).toHaveLength(1);
   });
 
+  test("assigns the Default Agent toolkit without Super Agent extras", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    await ensureBuiltinToolDefinitions(db);
+
+    const profile = await seedOrgDefaultProfile(db, "org_a");
+    const toolIds = (await db.listToolsForProfile(profile.id)).map(
+      (tool) => tool.id
+    );
+
+    expect(toolIds).toContain(BUILTIN_TOOL_IDS.web_search);
+    expect(toolIds).toContain(BUILTIN_TOOL_IDS.deep_research);
+    expect(toolIds).toContain(BUILTIN_TOOL_IDS.write_pptx);
+    expect(toolIds).toContain(BUILTIN_TOOL_IDS.browser);
+    expect(toolIds).not.toContain(BASH_TOOL_ID);
+    expect(toolIds).not.toContain(GENERATE_IMAGE_TOOL_ID);
+  });
+
+  test("does not rewrite tools on an existing Default Agent", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    await ensureBuiltinToolDefinitions(db);
+
+    const first = await seedOrgDefaultProfile(db, "org_a");
+    await db.unassignToolFromProfile(first.id, BUILTIN_TOOL_IDS.web_search);
+
+    const second = await seedOrgDefaultProfile(db, "org_a");
+    const toolIds = (await db.listToolsForProfile(second.id)).map(
+      (tool) => tool.id
+    );
+
+    expect(second.id).toBe(first.id);
+    expect(toolIds).not.toContain(BUILTIN_TOOL_IDS.web_search);
+  });
+
   test("assigns default bundled skills but not super agent skills", async () => {
     const db = createInMemoryDatabaseAdapter();
     await upsertSkill(db, "create-automation");

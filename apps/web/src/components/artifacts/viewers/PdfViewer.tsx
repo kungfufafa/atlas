@@ -7,9 +7,17 @@ import {
   ZoomInAreaIcon,
   ZoomOutAreaIcon,
 } from "hugeicons-react";
-import { useEffect, useState } from "react";
+import {
+  GlobalWorkerOptions,
+  getDocument,
+  type PDFDocumentProxy,
+} from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+
+GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 export function PdfViewer({
   preview,
@@ -18,61 +26,108 @@ export function PdfViewer({
   preview: PdfPreview;
   downloadUrl: string;
 }) {
-  const totalPages = Math.max(1, preview.pageCount || 1);
   const [currentPage, setCurrentPage] = useState(1);
   const [zoom, setZoom] = useState(100);
   const [showThumbnails, setShowThumbnails] = useState(false);
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [loadingPdf, setLoadingPdf] = useState(false);
+  const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
+  const [pageCount, setPageCount] = useState(
+    Math.max(1, preview.pageCount || 1)
+  );
+  const [loadingPdf, setLoadingPdf] = useState(true);
   const [pdfError, setPdfError] = useState<string | null>(null);
-
+  const [renderError, setRenderError] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const rawPdfUrl = preview.previewUrl || downloadUrl;
 
   useEffect(() => {
     let cancelled = false;
+    let documentProxy: PDFDocumentProxy | null = null;
     setLoadingPdf(true);
     setPdfError(null);
+    setPdf(null);
 
-    fetch(rawPdfUrl, { credentials: "include" })
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`Failed to load PDF (${res.status})`);
+    void (async () => {
+      try {
+        const response = await fetch(rawPdfUrl, { credentials: "include" });
+        if (!response.ok) {
+          throw new Error(`Failed to load PDF (${response.status})`);
         }
-        return res.blob();
-      })
-      .then((blob) => {
+        const data = await response.arrayBuffer();
+        const loadingTask = getDocument({ data });
+        documentProxy = await loadingTask.promise;
         if (cancelled) {
+          await documentProxy.destroy();
           return;
         }
-        const objectUrl = URL.createObjectURL(
-          new Blob([blob], { type: "application/pdf" })
+        setPageCount(documentProxy.numPages);
+        setCurrentPage((page) =>
+          Math.min(Math.max(1, page), documentProxy?.numPages ?? 1)
         );
-        setBlobUrl(objectUrl);
-      })
-      .catch((err) => {
-        if (cancelled) {
-          return;
+        setPdf(documentProxy);
+      } catch (error) {
+        if (!cancelled) {
+          setPdfError(
+            error instanceof Error
+              ? error.message
+              : "Failed to load PDF preview."
+          );
         }
-        setPdfError(err?.message || "Failed to load PDF preview.");
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) {
           setLoadingPdf(false);
         }
-      });
+      }
+    })();
 
     return () => {
       cancelled = true;
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl);
-      }
+      void documentProxy?.destroy();
     };
   }, [rawPdfUrl]);
 
-  // Sync zoom / page to embed URL
-  const pdfSource = blobUrl
-    ? `${blobUrl}#page=${currentPage}&zoom=${zoom}`
-    : `${rawPdfUrl}#page=${currentPage}&zoom=${zoom}`;
+  useEffect(() => {
+    if (!pdf) {
+      return;
+    }
+
+    let cancelled = false;
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      return;
+    }
+
+    void (async () => {
+      try {
+        const page = await pdf.getPage(currentPage);
+        if (cancelled) {
+          return;
+        }
+        const viewport = page.getViewport({ scale: zoom / 100 });
+        const context = canvas.getContext("2d");
+        if (!context) {
+          throw new Error("Canvas is not available.");
+        }
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: context, viewport }).promise;
+        if (!cancelled) {
+          setRenderError(null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setRenderError(
+            error instanceof Error
+              ? error.message
+              : "This PDF couldn't be previewed."
+          );
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentPage, pdf, zoom]);
 
   function handleZoomIn() {
     setZoom((z) => Math.min(250, z + 25));
@@ -91,10 +146,9 @@ export function PdfViewer({
   }
 
   function handleNextPage() {
-    setCurrentPage((p) => Math.min(totalPages, p + 1));
+    setCurrentPage((p) => Math.min(pageCount, p + 1));
   }
 
-  // Keyboard navigation
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (
@@ -106,16 +160,15 @@ export function PdfViewer({
       if (e.key === "ArrowLeft" || e.key === "PageUp") {
         setCurrentPage((p) => Math.max(1, p - 1));
       } else if (e.key === "ArrowRight" || e.key === "PageDown") {
-        setCurrentPage((p) => Math.min(totalPages, p + 1));
+        setCurrentPage((p) => Math.min(pageCount, p + 1));
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [totalPages]);
+  }, [pageCount]);
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-muted/10">
-      {/* Viewer Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-border border-b bg-card px-4 py-2 text-sm shadow-xs">
         <div className="flex items-center gap-1.5">
           <Button
@@ -147,24 +200,24 @@ export function PdfViewer({
             <input
               aria-label="Page number"
               className="w-12 rounded border border-border bg-background px-1.5 py-0.5 text-center font-semibold text-xs tabular-nums focus:outline-hidden focus:ring-1 focus:ring-primary"
-              max={totalPages}
+              max={pageCount}
               min={1}
               onChange={(e) => {
                 const val = Number.parseInt(e.target.value, 10);
-                if (!Number.isNaN(val) && val >= 1 && val <= totalPages) {
+                if (!Number.isNaN(val) && val >= 1 && val <= pageCount) {
                   setCurrentPage(val);
                 }
               }}
               type="number"
               value={currentPage}
             />
-            <span className="text-muted-foreground">/ {totalPages}</span>
+            <span className="text-muted-foreground">/ {pageCount}</span>
           </div>
 
           <Button
             aria-label="Next page"
             className="size-8 p-0"
-            disabled={currentPage >= totalPages}
+            disabled={currentPage >= pageCount}
             onClick={handleNextPage}
             size="sm"
             type="button"
@@ -174,7 +227,6 @@ export function PdfViewer({
           </Button>
         </div>
 
-        {/* Zoom Controls */}
         <div className="flex items-center gap-1.5">
           <Button
             aria-label="Zoom out"
@@ -222,16 +274,14 @@ export function PdfViewer({
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
-        {/* Left Thumbnail Rail */}
         {showThumbnails ? (
           <aside className="w-48 shrink-0 overflow-y-auto border-border border-r bg-card/60 p-3">
             <h4 className="mb-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-              Pages ({totalPages})
+              Pages ({pageCount})
             </h4>
             <div className="space-y-2">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              {Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
                 <button
                   className={`w-full rounded-md border p-2 text-left transition-all ${
                     currentPage === p
@@ -254,17 +304,18 @@ export function PdfViewer({
           </aside>
         ) : null}
 
-        {/* PDF Frame / Render Container */}
         <main className="relative min-h-0 flex-1 overflow-auto bg-muted/20 p-4">
-          <div className="mx-auto flex h-full min-h-[500px] w-full max-w-5xl items-center justify-center overflow-hidden rounded-lg border border-border bg-background shadow-sm">
+          <div className="mx-auto flex min-h-[500px] w-full max-w-5xl items-center justify-center overflow-auto rounded-lg border border-border bg-background shadow-sm">
             {loadingPdf ? (
               <div className="flex flex-col items-center justify-center gap-2 p-8 text-muted-foreground">
                 <Spinner className="size-6 text-primary" />
                 <p className="font-medium text-xs">Loading document preview…</p>
               </div>
-            ) : pdfError ? (
+            ) : pdfError || renderError ? (
               <div className="flex flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
-                <p className="text-destructive text-sm">{pdfError}</p>
+                <p className="text-sm">
+                  {pdfError || renderError || "This PDF couldn't be previewed."}
+                </p>
                 <a
                   className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 font-semibold text-primary-foreground text-xs shadow-xs"
                   download={preview.filename}
@@ -275,12 +326,7 @@ export function PdfViewer({
                 </a>
               </div>
             ) : (
-              <iframe
-                className="h-full w-full border-0"
-                key={`${preview.filename}-${currentPage}-${zoom}`}
-                src={pdfSource}
-                title={`PDF Preview - ${preview.filename}`}
-              />
+              <canvas className="max-h-full max-w-full" ref={canvasRef} />
             )}
           </div>
         </main>

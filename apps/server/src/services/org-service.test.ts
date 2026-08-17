@@ -59,6 +59,55 @@ describe("OrgService", () => {
     expect(soulContent).not.toContain("# Your Name");
   });
 
+  test("bootstrapInitialSetup rejects invalid phone before creating an org", async () => {
+    const { orgService, authService, databaseAdapter } = createOrgService();
+
+    await expect(
+      orgService.bootstrapInitialSetup({
+        admin: {
+          email: "admin@acme.com",
+          name: "Acme Admin",
+          passwordHash: await authService.hashPassword("password123"),
+          phone: "not-a-phone",
+        },
+        organization: { name: "Acme", slug: "acme-invalid-phone" },
+      })
+    ).rejects.toMatchObject({
+      message: "Enter a valid phone number.",
+      status: 400,
+    });
+
+    expect(await databaseAdapter.listOrganizations()).toEqual([]);
+    expect(await databaseAdapter.countHumanUsers()).toBe(0);
+  });
+
+  test("bootstrapInitialSetup reuses an orphan org from a failed first attempt", async () => {
+    const { orgService, authService, databaseAdapter } = createOrgService();
+    const now = new Date().toISOString();
+
+    await databaseAdapter.upsertOrganization({
+      createdAt: now,
+      id: "org_orphan",
+      name: "Acme",
+      slug: "acme-retry",
+      updatedAt: now,
+    });
+
+    const bootstrapped = await orgService.bootstrapInitialSetup({
+      admin: {
+        email: "admin@acme.com",
+        name: "Acme Admin",
+        passwordHash: await authService.hashPassword("password123"),
+        phone: "",
+      },
+      organization: { name: "Acme", slug: "acme-retry" },
+    });
+
+    expect(bootstrapped.organization.id).toBe("org_orphan");
+    expect(await databaseAdapter.listOrganizations()).toHaveLength(1);
+    expect(await databaseAdapter.countHumanUsers()).toBe(1);
+  });
+
   test("bootstrapInitialSetup allows admin without phone", async () => {
     const { orgService, authService } = createOrgService();
 

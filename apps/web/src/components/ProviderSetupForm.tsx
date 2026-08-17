@@ -29,17 +29,93 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import type { ModelsDevRow } from "@/hooks/use-models-dev";
 import { useProviderSetupForm } from "@/hooks/use-provider-setup-form";
-import {
-  apiKeyPlaceholder,
-  PROVIDER_OPTIONS,
-  type SelectedProvider,
-} from "@/lib/models";
+import { apiKeyPlaceholder, type SelectedProvider } from "@/lib/models";
 
 interface ProviderSetupFormProps {
   density?: "default" | "compact";
   onSuccess?: (result: CreateProviderResponse) => void;
   showHeading?: boolean;
   submitLabel?: string;
+}
+
+function ProviderApiKeyField({
+  apiKey,
+  apiKeyError,
+  density,
+  disabled,
+  onApiKeyBlur,
+  onApiKeyChange,
+  onToggleShowApiKey,
+  optional,
+  selectedProvider,
+  showApiKey,
+}: {
+  apiKey: string;
+  apiKeyError: string | null;
+  density: "default" | "compact";
+  disabled: boolean;
+  onApiKeyBlur: () => void;
+  onApiKeyChange: (value: string) => void;
+  onToggleShowApiKey: () => void;
+  optional: boolean;
+  selectedProvider: SelectedProvider;
+  showApiKey: boolean;
+}) {
+  const showDashboardHint =
+    selectedProvider !== "openai_compatible" && selectedProvider !== "ollama";
+
+  return (
+    <FormField
+      density={density}
+      footer={
+        apiKeyError ? (
+          <p
+            className="text-destructive text-sm"
+            id="api-key-error"
+            role="alert"
+          >
+            {apiKeyError}
+          </p>
+        ) : showDashboardHint ? (
+          <p className="text-muted-foreground text-xs" id="api-key-hint">
+            Paste the API key from your provider dashboard.
+          </p>
+        ) : null
+      }
+      id="api-key"
+      label={optional ? "API key (optional)" : "API key"}
+    >
+      <InputGroup>
+        <InputGroupInput
+          aria-describedby={
+            apiKeyError
+              ? "api-key-error"
+              : showDashboardHint
+                ? "api-key-hint"
+                : undefined
+          }
+          aria-invalid={apiKeyError != null}
+          autoComplete="off"
+          disabled={disabled}
+          id="api-key"
+          onBlur={onApiKeyBlur}
+          onChange={(event) => onApiKeyChange(event.target.value)}
+          placeholder={apiKeyPlaceholder(selectedProvider)}
+          type={showApiKey ? "text" : "password"}
+          value={apiKey}
+        />
+        <InputGroupAddon align="inline-end">
+          <InputGroupButton
+            aria-label={showApiKey ? "Hide API key" : "Show API key"}
+            onClick={onToggleShowApiKey}
+            size="icon-sm"
+          >
+            {showApiKey ? <ViewOffIcon /> : <ViewIcon />}
+          </InputGroupButton>
+        </InputGroupAddon>
+      </InputGroup>
+    </FormField>
+  );
 }
 
 export function ProviderSetupForm({
@@ -109,64 +185,27 @@ export function ProviderSetupForm({
         />
       ) : (
         <>
-          <FormField
-            density={density}
-            footer={
-              form.apiKeyError ? (
-                <p
-                  className="text-destructive text-sm"
-                  id="api-key-error"
-                  role="alert"
-                >
-                  {form.apiKeyError}
-                </p>
-              ) : (
-                <p className="text-muted-foreground text-xs" id="api-key-hint">
-                  Paste the API key from your{" "}
-                  {PROVIDER_OPTIONS.find(
-                    (option) => option.id === form.selectedProvider
-                  )?.label ?? "provider"}{" "}
-                  dashboard.
-                </p>
-              )
-            }
-            id="api-key"
-            label={apiKeyOptional ? "API key (optional)" : "API key"}
-          >
-            <InputGroup>
-              <InputGroupInput
-                aria-describedby={
-                  form.apiKeyError ? "api-key-error" : "api-key-hint"
-                }
-                aria-invalid={form.apiKeyError != null}
-                autoComplete="off"
-                disabled={form.busy}
-                id="api-key"
-                onBlur={form.handleApiKeyBlur}
-                onChange={(event) =>
-                  form.handleApiKeyChange(event.target.value)
-                }
-                placeholder={apiKeyPlaceholder(form.selectedProvider)}
-                type={form.showApiKey ? "text" : "password"}
-                value={form.apiKey}
-              />
-              <InputGroupAddon align="inline-end">
-                <InputGroupButton
-                  aria-label={form.showApiKey ? "Hide API key" : "Show API key"}
-                  onClick={() => form.setShowApiKey((current) => !current)}
-                  size="icon-sm"
-                >
-                  {form.showApiKey ? <ViewOffIcon /> : <ViewIcon />}
-                </InputGroupButton>
-              </InputGroupAddon>
-            </InputGroup>
-          </FormField>
-
           {form.selectedProvider === "openai_compatible" ? (
             <CustomProviderFields
               apiKey={form.apiKey}
               baseUrl={form.baseUrl}
               baseUrlError={form.baseUrlError}
+              connectionExtra={
+                <ProviderApiKeyField
+                  apiKey={form.apiKey}
+                  apiKeyError={form.apiKeyError}
+                  density={density}
+                  disabled={form.busy}
+                  onApiKeyBlur={form.handleApiKeyBlur}
+                  onApiKeyChange={form.handleApiKeyChange}
+                  onToggleShowApiKey={() =>
+                    form.setShowApiKey((current) => !current)
+                  }
+                  optional={apiKeyOptional}
+                  selectedProvider={form.selectedProvider}
+                  showApiKey={form.showApiKey}
+                />
+              }
               customModels={form.customModels}
               density={density}
               disabled={form.busy}
@@ -177,7 +216,22 @@ export function ProviderSetupForm({
               onCustomModelsChange={form.setCustomModels}
               onDisplayNameChange={form.setDisplayName}
             />
-          ) : null}
+          ) : (
+            <ProviderApiKeyField
+              apiKey={form.apiKey}
+              apiKeyError={form.apiKeyError}
+              density={density}
+              disabled={form.busy}
+              onApiKeyBlur={form.handleApiKeyBlur}
+              onApiKeyChange={form.handleApiKeyChange}
+              onToggleShowApiKey={() =>
+                form.setShowApiKey((current) => !current)
+              }
+              optional={apiKeyOptional}
+              selectedProvider={form.selectedProvider}
+              showApiKey={form.showApiKey}
+            />
+          )}
 
           {form.selectedProvider === "openrouter" ? (
             <OpenRouterProviderModelFields

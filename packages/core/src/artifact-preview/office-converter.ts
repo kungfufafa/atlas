@@ -116,7 +116,18 @@ export class OfficeConverter {
   isSupportedOfficeFormat(filename: string, mimeType?: string): boolean {
     const lowerName = filename.toLowerCase();
     const ext = lowerName.split(".").pop() || "";
-    const officeExts = ["pptx", "ppt", "docx", "doc", "rtf", "odt", "odp"];
+    const officeExts = [
+      "pptx",
+      "ppt",
+      "docx",
+      "doc",
+      "rtf",
+      "odt",
+      "odp",
+      "xlsx",
+      "xls",
+      "ods",
+    ];
     if (officeExts.includes(ext)) {
       return true;
     }
@@ -129,6 +140,9 @@ export class OfficeConverter {
       "application/rtf",
       "application/vnd.oasis.opendocument.text",
       "application/vnd.oasis.opendocument.presentation",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+      "application/vnd.oasis.opendocument.spreadsheet",
     ];
     return Boolean(mimeType && officeMimes.includes(mimeType));
   }
@@ -306,6 +320,94 @@ export class OfficeConverter {
         rmSync(tempDir, { force: true, recursive: true });
       } catch {
         // ignore cleanup error
+      }
+    }
+  }
+
+  async convertOfficeToPng(input: {
+    buffer: Buffer;
+    filename: string;
+    timeoutMs?: number;
+  }): Promise<{ converterVersion: string; pngBytes: Buffer }> {
+    inspectZipBombSafety(input.buffer);
+    const converterBinary = await this.resolveConverterBinary();
+    if (!converterBinary) {
+      throw new Error(
+        "Office converter binary (soffice/libreoffice) not available on host system."
+      );
+    }
+
+    const tempDir = await fs.mkdtemp(join(tmpdir(), "atlas-office-thumb-"));
+    const userProfileDir = join(tempDir, "user-profile");
+    await fs.mkdir(userProfileDir, { recursive: true });
+    const safeBaseName = basename(input.filename).replace(/[^\w.-]/g, "_");
+    const inputFilePath = join(tempDir, safeBaseName);
+    await fs.writeFile(inputFilePath, input.buffer);
+
+    const args = [
+      `-env:UserInstallation=file://${userProfileDir}`,
+      "--headless",
+      "--invisible",
+      "--nodefault",
+      "--nofirststartwizard",
+      "--nolockcheck",
+      "--nologo",
+      "--norestore",
+      "--convert-to",
+      "png",
+      "--outdir",
+      tempDir,
+      inputFilePath,
+    ];
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const child = spawn(converterBinary, args, {
+          cwd: tempDir,
+          env: {
+            HOME: tempDir,
+            PATH:
+              process.env.PATH ||
+              "/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin",
+            TMPDIR: tempDir,
+          },
+          stdio: "ignore",
+        });
+        const timer = setTimeout(() => {
+          child.kill("SIGTERM");
+          reject(new Error("Office thumbnail conversion timed out."));
+        }, input.timeoutMs ?? OFFICE_CONVERSION_TIMEOUT_MS);
+        child.on("error", (error) => {
+          clearTimeout(timer);
+          reject(error);
+        });
+        child.on("close", (code) => {
+          clearTimeout(timer);
+          if (code === 0) {
+            resolve();
+            return;
+          }
+          reject(new Error(`Office thumbnail conversion failed (${code}).`));
+        });
+      });
+
+      const entries = await fs.readdir(tempDir);
+      const pngName = entries
+        .filter((name) => name.toLowerCase().endsWith(".png"))
+        .sort()[0];
+      if (!pngName) {
+        throw new Error("Office conversion produced no PNG thumbnail.");
+      }
+      const pngBytes = await fs.readFile(join(tempDir, pngName));
+      if (pngBytes.length < 8 || pngBytes[0] !== 0x89 || pngBytes[1] !== 0x50) {
+        throw new Error("Generated thumbnail is not a PNG.");
+      }
+      return { converterVersion: OFFICE_CONVERTER_VERSION, pngBytes };
+    } finally {
+      try {
+        rmSync(tempDir, { force: true, recursive: true });
+      } catch {
+        // ignore
       }
     }
   }

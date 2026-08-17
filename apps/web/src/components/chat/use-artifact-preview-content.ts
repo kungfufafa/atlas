@@ -114,7 +114,7 @@ export function useArtifactPreviewContent({
           return;
         }
 
-        if (isHtml ? !servedAsHtml : servedAsHtml) {
+        if (!isHtml && servedAsHtml) {
           setError(
             "Preview is not available for this file type. Download instead."
           );

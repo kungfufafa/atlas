@@ -13,6 +13,7 @@ export * from "./previewers/presentation-previewer";
 export * from "./previewers/spreadsheet-previewer";
 export * from "./previewers/text-previewer";
 export * from "./registry";
+export * from "./sanitize-svg";
 export * from "./service";
 export * from "./signature";
 export * from "./types";

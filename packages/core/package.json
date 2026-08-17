@@ -45,7 +45,11 @@
     "./soul/org-memory": "./src/soul/org-memory.ts",
     "./tools/protected": "./src/tools/protected.ts",
     "./tools/email": "./src/tools/email.ts",
-    "./mcp/preinstalled": "./src/mcp/preinstalled.ts"
+    "./mcp/preinstalled": "./src/mcp/preinstalled.ts",
+    "./compatible-model-capabilities": "./src/compatible-model-capabilities.ts",
+    "./sanitize-svg": "./src/artifact-preview/sanitize-svg.ts",
+    "./setup-validation": "./src/setup-validation.ts",
+    "./artifact-lineage": "./src/artifact-lineage.ts"
   },
   "scripts": {
     "build": "bun build ./src/index.ts --outdir dist --target bun",

@@ -198,6 +198,35 @@ describe("browser session auth", () => {
     expect(meBody.isPlatformAdmin).toBe(true);
   });
 
+  test("setup rejects an invalid phone without creating the admin", async () => {
+    const { app, databaseAdapter } = createBrowserAuthApp();
+
+    const rejected = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/setup", {
+        body: JSON.stringify(
+          buildSetupAuthBody("admin@example.com", {
+            admin: { phone: "not-a-phone" },
+          })
+        ),
+        method: "POST",
+      })
+    );
+
+    expect(rejected.status).toBe(400);
+    expect(await databaseAdapter.countHumanUsers()).toBe(0);
+    expect(await databaseAdapter.listOrganizations()).toEqual([]);
+
+    const accepted = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/setup", {
+        body: JSON.stringify(buildSetupAuthBody()),
+        method: "POST",
+      })
+    );
+
+    expect(accepted.status).toBe(201);
+    expect(await databaseAdapter.countHumanUsers()).toBe(1);
+  });
+
   test("login sets a fresh session and logout revokes it", async () => {
     const { app } = createBrowserAuthApp();
 

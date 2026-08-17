@@ -18,6 +18,17 @@ RUN bun install --frozen-lockfile --ignore-scripts \
 FROM oven/bun:1.3-slim AS runtime
 WORKDIR /app
 
+# LibreOffice is required for PPTX/DOCX/XLSX fidelity previews and thumbnails.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    fonts-liberation \
+    libreoffice-calc \
+    libreoffice-impress \
+    libreoffice-writer \
+  && rm -rf /var/lib/apt/lists/* \
+  && soffice --version
+
 # Optional tool-output optimiser. Empty by default, so the published image is
 # unchanged and carries no binary most deployments would never run. Build with
 # --build-arg OMNI_VERSION=0.7.3 to include it, then set ATLAS_OMNI=1.
@@ -78,6 +89,7 @@ ENV NODE_ENV=production \
     ATLAS_HOST=0.0.0.0 \
     ATLAS_PORT=4310 \
     ATLAS_CONFIG_DIR=/atlas/data \
+    ATLAS_OFFICE_CONVERTER_PATH=/usr/bin/soffice \
     DATABASE_URL=file:/atlas/data/sqlite/atlas.sqlite \
     BUN_INSTALL_BIN=/atlas/data/.bun/bin \
     BUN_INSTALL_GLOBAL_DIR=/atlas/data/.bun/install/global

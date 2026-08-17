@@ -12,7 +12,7 @@ docker pull ghcr.io/kungfufafa/atlas:latest
 docker run -d -p 4310:4310 -v atlas-data:/atlas/data --name atlas ghcr.io/kungfufafa/atlas:latest
 ```
 
-Open `http://localhost:4310`. The container serves the API, web dashboard, and platform workers together.
+Open `http://localhost:4310`. The container serves the API, web dashboard, and platform workers together. The image includes **LibreOffice** so PowerPoint, Word, and Excel artifacts can generate fidelity previews and thumbnails.
 
 Data is stored at `/atlas/data` inside the container. The `-v atlas-data:/atlas/data` volume persists orgs, profiles, sessions, provider settings, and the local SQLite database across restarts.
 

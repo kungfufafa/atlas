@@ -1,6 +1,6 @@
 import type { MarkdownPreview } from "@atlas/core";
 import { Download01Icon, File01Icon } from "hugeicons-react";
-import { MessageResponse } from "@/components/ai-elements/message";
+import { SafeMarkdownPreview } from "@/components/artifacts/SafeMarkdownPreview";
 
 export function MarkdownViewer({
   preview,
@@ -11,7 +11,6 @@ export function MarkdownViewer({
 }) {
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-background">
-      {/* Top Toolbar */}
       <div className="flex items-center justify-between border-border border-b bg-card px-4 py-2 text-sm shadow-xs">
         <div className="flex items-center gap-2">
           <div className="flex size-7 items-center justify-center rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
@@ -39,12 +38,12 @@ export function MarkdownViewer({
         </div>
       </div>
 
-      {/* Main Markdown Body */}
       <main className="min-h-0 flex-1 overflow-y-auto bg-muted/10 p-4 sm:p-8">
         <div className="mx-auto max-w-4xl rounded-xl border border-border/80 bg-background p-6 shadow-sm sm:p-10">
-          <MessageResponse className="text-sm leading-relaxed sm:text-base">
-            {preview.content}
-          </MessageResponse>
+          <SafeMarkdownPreview
+            className="leading-relaxed sm:text-base"
+            content={preview.content}
+          />
         </div>
       </main>
     </div>

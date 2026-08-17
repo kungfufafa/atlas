@@ -31,7 +31,7 @@ Open [ARCHITECTURE.md](./ARCHITECTURE.md) for the system design.
 
 ### Run locally
 
-You need [Bun](https://bun.sh).
+You need [Bun](https://bun.sh). For PowerPoint, Word, and Excel previews and thumbnails, also install [LibreOffice](https://www.libreoffice.org/) (`soffice`). Docker images include it.
 
 ```bash
 # Install dependencies
@@ -82,8 +82,8 @@ Atlas connects to **Telegram**, **WhatsApp**, and **Composio**.
 With Composio, you can connect to more than 1,000 external apps.
 Enable them in the web app under **Integrations**.
 
-On the first run, the server asks for a provider and an API key if none is configured.
-The server saves settings to `~/.atlas/config.ini`.
+On the first run, open the dashboard and complete the setup wizard (admin account, workspace, and LLM provider).
+Provider settings are saved in `~/.atlas/config.ini`.
 
 The server listens on `http://127.0.0.1:4310` by default.
 Interactive API docs are at `http://127.0.0.1:4310/docs`.

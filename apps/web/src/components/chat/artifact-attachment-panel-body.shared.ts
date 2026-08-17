@@ -1,6 +1,5 @@
 import { clampAttachmentPanelWidth } from "@/components/chat/attachment-panel-width";
 import {
-  artifactCodeLanguage,
   isDocxFile,
   isHtmlArtifactMimeType,
   isImageArtifactMimeType,
@@ -8,72 +7,57 @@ import {
   isMarkdownArtifactMimeType,
   isVideoArtifactMimeType,
 } from "@/lib/chat-artifacts";
-import { formatBytes } from "@/lib/knowledge-base-files";
 
-const WIDE_ARTIFACT_PANEL_WIDTH = 768;
-const NARROW_ARTIFACT_PANEL_WIDTH = 448;
-/** Videos (often portrait reels) leave chat usable on tablet; avoid the 768 wide default. */
+/** Split-view canvas width — close to Claude/Grok, still leaves the thread readable. */
+const CANVAS_PANEL_WIDTH = 720;
+/** Videos (often portrait reels) leave chat usable on tablet. */
 const VIDEO_ARTIFACT_PANEL_WIDTH = 420;
 
 export function artifactPanelDefaultWidth(
-  filename: string,
+  _filename: string,
   mimeType: string
 ): number {
-  const isHtml = isHtmlArtifactMimeType(mimeType);
-  const isImage = isImageArtifactMimeType(mimeType);
   const isVideo = isVideoArtifactMimeType(mimeType);
-  const isWordDocument =
-    isDocxFile(filename, mimeType) || isLegacyDocFile(filename, mimeType);
-  const isMarkdown = isMarkdownArtifactMimeType(mimeType) || isWordDocument;
-  const language = artifactCodeLanguage(filename);
-
-  const baseWidth = isVideo
-    ? VIDEO_ARTIFACT_PANEL_WIDTH
-    : isHtml || isImage || isMarkdown || language
-      ? WIDE_ARTIFACT_PANEL_WIDTH
-      : NARROW_ARTIFACT_PANEL_WIDTH;
-
+  const baseWidth = isVideo ? VIDEO_ARTIFACT_PANEL_WIDTH : CANVAS_PANEL_WIDTH;
   return clampAttachmentPanelWidth(baseWidth);
 }
 
 export function artifactPanelBodyClassName({
   isHtml,
   isImage,
+  isSvg = false,
   isVideo = false,
   isMarkdown,
 }: {
   isHtml: boolean;
   isImage: boolean;
+  isSvg?: boolean;
   isVideo?: boolean;
   isMarkdown: boolean;
 }): string | undefined {
-  if (isHtml || isImage || isVideo) {
+  if (isHtml || isImage || isSvg || isVideo) {
     return "flex flex-col overflow-hidden p-0";
   }
 
-  if (!isMarkdown) {
-    return "flex flex-col overflow-hidden";
+  if (isMarkdown) {
+    return "overflow-y-auto px-6 py-6 sm:px-8 sm:py-8";
   }
+
+  return "flex flex-col overflow-hidden";
 }
 
 export function artifactPanelSubtitle({
-  mimeType,
-  sizeBytes = 0,
   streaming = false,
 }: {
-  mimeType: string;
+  mimeType?: string;
   sizeBytes?: number;
   streaming?: boolean;
-}): string {
-  const parts = [mimeType];
-
+}): string | null {
   if (streaming) {
-    parts.push("Writing…");
-  } else if (sizeBytes > 0) {
-    parts.push(formatBytes(sizeBytes));
+    return "Writing…";
   }
 
-  return parts.join(" · ");
+  return null;
 }
 
 export function downloadActionLabel(mimeType: string): string {

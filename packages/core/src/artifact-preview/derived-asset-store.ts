@@ -5,7 +5,7 @@ export interface DerivedAsset {
   converterVersion: string;
   createdAt: string;
   expiresAt: number;
-  mimeType: "application/pdf";
+  mimeType: string;
   orgId: string;
   pageCount: number;
   profileId: string;

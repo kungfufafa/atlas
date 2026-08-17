@@ -389,20 +389,49 @@ export function registerArtifactPreviewRoutes(
     const { profileId, filename } = parseCanonicalArtifactId(rawArtifactId);
 
     try {
-      const artifact = await agent.readProfileArtifact(
+      const thumb = await agent.getProfileArtifactThumbnail(
         orgId,
         profileId,
         filename
       );
-      const downloadName = (filename.split("/").pop() ?? "artifact").replace(
-        /["\\]/g,
-        "_"
-      );
+      if (!thumb) {
+        return json({ error: "Thumbnail is not available." }, 404);
+      }
+      const downloadName = `${(filename.split("/").pop() ?? "artifact").replace(/["\\]/g, "_")}.png`;
       return handleByteRangeRequest(
-        artifact.bytes,
-        artifact.contentType,
+        thumb.bytes,
+        thumb.mimeType,
         c.req.header("range"),
         downloadName,
+        true
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Artifact not found";
+      return json({ error: message }, 404);
+    }
+  });
+
+  app.get("/v1/profiles/:profileId/artifacts/thumbnail", async (c) => {
+    const orgId = requireActiveOrgIdFromContext(c);
+    const profileId = decodeURIComponent(c.req.param("profileId"));
+    const artifactPath = c.req.query("path");
+    if (!artifactPath) {
+      return json({ error: "path is required" }, 400);
+    }
+    try {
+      const thumb = await agent.getProfileArtifactThumbnail(
+        orgId,
+        profileId,
+        artifactPath
+      );
+      if (!thumb) {
+        return json({ error: "Thumbnail is not available." }, 404);
+      }
+      return handleByteRangeRequest(
+        thumb.bytes,
+        thumb.mimeType,
+        c.req.header("range"),
+        "thumbnail.png",
         true
       );
     } catch (err) {

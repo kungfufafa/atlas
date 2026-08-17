@@ -1,6 +1,23 @@
 import { expect, test } from "bun:test";
 import { buildChatSystemPrompt } from "./chat-prompt";
 
+test("buildChatSystemPrompt asks for a complete answer and tool use even with soul", () => {
+  const prompt = buildChatSystemPrompt([], {
+    basePrompt: "You embody the default agent.",
+    soul: true,
+  });
+
+  expect(prompt).toContain("You embody the default agent.");
+  expect(prompt).toContain("Use tools when needed while staying in character.");
+  expect(prompt).toContain("Be concise, friendly, grounded, and practical.");
+  expect(prompt).toContain("Be concise in wording and complete in the work");
+  expect(prompt).toContain("ready-to-use answer");
+  expect(prompt).toContain("finish the request in this turn");
+  expect(prompt).toContain("use them before you reply");
+  expect(prompt).toContain("user's objective");
+  expect(prompt).not.toContain("ChatGPT");
+});
+
 test("buildChatSystemPrompt includes automation skill pointer when create_automation is available", () => {
   const prompt = buildChatSystemPrompt(
     [
@@ -119,8 +136,77 @@ test("buildChatSystemPrompt includes artifact skill pointer when write_file is a
 
   expect(prompt).toContain("save-artifact skill");
   expect(prompt).toContain("never invoke save-artifact");
+  expect(prompt).toContain("wants output kept or mentions artifacts");
+  expect(prompt).toContain("do not leave that work only in chat");
   expect(prompt).toContain("artifacts/, not the profile workspace root");
   expect(prompt).not.toContain("save_artifact");
+});
+
+test("buildChatSystemPrompt nudges assigned work tools without extra product modes", () => {
+  const prompt = buildChatSystemPrompt(
+    [
+      {
+        description: "Search",
+        name: "web_search",
+        parameters: { properties: {}, type: "object" },
+      },
+      {
+        description: "Research",
+        name: "deep_research",
+        parameters: { properties: {}, type: "object" },
+      },
+      {
+        description: "KB",
+        name: "knowledge_base_search",
+        parameters: { properties: {}, type: "object" },
+      },
+      {
+        description: "Browse",
+        name: "browser",
+        parameters: { properties: {}, type: "object" },
+      },
+      {
+        description: "Slides",
+        name: "write_pptx",
+        parameters: { properties: {}, type: "object" },
+      },
+      {
+        description: "Sheet",
+        name: "spreadsheet",
+        parameters: { properties: {}, type: "object" },
+      },
+    ],
+    { enableToolLoop: true }
+  );
+
+  expect(prompt).toContain("search or fetch first");
+  expect(prompt).toContain("use deep_research");
+  expect(prompt).toContain("knowledge_base_search before guessing");
+  expect(prompt).toContain("use browser instead of guessing");
+  expect(prompt).toContain("use write_pptx");
+  expect(prompt).toContain("use spreadsheet");
+  expect(prompt).toContain("Use them when needed to finish the work");
+  expect(prompt).not.toContain("ChatGPT");
+});
+
+test("buildChatSystemPrompt omits work-tool nudges when those tools are unavailable", () => {
+  const prompt = buildChatSystemPrompt(
+    [
+      {
+        description: "Write",
+        name: "write_file",
+        parameters: { properties: {}, type: "object" },
+      },
+    ],
+    { enableToolLoop: true }
+  );
+
+  expect(prompt).not.toContain("search or fetch first");
+  expect(prompt).not.toContain("use deep_research");
+  expect(prompt).not.toContain("knowledge_base_search before guessing");
+  expect(prompt).not.toContain("use browser instead of guessing");
+  expect(prompt).not.toContain("use write_pptx");
+  expect(prompt).not.toContain("use spreadsheet");
 });
 
 test("buildChatSystemPrompt omits artifact guidance when write_file is unavailable", () => {

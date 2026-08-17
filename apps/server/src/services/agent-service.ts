@@ -3478,6 +3478,26 @@ export class AgentService {
     );
   }
 
+  async getProfileArtifactThumbnail(
+    orgId: string,
+    profileId: string,
+    filename: string
+  ): Promise<{ bytes: Buffer; mimeType: string } | null> {
+    await this.requireProfile(orgId, profileId);
+    const { bytes, contentType, filePath, relativePath } =
+      await this.readProfileArtifactFile(orgId, profileId, filename);
+    return previewService.getOrGenerateThumbnail(
+      {
+        filename: path.basename(filePath),
+        mimeType: contentType,
+        path: relativePath,
+        sizeBytes: bytes.length,
+      },
+      bytes,
+      { orgId, profileId }
+    );
+  }
+
   async deleteProfileArtifact(
     orgId: string,
     profileId: string,

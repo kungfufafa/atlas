@@ -8,6 +8,11 @@ import {
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  isMermaidArtifactFilename,
+  markdownForMermaidSource,
+  mermaidPreviewError,
+} from "@/lib/artifact-mermaid-preview";
 import { client } from "@/lib/client";
 import { useArtifactWorkspace } from "./ArtifactWorkspaceContext";
 import { CodeViewer } from "./viewers/CodeViewer";
@@ -51,12 +56,10 @@ export function ArtifactWorkspace() {
     return null;
   }
 
-  const downloadUrl = activeArtifact.artifactId
-    ? client.getArtifactDownloadUrl(activeArtifact.artifactId)
-    : client.getProfileArtifactDownloadUrl(
-        activeArtifact.profileId,
-        activeArtifact.path
-      );
+  const artifact = activeArtifact;
+  const downloadUrl = artifact.artifactId
+    ? client.getArtifactDownloadUrl(artifact.artifactId)
+    : client.getProfileArtifactDownloadUrl(artifact.profileId, artifact.path);
 
   const revision = activePreview?.revision ?? activeArtifact.revision ?? 1;
 
@@ -136,16 +139,29 @@ export function ArtifactWorkspace() {
           <MarkdownViewer downloadUrl={downloadUrl} preview={activePreview} />
         );
       case "code":
-        return <CodeViewer downloadUrl={downloadUrl} preview={activePreview} />;
-      case "json":
-        return <JsonViewer downloadUrl={downloadUrl} preview={activePreview} />;
-      case "image":
-        return (
-          <ImageViewer downloadUrl={downloadUrl} preview={activePreview} />
-        );
-      case "html":
-        return <HtmlViewer downloadUrl={downloadUrl} preview={activePreview} />;
-      case "text":
+      case "text": {
+        if (isMermaidArtifactFilename(artifact.filename)) {
+          const source = activePreview.content;
+          const mermaidError = mermaidPreviewError(source);
+          return (
+            <MarkdownViewer
+              downloadUrl={downloadUrl}
+              preview={{
+                ...activePreview,
+                content: mermaidError
+                  ? mermaidError
+                  : markdownForMermaidSource(source),
+                type: "markdown",
+                wordCount: source.trim().split(/\s+/).filter(Boolean).length,
+              }}
+            />
+          );
+        }
+        if (activePreview.type === "code") {
+          return (
+            <CodeViewer downloadUrl={downloadUrl} preview={activePreview} />
+          );
+        }
         return (
           <CodeViewer
             downloadUrl={downloadUrl}
@@ -156,6 +172,15 @@ export function ArtifactWorkspace() {
             }}
           />
         );
+      }
+      case "json":
+        return <JsonViewer downloadUrl={downloadUrl} preview={activePreview} />;
+      case "image":
+        return (
+          <ImageViewer downloadUrl={downloadUrl} preview={activePreview} />
+        );
+      case "html":
+        return <HtmlViewer downloadUrl={downloadUrl} preview={activePreview} />;
       default:
         return (
           <GenericViewer downloadUrl={downloadUrl} preview={activePreview} />

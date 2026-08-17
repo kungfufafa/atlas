@@ -1886,8 +1886,12 @@ export interface UpdateSoulFileRequest {
 
 export interface ArtifactFile {
   filename: string;
+  formatDetails?: import("./artifact-types").ArtifactFormatDetails;
   mimeType: string;
+  parentArtifactId?: string;
   path: string;
+  revision?: number;
+  rootArtifactId?: string;
   sizeBytes: number;
   updatedAt: string;
 }
@@ -2282,7 +2286,7 @@ export interface EnableComposioToolkitRequest {
 }
 
 export interface ComposioConnectRequest {
-  /** Browser origin for OAuth callback (e.g. http://localhost:3003). */
+  /** Browser origin for OAuth callback (e.g. http://localhost:3000). */
   callbackOrigin?: string;
 }
 

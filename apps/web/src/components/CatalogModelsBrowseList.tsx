@@ -28,6 +28,7 @@ export interface CatalogModelsBrowseListProps<
   onSelect: (row: T) => void;
   query?: CatalogModelsBrowseQuery;
   rows: T[];
+  selectedIds?: ReadonlySet<string>;
   status?:
     | ReactNode
     | ((context: { filteredCount: number; filteredRows: T[] }) => ReactNode);
@@ -40,6 +41,7 @@ export function CatalogModelsBrowseList<
 >({
   rows,
   onSelect,
+  selectedIds,
   className,
   query,
   idleMessage,
@@ -154,6 +156,7 @@ export function CatalogModelsBrowseList<
           <BrowseModelRowButton
             onSelect={() => onSelect(row)}
             row={toDisplayRow(row)}
+            selected={selectedIds?.has(row.id) === true}
             style={style}
           />
         )}

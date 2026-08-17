@@ -23,7 +23,7 @@ try {
     cwd: webRoot,
     env: {
       ...process.env,
-      atlas_SERVER_URL: serverUrl,
+      ATLAS_SERVER_URL: serverUrl,
     },
     stderr: "inherit",
     stdin: "inherit",

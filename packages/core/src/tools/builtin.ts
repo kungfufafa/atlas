@@ -357,7 +357,52 @@ export async function runWriteFile(
   }
 
   await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, parsed.content, "utf8");
+  let contentToWrite = parsed.content;
+  if (normalizedPath.endsWith(ARTIFACT_META_SUFFIX)) {
+    const { readLineageMeta } = await import("../artifact-lineage");
+    const contentFile = filePath.endsWith(ARTIFACT_META_SUFFIX)
+      ? filePath.slice(0, -ARTIFACT_META_SUFFIX.length)
+      : filePath;
+    const previous = await readLineageMeta(contentFile);
+    if (previous) {
+      try {
+        const payload = JSON.parse(parsed.content) as Record<string, unknown>;
+        contentToWrite = JSON.stringify({
+          ...payload,
+          formatDetails: {
+            ...previous.formatDetails,
+            ...(payload.formatDetails &&
+            typeof payload.formatDetails === "object"
+              ? payload.formatDetails
+              : {}),
+          },
+          id: previous.id,
+          parentArtifactId: previous.parentArtifactId,
+          revision: previous.revision,
+          rootArtifactId: previous.rootArtifactId,
+        });
+      } catch {
+        // Sidecar is not JSON; write as-is and stamp afterwards.
+      }
+    }
+  }
+  await writeFile(filePath, contentToWrite, "utf8");
+
+  if (
+    isArtifactPath(parsed.path) ||
+    normalizedPath.endsWith(ARTIFACT_META_SUFFIX)
+  ) {
+    const { stampArtifactLineage } = await import("../artifact-lineage");
+    const parentFilePath =
+      filePath === guarded.resolved ? undefined : guarded.resolved;
+    await stampArtifactLineage({
+      parentFilePath,
+      sizeBytes: contentBytes,
+      writtenPath: filePath.endsWith(ARTIFACT_META_SUFFIX)
+        ? filePath.slice(0, -ARTIFACT_META_SUFFIX.length)
+        : filePath,
+    });
+  }
 
   return { bytesWritten: contentBytes, path: filePath };
 }
@@ -401,6 +446,16 @@ export async function runWriteDocx(
   await mkdir(path.dirname(filePath), { recursive: true });
   await writeFile(filePath, bytes);
 
+  if (isArtifactPath(parsed.path)) {
+    const { stampArtifactLineage } = await import("../artifact-lineage");
+    await stampArtifactLineage({
+      parentFilePath:
+        filePath === guarded.resolved ? undefined : guarded.resolved,
+      sizeBytes: bytes.length,
+      writtenPath: filePath,
+    });
+  }
+
   return { bytesWritten: bytes.length, path: filePath };
 }
 
@@ -439,6 +494,17 @@ export async function runWritePptx(
 
   await mkdir(path.dirname(filePath), { recursive: true });
   await writeFile(filePath, bytes);
+
+  if (isArtifactPath(parsed.path)) {
+    const { stampArtifactLineage } = await import("../artifact-lineage");
+    await stampArtifactLineage({
+      extraDetails: { slideCount: parsed.slides.length },
+      parentFilePath:
+        filePath === guarded.resolved ? undefined : guarded.resolved,
+      sizeBytes: bytes.length,
+      writtenPath: filePath,
+    });
+  }
 
   return {
     bytesWritten: bytes.length,

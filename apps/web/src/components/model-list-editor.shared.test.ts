@@ -1,9 +1,65 @@
 import { describe, expect, test } from "bun:test";
-import { normalizeModelListRows } from "./model-list-editor.shared";
+import {
+  applyInferredCompatibleCapabilities,
+  normalizeModelListRows,
+  toggleModelListRow,
+} from "./model-list-editor.shared";
 import {
   seedManageModelRows,
   seedShortlistManageModelRows,
 } from "./settings/provider-settings-seed";
+
+describe("applyInferredCompatibleCapabilities", () => {
+  test("fills reasoning from the model id when the user did not set it", () => {
+    expect(
+      applyInferredCompatibleCapabilities(
+        [{ id: "qwen/qwen3.8-max-free", name: "Qwen" }],
+        { baseUrl: "https://api.tokenrouter.com/v1" }
+      )
+    ).toEqual([
+      {
+        id: "qwen/qwen3.8-max-free",
+        name: "Qwen",
+        reasoningEffortValues: ["low", "medium", "xhigh"],
+        supportsThinking: true,
+      },
+    ]);
+  });
+
+  test("does not override an explicit opt-out", () => {
+    expect(
+      applyInferredCompatibleCapabilities([
+        {
+          id: "qwen/qwen3.8-max-free",
+          supportsThinking: false,
+        },
+      ])
+    ).toEqual([{ id: "qwen/qwen3.8-max-free", supportsThinking: false }]);
+  });
+});
+
+describe("toggleModelListRow", () => {
+  test("adds a model and drops blank placeholder rows", () => {
+    expect(
+      toggleModelListRow([{ id: "", name: "" }], {
+        id: "llama3.2",
+        name: "Llama 3.2",
+      })
+    ).toEqual([{ id: "llama3.2", name: "Llama 3.2" }]);
+  });
+
+  test("removes a model that is already selected", () => {
+    expect(
+      toggleModelListRow(
+        [
+          { id: "llama3.2", name: "Llama 3.2" },
+          { id: "qwen3", name: "Qwen 3" },
+        ],
+        { id: "llama3.2", name: "Llama 3.2" }
+      )
+    ).toEqual([{ id: "qwen3", name: "Qwen 3" }]);
+  });
+});
 
 describe("normalizeModelListRows", () => {
   test("preserves reasoningEffortValues array and cleans empty items", () => {

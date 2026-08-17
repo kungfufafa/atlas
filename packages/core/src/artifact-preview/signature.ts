@@ -1,3 +1,9 @@
+import {
+  inferArtifactMimeType,
+  isHtmlArtifactMimeType,
+  normalizeMimeType,
+} from "../artifact-mime";
+
 export type InferredFormat =
   | "pdf"
   | "png"
@@ -230,4 +236,72 @@ export function isSignatureCompatible(
   }
 
   return true;
+}
+
+/**
+ * Content-Type to serve for artifact bytes. Declared metadata/filename wins
+ * unless the file signature contradicts a dangerous or binary type.
+ * Never upgrades generic text to an executable browser type.
+ */
+export function resolveServedArtifactContentType(
+  filename: string,
+  declaredMime: string,
+  buffer: Buffer
+): string {
+  const inferred = inferArtifactMimeType(filename);
+  const declared = normalizeMimeType(declaredMime) || inferred;
+  const sig = detectFileSignature(buffer);
+
+  if (sig === "executable") {
+    return "application/octet-stream";
+  }
+
+  if (declared === "application/pdf") {
+    return sig === "pdf" ? declared : "application/octet-stream";
+  }
+
+  if (declared === "image/svg+xml" || filename.toLowerCase().endsWith(".svg")) {
+    return sig === "svg" || sig === "text"
+      ? "image/svg+xml"
+      : "application/octet-stream";
+  }
+
+  if (isHtmlArtifactMimeType(declared)) {
+    return sig === "text" || sig === "svg" || sig === "xml"
+      ? declared
+      : "application/octet-stream";
+  }
+
+  if (declared.startsWith("image/")) {
+    if (declared === "image/png" && sig === "png") {
+      return declared;
+    }
+    if (
+      (declared === "image/jpeg" || declared === "image/jpg") &&
+      sig === "jpeg"
+    ) {
+      return "image/jpeg";
+    }
+    if (declared === "image/gif" && sig === "gif") {
+      return declared;
+    }
+    if (declared === "image/webp" && sig === "webp") {
+      return declared;
+    }
+    if (sig === "png") {
+      return "image/png";
+    }
+    if (sig === "jpeg") {
+      return "image/jpeg";
+    }
+    if (sig === "gif") {
+      return "image/gif";
+    }
+    if (sig === "webp") {
+      return "image/webp";
+    }
+    return "application/octet-stream";
+  }
+
+  return declared;
 }

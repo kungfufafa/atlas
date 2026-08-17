@@ -19,11 +19,25 @@ const DEFAULT_BUILTIN_TOOL_IDS = [
   TOOL_SEARCH_TOOL_ID,
 ];
 
+/** Default Agent toolkit — Super Agent extras (bash, image) stay opt-in. */
+export const DEFAULT_AGENT_TOOL_IDS = DEFAULT_BUILTIN_TOOL_IDS.filter(
+  (toolId) => toolId !== BASH_TOOL_ID && toolId !== GENERATE_IMAGE_TOOL_ID
+);
+
 export async function ensureProfileDefaultBuiltinTools(
   db: DatabaseAdapter,
   profileId: string
 ): Promise<void> {
   for (const toolId of DEFAULT_BUILTIN_TOOL_IDS) {
+    await db.assignToolToProfile(profileId, toolId);
+  }
+}
+
+export async function ensureProfileDefaultAgentTools(
+  db: DatabaseAdapter,
+  profileId: string
+): Promise<void> {
+  for (const toolId of DEFAULT_AGENT_TOOL_IDS) {
     await db.assignToolToProfile(profileId, toolId);
   }
 }
@@ -88,13 +102,7 @@ export async function seedOrgDefaultProfile(
   };
 
   await db.upsertProfile(profile);
-
-  for (const toolId of DEFAULT_BUILTIN_TOOL_IDS) {
-    if (toolId !== BASH_TOOL_ID && toolId !== GENERATE_IMAGE_TOOL_ID) {
-      await db.assignToolToProfile(profile.id, toolId);
-    }
-  }
-
+  await ensureProfileDefaultAgentTools(db, profile.id);
   await ensureProfileDefaultBundledSkills(db, profile.id);
 
   return profile;

@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
+import { Spinner } from "@/components/ui/spinner";
 import { useAppContext } from "@/context/use-app-context";
 import { useAuth } from "@/context/use-auth";
 import { useTheme } from "@/context/use-theme";
@@ -34,18 +35,26 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, isAuthenticated } = useAuth();
-  const { health } = useAppContext();
+  const { error: healthError, health } = useAppContext();
   const { resolvedTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from;
 
-  if (isAuthenticated) {
-    return <Navigate replace to={resolvePostAuthPath(health, from)} />;
+  if (health == null && !healthError) {
+    return (
+      <div className="flex h-svh items-center justify-center bg-background">
+        <Spinner className="size-6 text-muted-foreground" />
+      </div>
+    );
   }
 
   if (health?.userConfigured === false) {
     return <Navigate replace to={SETUP_PATH} />;
+  }
+
+  if (isAuthenticated) {
+    return <Navigate replace to={resolvePostAuthPath(health, from)} />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -81,6 +90,11 @@ export function LoginPage() {
             </p>
           )}
         </div>
+        {healthError ? (
+          <div className="rounded-md bg-red-50 px-3 py-2 text-red-800 text-sm dark:bg-red-950/30 dark:text-red-200">
+            {healthError}
+          </div>
+        ) : null}
         {demoLogin ? (
           <div className="space-y-2 rounded-md border bg-muted/40 px-3 py-3 text-sm">
             <div className="flex items-baseline justify-between gap-3">

@@ -5,7 +5,7 @@ import {
   Video01Icon,
   ViewIcon,
 } from "hugeicons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArtifactAttachmentPanelActions } from "@/components/chat/artifact-attachment-panel-actions";
 import { ArtifactAttachmentPanelBody } from "@/components/chat/artifact-attachment-panel-body";
 import {
@@ -27,6 +27,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useChatAttachmentPanel } from "@/context/use-chat-attachment-panel";
+import { artifactCanvasTypeLabel } from "@/lib/artifact-canvas";
 import {
   artifactCodeLanguage,
   buildArtifactContentUrl,
@@ -34,19 +35,22 @@ import {
   isDocxFile,
   isHtmlArtifactMimeType,
   isImageArtifactMimeType,
+  isJsxArtifactFilename,
   isLegacyDocFile,
   isMarkdownArtifactMimeType,
+  isMermaidArtifactFilename,
+  isSvgArtifactMimeType,
   isTextArtifactMimeType,
   isUnknownArtifactMimeType,
   isVideoArtifactMimeType,
   resolveArtifactMimeType,
 } from "@/lib/chat-artifacts";
 import { client } from "@/lib/client";
-import { formatBytes } from "@/lib/knowledge-base-files";
 import { cn } from "@/lib/utils";
 
 interface ArtifactAttachmentPreviewProps {
   artifact: ChatArtifactRef;
+  autoOpen?: boolean;
   className?: string;
   id: string;
   profileId: string;
@@ -66,8 +70,8 @@ function ArtifactAttachmentPreviewPanelBody({
   canPreview,
   artifact,
 }: {
-  kind: "image" | "video" | "html" | "text";
-  textFormat: "markdown" | "plain";
+  kind: "image" | "video" | "html" | "svg" | "text";
+  textFormat: "markdown" | "plain" | "mermaid";
   language: string | null;
   loading: boolean;
   error: string | null;
@@ -116,6 +120,19 @@ function ArtifactAttachmentPreviewPanelBody({
     );
   }
 
+  if (kind === "svg") {
+    return (
+      <ArtifactAttachmentPanelBody
+        artifact={artifact}
+        canPreview={canPreview}
+        content={content}
+        error={error}
+        kind="svg"
+        loading={loading}
+      />
+    );
+  }
+
   return (
     <ArtifactAttachmentPanelBody
       artifact={artifact}
@@ -134,10 +151,12 @@ export function ArtifactAttachmentPreview({
   profileId,
   id,
   artifact,
+  autoOpen = false,
   className,
   variant = "chip",
 }: ArtifactAttachmentPreviewProps) {
-  const { show, update, activeId } = useChatAttachmentPanel();
+  const { show, update, activeId, isDismissed } = useChatAttachmentPanel();
+  const autoOpenedRef = useRef(false);
   const share = useArtifactShareControls({
     artifactPath: artifact.path,
     profileId,
@@ -150,7 +169,11 @@ export function ArtifactAttachmentPreview({
     artifact.mimeType,
     artifact.filename
   );
-  const isHtml = isHtmlArtifactMimeType(mimeType);
+  const isHtml =
+    isHtmlArtifactMimeType(mimeType) ||
+    isJsxArtifactFilename(artifact.filename);
+  const isSvg = isSvgArtifactMimeType(mimeType);
+  const isMermaid = isMermaidArtifactFilename(artifact.filename);
   const isImage = isImageArtifactMimeType(mimeType);
   const isVideo = isVideoArtifactMimeType(mimeType);
   const isWordDocument =
@@ -231,6 +254,8 @@ export function ArtifactAttachmentPreview({
   const canPreview =
     isRichDoc ||
     isHtml ||
+    isSvg ||
+    isMermaid ||
     isImage ||
     isVideo ||
     isTextArtifactMimeType(mimeType) ||
@@ -287,7 +312,9 @@ export function ArtifactAttachmentPreview({
         ? "video"
         : isHtml
           ? "html"
-          : "text";
+          : isSvg
+            ? "svg"
+            : "text";
     return (
       <ArtifactAttachmentPreviewPanelBody
         artifact={artifact}
@@ -298,7 +325,7 @@ export function ArtifactAttachmentPreview({
         kind={panelKind}
         language={language}
         loading={loadingOverride ?? loading}
-        textFormat={isMarkdown ? "markdown" : "plain"}
+        textFormat={isMermaid ? "mermaid" : isMarkdown ? "markdown" : "plain"}
         videoPreviewUrl={videoPreviewUrl}
       />
     );
@@ -309,7 +336,8 @@ export function ArtifactAttachmentPreview({
       bodyClassName: artifactPanelBodyClassName({
         isHtml,
         isImage,
-        isMarkdown,
+        isMarkdown: isMarkdown || isMermaid,
+        isSvg,
         isVideo,
       }),
       content: buildPanelBody(),
@@ -419,9 +447,7 @@ export function ArtifactAttachmentPreview({
           error === null &&
           richError === null
       ),
-      defaultWidth: isRichDoc
-        ? 800
-        : artifactPanelDefaultWidth(artifact.filename, mimeType),
+      defaultWidth: artifactPanelDefaultWidth(artifact.filename, mimeType),
       fullscreen: false,
       id,
       onClose: () => {
@@ -431,6 +457,14 @@ export function ArtifactAttachmentPreview({
       resizable: true,
     });
   }
+
+  useEffect(() => {
+    if (!autoOpen || autoOpenedRef.current || open || isDismissed(id)) {
+      return;
+    }
+    autoOpenedRef.current = true;
+    openPanel();
+  }, [autoOpen, id, isDismissed, open]);
 
   if (variant === "icon") {
     return (
@@ -457,11 +491,16 @@ export function ArtifactAttachmentPreview({
     );
   }
 
+  const typeLabel = artifactCanvasTypeLabel(artifact.filename, mimeType);
+  const selected = open;
+
   if (isImage) {
     return (
       <button
+        aria-pressed={selected}
         className={cn(
-          "relative flex w-1/2 max-w-full shrink-0 flex-col gap-2 overflow-hidden rounded-lg border border-border bg-muted p-2 text-left transition-colors hover:bg-muted/70",
+          "relative flex w-56 max-w-full shrink-0 flex-col gap-2 overflow-hidden rounded-xl border bg-card p-2 text-left shadow-xs transition-colors hover:bg-accent/40",
+          selected ? "border-primary ring-1 ring-primary" : "border-border",
           className
         )}
         onClick={openPanel}
@@ -470,24 +509,19 @@ export function ArtifactAttachmentPreview({
         {imagePreviewUrl ? (
           <img
             alt=""
-            className="aspect-[4/3] w-full rounded-md border border-border object-cover outline outline-1 outline-black/10 dark:outline-white/10"
+            className="aspect-[4/3] w-full rounded-lg object-cover"
             src={imagePreviewUrl}
           />
         ) : (
-          <div className="flex aspect-[4/3] w-full items-center justify-center rounded-md border border-border bg-background">
+          <div className="flex aspect-[4/3] w-full items-center justify-center rounded-lg bg-muted">
             <Image01Icon aria-hidden className="size-6 text-muted-foreground" />
           </div>
         )}
-        <div className="min-w-0 px-0.5">
+        <div className="min-w-0 px-0.5 pb-0.5">
           <p className="truncate font-medium text-foreground text-xs">
             {artifact.filename}
           </p>
-          <p className="text-2xs text-muted-foreground">
-            {artifact.sizeBytes > 0
-              ? `${formatBytes(artifact.sizeBytes)} · `
-              : null}
-            Artifact
-          </p>
+          <p className="text-2xs text-muted-foreground">{typeLabel}</p>
         </div>
       </button>
     );
@@ -495,30 +529,27 @@ export function ArtifactAttachmentPreview({
 
   return (
     <button
+      aria-pressed={selected}
       className={cn(
-        "relative inline-flex max-w-full shrink-0 items-center gap-2 rounded-lg border border-border bg-muted px-2 py-2 text-left transition-colors hover:bg-muted/70",
+        "relative inline-flex max-w-full shrink-0 items-center gap-3 rounded-xl border bg-card px-3 py-2.5 text-left shadow-xs transition-colors hover:bg-accent/40",
+        selected ? "border-primary ring-1 ring-primary" : "border-border",
         className
       )}
       onClick={openPanel}
       type="button"
     >
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-md border border-border bg-background">
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
         {isVideo ? (
           <Video01Icon aria-hidden className="size-4 text-muted-foreground" />
         ) : (
           <File01Icon aria-hidden className="size-4 text-muted-foreground" />
         )}
       </div>
-      <div className="min-w-0 max-w-[12rem]">
-        <p className="truncate font-medium text-foreground text-xs">
+      <div className="min-w-0 max-w-[14rem]">
+        <p className="truncate font-medium text-foreground text-sm">
           {artifact.filename}
         </p>
-        <p className="text-2xs text-muted-foreground">
-          {artifact.sizeBytes > 0
-            ? `${formatBytes(artifact.sizeBytes)} · `
-            : null}
-          Artifact
-        </p>
+        <p className="text-muted-foreground text-xs">{typeLabel}</p>
       </div>
     </button>
   );

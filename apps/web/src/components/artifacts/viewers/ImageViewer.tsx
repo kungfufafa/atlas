@@ -5,8 +5,18 @@ import {
   ZoomInAreaIcon,
   ZoomOutAreaIcon,
 } from "hugeicons-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { SvgPreview } from "@/components/artifacts/SvgPreview";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+
+function isSvgPreview(preview: ImagePreview): boolean {
+  return (
+    preview.format.toLowerCase() === "svg" ||
+    preview.mimeType === "image/svg+xml" ||
+    preview.filename.toLowerCase().endsWith(".svg")
+  );
+}
 
 export function ImageViewer({
   preview,
@@ -16,6 +26,9 @@ export function ImageViewer({
   downloadUrl: string;
 }) {
   const [zoom, setZoom] = useState(100);
+  const svg = isSvgPreview(preview);
+  const [svgMarkup, setSvgMarkup] = useState<string | null>(null);
+  const [svgError, setSvgError] = useState<string | null>(null);
 
   function handleZoomIn() {
     setZoom((z) => Math.min(300, z + 25));
@@ -28,6 +41,39 @@ export function ImageViewer({
   function handleReset() {
     setZoom(100);
   }
+
+  useEffect(() => {
+    if (!svg) {
+      return;
+    }
+
+    let cancelled = false;
+    setSvgError(null);
+
+    fetch(preview.url || downloadUrl, { credentials: "include" })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to load SVG (${response.status})`);
+        }
+        return response.text();
+      })
+      .then((text) => {
+        if (!cancelled) {
+          setSvgMarkup(text);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setSvgError(
+            error instanceof Error ? error.message : "Failed to load SVG."
+          );
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [downloadUrl, preview.url, svg]);
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-background">
@@ -103,11 +149,25 @@ export function ImageViewer({
           className="transition-transform duration-150"
           style={{ transform: `scale(${zoom / 100})` }}
         >
-          <img
-            alt={preview.filename}
-            className="max-h-[min(75vh,50rem)] max-w-full rounded-lg border border-border bg-card object-contain shadow-md"
-            src={preview.url || downloadUrl}
-          />
+          {svg ? (
+            svgMarkup ? (
+              <SvgPreview
+                className="max-h-[min(75vh,50rem)] max-w-full rounded-lg border border-border bg-card object-contain shadow-md"
+                content={svgMarkup}
+                filename={preview.filename}
+              />
+            ) : svgError ? (
+              <p className="text-muted-foreground text-sm">{svgError}</p>
+            ) : (
+              <Spinner className="size-6 text-muted-foreground" />
+            )
+          ) : (
+            <img
+              alt={preview.filename}
+              className="max-h-[min(75vh,50rem)] max-w-full rounded-lg border border-border bg-card object-contain shadow-md"
+              src={preview.url || downloadUrl}
+            />
+          )}
         </div>
       </main>
     </div>

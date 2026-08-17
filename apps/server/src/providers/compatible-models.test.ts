@@ -269,6 +269,25 @@ describe("getModelsForProviderInstance fireworks", () => {
 });
 
 describe("getModelsForProviderInstance openai_compatible", () => {
+  test("infers reasoning for known families when the flag is unset", () => {
+    const models = getModelsForProviderInstance({
+      apiKey: "",
+      baseUrl: "https://api.tokenrouter.com/v1",
+      createdAt: "2026-06-07T10:00:00.000Z",
+      customModels: [{ default: true, id: "qwen/qwen3.8-max-free" }],
+      id: "compat-1",
+      label: "sada",
+      type: "openai_compatible",
+    });
+
+    expect(models[0]?.supportsThinking).toBe(true);
+    expect(models[0]?.reasoningEffortValues).toEqual([
+      "low",
+      "medium",
+      "xhigh",
+    ]);
+  });
+
   test("maps supportsThinking from custom models into the catalog", () => {
     const models = getModelsForProviderInstance({
       apiKey: "",
@@ -292,21 +311,117 @@ describe("getModelsForProviderInstance openai_compatible", () => {
   });
 });
 
+describe("fetchRemoteOpenAIModels TokenRouter payload", () => {
+  test("parses the gateway list that only includes ids", async () => {
+    mockServer = serve({
+      fetch() {
+        return Response.json({
+          data: [
+            {
+              created: 1_786_810_001,
+              id: "qwen/qwen3.8-max-free",
+              object: "model",
+              owned_by: "custom",
+              supported_endpoint_types: ["openai"],
+              tags: "Text",
+            },
+            {
+              created: 1_777_427_216,
+              id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+              object: "model",
+              owned_by: "custom",
+              supported_endpoint_types: ["openai"],
+              tags: "Text",
+            },
+          ],
+          object: "list",
+          success: true,
+        });
+      },
+      port: 0,
+    });
+
+    const models = await fetchRemoteOpenAIModels(
+      `http://127.0.0.1:${mockServer.port}/v1`,
+      "sk-test"
+    );
+
+    expect(models.map((model) => model.id)).toEqual([
+      "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      "qwen/qwen3.8-max-free",
+    ]);
+    expect(
+      models.find((model) => model.id === "qwen/qwen3.8-max-free")
+    ).toMatchObject({
+      supportsThinking: true,
+    });
+  });
+});
+
 describe("compatibleModelSupportsThinking", () => {
-  test("returns true only for models explicitly opted into thinking", () => {
+  test("honors an explicit opt-out and infers known reasoning families", () => {
     expect(
       compatibleModelSupportsThinking("qwen3.6-35b", [
         { id: "qwen3.6-35b", supportsThinking: true },
-        { id: "qwen3.6-7b" },
+        { id: "qwen3.6-7b", supportsThinking: false },
       ])
     ).toBe(true);
 
     expect(
       compatibleModelSupportsThinking("qwen3.6-7b", [
         { id: "qwen3.6-35b", supportsThinking: true },
-        { id: "qwen3.6-7b" },
+        { id: "qwen3.6-7b", supportsThinking: false },
       ])
     ).toBe(false);
+
+    expect(
+      compatibleModelSupportsThinking("qwen/qwen3.8-max-free", [
+        { id: "qwen/qwen3.8-max-free" },
+      ])
+    ).toBe(true);
+  });
+});
+
+describe("fetchRemoteOpenAIModels capabilities", () => {
+  test("keeps reasoning fields advertised by the endpoint", async () => {
+    mockServer = serve({
+      fetch() {
+        return Response.json({
+          data: [
+            {
+              id: "qwen/qwen3.8-max-free",
+              name: "Qwen 3.8 Max Free",
+              supported_parameters: ["reasoning", "reasoning_effort"],
+              supported_params_details: {
+                reasoning_effort: {
+                  accepted_values: ["low", "medium", "xhigh"],
+                },
+              },
+            },
+            { id: "meta-llama/llama-3.3-70b" },
+          ],
+        });
+      },
+      port: 0,
+    });
+
+    const models = await fetchRemoteOpenAIModels(
+      `http://127.0.0.1:${mockServer.port}/v1`,
+      "sk-test"
+    );
+
+    expect(models).toEqual([
+      {
+        id: "meta-llama/llama-3.3-70b",
+        name: "meta-llama/llama-3.3-70b",
+      },
+      {
+        id: "qwen/qwen3.8-max-free",
+        name: "Qwen 3.8 Max Free",
+        reasoningEffortValues: ["low", "medium", "xhigh"],
+        supportsThinking: true,
+      },
+    ]);
   });
 });
 

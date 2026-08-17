@@ -6,10 +6,22 @@ export type ArtifactType =
   | "image"
   | "file";
 
+export type ArtifactCompiler = "html" | "jsx";
+
+export interface ArtifactFormatDetails {
+  compiler?: ArtifactCompiler;
+  language?: string;
+  pageCount?: number;
+  sheetCount?: number;
+  slideCount?: number;
+  thumbnailUrl?: string;
+}
+
 export interface Artifact {
   branchId?: string;
   createdAt: string;
   filename: string;
+  formatDetails?: ArtifactFormatDetails;
   id: string;
   metadata?: Record<string, unknown>;
   mimeType: string;

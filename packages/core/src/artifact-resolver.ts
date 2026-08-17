@@ -288,6 +288,7 @@ export function createArtifactRevision(
     branchId: parentArtifact.branchId,
     createdAt: parentArtifact.createdAt,
     filename: parentArtifact.filename,
+    formatDetails: parentArtifact.formatDetails,
     id: newArtifactId,
     metadata: {
       ...parentArtifact.metadata,

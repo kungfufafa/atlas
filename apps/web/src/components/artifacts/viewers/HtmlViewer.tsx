@@ -1,5 +1,8 @@
 import type { HtmlPreview } from "@atlas/core";
 import { Download01Icon, Globe02Icon } from "hugeicons-react";
+import { useEffect, useState } from "react";
+import { HtmlPreviewFrame } from "@/components/artifacts/HtmlPreviewFrame";
+import { Spinner } from "@/components/ui/spinner";
 
 export function HtmlViewer({
   preview,
@@ -8,9 +11,41 @@ export function HtmlViewer({
   preview: HtmlPreview;
   downloadUrl: string;
 }) {
+  const [html, setHtml] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadError(null);
+
+    fetch(downloadUrl, { credentials: "include" })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to load HTML (${response.status})`);
+        }
+        return response.text();
+      })
+      .then((text) => {
+        if (!cancelled) {
+          setHtml(text);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setLoadError(
+            error instanceof Error ? error.message : "Failed to load HTML."
+          );
+          setHtml(preview.safeHtml);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [downloadUrl, preview.safeHtml]);
+
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-background">
-      {/* Top Toolbar */}
       <div className="flex items-center justify-between border-border border-b bg-card px-4 py-2 text-sm shadow-xs">
         <div className="flex items-center gap-2">
           <div className="flex size-7 items-center justify-center rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
@@ -37,15 +72,22 @@ export function HtmlViewer({
         </div>
       </div>
 
-      {/* Sandboxed iframe */}
       <main className="min-h-0 flex-1 bg-muted/20 p-4">
-        <div className="h-full w-full overflow-hidden rounded-lg border border-border bg-background shadow-xs">
-          <iframe
-            className="h-full w-full border-0"
-            sandbox={preview.sandbox || "allow-same-origin"}
-            srcDoc={preview.safeHtml}
-            title={preview.title || preview.filename}
-          />
+        <div className="flex h-full w-full flex-col overflow-hidden rounded-lg border border-border bg-background shadow-xs">
+          {html ? (
+            <HtmlPreviewFrame
+              className="h-full w-full border-0"
+              html={html}
+              title={preview.title || preview.filename}
+            />
+          ) : loadError ? (
+            <p className="p-4 text-muted-foreground text-sm">{loadError}</p>
+          ) : (
+            <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground text-sm">
+              <Spinner className="size-4" />
+              Loading preview…
+            </div>
+          )}
         </div>
       </main>
     </div>

@@ -38,6 +38,8 @@ Atlas supports these built-in provider types:
 
 Most built-in types allow one configured instance each. **Ollama** and **Custom (OpenAI-compatible)** can be added multiple times (for example local Ollama plus a remote compatible endpoint).
 
+For a custom endpoint, pick a preset such as LM Studio, vLLM, LiteLLM, llama.cpp, Groq, Together, or TokenRouter — or enter your own name and base URL — then browse models from that endpoint. API keys are optional for local servers that do not require auth. TokenRouter and similar gateways only expose the models your key can use, so Atlas tests the connection against a discovered model instead of a generic OpenAI id.
+
 ## Provider-specific features
 
 Some capabilities depend on the active provider:

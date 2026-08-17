@@ -14,7 +14,7 @@ import {
 } from "@/context/chat-attachment-panel-context-shared";
 import { cn } from "@/lib/utils";
 
-const DEFAULT_PANEL_WIDTH = 448;
+const DEFAULT_PANEL_WIDTH = 720;
 const ENTER_SLIDE_MS = 200;
 
 export function ChatAttachmentPanelProvider({
@@ -29,6 +29,7 @@ export function ChatAttachmentPanelProvider({
   const [width, setWidth] = useState(DEFAULT_PANEL_WIDTH);
   const [enterSlide, setEnterSlide] = useState(false);
   const configRef = useRef<ChatAttachmentPanelConfig | null>(config);
+  const dismissedRef = useRef(new Set<string>());
 
   useEffect(() => {
     configRef.current = config;
@@ -58,6 +59,7 @@ export function ChatAttachmentPanelProvider({
       if (id && current.id !== id) {
         return current;
       }
+      dismissedRef.current.add(current.id);
       return null;
     });
   }, []);
@@ -67,11 +69,17 @@ export function ChatAttachmentPanelProvider({
     if (current && current.id !== nextConfig.id) {
       current.onClose?.();
     }
+    dismissedRef.current.delete(nextConfig.id);
     setConfig(nextConfig);
     if (nextConfig.defaultWidth != null) {
       setWidth(clampAttachmentPanelWidth(nextConfig.defaultWidth));
     }
   }, []);
+
+  const isDismissed = useCallback(
+    (id: string) => dismissedRef.current.has(id),
+    []
+  );
 
   const update = useCallback(
     (id: string, patch: Partial<Omit<ChatAttachmentPanelConfig, "id">>) => {
@@ -90,7 +98,10 @@ export function ChatAttachmentPanelProvider({
   );
 
   const handlePanelClose = useCallback(() => {
-    configRef.current?.onClose?.();
+    if (configRef.current) {
+      dismissedRef.current.add(configRef.current.id);
+      configRef.current.onClose?.();
+    }
     setConfig(null);
   }, []);
 
@@ -98,12 +109,13 @@ export function ChatAttachmentPanelProvider({
     () => ({
       activeId: config?.id ?? null,
       hide,
+      isDismissed,
       isFullscreen: config?.fullscreen ?? false,
       isOpen: config !== null,
       show,
       update,
     }),
-    [config, show, update, hide]
+    [config, hide, isDismissed, show, update]
   );
 
   const overlay = presentation === "overlay";

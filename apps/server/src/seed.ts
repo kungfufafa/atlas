@@ -1,9 +1,12 @@
 import {
   AtlasApiError,
   createProviderInstanceId,
+  DEFAULT_SETUP_WORKSPACE_NAME,
   loadUserConfig,
   type ProviderInstance,
+  SETUP_MIN_PASSWORD_LENGTH,
   saveUserConfig,
+  slugifySetupWorkspaceName,
   type UserConfig,
 } from "@atlas/core";
 import type { DatabaseAdapter } from "@atlas/db";
@@ -23,7 +26,6 @@ const REQUIRED_SEED_ENV_KEYS = [
 
 const OPENCODE_ZEN_BASE_URL = "https://opencode.ai/zen/v1";
 const OPENCODE_ZEN_LABEL = "OpenCode Zen";
-const MIN_PASSWORD_LENGTH = 8;
 
 export type FirstBootSeedDeps = {
   authService: AuthService;
@@ -64,12 +66,12 @@ export async function runFirstBootSeed(
   const adminEmail = env[SEED_ADMIN_EMAIL]!.trim();
   const adminName = env[SEED_ADMIN_NAME]!.trim();
   const adminPassword = env[SEED_ADMIN_PASSWORD]!.trim();
-  const orgName = env[SEED_ORG_NAME]?.trim() || "Personal";
-  const orgSlug = slugifyOrgName(orgName);
+  const orgName = env[SEED_ORG_NAME]?.trim() || DEFAULT_SETUP_WORKSPACE_NAME;
+  const orgSlug = slugifySetupWorkspaceName(orgName);
 
-  if (adminPassword.length < MIN_PASSWORD_LENGTH) {
+  if (adminPassword.length < SETUP_MIN_PASSWORD_LENGTH) {
     throw new Error(
-      `First-boot seed failed: ${SEED_ADMIN_PASSWORD} must be at least ${MIN_PASSWORD_LENGTH} characters.`
+      `First-boot seed failed: ${SEED_ADMIN_PASSWORD} must be at least ${SETUP_MIN_PASSWORD_LENGTH} characters.`
     );
   }
 
@@ -96,16 +98,6 @@ export async function runFirstBootSeed(
   await writeOpenCodeZenProvider();
 
   return { providerWritten: true, seeded: true };
-}
-
-function slugifyOrgName(name: string): string {
-  const slug = name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-  return slug || "personal";
 }
 
 async function writeOpenCodeZenProvider(): Promise<void> {

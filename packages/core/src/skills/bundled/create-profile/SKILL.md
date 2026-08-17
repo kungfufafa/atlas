@@ -24,8 +24,9 @@ Also include a **tool plan**:
 
 - Server auto-assigns these basics on create when available: `read_file`, `write_file`, `edit_file`, `search_files`, `knowledge_base_search`, `web_fetch`, plus default bundled skills (including `update-profile-memory`).
 - Recommend optional extras from the available-tools context only when they clearly match the requested purpose.
+- New profiles stay narrow on purpose so the user can personalize them. Extra tools, skills, or MCP still need an explicit ask after create (`assign_tool_to_profile`).
 - Do not assign every available tool. Avoid powerful or externally visible tools unless the user asked for that capability.
-- Extra tools still need an explicit user ask after create (`assign_tool_to_profile`).
+- If a needed capability is missing after create, say so and ask the user to add a tool, skill, or MCP. Never invent a missing integration.
 
 Never set `isSuper: true` unless the user explicitly asked for a super profile. Prefer refusing agent-initiated super creation and directing them to the dashboard.
 

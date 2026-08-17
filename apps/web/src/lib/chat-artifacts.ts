@@ -7,8 +7,11 @@ export {
   isDocxFile,
   isHtmlArtifactMimeType,
   isImageArtifactMimeType,
+  isJsxArtifactFilename,
   isLegacyDocFile,
   isMarkdownArtifactMimeType,
+  isMermaidArtifactFilename,
+  isSvgArtifactMimeType,
   isTextArtifactMimeType,
   isUnknownArtifactMimeType,
   isVideoArtifactMimeType,
@@ -492,4 +495,12 @@ export function buildArtifactContentUrl(
   }
 
   return `/v1/profiles/${encodeURIComponent(profileId)}/artifacts/content?${query.toString()}`;
+}
+
+export function buildArtifactThumbnailUrl(
+  profileId: string,
+  artifactPath: string
+): string {
+  const query = new URLSearchParams({ path: artifactPath });
+  return `/v1/profiles/${encodeURIComponent(profileId)}/artifacts/thumbnail?${query.toString()}`;
 }

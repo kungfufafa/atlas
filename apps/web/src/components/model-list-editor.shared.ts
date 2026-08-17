@@ -1,5 +1,52 @@
+import { resolveCompatibleModelCapabilities } from "@atlas/core/compatible-model-capabilities";
 import type { CustomModelEntry } from "@atlas/core/contract";
 import type { ModelListRow } from "@/components/ModelListEditor";
+
+export function applyInferredCompatibleCapabilities(
+  models: ModelListRow[],
+  context: { baseUrl?: string; providerLabel?: string } = {}
+): ModelListRow[] {
+  return models.map((model) => {
+    const id = model.id.trim();
+    if (!id) {
+      return model;
+    }
+
+    const inferred = resolveCompatibleModelCapabilities(
+      id,
+      {
+        reasoningEffortValues: model.reasoningEffortValues,
+        supportsThinking: model.supportsThinking,
+      },
+      context
+    );
+
+    if (
+      inferred.supportsThinking === model.supportsThinking &&
+      inferred.reasoningEffortValues === model.reasoningEffortValues
+    ) {
+      return model;
+    }
+
+    return {
+      ...model,
+      ...inferred,
+    };
+  });
+}
+
+export function toggleModelListRow(
+  models: ModelListRow[],
+  next: ModelListRow
+): ModelListRow[] {
+  const existing = models.filter((model) => model.id.trim().length > 0);
+
+  if (existing.some((model) => model.id === next.id)) {
+    return existing.filter((model) => model.id !== next.id);
+  }
+
+  return [...existing, next];
+}
 
 export function normalizeModelListRows(
   models: ModelListRow[]

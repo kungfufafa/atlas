@@ -1,11 +1,18 @@
 import * as readline from "node:readline/promises";
 import type { AtlasClient } from "@atlas/client";
 import {
+  DEFAULT_SETUP_WORKSPACE_NAME,
   getUserConfigPath,
   type ProviderModelOption,
   promptForProviderConfig,
+  slugifySetupWorkspaceName,
   type UserProviderName,
+  validateSetupEmail,
+  validateSetupName,
+  validateSetupPassword,
+  validateSetupWorkspaceName,
 } from "@atlas/core";
+import type { SetupAuthRequest } from "@atlas/core/contract";
 
 function readPassword(prompt: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -64,6 +71,53 @@ function readPassword(prompt: string): Promise<string> {
   });
 }
 
+export function buildCliSetupRequest(input: {
+  confirmPassword: string;
+  email: string;
+  name: string;
+  password: string;
+  workspaceName: string;
+}): { error: string } | { request: SetupAuthRequest } {
+  const nameError = validateSetupName(input.name);
+  if (nameError) {
+    return { error: nameError };
+  }
+
+  const emailError = validateSetupEmail(input.email);
+  if (emailError) {
+    return { error: emailError };
+  }
+
+  const passwordError = validateSetupPassword(
+    input.password,
+    input.confirmPassword
+  );
+  if (passwordError) {
+    return { error: passwordError };
+  }
+
+  const workspaceName =
+    input.workspaceName.trim() || DEFAULT_SETUP_WORKSPACE_NAME;
+  const workspaceNameError = validateSetupWorkspaceName(workspaceName);
+  if (workspaceNameError) {
+    return { error: workspaceNameError };
+  }
+
+  return {
+    request: {
+      admin: {
+        email: input.email.trim(),
+        name: input.name.trim(),
+        password: input.password,
+      },
+      organization: {
+        name: workspaceName,
+        slug: slugifySetupWorkspaceName(workspaceName),
+      },
+    },
+  };
+}
+
 export async function ensureUserConfiguredViaCli(
   client: AtlasClient
 ): Promise<boolean> {
@@ -79,8 +133,10 @@ export async function ensureUserConfiguredViaCli(
     output: process.stdout,
   });
 
+  let name: string;
   let email: string;
   try {
+    name = await rl.question("Name: ");
     email = await rl.question("Email: ");
   } finally {
     rl.close();
@@ -89,19 +145,35 @@ export async function ensureUserConfiguredViaCli(
   const password = await readPassword("Password: ");
   const confirmPassword = await readPassword("Confirm password: ");
 
-  if (password !== confirmPassword) {
-    console.log("Passwords do not match.");
-    return false;
+  const workspaceRl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  let workspaceName: string;
+  try {
+    workspaceName = await workspaceRl.question(
+      `Workspace name [${DEFAULT_SETUP_WORKSPACE_NAME}]: `
+    );
+  } finally {
+    workspaceRl.close();
   }
 
-  if (password.length < 8) {
-    console.log("Password must be at least 8 characters.");
+  const built = buildCliSetupRequest({
+    confirmPassword,
+    email,
+    name,
+    password,
+    workspaceName,
+  });
+
+  if ("error" in built) {
+    console.log(built.error);
     return false;
   }
 
   try {
-    const result = await client.setupUser(email, password);
-    client.setAuthToken(result.token);
+    await client.setupUser(built.request);
     console.log("Admin user created successfully.");
     return true;
   } catch (error) {

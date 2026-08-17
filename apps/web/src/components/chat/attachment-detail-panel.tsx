@@ -127,11 +127,11 @@ export function AttachmentDetailPanel({
         />
       ) : null}
       <div className="relative flex min-h-0 flex-1 flex-col">
-        <div className="flex items-center justify-between gap-3 border-border border-b px-4 py-3">
+        <div className="flex h-11 items-center justify-between gap-3 border-border border-b px-3">
           <div className="min-w-0 flex-1">
             <h2 className="truncate font-medium text-sm">{title}</h2>
             {subtitle ? (
-              <p className="mt-0.5 truncate text-muted-foreground text-xs">
+              <p className="truncate text-muted-foreground text-xs">
                 {subtitle}
               </p>
             ) : null}

@@ -1,5 +1,14 @@
+import {
+  slugifySetupWorkspaceName,
+  validateSetupWorkspaceName,
+  validateSetupWorkspaceSlug,
+} from "@atlas/core/setup-validation";
 import { useRef, useState } from "react";
-import type { SetupAccountDraft } from "@/components/setup-wizard/setup-wizard.shared";
+import {
+  clearSetupAccountPrefill,
+  DEFAULT_SETUP_ORGANIZATION,
+  type SetupAccountDraft,
+} from "@/components/setup-wizard/setup-wizard.shared";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,26 +20,13 @@ interface SetupStepOrganizationProps {
   onNext: () => void;
 }
 
-const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-function slugifyOrganizationName(name: string): string {
-  return (
-    name
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 64) || "org"
-  );
-}
-
 export function SetupStepOrganization({
   account,
   onNext,
   onBack,
 }: SetupStepOrganizationProps) {
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
+  const [name, setName] = useState(DEFAULT_SETUP_ORGANIZATION.name);
+  const [slug, setSlug] = useState(DEFAULT_SETUP_ORGANIZATION.slug);
   const slugEditedRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,7 +35,7 @@ export function SetupStepOrganization({
   const handleNameChange = (value: string) => {
     setName(value);
     if (!slugEditedRef.current) {
-      setSlug(slugifyOrganizationName(value));
+      setSlug(slugifySetupWorkspaceName(value));
     }
   };
 
@@ -50,13 +46,12 @@ export function SetupStepOrganization({
     const trimmedName = name.trim();
     const trimmedSlug = slug.trim().toLowerCase();
 
-    if (!trimmedName) {
-      setError("Workspace name is required.");
-      return;
-    }
+    const validationError =
+      validateSetupWorkspaceName(trimmedName) ??
+      validateSetupWorkspaceSlug(trimmedSlug);
 
-    if (!(trimmedSlug && SLUG_PATTERN.test(trimmedSlug))) {
-      setError("Slug must use lowercase letters, numbers, and hyphens.");
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -72,6 +67,7 @@ export function SetupStepOrganization({
         },
         organization: { name: trimmedName, slug: trimmedSlug },
       });
+      clearSetupAccountPrefill();
       onNext();
     } catch (err) {
       setError(

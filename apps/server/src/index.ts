@@ -14,6 +14,7 @@ import {
   ensureBundledSkillFiles,
   getUserConfigDir,
   loadConfig,
+  officeConverter,
   registerBrowserHandler,
   writeRuntimeServerUrl,
 } from "@atlas/core";
@@ -248,6 +249,15 @@ if (server.port !== requestedPort) {
 
 console.log(`Atlas server listening on ${serverUrl}`);
 console.log(`Atlas database ready at ${config.databaseUrl}`);
+
+const officeBinary = await officeConverter.resolveConverterBinary();
+if (officeBinary) {
+  console.log(`Office preview converter ready (${officeBinary})`);
+} else {
+  console.warn(
+    "LibreOffice (soffice) not found. PPTX/DOCX/XLSX thumbnails and fidelity previews are disabled until it is installed."
+  );
+}
 
 void initializeOptionalServices({
   agent,

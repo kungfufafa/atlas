@@ -9,6 +9,15 @@ You need:
 
 - An LLM provider API key (see [Providers](/providers))
 - [Bun](https://bun.sh) if you run from source — or use [Docker](/docker)
+- **LibreOffice** for PowerPoint, Word, and Excel previews and thumbnails. Docker images already include it. From source:
+
+```bash
+# macOS
+brew install --formula libreoffice
+
+# Debian / Ubuntu
+sudo apt-get install -y libreoffice-writer libreoffice-impress libreoffice-calc fonts-liberation
+```
 
 ## Choose a deployment path
 
@@ -23,7 +32,7 @@ docker run -d -p 4310:4310 -v atlas-data:/atlas/data --name atlas ghcr.io/kungfu
 
 Open `http://localhost:4310`. See [Docker](/docker) for build-from-source, volumes, and production notes.
 
-### Option 4: Local development
+### Option 2: Local development
 
 Clone the repository and install dependencies:
 
@@ -36,7 +45,7 @@ bun run dev:web
 
 Open:
 
-- Dashboard: `http://localhost:3003`
+- Dashboard: `http://localhost:3000`
 - API server: `http://127.0.0.1:4310`
 - API docs: `http://127.0.0.1:4310/docs`
 
@@ -46,7 +55,29 @@ If you only want the API server:
 bun run dev:server
 ```
 
-On first run, Atlas asks for your provider and API key if they are not configured yet. Settings are saved in `~/.atlas/config.ini`.
+On first run, the dashboard opens the setup wizard. Provider settings are saved in `~/.atlas/config.ini`.
+
+### Option 3: VPS with PM2
+
+On a server with [Bun](https://bun.sh):
+
+```bash
+git clone https://github.com/kungfufafa/atlas.git
+cd atlas
+bun run pm2:deploy
+```
+
+That installs dependencies, builds the dashboard, and starts Atlas under PM2. Open `http://YOUR_SERVER:4310` and complete the setup wizard.
+
+Useful later:
+
+```bash
+bun run pm2:logs
+bun run pm2:stop
+bun x pm2 save && bun x pm2 startup
+```
+
+`pm2 startup` keeps Atlas running after a reboot. Put a reverse proxy in front if you want HTTPS on a domain.
 
 ## First-time setup
 

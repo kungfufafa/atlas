@@ -3,6 +3,15 @@ import {
   generateTemporaryPassword,
   getProfileSoulDir,
   initSoulDirectory,
+  normalizeOptionalSetupPhone,
+  normalizeSetupEmail,
+  SETUP_EMAIL_PATTERN,
+  SETUP_ORG_SLUG_PATTERN,
+  validateSetupEmail,
+  validateSetupName,
+  validateSetupPhone,
+  validateSetupWorkspaceName,
+  validateSetupWorkspaceSlug,
 } from "@atlas/core";
 import type {
   AcceptOrgInviteRequest,
@@ -37,10 +46,6 @@ import {
   seedOrgSuperAgentProfile,
 } from "@atlas/db";
 import type { AuthService } from "./auth-service";
-
-const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_PATTERN = /^[+0-9()\-\s]{6,32}$/;
 
 export class OrgService {
   constructor(
@@ -242,8 +247,8 @@ export class OrgService {
     let email = user.email;
 
     if (input.email !== undefined) {
-      email = normalizeEmail(input.email);
-      if (!EMAIL_PATTERN.test(email)) {
+      email = normalizeSetupEmail(input.email);
+      if (!SETUP_EMAIL_PATTERN.test(email)) {
         throw new AtlasApiError("A valid email address is required.", 400);
       }
 
@@ -292,14 +297,14 @@ export class OrgService {
     }
 
     const name = input.name.trim();
-    const email = normalizeEmail(input.email);
+    const email = normalizeSetupEmail(input.email);
     const phone = normalizeOptionalPhone(input.phone);
 
     if (!name) {
       throw new AtlasApiError("Member name is required.", 400);
     }
 
-    if (!EMAIL_PATTERN.test(email)) {
+    if (!SETUP_EMAIL_PATTERN.test(email)) {
       throw new AtlasApiError("A valid email address is required.", 400);
     }
 
@@ -369,22 +374,39 @@ export class OrgService {
       passwordHash: string;
     };
   }): Promise<{ user: StoredUserRecord; organization: OrganizationSummary }> {
-    const organization = await this.insertOrganization({
-      name: input.organization.name,
-      slug: input.organization.slug,
-    });
-
     const name = input.admin.name.trim();
-    const email = normalizeEmail(input.admin.email);
+    const email = normalizeSetupEmail(input.admin.email);
     const phone = normalizeOptionalPhone(input.admin.phone);
+    const organizationName = input.organization.name.trim();
+    const organizationSlug = input.organization.slug.trim().toLowerCase();
 
-    if (!name) {
+    const adminNameError = validateSetupName(name);
+    if (adminNameError) {
       throw new AtlasApiError("Admin name is required.", 400);
     }
 
-    if (!EMAIL_PATTERN.test(email)) {
-      throw new AtlasApiError("A valid email address is required.", 400);
+    const emailError = validateSetupEmail(email);
+    if (emailError) {
+      throw new AtlasApiError(emailError, 400);
     }
+
+    const organizationNameError = validateSetupWorkspaceName(organizationName);
+    if (organizationNameError) {
+      throw new AtlasApiError("Organization name is required.", 400);
+    }
+
+    const organizationSlugError = validateSetupWorkspaceSlug(organizationSlug);
+    if (organizationSlugError) {
+      throw new AtlasApiError(
+        "Organization slug must use lowercase letters, numbers, and hyphens.",
+        400
+      );
+    }
+
+    const organization = await this.ensureBootstrapOrganization({
+      name: organizationName,
+      slug: organizationSlug,
+    });
 
     const now = new Date().toISOString();
     const user: StoredUserRecord = {
@@ -511,8 +533,8 @@ export class OrgService {
       throw new AtlasApiError("Not found", 404);
     }
 
-    const email = normalizeEmail(input.email);
-    if (!EMAIL_PATTERN.test(email)) {
+    const email = normalizeSetupEmail(input.email);
+    if (!SETUP_EMAIL_PATTERN.test(email)) {
       throw new AtlasApiError("A valid email address is required.", 400);
     }
 
@@ -723,7 +745,7 @@ export class OrgService {
       throw new AtlasApiError("Organization name is required.", 400);
     }
 
-    if (!(slug && SLUG_PATTERN.test(slug))) {
+    if (!(slug && SETUP_ORG_SLUG_PATTERN.test(slug))) {
       throw new AtlasApiError(
         "Organization slug must use lowercase letters, numbers, and hyphens.",
         400
@@ -757,6 +779,26 @@ export class OrgService {
     return toOrganizationSummary(record);
   }
 
+  private async ensureBootstrapOrganization(input: {
+    name: string;
+    slug: string;
+  }): Promise<OrganizationSummary> {
+    const existing = await this.databaseAdapter.getOrganizationBySlug(
+      input.slug
+    );
+    if (!existing) {
+      return this.insertOrganization(input);
+    }
+
+    if ((await this.databaseAdapter.countHumanUsers()) > 0) {
+      throw new AtlasApiError("Organization slug already exists.", 409);
+    }
+
+    await this.seedOrgProfiles(existing.id);
+    await ensureLocalClientAccess(this.databaseAdapter);
+    return toOrganizationSummary(existing);
+  }
+
   private async seedOrgProfiles(orgId: string): Promise<void> {
     const defaultProfile = await seedOrgDefaultProfile(
       this.databaseAdapter,
@@ -772,20 +814,17 @@ export class OrgService {
   }
 }
 
-function normalizeEmail(email: string): string {
-  return email.trim().toLowerCase();
-}
-
 function normalizeOptionalPhone(
   phone: string | null | undefined
 ): string | null {
-  const trimmed = phone?.trim() ?? "";
+  const trimmed = normalizeOptionalSetupPhone(phone);
   if (!trimmed) {
     return null;
   }
 
-  if (!PHONE_PATTERN.test(trimmed)) {
-    throw new AtlasApiError("Enter a valid phone number.", 400);
+  const phoneError = validateSetupPhone(trimmed);
+  if (phoneError) {
+    throw new AtlasApiError(phoneError, 400);
   }
 
   return trimmed;

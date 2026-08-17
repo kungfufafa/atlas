@@ -1,7 +1,7 @@
 import type { DocumentPreview } from "@atlas/core";
 import { Download01Icon, File01Icon, SidebarLeftIcon } from "hugeicons-react";
 import { useState } from "react";
-import { MessageResponse } from "@/components/ai-elements/message";
+import { SafeMarkdownPreview } from "@/components/artifacts/SafeMarkdownPreview";
 import { Button } from "@/components/ui/button";
 
 export function DocumentViewer({
@@ -90,9 +90,10 @@ export function DocumentViewer({
         <main className="min-h-0 flex-1 overflow-y-auto bg-muted/20 p-4 sm:p-8">
           <div className="mx-auto max-w-3xl rounded-xl border border-border/80 bg-background p-6 shadow-sm sm:p-12">
             {preview.markdown ? (
-              <MessageResponse className="text-sm leading-relaxed sm:text-base">
-                {preview.markdown}
-              </MessageResponse>
+              <SafeMarkdownPreview
+                className="leading-relaxed sm:text-base"
+                content={preview.markdown}
+              />
             ) : (
               <p className="text-muted-foreground text-sm">
                 No text content available.

@@ -8,6 +8,9 @@ const root = fileURLToPath(new URL(".", import.meta.url));
 const serverUrl = process.env.ATLAS_SERVER_URL ?? "http://127.0.0.1:4310";
 
 export default defineConfig({
+  optimizeDeps: {
+    exclude: ["nodemailer", "imapflow", "mailparser"],
+  },
   plugins: [react(), tailwindcss()],
   preview: {
     port: 3000,
@@ -28,6 +31,9 @@ export default defineConfig({
       [path.resolve(root, "../../packages/core/src/anydoc-text.ts")]:
         path.resolve(root, "src/shims/anydoc-text.ts"),
       "@firecrawl/anydoc": path.resolve(root, "src/shims/firecrawl-anydoc.ts"),
+      imapflow: path.resolve(root, "src/shims/imapflow.ts"),
+      mailparser: path.resolve(root, "src/shims/mailparser.ts"),
+      nodemailer: path.resolve(root, "src/shims/nodemailer.ts"),
     },
   },
   server: {

@@ -393,6 +393,64 @@ export class PreviewService {
     };
   }
 
+  async getOrGenerateThumbnail(
+    artifact: ArtifactFileTarget,
+    buffer: Buffer,
+    context: PreviewContext
+  ): Promise<{ bytes: Buffer; mimeType: string } | null> {
+    const ext = artifact.filename.toLowerCase();
+    if (
+      ext.endsWith(".png") ||
+      ext.endsWith(".jpg") ||
+      ext.endsWith(".jpeg") ||
+      ext.endsWith(".webp") ||
+      ext.endsWith(".gif")
+    ) {
+      return { bytes: buffer, mimeType: artifact.mimeType || "image/png" };
+    }
+
+    if (
+      !officeConverter.isSupportedOfficeFormat(
+        artifact.filename,
+        artifact.mimeType
+      )
+    ) {
+      return null;
+    }
+
+    const rev = artifact.revision ?? 1;
+    const targetId = artifact.artifactId || artifact.path || artifact.filename;
+    const contentHash = computeContentHash(buffer);
+    const existing = derivedAssetStore.getDerivedAsset(
+      context.orgId,
+      context.profileId,
+      `${targetId}-thumb`,
+      rev,
+      contentHash,
+      OFFICE_CONVERTER_VERSION
+    );
+    if (existing && existing.mimeType === "image/png") {
+      return { bytes: existing.bytes, mimeType: "image/png" };
+    }
+
+    const result = await officeConverter.convertOfficeToPng({
+      buffer,
+      filename: artifact.filename,
+    });
+    derivedAssetStore.storeDerivedAsset({
+      artifactId: `${targetId}-thumb`,
+      bytes: result.pngBytes,
+      contentHash,
+      converterVersion: result.converterVersion,
+      mimeType: "image/png",
+      orgId: context.orgId,
+      pageCount: 1,
+      profileId: context.profileId,
+      revision: rev,
+    });
+    return { bytes: result.pngBytes, mimeType: "image/png" };
+  }
+
   getJob(jobId: string): PreviewJob | undefined {
     return this.previewJobs.get(jobId);
   }

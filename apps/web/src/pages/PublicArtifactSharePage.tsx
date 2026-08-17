@@ -3,7 +3,6 @@ import { useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { ArtifactAttachmentPanelBody } from "@/components/chat/artifact-attachment-panel-body";
 import { usePublicArtifactShare } from "@/hooks/use-public-artifact-share";
-import { ARTIFACT_HTML_IFRAME_SANDBOX } from "@/lib/artifact-html-preview";
 import {
   artifactCodeLanguage,
   isDocxFile,
@@ -11,6 +10,8 @@ import {
   isImageArtifactMimeType,
   isLegacyDocFile,
   isMarkdownArtifactMimeType,
+  isMermaidArtifactFilename,
+  isSvgArtifactMimeType,
   isTextArtifactMimeType,
   isUnknownArtifactMimeType,
   isVideoArtifactMimeType,
@@ -37,6 +38,10 @@ export function PublicArtifactSharePage() {
     ? resolveArtifactMimeType(metadata.mimeType, metadata.filename)
     : "";
   const isHtml = isHtmlArtifactMimeType(mimeType);
+  const isSvg = isSvgArtifactMimeType(mimeType);
+  const isMermaid = metadata
+    ? isMermaidArtifactFilename(metadata.filename)
+    : false;
   const isImage = isImageArtifactMimeType(mimeType);
   const isVideo = isVideoArtifactMimeType(mimeType);
   const isWordDocument =
@@ -48,6 +53,8 @@ export function PublicArtifactSharePage() {
   const canPreview =
     metadata != null &&
     (isHtml ||
+      isSvg ||
+      isMermaid ||
       isImage ||
       isVideo ||
       isWordDocument ||
@@ -140,8 +147,16 @@ export function PublicArtifactSharePage() {
               canPreview={canPreview}
               content={content}
               error={null}
-              htmlSandbox={ARTIFACT_HTML_IFRAME_SANDBOX}
               kind="html"
+              loading={false}
+            />
+          ) : isSvg ? (
+            <ArtifactAttachmentPanelBody
+              artifact={artifact}
+              canPreview={canPreview}
+              content={content}
+              error={null}
+              kind="svg"
               loading={false}
             />
           ) : (
@@ -150,7 +165,7 @@ export function PublicArtifactSharePage() {
               canPreview={canPreview}
               content={content}
               error={null}
-              format={isMarkdown ? "markdown" : "plain"}
+              format={isMermaid ? "mermaid" : isMarkdown ? "markdown" : "plain"}
               kind="text"
               language={language}
               loading={false}

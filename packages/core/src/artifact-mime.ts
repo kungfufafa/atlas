@@ -42,7 +42,9 @@ const MIME_TYPE_BY_EXTENSION: Record<string, string> = {
   markdown: "text/markdown",
   md: "text/markdown",
   mdx: "text/markdown",
+  mermaid: "text/plain",
   mjs: "application/javascript",
+  mmd: "text/plain",
   mov: "video/quicktime",
   mp4: "video/mp4",
   ogv: "video/ogg",
@@ -110,6 +112,20 @@ export function resolveArtifactMimeType(
 export function isHtmlArtifactMimeType(mimeType: string): boolean {
   const normalized = normalizeMimeType(mimeType);
   return normalized === "text/html" || normalized === "application/xhtml+xml";
+}
+
+/** Standalone SVG — preview as a sanitized image, not as XML source. */
+export function isSvgArtifactMimeType(mimeType: string): boolean {
+  return normalizeMimeType(mimeType) === "image/svg+xml";
+}
+
+/** Mermaid source files (`.mmd`, `.mermaid`) rendered as diagrams. */
+export function isMermaidArtifactFilename(filename: string): boolean {
+  return /\.(mmd|mermaid)$/i.test(filename);
+}
+
+export function isJsxArtifactFilename(filename: string): boolean {
+  return /\.(jsx|tsx)$/i.test(filename);
 }
 
 export function isMarkdownArtifactMimeType(mimeType: string): boolean {

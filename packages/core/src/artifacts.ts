@@ -6,6 +6,7 @@ import {
   isDocxFile,
   isLegacyDocFile,
 } from "./artifact-mime";
+import { resolveServedArtifactContentType } from "./artifact-preview/signature";
 import type {
   ArtifactFile,
   DeleteArtifactResponse,
@@ -20,7 +21,12 @@ import { guardFilePath } from "./tools/paths";
 const ARTIFACT_META_SUFFIX = ".atlas-meta.json";
 
 const artifactMetaSchema = z.object({
+  formatDetails: z.record(z.string(), z.unknown()).optional(),
+  id: z.string().optional(),
   mimeType: z.string().trim().min(1),
+  parentArtifactId: z.string().optional(),
+  revision: z.number().int().positive().optional(),
+  rootArtifactId: z.string().optional(),
   savedAt: z.string().trim().min(1),
   sizeBytes: z.number().int().nonnegative(),
 });
@@ -104,8 +110,14 @@ async function walkArtifacts(
       .join("/");
     files.push({
       filename: relativePath,
+      formatDetails: metadata.formatDetails as
+        | import("./artifact-types").ArtifactFormatDetails
+        | undefined,
       mimeType: metadata.mimeType,
+      parentArtifactId: metadata.parentArtifactId,
       path: relativePath,
+      revision: metadata.revision,
+      rootArtifactId: metadata.rootArtifactId,
       sizeBytes: metadata.sizeBytes,
       updatedAt: metadata.savedAt,
     });
@@ -219,7 +231,11 @@ export async function readArtifactFile(input: {
 
   return {
     bytes,
-    contentType: metadata.mimeType,
+    contentType: resolveServedArtifactContentType(
+      filename,
+      metadata.mimeType,
+      bytes
+    ),
     filePath,
     relativePath,
   };

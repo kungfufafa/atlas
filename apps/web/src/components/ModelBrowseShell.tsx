@@ -155,15 +155,21 @@ const BADGE_TONES: Record<BrowseModelBadgeTone, string> = {
 export function BrowseModelRowButton({
   row,
   onSelect,
+  selected = false,
   style,
 }: {
   row: BrowseModelRowDisplay;
   onSelect: () => void;
+  selected?: boolean;
   style: CSSProperties;
 }) {
   return (
     <button
-      className="absolute top-0 left-0 flex w-full cursor-pointer items-start gap-2.5 border-border border-b px-3 py-2 text-left transition-colors hover:bg-muted"
+      aria-pressed={selected}
+      className={cn(
+        "absolute top-0 left-0 flex w-full cursor-pointer items-start gap-2.5 border-border border-b px-3 py-2 text-left transition-colors hover:bg-muted",
+        selected && "bg-muted/70"
+      )}
       onClick={onSelect}
       style={style}
       type="button"
@@ -183,6 +189,9 @@ export function BrowseModelRowButton({
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-1 pt-0.5 text-muted-foreground text-xs">
+        {selected ? (
+          <span className="font-medium text-foreground text-xs">Added</span>
+        ) : null}
         <div className="flex items-center gap-1">
           {(row.badges ?? []).map((badge) => (
             <span

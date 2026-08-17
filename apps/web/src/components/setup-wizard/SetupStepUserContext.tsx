@@ -70,7 +70,7 @@ export function SetupStepUserContext({
           </button>
 
           <Button onClick={onNext} size="lg" type="button">
-            Continue
+            Start chatting
           </Button>
         </div>
       </div>

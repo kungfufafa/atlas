@@ -6,6 +6,7 @@ import {
   artifactPanelSubtitle,
 } from "@/components/chat/artifact-attachment-panel-body.shared";
 import { useChatAttachmentPanel } from "@/context/use-chat-attachment-panel";
+import { artifactCanvasId } from "@/lib/artifact-canvas";
 import {
   artifactCodeLanguage,
   type ChatArtifactRef,
@@ -14,6 +15,8 @@ import {
   isHtmlArtifactMimeType,
   isLegacyDocFile,
   isMarkdownArtifactMimeType,
+  isMermaidArtifactFilename,
+  isSvgArtifactMimeType,
 } from "@/lib/chat-artifacts";
 import type { ChatListItem } from "@/lib/chat-history";
 import {
@@ -57,6 +60,7 @@ function buildStreamingPanelBody({
     isDocxFile(artifact.filename, mimeType) ||
     isLegacyDocFile(artifact.filename, mimeType);
   const isHtml = isHtmlArtifactMimeType(mimeType);
+  const isMermaid = isMermaidArtifactFilename(artifact.filename);
   const isMarkdown = isMarkdownArtifactMimeType(mimeType) || isWordDocument;
   const language = artifactCodeLanguage(artifact.filename);
 
@@ -66,7 +70,9 @@ function buildStreamingPanelBody({
       canPreview
       content={content || null}
       error={null}
-      format={isMarkdown && !isHtml ? "markdown" : "plain"}
+      format={
+        isMermaid ? "mermaid" : isMarkdown && !isHtml ? "markdown" : "plain"
+      }
       kind="text"
       language={language}
       loading={false}
@@ -86,6 +92,8 @@ function buildStablePanelBody({
   const isWordDocument =
     isDocxFile(artifact.filename, mimeType) ||
     isLegacyDocFile(artifact.filename, mimeType);
+  const isSvg = isSvgArtifactMimeType(mimeType);
+  const isMermaid = isMermaidArtifactFilename(artifact.filename);
   const isMarkdown = isMarkdownArtifactMimeType(mimeType) || isWordDocument;
 
   if (isHtmlArtifactMimeType(mimeType)) {
@@ -101,13 +109,26 @@ function buildStablePanelBody({
     );
   }
 
+  if (isSvg) {
+    return (
+      <ArtifactAttachmentPanelBody
+        artifact={artifact}
+        canPreview
+        content={content}
+        error={null}
+        kind="svg"
+        loading={false}
+      />
+    );
+  }
+
   return (
     <ArtifactAttachmentPanelBody
       artifact={artifact}
       canPreview
       content={content}
       error={null}
-      format={isMarkdown ? "markdown" : "plain"}
+      format={isMermaid ? "mermaid" : isMarkdown ? "markdown" : "plain"}
       kind="text"
       language={artifactCodeLanguage(artifact.filename)}
       loading={false}
@@ -122,7 +143,7 @@ export function ArtifactStreamingPanelBridge({
   messages: ChatListItem[];
   profileId?: string | null;
 }) {
-  const { show, update, activeId } = useChatAttachmentPanel();
+  const { show, update, activeId, isDismissed } = useChatAttachmentPanel();
   const dismissedRef = useRef(new Set<string>());
   const openedRef = useRef<string | null>(null);
   const lastEligibleRef = useRef<EligibleStreamTarget | null>(null);
@@ -154,9 +175,9 @@ export function ArtifactStreamingPanelBridge({
       return;
     }
 
-    const panelId = streaming.toolCallId;
+    const panelId = artifactCanvasId(streaming.parsed.relativePath);
 
-    if (dismissedRef.current.has(panelId)) {
+    if (isDismissed(panelId) || dismissedRef.current.has(panelId)) {
       return;
     }
 
@@ -179,24 +200,24 @@ export function ArtifactStreamingPanelBridge({
       streaming: true,
     });
     const isHtml = isHtmlArtifactMimeType(artifact.mimeType);
+    const isSvg = isSvgArtifactMimeType(artifact.mimeType);
     const isWordDocument =
       isDocxFile(artifact.filename, artifact.mimeType) ||
       isLegacyDocFile(artifact.filename, artifact.mimeType);
     const isMarkdown =
-      isMarkdownArtifactMimeType(artifact.mimeType) || isWordDocument;
+      isMarkdownArtifactMimeType(artifact.mimeType) ||
+      isWordDocument ||
+      isMermaidArtifactFilename(artifact.filename);
     const bodyClassName = artifactPanelBodyClassName({
       isHtml,
       isImage: false,
       isMarkdown,
+      isSvg,
     });
-    const widthPatch =
-      defaultWidth === 768 && !autoWidthAppliedRef.current.has(panelId)
-        ? { defaultWidth }
-        : {};
-
-    if (defaultWidth === 768) {
-      autoWidthAppliedRef.current.add(panelId);
-    }
+    const widthPatch = autoWidthAppliedRef.current.has(panelId)
+      ? {}
+      : { defaultWidth };
+    autoWidthAppliedRef.current.add(panelId);
 
     if (activeId === panelId) {
       update(panelId, {
@@ -214,9 +235,6 @@ export function ArtifactStreamingPanelBridge({
     }
 
     openedRef.current = panelId;
-    if (defaultWidth === 768) {
-      autoWidthAppliedRef.current.add(panelId);
-    }
     show({
       bodyClassName,
       content: body,
@@ -231,35 +249,40 @@ export function ArtifactStreamingPanelBridge({
       subtitle,
       title: filename,
     });
-  }, [activeId, profileId, show, streaming, update]);
+  }, [activeId, isDismissed, profileId, show, streaming, update]);
 
   const handoffTarget = useMemo(() => {
     const candidate = lastEligibleRef.current;
 
-    if (!candidate || dismissedRef.current.has(candidate.toolCallId)) {
+    if (!candidate) {
       return null;
     }
 
-    if (
-      activeId !== candidate.toolCallId &&
-      openedRef.current !== candidate.toolCallId
-    ) {
+    const canvasId = artifactCanvasId(candidate.relativePath);
+
+    if (isDismissed(canvasId) || dismissedRef.current.has(canvasId)) {
+      return null;
+    }
+
+    if (activeId !== canvasId && openedRef.current !== canvasId) {
       return null;
     }
 
     return findCompletedContentArtifact(messages, candidate.toolCallId);
-  }, [activeId, messages]);
+  }, [activeId, isDismissed, messages]);
 
   useEffect(() => {
     if (!(profileId && handoffTarget)) {
       return;
     }
 
-    if (handedOffRef.current.has(handoffTarget.toolCallId)) {
+    const canvasId = artifactCanvasId(handoffTarget.relativePath);
+
+    if (handedOffRef.current.has(canvasId)) {
       return;
     }
 
-    handedOffRef.current.add(handoffTarget.toolCallId);
+    handedOffRef.current.add(canvasId);
 
     let cancelled = false;
 
@@ -269,7 +292,7 @@ export function ArtifactStreamingPanelBridge({
         render: handoffTarget.tool === "write_docx" ? "markdown" : undefined,
       })
       .then((response) => {
-        if (cancelled || activeId !== handoffTarget.toolCallId) {
+        if (cancelled || activeId !== canvasId) {
           return;
         }
 
@@ -283,17 +306,21 @@ export function ArtifactStreamingPanelBridge({
           handoffTarget.tool
         );
         const isHtml = isHtmlArtifactMimeType(artifact.mimeType);
+        const isSvg = isSvgArtifactMimeType(artifact.mimeType);
         const isWordDocument =
           isDocxFile(artifact.filename, artifact.mimeType) ||
           isLegacyDocFile(artifact.filename, artifact.mimeType);
         const isMarkdown =
-          isMarkdownArtifactMimeType(artifact.mimeType) || isWordDocument;
+          isMarkdownArtifactMimeType(artifact.mimeType) ||
+          isWordDocument ||
+          isMermaidArtifactFilename(artifact.filename);
 
-        update(handoffTarget.toolCallId, {
+        update(canvasId, {
           bodyClassName: artifactPanelBodyClassName({
             isHtml,
             isImage: false,
             isMarkdown,
+            isSvg,
           }),
           content: buildStablePanelBody({
             artifact,
@@ -311,11 +338,11 @@ export function ArtifactStreamingPanelBridge({
         });
       })
       .catch((error) => {
-        if (cancelled || activeId !== handoffTarget.toolCallId) {
+        if (cancelled || activeId !== canvasId) {
           return;
         }
 
-        update(handoffTarget.toolCallId, {
+        update(canvasId, {
           content: (
             <p className="p-4 text-destructive text-sm">{formatError(error)}</p>
           ),

@@ -1,8 +1,18 @@
+import {
+  validateSetupEmail,
+  validateSetupName,
+  validateSetupPassword,
+  validateSetupPhone,
+} from "@atlas/core/setup-validation";
 import { Upload04Icon } from "hugeicons-react";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SetupStepBackupImport } from "@/components/setup-wizard/SetupStepBackupImport";
-import type { SetupAccountDraft } from "@/components/setup-wizard/setup-wizard.shared";
+import {
+  readSetupAccountPrefill,
+  type SetupAccountDraft,
+  writeSetupAccountPrefill,
+} from "@/components/setup-wizard/setup-wizard.shared";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,9 +29,10 @@ export function SetupStepAccount({ onNext }: SetupStepAccountProps) {
   const backupInputRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<SetupAccountMode>("account");
   const [initialBackupFile, setInitialBackupFile] = useState<File | null>(null);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const prefill = readSetupAccountPrefill();
+  const [name, setName] = useState(prefill?.name ?? "");
+  const [email, setEmail] = useState(prefill?.email ?? "");
+  const [phone, setPhone] = useState(prefill?.phone ?? "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -43,22 +54,25 @@ export function SetupStepAccount({ onNext }: SetupStepAccountProps) {
     event.preventDefault();
     setError(null);
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
-    }
-
-    onNext({
+    const nextAccount: SetupAccountDraft = {
       email: email.trim(),
       name: name.trim(),
       password,
       phone: phone.trim(),
-    });
+    };
+    const validationError =
+      validateSetupName(nextAccount.name) ??
+      validateSetupEmail(nextAccount.email) ??
+      validateSetupPhone(nextAccount.phone) ??
+      validateSetupPassword(password, confirmPassword);
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    writeSetupAccountPrefill(nextAccount);
+    onNext(nextAccount);
   };
 
   return (

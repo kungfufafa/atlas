@@ -1,20 +1,21 @@
 import type { ArtifactPreview } from "@atlas/core";
 import { CodeBlock } from "@/components/ai-elements/code-block";
 import { MessageResponse } from "@/components/ai-elements/message";
+import { HtmlPreviewFrame } from "@/components/artifacts/HtmlPreviewFrame";
+import { SafeMarkdownPreview } from "@/components/artifacts/SafeMarkdownPreview";
+import { SvgPreview } from "@/components/artifacts/SvgPreview";
 import { DocumentViewer } from "@/components/artifacts/viewers/DocumentViewer";
 import { PdfViewer } from "@/components/artifacts/viewers/PdfViewer";
 import { PresentationViewer } from "@/components/artifacts/viewers/PresentationViewer";
 import { SpreadsheetViewer } from "@/components/artifacts/viewers/SpreadsheetViewer";
 import { Spinner } from "@/components/ui/spinner";
 import {
-  ARTIFACT_HTML_IFRAME_SANDBOX,
-  htmlForArtifactPreview,
-} from "@/lib/artifact-html-preview";
+  markdownForMermaidSource,
+  mermaidPreviewError,
+} from "@/lib/artifact-mermaid-preview";
+import { MAX_HIGHLIGHTED_CHARS } from "@/lib/artifact-preview-limits";
 import type { ChatArtifactRef } from "@/lib/chat-artifacts";
 import { cn } from "@/lib/utils";
-
-/** Highlighting a very large file blocks the main thread, so show it as plain text. */
-const MAX_HIGHLIGHTED_CHARS = 200_000;
 
 type ArtifactPanelSharedProps = {
   loading: boolean;
@@ -41,12 +42,15 @@ export type ArtifactAttachmentPanelBodyProps =
   | (ArtifactPanelSharedProps & {
       kind: "html";
       content: string | null;
-      htmlSandbox?: string;
+    })
+  | (ArtifactPanelSharedProps & {
+      kind: "svg";
+      content: string | null;
     })
   | (ArtifactPanelSharedProps & {
       kind: "text";
       content: string | null;
-      format: "markdown" | "plain";
+      format: "markdown" | "plain" | "mermaid";
       language: string | null;
       streaming?: boolean;
     });
@@ -62,11 +66,12 @@ function toCodeFence(content: string, language: string): string {
 
 function usesPlainCodeBlock(
   content: string,
-  format: "markdown" | "plain",
+  format: "markdown" | "plain" | "mermaid",
   language: string | null
 ): boolean {
   return (
     format !== "markdown" &&
+    format !== "mermaid" &&
     !(language !== null && content.length <= MAX_HIGHLIGHTED_CHARS)
   );
 }
@@ -79,17 +84,26 @@ function renderTextContent({
   fillHeight = false,
 }: {
   content: string;
-  format: "markdown" | "plain";
+  format: "markdown" | "plain" | "mermaid";
   language: string | null;
   streaming?: boolean;
   fillHeight?: boolean;
 }) {
-  if (format === "markdown") {
+  if (format === "mermaid") {
+    const mermaidError = mermaidPreviewError(content);
+    if (mermaidError) {
+      return <p className="text-muted-foreground text-sm">{mermaidError}</p>;
+    }
     return (
-      <MessageResponse className="text-sm" isAnimating={streaming}>
-        {content}
-      </MessageResponse>
+      <SafeMarkdownPreview
+        content={markdownForMermaidSource(content)}
+        streaming={streaming}
+      />
     );
+  }
+
+  if (format === "markdown") {
+    return <SafeMarkdownPreview content={content} streaming={streaming} />;
   }
 
   if (language && content.length <= MAX_HIGHLIGHTED_CHARS) {
@@ -196,19 +210,40 @@ function ArtifactAttachmentHtmlBody({
   content,
   canPreview,
   artifact,
-  htmlSandbox = ARTIFACT_HTML_IFRAME_SANDBOX,
 }: Extract<ArtifactAttachmentPanelBodyProps, { kind: "html" }>) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {loading ? <LoadingState /> : null}
       {error ? <p className="p-4 text-destructive text-sm">{error}</p> : null}
       {!(loading || error) && content ? (
-        <iframe
-          className="min-h-0 w-full flex-1 border-0 bg-background"
-          sandbox={htmlSandbox}
-          srcDoc={htmlForArtifactPreview(content)}
+        <HtmlPreviewFrame
+          filename={artifact.filename}
+          html={content}
           title={artifact.filename}
         />
+      ) : null}
+      {loading || error || content || canPreview ? null : (
+        <UnavailablePreview padded />
+      )}
+    </div>
+  );
+}
+
+function ArtifactAttachmentSvgBody({
+  loading,
+  error,
+  content,
+  canPreview,
+  artifact,
+}: Extract<ArtifactAttachmentPanelBodyProps, { kind: "svg" }>) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      {loading ? <LoadingState /> : null}
+      {error ? <p className="p-4 text-destructive text-sm">{error}</p> : null}
+      {!(loading || error) && content ? (
+        <div className="flex min-h-0 flex-1 items-center justify-center p-4">
+          <SvgPreview content={content} filename={artifact.filename} />
+        </div>
       ) : null}
       {loading || error || content || canPreview ? null : (
         <UnavailablePreview padded />
@@ -305,6 +340,8 @@ export function ArtifactAttachmentPanelBody(
       return <ArtifactAttachmentVideoBody {...props} />;
     case "html":
       return <ArtifactAttachmentHtmlBody {...props} />;
+    case "svg":
+      return <ArtifactAttachmentSvgBody {...props} />;
     case "text":
       return <ArtifactAttachmentTextBody {...props} />;
     default: {

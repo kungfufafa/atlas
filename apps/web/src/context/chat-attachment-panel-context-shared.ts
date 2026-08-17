@@ -16,6 +16,7 @@ export interface ChatAttachmentPanelConfig {
 export interface ChatAttachmentPanelContextValue {
   activeId: string | null;
   hide: (id?: string) => void;
+  isDismissed: (id: string) => boolean;
   isFullscreen: boolean;
   isOpen: boolean;
   show: (config: ChatAttachmentPanelConfig) => void;

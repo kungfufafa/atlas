@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const TIPS = [
+  "Default Agent is ready to use. Super Agent builds the team. A new agent starts basic so you can personalize it.",
   "Use the Super Agent profile to create your own agents and tools.",
   "Type / to use a skill — a quick shortcut for common tasks.",
   "Switch profiles from the composer to give the agent a different personality and tools.",

@@ -28,7 +28,6 @@ import { AssistantTurnSegmentView } from "@/components/chat/assistant-tool-group
 import { segmentAssistantTurn } from "@/components/chat/assistant-tool-group.shared";
 import { SourcesPanel } from "@/components/chat/CitationsAndSources";
 import { ImageAttachmentPreview } from "@/components/chat/image-attachment-preview";
-import { ProductArtifactCard } from "@/components/chat/ProductArtifactCard";
 import { TextAttachmentPreview } from "@/components/chat/text-attachment-preview";
 import {
   DropdownMenu,
@@ -36,6 +35,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  artifactCanvasId,
+  mergeTurnCanvasArtifacts,
+} from "@/lib/artifact-canvas";
 import { extractTurnArtifacts } from "@/lib/chat-artifacts";
 import { type ChatListItem, formatSessionTimestamp } from "@/lib/chat-history";
 import {
@@ -248,6 +251,7 @@ function ChatMessageListSession({
         <div className={itemClassName}>
           <AssistantTurn
             actionsDisabled={actionsDisabled}
+            autoOpenArtifact={turnIndex === turns.length - 1}
             branchingMessageId={branchingMessageId}
             messages={turn.messages}
             modelLabel={modelLabel}
@@ -344,6 +348,7 @@ function AssistantTurn({
   onRetryMessage,
   onSuggestedQuestion,
   showRelatedQuestions,
+  autoOpenArtifact = false,
 }: {
   messages: IndexedMessage[];
   profileId?: string | null;
@@ -358,10 +363,19 @@ function AssistantTurn({
   onRetryMessage?: (message: ChatListItem) => void;
   onSuggestedQuestion?: (question: string) => void;
   showRelatedQuestions?: boolean;
+  autoOpenArtifact?: boolean;
 }) {
   const turnMessages = messages.map(({ message }) => message);
   const segments = segmentAssistantTurn(turnMessages);
-  const artifacts = extractTurnArtifacts(turnMessages);
+  const toolArtifacts = extractTurnArtifacts(turnMessages);
+  const lastAssistantMsg = turnMessages
+    .slice()
+    .reverse()
+    .find((m) => m.role === "assistant");
+  const artifacts = mergeTurnCanvasArtifacts(
+    toolArtifacts,
+    lastAssistantMsg?.artifacts
+  );
   const artifactTurnKey = messages.map(({ message }) => message.id).join(":");
   const anchorMessage = findAssistantTurnAnchor(turnMessages);
   const turnComplete = isAssistantTurnComplete(turnMessages);
@@ -369,14 +383,9 @@ function AssistantTurn({
   const showArtifacts = turnComplete && artifacts.length > 0;
   const showActions = !streamActive && turnComplete && anchorMessage != null;
 
-  const lastAssistantMsg = turnMessages
-    .slice()
-    .reverse()
-    .find((m) => m.role === "assistant");
   const sources = lastAssistantMsg?.sources;
   const approval = turnMessages.find((m) => m.approval)?.approval;
   const memorySaved = turnMessages.find((m) => m.memorySaved)?.memorySaved;
-  const structuredArtifacts = lastAssistantMsg?.artifacts;
 
   return (
     <div className="group mr-auto ml-0 flex w-full max-w-full flex-col items-start justify-start gap-3">
@@ -403,28 +412,18 @@ function AssistantTurn({
       {sources && sources.length > 0 ? (
         <SourcesPanel sources={sources} />
       ) : null}
-      {structuredArtifacts && structuredArtifacts.length > 0 ? (
-        <div className="w-full space-y-2">
-          {structuredArtifacts.map((art) => (
-            <ProductArtifactCard
-              artifact={art}
-              key={art.id}
-              profileId={profileId ?? undefined}
-            />
-          ))}
-        </div>
-      ) : null}
       {showAwaiting ? <TurnAwaitingElapsed startedAt={turnStartedAt} /> : null}
       {profileId && showArtifacts ? (
         <div className="flex flex-wrap gap-2">
-          {artifacts.map((artifact) => {
-            const chipId = `${artifactTurnKey}:${artifact.path}`;
+          {artifacts.map((artifact, index) => {
+            const chipId = artifactCanvasId(artifact.path);
 
             return (
               <ArtifactAttachmentPreview
                 artifact={artifact}
+                autoOpen={autoOpenArtifact && index === artifacts.length - 1}
                 id={chipId}
-                key={chipId}
+                key={`${artifactTurnKey}:${chipId}`}
                 profileId={profileId}
               />
             );

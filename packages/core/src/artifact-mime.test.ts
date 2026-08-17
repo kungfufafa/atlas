@@ -5,6 +5,8 @@ import {
   isHtmlArtifactMimeType,
   isImageArtifactMimeType,
   isMarkdownArtifactMimeType,
+  isMermaidArtifactFilename,
+  isSvgArtifactMimeType,
   isTextArtifactMimeType,
   isUnknownArtifactMimeType,
   isVideoArtifactMimeType,
@@ -19,6 +21,7 @@ describe("inferArtifactMimeType", () => {
       "text/markdown"
     );
     expect(inferArtifactMimeType("slides.html")).toBe("text/html");
+    expect(inferArtifactMimeType("flow.mmd")).toBe("text/plain");
     expect(inferArtifactMimeType("data.json")).toBe("application/json");
   });
 
@@ -70,6 +73,10 @@ describe("mime predicates", () => {
     expect(isImageArtifactMimeType("image/png")).toBe(true);
     expect(isImageArtifactMimeType("image/jpeg")).toBe(true);
     expect(isImageArtifactMimeType("image/svg+xml")).toBe(false);
+    expect(isSvgArtifactMimeType("image/svg+xml")).toBe(true);
+    expect(isSvgArtifactMimeType("image/png")).toBe(false);
+    expect(isMermaidArtifactFilename("flow.mmd")).toBe(true);
+    expect(isMermaidArtifactFilename("notes.md")).toBe(false);
     expect(isImageArtifactMimeType("application/pdf")).toBe(false);
     expect(isVideoArtifactMimeType("video/mp4")).toBe(true);
     expect(isVideoArtifactMimeType("video/webm; codecs=vp9")).toBe(true);

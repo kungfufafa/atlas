@@ -86,9 +86,7 @@ export function useProviderSetupForm(
   const [ollamaHostMode, setOllamaHostMode] = useState<OllamaHostMode>("local");
   const [displayName, setDisplayName] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
-  const [customModels, setCustomModels] = useState<ModelListRow[]>([
-    { id: "", name: "" },
-  ]);
+  const [customModels, setCustomModels] = useState<ModelListRow[]>([]);
   const [extraModels, setExtraModels] = useState<ProviderModelOption[]>([]);
   const [displayNameError, setDisplayNameError] = useState<string | null>(null);
   const [baseUrlError, setBaseUrlError] = useState<string | null>(null);
@@ -257,7 +255,7 @@ export function useProviderSetupForm(
 
       if (provider === "openai_compatible") {
         setBaseUrl("");
-        setCustomModels([{ id: "", name: "" }]);
+        setCustomModels([]);
       }
     },
     [configuredTypes, openRouterModels.length, shortlistModels.length]
@@ -606,7 +604,7 @@ export function useProviderSetupForm(
         setShowApiKey(false);
         setOpenRouterModels([]);
         setShortlistModels([]);
-        setCustomModels([{ id: "", name: "" }]);
+        setCustomModels([]);
         onSuccess?.(result);
       } catch (err) {
         setFormError(formatError(err));

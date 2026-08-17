@@ -6,6 +6,9 @@ import { queryKeys } from "@/lib/query-keys";
 export interface RemoteModelRow {
   id: string;
   name: string;
+  reasoningEffortValues?: string[];
+  supportsThinking?: boolean;
+  supportsVision?: boolean;
 }
 
 export type RemoteBrowseSelectHandler = (row: RemoteModelRow) => void;
@@ -21,6 +24,7 @@ interface RemoteModelsBrowseListProps {
   onSelect: RemoteBrowseSelectHandler;
   provider?: "ollama" | "openai_compatible";
   providerId?: string;
+  selectedIds?: ReadonlySet<string>;
 }
 
 export function RemoteModelsBrowseList({
@@ -32,6 +36,7 @@ export function RemoteModelsBrowseList({
   provider,
   hostMode,
   browseLabel = "endpoint",
+  selectedIds,
 }: RemoteModelsBrowseListProps) {
   const trimmedBaseUrl = baseUrl?.trim() ?? "";
   const canFetch = Boolean(providerId?.trim() || trimmedBaseUrl);
@@ -61,6 +66,15 @@ export function RemoteModelsBrowseList({
       return (response.customModels ?? response.models ?? []).map((entry) => ({
         id: entry.id,
         name: entry.name?.trim() || entry.id,
+        ...(entry.supportsThinking === undefined
+          ? {}
+          : { supportsThinking: entry.supportsThinking }),
+        ...(entry.reasoningEffortValues?.length
+          ? { reasoningEffortValues: entry.reasoningEffortValues }
+          : {}),
+        ...(entry.supportsVision === undefined
+          ? {}
+          : { supportsVision: entry.supportsVision }),
       }));
     },
     queryKey: queryKeys.remoteModelDiscovery({
@@ -88,11 +102,20 @@ export function RemoteModelsBrowseList({
         refreshDisabled: isFetching,
       }}
       rows={data ?? EMPTY_ROWS}
+      selectedIds={selectedIds}
       status={({ filteredCount }) =>
         canFetch
           ? `${filteredCount} model${filteredCount === 1 ? "" : "s"} from ${browseLabel}`
           : `Browse models from your ${browseLabel}`
       }
+      toDisplayRow={(row) => ({
+        capabilities: [
+          ...(row.supportsThinking ? (["reasoning"] as const) : []),
+          ...(row.supportsVision ? (["vision"] as const) : []),
+        ],
+        id: row.id,
+        name: row.name,
+      })}
     />
   );
 }

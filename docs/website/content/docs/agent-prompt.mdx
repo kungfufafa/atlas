@@ -52,8 +52,9 @@ After the main profile prompt, Atlas may append:
 The chat runtime then wraps the profile prompt with general chat instructions:
 
 - User context from `USER.md`, when available
+- Finish the request in this turn; use assigned tools when they improve the answer
 - The user's timezone
-- Tool-use guidance for assigned tools
+- Tool-use guidance for assigned tools (search, research, knowledge base, browser, slides, and spreadsheets when those tools are present)
 - Memory and skill rules when `read_file` and `edit_file` are available (bundled `update-profile-memory` and `archive-profile-memory` skills)
 - Artifact guidance when `write_file` is available (bundled `save-artifact` skill)
 - Word-document guidance when `write_docx` is available (use Markdown input; never target `.docx` paths with `write_file`)

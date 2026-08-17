@@ -80,6 +80,26 @@ test("prefers the sidecar mime type when present", async () => {
   expect(artifact.contentType).toBe("text/html");
 });
 
+test("does not serve a spoofed pdf header as application/pdf", async () => {
+  await writeArtifact("report.pdf", "<html><body>nope</body></html>");
+  await writeArtifact(
+    "report.pdf.atlas-meta.json",
+    JSON.stringify({
+      mimeType: "application/pdf",
+      savedAt: "2026-01-01T00:00:00.000Z",
+      sizeBytes: 28,
+    })
+  );
+
+  const artifact = await readArtifactFile({
+    filename: "report.pdf",
+    orgId: ORG_ID,
+    profileId: PROFILE_ID,
+  });
+
+  expect(artifact.contentType).toBe("application/octet-stream");
+});
+
 test("keeps the binary fallback for unknown extensions", async () => {
   await writeArtifact("blob.bin", "raw");
 

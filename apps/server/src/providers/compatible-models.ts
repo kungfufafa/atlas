@@ -2,7 +2,10 @@ import type { ProviderInstance, ProviderName } from "@atlas/core";
 import {
   type CustomModelEntry,
   findCustomModel,
+  inferCompatibleReasoningEffortValues,
   normalizeBaseUrl,
+  parseRemoteOpenAIModelEntry,
+  resolveCompatibleModelCapabilities,
 } from "@atlas/core";
 import OpenAI from "openai";
 import type { ProviderModelOption } from "./models";
@@ -206,42 +209,28 @@ export function inferReasoningEffortValues(
   providerLabel?: string,
   baseUrl?: string
 ): string[] {
-  const mid = modelId.toLowerCase();
-  const plabel = (providerLabel ?? "").toLowerCase();
-  const url = (baseUrl ?? "").toLowerCase();
-
-  if (mid.includes("claude") || provider === "anthropic") {
-    return ["low", "medium", "high", "xhigh"];
-  }
-
-  if (mid.includes("deepseek") || provider === "deepseek") {
-    return ["low", "high", "max"];
-  }
-
-  if (
-    plabel === "tr" ||
-    plabel.startsWith("tr ") ||
-    plabel.endsWith(" tr") ||
-    plabel.includes("tokenrouter") ||
-    plabel.includes("token router") ||
-    plabel.includes("token-router") ||
-    url.includes("tokenrouter") ||
-    url.includes("token-router") ||
-    mid.includes("tokenrouter") ||
-    (provider === "openai_compatible" &&
-      (mid.includes("qwen") || mid.includes("kimi") || mid.includes("glm")))
-  ) {
-    return ["low", "medium", "xhigh"];
-  }
-
-  return ["low", "medium", "high"];
+  return inferCompatibleReasoningEffortValues(modelId, {
+    baseUrl,
+    provider,
+    providerLabel,
+  });
 }
 
 export function customModelsToCatalog(
   entries: CustomModelEntry[],
-  provider: ProviderName = "openai_compatible"
+  provider: ProviderName = "openai_compatible",
+  providerLabel?: string,
+  baseUrl?: string
 ): ProviderModelOption[] {
   return entries.map((entry) => {
+    const inferred = resolveCompatibleModelCapabilities(
+      entry.id,
+      {
+        reasoningEffortValues: entry.reasoningEffortValues,
+        supportsThinking: entry.supportsThinking,
+      },
+      { baseUrl, provider, providerLabel }
+    );
     const model: ProviderModelOption = {
       contextWindow: DEFAULT_CONTEXT_WINDOW,
       id: entry.id,
@@ -253,11 +242,11 @@ export function customModelsToCatalog(
     if (entry.default) {
       model.default = true;
     }
-    if (entry.supportsThinking !== undefined) {
-      model.supportsThinking = entry.supportsThinking;
+    if (inferred.supportsThinking !== undefined) {
+      model.supportsThinking = inferred.supportsThinking;
     }
-    if (entry.reasoningEffortValues !== undefined) {
-      model.reasoningEffortValues = entry.reasoningEffortValues;
+    if (inferred.reasoningEffortValues !== undefined) {
+      model.reasoningEffortValues = inferred.reasoningEffortValues;
     }
     if (entry.supportsVision !== undefined) {
       model.supportsVision = entry.supportsVision;
@@ -491,6 +480,19 @@ export async function fetchRemoteOpenAIModels(
   apiKey: string
 ): Promise<CustomModelEntry[]> {
   const normalized = normalizeBaseUrl(baseUrl);
+
+  try {
+    const fromRaw = await fetchRemoteOpenAIModelsRaw(normalized, apiKey);
+    if (fromRaw.length > 0) {
+      return fromRaw;
+    }
+  } catch (error) {
+    if (isRemoteModelsAuthError(error)) {
+      throw error;
+    }
+    // Fall through to the SDK for hosts that only speak the official list API.
+  }
+
   const client = new OpenAI({
     apiKey: apiKey || "not-needed",
     baseURL: normalized,
@@ -499,28 +501,26 @@ export async function fetchRemoteOpenAIModels(
     },
   });
 
-  try {
-    const page = await client.models.list();
-    const ids = new Set<string>();
+  const page = await client.models.list();
+  const ids = new Set<string>();
 
-    for await (const model of page) {
-      const id = model.id?.trim();
+  for await (const model of page) {
+    const id = model.id?.trim();
 
-      if (id) {
-        ids.add(id);
-      }
+    if (id) {
+      ids.add(id);
     }
-
-    if (ids.size > 0) {
-      return [...ids]
-        .sort((left, right) => left.localeCompare(right))
-        .map((id) => ({ id, name: id }));
-    }
-  } catch {
-    // Fall through to raw fetch for hosts without SDK-compatible models.list.
   }
 
-  return fetchRemoteOpenAIModelsRaw(normalized, apiKey);
+  if (ids.size === 0) {
+    throw new Error("Remote models response did not include any model ids.");
+  }
+
+  return [...ids]
+    .sort((left, right) => left.localeCompare(right))
+    .map((id) =>
+      toDiscoveredCustomModel({ id, name: id }, { baseUrl: normalized })
+    );
 }
 
 async function fetchRemoteOpenAIModelsRaw(
@@ -552,20 +552,63 @@ async function fetchRemoteOpenAIModelsRaw(
   }
 
   const payload = (await response.json()) as {
-    data?: Array<{ id?: string }>;
+    data?: unknown[];
   };
 
-  const ids = (payload.data ?? [])
-    .map((entry) => entry.id?.trim())
-    .filter((id): id is string => Boolean(id));
+  const models = new Map<string, CustomModelEntry>();
 
-  if (ids.length === 0) {
+  for (const entry of payload.data ?? []) {
+    const parsed = parseRemoteOpenAIModelEntry(entry);
+    if (!parsed) {
+      continue;
+    }
+
+    models.set(parsed.id, toDiscoveredCustomModel(parsed, { baseUrl }));
+  }
+
+  if (models.size === 0) {
     throw new Error("Remote models response did not include any model ids.");
   }
 
-  return [...new Set(ids)]
-    .sort((left, right) => left.localeCompare(right))
-    .map((id) => ({ id, name: id }));
+  return [...models.values()].sort((left, right) =>
+    left.id.localeCompare(right.id)
+  );
+}
+
+function toDiscoveredCustomModel(
+  parsed: {
+    id: string;
+    name?: string;
+    reasoningEffortValues?: string[];
+    supportsThinking?: boolean;
+    supportsVision?: boolean;
+  },
+  context: { baseUrl: string }
+): CustomModelEntry {
+  const capabilities = resolveCompatibleModelCapabilities(
+    parsed.id,
+    {
+      reasoningEffortValues: parsed.reasoningEffortValues,
+      supportsThinking: parsed.supportsThinking,
+    },
+    context
+  );
+
+  return {
+    id: parsed.id,
+    name: parsed.name?.trim() || parsed.id,
+    ...capabilities,
+    ...(parsed.supportsVision === undefined
+      ? {}
+      : { supportsVision: parsed.supportsVision }),
+  };
+}
+
+function isRemoteModelsAuthError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message.includes("Add an API key before discovering models")
+  );
 }
 
 export function resolveCompatibleDefaultModel(
@@ -597,7 +640,17 @@ export function compatibleModelSupportsThinking(
   modelId: string,
   customModels: CustomModelEntry[] | undefined
 ): boolean {
-  return findCustomModel(customModels, modelId)?.supportsThinking === true;
+  const custom = findCustomModel(customModels, modelId);
+
+  if (custom?.supportsThinking !== undefined) {
+    return custom.supportsThinking;
+  }
+
+  return (
+    resolveCompatibleModelCapabilities(modelId, {
+      reasoningEffortValues: custom?.reasoningEffortValues,
+    }).supportsThinking === true
+  );
 }
 
 export function compatibleModelSupportsVision(
@@ -609,7 +662,17 @@ export function compatibleModelSupportsVision(
 
 export function compatibleModelReasoningEffortValues(
   modelId: string,
-  customModels: CustomModelEntry[] | undefined
+  customModels: CustomModelEntry[] | undefined,
+  context: { baseUrl?: string; providerLabel?: string } = {}
 ): string[] | undefined {
-  return findCustomModel(customModels, modelId)?.reasoningEffortValues;
+  const custom = findCustomModel(customModels, modelId);
+
+  return resolveCompatibleModelCapabilities(
+    modelId,
+    {
+      reasoningEffortValues: custom?.reasoningEffortValues,
+      supportsThinking: custom?.supportsThinking,
+    },
+    context
+  ).reasoningEffortValues;
 }

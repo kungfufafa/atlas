@@ -10,7 +10,10 @@ Where you open the dashboard depends on how you deployed:
 | Deployment | URL |
 |---|---|
 | [Docker](/docker) | `http://localhost:4310` |
-| Local development | `http://localhost:3003` (web dev server proxies to the API) |
+| VPS with PM2 | `http://YOUR_SERVER:4310` |
+| Local development | `http://localhost:3000` (web dev server proxies to the API) |
+
+Docker images include LibreOffice so Word, PowerPoint, and Excel artifacts can preview and generate thumbnails. Source and PM2 installs need LibreOffice on the host — see [Quickstart](/quickstart).
 
 On a fresh install, Atlas redirects you to the setup wizard automatically.
 
@@ -40,7 +43,7 @@ See [Backup and restore](/backup-restore) for what is included in export ZIPs an
 
 ## Step 2: Workspace
 
-Name the first workspace and choose a slug for URLs and API context.
+Name the first workspace and choose a slug for URLs and API context. The wizard starts with **Personal** so you can continue immediately.
 
 ![Create your organization](/screenshots/setup-step-organization.png)
 

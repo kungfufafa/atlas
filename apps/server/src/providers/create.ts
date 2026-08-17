@@ -116,7 +116,11 @@ export function createProvider(options: CreateProviderOptions): ProviderClient {
         model,
         reasoningEffortValues: compatibleModelReasoningEffortValues(
           model,
-          options.instance?.customModels
+          options.instance?.customModels,
+          {
+            baseUrl: baseUrlOverride,
+            providerLabel: displayName,
+          }
         ),
         supportsThinking: compatibleModelSupportsThinking(
           model,

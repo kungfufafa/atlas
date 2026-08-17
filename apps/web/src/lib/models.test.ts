@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  effectiveProfileModelSelection,
   encodeModelSelection,
   firstAvailableProviderOption,
   hasOpenCodeZenProvider,
@@ -276,6 +277,16 @@ describe("isProviderTypeAlreadyConfigured", () => {
     const configured = new Set(["ollama", "openai"]);
 
     expect(isProviderTypeAlreadyConfigured("ollama", configured)).toBe(false);
+  });
+});
+
+describe("effectiveProfileModelSelection", () => {
+  test("uses the first configured model when the profile has none", () => {
+    const groups = group("compat-1", "openai_compatible");
+
+    expect(effectiveProfileModelSelection(null, groups)).toBe(
+      "compat-1::model-1"
+    );
   });
 });
 

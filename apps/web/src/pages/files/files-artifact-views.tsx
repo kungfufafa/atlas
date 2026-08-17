@@ -58,6 +58,7 @@ export function FilesArtifactViews({
   hasMore,
   remainingCount,
   onDelete,
+  onPreview,
   onShowMore,
 }: {
   viewMode: FilesViewMode;
@@ -72,6 +73,7 @@ export function FilesArtifactViews({
   hasMore: boolean;
   remainingCount: number;
   onDelete: (artifact: ArtifactFile) => void;
+  onPreview: (artifact: ArtifactFile) => void;
   onShowMore: () => void;
 }) {
   return (
@@ -101,6 +103,7 @@ export function FilesArtifactViews({
               artifacts={filteredArtifacts}
               deletePending={deletePending}
               onDelete={onDelete}
+              onPreview={onPreview}
               profileId={profileId}
             />
           </div>
@@ -117,6 +120,7 @@ export function FilesArtifactViews({
             artifacts={filteredArtifacts}
             deletePending={deletePending}
             onDelete={onDelete}
+            onPreview={onPreview}
             profileId={profileId}
           />
           <ShowMoreArtifactsButton

@@ -6,11 +6,13 @@ export function ArtifactGridView({
   artifacts,
   deletePending,
   onDelete,
+  onPreview,
 }: {
   profileId: string;
   artifacts: ArtifactFile[];
   deletePending: boolean;
   onDelete: (artifact: ArtifactFile) => void;
+  onPreview: (artifact: ArtifactFile) => void;
 }) {
   return (
     <ul className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-3">
@@ -20,6 +22,7 @@ export function ArtifactGridView({
           deletePending={deletePending}
           key={artifact.filename}
           onDelete={() => onDelete(artifact)}
+          onPreview={() => onPreview(artifact)}
           profileId={profileId}
         />
       ))}

@@ -92,15 +92,17 @@ export function buildChatSystemPrompt(
 
   if (options.soul) {
     sections.push("Use tools when needed while staying in character.");
-  } else {
-    sections.push(
-      "Chat naturally, answer questions, and help the user achieve their goals effortlessly.",
-      "Be concise, friendly, grounded, and practical.",
-      "Choose sensible defaults (such as format, layout, and count) rather than asking unnecessary clarifying questions.",
-      "When follow-up requests refer to previous deliverables or artifacts ('edit yang tadi', 'ubah slide 2', 'export ke PDF'), modify and update the existing artifact rather than creating unrelated files.",
-      "Always focus the final answer on the user's objective, highlighting key findings, links, and deliverables cleanly without repeating raw tool mechanics."
-    );
   }
+
+  sections.push(
+    "Chat naturally, answer questions, and help the user achieve their goals effortlessly.",
+    "Be concise, friendly, grounded, and practical.",
+    "Be concise in wording and complete in the work: finish the request in this turn with a ready-to-use answer, not a thin outline, a teaser, or a promise to do the work later.",
+    "If assigned tools would make the answer better, use them before you reply.",
+    "Choose sensible defaults (such as format, layout, and count) rather than asking unnecessary clarifying questions.",
+    "When follow-up requests refer to previous deliverables or artifacts ('edit yang tadi', 'ubah slide 2', 'export ke PDF'), modify and update the existing artifact rather than creating unrelated files.",
+    "Always focus the final answer on the user's objective, highlighting key findings, links, and deliverables cleanly without repeating raw tool mechanics."
+  );
 
   const timezone = options.userTimezone?.trim() || "UTC";
 
@@ -129,7 +131,7 @@ export function buildChatSystemPrompt(
   if (options.enableToolLoop && tools.length > 0) {
     sections.push(
       "",
-      "You have access to tools for this session. Use them when needed, then reply to the user in natural language unless another tool call is required."
+      "You have access to tools for this session. Use them when needed to finish the work, then reply to the user in natural language unless another tool call is required."
     );
 
     if (
@@ -139,6 +141,45 @@ export function buildChatSystemPrompt(
       })
     ) {
       sections.push(UNTRUSTED_DOCUMENT_GUIDANCE);
+    }
+
+    if (
+      tools.some((tool) => tool.name === "web_search") ||
+      tools.some((tool) => tool.name === "web_fetch")
+    ) {
+      sections.push(
+        "For current, local, or unverified facts, search or fetch first, then answer from what you found. Include the links you used."
+      );
+    }
+
+    if (tools.some((tool) => tool.name === "deep_research")) {
+      sections.push(
+        "When the user wants research, a comparison, or a cited brief, use deep_research, then give them the findings — not a plan to research later."
+      );
+    }
+
+    if (tools.some((tool) => tool.name === "knowledge_base_search")) {
+      sections.push(
+        "When uploaded documents may answer the question, use knowledge_base_search before guessing."
+      );
+    }
+
+    if (tools.some((tool) => tool.name === "browser")) {
+      sections.push(
+        "When the user wants a live page checked, opened, or walked through, use browser instead of guessing from memory."
+      );
+    }
+
+    if (tools.some((tool) => tool.name === "write_pptx")) {
+      sections.push(
+        "When the user asks for a presentation or slides, use write_pptx. Do not leave a slide outline in chat as a substitute."
+      );
+    }
+
+    if (tools.some((tool) => tool.name === "spreadsheet")) {
+      sections.push(
+        "When the user asks for a spreadsheet, model, or workbook, use spreadsheet. Do not leave a table dump in chat as a substitute."
+      );
     }
 
     if (tools.some((tool) => tool.name === "todo_write")) {
@@ -171,7 +212,8 @@ export function buildChatSystemPrompt(
     if (tools.some((tool) => tool.name === "write_file")) {
       sections.push(
         "Skills are workflow instructions, not callable tools — never invoke save-artifact (or other skills) as a tool.",
-        "When the user wants output kept or mentions artifacts, use write_file to save under artifacts/ (follow the save-artifact skill when active, including the metadata sidecar). Durable deliverables such as reports, slide decks, and exports belong under artifacts/, not the profile workspace root.",
+        "When the user wants output kept or mentions artifacts, use write_file to save under artifacts/ (follow the save-artifact skill when active, including the metadata sidecar). The same applies when they ask for a report, document, export, or anything they would reopen later — do not leave that work only in chat.",
+        "Durable deliverables such as reports, slide decks, and exports belong under artifacts/, not the profile workspace root.",
         "Do not use artifacts/ for soul files or MEMORY.md."
       );
     }

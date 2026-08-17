@@ -97,16 +97,16 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
       : currentStep === 2
         ? "Create your workspace"
         : currentStep === 3
-          ? "Welcome to Atlas"
+          ? "Connect a provider"
           : "Tell us about yourself";
 
   const subtitle =
     currentStep === 1
       ? "Set up the system-wide Superadmin account, or restore a backup ZIP from a previous install."
       : currentStep === 2
-        ? "Name the first workspace to finish setup."
+        ? "Name the first workspace. You can add more later."
         : currentStep === 3
-          ? "Set up your AI provider to get started. You can add more later."
+          ? "Add an LLM provider so chat can reply. You can add more later."
           : "Help the agent understand your preferences — optional.";
 
   function renderStep(): ReactNode {

@@ -9,6 +9,7 @@ import { createClientId, syncRowKeys } from "@/lib/client-id";
 export interface ModelListRow extends CustomModelEntry {}
 
 interface ModelListEditorProps {
+  allowEmpty?: boolean;
   browseLabel?: string;
   disabled?: boolean;
   models: ModelListRow[];
@@ -78,6 +79,7 @@ function ReasoningLevelsInput({
 export function ModelListEditor({
   models,
   disabled,
+  allowEmpty = false,
   showPricing = true,
   showThinking = false,
   onBrowse,
@@ -105,15 +107,12 @@ export function ModelListEditor({
     <div className="space-y-2">
       <div className="overflow-x-auto rounded-lg border border-border">
         <table
-          className={`w-full text-left text-xs ${showThinking ? "min-w-[48rem]" : "min-w-[32rem]"}`}
+          className={`w-full text-left text-xs ${showPricing ? "min-w-[32rem]" : ""}`}
         >
           <thead className="border-border border-b bg-muted/30 text-muted-foreground">
             <tr>
               <th className="px-2 py-2 font-medium">Model ID</th>
               <th className="px-2 py-2 font-medium">Display name</th>
-              {showThinking ? (
-                <th className="px-2 py-2 font-medium">Reasoning / Levels</th>
-              ) : null}
               {showPricing ? (
                 <>
                   <th className="px-2 py-2 font-medium">$/1M in</th>
@@ -129,7 +128,7 @@ export function ModelListEditor({
                 className="border-border/60 border-b last:border-0"
                 key={rowKeysRef.current[index]}
               >
-                <td className="px-2 py-1.5">
+                <td className="px-2 py-1.5 align-top">
                   <InputGroup>
                     <InputGroupInput
                       disabled={disabled}
@@ -141,7 +140,7 @@ export function ModelListEditor({
                     />
                   </InputGroup>
                 </td>
-                <td className="px-2 py-1.5">
+                <td className="px-2 py-1.5 align-top">
                   <InputGroup>
                     <InputGroupInput
                       disabled={disabled}
@@ -152,10 +151,8 @@ export function ModelListEditor({
                       value={row.name ?? ""}
                     />
                   </InputGroup>
-                </td>
-                {showThinking ? (
-                  <td className="px-2 py-1.5">
-                    <div className="flex items-center gap-2">
+                  {showThinking ? (
+                    <div className="mt-1.5 flex items-center gap-2">
                       <Switch
                         aria-label={`Reasoning for ${row.id.trim() || "model"}`}
                         checked={row.supportsThinking === true}
@@ -165,8 +162,11 @@ export function ModelListEditor({
                         }
                         size="sm"
                       />
+                      <span className="shrink-0 text-muted-foreground">
+                        Reasoning
+                      </span>
                       {row.supportsThinking ? (
-                        <InputGroup className="w-44">
+                        <InputGroup className="min-w-0 flex-1">
                           <ReasoningLevelsInput
                             disabled={disabled}
                             modelId={row.id}
@@ -178,8 +178,8 @@ export function ModelListEditor({
                         </InputGroup>
                       ) : null}
                     </div>
-                  </td>
-                ) : null}
+                  ) : null}
+                </td>
                 {showPricing ? (
                   <>
                     <td className="px-2 py-1.5">
@@ -225,7 +225,7 @@ export function ModelListEditor({
                 <td className="px-2 py-1.5 text-right">
                   <Button
                     aria-label="Remove model"
-                    disabled={disabled || models.length <= 1}
+                    disabled={disabled || (!allowEmpty && models.length <= 1)}
                     onClick={() => removeRow(index)}
                     size="icon-sm"
                     type="button"
