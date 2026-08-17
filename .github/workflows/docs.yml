@@ -37,12 +37,10 @@ jobs:
         working-directory: docs/website
         env:
           NODE_ENV: production
-          NAKAMA_DOCS_GITHUB_PAGES: 'true'
+          ATLAS_DOCS_GITHUB_PAGES: 'true'
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
