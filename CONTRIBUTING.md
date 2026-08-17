@@ -70,6 +70,8 @@ Husky runs `bun x ultracite fix` on staged files in `.husky/pre-commit` and re-s
 bun test
 ```
 
+CI also installs LibreOffice (`soffice`) and Playwright Chromium before `bun test`. Those binaries are required for Office preview conversion tests and the in-process browser-tool tests. Docker images already include LibreOffice.
+
 Assert behavior (outputs, status codes, side effects), not prompt text, description strings, or exact error copy.
 
 ### LLM cassette tests (MSW)
@@ -119,18 +121,31 @@ Published URL: `https://kungfufafa.github.io/atlas/`
 
 **Private repositories** need a paid GitHub plan (Pro/Team/Enterprise) to publish Pages. Free accounts must use a public repository or host docs elsewhere.
 
+## Git branches
+
+Promotion is one way: working branches → `staging` → `main`.
+
+| Branch | Role |
+|---|---|
+| `main` | Production. Only receives merges from `staging`. Docs site and Docker `latest` publish from here. |
+| `staging` | Integration. Feature, fix, and experiment PRs land here first. |
+| `feat/*`, `fix/*`, `dev/*`, `cursor/*` | Short-lived. Branch from `staging`, open a PR back to `staging`, delete after merge. |
+
+Do not open feature PRs against `main`. When `staging` is ready to ship, open a promotion PR (`staging` → `main`).
+
 ## Workflow
 
-1. Branch from `main` (or fork, then branch)
+1. Branch from `staging` (or fork, then branch from `staging`)
 2. One concern per PR
-3. Push and open a PR:
+3. Push and open a PR into `staging`:
 
 ```bash
 git push -u origin HEAD
-gh pr create
+gh pr create --base staging
 ```
 
 4. PR body should state what changed, what you verified, and remaining risks
 5. CI must pass before merge
+6. After `staging` is verified, promote with a PR from `staging` into `main`
 
 Do not rewrite `AGENTS.md`, `README.md`, or `ARCHITECTURE.md` unless the change is specifically about those files.

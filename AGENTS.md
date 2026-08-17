@@ -24,6 +24,14 @@ LLM_VCR_MODE=record bun test path/to/foo.llm.test.ts  # re-record (needs provide
 
 Use `gh` for issues, PRs, checks, reviews, releases, and any GitHub URL. Run the gh cli command outside the sandbox so that the auth can works.
 
+Promotion is one way: working branches → `staging` → `main`.
+
+| Branch | Role |
+|---|---|
+| `main` | Production. Only merge from `staging`. Docs site and Docker `latest` publish from here. |
+| `staging` | Integration. Default PR target. |
+| `feat/*`, `fix/*`, `dev/*`, `cursor/*` | Short-lived. Branch from `staging`, PR back to `staging`, delete after merge. |
+
 ## Browser automation & QA Verification
 
 Mandatory QA step for UI / web changes:

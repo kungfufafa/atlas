@@ -40,7 +40,11 @@ import { searchFilesTool } from "./search-files";
 import { spreadsheetTool } from "./spreadsheet";
 import { webFetchTool } from "./web-fetch";
 import { webSearchTool } from "./web-search";
-import { writePptxInputSchema, writePptxTool } from "./write-pptx";
+import {
+  type WritePptxInput,
+  type WritePptxOutput,
+  writePptxInputSchema,
+} from "./write-pptx";
 
 export const writeFileInputSchema = z
   .object({
@@ -512,6 +516,16 @@ export async function runWritePptx(
     slideCount: parsed.slides.length,
   };
 }
+
+export const writePptxTool: ToolDefinition<WritePptxInput, WritePptxOutput> = {
+  description:
+    "Create a real Microsoft PowerPoint (.pptx) presentation with structured slides, titles, bullet points, tables, and themes. Use this whenever the user asks for a presentation or slide deck.",
+  name: "write_pptx",
+  parameters: jsonSchemaFromZod(writePptxInputSchema),
+  run(input, context) {
+    return runWritePptx(input, context);
+  },
+};
 
 export const deleteFileTool: ToolDefinition<DeleteFileInput, DeleteFileOutput> =
   {

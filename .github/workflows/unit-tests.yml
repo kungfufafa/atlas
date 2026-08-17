@@ -2,7 +2,7 @@ name: Unit Tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
   pull_request:
 
 jobs:
@@ -19,6 +19,12 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Install LibreOffice
+        run: bash scripts/ensure-office-converter.sh
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
 
       - name: Run tests
         run: bun run test
