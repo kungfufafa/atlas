@@ -1,12 +1,6 @@
 import { z } from "zod";
-import type { ToolDefinition } from "../contract";
 import { presentationSlideSchema } from "../presentation-engine";
-import { runWritePptx } from "./builtin";
-import {
-  jsonSchemaFromZod,
-  requiredTrimmedString,
-  trimmedOptionalString,
-} from "./schema";
+import { requiredTrimmedString, trimmedOptionalString } from "./schema";
 
 export const writePptxInputSchema = z
   .object({
@@ -39,13 +33,3 @@ export interface WritePptxOutput {
   path: string;
   slideCount: number;
 }
-
-export const writePptxTool: ToolDefinition<WritePptxInput, WritePptxOutput> = {
-  description:
-    "Create a real Microsoft PowerPoint (.pptx) presentation with structured slides, titles, bullet points, tables, and themes. Use this whenever the user asks for a presentation or slide deck.",
-  name: "write_pptx",
-  parameters: jsonSchemaFromZod(writePptxInputSchema),
-  run(input, context) {
-    return runWritePptx(input, context);
-  },
-};
