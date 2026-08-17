@@ -384,6 +384,7 @@ describe("skill org id backfill", () => {
     try {
       migrateDatabase(db);
 
+      // Rows as every pre-fix install has them: org_id never written.
       db.prepare(
         `INSERT INTO skills (
           id, name, description, source_path, has_tool,
@@ -424,6 +425,8 @@ describe("skill org id backfill", () => {
         { id: "skill_org_a", org_id: "org_a" },
       ]);
 
+      // Two global skills may not share a source_path, which the org-scoped
+      // index alone cannot enforce.
       expect(() =>
         db
           .prepare(
