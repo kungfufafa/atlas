@@ -39,6 +39,30 @@ jobs:
           NODE_ENV: production
           ATLAS_DOCS_GITHUB_PAGES: 'true'
 
+      - name: Verify GitHub Pages is enabled
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh api "repos/${GITHUB_REPOSITORY}/pages" >/dev/null 2>&1; then
+            echo "GitHub Pages is configured for ${GITHUB_REPOSITORY}."
+            exit 0
+          fi
+
+          echo "::error::GitHub Pages is not enabled for ${GITHUB_REPOSITORY}."
+          echo ""
+          echo "One-time setup (repository admin):"
+          echo "  1. Open https://github.com/${GITHUB_REPOSITORY}/settings/pages"
+          echo "  2. Under Build and deployment, set Source to GitHub Actions"
+          echo "  3. Re-run this workflow (Actions → Docs → Run workflow)"
+          echo ""
+          echo "Workflows cannot enable Pages automatically — GitHub does not allow"
+          echo "GITHUB_TOKEN to create a Pages site (security policy)."
+          echo ""
+          echo "Private repositories require a paid GitHub plan to publish Pages."
+          echo "Free accounts need a public repository or a separate public docs repo."
+          exit 1
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
