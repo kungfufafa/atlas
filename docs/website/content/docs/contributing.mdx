@@ -53,11 +53,14 @@ Docs-only changes: register new MDX pages in `meta.json`, link them from the [Do
 
 ## Open a pull request
 
-1. Branch from `main` (or fork first)
+Work lands on `staging` first. `main` is production and only receives a promotion PR from `staging`.
+
+1. Branch from `staging` (or fork first)
 2. Keep the PR to one concern
-3. Push and create the PR with `gh pr create`
+3. Push and create the PR into `staging` (`gh pr create --base staging`)
 4. In the body: what changed, what you verified, remaining risks
 5. Wait for CI to pass
+6. When `staging` is ready to ship, open a promotion PR from `staging` into `main`
 
 ## Links
 

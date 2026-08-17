@@ -18,6 +18,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: staging
 
       - name: Configure Git Author
         run: |
@@ -47,12 +48,13 @@ jobs:
         uses: peter-evans/create-pull-request@v6
         with:
           branch: sync/upstream-latest
-          base: main
+          base: staging
           title: "🔄 Auto Sync: Update terbaru dari Nakama upstream"
           body: |
             ## 🚀 Upstream Update (Nakama -> Atlas)
 
             Workflow otomatis telah mendeteksi commit baru dari `ahmadrosid/nakama`.
+            PR ini masuk ke `staging` dulu; promote ke `main` setelah review.
 
             ### 📝 Checklist Review:
             - [ ] Cek tab **Files changed** di Pull Request ini.
