@@ -70,6 +70,8 @@ Husky runs `bun x ultracite fix` on staged files in `.husky/pre-commit` and re-s
 bun test
 ```
 
+CI also installs LibreOffice (`soffice`) and Playwright Chromium before `bun test`. Those binaries are required for Office preview conversion tests and the in-process browser-tool tests. Docker images already include LibreOffice.
+
 Assert behavior (outputs, status codes, side effects), not prompt text, description strings, or exact error copy.
 
 ### LLM cassette tests (MSW)
