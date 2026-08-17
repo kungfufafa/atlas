@@ -288,6 +288,86 @@ describe("skills are scoped per org", () => {
     expect(assigned.every((skill) => skill.orgId === null)).toBe(true);
   });
 
+  test("startup sync does not collapse same-named skills across orgs", async () => {
+    const db = await openDb();
+    const service = new SkillsService(db);
+
+    await service.createAndAssignRawSkillToProfile(
+      "org_a",
+      "profile_a",
+      ORG_A_SKILL
+    );
+    await service.createAndAssignRawSkillToProfile(
+      "org_b",
+      "profile_b",
+      ORG_B_SKILL
+    );
+
+    await service.syncDiscoveredSkills();
+
+    const orgA = await db.getSkillByName("deploy-notes", "org_a");
+    const orgB = await db.getSkillByName("deploy-notes", "org_b");
+
+    expect(orgA?.id).not.toBe(orgB?.id);
+    expect(orgA?.description).toContain("org A");
+    expect(orgB?.description).toContain("org B");
+    expect(
+      (await db.listSkillsForProfile("profile_a")).some(
+        (skill) => skill.id === orgA?.id
+      )
+    ).toBe(true);
+    expect(
+      (await db.listSkillsForProfile("profile_b")).some(
+        (skill) => skill.id === orgB?.id
+      )
+    ).toBe(true);
+  });
+
+  test("startup sync still collapses duplicate rows inside one org", async () => {
+    const db = await openDb();
+    const service = new SkillsService(db);
+    const now = new Date().toISOString();
+    const sourcePath = profileSkillDir("org_a", "profile_a", "deploy-notes");
+
+    await db.upsertSkill({
+      createdAt: now,
+      createdBy: "human",
+      description: "first copy",
+      disableModelInvocation: false,
+      enabled: true,
+      hasTool: false,
+      id: "skill_dup_a",
+      name: "deploy-notes",
+      orgId: "org_a",
+      sourcePath,
+      updatedAt: now,
+    });
+    await db.upsertSkill({
+      createdAt: now,
+      createdBy: "human",
+      description: "second copy",
+      disableModelInvocation: false,
+      enabled: true,
+      hasTool: false,
+      id: "skill_dup_b",
+      name: "deploy-notes",
+      orgId: "org_a",
+      sourcePath: `${sourcePath}-copy`,
+      updatedAt: now,
+    });
+    await db.assignSkillToProfile("profile_a", "skill_dup_b");
+
+    await service.syncDiscoveredSkills();
+
+    const remaining = (await db.listSkills()).filter(
+      (row) => row.name === "deploy-notes" && row.orgId === "org_a"
+    );
+    expect(remaining).toHaveLength(1);
+    expect((await db.listSkillsForProfile("profile_a"))[0]?.id).toBe(
+      remaining[0]?.id
+    );
+  });
+
   test("global skills stay visible to every org", async () => {
     const db = await openDb();
     const service = new SkillsService(db);

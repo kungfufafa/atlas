@@ -774,9 +774,12 @@ export class SkillsService {
     const grouped = new Map<string, StoredSkillRecord[]>();
 
     for (const skill of skills) {
-      const group = grouped.get(skill.name) ?? [];
+      // Same name in two orgs is legitimate. Only collapse copies that share
+      // both a name and an owning org (or both are global).
+      const key = `${skill.orgId ?? ""}:${skill.name}`;
+      const group = grouped.get(key) ?? [];
       group.push(skill);
-      grouped.set(skill.name, group);
+      grouped.set(key, group);
     }
 
     const profiles = await this.db.listProfiles();
@@ -792,8 +795,12 @@ export class SkillsService {
       }
 
       const duplicates = group.filter((skill) => skill.id !== canonical.id);
+      const scopeOrgId = canonical.orgId ?? null;
+      const scopedProfiles = profiles.filter((profile) =>
+        scopeOrgId === null ? true : profile.orgId === scopeOrgId
+      );
 
-      for (const profile of profiles) {
+      for (const profile of scopedProfiles) {
         const assigned = await this.db.listSkillsForProfile(profile.id);
 
         for (const assignedSkill of assigned) {
