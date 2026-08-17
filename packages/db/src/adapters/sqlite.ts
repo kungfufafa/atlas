@@ -797,6 +797,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
 
   const listSkillsStmt = db.prepare("SELECT * FROM skills ORDER BY name ASC");
   const getSkillStmt = db.prepare("SELECT * FROM skills WHERE id = ?");
+  // The org's own skill wins over a global skill of the same name.
   const getSkillByNameStmt = db.prepare(`
     SELECT * FROM skills
     WHERE name = ? AND (org_id IS NULL OR org_id = ?)
