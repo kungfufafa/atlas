@@ -107,6 +107,18 @@ When adding or changing a page:
 4. Screenshots go in `docs/website/public/screenshots/` (`![alt](/screenshots/foo.png)`); capture scripts in `docs/website/scripts/`
 5. Verify: `bun run build:docs`
 
+### Publishing docs to GitHub Pages
+
+The [Docs workflow](.github/workflows/docs.yml) deploys `docs/website` to GitHub Pages on pushes to `main`. **Pages must be enabled once by a repository admin** — workflows cannot create a Pages site (`GITHUB_TOKEN` is blocked by GitHub policy).
+
+1. Open **Settings → Pages** for the repository
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**
+3. Re-run the **Docs** workflow if needed
+
+Published URL: `https://kungfufafa.github.io/atlas/`
+
+**Private repositories** need a paid GitHub plan (Pro/Team/Enterprise) to publish Pages. Free accounts must use a public repository or host docs elsewhere.
+
 ## Workflow
 
 1. Branch from `main` (or fork, then branch)
