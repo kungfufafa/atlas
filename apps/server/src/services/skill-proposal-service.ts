@@ -276,7 +276,7 @@ export class SkillProposalService {
     assertNotBundledSkillName(name);
 
     const db = this.requireDatabase();
-    const existingByName = await db.getSkillByName(name);
+    const existingByName = await db.getSkillByName(name, input.orgId);
     if (
       existingByName &&
       !isPathWithinProfileSkillsDir(
@@ -641,7 +641,7 @@ export class SkillProposalService {
   ): Promise<void> {
     const db = this.requireDatabase();
     const skillName = assertValidSkillName(name);
-    const record = await db.getSkillByName(skillName);
+    const record = await db.getSkillByName(skillName, orgId);
     if (!record) {
       throw new AtlasApiError(`Skill "${skillName}" not found.`, 404);
     }

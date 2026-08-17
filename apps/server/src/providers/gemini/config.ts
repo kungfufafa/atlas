@@ -71,14 +71,14 @@ export function sanitizeGeminiSchema(
   for (const [key, value] of Object.entries(record)) {
     if (key === "exclusiveMinimum") {
       if (typeof value === "number" && !("minimum" in record)) {
-        result.minimum = value;
+        result.minimum = record.type === "integer" ? value + 1 : value;
       }
       continue;
     }
 
     if (key === "exclusiveMaximum") {
       if (typeof value === "number" && !("maximum" in record)) {
-        result.maximum = value;
+        result.maximum = record.type === "integer" ? value - 1 : value;
       }
       continue;
     }

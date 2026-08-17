@@ -275,6 +275,7 @@ interface SkillRow {
   has_tool: number;
   id: string;
   name: string;
+  org_id: string | null;
   source_path: string;
   updated_at: string;
 }
@@ -796,15 +797,21 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
 
   const listSkillsStmt = db.prepare("SELECT * FROM skills ORDER BY name ASC");
   const getSkillStmt = db.prepare("SELECT * FROM skills WHERE id = ?");
-  const getSkillByNameStmt = db.prepare("SELECT * FROM skills WHERE name = ?");
+  // The org's own skill wins over a global skill of the same name.
+  const getSkillByNameStmt = db.prepare(`
+    SELECT * FROM skills
+    WHERE name = ? AND (org_id IS NULL OR org_id = ?)
+    ORDER BY org_id IS NULL
+    LIMIT 1
+  `);
   const getSkillBySourcePathStmt = db.prepare(
     "SELECT * FROM skills WHERE source_path = ?"
   );
   const upsertSkillStmt = db.prepare(`
     INSERT INTO skills (
-      id, name, description, source_path, has_tool, disable_model_invocation, enabled, created_by, created_at, updated_at
+      id, name, description, source_path, has_tool, disable_model_invocation, enabled, created_by, org_id, created_at, updated_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       name = excluded.name,
       description = excluded.description,
@@ -813,6 +820,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       disable_model_invocation = excluded.disable_model_invocation,
       enabled = excluded.enabled,
       created_by = excluded.created_by,
+      org_id = excluded.org_id,
       updated_at = excluded.updated_at
   `);
   const deleteSkillStmt = db.prepare("DELETE FROM skills WHERE id = ?");
@@ -2174,8 +2182,11 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       return row ? toSkillRecord(row) : null;
     },
 
-    async getSkillByName(name) {
-      const row = getSkillByNameStmt.get(name) as SkillRow | null;
+    async getSkillByName(name, orgId) {
+      const row = getSkillByNameStmt.get(
+        name,
+        orgId ?? null
+      ) as SkillRow | null;
       return row ? toSkillRecord(row) : null;
     },
 
@@ -3159,6 +3170,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.disableModelInvocation ? 1 : 0,
         record.enabled ? 1 : 0,
         record.createdBy,
+        record.orgId ?? null,
         record.createdAt,
         record.updatedAt
       );
@@ -3279,6 +3291,7 @@ function toSkillRecord(row: SkillRow): StoredSkillRecord {
     hasTool: row.has_tool !== 0,
     id: row.id,
     name: row.name,
+    orgId: row.org_id ?? null,
     sourcePath: row.source_path,
     updatedAt: row.updated_at,
   };
