@@ -19,7 +19,7 @@ const DEFAULT_BUILTIN_TOOL_IDS = [
   TOOL_SEARCH_TOOL_ID,
 ];
 
-/** Default Agent toolkit — Super Agent extras (bash, image) stay opt-in. */
+/** Default Agent + new custom profile toolkit — Super Agent extras (bash, image) stay opt-in. */
 export const DEFAULT_AGENT_TOOL_IDS = DEFAULT_BUILTIN_TOOL_IDS.filter(
   (toolId) => toolId !== BASH_TOOL_ID && toolId !== GENERATE_IMAGE_TOOL_ID
 );

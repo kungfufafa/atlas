@@ -28,6 +28,8 @@ import {
 import {
   createInMemoryDatabaseAdapter,
   ensureBuiltinToolDefinitions,
+  ensurePythonExecuteToolDefinition,
+  ensureToolSearchToolDefinition,
   SUPER_AGENT_SYSTEM_PROMPT,
   SUPER_AGENT_TOOL_AUTHORING_RULES,
 } from "@atlas/db";
@@ -56,6 +58,10 @@ const DEFAULT_TOOL_NAMES = [
   "search_files",
   "knowledge_base_search",
   "web_fetch",
+  "web_search",
+  "deep_research",
+  "python_execute",
+  "tool_search",
 ] as const;
 
 let tempConfigDir: string | null = null;
@@ -154,6 +160,8 @@ test(
 
     const db = createInMemoryDatabaseAdapter();
     await ensureBuiltinToolDefinitions(db);
+    await ensurePythonExecuteToolDefinition(db);
+    await ensureToolSearchToolDefinition(db);
     await seedDefaultBundledSkills(db, tempConfigDir);
 
     const profileService = new ProfileService(db);
@@ -270,7 +278,7 @@ test(
 
         expect(created.profile.name.toLowerCase()).toContain("refund");
         expect(created.profile.isSuper).toBe(false);
-        expect(created.profile.systemPrompt.trim().length).toBeGreaterThan(0);
+        expect(created.profile.systemPrompt).toBe("");
 
         const assignedToolNames = created.profile.tools.map(
           (tool) => tool.name
@@ -278,6 +286,7 @@ test(
         for (const toolName of DEFAULT_TOOL_NAMES) {
           expect(assignedToolNames).toContain(toolName);
         }
+        expect(assignedToolNames).not.toContain("bash");
 
         const assignedSkillNames = created.profile.skills.map(
           (skill) => skill.name

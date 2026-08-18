@@ -12,7 +12,7 @@ Profile soul/system prompt
 + skills catalog
 + knowledge base catalog
 + org memory summary (non-viewers only)
-+ super agent rules, when enabled
++ default-agent work rules, or super-agent rules when enabled
 + USER.md context
 + timezone
 + tool instructions
@@ -46,6 +46,7 @@ After the main profile prompt, Atlas may append:
 - Knowledge base catalog
 - Org memory summary for non-viewers — pinned bullets under `## Org Memory`, capped at **2048 bytes** with an overflow hint to use `org_memory_search` when truncated (see [Org memory](/org-memory))
 - Super Agent tool-authoring rules, only for super profiles
+- Default Agent work-quality rules, for every other profile (finish the request with assigned tools; save durable deliverables under `artifacts/`)
 
 ## Chat wrapper
 

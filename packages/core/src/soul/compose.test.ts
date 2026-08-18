@@ -5,9 +5,17 @@ import { join } from "node:path";
 import { composeSoulSystemPrompt } from "./compose";
 import { initSoulDirectory } from "./init";
 import { loadSoulStack } from "./load";
-import { SOUL_TEMPLATE } from "./templates";
+import { INSTRUCTIONS_TEMPLATE, SOUL_TEMPLATE } from "./templates";
 
 describe("composeSoulSystemPrompt", () => {
+  test("default soul is a capable worker, not a junior Super Agent", () => {
+    expect(SOUL_TEMPLATE).not.toMatch(/I'm not Super Agent/);
+    expect(SOUL_TEMPLATE).toMatch(/high-quality/);
+    expect(INSTRUCTIONS_TEMPLATE).toContain("web_search");
+    expect(INSTRUCTIONS_TEMPLATE).toContain("python_execute");
+    expect(INSTRUCTIONS_TEMPLATE).toContain("artifacts/");
+  });
+
   test("does not append Profile Instructions when profilePrompt is empty", () => {
     const prompt = composeSoulSystemPrompt(
       {

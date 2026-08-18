@@ -172,12 +172,12 @@ import {
 } from "@atlas/core";
 import { canAccessSuperAgentProfile } from "@atlas/core/profiles";
 import {
+  appendRuntimeProfileRules,
   type DatabaseAdapter,
   type LlmUsageDimensions,
   type StoredProfileRecord,
   type StoredSessionRecord,
   type StoredTaskRunRecord,
-  SUPER_AGENT_TOOL_AUTHORING_RULES,
   UNKNOWN_USAGE_DIMENSION,
   WORKSPACE_SETTINGS_ID,
 } from "@atlas/db";
@@ -1597,6 +1597,10 @@ export class AgentService {
       profile.systemPrompt,
       "member"
     );
+    const resolvedSystemPrompt = appendRuntimeProfileRules(
+      profile.isSuper,
+      systemPrompt
+    );
     const userTimezone = userConfig?.timezone ?? DEFAULT_TIMEZONE;
     const userContext = await this.loadUserContextForUser(orgId, undefined);
     const harness = this.createHarnessForProfile(profile, userConfig);
@@ -1605,7 +1609,7 @@ export class AgentService {
       channel: "automation",
       enableToolLoop: true,
       soul: soulActive,
-      systemPrompt,
+      systemPrompt: resolvedSystemPrompt,
       toolContext: buildToolExecutionContext({
         automationId,
         automationRunId,
@@ -1659,8 +1663,12 @@ export class AgentService {
       profile.systemPrompt,
       "member"
     );
+    const resolvedSystemPrompt = appendRuntimeProfileRules(
+      profile.isSuper,
+      systemPrompt
+    );
     const childSystemPrompt = [
-      systemPrompt.trim(),
+      resolvedSystemPrompt.trim(),
       "",
       "You are running as a focused sub-agent delegated from a parent conversation.",
       "Complete the assigned task and return a clear final answer.",
@@ -3969,9 +3977,10 @@ export class AgentService {
     // keeps whatever they configured.
     const tokenOptimizerEnabled = (await this.db.getWorkspaceSettings(orgId))
       ?.tokenOptimizerEnabled;
-    const resolvedSystemPrompt = profile.isSuper
-      ? `${systemPrompt.trim()}\n\n${SUPER_AGENT_TOOL_AUTHORING_RULES}`
-      : systemPrompt;
+    const resolvedSystemPrompt = appendRuntimeProfileRules(
+      profile.isSuper,
+      systemPrompt
+    );
     const initialHistory = await loadSessionHistory(this.db, sessionId);
     const userTimezone = userConfig?.timezone ?? DEFAULT_TIMEZONE;
     const userContext = await this.loadUserContextForUser(orgId, userId);

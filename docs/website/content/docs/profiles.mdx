@@ -15,9 +15,9 @@ Profiles belong to a **workspace**. Switching workspaces shows only that workspa
 |---|---|
 | **Super Agent** | The orchestrator. Creates other agents, assigns tools, writes host tools, and runs workspace shell work. Visible to Superadmins and Workspace Admins in that workspace. |
 | **Default Agent** | Ready to use. Full work toolkit (search, files, research, documents) so the team can chat immediately. |
-| **New agent** | Custom. Starts with basic file and knowledge tools. You add soul, tools, skills, and MCP to make it specific. |
+| **New agent** | Custom identity. Same work toolkit as Default Agent (search, files, research, documents). Super Agent extras (bash, host tools) stay off unless you assign them. |
 
-Use **Default Agent** to get work done. Use **Super Agent** to build and operate the team. Create a **new agent** when a role needs its own personality and access.
+Use **Default Agent** to get work done. Use **Super Agent** to build and operate the team. Create a **new agent** when a role needs its own personality — it already has the same work tools as Default Agent.
 
 ## Default profile per organization
 
@@ -41,9 +41,9 @@ If a session or channel config omits a profile id — or names one that does not
 
 ### New custom profiles
 
-Superadmins and Workspace Admins create profiles inside the **active workspace**. Each new profile gets its own soul directory and starts with `read_file`, `write_file`, `edit_file`, `search_files`, and `knowledge_base_search` when those builtins are available. Assign existing tools, MCP servers, and skills from the dashboard.
+Superadmins and Workspace Admins create profiles inside the **active workspace**. Each new profile gets its own soul directory and starts with the same work toolkit as Default Agent (search, research, files, documents, python) when those builtins are available. Super Agent extras such as `bash` stay off until you assign them. Add MCP servers and extra skills from the dashboard.
 
-Super Agent can also create profiles from chat using a confirm-first factory. For profile-creation requests, it drafts soul files and a tool plan in chat, waits for your explicit OK, then calls `create_profile`. New profiles keep `MEMORY.md` empty and receive basic file/knowledge tools automatically; extra tools still need an explicit ask. On the Profiles page, use **Ask Super Agent** (empty state or create dialog) when a Super Agent profile exists.
+Super Agent can also create profiles from chat using a confirm-first factory. For profile-creation requests, it drafts soul files and a tool plan in chat, waits for your explicit OK, then calls `create_profile`. New profiles keep `MEMORY.md` empty and receive the Default Agent work toolkit automatically; `bash`, image generation, and host-tool authoring still need an explicit ask. On the Profiles page, use **Ask Super Agent** (empty state or create dialog) when a Super Agent profile exists.
 
 Super Agent can hand coding tasks to a dedicated coding agent via the `coding-agent` skill and `bash`. See [Coding agent](/coding-agent).
 

@@ -44,23 +44,23 @@ Parallel execution speeds up multi-file research and lets a parent agent delegat
 
 Atlas includes these builtins:
 
-| Tool | `default` / `super_agent` | New custom profiles | Notes |
-|------|-------------------------|---------------------|-------|
+| Tool | Default Agent / new agent | Super Agent | Notes |
+|------|---------------------------|-------------|-------|
 | `write_file` | Yes | Yes | |
-| `write_docx` | Yes | No | Create real `.docx` files from Markdown |
-| `delete_file` | Yes | No | |
+| `write_docx` | Yes | Yes | Create real `.docx` files from Markdown |
+| `delete_file` | Yes | Yes | |
 | `edit_file` | Yes | Yes | |
 | `read_file` | Yes | Yes | |
 | `search_files` | Yes | Yes | |
 | `knowledge_base_search` | Yes | Yes | |
-| `web_search` | Yes | No | |
+| `web_search` | Yes | Yes | |
 | `web_fetch` | Yes | Yes | |
-| `email` | Yes | No | Omitted at runtime when mailbox is unconfigured |
-| `extract_document_text` | Yes | No | Extracts text from PDF, Word, or Excel attachments returned by `email` |
-| `bash` | When assigned | No | Run shell commands in the profile workspace |
+| `email` | Yes | Yes | Omitted at runtime when mailbox is unconfigured |
+| `extract_document_text` | Yes | Yes | Extracts text from PDF, Word, or Excel attachments returned by `email` |
+| `bash` | No | Yes | Run shell commands in the profile workspace |
 | `sub_agent` | No | No | Opt-in: delegate to a same-profile sub-agent (see below) |
 
-**New custom profiles** receive `read_file`, `write_file`, `edit_file`, `search_files`, `knowledge_base_search`, and `web_fetch` until a Workspace Admin assigns additional tools. Memory writes, archives, and artifact saves use bundled skills with those file tools — see [Skills](/skills#bundled-system-skills). Word documents use `write_docx` (system profiles only by default). Coding-agent workflows use `bash` with the `coding-agent` skill — see [Coding agent](/coding-agent). Interactive browser automation (login walls, forms, clicks) uses `bash` with the opt-in `agent-browser` skill — see [Agent browser](/agent-browser). The `sub_agent` tool is seeded but **not** auto-assigned — Workspace Admins opt in per profile. System profiles (`default`, `super_agent`) get the full seeded builtin set; Super Agent also receives `bash`.
+**Default Agent and new custom profiles** receive the same work toolkit (search, research, files, documents, python) when those builtins are available. Super Agent extras such as `bash` stay off unless a Workspace Admin assigns them. Memory writes, archives, and artifact saves use bundled skills with the file tools — see [Skills](/skills#bundled-system-skills). Coding-agent workflows use `bash` with the `coding-agent` skill — see [Coding agent](/coding-agent). Interactive browser automation (login walls, forms, clicks) uses `bash` with the opt-in `agent-browser` skill — see [Agent browser](/agent-browser). The `sub_agent` tool is seeded but **not** auto-assigned — Workspace Admins opt in per profile. Super Agent also receives `bash`.
 
 ## Choosing tools for a profile
 

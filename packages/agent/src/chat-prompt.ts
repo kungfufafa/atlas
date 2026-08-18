@@ -224,6 +224,18 @@ export function buildChatSystemPrompt(
       );
     }
 
+    if (tools.some((tool) => tool.name === "python_execute")) {
+      sections.push(
+        "When the user wants a calculation, transform, or short data script, use python_execute. Return the result — do not leave the formula as a substitute."
+      );
+    }
+
+    if (tools.some((tool) => tool.name === "tool_search")) {
+      sections.push(
+        "If you are unsure which assigned tool fits, use tool_search before guessing or skipping the work."
+      );
+    }
+
     if (tools.some((tool) => tool.name === "generate_image")) {
       sections.push(
         "When the user asks you to create or generate an image, use generate_image. Do not invent image URLs or pretend binary image data is attached in text."
