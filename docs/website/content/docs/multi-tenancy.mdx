@@ -18,14 +18,15 @@ settings—even if someone knows a resource ID from the other workspace.
 
 | Role | Scope | Capabilities |
 |---|---|---|
-| Superadmin | Entire system | Create workspaces and manage system-wide infrastructure and secrets |
-| Workspace Admin | One workspace | Same sidebar as Superadmin inside that workspace (including Files). Manage members, providers, profiles, and settings |
+| Superadmin | Entire system | Create and switch workspaces; same in-workspace admin as Workspace Admin after switching; host install, export, and public URL |
+| Workspace Admin | One workspace | Full admin of that workspace only — including Super Agent, Files, MCP, tools, skills, members, providers, and integrations |
 | Member | One workspace | Chat with profiles and use assigned workspace capabilities |
 | Viewer | One workspace | Read chat history only; no agent invocation or mutations |
 
-The practical rule is simple: a **Superadmin** manages Atlas as a whole, while
-a **Workspace Admin** manages only the workspace in which that role was
-granted.
+Workspace Admins have the complete admin surface **inside their active
+workspace**. Superadmins have that same surface after switching into a
+workspace, plus the ability to create other workspaces and run host-level
+operations (data export, public web URL, host worker install).
 
 ## First-time setup
 
@@ -42,10 +43,9 @@ or privacy boundaries. If one team needs multiple assistants while sharing the
 same people and data boundary, use multiple [profiles](/profiles) in one
 workspace.
 
-Workspace Admins can configure providers, profiles, and files only in their active
-workspace. Global messaging workers, shared tool/MCP/skill definitions, data
-import/export, and host installation remain Superadmin-only. A Workspace Admin
-can assign existing shared capabilities to profiles in their workspace.
+Workspace Admins configure providers, profiles, Super Agent, files, tools, MCP,
+and skills only in their active workspace. Creating additional workspaces, data
+import/export, the public web URL, and host installation remain Superadmin-only.
 
 ## Next steps
 

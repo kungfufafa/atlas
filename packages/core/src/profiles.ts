@@ -4,7 +4,7 @@ export function canAccessSuperAgentProfile(options: {
   orgRole?: OrgRole | null;
   isPlatformAdmin?: boolean;
 }): boolean {
-  return options.isPlatformAdmin === true;
+  return options.isPlatformAdmin === true || options.orgRole === "admin";
 }
 
 export function filterProfilesForChatAccess(

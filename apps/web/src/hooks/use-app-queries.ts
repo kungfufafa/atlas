@@ -12,6 +12,7 @@ import { thinkingSettingsQueryOptions } from "@/hooks/use-thinking-settings";
 import { prefetchTimezoneData } from "@/hooks/use-timezones";
 import { whatsappSettingsQueryOptions } from "@/hooks/use-whatsapp-settings";
 import { client } from "@/lib/client";
+import { canAccessSystemPage } from "@/lib/navigation";
 import { queryKeys } from "@/lib/query-keys";
 
 const defaultStaleTime = 1000 * 30;
@@ -70,7 +71,7 @@ export function profileQueryOptions(profileId: string) {
 
 export function prefetchAppData(
   queryClient: QueryClient,
-  options?: { isPlatformAdmin?: boolean }
+  options?: { canAccessSystem?: boolean }
 ): void {
   prefetchTimezoneData(queryClient);
   void queryClient.prefetchQuery(thinkingSettingsQueryOptions);
@@ -80,23 +81,28 @@ export function prefetchAppData(
   void queryClient.prefetchQuery(modelsQueryOptions);
   void queryClient.prefetchQuery(profilesQueryOptions);
   void queryClient.prefetchQuery(automationsQueryOptions);
-  if (options?.isPlatformAdmin) {
+  if (options?.canAccessSystem) {
     void queryClient.prefetchQuery(toolsQueryOptions);
     void queryClient.prefetchQuery(skillsQueryOptions);
+    void queryClient.prefetchQuery(mcpServersQueryOptions);
   }
 }
 
 export function AppQueryPrefetch() {
   const queryClient = useQueryClient();
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user, activeOrg } = useAuth();
+  const canAccessSystem = canAccessSystemPage(
+    user?.isPlatformAdmin === true,
+    activeOrg?.role
+  );
 
   useEffect(() => {
     if (isLoading || !isAuthenticated) {
       return;
     }
 
-    prefetchAppData(queryClient, { isPlatformAdmin: user?.isPlatformAdmin });
-  }, [queryClient, isAuthenticated, isLoading, user?.isPlatformAdmin]);
+    prefetchAppData(queryClient, { canAccessSystem });
+  }, [queryClient, isAuthenticated, isLoading, canAccessSystem]);
 
   return null;
 }
@@ -258,9 +264,13 @@ export function useConfigureProviderMutation() {
 
 export function usePrefetchAppData() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user, activeOrg } = useAuth();
+  const canAccessSystem = canAccessSystemPage(
+    user?.isPlatformAdmin === true,
+    activeOrg?.role
+  );
 
   return useCallback(() => {
-    prefetchAppData(queryClient, { isPlatformAdmin: user?.isPlatformAdmin });
-  }, [queryClient, user?.isPlatformAdmin]);
+    prefetchAppData(queryClient, { canAccessSystem });
+  }, [queryClient, canAccessSystem]);
 }

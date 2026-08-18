@@ -1396,12 +1396,12 @@ export function registerModelRoutes(
   });
 
   app.get("/v1/settings/email", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     return json<EmailSettingsResponse>(await agent.getEmailSettings());
   });
 
   app.put("/v1/settings/email", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const body = await readJson<UpdateEmailSettingsRequest>(c.req.raw);
 
     try {
@@ -1416,7 +1416,7 @@ export function registerModelRoutes(
   });
 
   app.post("/v1/settings/email/test", async (c) => {
-    const auth = requirePlatformAdminFromContext(c);
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
     const body = await readJson<SendEmailTestRequest>(c.req.raw).catch(
       () => ({}) as SendEmailTestRequest
     );
@@ -1435,7 +1435,7 @@ export function registerModelRoutes(
   });
 
   app.get("/v1/settings/agent-browser", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     return json<AgentBrowserStatusResponse>(
       await agent.getAgentBrowserStatus()
     );
@@ -1550,12 +1550,12 @@ export function registerModelRoutes(
   });
 
   app.get("/v1/settings/composio", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     return json<ComposioSettingsResponse>(await agent.getComposioSettings());
   });
 
   app.put("/v1/settings/composio", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const body = await readJson<UpdateComposioSettingsRequest>(c.req.raw);
 
     try {

@@ -13,7 +13,6 @@ import type { ServerOptions } from "../context";
 import {
   requireActiveOrgIdFromContext,
   requireOrgAdminOrPlatformAdminFromContext,
-  requirePlatformAdminFromContext,
 } from "../org-guards";
 import { json, readJson } from "../shared";
 import type { HonoApp } from "../types";
@@ -260,19 +259,19 @@ export function registerSkillRoutes(
   );
 
   app.get("/v1/skills", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     return json<ListSkillsResponse>(await agent.listSkills());
   });
 
   app.post("/v1/skills", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<CreateSkillRequest>(c.req.raw);
     return json<SkillResponse>(await agent.createSkill(orgId, body));
   });
 
   app.post("/v1/skills/install", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<InstallSkillRequest>(c.req.raw);
     return json<SkillResponse>(
@@ -282,19 +281,19 @@ export function registerSkillRoutes(
   });
 
   app.post("/v1/skills/sync", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     return json<SyncSkillsResponse>(await agent.syncSkills());
   });
 
   app.get("/v1/skills/:skillId", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     return json<SkillResponse>(
       await agent.getSkill(decodeURIComponent(c.req.param("skillId")))
     );
   });
 
   app.patch("/v1/skills/:skillId", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<PatchSkillRequest>(c.req.raw);
     const profileId = c.req.query("profileId")?.trim() || undefined;
@@ -309,7 +308,7 @@ export function registerSkillRoutes(
   });
 
   app.delete("/v1/skills/:skillId", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     await agent.deleteSkill(decodeURIComponent(c.req.param("skillId")));
     return new Response(null, { status: 204 });
   });

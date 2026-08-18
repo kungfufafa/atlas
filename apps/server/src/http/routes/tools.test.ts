@@ -13,6 +13,18 @@ setupTestConfigDir("atlas-tools-route-test-");
 function createApp(agentOverrides: Record<string, unknown> = {}) {
   return createMinimalHonoApp({
     agent: {
+      createTool: async () => ({
+        tool: {
+          createdAt: new Date().toISOString(),
+          description: "Echo tool",
+          handlerConfig: { modulePath: "echo.js" },
+          handlerType: "javascript",
+          id: "tool_echo",
+          name: "echo",
+          updatedAt: new Date().toISOString(),
+        },
+      }),
+      deleteTool: async () => undefined,
       getTool: async (toolId: string) => ({
         tool: {
           createdAt: new Date().toISOString(),
@@ -333,5 +345,117 @@ describe("tool playground routes", () => {
     );
 
     expect(response.status).toBe(400);
+  });
+});
+
+describe("tool definition routes", () => {
+  test("org admin can create and delete a custom tool", async () => {
+    const { app, authService, databaseAdapter } = createApp();
+    const { orgId, adminSession } = await createOrgAdminSession(
+      app,
+      authService,
+      databaseAdapter,
+      "acme-create-tool",
+      "admin-create-tool@acme.com"
+    );
+
+    const createResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/tools", {
+        body: JSON.stringify({
+          description: "Echo tool",
+          handlerConfig: { modulePath: "echo.js" },
+          handlerType: "javascript",
+          name: "echo",
+        }),
+        headers: adminSession.headers(
+          {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": adminSession.csrfToken,
+          },
+          orgId
+        ),
+        method: "POST",
+      })
+    );
+
+    expect(createResponse.status).not.toBe(403);
+    expect(createResponse.status).toBe(201);
+
+    const deleteResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/tools/tool_echo", {
+        headers: adminSession.headers(
+          {
+            "X-CSRF-Token": adminSession.csrfToken,
+          },
+          orgId
+        ),
+        method: "DELETE",
+      })
+    );
+
+    expect(deleteResponse.status).not.toBe(403);
+    expect(deleteResponse.status).toBe(204);
+  });
+
+  test("org member cannot create a tool", async () => {
+    const { app, authService, databaseAdapter } = createApp();
+    const { orgId, adminSession } = await createOrgAdminSession(
+      app,
+      authService,
+      databaseAdapter,
+      "acme-member-create-tool",
+      "admin-member-create-tool@acme.com"
+    );
+
+    const addMemberResponse = await app.fetch(
+      new Request(`http://localhost:4310/v1/orgs/${orgId}/members`, {
+        body: JSON.stringify({
+          email: "member-create-tool@acme.com",
+          name: "Member One",
+          phone: "+628111111112",
+          role: "member",
+        }),
+        headers: adminSession.headers(
+          {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": adminSession.csrfToken,
+          },
+          orgId
+        ),
+        method: "POST",
+      })
+    );
+
+    expect(addMemberResponse.status).toBe(201);
+    const memberProvisioned = (await addMemberResponse.json()) as {
+      temporaryPassword: string;
+    };
+    const memberSession = await loginUserSession(
+      app,
+      "member-create-tool@acme.com",
+      memberProvisioned.temporaryPassword,
+      orgId
+    );
+
+    const response = await app.fetch(
+      new Request("http://localhost:4310/v1/tools", {
+        body: JSON.stringify({
+          description: "Echo tool",
+          handlerConfig: { modulePath: "echo.js" },
+          handlerType: "javascript",
+          name: "echo",
+        }),
+        headers: memberSession.headers(
+          {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": memberSession.csrfToken,
+          },
+          orgId
+        ),
+        method: "POST",
+      })
+    );
+
+    expect(response.status).toBe(403);
   });
 });

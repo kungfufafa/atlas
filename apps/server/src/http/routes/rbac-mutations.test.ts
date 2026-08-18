@@ -23,15 +23,25 @@ function createApp() {
     agent: {
       configureProvider: record("agent.configureProvider"),
       createProvider: record("agent.createProvider"),
+      createTool: record("agent.createTool"),
       deleteProvider: record("agent.deleteProvider"),
+      deleteTool: record("agent.deleteTool"),
       discoverModels: record("agent.discoverModels"),
       draftAutomation: record("agent.draftAutomation"),
       draftTaskPrompt: record("agent.draftTaskPrompt"),
+      getAgentBrowserStatus: async () => ({
+        installed: false,
+        ready: false,
+      }),
+      getComposioSettings: async () => ({ configured: false }),
       getDiscordSettings: record("agent.getDiscordSettings"),
+      getEmailSettings: async () => ({ configured: false }),
       getTelegramSettings: record("agent.getTelegramSettings"),
       getWhatsAppSettings: record("agent.getWhatsAppSettings"),
       listProfiles: async () => ({ profiles: [{ id: "default" }] }),
       listProviders: record("agent.listProviders"),
+      listSkills: async () => ({ skills: [] }),
+      listTools: async () => ({ tools: [] }),
       runAutomation: async () => {
         calls.push("agent.runAutomation");
         return { skipped: false };
@@ -50,6 +60,9 @@ function createApp() {
       get: async () => ({ id: "a", name: "a", prompt: "x" }),
       listRuns: async () => [{ id: "r", status: "ok" }],
       update: record("automationService.update"),
+    },
+    mcpService: {
+      listServers: async () => ({ servers: [] }),
     },
     taskService: {
       create: record("taskService.create"),
@@ -164,12 +177,15 @@ const PROVIDER_MANAGEMENT_ROUTES: Array<{
   },
 ];
 
-const SYSTEM_SETTINGS_ROUTES = [
+const WORKSPACE_ADMIN_SETTINGS_ROUTES = [
   "/v1/settings/email",
   "/v1/settings/agent-browser",
   "/v1/settings/composio",
-  "/v1/system/web-public-url",
+  "/v1/skills",
+  "/v1/mcp/servers",
 ] as const;
+
+const HOST_SETTINGS_ROUTES = ["/v1/system/web-public-url"] as const;
 
 const WORKSPACE_CHANNEL_ROUTES = [
   "/v1/settings/telegram",
@@ -294,8 +310,63 @@ describe("RBAC: provider management requires an admin", () => {
   });
 });
 
-describe("RBAC: system settings require Superadmin", () => {
-  for (const path of SYSTEM_SETTINGS_ROUTES) {
+describe("RBAC: workspace admin can use in-workspace admin settings", () => {
+  for (const path of WORKSPACE_ADMIN_SETTINGS_ROUTES) {
+    test(`GET ${path} is available to Workspace Admin`, async () => {
+      const { app, databaseAdapter, authService } = createApp();
+      await seedUser(
+        databaseAdapter,
+        authService,
+        "workspace-admin@example.com",
+        "admin"
+      );
+      const admin = await loginUserSession(
+        app,
+        "workspace-admin@example.com",
+        PASSWORD,
+        ORG_ID
+      );
+
+      const response = await app.fetch(
+        new Request(`http://localhost:4310${path}`, {
+          headers: admin.headers(),
+        })
+      );
+
+      expect(response.status).not.toBe(403);
+    });
+
+    for (const role of ["member", "viewer"] as const) {
+      test(`GET ${path} -> 403 for ${role}`, async () => {
+        const { app, databaseAdapter, authService, calls } = createApp();
+        await seedUser(
+          databaseAdapter,
+          authService,
+          `${role}@example.com`,
+          role
+        );
+        const session = await loginUserSession(
+          app,
+          `${role}@example.com`,
+          PASSWORD,
+          ORG_ID
+        );
+
+        const response = await app.fetch(
+          new Request(`http://localhost:4310${path}`, {
+            headers: session.headers(),
+          })
+        );
+
+        expect(response.status).toBe(403);
+        expect(calls).toEqual([]);
+      });
+    }
+  }
+});
+
+describe("RBAC: host settings remain Superadmin", () => {
+  for (const path of HOST_SETTINGS_ROUTES) {
     test(`GET ${path} -> 403 for Workspace Admin`, async () => {
       const { app, databaseAdapter, authService, calls } = createApp();
       await seedUser(
