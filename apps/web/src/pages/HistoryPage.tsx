@@ -2,6 +2,7 @@ import type { SessionSummary } from "@atlas/core/contract";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useActiveChatProfile } from "@/context/use-active-chat-profile";
+import { useAuth } from "@/context/use-auth";
 import { useAppNavigation } from "@/hooks/use-app-navigation";
 import { useProfilesQuery } from "@/hooks/use-app-queries";
 import {
@@ -10,11 +11,14 @@ import {
 } from "@/hooks/use-resource-mutations";
 import { resolveHistoryProfileId } from "@/lib/chat-history";
 import { formatError } from "@/lib/client";
+import { canMutateWorkspace } from "@/lib/org-roles";
 import { HistoryDeleteDialog } from "@/pages/history-delete-dialog";
 import { HistorySessionsPanel } from "@/pages/history-sessions-panel";
 
 export function HistoryPage() {
   const { navigateToPage, navigateToChat } = useAppNavigation();
+  const { activeOrg } = useAuth();
+  const canMutate = canMutateWorkspace(activeOrg?.role);
   const [searchParams, setSearchParams] = useSearchParams();
   const { profileId: liveChatProfileId, setProfileId: setLiveChatProfileId } =
     useActiveChatProfile();
@@ -167,9 +171,11 @@ export function HistoryPage() {
           filteredSessions={filteredSessions}
           initialLoading={initialLoading}
           onClearSearch={() => setSearchQuery("")}
-          onDeleteSession={setDeleteTarget}
-          onGoToChat={() => navigateToPage("chat")}
-          onGoToProfiles={() => navigateToPage("profiles")}
+          onDeleteSession={canMutate ? setDeleteTarget : undefined}
+          onGoToChat={canMutate ? () => navigateToPage("chat") : undefined}
+          onGoToProfiles={
+            canMutate ? () => navigateToPage("profiles") : undefined
+          }
           onOpenSession={handleOpen}
           onRefresh={() => void refetchSessions()}
           onSearchChange={setSearchQuery}

@@ -367,6 +367,37 @@ describe("OrgService", () => {
     expect(accepted.role).toBe("member");
   });
 
+  test("previews a pending invite", async () => {
+    const { orgService } = createOrgService();
+
+    const created = await orgService.createOrganization({
+      name: "Acme",
+      slug: "acme-preview",
+    });
+    const invite = await orgService.createInvite({
+      email: "member@acme.com",
+      invitedByUserId: "user_platform",
+      orgId: created.organization.id,
+      role: "viewer",
+    });
+
+    await expect(orgService.previewInvite(invite.token)).resolves.toEqual({
+      email: "member@acme.com",
+      expiresAt: invite.invite.expiresAt,
+      orgName: "Acme",
+      role: "viewer",
+    });
+  });
+
+  test("preview rejects unknown invite tokens", async () => {
+    const { orgService } = createOrgService();
+
+    await expect(orgService.previewInvite("missing")).rejects.toMatchObject({
+      message: "Not found",
+      status: 404,
+    });
+  });
+
   test("rejects expired invites", async () => {
     const { orgService, databaseAdapter } = createOrgService();
     const authService = new AuthService();

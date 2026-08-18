@@ -6,6 +6,7 @@ import {
   type CreateOrganizationResponse,
   type ListUserOrgsResponse,
   LocalAuthTokenManagedExternallyError,
+  type PreviewOrgInviteResponse,
   type RotateLocalAuthTokenResponse,
   rotateLocalAuthToken,
   type SetActiveOrgRequest,
@@ -243,6 +244,19 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
       role: z.enum(["admin", "member", "viewer"]),
     })
     .openapi("AcceptOrgInviteResponse");
+  const previewInviteQuerySchema = z
+    .object({
+      token: z.string(),
+    })
+    .openapi("PreviewOrgInviteQuery");
+  const previewInviteResponseSchema = z
+    .object({
+      email: z.string(),
+      expiresAt: z.string(),
+      orgName: z.string(),
+      role: z.enum(["admin", "member", "viewer"]),
+    })
+    .openapi("PreviewOrgInviteResponse");
   const changePasswordSchema = z
     .object({
       currentPassword: z.string(),
@@ -284,6 +298,37 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
       },
     },
     summary: "Change the current user's password",
+    tags: ["Auth"],
+  });
+
+  const previewInviteRoute = createRoute({
+    method: "get",
+    operationId: "previewOrgInvite",
+    path: "/v1/auth/invite",
+    request: {
+      query: previewInviteQuerySchema,
+    },
+    responses: {
+      200: {
+        content: {
+          "application/json": { schema: previewInviteResponseSchema },
+        },
+        description: "Invite preview",
+      },
+      400: {
+        content: { "application/json": { schema: errorSchema } },
+        description: "Error",
+      },
+      404: {
+        content: { "application/json": { schema: errorSchema } },
+        description: "Error",
+      },
+      500: {
+        content: { "application/json": { schema: errorSchema } },
+        description: "Error",
+      },
+    },
+    summary: "Preview a workspace invite before accepting it",
     tags: ["Auth"],
   });
 
@@ -559,6 +604,16 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
     });
 
     return json({ ok: true });
+  });
+
+  app.openAPIRegistry.registerPath(previewInviteRoute);
+  app.get("/v1/auth/invite", async (c) => {
+    if (!orgService) {
+      return errorResponse("Authentication not configured", 500);
+    }
+
+    const preview = await orgService.previewInvite(c.req.query("token") ?? "");
+    return json<PreviewOrgInviteResponse>(preview);
   });
 
   app.openAPIRegistry.registerPath(acceptInviteRoute);

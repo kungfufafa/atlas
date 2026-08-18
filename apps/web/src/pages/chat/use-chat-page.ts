@@ -82,6 +82,7 @@ import {
   resolveModelVisionSupport,
 } from "@/lib/models";
 import { SETUP_PATH } from "@/lib/navigation";
+import { isViewerRole } from "@/lib/org-roles";
 import {
   buildAutoEnableThinkingPayload,
   DEFAULT_THINKING_EFFORT,
@@ -266,6 +267,7 @@ export function useChatPage() {
   );
 
   const readOnlySession = isReadOnlySessionChannel(sessionChannel);
+  const workspaceReadOnly = isViewerRole(activeOrg?.role);
   const showThinking = shouldShowThinkingBlocks(activeModelSupportsThinking);
   const thinkingEffortVisible = shouldShowThinkingEffort(
     activeModelSupportsThinking
@@ -275,7 +277,8 @@ export function useChatPage() {
     busy ||
     thinkingSettingsLoading ||
     saveThinkingSettingsMutation.isPending ||
-    readOnlySession;
+    readOnlySession ||
+    workspaceReadOnly;
 
   const handleModelChange = useCallback(
     (selection: string) => {
@@ -522,7 +525,11 @@ export function useChatPage() {
 
   const handleBranchMessage = useCallback(
     async (message: ChatListItem) => {
-      if (!(session && profileId) || typeof message.historyIndex !== "number") {
+      if (
+        !(session && profileId) ||
+        workspaceReadOnly ||
+        typeof message.historyIndex !== "number"
+      ) {
         return;
       }
       setBranchingMessageId(message.id);
@@ -541,7 +548,13 @@ export function useChatPage() {
         setBranchingMessageId(null);
       }
     },
-    [branchSessionMutation, profileId, resumeSession, session]
+    [
+      branchSessionMutation,
+      profileId,
+      resumeSession,
+      session,
+      workspaceReadOnly,
+    ]
   );
 
   const handleProfileSwitch = useCallback(
@@ -830,7 +843,7 @@ export function useChatPage() {
       files: FileUIPart[] = [],
       options: SendMessageOptions = {}
     ) => {
-      if (readOnlySession) {
+      if (readOnlySession || workspaceReadOnly) {
         return;
       }
 
@@ -865,12 +878,12 @@ export function useChatPage() {
 
       await executeSend(text, files, options);
     },
-    [executeSend, profileId, readOnlySession]
+    [executeSend, profileId, readOnlySession, workspaceReadOnly]
   );
 
   const handleTryAgainMessage = useCallback(
     async (message: ChatListItem) => {
-      if (busy || !profileId) {
+      if (busy || !profileId || workspaceReadOnly) {
         return;
       }
 
@@ -941,11 +954,12 @@ export function useChatPage() {
       sendMessage,
       session,
       syncChatUrl,
+      workspaceReadOnly,
     ]
   );
 
   const isEmptyState = messages.length === 0 && !busy;
-  const composerDisabled = !profileId || readOnlySession;
+  const composerDisabled = !profileId || readOnlySession || workspaceReadOnly;
 
   return {
     activeModelSupportsVision,
@@ -991,6 +1005,7 @@ export function useChatPage() {
     thinkingEffortValues: activeModelReasoningEffortValues,
     thinkingEffortVisible,
     turnStartedAt,
+    workspaceReadOnly,
   };
 }
 

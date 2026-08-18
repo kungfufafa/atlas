@@ -55,17 +55,22 @@ export function ChatPageContent(state: ChatPageState) {
     navigateSetup,
     agentTodos,
     agentQuestionnaire,
+    workspaceReadOnly,
   } = state;
 
   const { banner: skillReviewBanner } = usePostTurnSkillReviewOverlay({
     lastSuccessfulTurnAt,
     profile: activeProfile,
-    readOnlySession,
+    readOnlySession: readOnlySession || workspaceReadOnly,
     sessionChannel,
     sessionId: session?.id ?? null,
   });
 
-  const readOnlyBanner = readOnlySession ? (
+  const readOnlyBanner = workspaceReadOnly ? (
+    <p className="mb-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-muted-foreground text-sm">
+      This workspace is view-only. You can read chats but cannot send messages.
+    </p>
+  ) : readOnlySession ? (
     <p className="mb-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-muted-foreground text-sm">
       View-only {formatSessionChannelLabel(sessionChannel)} conversation. Reply
       from {formatSessionChannelLabel(sessionChannel)}.
@@ -120,7 +125,7 @@ export function ChatPageContent(state: ChatPageState) {
         queuedMessages={queuedMessages}
         renderModelLabel={renderModelLabel}
         showOfflineHint={showOfflineHint}
-        showTips={isEmptyState}
+        showTips={isEmptyState && !workspaceReadOnly}
         thinkingEffort={thinkingEffort}
         thinkingEffortDisabled={thinkingEffortDisabled}
         thinkingEffortValues={thinkingEffortValues}
@@ -156,7 +161,7 @@ export function ChatPageContent(state: ChatPageState) {
         <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col">
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <ChatMessageList
-              actionsDisabled={busy || readOnlySession}
+              actionsDisabled={busy || readOnlySession || workspaceReadOnly}
               branchingMessageId={branchingMessageId}
               messages={messages}
               modelLabel={
@@ -164,9 +169,21 @@ export function ChatPageContent(state: ChatPageState) {
                   ? renderModelLabel(currentModelSelection)
                   : null
               }
-              onBranchMessage={(message) => void handleBranchMessage(message)}
-              onRetryMessage={(message) => void handleTryAgainMessage(message)}
-              onSuggestedQuestion={(question) => void sendMessage(question)}
+              onBranchMessage={
+                workspaceReadOnly
+                  ? undefined
+                  : (message) => void handleBranchMessage(message)
+              }
+              onRetryMessage={
+                workspaceReadOnly
+                  ? undefined
+                  : (message) => void handleTryAgainMessage(message)
+              }
+              onSuggestedQuestion={
+                workspaceReadOnly
+                  ? undefined
+                  : (question) => void sendMessage(question)
+              }
               profileId={profileId}
               showThinking={showThinking}
               streamActive={busy}

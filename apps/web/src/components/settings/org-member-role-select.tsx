@@ -6,12 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const ROLE_LABELS: Record<OrgRole, string> = {
-  admin: "Workspace Admin",
-  member: "Member",
-  viewer: "Viewer",
-};
+import { ORG_ROLE_LABELS } from "@/lib/org-roles";
 
 export function OrgMemberRoleSelect({
   value,
@@ -36,9 +31,9 @@ export function OrgMemberRoleSelect({
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        {(Object.keys(ROLE_LABELS) as OrgRole[]).map((role) => (
+        {(Object.keys(ORG_ROLE_LABELS) as OrgRole[]).map((role) => (
           <SelectItem key={role} value={role}>
-            {ROLE_LABELS[role]}
+            {ORG_ROLE_LABELS[role]}
           </SelectItem>
         ))}
       </SelectContent>

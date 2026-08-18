@@ -9,6 +9,7 @@ import {
   UserSquareIcon,
   WebhookIcon,
 } from "hugeicons-react";
+import { canMutateWorkspace } from "@/lib/org-roles";
 
 type NavIcon = typeof SharedWifiIcon;
 
@@ -178,6 +179,14 @@ export function visibleNavGroups(access: {
 
       if (item.id === "integrations") {
         return canAccessIntegrationsPage(access.orgRole);
+      }
+
+      if (item.id === "profiles") {
+        return canAccessSystemPage(access.isPlatformAdmin, access.orgRole);
+      }
+
+      if (item.id === "chat" || item.id === "automations") {
+        return canMutateWorkspace(access.orgRole);
       }
 
       return true;

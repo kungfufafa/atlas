@@ -1,5 +1,7 @@
 import { AtlasApiError, readApiErrorMessage } from "@atlas/core/api-error";
 import type {
+  AcceptOrgInviteRequest,
+  AcceptOrgInviteResponse,
   AddOrgMemberRequest,
   AddOrgMemberResponse,
   AddOrgMemoryFactRequest,
@@ -109,6 +111,7 @@ import type {
   PreviewManifest,
   PreviewMetadata,
   PreviewOptions,
+  PreviewOrgInviteResponse,
   ProfileResponse,
   PublishArtifactShareRequest,
   PublishArtifactShareResponse,
@@ -1972,6 +1975,27 @@ export class AtlasClient {
     });
 
     this.applyAuthUserResponse(response);
+    return response;
+  }
+
+  async previewOrgInvite(token: string): Promise<PreviewOrgInviteResponse> {
+    const query = new URLSearchParams({ token });
+    return this.request<PreviewOrgInviteResponse>(
+      `/v1/auth/invite?${query.toString()}`
+    );
+  }
+
+  async acceptOrgInvite(
+    request: AcceptOrgInviteRequest
+  ): Promise<AcceptOrgInviteResponse> {
+    const response = await this.request<AcceptOrgInviteResponse>(
+      "/v1/auth/accept-invite",
+      {
+        body: JSON.stringify(request),
+        method: "POST",
+      }
+    );
+    this.setOrgId(response.orgId);
     return response;
   }
 

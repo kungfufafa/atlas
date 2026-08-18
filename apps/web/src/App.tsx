@@ -17,6 +17,7 @@ import { ChatPage } from "@/pages/ChatPage";
 import { FilesPage } from "@/pages/FilesPage";
 import { HistoryPage } from "@/pages/HistoryPage";
 import { IntegrationsPage } from "@/pages/IntegrationsPage";
+import { InvitePage } from "@/pages/InvitePage";
 import { LoginPage } from "@/pages/LoginPage";
 import { NotificationsPage } from "@/pages/NotificationsPage";
 import { ProfilesPage } from "@/pages/ProfilesPage";
@@ -46,6 +47,7 @@ function AppShell() {
             <Routes>
               <Route element={<SetupWizardPage />} path="/setup" />
               <Route element={<LoginPage />} path="/login" />
+              <Route element={<InvitePage />} path="/invite" />
               <Route element={<PublicArtifactSharePage />} path="/s/:token" />
               <Route element={<AuthGuard />}>
                 <Route element={<SetupGuard />}>

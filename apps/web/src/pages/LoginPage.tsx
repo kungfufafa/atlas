@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -12,6 +12,7 @@ import {
   DEMO_LOGIN_PASSWORD,
   isDemoLoginHost,
 } from "@/lib/demo-login";
+import { INVITE_PATH } from "@/lib/invite";
 import { SETUP_PATH } from "@/lib/navigation";
 import { ditherLogoSrc } from "@/lib/theme";
 
@@ -152,6 +153,16 @@ export function LoginPage() {
             {isSubmitting ? "Signing in..." : "Sign in"}
           </Button>
         </form>
+        {demoLogin ? null : (
+          <p className="text-center text-muted-foreground text-sm">
+            <Link
+              className="underline-offset-4 hover:underline"
+              to={INVITE_PATH}
+            >
+              Have an invite?
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   );

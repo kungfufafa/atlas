@@ -21,6 +21,10 @@ export function isPublicRouteRequest(
     return method === "GET";
   }
 
+  if (pathname === "/v1/auth/invite") {
+    return method === "GET";
+  }
+
   if (pathname === "/v1/tools") {
     return method === "GET";
   }

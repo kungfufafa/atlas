@@ -31,7 +31,7 @@ describe("visibleNavGroups", () => {
     ).toEqual([...WORKSPACE_ADMIN_NAV]);
   });
 
-  it("member sees Integrations and automations but not System or Files", () => {
+  it("member sees Integrations and automations but not System, Files, or Profiles", () => {
     const groups = visibleNavGroups({
       isPlatformAdmin: false,
       orgRole: "member",
@@ -42,11 +42,13 @@ describe("visibleNavGroups", () => {
     );
     expect(pageIds).toContain("integrations");
     expect(pageIds).toContain("automations");
+    expect(pageIds).toContain("chat");
     expect(pageIds).not.toContain("soul");
     expect(pageIds).not.toContain("files");
+    expect(pageIds).not.toContain("profiles");
   });
 
-  it("viewer loses Integrations, System, and Files", () => {
+  it("viewer sees chat history only", () => {
     const groups = visibleNavGroups({
       isPlatformAdmin: false,
       orgRole: "viewer",
@@ -55,6 +57,10 @@ describe("visibleNavGroups", () => {
     const pageIds = groups.flatMap((group) =>
       group.items.map((item) => item.id)
     );
+    expect(pageIds).toEqual(["history", "settings"]);
+    expect(pageIds).not.toContain("chat");
+    expect(pageIds).not.toContain("automations");
+    expect(pageIds).not.toContain("profiles");
     expect(pageIds).not.toContain("integrations");
     expect(pageIds).not.toContain("soul");
     expect(pageIds).not.toContain("files");

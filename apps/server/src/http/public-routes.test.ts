@@ -21,9 +21,9 @@ describe("isPublicRouteRequest", () => {
     ).toBe(true);
   });
 
-  test("allows GET /v1/auth/me without middleware auth but not PATCH", () => {
-    expect(isPublicRouteRequest("GET", "/v1/auth/me")).toBe(true);
-    expect(isPublicRouteRequest("PATCH", "/v1/auth/me")).toBe(false);
+  test("allows GET /v1/auth/invite without auth but not other methods", () => {
+    expect(isPublicRouteRequest("GET", "/v1/auth/invite")).toBe(true);
+    expect(isPublicRouteRequest("POST", "/v1/auth/invite")).toBe(false);
   });
 
   test("allows only the tool catalog GET without auth", () => {

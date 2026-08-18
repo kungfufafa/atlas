@@ -21,6 +21,7 @@ import {
   useUpdateOrgMember,
 } from "@/hooks/use-org-members";
 import { formatError } from "@/lib/client";
+import { inviteAcceptUrl } from "@/lib/invite";
 
 type OrgMembersState = {
   inviteOpen: boolean;
@@ -200,8 +201,11 @@ export function OrgMembersCard() {
             type: "patch",
             values: {
               inviteOpen: false,
-              secretHint: "Share this invite token with the recipient.",
-              secretValue: result.token,
+              secretHint: "Share this invite link with the recipient.",
+              secretValue: inviteAcceptUrl(
+                window.location.origin,
+                result.token
+              ),
             },
           });
           dispatch({ type: "reset-invite" });
