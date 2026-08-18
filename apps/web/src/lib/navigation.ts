@@ -137,17 +137,15 @@ export const NAV_ITEM_ICONS: Record<PageId, NavIcon> = {
 
 export const SETUP_PATH = "/setup";
 
-export const PLATFORM_ADMIN_PAGE_IDS: ReadonlySet<PageId> = new Set([
-  "files",
-  "soul",
-]);
-
 export function canAccessSystemPage(
   isPlatformAdmin: boolean,
   orgRole: string | undefined
 ): boolean {
   return isPlatformAdmin || orgRole === "admin";
 }
+
+/** Files is a workspace-admin page (artifacts/knowledge), same as System. */
+export const canAccessFilesPage = canAccessSystemPage;
 
 export function canAccessIntegrationsPage(
   orgRole: string | undefined
@@ -170,6 +168,10 @@ export function visibleNavGroups(access: {
 
   for (const group of NAV_GROUPS) {
     const items = group.items.filter((item) => {
+      if (item.id === "files") {
+        return canAccessFilesPage(access.isPlatformAdmin, access.orgRole);
+      }
+
       if (item.id === "soul") {
         return canAccessSystemPage(access.isPlatformAdmin, access.orgRole);
       }
@@ -178,7 +180,7 @@ export function visibleNavGroups(access: {
         return canAccessIntegrationsPage(access.orgRole);
       }
 
-      return !PLATFORM_ADMIN_PAGE_IDS.has(item.id) || access.isPlatformAdmin;
+      return true;
     });
 
     if (items.length > 0) {

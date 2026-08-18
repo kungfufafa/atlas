@@ -19,7 +19,7 @@ settings—even if someone knows a resource ID from the other workspace.
 | Role | Scope | Capabilities |
 |---|---|---|
 | Superadmin | Entire system | Create workspaces and manage system-wide infrastructure and secrets |
-| Workspace Admin | One workspace | Manage members, providers, profiles, assignments, and workspace settings |
+| Workspace Admin | One workspace | Same sidebar as Superadmin inside that workspace (including Files). Manage members, providers, profiles, and settings |
 | Member | One workspace | Chat with profiles and use assigned workspace capabilities |
 | Viewer | One workspace | Read chat history only; no agent invocation or mutations |
 
@@ -42,7 +42,7 @@ or privacy boundaries. If one team needs multiple assistants while sharing the
 same people and data boundary, use multiple [profiles](/profiles) in one
 workspace.
 
-Workspace Admins can configure providers and profiles only in their active
+Workspace Admins can configure providers, profiles, and files only in their active
 workspace. Global messaging workers, shared tool/MCP/skill definitions, data
 import/export, and host installation remain Superadmin-only. A Workspace Admin
 can assign existing shared capabilities to profiles in their workspace.

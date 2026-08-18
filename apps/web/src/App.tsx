@@ -5,7 +5,6 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { ArtifactWorkspace } from "@/components/artifacts/ArtifactWorkspace";
 import { ArtifactWorkspaceProvider } from "@/components/artifacts/ArtifactWorkspaceContext";
 import { Layout } from "@/components/Layout";
-import { PlatformAdminGuard } from "@/components/PlatformAdminGuard";
 import { SetupGuard } from "@/components/SetupGuard";
 import { WorkspaceAdminGuard } from "@/components/WorkspaceAdminGuard";
 import { AppProvider } from "@/context/app-context";
@@ -62,18 +61,14 @@ function AppShell() {
                       path="/chat/:profileId/:sessionId"
                     />
                     <Route element={<HistoryPage />} path="/history" />
-                    <Route element={<PlatformAdminGuard />}>
-                      <Route element={<FilesPage />} path="/files" />
-                    </Route>
                     <Route
                       element={<ToolPlaygroundPage />}
                       path="/system/playground/:toolId"
                     />
                     <Route element={<SystemPage />} path="/system" />
                     <Route element={<WorkspaceAdminGuard />}>
+                      <Route element={<FilesPage />} path="/files" />
                       <Route element={<ProfilesPage />} path="/profiles" />
-                    </Route>
-                    <Route element={<PlatformAdminGuard />}>
                       <Route
                         element={<SkillDetailPage />}
                         path="/profiles/skills/:skillId"
