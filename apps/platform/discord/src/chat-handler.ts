@@ -329,9 +329,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       const thread = await createGuildThread(message, messageText);
 
       if (thread) {
-        replyChannel = thread;
+        replyChannel = thread as unknown as typeof replyChannel;
         replyConversationKey = `g:${channelId}:t:${thread.id}`;
-        replyMessenger = createDiscordMessenger(thread);
+        replyMessenger = createDiscordMessenger(
+          thread as unknown as Parameters<typeof createDiscordMessenger>[0]
+        );
         replyIsThread = true;
         console.log("[discord] thread created", thread.id);
       } else {

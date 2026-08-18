@@ -831,7 +831,7 @@ export async function installCodingAgentHarness(
 }
 
 async function probeHarnessLight(
-  harness: CodingAgentHarnessStatus,
+  harness: StoredCodingAgentHarnessRecord,
   probeContext?: CodingAgentHarnessProbeContext
 ): Promise<{
   authenticated: boolean | null;

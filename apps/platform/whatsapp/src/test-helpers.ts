@@ -199,7 +199,10 @@ export function createMockClient(
 
   const client = {
     createChatSession: () => session,
-    createSession: async (_channel, options = {}) => {
+    createSession: async (
+      _channel: unknown,
+      options: { profileId?: string } = {}
+    ) => {
       calls.createSession += 1;
       calls.profileIds.push(options.profileId ?? "default");
       return session;

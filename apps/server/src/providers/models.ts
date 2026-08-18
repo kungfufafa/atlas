@@ -689,7 +689,6 @@ export function modelSupportsTranscription(
   if (
     provider === "openai_compatible" ||
     provider === "openrouter" ||
-    provider === "groq" ||
     provider === "ollama" ||
     provider === "fireworks" ||
     provider === "cerebras"

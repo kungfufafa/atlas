@@ -165,6 +165,48 @@ export interface WhatsAppWorkerStatus {
 export interface WorkerLogsResponse {
   stderr: string;
   stdout: string;
+  worker?: string;
+}
+
+export type LlmUsageReportScope = "platform" | "workspace" | "user";
+export type LlmUsageReportGroupBy =
+  | "workspace"
+  | "user"
+  | "provider"
+  | "model"
+  | "credential";
+
+export interface LlmUsageReportRow {
+  estimatedCostUsd: number;
+  inputTokens: number;
+  /** Raw grouping key (org id, user id, provider type, model id, …). */
+  key: string;
+  /** Human-friendly label (workspace name, user name/email, else the key). */
+  label: string;
+  outputTokens: number;
+  requestCount: number;
+  totalTokens: number;
+}
+
+export interface LlmUsageReportResponse {
+  from: string | null;
+  groupBy: LlmUsageReportGroupBy;
+  rows: LlmUsageReportRow[];
+  /** Data scope granted to the caller by RBAC. */
+  scope: LlmUsageReportScope;
+  to: string | null;
+}
+
+export interface OrgUsageBudgetResponse {
+  /** Fraction of the budget used (0..1+), or null when no budget. */
+  fractionUsed: number | null;
+  /** `YYYY-MM` the spend is measured over. */
+  month: string;
+  /** Monthly USD limit, or null when no budget is set. */
+  monthlyLimitUsd: number | null;
+  /** Estimated spend so far this month (USD). */
+  monthToDateUsd: number;
+  overBudget: boolean;
 }
 
 export interface LlmUsageStats {
@@ -2030,6 +2072,10 @@ export interface GenerateTextInput {
   /** Defaults to `json` for structured automation drafts. Use `text` for plain prose. */
   format?: GenerateTextFormat;
   prompt: string;
+  /** Provider-specific options (e.g. thinking/reasoning effort). */
+  providerOptions?: Record<string, unknown>;
+  /** Optional abort signal to cancel the request. */
+  signal?: AbortSignal;
   system: string;
 }
 

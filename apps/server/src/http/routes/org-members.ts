@@ -3,8 +3,10 @@ import type {
   AddOrgMemberResponse,
   InviteOrgMemberRequest,
   ListOrgMembersResponse,
+  OrganizationResponse,
   OrgInviteCreatedResponse,
   OrgMemberResponse,
+  UpdateOrganizationRequest,
   UpdateOrgMemberRequest,
 } from "@atlas/core/contract";
 import { createRoute, z } from "@hono/zod-openapi";

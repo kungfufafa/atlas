@@ -83,7 +83,7 @@ try {
   spawnedChild = child;
 
   const client = createClient({
-    authToken: await loadLocalAuthToken("cli@atlas.internal"),
+    authToken: (await loadLocalAuthToken("cli@atlas.internal")) ?? undefined,
     baseUrl: serverUrl,
   });
 

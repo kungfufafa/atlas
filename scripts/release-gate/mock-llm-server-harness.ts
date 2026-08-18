@@ -191,7 +191,10 @@ export class MockLLMServerHarness {
         };
       }
       if (
+        toolMsg.name === "deep_research" ||
         toolContent.includes("deep_research") ||
+        toolContent.includes("markdownReport") ||
+        toolContent.includes("evidenceCount") ||
         toolContent.includes("HNSW") ||
         toolContent.includes("DiskANN") ||
         toolContent.includes("IVFPQ") ||

@@ -153,7 +153,7 @@ export function registerComposioRoutes(
 
     try {
       const body = await readJson<ComposioConnectRequest>(c.req.raw).catch(
-        () => ({})
+        () => ({}) as ComposioConnectRequest
       );
       return json<ComposioConnectResponse>(
         await service.connectToolkit(

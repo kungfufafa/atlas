@@ -110,7 +110,7 @@ export function registerArtifactShareRoutes(
           ? "text/plain; charset=utf-8"
           : "application/octet-stream";
 
-      return new Response(bytes, {
+      return new Response(bytes as unknown as BodyInit, {
         headers: {
           "Content-Disposition": `${disposition}; filename="${downloadName}"`,
           "Content-Type": contentType,

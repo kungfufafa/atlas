@@ -3,6 +3,7 @@ import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
 import { LLM_USAGE_STATS_ID } from "../constants";
 import type {
   DatabaseAdapter,
+  LlmUsageAggregateRow,
   LlmUsageStatsDelta,
   StoredArtifactShareRecord,
   StoredAttachmentRecord,
@@ -12,15 +13,18 @@ import type {
   StoredComposioToolkitRecord,
   StoredComposioUserConnectionRecord,
   StoredLlmTurnUsageRecord,
+  StoredLlmUsageDailyRecord,
   StoredLlmUsageModelStatsRecord,
   StoredLlmUsageStatsRecord,
   StoredMcpServerRecord,
+  StoredMemoryRecord,
   StoredNotificationDestinationRecord,
   StoredOrgAiConfigRecord,
   StoredOrganizationRecord,
   StoredOrgInviteRecord,
   StoredOrgMemberRecord,
   StoredOrgMemoryProposal,
+  StoredOrgUsageBudgetRecord,
   StoredProfileComposioToolkitRecord,
   StoredProfileRecord,
   StoredSessionMessageRecord,
@@ -103,8 +107,72 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     string,
     StoredProfileComposioToolkitRecord[]
   >();
+  const memories = new Map<string, StoredMemoryRecord>();
+  const memoryKey = (orgId: string, id: string) => `${orgId}:${id}`;
+  const llmUsageDaily = new Map<string, StoredLlmUsageDailyRecord>();
+  const orgUsageBudgets = new Map<string, StoredOrgUsageBudgetRecord>();
 
   return {
+    aggregateLlmUsage(options) {
+      const keyOf = (record: StoredLlmUsageDailyRecord): string => {
+        if (options.groupBy === "user") {
+          return record.userId;
+        }
+        if (options.groupBy === "profile") {
+          return record.profileId;
+        }
+        if (options.groupBy === "provider") {
+          return record.providerType;
+        }
+        if (options.groupBy === "credential") {
+          return record.providerCredentialId;
+        }
+        if (options.groupBy === "model") {
+          return record.modelId;
+        }
+        return record.orgId;
+      };
+
+      const totals = new Map<string, LlmUsageAggregateRow>();
+      for (const record of llmUsageDaily.values()) {
+        if (options.orgId && record.orgId !== options.orgId) {
+          continue;
+        }
+        if (options.userId && record.userId !== options.userId) {
+          continue;
+        }
+        if (options.from && record.day < options.from) {
+          continue;
+        }
+        if (options.to && record.day > options.to) {
+          continue;
+        }
+
+        const key = keyOf(record);
+        const row = totals.get(key) ?? {
+          estimatedCostUsd: 0,
+          inputTokens: 0,
+          key,
+          outputTokens: 0,
+          requestCount: 0,
+          totalTokens: 0,
+        };
+        row.requestCount += record.requestCount;
+        row.inputTokens += record.inputTokens;
+        row.outputTokens += record.outputTokens;
+        row.estimatedCostUsd += record.estimatedCostUsd;
+        row.totalTokens = row.inputTokens + row.outputTokens;
+        totals.set(key, row);
+      }
+
+      let rows = [...totals.values()].sort(
+        (left, right) => right.totalTokens - left.totalTokens
+      );
+      if (typeof options.limit === "number" && options.limit > 0) {
+        rows = rows.slice(0, Math.floor(options.limit));
+      }
+      return Promise.resolve(rows);
+    },
     async appendMessagesForSession(sessionId, messages) {
       const existing = sessionMessages.get(sessionId) ?? [];
       sessionMessages.set(sessionId, [...existing, ...messages]);
@@ -215,6 +283,10 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       browserSessionsByHash.set(record.sessionTokenHash, record);
     },
 
+    async createMemory(record) {
+      memories.set(memoryKey(record.orgId, record.id), { ...record });
+    },
+
     async createOrgInvite(record) {
       orgInvites.set(record.id, record);
       orgInvitesByTokenHash.set(record.tokenHash, record);
@@ -276,6 +348,10 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       }
 
       return true;
+    },
+
+    async deleteMemory(orgId, id) {
+      return memories.delete(memoryKey(orgId, id));
     },
 
     async deleteMessagesForSession(sessionId) {
@@ -435,6 +511,10 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       return composioUserConnections.get(id) ?? null;
     },
 
+    getConversationHistory() {
+      return Promise.resolve(null);
+    },
+
     async getDefaultProfileForOrg(orgId) {
       return (
         Array.from(profiles.values()).find(
@@ -453,6 +533,10 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
     async getMcpServerByName(name) {
       return mcpServersByName.get(name) ?? null;
+    },
+
+    async getMemory(orgId, id) {
+      return memories.get(memoryKey(orgId, id)) ?? null;
     },
 
     async getNotificationDestination(id) {
@@ -485,6 +569,10 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         return null;
       }
       return proposal;
+    },
+
+    getOrgUsageBudget(orgId) {
+      return Promise.resolve(orgUsageBudgets.get(orgId) ?? null);
     },
 
     async getPendingOrgInvite(orgId, email) {
@@ -686,6 +774,31 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         outputTokens: (existing?.outputTokens ?? 0) + delta.outputTokens,
         turns: (existing?.turns ?? 0) + 1,
       });
+    },
+
+    incrementLlmUsageDaily(dimensions, delta) {
+      const day = new Date().toISOString().slice(0, 10);
+      const key = [
+        day,
+        dimensions.orgId,
+        dimensions.userId,
+        dimensions.profileId,
+        dimensions.providerType,
+        dimensions.providerCredentialId,
+        dimensions.modelId,
+      ].join("\u0000");
+      const existing = llmUsageDaily.get(key);
+      llmUsageDaily.set(key, {
+        ...dimensions,
+        day,
+        estimatedCostUsd:
+          (existing?.estimatedCostUsd ?? 0) + delta.estimatedCostUsd,
+        inputTokens: (existing?.inputTokens ?? 0) + delta.inputTokens,
+        outputTokens: (existing?.outputTokens ?? 0) + delta.outputTokens,
+        requestCount: (existing?.requestCount ?? 0) + delta.requestCount,
+        updatedAt: new Date().toISOString(),
+      });
+      return Promise.resolve();
     },
 
     async incrementLlmUsageStats(
@@ -896,6 +1009,19 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         );
     },
 
+    async listMemories(orgId, scope, ownerId, limit) {
+      let results = [...memories.values()].filter(
+        (memory) => memory.orgId === orgId
+      );
+      if (scope) {
+        results = results.filter((memory) => memory.scope === scope);
+      }
+      if (ownerId) {
+        results = results.filter((memory) => memory.ownerId === ownerId);
+      }
+      return typeof limit === "number" ? results.slice(0, limit) : results;
+    },
+
     async listMessagesForSession(sessionId) {
       return [...(sessionMessages.get(sessionId) ?? [])].sort(
         (left, right) => left.seq - right.seq
@@ -928,6 +1054,14 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         ? proposals.filter((proposal) => proposal.status === status)
         : proposals;
       return filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    },
+
+    listOrgUsageBudgets() {
+      return Promise.resolve(
+        [...orgUsageBudgets.values()].sort(
+          (left, right) => right.monthlyLimitUsd - left.monthlyLimitUsd
+        )
+      );
     },
 
     async listProfileComposioToolkits(profileId) {
@@ -1150,6 +1284,16 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       });
       return true;
     },
+    pruneLlmUsageDaily(beforeDay) {
+      let removed = 0;
+      for (const [key, record] of llmUsageDaily.entries()) {
+        if (record.day <= beforeDay) {
+          llmUsageDaily.delete(key);
+          removed += 1;
+        }
+      }
+      return Promise.resolve(removed);
+    },
 
     async replaceMessagesForSession(sessionId, messages) {
       sessionMessages.set(sessionId, [...messages]);
@@ -1183,6 +1327,26 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
       browserSessionsByHash.set(sessionTokenHash, { ...session, revokedAt });
       return true;
+    },
+
+    searchConversationMessages() {
+      return Promise.resolve([]);
+    },
+
+    async searchMemories(orgId, query, scope, ownerId, limit) {
+      const needle = query.trim().toLowerCase();
+      let results = [...memories.values()].filter(
+        (memory) =>
+          memory.orgId === orgId &&
+          memory.content.toLowerCase().includes(needle)
+      );
+      if (scope) {
+        results = results.filter((memory) => memory.scope === scope);
+      }
+      if (ownerId) {
+        results = results.filter((memory) => memory.ownerId === ownerId);
+      }
+      return typeof limit === "number" ? results.slice(0, limit) : results;
     },
 
     async setUserContext(orgId, userId, content, updatedAt) {
@@ -1268,6 +1432,14 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
           browserSessionsByHash.set(hash, { ...session, lastUsedAt });
           return;
         }
+      }
+    },
+
+    async updateMemory(orgId, id, patch) {
+      const key = memoryKey(orgId, id);
+      const existing = memories.get(key);
+      if (existing) {
+        memories.set(key, { ...existing, ...patch, id, orgId });
       }
     },
 
@@ -1428,6 +1600,11 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
     async upsertOrgMember(record) {
       orgMembers.set(`${record.orgId}:${record.userId}`, record);
+    },
+
+    upsertOrgUsageBudget(record) {
+      orgUsageBudgets.set(record.orgId, { ...record });
+      return Promise.resolve();
     },
 
     async upsertProfile(record) {

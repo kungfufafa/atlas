@@ -32,6 +32,7 @@ import { registerSystemRoutes } from "./routes/system";
 import { registerTaskRoutes } from "./routes/tasks";
 import { registerTokenOptimizationRoutes } from "./routes/token-optimization";
 import { registerToolRoutes } from "./routes/tools";
+import { registerUsageRoutes } from "./routes/usage";
 import { registerUserContextRoutes } from "./routes/user-context";
 import { registerWorkerRoutes } from "./routes/workers";
 import { errorResponse } from "./shared";
@@ -119,6 +120,7 @@ export function createHonoApp(options: ServerOptions) {
   registerAutomationRoutes(app, options);
   registerNotificationDestinationRoutes(app, options);
   registerTokenOptimizationRoutes(app, options);
+  registerUsageRoutes(app, options);
   registerComposioRoutes(app, options);
   registerTaskRoutes(app, options);
   registerPlatformOrgRoutes(app, options);

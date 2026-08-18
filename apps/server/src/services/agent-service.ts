@@ -173,9 +173,12 @@ import {
 import { canAccessSuperAgentProfile } from "@atlas/core/profiles";
 import {
   type DatabaseAdapter,
+  type LlmUsageDimensions,
   type StoredProfileRecord,
+  type StoredSessionRecord,
   type StoredTaskRunRecord,
   SUPER_AGENT_TOOL_AUTHORING_RULES,
+  UNKNOWN_USAGE_DIMENSION,
   WORKSPACE_SETTINGS_ID,
 } from "@atlas/db";
 import {
@@ -193,6 +196,10 @@ import {
 } from "../providers";
 import { isAllowedImageGenerationSelection } from "../providers/models";
 import { wrapProviderForNonVision } from "../providers/non-vision-wrap";
+import {
+  estimateUsageCostUsd,
+  type PricingContext,
+} from "../providers/pricing";
 import { wrapProviderWithUsageTracking } from "../providers/usage-tracking";
 import { createAskUserQuestionTools } from "../tools/ask-user-question-tool";
 import { createDeepResearchServerTool } from "../tools/deep-research-server";
@@ -287,6 +294,7 @@ import type { SkillProposalService } from "./skill-proposal-service";
 import type { SkillSuggestionService } from "./skill-suggestion-service";
 import type { SkillsService } from "./skills-service";
 import { SuperAgentSessionState } from "./super-agent-session-state";
+import type { TaskRunner } from "./task-runner";
 import { toolActivationService } from "./tool-activation-service";
 import {
   resolveProfileStoredTools,
@@ -378,7 +386,46 @@ export class AgentService {
    * is not awaited and a rejection is swallowed.
    */
   /** Same fire-and-forget shape as the savings recorder, for provider tokens. */
-  private turnUsageRecorderFor(orgId: string | undefined) {
+  /**
+   * Resolve the attribution dimensions (workspace/user/profile + the active
+   * provider credential and model) plus a pricing context for a session, so
+   * each turn can be folded into the multi-tenant usage rollup. Returns
+   * undefined when no provider is configured (nothing to attribute).
+   */
+  private buildUsageAttribution(options: {
+    orgId: string;
+    userId?: string | null;
+    profileId: string;
+    userConfig: UserConfig | null;
+    modelId?: string | null;
+  }): { dimensions: LlmUsageDimensions; pricing: PricingContext } | undefined {
+    const instance = getActiveProviderInstance(options.userConfig);
+    if (!instance) {
+      return;
+    }
+
+    const modelId =
+      options.modelId?.trim() ||
+      resolveDefaultModelForInstance(instance) ||
+      instance.type;
+
+    return {
+      dimensions: {
+        modelId,
+        orgId: options.orgId,
+        profileId: options.profileId || UNKNOWN_USAGE_DIMENSION,
+        providerCredentialId: instance.id,
+        providerType: instance.type,
+        userId: options.userId?.trim() || UNKNOWN_USAGE_DIMENSION,
+      },
+      pricing: { provider: instance.type, providerInstance: instance },
+    };
+  }
+
+  private turnUsageRecorderFor(
+    orgId: string | undefined,
+    attribution?: { dimensions: LlmUsageDimensions; pricing: PricingContext }
+  ) {
     if (!orgId?.trim()) {
       return;
     }
@@ -394,6 +441,23 @@ export class AgentService {
       void this.db
         .incrementLlmTurnUsage(scopedOrgId, turn)
         .catch(() => undefined);
+
+      if (attribution) {
+        const estimatedCostUsd = estimateUsageCostUsd(
+          attribution.dimensions.modelId,
+          turn.inputTokens,
+          turn.outputTokens,
+          attribution.pricing
+        );
+        void this.db
+          .incrementLlmUsageDaily(attribution.dimensions, {
+            estimatedCostUsd,
+            inputTokens: turn.inputTokens,
+            outputTokens: turn.outputTokens,
+            requestCount: 1,
+          })
+          .catch(() => undefined);
+      }
     };
   }
 
@@ -708,7 +772,7 @@ export class AgentService {
     input: GenerateImageRequest
   ): Promise<GenerateImageResponse> {
     const config = await this.getOrgUserConfig(orgId);
-    return this.generateImageWithConfig(input, config);
+    return this.generateImageWithConfig(input, config, orgId);
   }
 
   async setUserTimezone(timezone: string): Promise<string> {
@@ -926,10 +990,10 @@ export class AgentService {
       null;
 
     await this.db.upsertWorkspaceSettings({
-      codingAgentHarnesses: stored?.codingAgentHarnesses ?? [],
+      codingAgentHarnesses: [],
       id: WORKSPACE_SETTINGS_ID,
       imageModel: this.userConfig?.imageModel ?? null,
-      selectedCodingAgentHarness: stored?.selectedCodingAgentHarness ?? null,
+      selectedCodingAgentHarness: null,
       transcriptionModel: legacyModel,
       updatedAt: new Date().toISOString(),
       visionModel: this.userConfig?.visionModel ?? null,
@@ -1148,10 +1212,10 @@ export class AgentService {
     const legacyImageModel = this.userConfig?.imageModel ?? null;
 
     await this.db.upsertWorkspaceSettings({
-      codingAgentHarnesses: stored?.codingAgentHarnesses ?? [],
+      codingAgentHarnesses: [],
       id: WORKSPACE_SETTINGS_ID,
       imageModel: legacyImageModel,
-      selectedCodingAgentHarness: stored?.selectedCodingAgentHarness ?? null,
+      selectedCodingAgentHarness: null,
       transcriptionModel: legacyTranscriptionModel,
       updatedAt: new Date().toISOString(),
       visionModel: legacyVisionModel,
@@ -1549,7 +1613,10 @@ export class AgentService {
         orgRole: "member",
         profileId,
         recordToolOutputSavings: this.savingsRecorderFor(orgId),
-        recordTurnUsage: this.turnUsageRecorderFor(orgId),
+        recordTurnUsage: this.turnUsageRecorderFor(
+          orgId,
+          this.buildUsageAttribution({ orgId, profileId, userConfig })
+        ),
       }),
       tools,
       userContext,
@@ -1619,7 +1686,15 @@ export class AgentService {
         orgRole: "member",
         profileId: input.profileId,
         recordToolOutputSavings: this.savingsRecorderFor(input.orgId),
-        recordTurnUsage: this.turnUsageRecorderFor(input.orgId),
+        recordTurnUsage: this.turnUsageRecorderFor(
+          input.orgId,
+          this.buildUsageAttribution({
+            orgId: input.orgId,
+            profileId: input.profileId,
+            userConfig,
+            userId: input.userId,
+          })
+        ),
         sessionId: input.sessionId,
         userId: input.userId,
       }),
@@ -2882,7 +2957,8 @@ export class AgentService {
 
   private async generateImageWithConfig(
     input: GenerateImageRequest,
-    config: UserConfig | null
+    config: UserConfig | null,
+    orgId?: string | null
   ): Promise<GenerateImageResponse> {
     const prompt = input.prompt?.trim();
     if (!prompt) {
@@ -2902,6 +2978,35 @@ export class AgentService {
       usage.inputTokens,
       usage.outputTokens
     );
+    if (orgId) {
+      const estimatedCostUsd = estimateUsageCostUsd(
+        result.model,
+        usage.inputTokens,
+        usage.outputTokens,
+        {
+          provider: selection.instance.type,
+          providerInstance: selection.instance,
+        }
+      );
+      void this.db
+        .incrementLlmUsageDaily(
+          {
+            modelId: result.model,
+            orgId,
+            profileId: UNKNOWN_USAGE_DIMENSION,
+            providerCredentialId: selection.instance.id,
+            providerType: selection.instance.type,
+            userId: UNKNOWN_USAGE_DIMENSION,
+          },
+          {
+            estimatedCostUsd,
+            inputTokens: usage.inputTokens,
+            outputTokens: usage.outputTokens,
+            requestCount: 1,
+          }
+        )
+        .catch(() => undefined);
+    }
     return {
       data: Buffer.from(result.data).toString("base64"),
       mediaType: result.mediaType,
@@ -3050,7 +3155,11 @@ export class AgentService {
 
     const raw = await executeToolCall(
       [loaded],
-      { arguments: parameters, name: loaded.name },
+      {
+        arguments: parameters,
+        id: `playground_${Date.now()}`,
+        name: loaded.name,
+      },
       toolContext
     );
 
@@ -4032,7 +4141,10 @@ export class AgentService {
         orgRole: orgRole ?? undefined,
         profileId,
         recordToolOutputSavings: this.savingsRecorderFor(orgId),
-        recordTurnUsage: this.turnUsageRecorderFor(orgId),
+        recordTurnUsage: this.turnUsageRecorderFor(
+          orgId,
+          this.buildUsageAttribution({ orgId, profileId, userConfig, userId })
+        ),
         sessionId,
         tokenOptimizerEnabled: tokenOptimizerEnabled ?? undefined,
         userId: userId ?? undefined,
@@ -4127,7 +4239,7 @@ export class AgentService {
     harness: CodingAgentHarnessStatus,
     workspaceRoot: string,
     probeContext: {
-      userConfig: typeof this.userConfig;
+      userConfig: UserConfig | null;
       profileModel: string | null;
     }
   ): Promise<string> {
@@ -4284,7 +4396,7 @@ export class AgentService {
       profile.model
     );
     const resolvedProvider =
-      primarySupportsVision === false
+      primarySupportsVision === false && provider
         ? wrapProviderForNonVision(provider)
         : provider;
 

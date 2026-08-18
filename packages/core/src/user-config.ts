@@ -130,7 +130,7 @@ export function normalizeProviderInstanceLabel(
 }
 
 export function findProviderInstance(
-  config: UserConfig | null | undefined,
+  config: Pick<UserConfig, "providers"> | null | undefined,
   providerId: string
 ): ProviderInstance | null {
   return config?.providers.find((entry) => entry.id === providerId) ?? null;
