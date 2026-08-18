@@ -322,6 +322,70 @@ export interface StoredLlmTurnUsageRecord {
   turns: number;
 }
 
+/** Sentinel for a usage dimension that could not be resolved at record time. */
+export const UNKNOWN_USAGE_DIMENSION = "unknown";
+
+/** Attribution dimensions for a single LLM turn's usage. */
+export interface LlmUsageDimensions {
+  modelId: string;
+  orgId: string;
+  profileId: string;
+  /** Stable id of the provider credential/instance that served the request. */
+  providerCredentialId: string;
+  providerType: string;
+  userId: string;
+}
+
+/** Per-turn counters folded into a daily rollup row. */
+export interface LlmUsageDelta {
+  estimatedCostUsd: number;
+  inputTokens: number;
+  outputTokens: number;
+  requestCount: number;
+}
+
+export interface StoredLlmUsageDailyRecord extends LlmUsageDimensions {
+  /** `YYYY-MM-DD` (UTC). */
+  day: string;
+  estimatedCostUsd: number;
+  inputTokens: number;
+  outputTokens: number;
+  requestCount: number;
+  updatedAt: string;
+}
+
+export type LlmUsageGroupBy =
+  | "workspace"
+  | "user"
+  | "profile"
+  | "provider"
+  | "credential"
+  | "model";
+
+export interface LlmUsageAggregateOptions {
+  /** Inclusive lower bound, `YYYY-MM-DD` (UTC). */
+  from?: string;
+  groupBy: LlmUsageGroupBy;
+  /** Max rows returned, ordered by total tokens desc. */
+  limit?: number;
+  /** Restrict to a single workspace (org admins are always scoped this way). */
+  orgId?: string;
+  /** Inclusive upper bound, `YYYY-MM-DD` (UTC). */
+  to?: string;
+  /** Restrict to a single user (members are scoped to themselves). */
+  userId?: string;
+}
+
+export interface LlmUsageAggregateRow {
+  estimatedCostUsd: number;
+  inputTokens: number;
+  /** Grouping key value (e.g. org id, user id, provider type, model id). */
+  key: string;
+  outputTokens: number;
+  requestCount: number;
+  totalTokens: number;
+}
+
 export interface StoredToolOutputSavingsRecord {
   /** Day the bytes were removed, `YYYY-MM-DD`. Day resolution because the panel
    * plots days and an hour column would be 24x the rows for a chart nobody asked
@@ -539,6 +603,10 @@ export interface StoredBrowserSessionRecord {
 }
 
 export interface DatabaseAdapter {
+  /** Aggregate the daily usage rollup by a single dimension. */
+  aggregateLlmUsage(
+    options: LlmUsageAggregateOptions
+  ): Promise<LlmUsageAggregateRow[]>;
   appendMessagesForSession(
     sessionId: string,
     messages: StoredSessionMessageRecord[]
@@ -741,6 +809,12 @@ export interface DatabaseAdapter {
     orgId?: string
   ): Promise<StoredWorkspaceSettingsRecord | null>;
   incrementLlmTurnUsage(orgId: string, delta: LlmTurnUsageDelta): Promise<void>;
+
+  /** Fold one LLM turn into the multi-tenant daily usage rollup. */
+  incrementLlmUsageDaily(
+    dimensions: LlmUsageDimensions,
+    delta: LlmUsageDelta
+  ): Promise<void>;
   incrementLlmUsageStats(
     delta: LlmUsageStatsDelta,
     trackedSince: string

@@ -34,6 +34,7 @@ export function migrateDatabase(db: Database): void {
   migrateLlmUsageModelStatsTable(db);
   migrateToolOutputSavingsTable(db);
   migrateLlmTurnUsageTable(db);
+  migrateLlmUsageDailyTable(db);
   migrateAttachmentsTable(db);
   migrateAutomationRunsTable(db);
   migrateAutomationRunReadStateTable(db);
@@ -325,6 +326,43 @@ function migrateLlmTurnUsageTable(db: Database): void {
       updated_at TEXT NOT NULL,
       PRIMARY KEY (org_id, bucket, arm)
     );
+  `);
+}
+
+/**
+ * Multi-tenant LLM usage rollup at day grain. Every LLM turn is attributed to
+ * the workspace/user/profile that consumed it, plus the provider identity that
+ * served it. `provider_credential_id` keeps the shared-key case honest: one API
+ * key used across workspaces shows up under one credential id, while the
+ * per-workspace/user rows underneath split the consumption for chargeback.
+ *
+ * Unknown dimensions are stored as the sentinel "unknown" (never NULL) so the
+ * composite primary key stays intact and aggregation never drops rows.
+ */
+function migrateLlmUsageDailyTable(db: Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS llm_usage_daily (
+      day TEXT NOT NULL,
+      org_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      profile_id TEXT NOT NULL,
+      provider_type TEXT NOT NULL,
+      provider_credential_id TEXT NOT NULL,
+      model_id TEXT NOT NULL,
+      request_count INTEGER NOT NULL DEFAULT 0,
+      input_tokens INTEGER NOT NULL DEFAULT 0,
+      output_tokens INTEGER NOT NULL DEFAULT 0,
+      estimated_cost_usd REAL NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY (
+        day, org_id, user_id, profile_id,
+        provider_type, provider_credential_id, model_id
+      )
+    );
+    CREATE INDEX IF NOT EXISTS llm_usage_daily_org_day
+      ON llm_usage_daily (org_id, day);
+    CREATE INDEX IF NOT EXISTS llm_usage_daily_day
+      ON llm_usage_daily (day);
   `);
 }
 

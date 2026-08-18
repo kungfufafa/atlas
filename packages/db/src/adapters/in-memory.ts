@@ -3,6 +3,7 @@ import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
 import { LLM_USAGE_STATS_ID } from "../constants";
 import type {
   DatabaseAdapter,
+  LlmUsageAggregateRow,
   LlmUsageStatsDelta,
   StoredArtifactShareRecord,
   StoredAttachmentRecord,
@@ -12,6 +13,7 @@ import type {
   StoredComposioToolkitRecord,
   StoredComposioUserConnectionRecord,
   StoredLlmTurnUsageRecord,
+  StoredLlmUsageDailyRecord,
   StoredLlmUsageModelStatsRecord,
   StoredLlmUsageStatsRecord,
   StoredMcpServerRecord,
@@ -106,8 +108,69 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
   >();
   const memories = new Map<string, StoredMemoryRecord>();
   const memoryKey = (orgId: string, id: string) => `${orgId}:${id}`;
+  const llmUsageDaily = new Map<string, StoredLlmUsageDailyRecord>();
 
   return {
+    aggregateLlmUsage(options) {
+      const keyOf = (record: StoredLlmUsageDailyRecord): string => {
+        if (options.groupBy === "user") {
+          return record.userId;
+        }
+        if (options.groupBy === "profile") {
+          return record.profileId;
+        }
+        if (options.groupBy === "provider") {
+          return record.providerType;
+        }
+        if (options.groupBy === "credential") {
+          return record.providerCredentialId;
+        }
+        if (options.groupBy === "model") {
+          return record.modelId;
+        }
+        return record.orgId;
+      };
+
+      const totals = new Map<string, LlmUsageAggregateRow>();
+      for (const record of llmUsageDaily.values()) {
+        if (options.orgId && record.orgId !== options.orgId) {
+          continue;
+        }
+        if (options.userId && record.userId !== options.userId) {
+          continue;
+        }
+        if (options.from && record.day < options.from) {
+          continue;
+        }
+        if (options.to && record.day > options.to) {
+          continue;
+        }
+
+        const key = keyOf(record);
+        const row = totals.get(key) ?? {
+          estimatedCostUsd: 0,
+          inputTokens: 0,
+          key,
+          outputTokens: 0,
+          requestCount: 0,
+          totalTokens: 0,
+        };
+        row.requestCount += record.requestCount;
+        row.inputTokens += record.inputTokens;
+        row.outputTokens += record.outputTokens;
+        row.estimatedCostUsd += record.estimatedCostUsd;
+        row.totalTokens = row.inputTokens + row.outputTokens;
+        totals.set(key, row);
+      }
+
+      let rows = [...totals.values()].sort(
+        (left, right) => right.totalTokens - left.totalTokens
+      );
+      if (typeof options.limit === "number" && options.limit > 0) {
+        rows = rows.slice(0, Math.floor(options.limit));
+      }
+      return Promise.resolve(rows);
+    },
     async appendMessagesForSession(sessionId, messages) {
       const existing = sessionMessages.get(sessionId) ?? [];
       sessionMessages.set(sessionId, [...existing, ...messages]);
@@ -705,6 +768,31 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         outputTokens: (existing?.outputTokens ?? 0) + delta.outputTokens,
         turns: (existing?.turns ?? 0) + 1,
       });
+    },
+
+    incrementLlmUsageDaily(dimensions, delta) {
+      const day = new Date().toISOString().slice(0, 10);
+      const key = [
+        day,
+        dimensions.orgId,
+        dimensions.userId,
+        dimensions.profileId,
+        dimensions.providerType,
+        dimensions.providerCredentialId,
+        dimensions.modelId,
+      ].join("\u0000");
+      const existing = llmUsageDaily.get(key);
+      llmUsageDaily.set(key, {
+        ...dimensions,
+        day,
+        estimatedCostUsd:
+          (existing?.estimatedCostUsd ?? 0) + delta.estimatedCostUsd,
+        inputTokens: (existing?.inputTokens ?? 0) + delta.inputTokens,
+        outputTokens: (existing?.outputTokens ?? 0) + delta.outputTokens,
+        requestCount: (existing?.requestCount ?? 0) + delta.requestCount,
+        updatedAt: new Date().toISOString(),
+      });
+      return Promise.resolve();
     },
 
     async incrementLlmUsageStats(
