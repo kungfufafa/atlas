@@ -1946,7 +1946,7 @@ export class AgentService {
         }))
     ) {
       throw new AtlasApiError(
-        "Super Agent is only available to Superadmins.",
+        "Super Agent is only available to Workspace Admins and Superadmins.",
         403
       );
     }

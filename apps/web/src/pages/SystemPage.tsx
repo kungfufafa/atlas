@@ -22,8 +22,8 @@ export function SystemPage() {
   const isPlatformAdmin = user?.isPlatformAdmin === true;
   const canAccess = canAccessSystemPage(isPlatformAdmin, activeOrg?.role);
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = resolveSystemTab(searchParams.get("tab"), isPlatformAdmin);
-  const visibleTabs = visibleSystemTabs(isPlatformAdmin);
+  const tab = resolveSystemTab(searchParams.get("tab"));
+  const visibleTabs = visibleSystemTabs();
   const pageHeaderActions = usePageHeaderActions();
 
   const setTab = useCallback(

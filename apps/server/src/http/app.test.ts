@@ -1193,7 +1193,7 @@ describe("createHonoApp", () => {
   });
 
   describe("platform admin routes", () => {
-    test("allows Workspace Admin profile management but keeps shared skill definitions Superadmin-only", async () => {
+    test("allows Workspace Admin full in-workspace profile and skill management", async () => {
       const options = createServerOptions();
       const app = createHonoApp(options);
       await createPlatformAdminUser(
@@ -1289,7 +1289,14 @@ describe("createHonoApp", () => {
       const skillsResponse = await app.fetch(
         new Request("http://localhost:4310/v1/skills", { headers: orgHeaders })
       );
-      expect(skillsResponse.status).toBe(403);
+      expect(skillsResponse.status).toBe(200);
+
+      const mcpResponse = await app.fetch(
+        new Request("http://localhost:4310/v1/mcp/servers", {
+          headers: orgHeaders,
+        })
+      );
+      expect(mcpResponse.status).toBe(200);
     });
   });
 });

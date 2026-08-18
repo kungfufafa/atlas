@@ -13,7 +13,7 @@ Profiles belong to a **workspace**. Switching workspaces shows only that workspa
 
 | Agent | Role |
 |---|---|
-| **Super Agent** | The orchestrator. Creates other agents, assigns tools, writes host tools, and runs workspace shell work. Visible to Superadmins. |
+| **Super Agent** | The orchestrator. Creates other agents, assigns tools, writes host tools, and runs workspace shell work. Visible to Superadmins and Workspace Admins in that workspace. |
 | **Default Agent** | Ready to use. Full work toolkit (search, files, research, documents) so the team can chat immediately. |
 | **New agent** | Custom. Starts with basic file and knowledge tools. You add soul, tools, skills, and MCP to make it specific. |
 
@@ -34,7 +34,7 @@ That profile is named **Default Agent** and gets a unique id (not a fixed string
 | What | Behavior |
 |------|----------|
 | Default profile | Exactly one per org, marked with `isDefault` — ready to use |
-| Super Agent | Orchestrator; Superadmins only |
+| Super Agent | Orchestrator; Superadmins and Workspace Admins in that workspace |
 | Additional orgs | Each gets its own default profile and isolated on-disk data |
 
 If a session or channel config omits a profile id — or names one that does not exist in the active org — Atlas falls back to that org's default profile.

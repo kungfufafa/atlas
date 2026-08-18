@@ -13,7 +13,7 @@ person may perform and the workspace data the action may touch.
 | ID | Role | Scope | Contract |
 |---|---|---|---|
 | AUTH-ROLE-001 | Superadmin | Entire system | Manages workspaces and system-wide infrastructure. |
-| AUTH-ROLE-002 | Workspace Admin | One workspace | Manages members, providers, profiles, and workspace settings only inside that workspace. |
+| AUTH-ROLE-002 | Workspace Admin | One workspace | Full admin of that workspace, including Super Agent, members, providers, profiles, tools, MCP, skills, and workspace settings. |
 | AUTH-ROLE-003 | Member | One workspace | Uses assigned agents and workspace capabilities; cannot administer workspace configuration. |
 | AUTH-ROLE-004 | Viewer | One workspace | Read-only; cannot invoke agents or mutate state. |
 
@@ -48,8 +48,10 @@ Admin**.
 | Capability | Superadmin | Workspace Admin | Member | Viewer |
 |---|---:|---:|---:|---:|
 | Create/manage workspaces | Yes | No | No | No |
+| Manage workspace Super Agent | Yes, with active membership | Yes | No | No |
 | Manage workspace members | Yes, with active membership | Yes | No | No |
 | Manage workspace AI providers/models | Yes, with active membership | Yes | No | No |
+| Manage workspace tools, MCP, and skills | Yes, with active membership | Yes | No | No |
 | Use agents and AI media operations | Yes | Yes | Yes | No |
 | Read workspace chat | Yes | Yes | Yes | Yes |
 | Mutate workspace chat | Yes | Yes | Yes | No |

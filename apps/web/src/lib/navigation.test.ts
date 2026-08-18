@@ -1,43 +1,37 @@
 import { describe, expect, it } from "bun:test";
 import { visibleNavGroups } from "./navigation";
 
+const WORKSPACE_ADMIN_NAV = [
+  "chat",
+  "history",
+  "files",
+  "profiles",
+  "automations",
+  "integrations",
+  "soul",
+  "settings",
+] as const;
+
 describe("visibleNavGroups", () => {
-  it("platform admin sees all groups and items including System, Profiles, Files", () => {
-    const groups = visibleNavGroups({
+  it("platform admin and workspace admin see the same sidebar", () => {
+    const platformAdmin = visibleNavGroups({
       isPlatformAdmin: true,
       orgRole: "admin",
     });
-
-    const pageIds = groups.flatMap((group) =>
-      group.items.map((item) => item.id)
-    );
-    expect(pageIds).toEqual([
-      "chat",
-      "history",
-      "files",
-      "profiles",
-      "automations",
-      "integrations",
-      "soul",
-      "settings",
-    ]);
-  });
-
-  it("org admin sees System and Integrations, but not platform-admin-only pages", () => {
-    const groups = visibleNavGroups({
+    const workspaceAdmin = visibleNavGroups({
       isPlatformAdmin: false,
       orgRole: "admin",
     });
 
-    const pageIds = groups.flatMap((group) =>
-      group.items.map((item) => item.id)
-    );
-    expect(pageIds).toContain("soul");
-    expect(pageIds).toContain("integrations");
-    expect(pageIds).not.toContain("files");
+    expect(
+      platformAdmin.flatMap((group) => group.items.map((item) => item.id))
+    ).toEqual([...WORKSPACE_ADMIN_NAV]);
+    expect(
+      workspaceAdmin.flatMap((group) => group.items.map((item) => item.id))
+    ).toEqual([...WORKSPACE_ADMIN_NAV]);
   });
 
-  it("member sees Integrations and automations but not System", () => {
+  it("member sees Integrations and automations but not System or Files", () => {
     const groups = visibleNavGroups({
       isPlatformAdmin: false,
       orgRole: "member",
@@ -52,7 +46,7 @@ describe("visibleNavGroups", () => {
     expect(pageIds).not.toContain("files");
   });
 
-  it("viewer loses Integrations and System", () => {
+  it("viewer loses Integrations, System, and Files", () => {
     const groups = visibleNavGroups({
       isPlatformAdmin: false,
       orgRole: "viewer",

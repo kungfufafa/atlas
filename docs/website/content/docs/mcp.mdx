@@ -5,7 +5,7 @@ description: "Connect external MCP servers to Atlas profiles and expose new tool
 
 An **MCP server** is an external tool provider. Atlas acts as an **MCP client**: it connects to servers you register, caches their tools, and exposes them in chat like [builtin tools](/builtin-tools).
 
-- Register a server once (Superadmin)
+- Register a server once for the workspace (Workspace Admin or Superadmin)
 - Assign it to profiles that need it
 - Tools appear at chat time, namespaced as `{serverName}__{toolName}`
 
@@ -55,7 +55,7 @@ Atlas **caches** the tool list at connect time — it is not re-fetched on every
 
 ## Setup
 
-Superadmins manage shared server definitions at **Agent → System → MCP**. Superadmins and Workspace Admins can assign an existing server to profiles in their active workspace.
+Superadmins and Workspace Admins manage server definitions at **System → MCP** in the active workspace, then assign a server to profiles that need it.
 
 ### Add a server
 
@@ -150,12 +150,12 @@ HTTP headers and stdio `env` values are secrets:
 
 ## Permissions
 
-MCP server definitions are system-wide. Profile assignments are workspace-scoped.
+MCP server definitions are install-wide. Superadmins and Workspace Admins manage them from the active workspace; profile assignments stay workspace-scoped.
 
 | Actor | Manage MCP | Use MCP tools in chat |
 |-------|------------|----------------------|
 | Superadmin | Yes | Yes |
-| Workspace Admin | Assign existing servers | Yes |
+| Workspace Admin | Yes | Yes |
 | Member | No | Yes |
 | Viewer | No | No |
 

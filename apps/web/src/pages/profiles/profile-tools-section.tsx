@@ -60,8 +60,7 @@ export function ProfileToolsSection({
               </p>
             );
             const onConfigure =
-              user?.isPlatformAdmin === true &&
-              tool.id === BUILTIN_TOOL_IDS.email
+              canOpenPlayground && tool.id === BUILTIN_TOOL_IDS.email
                 ? () => setEmailConfigOpen(true)
                 : undefined;
 

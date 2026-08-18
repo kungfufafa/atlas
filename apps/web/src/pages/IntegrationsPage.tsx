@@ -101,22 +101,13 @@ export function IntegrationsPage() {
   }
 
   const isOrgAdmin = activeOrg?.role === "admin";
-  const isSuperadmin = user?.isPlatformAdmin === true;
+  const canManageWorkspace = user?.isPlatformAdmin === true || isOrgAdmin;
   const section = resolveSection(
-    isSuperadmin || isOrgAdmin ? searchParams.get("section") : "composio"
+    canManageWorkspace ? searchParams.get("section") : "composio"
   );
-  const visibleSections = isSuperadmin
+  const visibleSections = canManageWorkspace
     ? INTEGRATION_SECTIONS
-    : INTEGRATION_SECTIONS.filter((item) =>
-        isOrgAdmin
-          ? item.id === "telegram" ||
-            item.id === "whatsapp" ||
-            item.id === "discord" ||
-            item.id === "notifications" ||
-            item.id === "composio" ||
-            item.id === "optimization"
-          : item.id === "composio"
-      );
+    : INTEGRATION_SECTIONS.filter((item) => item.id === "composio");
   const visibleSection = visibleSections.some((item) => item.id === section)
     ? section
     : "composio";
@@ -169,7 +160,7 @@ export function IntegrationsPage() {
 
           {visibleSection === "composio" ? (
             <div className={cn(isOrgAdmin && "space-y-4")}>
-              {isSuperadmin ? <ComposioSettingsCard embedded /> : null}
+              {canManageWorkspace ? <ComposioSettingsCard embedded /> : null}
               <ComposioConnectionsCard bordered embedded />
             </div>
           ) : null}

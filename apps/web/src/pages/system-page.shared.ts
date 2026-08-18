@@ -14,36 +14,19 @@ export const SYSTEM_TABS = [
 
 export type SystemTabId = (typeof SYSTEM_TABS)[number]["id"];
 
-export function resolveSystemTab(
-  value: string | null,
-  isPlatformAdmin: boolean
-): SystemTabId {
-  if (value === "status") {
-    return "status";
-  }
-
-  if (value === "organization") {
-    return "organization";
-  }
-
-  if (!isPlatformAdmin) {
-    return "tools";
-  }
-
-  if (value === "mcp") {
+export function resolveSystemTab(value: string | null): SystemTabId {
+  if (
+    value === "status" ||
+    value === "organization" ||
+    value === "mcp" ||
+    value === "tools"
+  ) {
     return value;
   }
 
   return "tools";
 }
 
-export function visibleSystemTabs(isPlatformAdmin: boolean) {
-  if (isPlatformAdmin) {
-    return SYSTEM_TABS;
-  }
-
-  return SYSTEM_TABS.filter(
-    (item) =>
-      item.id === "status" || item.id === "organization" || item.id === "tools"
-  );
+export function visibleSystemTabs() {
+  return SYSTEM_TABS;
 }

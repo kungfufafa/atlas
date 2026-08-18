@@ -68,8 +68,8 @@ Orgs isolate profiles, sessions, automations, tasks, tools, MCP, skills, usage (
 
 | Role | Can |
 |---|---|
-| Platform admin | Orgs (`/v1/platform/orgs`), profiles/tools/MCP/skills |
-| Org admin | Members/invites (`/v1/orgs/{orgId}/members`) |
+| Platform admin | Create/manage orgs (`/v1/platform/orgs`); after switching, same in-workspace admin as org admin; host export/install/public URL |
+| Org admin | Full admin of that workspace: members, Super Agent, profiles, tools/MCP/skills, providers, channels |
 | Org member | Chat, agents, automations/tasks |
 | Org viewer | Read chat only — no agent invoke / mutations |
 
@@ -168,7 +168,7 @@ Always build context with `buildToolExecutionContext()` (`packages/core/src/tool
 - `packages/db` — DB
 - `packages/client` — API client
 
-Server: Hono in `apps/server/src/http/app.ts`. Middleware: auth → org → routes (`routes/*`). OpenAPI from `openapi.ts` (`/openapi.json`). Platform-admin-only: profile/tool/MCP/skill mutations (org admins use provisioned profiles or Super Agent `create-profile`). Org-admin: `/v1/orgs/{orgId}/…` members. Viewers blocked by `requireNotViewer` on worker control and agent invoke.
+Server: Hono in `apps/server/src/http/app.ts`. Middleware: auth → org → routes (`routes/*`). OpenAPI from `openapi.ts` (`/openapi.json`). Platform-admin-only: org CRUD (`/v1/platform/orgs`), data import/export, public web URL, host worker/install, Super Agent profile creation (`isSuper`). Org admin is the full in-workspace operator (profiles, tools, MCP, skills, members, channels). Viewers blocked by `requireNotViewer` on worker control and agent invoke.
 
 ## Developing 
 

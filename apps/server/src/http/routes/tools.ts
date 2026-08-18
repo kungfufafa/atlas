@@ -15,7 +15,6 @@ import type { ServerOptions } from "../context";
 import {
   requireActiveOrgIdFromContext,
   requireOrgAdminOrPlatformAdminFromContext,
-  requirePlatformAdminFromContext,
 } from "../org-guards";
 import { json, readJson } from "../shared";
 import type { HonoApp } from "../types";
@@ -310,7 +309,7 @@ export function registerToolRoutes(app: HonoApp, options: ServerOptions): void {
   );
 
   app.post("/v1/tools", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     const body = await readJson<CreateToolRequest>(c.req.raw);
     return json(await agent.createTool(body), 201);
   });
@@ -330,7 +329,7 @@ export function registerToolRoutes(app: HonoApp, options: ServerOptions): void {
   });
 
   app.delete("/v1/tools/:toolId", async (c) => {
-    requirePlatformAdminFromContext(c);
+    requireOrgAdminOrPlatformAdminFromContext(c);
     await agent.deleteTool(decodeURIComponent(c.req.param("toolId")));
     return new Response(null, { status: 204 });
   });
