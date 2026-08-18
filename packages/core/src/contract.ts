@@ -168,6 +168,35 @@ export interface WorkerLogsResponse {
   worker?: string;
 }
 
+export type LlmUsageReportScope = "platform" | "workspace" | "user";
+export type LlmUsageReportGroupBy =
+  | "workspace"
+  | "user"
+  | "provider"
+  | "model"
+  | "credential";
+
+export interface LlmUsageReportRow {
+  estimatedCostUsd: number;
+  inputTokens: number;
+  /** Raw grouping key (org id, user id, provider type, model id, …). */
+  key: string;
+  /** Human-friendly label (workspace name, user name/email, else the key). */
+  label: string;
+  outputTokens: number;
+  requestCount: number;
+  totalTokens: number;
+}
+
+export interface LlmUsageReportResponse {
+  from: string | null;
+  groupBy: LlmUsageReportGroupBy;
+  rows: LlmUsageReportRow[];
+  /** Data scope granted to the caller by RBAC. */
+  scope: LlmUsageReportScope;
+  to: string | null;
+}
+
 export interface LlmUsageStats {
   estimatedCostUsd: number;
   inputTokens: number;

@@ -935,6 +935,24 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   const listLlmTurnUsageStmt = db.prepare(
     "SELECT * FROM llm_turn_usage WHERE org_id = ? ORDER BY bucket ASC"
   );
+  const incrementLlmUsageDailyStmt = db.prepare(`
+    INSERT INTO llm_usage_daily (
+      day, org_id, user_id, profile_id, provider_type,
+      provider_credential_id, model_id,
+      request_count, input_tokens, output_tokens, estimated_cost_usd, updated_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(
+      day, org_id, user_id, profile_id,
+      provider_type, provider_credential_id, model_id
+    ) DO UPDATE SET
+      request_count = llm_usage_daily.request_count + excluded.request_count,
+      input_tokens = llm_usage_daily.input_tokens + excluded.input_tokens,
+      output_tokens = llm_usage_daily.output_tokens + excluded.output_tokens,
+      estimated_cost_usd =
+        llm_usage_daily.estimated_cost_usd + excluded.estimated_cost_usd,
+      updated_at = excluded.updated_at
+  `);
   const getWorkspaceSettingsStmt = db.prepare(
     "SELECT * FROM workspace_settings WHERE id = ?"
   );
@@ -1575,6 +1593,74 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   `);
 
   return {
+    aggregateLlmUsage(options) {
+      const columnByGroup: Record<string, string> = {
+        credential: "provider_credential_id",
+        model: "model_id",
+        profile: "profile_id",
+        provider: "provider_type",
+        user: "user_id",
+        workspace: "org_id",
+      };
+      const column = columnByGroup[options.groupBy] ?? "org_id";
+
+      const filters: string[] = [];
+      const params: (string | number)[] = [];
+      if (options.orgId) {
+        filters.push("org_id = ?");
+        params.push(options.orgId);
+      }
+      if (options.userId) {
+        filters.push("user_id = ?");
+        params.push(options.userId);
+      }
+      if (options.from) {
+        filters.push("day >= ?");
+        params.push(options.from);
+      }
+      if (options.to) {
+        filters.push("day <= ?");
+        params.push(options.to);
+      }
+      const where = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
+      const limitClause =
+        typeof options.limit === "number" && options.limit > 0 ? "LIMIT ?" : "";
+      if (limitClause) {
+        params.push(Math.floor(options.limit as number));
+      }
+
+      const rows = db
+        .prepare(
+          `SELECT ${column} AS key,
+             SUM(request_count) AS request_count,
+             SUM(input_tokens) AS input_tokens,
+             SUM(output_tokens) AS output_tokens,
+             SUM(estimated_cost_usd) AS estimated_cost_usd
+           FROM llm_usage_daily
+           ${where}
+           GROUP BY ${column}
+           ORDER BY (SUM(input_tokens) + SUM(output_tokens)) DESC
+           ${limitClause}`
+        )
+        .all(...params) as Array<{
+        key: string;
+        request_count: number;
+        input_tokens: number;
+        output_tokens: number;
+        estimated_cost_usd: number;
+      }>;
+
+      return Promise.resolve(
+        rows.map((row) => ({
+          estimatedCostUsd: row.estimated_cost_usd ?? 0,
+          inputTokens: row.input_tokens ?? 0,
+          key: row.key,
+          outputTokens: row.output_tokens ?? 0,
+          requestCount: row.request_count ?? 0,
+          totalTokens: (row.input_tokens ?? 0) + (row.output_tokens ?? 0),
+        }))
+      );
+    },
     async appendMessagesForSession(sessionId, messages) {
       for (const message of messages) {
         appendMessageStmt.run(
@@ -2268,6 +2354,24 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         delta.inputTokens,
         delta.outputTokens,
         delta.estimated ? 1 : 0,
+        updatedAt
+      );
+    },
+
+    async incrementLlmUsageDaily(dimensions, delta) {
+      const updatedAt = new Date().toISOString();
+      incrementLlmUsageDailyStmt.run(
+        updatedAt.slice(0, 10),
+        dimensions.orgId,
+        dimensions.userId,
+        dimensions.profileId,
+        dimensions.providerType,
+        dimensions.providerCredentialId,
+        dimensions.modelId,
+        delta.requestCount,
+        delta.inputTokens,
+        delta.outputTokens,
+        delta.estimatedCostUsd,
         updatedAt
       );
     },
