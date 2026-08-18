@@ -1,7 +1,10 @@
 import type {
+  LlmUsageReportGroupBy,
+  LlmUsageReportResponse,
   LlmUsageStatus,
   SystemStatusResponse,
 } from "@atlas/core/contract";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert02Icon,
   ArrowDownLeft01Icon,
@@ -13,7 +16,7 @@ import {
   SparklesIcon,
   ZapIcon,
 } from "hugeicons-react";
-import { type ReactNode, useMemo } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +28,7 @@ import {
   useRefreshSystemStatus,
   useSystemStatusQuery,
 } from "@/hooks/use-system-status";
-import { formatError } from "@/lib/client";
+import { client, formatError } from "@/lib/client";
 import { formatProviderLabel } from "@/lib/models";
 import { PAGE_PATHS } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
@@ -87,8 +90,293 @@ export function StatusPage({ embedded = false }: { embedded?: boolean } = {}) {
             status={status}
           />
           <LlmUsageSection embedded={embedded} usage={status.llmUsage} />
+          <UsageBreakdownSection
+            canManageBudget={canManageWorkers}
+            embedded={embedded}
+            isPlatformAdmin={user?.isPlatformAdmin === true}
+          />
         </>
       ) : null}
+    </div>
+  );
+}
+
+const USAGE_TAB_LABELS: Record<LlmUsageReportGroupBy, string> = {
+  credential: "Credentials",
+  model: "Models",
+  provider: "Providers",
+  user: "Users",
+  workspace: "Workspaces",
+};
+
+const USAGE_RANGE_OPTIONS = [
+  { days: 7, label: "7 days" },
+  { days: 30, label: "30 days" },
+  { days: 90, label: "90 days" },
+] as const;
+
+function usageRangeFrom(days: number): string {
+  return new Date(Date.now() - (days - 1) * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+}
+
+function UsageBreakdownSection({
+  embedded,
+  isPlatformAdmin,
+  canManageBudget,
+}: {
+  embedded: boolean;
+  isPlatformAdmin: boolean;
+  canManageBudget: boolean;
+}) {
+  const tabs: LlmUsageReportGroupBy[] = isPlatformAdmin
+    ? ["workspace", "user", "provider", "model", "credential"]
+    : ["user", "provider", "model"];
+  const [groupBy, setGroupBy] = useState<LlmUsageReportGroupBy>(tabs[0]);
+  const [days, setDays] = useState<number>(30);
+  const from = usageRangeFrom(days);
+
+  const { data, isLoading, error } = useQuery({
+    queryFn: () => client.getUsageReport({ from, groupBy, limit: 25 }),
+    queryKey: ["usage-report", groupBy, from],
+  });
+
+  const rows = data?.rows ?? [];
+  const hasCost = rows.some((row) => row.estimatedCostUsd > 0);
+  const csvHref = `/v1/usage/export.csv?groupBy=${groupBy}&from=${from}`;
+
+  return (
+    <section className={cn(embedded ? "px-4 py-4" : `${sectionClass} p-4`)}>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-semibold text-foreground text-sm">
+            Usage breakdown
+          </h2>
+          <p className="text-muted-foreground text-xs">
+            Who and where tokens are spent, attributed per turn.
+          </p>
+        </div>
+        <div className="flex items-center gap-1">
+          <a
+            className="rounded-md border border-border px-2 py-1 text-muted-foreground text-xs hover:text-foreground"
+            download
+            href={csvHref}
+          >
+            Export CSV
+          </a>
+          {USAGE_RANGE_OPTIONS.map((option) => (
+            <button
+              className={cn(
+                "rounded-md border px-2 py-1 text-xs",
+                days === option.days
+                  ? "border-border bg-muted font-medium text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+              key={option.days}
+              onClick={() => setDays(option.days)}
+              type="button"
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mb-3 flex flex-wrap gap-1">
+        {tabs.map((tab) => (
+          <button
+            className={cn(
+              "rounded-md border px-3 py-1 text-xs",
+              groupBy === tab
+                ? "border-border bg-muted font-medium text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            )}
+            key={tab}
+            onClick={() => setGroupBy(tab)}
+            type="button"
+          >
+            {USAGE_TAB_LABELS[tab]}
+          </button>
+        ))}
+      </div>
+
+      <BudgetCard canManage={canManageBudget} />
+
+      <UsageBreakdownTable
+        error={error ? formatError(error) : null}
+        hasCost={hasCost}
+        isLoading={isLoading}
+        rows={rows}
+      />
+    </section>
+  );
+}
+
+function BudgetCard({ canManage }: { canManage: boolean }) {
+  const queryClient = useQueryClient();
+  const { data: budget } = useQuery({
+    queryFn: () => client.getUsageBudget(),
+    queryKey: ["usage-budget"],
+  });
+  const [draft, setDraft] = useState("");
+
+  const save = useMutation({
+    mutationFn: (limit: number) => client.setUsageBudget(limit),
+    onSuccess: (next) => {
+      queryClient.setQueryData(["usage-budget"], next);
+      setDraft("");
+    },
+  });
+
+  if (!budget) {
+    return null;
+  }
+
+  const limit = budget.monthlyLimitUsd;
+  const pct =
+    budget.fractionUsed == null ? 0 : Math.min(1, budget.fractionUsed);
+
+  return (
+    <div
+      className={cn(
+        "mb-3 rounded-md border p-3",
+        budget.overBudget
+          ? "border-destructive/40 bg-destructive/5"
+          : "border-border bg-muted/20"
+      )}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="font-medium text-foreground text-xs">
+            Monthly budget · {budget.month}
+          </p>
+          <p className="text-muted-foreground text-xs">
+            {`$${budget.monthToDateUsd.toFixed(2)} spent`}
+            {limit == null ? " · no budget set" : ` of $${limit.toFixed(2)}`}
+            {budget.overBudget ? " · over budget" : ""}
+          </p>
+        </div>
+        {canManage ? (
+          <form
+            className="flex items-center gap-1"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const value = Number(draft);
+              if (Number.isFinite(value) && value >= 0) {
+                save.mutate(value);
+              }
+            }}
+          >
+            <input
+              aria-label="Monthly budget in USD"
+              className="w-24 rounded-md border border-border bg-background px-2 py-1 text-xs"
+              inputMode="decimal"
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder={limit == null ? "Set $/mo" : String(limit)}
+              type="text"
+              value={draft}
+            />
+            <button
+              className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
+              disabled={save.isPending}
+              type="submit"
+            >
+              {save.isPending ? "Saving…" : "Save"}
+            </button>
+          </form>
+        ) : null}
+      </div>
+      {limit == null ? null : (
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className={cn(
+              "h-full",
+              budget.overBudget ? "bg-destructive" : "bg-primary"
+            )}
+            style={{ width: `${pct * 100}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UsageBreakdownTable({
+  rows,
+  hasCost,
+  isLoading,
+  error,
+}: {
+  rows: LlmUsageReportResponse["rows"];
+  hasCost: boolean;
+  isLoading: boolean;
+  error: string | null;
+}) {
+  if (error) {
+    return (
+      <p className="text-destructive text-sm" role="alert">
+        Could not load usage: {error}
+      </p>
+    );
+  }
+
+  if (isLoading) {
+    return <p className="text-muted-foreground text-sm">Loading usage…</p>;
+  }
+
+  if (rows.length === 0) {
+    return (
+      <p className="text-muted-foreground text-sm">
+        No usage recorded in this range yet.
+      </p>
+    );
+  }
+
+  const maxTokens = rows[0]?.totalTokens ?? 0;
+
+  return (
+    <div className="overflow-hidden rounded-md border border-border">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-border border-b bg-muted/40 text-left text-muted-foreground text-xs">
+            <th className="px-3 py-2 font-medium">Name</th>
+            <th className="px-3 py-2 text-right font-medium">Requests</th>
+            <th className="px-3 py-2 text-right font-medium">Total tokens</th>
+            {hasCost ? (
+              <th className="px-3 py-2 text-right font-medium">Est. cost</th>
+            ) : null}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr
+              className="border-border border-t first:border-t-0"
+              key={row.key}
+            >
+              <td className="px-3 py-2">
+                <div className="truncate font-medium text-foreground">
+                  {row.label}
+                </div>
+                <UsageShareBar max={maxTokens} value={row.totalTokens} />
+              </td>
+              <td className="px-3 py-2 text-right tabular-nums">
+                {row.requestCount.toLocaleString()}
+              </td>
+              <td className="px-3 py-2 text-right tabular-nums">
+                {row.totalTokens.toLocaleString()}
+              </td>
+              {hasCost ? (
+                <td className="px-3 py-2 text-right tabular-nums">
+                  {row.estimatedCostUsd > 0
+                    ? `$${row.estimatedCostUsd.toFixed(4)}`
+                    : "—"}
+                </td>
+              ) : null}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

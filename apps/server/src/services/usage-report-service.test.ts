@@ -116,3 +116,36 @@ describe("UsageReportService RBAC scoping", () => {
     expect(shared?.totalTokens).toBe(1400);
   });
 });
+
+describe("UsageReportService budgets", () => {
+  test("reports month-to-date spend and over-budget after setting a limit", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const service = new UsageReportService(db);
+    await db.incrementLlmUsageDaily(
+      {
+        modelId: "gpt-x",
+        orgId: "org_a",
+        profileId: "p1",
+        providerCredentialId: "cred",
+        providerType: "openrouter",
+        userId: "user_1",
+      },
+      {
+        estimatedCostUsd: 0.6,
+        inputTokens: 100,
+        outputTokens: 20,
+        requestCount: 1,
+      }
+    );
+
+    const noBudget = await service.getBudgetStatus("org_a");
+    expect(noBudget.monthlyLimitUsd).toBeNull();
+    expect(noBudget.monthToDateUsd).toBeCloseTo(0.6, 5);
+    expect(noBudget.overBudget).toBe(false);
+
+    const set = await service.setBudget("org_a", 0.5);
+    expect(set.monthlyLimitUsd).toBe(0.5);
+    expect(set.overBudget).toBe(true);
+    expect(set.fractionUsed).toBeCloseTo(1.2, 5);
+  });
+});

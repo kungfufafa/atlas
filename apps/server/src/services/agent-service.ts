@@ -772,7 +772,7 @@ export class AgentService {
     input: GenerateImageRequest
   ): Promise<GenerateImageResponse> {
     const config = await this.getOrgUserConfig(orgId);
-    return this.generateImageWithConfig(input, config);
+    return this.generateImageWithConfig(input, config, orgId);
   }
 
   async setUserTimezone(timezone: string): Promise<string> {
@@ -2965,7 +2965,8 @@ export class AgentService {
 
   private async generateImageWithConfig(
     input: GenerateImageRequest,
-    config: UserConfig | null
+    config: UserConfig | null,
+    orgId?: string | null
   ): Promise<GenerateImageResponse> {
     const prompt = input.prompt?.trim();
     if (!prompt) {
@@ -2985,6 +2986,35 @@ export class AgentService {
       usage.inputTokens,
       usage.outputTokens
     );
+    if (orgId) {
+      const estimatedCostUsd = estimateUsageCostUsd(
+        result.model,
+        usage.inputTokens,
+        usage.outputTokens,
+        {
+          provider: selection.instance.type,
+          providerInstance: selection.instance,
+        }
+      );
+      void this.db
+        .incrementLlmUsageDaily(
+          {
+            modelId: result.model,
+            orgId,
+            profileId: UNKNOWN_USAGE_DIMENSION,
+            providerCredentialId: selection.instance.id,
+            providerType: selection.instance.type,
+            userId: UNKNOWN_USAGE_DIMENSION,
+          },
+          {
+            estimatedCostUsd,
+            inputTokens: usage.inputTokens,
+            outputTokens: usage.outputTokens,
+            requestCount: 1,
+          }
+        )
+        .catch(() => undefined);
+    }
     return {
       data: Buffer.from(result.data).toString("base64"),
       mediaType: result.mediaType,

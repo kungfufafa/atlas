@@ -3,6 +3,7 @@ import type {
   LlmUsageReportResponse,
   LlmUsageReportRow,
   OrgRole,
+  OrgUsageBudgetResponse,
 } from "@atlas/core";
 import {
   type DatabaseAdapter,
@@ -93,6 +94,55 @@ export class UsageReportService {
     );
 
     return { ...emptyReport, rows: labeled };
+  }
+
+  private currentMonth(): { month: string; from: string } {
+    const month = new Date().toISOString().slice(0, 7);
+    return { from: `${month}-01`, month };
+  }
+
+  private async monthToDateSpend(orgId: string): Promise<number> {
+    const { from } = this.currentMonth();
+    const rows = await this.db.aggregateLlmUsage({
+      from,
+      groupBy: "workspace",
+      orgId,
+    });
+    return rows[0]?.estimatedCostUsd ?? 0;
+  }
+
+  async getBudgetStatus(orgId: string): Promise<OrgUsageBudgetResponse> {
+    const { month } = this.currentMonth();
+    const [budget, monthToDateUsd] = await Promise.all([
+      this.db.getOrgUsageBudget(orgId),
+      this.monthToDateSpend(orgId),
+    ]);
+    const limit =
+      budget && budget.monthlyLimitUsd > 0 ? budget.monthlyLimitUsd : null;
+
+    return {
+      fractionUsed: limit ? monthToDateUsd / limit : null,
+      month,
+      monthlyLimitUsd: limit,
+      monthToDateUsd,
+      overBudget: limit ? monthToDateUsd > limit : false,
+    };
+  }
+
+  async setBudget(
+    orgId: string,
+    monthlyLimitUsd: number
+  ): Promise<OrgUsageBudgetResponse> {
+    const normalized =
+      Number.isFinite(monthlyLimitUsd) && monthlyLimitUsd > 0
+        ? monthlyLimitUsd
+        : 0;
+    await this.db.upsertOrgUsageBudget({
+      monthlyLimitUsd: normalized,
+      orgId,
+      updatedAt: new Date().toISOString(),
+    });
+    return this.getBudgetStatus(orgId);
   }
 
   private async resolveLabel(
