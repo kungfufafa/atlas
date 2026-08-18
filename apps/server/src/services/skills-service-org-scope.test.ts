@@ -1,4 +1,11 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  setDefaultTimeout,
+  test,
+} from "bun:test";
 import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -7,10 +14,16 @@ import {
   createSqliteDatabase,
   type DatabaseAdapter,
   ensureProfileDefaultBundledSkills,
+  type SqliteDatabase,
 } from "@atlas/db";
 import { SkillProposalService } from "./skill-proposal-service";
 import { SkillSuggestionService } from "./skill-suggestion-service";
 import { SkillsService } from "./skills-service";
+
+// Opening sqlite still runs the full migrate suite and has exceeded bun's 5s
+// default on CI while the rest of the monorepo is also under test. Extra
+// headroom matches packages/db reopen.test.ts and telegram chat-handler tests.
+setDefaultTimeout(15_000);
 
 function markdown(name: string, description: string, body: string): string {
   return `---
@@ -60,7 +73,9 @@ async function seedTenant(
 }
 
 describe("skills are scoped per org", () => {
+  const originalConfigDir = process.env.ATLAS_CONFIG_DIR;
   let configDir: string;
+  let database: SqliteDatabase | undefined;
 
   beforeEach(async () => {
     configDir = await mkdtemp(join(tmpdir(), "atlas-skill-org-scope-"));
@@ -68,13 +83,18 @@ describe("skills are scoped per org", () => {
   });
 
   afterEach(() => {
-    delete process.env.ATLAS_CONFIG_DIR;
+    database?.close();
+    database = undefined;
+    if (originalConfigDir === undefined) {
+      delete process.env.ATLAS_CONFIG_DIR;
+    } else {
+      process.env.ATLAS_CONFIG_DIR = originalConfigDir;
+    }
   });
 
   async function openDb(): Promise<DatabaseAdapter> {
-    const database = await createSqliteDatabase(
-      `file:${join(configDir, "atlas.db")}`
-    );
+    database?.close();
+    database = await createSqliteDatabase(":memory:");
     const db = database.adapter;
 
     await seedTenant(db, "org_a", "profile_a");
