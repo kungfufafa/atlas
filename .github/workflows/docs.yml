@@ -40,16 +40,19 @@ jobs:
           ATLAS_DOCS_GITHUB_PAGES: 'true'
 
       - name: Verify GitHub Pages is enabled
+        id: pages
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           if gh api "repos/${GITHUB_REPOSITORY}/pages" >/dev/null 2>&1; then
             echo "GitHub Pages is configured for ${GITHUB_REPOSITORY}."
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          echo "::error::GitHub Pages is not enabled for ${GITHUB_REPOSITORY}."
+          echo "enabled=false" >> "$GITHUB_OUTPUT"
+          echo "::warning::GitHub Pages is not enabled for ${GITHUB_REPOSITORY}. Docs built; deploy skipped."
           echo ""
           echo "One-time setup (repository admin):"
           echo "  1. Open https://github.com/${GITHUB_REPOSITORY}/settings/pages"
@@ -61,26 +64,28 @@ jobs:
           echo ""
           echo "Private repositories require a paid GitHub plan to publish Pages."
           echo "Free accounts need a public repository or a separate public docs repo."
-          exit 1
 
       - name: Setup Pages
+        if: steps.pages.outputs.enabled == 'true'
         uses: actions/configure-pages@v5
 
       - name: Upload artifact
+        if: steps.pages.outputs.enabled == 'true'
         uses: actions/upload-pages-artifact@v4
         with:
           path: docs/website/out
 
       - name: Deploy to GitHub Pages
+        if: steps.pages.outputs.enabled == 'true'
         id: deployment
         uses: actions/deploy-pages@v5
         continue-on-error: true
 
       - name: Retry Pages deploy
-        if: steps.deployment.outcome == 'failure'
+        if: steps.pages.outputs.enabled == 'true' && steps.deployment.outcome == 'failure'
         id: deployment_retry
         uses: actions/deploy-pages@v5
 
       - name: Verify Pages deploy
-        if: steps.deployment.outcome == 'failure' && steps.deployment_retry.outcome == 'failure'
+        if: steps.pages.outputs.enabled == 'true' && steps.deployment.outcome == 'failure' && steps.deployment_retry.outcome == 'failure'
         run: exit 1
