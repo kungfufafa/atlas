@@ -239,11 +239,22 @@ export class SdkComposioApiClient implements ComposioApiClient {
     limit?: number;
   }): Promise<ComposioCatalogToolkit[]> {
     const limit = options?.limit ?? 200;
-    const response = await this.composio.toolkits.getToolkits({ limit });
-    const items = extractComposioListItems(response);
+    // getToolkits is marked private in the Composio SDK typings but is the
+    // documented catalog call; access it through a typed shim.
+    const toolkits = this.composio.toolkits as unknown as {
+      getToolkits(opts: { limit: number }): Promise<unknown>;
+    };
+    const response = await toolkits.getToolkits({ limit });
+    const items = extractComposioListItems(
+      response as Parameters<typeof extractComposioListItems>[0]
+    );
 
     return items
-      .map((item) => parseCatalogToolkitItem(item))
+      .map((item) =>
+        parseCatalogToolkitItem(
+          item as Parameters<typeof parseCatalogToolkitItem>[0]
+        )
+      )
       .filter((item): item is ComposioCatalogToolkit => item !== null);
   }
 

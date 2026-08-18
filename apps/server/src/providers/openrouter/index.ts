@@ -184,7 +184,9 @@ function buildOpenRouterReasoningRequest(
   }
 
   const reasoning: ChatRequestReasoning = {
-    effort: resolveThinkingEffort(providerOptions.thinking.effort),
+    effort: resolveThinkingEffort(
+      providerOptions.thinking.effort
+    ) as ChatRequestReasoning["effort"],
     summary: "auto",
   };
 

@@ -8,7 +8,7 @@ import {
 } from "@whiskeysockets/baileys";
 
 export function isPrivateWhatsAppChat(jid: string): boolean {
-  return isJidUser(jid) || isLidUser(jid);
+  return Boolean(isJidUser(jid) || isLidUser(jid));
 }
 
 export function isSelfWhatsAppChat(

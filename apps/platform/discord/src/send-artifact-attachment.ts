@@ -44,7 +44,9 @@ export async function sendDiscordArtifactAttachment(
     const attachment = new AttachmentBuilder(Buffer.from(input.bytes)).setName(
       input.filename
     );
-    await channel.send({ files: [attachment] });
+    await (
+      channel as { send: (options: { files: unknown[] }) => Promise<unknown> }
+    ).send({ files: [attachment] });
     return { ok: true };
   } catch (error) {
     return {

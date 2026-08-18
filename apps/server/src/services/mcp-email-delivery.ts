@@ -79,7 +79,7 @@ export function createMcpAwareEmailOutboundAdapter(
         const loadConfig = dependencies.loadConfig ?? loadEmailConfig;
         const config = await loadConfig();
 
-        if (isEmailConfigComplete(config)) {
+        if (config && isEmailConfigComplete(config)) {
           const sender = createSmtpSender(emailConfigToMailboxConfig(config));
           await sender.send({
             subject: input.subject,

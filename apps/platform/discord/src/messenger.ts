@@ -20,7 +20,11 @@ export function createDiscordMessenger(
       let last: { id: string } | null = null;
 
       for (const chunk of chunks) {
-        const message = await channel.send(chunk);
+        // discord.js's TextBasedChannel union omits `send` on some members,
+        // but every channel this messenger is used with supports it.
+        const message = await (
+          channel as { send: (content: string) => Promise<{ id: string }> }
+        ).send(chunk);
         last = { id: message.id };
       }
 

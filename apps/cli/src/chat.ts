@@ -810,7 +810,7 @@ async function runStickyChat(
   prompt.start();
 
   function cleanupChat(): void {
-    prompt.stop();
+    prompt?.stop();
     renderer.reset();
     terminalInput.stop();
   }

@@ -15,6 +15,7 @@ import type {
   StoredLlmUsageModelStatsRecord,
   StoredLlmUsageStatsRecord,
   StoredMcpServerRecord,
+  StoredMemoryRecord,
   StoredNotificationDestinationRecord,
   StoredOrgAiConfigRecord,
   StoredOrganizationRecord,
@@ -103,6 +104,8 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     string,
     StoredProfileComposioToolkitRecord[]
   >();
+  const memories = new Map<string, StoredMemoryRecord>();
+  const memoryKey = (orgId: string, id: string) => `${orgId}:${id}`;
 
   return {
     async appendMessagesForSession(sessionId, messages) {
@@ -215,6 +218,10 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       browserSessionsByHash.set(record.sessionTokenHash, record);
     },
 
+    async createMemory(record) {
+      memories.set(memoryKey(record.orgId, record.id), { ...record });
+    },
+
     async createOrgInvite(record) {
       orgInvites.set(record.id, record);
       orgInvitesByTokenHash.set(record.tokenHash, record);
@@ -276,6 +283,10 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       }
 
       return true;
+    },
+
+    async deleteMemory(orgId, id) {
+      return memories.delete(memoryKey(orgId, id));
     },
 
     async deleteMessagesForSession(sessionId) {
@@ -435,6 +446,10 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       return composioUserConnections.get(id) ?? null;
     },
 
+    getConversationHistory() {
+      return Promise.resolve(null);
+    },
+
     async getDefaultProfileForOrg(orgId) {
       return (
         Array.from(profiles.values()).find(
@@ -453,6 +468,10 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
     async getMcpServerByName(name) {
       return mcpServersByName.get(name) ?? null;
+    },
+
+    async getMemory(orgId, id) {
+      return memories.get(memoryKey(orgId, id)) ?? null;
     },
 
     async getNotificationDestination(id) {
@@ -896,6 +915,19 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         );
     },
 
+    async listMemories(orgId, scope, ownerId, limit) {
+      let results = [...memories.values()].filter(
+        (memory) => memory.orgId === orgId
+      );
+      if (scope) {
+        results = results.filter((memory) => memory.scope === scope);
+      }
+      if (ownerId) {
+        results = results.filter((memory) => memory.ownerId === ownerId);
+      }
+      return typeof limit === "number" ? results.slice(0, limit) : results;
+    },
+
     async listMessagesForSession(sessionId) {
       return [...(sessionMessages.get(sessionId) ?? [])].sort(
         (left, right) => left.seq - right.seq
@@ -1185,6 +1217,26 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       return true;
     },
 
+    searchConversationMessages() {
+      return Promise.resolve([]);
+    },
+
+    async searchMemories(orgId, query, scope, ownerId, limit) {
+      const needle = query.trim().toLowerCase();
+      let results = [...memories.values()].filter(
+        (memory) =>
+          memory.orgId === orgId &&
+          memory.content.toLowerCase().includes(needle)
+      );
+      if (scope) {
+        results = results.filter((memory) => memory.scope === scope);
+      }
+      if (ownerId) {
+        results = results.filter((memory) => memory.ownerId === ownerId);
+      }
+      return typeof limit === "number" ? results.slice(0, limit) : results;
+    },
+
     async setUserContext(orgId, userId, content, updatedAt) {
       const memberKey = `${orgId}:${userId}`;
       const member = orgMembers.get(memberKey);
@@ -1268,6 +1320,14 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
           browserSessionsByHash.set(hash, { ...session, lastUsedAt });
           return;
         }
+      }
+    },
+
+    async updateMemory(orgId, id, patch) {
+      const key = memoryKey(orgId, id);
+      const existing = memories.get(key);
+      if (existing) {
+        memories.set(key, { ...existing, ...patch, id, orgId });
       }
     },
 

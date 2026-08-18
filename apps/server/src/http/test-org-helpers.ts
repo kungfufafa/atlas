@@ -1,6 +1,6 @@
 import type { OrgRole, SetupAuthRequest } from "@atlas/core";
 import type { DatabaseAdapter } from "@atlas/db";
-import type { AuthService } from "../../services/auth-service";
+import type { AuthService } from "../services/auth-service";
 
 export const TEST_ORG_ID = "org_test";
 export const LOCAL_CLIENT_EMAIL = "local-client@atlas.internal";

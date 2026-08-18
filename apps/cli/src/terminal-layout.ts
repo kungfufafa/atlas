@@ -137,7 +137,7 @@ export class TerminalLayout {
 
   async anchorFromCursor(): Promise<void> {
     const row = await this.terminalInput?.requestCursorRow();
-    if (row !== null && row > 0) {
+    if (typeof row === "number" && row > 0) {
       this.anchorRow = row;
     } else {
       // Fall back to a compact inline start near the bottom when cursor probing fails.

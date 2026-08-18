@@ -9,6 +9,9 @@ export function registerNotificationWebhookRoutes(
   app: HonoApp,
   options: ServerOptions
 ): void {
+  if (!(options.databaseAdapter && options.authService)) {
+    throw new Error("Database adapter and auth service are not configured.");
+  }
   const service = new NotificationWebhookService(
     options.databaseAdapter,
     options.authService

@@ -65,7 +65,7 @@ export function registerSystemRoutes(
     })
     .openapi("HealthResponse");
   const systemStatusSchema = z
-    .object({ ok: z.boolean() })
+    .object({})
     .passthrough()
     .openapi("SystemStatusResponse");
   const errorSchema = z

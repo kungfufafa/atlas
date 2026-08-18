@@ -14,6 +14,7 @@ import type {
 import { createRoute, z } from "@hono/zod-openapi";
 import { resolveRequestClientOrigin } from "../../services/composio-callback-url";
 import { sessionTurnRegistry } from "../../services/session-turn-registry";
+import type { ServerOptions } from "../context";
 import {
   requireActiveOrgIdFromContext,
   requireNotViewerFromContext,
@@ -398,7 +399,7 @@ export function registerSessionRoutes(
     const orgId = requireActiveOrgIdFromContext(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
     const body = await readJson<CompactSessionRequest>(c.req.raw).catch(
-      () => ({})
+      () => ({}) as CompactSessionRequest
     );
     const result = await agent.compactSession(orgId, sessionId, {
       force: body.force ?? false,

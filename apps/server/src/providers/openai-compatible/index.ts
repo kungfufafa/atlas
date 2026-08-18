@@ -83,7 +83,9 @@ export function createOpenAICompatibleProvider(
         signal: input.signal,
         system: input.system ?? "",
         thinking: options.supportsThinking
-          ? input.providerOptions?.thinking
+          ? (input.providerOptions?.thinking as
+              | { enabled: boolean; effort?: string }
+              | undefined)
           : undefined,
       }).then((result) => ({
         content: result.content,

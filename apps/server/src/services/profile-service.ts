@@ -316,7 +316,7 @@ export class ProfileService {
   ): Promise<ListToolsResponse> {
     await this.requireProfile(orgId, profileId);
     const tools = await this.db.listToolsForProfile(profileId);
-    return { tools: tools.map(toToolSummary) };
+    return { tools: tools.map((tool) => toToolDetail(tool)) };
   }
 
   async deleteTool(toolId: string): Promise<void> {

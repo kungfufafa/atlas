@@ -97,7 +97,14 @@ export function resolvePrimaryModelVisionSupport(
 export function createVisionFallbackProvider(
   selection: ResolvedProfileProviderSelection
 ): ProviderClient {
-  return createProviderForInstance(selection.instance, selection.model);
+  const provider = createProviderForInstance(
+    selection.instance,
+    selection.model
+  );
+  if (!provider) {
+    throw new Error("Unable to create vision fallback provider.");
+  }
+  return provider;
 }
 
 export async function describeImagesWithVisionModel(

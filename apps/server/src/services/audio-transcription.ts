@@ -77,7 +77,9 @@ export async function transcribeAudioWithOpenAI(
     baseUrl ?? "https://api.openai.com/v1"
   );
   const formData = new FormData();
-  const blob = new Blob([audio.bytes], { type: audio.mediaType });
+  const blob = new Blob([audio.bytes as unknown as BlobPart], {
+    type: audio.mediaType,
+  });
   formData.append("file", blob, audio.filename);
   formData.append("model", model);
 

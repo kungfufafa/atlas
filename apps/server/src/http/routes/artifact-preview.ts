@@ -69,7 +69,9 @@ export function handleByteRangeRequest(
   const disposition = inline ? "inline" : "attachment";
 
   if (!(rangeHeader && rangeHeader.startsWith("bytes="))) {
-    return new Response(bytes, {
+    // Bun's runtime Response accepts Node Buffers; the DOM `BodyInit` type used
+    // for type-checking does not, so cast (safe at runtime under Bun).
+    return new Response(bytes as unknown as BodyInit, {
       headers: {
         "Accept-Ranges": "bytes",
         "Content-Disposition": `${disposition}; filename="${downloadName}"`,
@@ -97,7 +99,7 @@ export function handleByteRangeRequest(
   const chunkSize = chunkEnd - start + 1;
   const sliced = bytes.subarray(start, chunkEnd + 1);
 
-  return new Response(sliced, {
+  return new Response(sliced as unknown as BodyInit, {
     headers: {
       "Accept-Ranges": "bytes",
       "Content-Disposition": `${disposition}; filename="${downloadName}"`,

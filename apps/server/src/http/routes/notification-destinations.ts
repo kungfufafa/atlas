@@ -17,6 +17,9 @@ export function registerNotificationDestinationRoutes(
   app: HonoApp,
   options: ServerOptions
 ): void {
+  if (!(options.databaseAdapter && options.authService)) {
+    throw new Error("Database adapter and auth service are not configured.");
+  }
   const service = new NotificationDestinationService(
     options.databaseAdapter,
     options.authService

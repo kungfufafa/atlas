@@ -22,7 +22,11 @@ export async function validateProviderConnection(
     throw new Error("API key is required.");
   }
 
-  if (type === "ollama" && ollamaRequiresApiKey(hostMode) && !apiKey) {
+  if (
+    type === "ollama" &&
+    ollamaRequiresApiKey(hostMode ?? "local") &&
+    !apiKey
+  ) {
     throw new Error("API key is required for Ollama Cloud mode.");
   }
 

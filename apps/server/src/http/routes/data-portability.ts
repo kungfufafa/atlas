@@ -142,7 +142,7 @@ export function registerDataPortabilityRoutes(
   app.get("/v1/platform/data/export", async (c) => {
     requirePlatformAdminFromContext(c);
     const result = await createAtlasDataExport();
-    return new Response(result.data, {
+    return new Response(result.data as unknown as BodyInit, {
       headers: {
         "Content-Disposition": `attachment; filename="${result.filename}"`,
         "Content-Type": "application/zip",

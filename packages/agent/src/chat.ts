@@ -66,6 +66,7 @@ import {
   mapToolCallToActivity,
   metrics,
   resolveExecutionPolicy,
+  summarizeActionConsequence,
   updateActivityCompletion,
 } from "@atlas/core";
 
@@ -478,7 +479,7 @@ async function sendMessage(
     : baseToolContext;
 
   metrics.executionActive.inc();
-  metrics.executionTotal.inc({ policy: resolvedPolicy.policy });
+  metrics.executionTotal.inc({ policy: resolvedPolicy });
   const executionStartMs = Date.now();
 
   try {
@@ -521,15 +522,15 @@ async function sendMessage(
 
     const durationMs = Date.now() - executionStartMs;
     metrics.executionDurationMs.observe(durationMs, {
-      policy: resolvedPolicy.policy,
+      policy: resolvedPolicy,
     });
-    metrics.executionSuccessTotal.inc({ policy: resolvedPolicy.policy });
+    metrics.executionSuccessTotal.inc({ policy: resolvedPolicy });
 
     return reply;
   } catch (error) {
     const durationMs = Date.now() - executionStartMs;
     metrics.executionDurationMs.observe(durationMs, {
-      policy: resolvedPolicy.policy,
+      policy: resolvedPolicy,
     });
     const failure = classifyFailure(error);
     if (failure.code === "CANCELLED") {
@@ -739,12 +740,12 @@ async function executeToolCalls(
           const risk = evaluateActionRisk(call.name, call.arguments);
           if (risk.requiresApproval) {
             handlers?.onApprovalRequested?.({
-              consequenceSummary: risk.consequenceSummary,
+              consequenceSummary: summarizeActionConsequence(risk.consequence),
               createdAt: new Date().toISOString(),
               details: call.arguments,
               id: `app_${call.id}`,
               status: "pending",
-              title: risk.title,
+              title: risk.consequence.title,
               tool: call.name,
               toolCallId: call.id,
             });
@@ -828,12 +829,12 @@ async function executeToolCalls(
     const risk = evaluateActionRisk(call.name, call.arguments);
     if (risk.requiresApproval) {
       handlers?.onApprovalRequested?.({
-        consequenceSummary: risk.consequenceSummary,
+        consequenceSummary: summarizeActionConsequence(risk.consequence),
         createdAt: new Date().toISOString(),
         details: call.arguments,
         id: `app_${call.id}`,
         status: "pending",
-        title: risk.title,
+        title: risk.consequence.title,
         tool: call.name,
         toolCallId: call.id,
       });
