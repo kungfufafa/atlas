@@ -86,6 +86,8 @@ import type {
   ListTimezonesResponse,
   ListToolsResponse,
   ListUserOrgsResponse,
+  LlmUsageReportGroupBy,
+  LlmUsageReportResponse,
   MarkAutomationRunsReadResponse,
   McpServerResponse,
   ModelsResponse,
@@ -252,6 +254,27 @@ export class AtlasClient {
 
   async getTokenOptimization(): Promise<TokenOptimizationResponse> {
     return this.request<TokenOptimizationResponse>("/v1/token-optimization");
+  }
+
+  async getUsageReport(params: {
+    groupBy: LlmUsageReportGroupBy;
+    from?: string;
+    to?: string;
+    limit?: number;
+  }): Promise<LlmUsageReportResponse> {
+    const search = new URLSearchParams({ groupBy: params.groupBy });
+    if (params.from) {
+      search.set("from", params.from);
+    }
+    if (params.to) {
+      search.set("to", params.to);
+    }
+    if (params.limit) {
+      search.set("limit", String(params.limit));
+    }
+    return this.request<LlmUsageReportResponse>(
+      `/v1/usage?${search.toString()}`
+    );
   }
 
   async setTokenOptimization(enabled: boolean): Promise<{ enabled: boolean }> {
