@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createPptxBuffer, inspectPptxBuffer } from "../presentation-engine";
-import { writePptxTool } from "./builtin";
+import { writePptxTool } from "./write-pptx";
 
 describe("Presentation Engine", () => {
   test("creates valid PPTX buffer with specified slides and inspects slide count", async () => {
