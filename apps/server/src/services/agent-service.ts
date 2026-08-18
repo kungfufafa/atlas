@@ -173,10 +173,12 @@ import {
 import { canAccessSuperAgentProfile } from "@atlas/core/profiles";
 import {
   type DatabaseAdapter,
+  type LlmUsageDimensions,
   type StoredProfileRecord,
   type StoredSessionRecord,
   type StoredTaskRunRecord,
   SUPER_AGENT_TOOL_AUTHORING_RULES,
+  UNKNOWN_USAGE_DIMENSION,
   WORKSPACE_SETTINGS_ID,
 } from "@atlas/db";
 import {
@@ -194,6 +196,10 @@ import {
 } from "../providers";
 import { isAllowedImageGenerationSelection } from "../providers/models";
 import { wrapProviderForNonVision } from "../providers/non-vision-wrap";
+import {
+  estimateUsageCostUsd,
+  type PricingContext,
+} from "../providers/pricing";
 import { wrapProviderWithUsageTracking } from "../providers/usage-tracking";
 import { createAskUserQuestionTools } from "../tools/ask-user-question-tool";
 import { createDeepResearchServerTool } from "../tools/deep-research-server";
@@ -380,7 +386,46 @@ export class AgentService {
    * is not awaited and a rejection is swallowed.
    */
   /** Same fire-and-forget shape as the savings recorder, for provider tokens. */
-  private turnUsageRecorderFor(orgId: string | undefined) {
+  /**
+   * Resolve the attribution dimensions (workspace/user/profile + the active
+   * provider credential and model) plus a pricing context for a session, so
+   * each turn can be folded into the multi-tenant usage rollup. Returns
+   * undefined when no provider is configured (nothing to attribute).
+   */
+  private buildUsageAttribution(options: {
+    orgId: string;
+    userId?: string | null;
+    profileId: string;
+    userConfig: UserConfig | null;
+    modelId?: string | null;
+  }): { dimensions: LlmUsageDimensions; pricing: PricingContext } | undefined {
+    const instance = getActiveProviderInstance(options.userConfig);
+    if (!instance) {
+      return;
+    }
+
+    const modelId =
+      options.modelId?.trim() ||
+      resolveDefaultModelForInstance(instance) ||
+      instance.type;
+
+    return {
+      dimensions: {
+        modelId,
+        orgId: options.orgId,
+        profileId: options.profileId || UNKNOWN_USAGE_DIMENSION,
+        providerCredentialId: instance.id,
+        providerType: instance.type,
+        userId: options.userId?.trim() || UNKNOWN_USAGE_DIMENSION,
+      },
+      pricing: { provider: instance.type, providerInstance: instance },
+    };
+  }
+
+  private turnUsageRecorderFor(
+    orgId: string | undefined,
+    attribution?: { dimensions: LlmUsageDimensions; pricing: PricingContext }
+  ) {
     if (!orgId?.trim()) {
       return;
     }
@@ -396,6 +441,23 @@ export class AgentService {
       void this.db
         .incrementLlmTurnUsage(scopedOrgId, turn)
         .catch(() => undefined);
+
+      if (attribution) {
+        const estimatedCostUsd = estimateUsageCostUsd(
+          attribution.dimensions.modelId,
+          turn.inputTokens,
+          turn.outputTokens,
+          attribution.pricing
+        );
+        void this.db
+          .incrementLlmUsageDaily(attribution.dimensions, {
+            estimatedCostUsd,
+            inputTokens: turn.inputTokens,
+            outputTokens: turn.outputTokens,
+            requestCount: 1,
+          })
+          .catch(() => undefined);
+      }
     };
   }
 
@@ -1551,7 +1613,10 @@ export class AgentService {
         orgRole: "member",
         profileId,
         recordToolOutputSavings: this.savingsRecorderFor(orgId),
-        recordTurnUsage: this.turnUsageRecorderFor(orgId),
+        recordTurnUsage: this.turnUsageRecorderFor(
+          orgId,
+          this.buildUsageAttribution({ orgId, profileId, userConfig })
+        ),
       }),
       tools,
       userContext,
@@ -1621,7 +1686,15 @@ export class AgentService {
         orgRole: "member",
         profileId: input.profileId,
         recordToolOutputSavings: this.savingsRecorderFor(input.orgId),
-        recordTurnUsage: this.turnUsageRecorderFor(input.orgId),
+        recordTurnUsage: this.turnUsageRecorderFor(
+          input.orgId,
+          this.buildUsageAttribution({
+            orgId: input.orgId,
+            profileId: input.profileId,
+            userConfig,
+            userId: input.userId,
+          })
+        ),
         sessionId: input.sessionId,
         userId: input.userId,
       }),
@@ -4038,7 +4111,10 @@ export class AgentService {
         orgRole: orgRole ?? undefined,
         profileId,
         recordToolOutputSavings: this.savingsRecorderFor(orgId),
-        recordTurnUsage: this.turnUsageRecorderFor(orgId),
+        recordTurnUsage: this.turnUsageRecorderFor(
+          orgId,
+          this.buildUsageAttribution({ orgId, profileId, userConfig, userId })
+        ),
         sessionId,
         tokenOptimizerEnabled: tokenOptimizerEnabled ?? undefined,
         userId: userId ?? undefined,
