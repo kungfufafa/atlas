@@ -1,10 +1,16 @@
 import type { OrgRole, ProfileSummary } from "./contract";
 
+/**
+ * Super Agent access is an admin capability. Workspace (org) admins get it
+ * within their own workspace; platform admins get it across every workspace.
+ * The capability is identical — only the scope differs, which the callers
+ * already enforce by operating within the caller's active org.
+ */
 export function canAccessSuperAgentProfile(options: {
   orgRole?: OrgRole | null;
   isPlatformAdmin?: boolean;
 }): boolean {
-  return options.isPlatformAdmin === true;
+  return options.isPlatformAdmin === true || options.orgRole === "admin";
 }
 
 export function filterProfilesForChatAccess(

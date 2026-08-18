@@ -362,7 +362,7 @@ export class AutomationService {
       if (profile) {
         if (profile.isSuper && access && !canAccessSuperAgentProfile(access)) {
           throw new AtlasApiError(
-            "Super Agent is only available to Superadmins.",
+            "Super Agent is only available to workspace admins.",
             403
           );
         }

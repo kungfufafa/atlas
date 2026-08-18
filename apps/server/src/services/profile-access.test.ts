@@ -33,7 +33,7 @@ const automationInput = {
 };
 const taskInput = { prompt: "do it", status: "backlog" as const, title: "t" };
 
-describe("profile access: binding an automation/task to Super Agent is Superadmin-only", () => {
+describe("profile access: binding an automation/task to Super Agent requires workspace admin", () => {
   test("member cannot bind an automation to the Super Agent profile", async () => {
     const { db, superId } = await seed();
     const service = new AutomationService(db, {
@@ -46,6 +46,37 @@ describe("profile access: binding an automation/task to Super Agent is Superadmi
 
     await expect(attempt).rejects.toBeInstanceOf(AtlasApiError);
     await expect(attempt).rejects.toMatchObject({ status: 403 });
+  });
+
+  test("workspace admin can bind an automation to the Super Agent profile", async () => {
+    const { db, superId } = await seed();
+    const service = new AutomationService(db, {
+      getUserTimezone: async () => "UTC",
+    });
+
+    const automation = await service.create(
+      ORG_ID,
+      automationInput as any,
+      superId,
+      {
+        isPlatformAdmin: false,
+        orgRole: "admin",
+      }
+    );
+
+    expect(automation.profileId).toBe(superId);
+  });
+
+  test("workspace admin can bind a task to the Super Agent profile", async () => {
+    const { db, superId } = await seed();
+    const service = new TaskService(db);
+
+    const task = await service.create(ORG_ID, taskInput as any, superId, {
+      isPlatformAdmin: false,
+      orgRole: "admin",
+    });
+
+    expect(task.profileId).toBe(superId);
   });
 
   test("Superadmin can bind an automation to the Super Agent profile", async () => {
