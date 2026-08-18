@@ -197,6 +197,18 @@ export interface LlmUsageReportResponse {
   to: string | null;
 }
 
+export interface OrgUsageBudgetResponse {
+  /** Fraction of the budget used (0..1+), or null when no budget. */
+  fractionUsed: number | null;
+  /** `YYYY-MM` the spend is measured over. */
+  month: string;
+  /** Monthly USD limit, or null when no budget is set. */
+  monthlyLimitUsd: number | null;
+  /** Estimated spend so far this month (USD). */
+  monthToDateUsd: number;
+  overBudget: boolean;
+}
+
 export interface LlmUsageStats {
   estimatedCostUsd: number;
   inputTokens: number;

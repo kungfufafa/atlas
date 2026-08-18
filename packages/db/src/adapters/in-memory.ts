@@ -24,6 +24,7 @@ import type {
   StoredOrgInviteRecord,
   StoredOrgMemberRecord,
   StoredOrgMemoryProposal,
+  StoredOrgUsageBudgetRecord,
   StoredProfileComposioToolkitRecord,
   StoredProfileRecord,
   StoredSessionMessageRecord,
@@ -109,6 +110,7 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
   const memories = new Map<string, StoredMemoryRecord>();
   const memoryKey = (orgId: string, id: string) => `${orgId}:${id}`;
   const llmUsageDaily = new Map<string, StoredLlmUsageDailyRecord>();
+  const orgUsageBudgets = new Map<string, StoredOrgUsageBudgetRecord>();
 
   return {
     aggregateLlmUsage(options) {
@@ -567,6 +569,10 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         return null;
       }
       return proposal;
+    },
+
+    getOrgUsageBudget(orgId) {
+      return Promise.resolve(orgUsageBudgets.get(orgId) ?? null);
     },
 
     async getPendingOrgInvite(orgId, email) {
@@ -1050,6 +1056,14 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       return filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     },
 
+    listOrgUsageBudgets() {
+      return Promise.resolve(
+        [...orgUsageBudgets.values()].sort(
+          (left, right) => right.monthlyLimitUsd - left.monthlyLimitUsd
+        )
+      );
+    },
+
     async listProfileComposioToolkits(profileId) {
       return profileComposioToolkits.get(profileId) ?? [];
     },
@@ -1269,6 +1283,16 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         status: "applied",
       });
       return true;
+    },
+    pruneLlmUsageDaily(beforeDay) {
+      let removed = 0;
+      for (const [key, record] of llmUsageDaily.entries()) {
+        if (record.day <= beforeDay) {
+          llmUsageDaily.delete(key);
+          removed += 1;
+        }
+      }
+      return Promise.resolve(removed);
     },
 
     async replaceMessagesForSession(sessionId, messages) {
@@ -1576,6 +1600,11 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
     async upsertOrgMember(record) {
       orgMembers.set(`${record.orgId}:${record.userId}`, record);
+    },
+
+    upsertOrgUsageBudget(record) {
+      orgUsageBudgets.set(record.orgId, { ...record });
+      return Promise.resolve();
     },
 
     async upsertProfile(record) {

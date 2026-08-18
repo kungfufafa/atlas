@@ -107,4 +107,36 @@ describe("llm_usage_daily rollup + aggregation (in-memory)", () => {
     expect(models[0]?.key).toBe("gpt-x");
     expect(models[0]?.requestCount).toBe(2);
   });
+
+  test("prune removes only rows on or before the cutoff day", async () => {
+    const db = await seed();
+    const removedOld = await db.pruneLlmUsageDaily("1970-01-01");
+    expect(removedOld).toBe(0);
+    expect(await db.aggregateLlmUsage({ groupBy: "workspace" })).not.toEqual(
+      []
+    );
+
+    const today = new Date().toISOString().slice(0, 10);
+    const removed = await db.pruneLlmUsageDaily(today);
+    expect(removed).toBeGreaterThan(0);
+    expect(await db.aggregateLlmUsage({ groupBy: "workspace" })).toEqual([]);
+  });
+
+  test("org usage budget get/upsert/list", async () => {
+    const db = await seed();
+    expect(await db.getOrgUsageBudget("org_a")).toBeNull();
+    await db.upsertOrgUsageBudget({
+      monthlyLimitUsd: 25,
+      orgId: "org_a",
+      updatedAt: new Date().toISOString(),
+    });
+    expect((await db.getOrgUsageBudget("org_a"))?.monthlyLimitUsd).toBe(25);
+    await db.upsertOrgUsageBudget({
+      monthlyLimitUsd: 40,
+      orgId: "org_a",
+      updatedAt: new Date().toISOString(),
+    });
+    expect((await db.getOrgUsageBudget("org_a"))?.monthlyLimitUsd).toBe(40);
+    expect(await db.listOrgUsageBudgets()).toHaveLength(1);
+  });
 });

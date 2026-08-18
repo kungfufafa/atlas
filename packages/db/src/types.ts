@@ -354,6 +354,13 @@ export interface StoredLlmUsageDailyRecord extends LlmUsageDimensions {
   updatedAt: string;
 }
 
+export interface StoredOrgUsageBudgetRecord {
+  /** Monthly spend limit in USD. 0 means "no budget set". */
+  monthlyLimitUsd: number;
+  orgId: string;
+  updatedAt: string;
+}
+
 export type LlmUsageGroupBy =
   | "workspace"
   | "user"
@@ -741,6 +748,8 @@ export interface DatabaseAdapter {
     orgId: string,
     id: string
   ): Promise<StoredOrgMemoryProposal | null>;
+
+  getOrgUsageBudget(orgId: string): Promise<StoredOrgUsageBudgetRecord | null>;
   getPendingOrgInvite(
     orgId: string,
     email: string
@@ -888,6 +897,7 @@ export interface DatabaseAdapter {
     orgId: string,
     status?: OrgMemoryProposalStatus
   ): Promise<StoredOrgMemoryProposal[]>;
+  listOrgUsageBudgets(): Promise<StoredOrgUsageBudgetRecord[]>;
 
   listProfileComposioToolkits(
     profileId: string
@@ -947,6 +957,9 @@ export interface DatabaseAdapter {
     id: string,
     appliedAt: string
   ): Promise<boolean>;
+
+  /** Delete rollup rows on or before a `YYYY-MM-DD` day (retention). */
+  pruneLlmUsageDaily(beforeDay: string): Promise<number>;
   replaceMessagesForSession(
     sessionId: string,
     messages: StoredSessionMessageRecord[]
@@ -1068,6 +1081,7 @@ export interface DatabaseAdapter {
 
   upsertOrganization(record: StoredOrganizationRecord): Promise<void>;
   upsertOrgMember(record: StoredOrgMemberRecord): Promise<void>;
+  upsertOrgUsageBudget(record: StoredOrgUsageBudgetRecord): Promise<void>;
   upsertProfile(record: StoredProfileRecord): Promise<void>;
   upsertSession(record: StoredSessionRecord): Promise<void>;
   upsertSkill(record: StoredSkillRecord): Promise<void>;

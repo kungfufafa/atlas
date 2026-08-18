@@ -35,6 +35,7 @@ export function migrateDatabase(db: Database): void {
   migrateToolOutputSavingsTable(db);
   migrateLlmTurnUsageTable(db);
   migrateLlmUsageDailyTable(db);
+  migrateOrgUsageBudgetsTable(db);
   migrateAttachmentsTable(db);
   migrateAutomationRunsTable(db);
   migrateAutomationRunReadStateTable(db);
@@ -363,6 +364,20 @@ function migrateLlmUsageDailyTable(db: Database): void {
       ON llm_usage_daily (org_id, day);
     CREATE INDEX IF NOT EXISTS llm_usage_daily_day
       ON llm_usage_daily (day);
+  `);
+}
+
+/**
+ * Per-workspace monthly spend budget (USD). Soft budget: used for visibility
+ * and over-budget flagging, not to hard-block requests.
+ */
+function migrateOrgUsageBudgetsTable(db: Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS org_usage_budgets (
+      org_id TEXT PRIMARY KEY NOT NULL,
+      monthly_limit_usd REAL NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL
+    );
   `);
 }
 

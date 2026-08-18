@@ -953,6 +953,22 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         llm_usage_daily.estimated_cost_usd + excluded.estimated_cost_usd,
       updated_at = excluded.updated_at
   `);
+  const pruneLlmUsageDailyStmt = db.prepare(
+    "DELETE FROM llm_usage_daily WHERE day <= ?"
+  );
+  const getOrgUsageBudgetStmt = db.prepare(
+    "SELECT * FROM org_usage_budgets WHERE org_id = ?"
+  );
+  const upsertOrgUsageBudgetStmt = db.prepare(`
+    INSERT INTO org_usage_budgets (org_id, monthly_limit_usd, updated_at)
+    VALUES (?, ?, ?)
+    ON CONFLICT(org_id) DO UPDATE SET
+      monthly_limit_usd = excluded.monthly_limit_usd,
+      updated_at = excluded.updated_at
+  `);
+  const listOrgUsageBudgetsStmt = db.prepare(
+    "SELECT * FROM org_usage_budgets ORDER BY monthly_limit_usd DESC"
+  );
   const getWorkspaceSettingsStmt = db.prepare(
     "SELECT * FROM workspace_settings WHERE id = ?"
   );
@@ -2183,6 +2199,23 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       return row ? toOrgMemoryProposalRecord(row) : null;
     },
 
+    getOrgUsageBudget(orgId) {
+      const row = getOrgUsageBudgetStmt.get(orgId) as {
+        org_id: string;
+        monthly_limit_usd: number;
+        updated_at: string;
+      } | null;
+      return Promise.resolve(
+        row
+          ? {
+              monthlyLimitUsd: row.monthly_limit_usd,
+              orgId: row.org_id,
+              updatedAt: row.updated_at,
+            }
+          : null
+      );
+    },
+
     async getPendingOrgInvite(orgId, email) {
       const row = getPendingOrgInviteStmt.get(
         orgId,
@@ -2626,6 +2659,21 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       return rows.map(toOrgMemoryProposalRecord);
     },
 
+    listOrgUsageBudgets() {
+      const rows = listOrgUsageBudgetsStmt.all() as {
+        org_id: string;
+        monthly_limit_usd: number;
+        updated_at: string;
+      }[];
+      return Promise.resolve(
+        rows.map((row) => ({
+          monthlyLimitUsd: row.monthly_limit_usd,
+          orgId: row.org_id,
+          updatedAt: row.updated_at,
+        }))
+      );
+    },
+
     async listProfileComposioToolkits(profileId) {
       return listProfileComposioToolkitsStmt
         .all(profileId)
@@ -2829,6 +2877,11 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     async markSkillSuggestionApplied(orgId, id, appliedAt) {
       const result = markSkillSuggestionAppliedStmt.run(appliedAt, orgId, id);
       return result.changes > 0;
+    },
+
+    pruneLlmUsageDaily(beforeDay) {
+      const result = pruneLlmUsageDailyStmt.run(beforeDay);
+      return Promise.resolve(Number(result.changes ?? 0));
     },
 
     async replaceMessagesForSession(sessionId, messages) {
@@ -3220,6 +3273,14 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.role,
         record.userContext ?? null,
         record.createdAt
+      );
+    },
+
+    async upsertOrgUsageBudget(record) {
+      upsertOrgUsageBudgetStmt.run(
+        record.orgId,
+        record.monthlyLimitUsd,
+        record.updatedAt
       );
     },
 
