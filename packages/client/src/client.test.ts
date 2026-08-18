@@ -88,6 +88,46 @@ test("clients send org context on authenticated requests", async () => {
   expect(headers.get("X-Org-Id")).toBe("org_test");
 });
 
+test("preview and accept invite hit public auth routes", async () => {
+  const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
+    [];
+  const client = createClient({
+    baseUrl: "http://localhost:4310",
+    fetch: async (input, init) => {
+      fetchCalls.push({ init, input });
+      if (String(input).includes("/v1/auth/invite?")) {
+        return Response.json({
+          email: "member@acme.com",
+          expiresAt: "2026-09-01T00:00:00.000Z",
+          orgName: "Acme",
+          role: "member",
+        });
+      }
+      return Response.json({
+        email: "member@acme.com",
+        orgId: "org_acme",
+        role: "member",
+      });
+    },
+  });
+
+  await client.previewOrgInvite("invite-token");
+  const accepted = await client.acceptOrgInvite({
+    password: "secret123",
+    token: "invite-token",
+  });
+
+  expect(String(fetchCalls[0]!.input)).toBe(
+    "http://localhost:4310/v1/auth/invite?token=invite-token"
+  );
+  expect(fetchCalls[0]!.init?.method ?? "GET").toBe("GET");
+  expect(String(fetchCalls[1]!.input)).toBe(
+    "http://localhost:4310/v1/auth/accept-invite"
+  );
+  expect(fetchCalls[1]!.init?.method).toBe("POST");
+  expect(accepted.orgId).toBe("org_acme");
+});
+
 test("non-browser clients send local auth as a bearer token", async () => {
   const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
     [];

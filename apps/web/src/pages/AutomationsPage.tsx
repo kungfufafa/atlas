@@ -1,14 +1,21 @@
-import { useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/context/use-auth";
 import { agentWorkTabFromSearchParams } from "@/lib/navigation";
+import { isViewerRole } from "@/lib/org-roles";
 import { AutomationsDialogs } from "@/pages/automations/automations-dialogs";
 import { AutomationsPageLayout } from "@/pages/automations/automations-page-layout";
 import { useAutomationsPage } from "@/pages/automations/use-automations-page";
 import { TasksPage } from "@/pages/TasksPage";
 
 export function AutomationsPage() {
+  const { activeOrg } = useAuth();
   const state = useAutomationsPage();
   const [searchParams] = useSearchParams();
   const activeTab = agentWorkTabFromSearchParams(searchParams);
+
+  if (isViewerRole(activeOrg?.role)) {
+    return <Navigate replace to="/history" />;
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">

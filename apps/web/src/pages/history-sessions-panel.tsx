@@ -49,10 +49,10 @@ export function HistorySessionsPanel({
   onSearchChange: (value: string) => void;
   onClearSearch: () => void;
   onRefresh: () => void;
-  onGoToProfiles: () => void;
-  onGoToChat: () => void;
+  onGoToProfiles?: () => void;
+  onGoToChat?: () => void;
   onOpenSession: (session: SessionSummary) => void;
-  onDeleteSession: (session: SessionSummary) => void;
+  onDeleteSession?: (session: SessionSummary) => void;
 }) {
   const trimmedSearch = searchQuery.trim();
   const isSearching = trimmedSearch.length > 0;
@@ -109,23 +109,27 @@ export function HistorySessionsPanel({
 
       {profiles.length === 0 ? (
         <HistoryEmptyMessage
-          actionLabel="Go to Profiles"
-          message="Create a profile to start chatting."
+          actionLabel={onGoToProfiles ? "Go to Profiles" : undefined}
+          message="No profiles are available yet."
           onAction={onGoToProfiles}
         />
       ) : initialLoading ? (
         <HistoryListSkeleton />
       ) : filteredSessions.length === 0 ? (
         <HistoryEmptyMessage
-          actionLabel={sessions.length > 0 ? "Clear search" : "New chat"}
+          actionLabel={
+            sessions.length > 0
+              ? "Clear search"
+              : onGoToChat
+                ? "New chat"
+                : undefined
+          }
           message={
             sessions.length > 0
               ? "No chats match your search."
               : "No chats yet."
           }
-          onAction={() =>
-            sessions.length > 0 ? onClearSearch() : onGoToChat()
-          }
+          onAction={sessions.length > 0 ? onClearSearch : onGoToChat}
         />
       ) : (
         <div className="divide-y divide-border">
@@ -138,8 +142,9 @@ export function HistorySessionsPanel({
                 {group.sessions.map((session) => (
                   <li key={session.id}>
                     <HistorySessionRow
+                      canDelete={Boolean(onDeleteSession)}
                       disabled={busy}
-                      onDelete={() => onDeleteSession(session)}
+                      onDelete={() => onDeleteSession?.(session)}
                       onOpen={() => onOpenSession(session)}
                       session={session}
                     />
@@ -161,11 +166,13 @@ function formatMessageCount(count: number): string {
 function HistorySessionRow({
   session,
   disabled,
+  canDelete,
   onOpen,
   onDelete,
 }: {
   session: SessionSummary;
   disabled: boolean;
+  canDelete: boolean;
   onOpen: () => void;
   onDelete: () => void;
 }) {
@@ -200,20 +207,22 @@ function HistorySessionRow({
         </p>
       </button>
 
-      <Button
-        aria-label={`Delete ${title}`}
-        className="shrink-0 text-muted-foreground hover:text-destructive"
-        disabled={disabled}
-        onClick={(event) => {
-          event.stopPropagation();
-          onDelete();
-        }}
-        size="icon-sm"
-        type="button"
-        variant="ghost"
-      >
-        <Delete02Icon className="size-4" />
-      </Button>
+      {canDelete ? (
+        <Button
+          aria-label={`Delete ${title}`}
+          className="shrink-0 text-muted-foreground hover:text-destructive"
+          disabled={disabled}
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete();
+          }}
+          size="icon-sm"
+          type="button"
+          variant="ghost"
+        >
+          <Delete02Icon className="size-4" />
+        </Button>
+      ) : null}
     </div>
   );
 }

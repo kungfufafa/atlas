@@ -189,3 +189,112 @@ describe("direct org member provisioning", () => {
     expect(relogin.status).toBe(200);
   });
 });
+
+describe("workspace invite accept", () => {
+  test("recipient can preview and accept an invite link", async () => {
+    const { app, authService, databaseAdapter } = createApp();
+    const platformSession = await loginPlatformAdminSession(
+      app,
+      authService,
+      databaseAdapter
+    );
+
+    const createResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/platform/orgs", {
+        body: JSON.stringify({
+          admin: {
+            email: "admin-invite@acme.com",
+            name: "Acme Admin",
+            phone: "+628123456789",
+          },
+          name: "Acme Invite",
+          slug: "acme-invite",
+        }),
+        headers: platformSession.headers({
+          "X-CSRF-Token": platformSession.csrfToken,
+        }),
+        method: "POST",
+      })
+    );
+    const created = (await createResponse.json()) as {
+      organization: { id: string };
+      adminMember: { temporaryPassword: string };
+    };
+
+    const adminLogin = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/login", {
+        body: JSON.stringify({
+          email: "admin-invite@acme.com",
+          password: created.adminMember.temporaryPassword,
+        }),
+        method: "POST",
+      })
+    );
+    const adminSession = browserSessionFromResponse(
+      adminLogin,
+      created.organization.id
+    );
+
+    const inviteResponse = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/orgs/${created.organization.id}/invites`,
+        {
+          body: JSON.stringify({
+            email: "member-invite@acme.com",
+            role: "member",
+          }),
+          headers: adminSession.headers({
+            "X-CSRF-Token": adminSession.csrfToken,
+          }),
+          method: "POST",
+        }
+      )
+    );
+    expect(inviteResponse.status).toBe(201);
+    const invited = (await inviteResponse.json()) as { token: string };
+
+    const previewResponse = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/auth/invite?token=${encodeURIComponent(invited.token)}`
+      )
+    );
+    expect(previewResponse.status).toBe(200);
+    await expect(previewResponse.json()).resolves.toMatchObject({
+      email: "member-invite@acme.com",
+      orgName: "Acme Invite",
+      role: "member",
+    });
+
+    const acceptResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/accept-invite", {
+        body: JSON.stringify({
+          password: "invite-pass-1",
+          token: invited.token,
+        }),
+        method: "POST",
+      })
+    );
+    expect(acceptResponse.status).toBe(200);
+    const accepted = (await acceptResponse.json()) as {
+      email: string;
+      orgId: string;
+      role: string;
+    };
+    expect(accepted).toEqual({
+      email: "member-invite@acme.com",
+      orgId: created.organization.id,
+      role: "member",
+    });
+
+    const memberSession = browserSessionFromResponse(
+      acceptResponse,
+      created.organization.id
+    );
+    const profilesResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/profiles", {
+        headers: memberSession.headers(),
+      })
+    );
+    expect(profilesResponse.status).toBe(200);
+  });
+});

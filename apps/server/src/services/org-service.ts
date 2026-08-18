@@ -27,6 +27,7 @@ import type {
   OrgMemberResponse,
   OrgMemberSummary,
   OrgRole,
+  PreviewOrgInviteResponse,
   UpdateOrganizationRequest,
   UpdateOrgMemberRequest,
   UserOrgSummary,
@@ -589,6 +590,34 @@ export class OrgService {
     return {
       invite: toOrgInviteSummary(record),
       token,
+    };
+  }
+
+  async previewInvite(token: string): Promise<PreviewOrgInviteResponse> {
+    const trimmed = token?.trim();
+    if (!trimmed) {
+      throw new AtlasApiError("Invite token is required.", 400);
+    }
+
+    const invite = await this.databaseAdapter.getOrgInviteByTokenHash(
+      this.authService.hashToken(trimmed)
+    );
+    if (!invite) {
+      throw new AtlasApiError("Not found", 404);
+    }
+
+    assertInviteUsable(invite);
+
+    const org = await this.databaseAdapter.getOrganizationById(invite.orgId);
+    if (!org) {
+      throw new AtlasApiError("Not found", 404);
+    }
+
+    return {
+      email: invite.email,
+      expiresAt: invite.expiresAt,
+      orgName: org.name,
+      role: invite.role,
     };
   }
 

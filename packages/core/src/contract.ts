@@ -712,6 +712,13 @@ export interface AcceptOrgInviteResponse {
   role: OrgRole;
 }
 
+export interface PreviewOrgInviteResponse {
+  email: string;
+  expiresAt: string;
+  orgName: string;
+  role: OrgRole;
+}
+
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
