@@ -84,7 +84,8 @@ export async function createWhatsAppSocket(
           deps.onDisconnected?.();
           const statusCode = lastDisconnect?.error?.message
             ? (lastDisconnect.error as any)?.output?.statusCode
-            : lastDisconnect?.statusCode;
+            : (lastDisconnect as { statusCode?: number } | undefined)
+                ?.statusCode;
           const shouldReconnect =
             statusCode !== DisconnectReason.loggedOut && !stopped;
 
@@ -152,7 +153,9 @@ export async function createWhatsAppSocket(
             loggedMissingTextPayload = true;
             console.log(
               "WhatsApp missing-text payload:",
-              summarizeMissingTextPayload(msg)
+              summarizeMissingTextPayload(
+                msg as Parameters<typeof summarizeMissingTextPayload>[0]
+              )
             );
           }
 

@@ -157,9 +157,9 @@ export function modelExistsOnInstance(
 }
 
 export function resolveDefaultModelForInstance(
-  instance: ProviderInstance
+  instance: ProviderInstance | null | undefined
 ): string {
-  return getDefaultModel(instance.type, instance.customModels);
+  return instance ? getDefaultModel(instance.type, instance.customModels) : "";
 }
 
 export function buildProviderInstanceFromCreateRequest(
@@ -199,10 +199,10 @@ export function buildProviderInstanceFromCreateRequest(
   return {
     apiKey,
     id: createProviderInstanceId(),
-    label,
     type,
     ...fields,
     createdAt: new Date().toISOString(),
+    label,
   };
 }
 
@@ -269,9 +269,12 @@ export function applyProviderInstanceUpdate(
   return next;
 }
 
-function buildProviderFieldsFromRequest(
-  request: CreateProviderRequest
-): Pick<ProviderInstance, "baseUrl" | "customModels" | "label" | "hostMode"> {
+function buildProviderFieldsFromRequest(request: CreateProviderRequest): Pick<
+  ProviderInstance,
+  "baseUrl" | "customModels" | "hostMode"
+> & {
+  label?: string;
+} {
   const type = request.type;
 
   if (type === "ollama") {

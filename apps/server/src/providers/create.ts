@@ -49,7 +49,6 @@ export function createProvider(options: CreateProviderOptions): ProviderClient {
     case "cerebras":
       return createCerebrasProvider({
         apiKey: options.apiKey,
-        baseUrl: baseUrlOverride,
         customModels: options.instance?.customModels,
         model,
       });
@@ -58,13 +57,11 @@ export function createProvider(options: CreateProviderOptions): ProviderClient {
         apiKey: options.apiKey,
         baseUrl: baseUrlOverride ?? DEFAULT_DEEPSEEK_BASE_URL,
         model,
-        providerLabel: "DeepSeek",
         providerName: "deepseek",
       });
     case "fireworks":
       return createFireworksProvider({
         apiKey: options.apiKey,
-        baseUrl: baseUrlOverride,
         customModels: options.instance?.customModels,
         model,
       });
@@ -90,8 +87,6 @@ export function createProvider(options: CreateProviderOptions): ProviderClient {
     case "opencode_go":
       return createOpenCodeGoProvider({
         apiKey: options.apiKey,
-        baseUrl: baseUrlOverride,
-        customModels: options.instance?.customModels,
         model,
       });
     case "ollama":

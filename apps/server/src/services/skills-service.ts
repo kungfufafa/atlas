@@ -115,7 +115,7 @@ export class SkillsService {
     }
 
     const skills = await this.db.listSkills();
-    return { skills: skills.map(toSkillSummary) };
+    return { skills: skills.map((skill) => toSkillSummary(skill)) };
   }
 
   async createSkill(

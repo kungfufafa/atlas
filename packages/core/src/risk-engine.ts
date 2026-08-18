@@ -31,6 +31,36 @@ export interface RiskEvaluation {
   riskLevel: RiskLevel;
 }
 
+/**
+ * Human-readable one-line summary of an action's consequence, suitable for an
+ * approval prompt. `RiskEvaluation` carries a structured `consequence`; the
+ * approval UI needs a flat summary string.
+ */
+export function summarizeActionConsequence(
+  consequence: ActionConsequence
+): string {
+  const parts: string[] = [];
+  if (consequence.target) {
+    parts.push(`Target: ${consequence.target}`);
+  }
+  if (consequence.recipient) {
+    parts.push(`Recipient: ${consequence.recipient}`);
+  }
+  if (typeof consequence.amount === "number") {
+    const currency = consequence.currency ? ` ${consequence.currency}` : "";
+    parts.push(`Amount: ${consequence.amount}${currency}`);
+  }
+  if (typeof consequence.affectedResources === "number") {
+    parts.push(`Affected resources: ${consequence.affectedResources}`);
+  }
+  parts.push(
+    consequence.irreversible
+      ? "This action is irreversible."
+      : "This action can be undone."
+  );
+  return parts.join(" · ");
+}
+
 export interface RiskPolicyConfig {
   bulkDeleteThreshold?: number;
   bulkFileWriteThreshold?: number;

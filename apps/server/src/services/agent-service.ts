@@ -174,6 +174,7 @@ import { canAccessSuperAgentProfile } from "@atlas/core/profiles";
 import {
   type DatabaseAdapter,
   type StoredProfileRecord,
+  type StoredSessionRecord,
   type StoredTaskRunRecord,
   SUPER_AGENT_TOOL_AUTHORING_RULES,
   WORKSPACE_SETTINGS_ID,
@@ -287,6 +288,7 @@ import type { SkillProposalService } from "./skill-proposal-service";
 import type { SkillSuggestionService } from "./skill-suggestion-service";
 import type { SkillsService } from "./skills-service";
 import { SuperAgentSessionState } from "./super-agent-session-state";
+import type { TaskRunner } from "./task-runner";
 import { toolActivationService } from "./tool-activation-service";
 import {
   resolveProfileStoredTools,
@@ -926,10 +928,10 @@ export class AgentService {
       null;
 
     await this.db.upsertWorkspaceSettings({
-      codingAgentHarnesses: stored?.codingAgentHarnesses ?? [],
+      codingAgentHarnesses: [],
       id: WORKSPACE_SETTINGS_ID,
       imageModel: this.userConfig?.imageModel ?? null,
-      selectedCodingAgentHarness: stored?.selectedCodingAgentHarness ?? null,
+      selectedCodingAgentHarness: null,
       transcriptionModel: legacyModel,
       updatedAt: new Date().toISOString(),
       visionModel: this.userConfig?.visionModel ?? null,
@@ -1148,10 +1150,10 @@ export class AgentService {
     const legacyImageModel = this.userConfig?.imageModel ?? null;
 
     await this.db.upsertWorkspaceSettings({
-      codingAgentHarnesses: stored?.codingAgentHarnesses ?? [],
+      codingAgentHarnesses: [],
       id: WORKSPACE_SETTINGS_ID,
       imageModel: legacyImageModel,
-      selectedCodingAgentHarness: stored?.selectedCodingAgentHarness ?? null,
+      selectedCodingAgentHarness: null,
       transcriptionModel: legacyTranscriptionModel,
       updatedAt: new Date().toISOString(),
       visionModel: legacyVisionModel,
@@ -3050,7 +3052,11 @@ export class AgentService {
 
     const raw = await executeToolCall(
       [loaded],
-      { arguments: parameters, name: loaded.name },
+      {
+        arguments: parameters,
+        id: `playground_${Date.now()}`,
+        name: loaded.name,
+      },
       toolContext
     );
 
@@ -4127,7 +4133,7 @@ export class AgentService {
     harness: CodingAgentHarnessStatus,
     workspaceRoot: string,
     probeContext: {
-      userConfig: typeof this.userConfig;
+      userConfig: UserConfig | null;
       profileModel: string | null;
     }
   ): Promise<string> {
@@ -4284,7 +4290,7 @@ export class AgentService {
       profile.model
     );
     const resolvedProvider =
-      primarySupportsVision === false
+      primarySupportsVision === false && provider
         ? wrapProviderForNonVision(provider)
         : provider;
 

@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "lib": ["ESNext", "DOM", "DOM.Iterable"]
+  },
+  "include": [
+    "apps/server/src/**/*.ts",
+    "apps/cli/src/**/*.ts",
+    "apps/platform/*/src/**/*.ts",
+    "packages/*/src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/node_modules",
+    "**/dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "**/testing/**",
+    "apps/web",
+    "docs/website"
+  ]
+}

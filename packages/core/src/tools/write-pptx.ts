@@ -1,7 +1,6 @@
 import { z } from "zod";
 import type { ToolDefinition } from "../contract";
 import { presentationSlideSchema } from "../presentation-engine";
-import { runWritePptx } from "./builtin";
 import {
   jsonSchemaFromZod,
   requiredTrimmedString,
@@ -45,7 +44,12 @@ export const writePptxTool: ToolDefinition<WritePptxInput, WritePptxOutput> = {
     "Create a real Microsoft PowerPoint (.pptx) presentation with structured slides, titles, bullet points, tables, and themes. Use this whenever the user asks for a presentation or slide deck.",
   name: "write_pptx",
   parameters: jsonSchemaFromZod(writePptxInputSchema),
-  run(input, context) {
+  // `builtin.ts` imports this tool for its registry while the implementation
+  // (`runWritePptx`) lives there, so import it lazily to avoid a static import
+  // cycle that can leave `writePptxTool` in the temporal dead zone depending on
+  // module load order.
+  async run(input, context) {
+    const { runWritePptx } = await import("./builtin");
     return runWritePptx(input, context);
   },
 };

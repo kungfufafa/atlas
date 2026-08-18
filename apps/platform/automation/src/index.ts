@@ -30,7 +30,7 @@ try {
   spawnedChild = child;
 
   const client = createClient({
-    authToken: await loadLocalAuthToken(),
+    authToken: (await loadLocalAuthToken()) ?? undefined,
     baseUrl: serverUrl,
   });
 

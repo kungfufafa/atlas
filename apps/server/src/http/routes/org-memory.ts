@@ -759,7 +759,7 @@ export function registerOrgMemoryRoutes(
       const proposalId = decodeURIComponent(c.req.param("proposalId"));
       const service = requireService();
       const body = await readJson<{ pin?: boolean }>(c.req.raw).catch(
-        () => ({})
+        () => ({}) as { pin?: boolean }
       );
       const proposal = await service.approveProposal(
         orgId,

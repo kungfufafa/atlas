@@ -687,7 +687,7 @@ export function registerProfileRoutes(
       "_"
     );
     const disposition = c.req.query("inline") === "1" ? "inline" : "attachment";
-    return new Response(artifact.bytes, {
+    return new Response(artifact.bytes as unknown as BodyInit, {
       headers: {
         "Content-Disposition": `${disposition}; filename="${downloadName}"`,
         "Content-Type": artifact.contentType,
@@ -764,7 +764,7 @@ export function registerProfileRoutes(
       const downloadName = document.filename.replace(/["\\]/g, "_");
       const disposition =
         c.req.query("inline") === "1" ? "inline" : "attachment";
-      return new Response(document.bytes, {
+      return new Response(document.bytes as unknown as BodyInit, {
         headers: {
           "Content-Disposition": `${disposition}; filename="${downloadName}"`,
           "Content-Type": document.contentType,
@@ -776,7 +776,7 @@ export function registerProfileRoutes(
   app.get("/v1/profiles/:profileId/avatar", async (c) => {
     const profileId = decodeURIComponent(c.req.param("profileId"));
     const avatar = await agent.getProfileAvatarByProfileId(profileId);
-    return new Response(avatar.bytes, {
+    return new Response(avatar.bytes as unknown as BodyInit, {
       headers: { "Content-Type": avatar.mediaType },
     });
   });

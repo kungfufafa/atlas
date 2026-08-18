@@ -165,6 +165,7 @@ export interface WhatsAppWorkerStatus {
 export interface WorkerLogsResponse {
   stderr: string;
   stdout: string;
+  worker?: string;
 }
 
 export interface LlmUsageStats {
@@ -2030,6 +2031,10 @@ export interface GenerateTextInput {
   /** Defaults to `json` for structured automation drafts. Use `text` for plain prose. */
   format?: GenerateTextFormat;
   prompt: string;
+  /** Provider-specific options (e.g. thinking/reasoning effort). */
+  providerOptions?: Record<string, unknown>;
+  /** Optional abort signal to cancel the request. */
+  signal?: AbortSignal;
   system: string;
 }
 

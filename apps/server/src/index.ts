@@ -173,7 +173,7 @@ const orgMemoryService = new OrgMemoryService(database.adapter, {
       return mergeOrgMemoryWithApprovedBullet(content, bullet, {
         dateUtc: options.dateUtc,
         pin: options.pin,
-        provider,
+        provider: provider ?? undefined,
       });
     },
   },
@@ -343,7 +343,7 @@ function startServer(options: {
   for (let port = options.preferredPort; port <= lastPort; port += 1) {
     try {
       return Bun.serve({
-        async fetch(request, server: Server) {
+        async fetch(request, server: Server<undefined>) {
           const response = await options.fetch(request);
           disableBunIdleTimeoutForSse(request, response, server);
           return response;

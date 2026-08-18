@@ -245,8 +245,33 @@ describe("Atlas Golden Robustness & Security E2E Suite (Tests A through P)", () 
   // -------------------------------------------------------------
   it("TEST G: Research Delta - Reuses existing evidence and creates updated session revision", async () => {
     const engine = new ResearchEngine();
-    const round1 = await engine.executeResearch("OpenAI vs Anthropic");
+    // Delta reuse can only surface prior evidence when the first round actually
+    // gathered some, which requires a search backend. Inject a deterministic
+    // web_search stub so the test exercises reuse rather than an empty round 1.
+    const webSearch = async ({ query }: { limit?: number; query: string }) => ({
+      results: [
+        {
+          domain: "openai.com",
+          snippet: `OpenAI capabilities relevant to ${query}.`,
+          title: "OpenAI",
+          url: "https://openai.com",
+        },
+        {
+          domain: "anthropic.com",
+          snippet: `Anthropic capabilities relevant to ${query}.`,
+          title: "Anthropic",
+          url: "https://anthropic.com",
+        },
+      ],
+    });
+
+    const round1 = await engine.executeResearch(
+      "OpenAI vs Anthropic",
+      {},
+      { web_search: webSearch }
+    );
     expect(round1.researchSession?.revision).toBe(1);
+    expect(round1.evidence.length).toBeGreaterThan(0);
 
     const round2 = await engine.executeResearch("Add Gemini", {
       focusAreas: ["Gemini multimodal benchmarks"],

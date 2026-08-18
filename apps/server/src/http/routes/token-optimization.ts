@@ -33,10 +33,14 @@ export function registerTokenOptimizationRoutes(
 ): void {
   app.get("/v1/token-optimization", async (c) => {
     const orgId = requireActiveOrgIdFromContext(c);
+    const db = options.databaseAdapter;
+    if (!db) {
+      throw new Error("Database adapter is not configured.");
+    }
     const [rows, turnRows, settings, installed] = await Promise.all([
-      options.databaseAdapter.listToolOutputSavings(orgId),
-      options.databaseAdapter.listLlmTurnUsage(orgId),
-      options.databaseAdapter.getWorkspaceSettings(orgId),
+      db.listToolOutputSavings(orgId),
+      db.listLlmTurnUsage(orgId),
+      db.getWorkspaceSettings(orgId),
       isOmniInstalled(),
     ]);
     const enabled = settings?.tokenOptimizerEnabled ?? isOmniEnabled();
@@ -151,9 +155,13 @@ export function registerTokenOptimizationRoutes(
     requireOrgAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<{ enabled: boolean }>(c.req.raw);
-    const existing = await options.databaseAdapter.getWorkspaceSettings(orgId);
+    const db = options.databaseAdapter;
+    if (!db) {
+      throw new Error("Database adapter is not configured.");
+    }
+    const existing = await db.getWorkspaceSettings(orgId);
 
-    await options.databaseAdapter.upsertWorkspaceSettings({
+    await db.upsertWorkspaceSettings({
       codingAgentHarnesses: existing?.codingAgentHarnesses ?? [],
       id: existing?.id ?? `workspace-settings:${orgId}`,
       imageModel: existing?.imageModel ?? null,

@@ -1,7 +1,9 @@
 import type {
+  DiscordWorkerStatus,
   HealthResponse,
   LlmUsageStatus,
   SystemStatusResponse,
+  WhatsAppWorkerStatus,
   WorkerProcessInfo,
 } from "@atlas/core";
 import {
@@ -85,7 +87,7 @@ export class SystemStatusService {
           : 0,
       },
       checkedAt: new Date().toISOString(),
-      discordWorker: discordStatus,
+      discordWorker: discordStatus as DiscordWorkerStatus,
       llmUsage: this.getLlmUsage(
         models.provider,
         usageFields.currentModel,
@@ -103,7 +105,7 @@ export class SystemStatusService {
         providerConfigured,
       },
       telegramWorker: telegramStatus,
-      whatsappWorker: whatsappStatus,
+      whatsappWorker: whatsappStatus as WhatsAppWorkerStatus,
     };
   }
 

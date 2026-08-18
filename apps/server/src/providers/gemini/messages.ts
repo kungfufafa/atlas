@@ -72,12 +72,14 @@ async function toGeminiUserParts(
       continue;
     }
 
-    parts.push({
-      inlineData: {
-        data: part.data,
-        mimeType: part.mediaType,
-      },
-    });
+    if ("data" in part) {
+      parts.push({
+        inlineData: {
+          data: part.data,
+          mimeType: part.mediaType,
+        },
+      });
+    }
   }
 
   return parts;

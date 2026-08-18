@@ -40,7 +40,10 @@ interface NativeWorkerProcessState {
 }
 
 function promisifyPm2<T>(
-  fn: (cb: (err: Error | null, result?: T) => void) => void
+  // pm2's typed callbacks expect a non-null Error and a specific payload
+  // (Proc / ProcessDescription[]); accept the widest shape here so any pm2
+  // method callback is assignable, then narrow to T on resolve.
+  fn: (cb: (err: Error | null, result?: unknown) => void) => void
 ): Promise<T> {
   return new Promise((resolve, reject) => {
     fn((err, result) => {
