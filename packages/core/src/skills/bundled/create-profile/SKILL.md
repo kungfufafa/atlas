@@ -20,15 +20,18 @@ Post a reviewable draft before any tool call:
 - Full proposed `INSTRUCTIONS.md` (operating rules, tool posture, when to ask the user)
 - `MEMORY.md` must be **empty**. Do not invent continuity facts, preferences, or history.
 
+Write soul files for a **capable specialist**, not a junior or limited copy of Super Agent. `INSTRUCTIONS.md` must tell the agent to finish work in the turn with assigned tools (search, research, files, documents, slides, sheets, python) and to save durable deliverables under `artifacts/`. Super Agent remains the only orchestrator — do not invent profile/tool-authoring or bash capabilities.
+
 Also include a **tool plan**:
 
-- Server auto-assigns these basics on create when available: `read_file`, `write_file`, `edit_file`, `search_files`, `knowledge_base_search`, `web_fetch`, plus default bundled skills (including `update-profile-memory`).
-- Recommend optional extras from the available-tools context only when they clearly match the requested purpose.
-- New profiles stay narrow on purpose so the user can personalize them. Extra tools, skills, or MCP still need an explicit ask after create (`assign_tool_to_profile`).
-- Do not assign every available tool. Avoid powerful or externally visible tools unless the user asked for that capability.
+- Server auto-assigns the Default Agent work toolkit on create when available: `web_search`, `web_fetch`, `deep_research`, `knowledge_base_search`, `browser`, file tools, `write_docx`, `write_pptx`, `spreadsheet`, `python_execute`, `tool_search`, plus default bundled skills (including `update-profile-memory`).
+- Super Agent extras stay off unless the user asked: `bash`, `generate_image`, and profile/tool authoring.
+- Recommend extra MCP, skills, or powerful tools from the available-tools context only when they clearly match the requested purpose.
 - If a needed capability is missing after create, say so and ask the user to add a tool, skill, or MCP. Never invent a missing integration.
 
 Never set `isSuper: true` unless the user explicitly asked for a super profile. Prefer refusing agent-initiated super creation and directing them to the dashboard.
+
+Do not pass `systemPrompt` — identity lives in the soul files.
 
 ## 3. Wait for explicit confirmation
 
@@ -44,4 +47,4 @@ Then summarize:
 
 - Profile id and name
 - How to open it in the dashboard (Profiles → select the new profile)
-- Which basics were auto-assigned vs any extras still waiting on an explicit assign ask
+- That the Default Agent work toolkit was auto-assigned, and any Super Agent extras still waiting on an explicit assign ask

@@ -40,16 +40,14 @@ import {
   saveProfileAvatar,
   writeSoulFile,
 } from "@atlas/core";
-import {
-  BUILTIN_TOOL_IDS,
-  isProtectedToolId,
-} from "@atlas/core/tools/protected";
+import { isProtectedToolId } from "@atlas/core/tools/protected";
 import type {
   DatabaseAdapter,
   StoredProfileRecord,
   StoredToolRecord,
 } from "@atlas/db";
 import {
+  DEFAULT_AGENT_TOOL_IDS,
   ensureBuiltinToolDefinitions,
   ensureProfileDefaultBundledSkills,
 } from "@atlas/db";
@@ -62,14 +60,6 @@ import { toSkillSummaries } from "./skills-service";
 import { readToolSource } from "./tool-source";
 
 const PROFILE_ID_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$/;
-const BASIC_PROFILE_TOOL_IDS = [
-  BUILTIN_TOOL_IDS.write_file,
-  BUILTIN_TOOL_IDS.edit_file,
-  BUILTIN_TOOL_IDS.read_file,
-  BUILTIN_TOOL_IDS.search_files,
-  BUILTIN_TOOL_IDS.knowledge_base_search,
-  BUILTIN_TOOL_IDS.web_fetch,
-] as const;
 const SOUL_FILE_KEY_BY_NAME = {
   "INSTRUCTIONS.md": "instructions",
   "MEMORY.md": "memory",
@@ -185,8 +175,7 @@ export class ProfileService {
       model: request.model ?? null,
       name,
       orgId,
-      systemPrompt:
-        request.systemPrompt?.trim() ?? "You are a helpful personal assistant.",
+      systemPrompt: request.systemPrompt?.trim() ?? "",
       updatedAt: now,
     };
 
@@ -728,7 +717,7 @@ export class ProfileService {
   }
 
   private async assignDefaultTools(profileId: string): Promise<void> {
-    for (const toolId of BASIC_PROFILE_TOOL_IDS) {
+    for (const toolId of DEFAULT_AGENT_TOOL_IDS) {
       const tool = await this.db.getTool(toolId);
 
       if (tool) {

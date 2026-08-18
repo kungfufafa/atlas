@@ -157,7 +157,7 @@ Always build context with `buildToolExecutionContext()` (`packages/core/src/tool
 | Playground | `POST /v1/tools/:toolId/run` → `runToolPlayground()` (`resolvePlaygroundProfileId`) |
 | Param suggest | `POST /v1/tools/:toolId/params/suggest` |
 
-**Debug:** (1) check path resolution in `~/.atlas/tools/`, (2) confirm `buildToolExecutionContext` + real `profileId`, (3) monorepo-root paths ⇒ missing `workspaceRoot`, (4) put test files in the assigned profile workspace. Super Agent authoring rules: `SUPER_AGENT_SYSTEM_PROMPT` in `packages/db/src/constants.ts`.
+**Debug:** (1) check path resolution in `~/.atlas/tools/`, (2) confirm `buildToolExecutionContext` + real `profileId`, (3) monorepo-root paths ⇒ missing `workspaceRoot`, (4) put test files in the assigned profile workspace. Super Agent authoring rules: `SUPER_AGENT_SYSTEM_PROMPT` in `packages/db/src/constants.ts`. Non-super work quality: `DEFAULT_AGENT_WORK_RULES` (appended at runtime). New profiles get `DEFAULT_AGENT_TOOL_IDS`, not Super Agent extras (`bash`, `generate_image`).
 
 **Playground UI:** `/system/playground/:toolId` — `ToolPlaygroundPage.tsx`, `ToolPlaygroundPanel.tsx`; admin-only via `canUseToolPlayground()`.
 

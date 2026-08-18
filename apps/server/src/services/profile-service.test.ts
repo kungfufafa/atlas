@@ -5,6 +5,8 @@ import path from "node:path";
 import {
   createInMemoryDatabaseAdapter,
   ensureBuiltinToolDefinitions,
+  ensurePythonExecuteToolDefinition,
+  ensureToolSearchToolDefinition,
 } from "@atlas/db";
 import { ProfileService } from "./profile-service";
 
@@ -183,7 +185,7 @@ describe("profile service createProfile", () => {
     expect(dirExists).toBe(false);
   });
 
-  test("assigns basic tools when the built-in tools exist", async () => {
+  test("assigns the Default Agent work toolkit when built-in tools exist", async () => {
     tempConfigDir = await mkdtemp(
       path.join(os.tmpdir(), "atlas-profile-default-tools-")
     );
@@ -191,21 +193,29 @@ describe("profile service createProfile", () => {
 
     const db = createInMemoryDatabaseAdapter();
     await ensureBuiltinToolDefinitions(db);
+    await ensurePythonExecuteToolDefinition(db);
+    await ensureToolSearchToolDefinition(db);
 
     const service = new ProfileService(db);
     const created = await service.createProfile(ORG_ID, { name: "Skill Bot" });
     const tools = await db.listToolsForProfile(created.profile.id);
+    const toolNames = tools.map((tool) => tool.name);
 
-    expect(tools.map((tool) => tool.name)).toContain("read_file");
-    expect(tools.map((tool) => tool.name)).toContain("write_file");
-    expect(tools.map((tool) => tool.name)).toContain("edit_file");
-    expect(tools.map((tool) => tool.name)).toContain("search_files");
-    expect(tools.map((tool) => tool.name)).toContain("knowledge_base_search");
-    expect(tools.map((tool) => tool.name)).toContain("web_fetch");
-    expect(tools.map((tool) => tool.name)).not.toContain(
-      "update_profile_memory"
-    );
-    expect(tools.map((tool) => tool.name)).not.toContain("web_search");
+    expect(toolNames).toContain("read_file");
+    expect(toolNames).toContain("write_file");
+    expect(toolNames).toContain("edit_file");
+    expect(toolNames).toContain("search_files");
+    expect(toolNames).toContain("knowledge_base_search");
+    expect(toolNames).toContain("web_fetch");
+    expect(toolNames).toContain("web_search");
+    expect(toolNames).toContain("deep_research");
+    expect(toolNames).toContain("python_execute");
+    expect(toolNames).toContain("tool_search");
+    expect(toolNames).toContain("write_pptx");
+    expect(toolNames).not.toContain("update_profile_memory");
+    expect(toolNames).not.toContain("bash");
+    expect(toolNames).not.toContain("generate_image");
+    expect(created.profile.systemPrompt).toBe("");
   });
 
   test("assigns default bundled skills when they exist", async () => {

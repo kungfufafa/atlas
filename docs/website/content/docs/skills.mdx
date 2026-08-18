@@ -164,7 +164,7 @@ Profiles receive bundled skills for common workflows:
 - `coding-agent` — invoke a coding agent for repo work via `bash` (Super Agent by default; see [Coding agent](/coding-agent))
 - `agent-browser` — interactive browser automation via `bash` (opt-in; see [Agent browser](/agent-browser))
 
-New custom profiles receive the file tools and `knowledge_base_search` by default when those builtins are available. Default and super-agent profiles also receive the bundled skills above when they are installed and synced on the server (except opt-in skills such as `agent-browser`). Super Agent also receives `bash` for one-off host commands and coding-agent workflows.
+New custom profiles receive the same work toolkit and default bundled skills as Default Agent when those builtins are available. Super Agent also receives `bash` for one-off host commands and coding-agent workflows. Opt-in skills such as `agent-browser` are never auto-assigned.
 
 When `manage-skills` is assigned, interactive chat gets a `skill_manage` tool (`create` / `patch` / `edit` / `delete` / `write_file` / `remove_file`). Creates auto-assign to the profile. Automations and messaging channels do not receive `skill_manage`. For crystallization, optional write approval, admin review UI, and the Phase 3–4 roadmap, see [Self-improving skills](/self-improving-skills).
 

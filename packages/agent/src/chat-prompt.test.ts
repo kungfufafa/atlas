@@ -189,6 +189,27 @@ test("buildChatSystemPrompt nudges assigned work tools without extra product mod
   expect(prompt).not.toContain("ChatGPT");
 });
 
+test("buildChatSystemPrompt nudges python_execute and tool_search when assigned", () => {
+  const prompt = buildChatSystemPrompt(
+    [
+      {
+        description: "Python",
+        name: "python_execute",
+        parameters: { properties: {}, type: "object" },
+      },
+      {
+        description: "Search tools",
+        name: "tool_search",
+        parameters: { properties: {}, type: "object" },
+      },
+    ],
+    { enableToolLoop: true }
+  );
+
+  expect(prompt).toContain("use python_execute");
+  expect(prompt).toContain("use tool_search");
+});
+
 test("buildChatSystemPrompt omits work-tool nudges when those tools are unavailable", () => {
   const prompt = buildChatSystemPrompt(
     [
@@ -207,6 +228,8 @@ test("buildChatSystemPrompt omits work-tool nudges when those tools are unavaila
   expect(prompt).not.toContain("use browser instead of guessing");
   expect(prompt).not.toContain("use write_pptx");
   expect(prompt).not.toContain("use spreadsheet");
+  expect(prompt).not.toContain("use python_execute");
+  expect(prompt).not.toContain("use tool_search");
 });
 
 test("buildChatSystemPrompt omits artifact guidance when write_file is unavailable", () => {

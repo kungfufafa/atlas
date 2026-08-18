@@ -67,7 +67,10 @@ describe("bundled create-profile skill", () => {
     expect(body).not.toMatch(/otherwise proceed/);
     expect(body).toContain("memory.md");
     expect(body).toMatch(/empty/);
+    expect(body).toContain("web_search");
     expect(body).toContain("web_fetch");
+    expect(body).toMatch(/work toolkit/i);
+    expect(body).not.toMatch(/stay narrow/);
     expect(body).toMatch(/isSuper|is super|super profile/i);
     expect(body).toMatch(/revise|edit/);
     expect(body).toMatch(/open|dashboard|profiles/);
