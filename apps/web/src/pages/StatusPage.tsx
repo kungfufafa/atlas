@@ -4,7 +4,7 @@ import type {
   LlmUsageStatus,
   SystemStatusResponse,
 } from "@atlas/core/contract";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert02Icon,
   ArrowDownLeft01Icon,
@@ -91,6 +91,7 @@ export function StatusPage({ embedded = false }: { embedded?: boolean } = {}) {
           />
           <LlmUsageSection embedded={embedded} usage={status.llmUsage} />
           <UsageBreakdownSection
+            canManageBudget={canManageWorkers}
             embedded={embedded}
             isPlatformAdmin={user?.isPlatformAdmin === true}
           />
@@ -123,9 +124,11 @@ function usageRangeFrom(days: number): string {
 function UsageBreakdownSection({
   embedded,
   isPlatformAdmin,
+  canManageBudget,
 }: {
   embedded: boolean;
   isPlatformAdmin: boolean;
+  canManageBudget: boolean;
 }) {
   const tabs: LlmUsageReportGroupBy[] = isPlatformAdmin
     ? ["workspace", "user", "provider", "model", "credential"]
@@ -141,6 +144,7 @@ function UsageBreakdownSection({
 
   const rows = data?.rows ?? [];
   const hasCost = rows.some((row) => row.estimatedCostUsd > 0);
+  const csvHref = `/v1/usage/export.csv?groupBy=${groupBy}&from=${from}`;
 
   return (
     <section className={cn(embedded ? "px-4 py-4" : `${sectionClass} p-4`)}>
@@ -154,6 +158,13 @@ function UsageBreakdownSection({
           </p>
         </div>
         <div className="flex items-center gap-1">
+          <a
+            className="rounded-md border border-border px-2 py-1 text-muted-foreground text-xs hover:text-foreground"
+            download
+            href={csvHref}
+          >
+            Export CSV
+          </a>
           {USAGE_RANGE_OPTIONS.map((option) => (
             <button
               className={cn(
@@ -190,6 +201,8 @@ function UsageBreakdownSection({
         ))}
       </div>
 
+      <BudgetCard canManage={canManageBudget} />
+
       <UsageBreakdownTable
         error={error ? formatError(error) : null}
         hasCost={hasCost}
@@ -197,6 +210,95 @@ function UsageBreakdownSection({
         rows={rows}
       />
     </section>
+  );
+}
+
+function BudgetCard({ canManage }: { canManage: boolean }) {
+  const queryClient = useQueryClient();
+  const { data: budget } = useQuery({
+    queryFn: () => client.getUsageBudget(),
+    queryKey: ["usage-budget"],
+  });
+  const [draft, setDraft] = useState("");
+
+  const save = useMutation({
+    mutationFn: (limit: number) => client.setUsageBudget(limit),
+    onSuccess: (next) => {
+      queryClient.setQueryData(["usage-budget"], next);
+      setDraft("");
+    },
+  });
+
+  if (!budget) {
+    return null;
+  }
+
+  const limit = budget.monthlyLimitUsd;
+  const pct =
+    budget.fractionUsed == null ? 0 : Math.min(1, budget.fractionUsed);
+
+  return (
+    <div
+      className={cn(
+        "mb-3 rounded-md border p-3",
+        budget.overBudget
+          ? "border-destructive/40 bg-destructive/5"
+          : "border-border bg-muted/20"
+      )}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="font-medium text-foreground text-xs">
+            Monthly budget · {budget.month}
+          </p>
+          <p className="text-muted-foreground text-xs">
+            {`$${budget.monthToDateUsd.toFixed(2)} spent`}
+            {limit == null ? " · no budget set" : ` of $${limit.toFixed(2)}`}
+            {budget.overBudget ? " · over budget" : ""}
+          </p>
+        </div>
+        {canManage ? (
+          <form
+            className="flex items-center gap-1"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const value = Number(draft);
+              if (Number.isFinite(value) && value >= 0) {
+                save.mutate(value);
+              }
+            }}
+          >
+            <input
+              aria-label="Monthly budget in USD"
+              className="w-24 rounded-md border border-border bg-background px-2 py-1 text-xs"
+              inputMode="decimal"
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder={limit == null ? "Set $/mo" : String(limit)}
+              type="text"
+              value={draft}
+            />
+            <button
+              className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
+              disabled={save.isPending}
+              type="submit"
+            >
+              {save.isPending ? "Saving…" : "Save"}
+            </button>
+          </form>
+        ) : null}
+      </div>
+      {limit == null ? null : (
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className={cn(
+              "h-full",
+              budget.overBudget ? "bg-destructive" : "bg-primary"
+            )}
+            style={{ width: `${pct * 100}%` }}
+          />
+        </div>
+      )}
+    </div>
   );
 }
 

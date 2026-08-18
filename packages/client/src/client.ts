@@ -101,6 +101,7 @@ import type {
   OrgMemoryResponse,
   OrgMemorySearchRequest,
   OrgMemorySearchResponse,
+  OrgUsageBudgetResponse,
   PatchSkillRequest,
   PinOrgMemoryRequest,
   PreviewDataImportRequest,
@@ -275,6 +276,19 @@ export class AtlasClient {
     return this.request<LlmUsageReportResponse>(
       `/v1/usage?${search.toString()}`
     );
+  }
+
+  async getUsageBudget(): Promise<OrgUsageBudgetResponse> {
+    return this.request<OrgUsageBudgetResponse>("/v1/usage/budget");
+  }
+
+  async setUsageBudget(
+    monthlyLimitUsd: number
+  ): Promise<OrgUsageBudgetResponse> {
+    return this.request<OrgUsageBudgetResponse>("/v1/usage/budget", {
+      body: JSON.stringify({ monthlyLimitUsd }),
+      method: "PUT",
+    });
   }
 
   async setTokenOptimization(enabled: boolean): Promise<{ enabled: boolean }> {
