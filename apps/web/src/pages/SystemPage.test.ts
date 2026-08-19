@@ -28,21 +28,24 @@ describe("SystemPage tab access", () => {
   });
 
   test("keys System queries by the active workspace", () => {
-    expect(systemStatusQueryOptions("org_a").queryKey).toEqual([
+    expect([...systemStatusQueryOptions("org_a").queryKey]).toEqual([
       "systemStatus",
       "org_a",
     ]);
-    expect(profilesQueryOptions("org_a").queryKey).toEqual([
+    expect([...profilesQueryOptions("org_a").queryKey]).toEqual([
       "profiles",
       "org_a",
     ]);
-    expect(toolsQueryOptions("org_a").queryKey).toEqual(["tools", "org_a"]);
-    expect(mcpServersQueryOptions("org_b").queryKey).toEqual([
+    expect([...toolsQueryOptions("org_a").queryKey]).toEqual([
+      "tools",
+      "org_a",
+    ]);
+    expect([...mcpServersQueryOptions("org_b").queryKey]).toEqual([
       "mcp",
       "servers",
       "org_b",
     ]);
-    expect(systemStatusQueryOptions(null).queryKey).toEqual([
+    expect([...systemStatusQueryOptions(null).queryKey]).toEqual([
       "systemStatus",
       "none",
     ]);
