@@ -240,4 +240,16 @@ describe("applyProviderInstanceUpdate", () => {
       modelExistsOnInstance(withoutShortlist, "accounts/unknown/models/foo")
     ).toBe(false);
   });
+
+  test("clears an OpenCode Go shortlist so the live catalog is used", () => {
+    const instance = createProviderInstance({
+      customModels: [{ id: "opencode-go/kimi-k2.7-code" }],
+      id: "go-1",
+      label: "OpenCode Go",
+      type: "opencode_go",
+    });
+
+    const next = applyProviderInstanceUpdate(instance, { customModels: [] });
+    expect(next.customModels).toBeUndefined();
+  });
 });

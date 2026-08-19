@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { getDefaultModel, isOpenRouterModelSlug, resolveModel } from "./models";
+import {
+  getDefaultModel,
+  isOpenRouterModelSlug,
+  resolveModel,
+  toOpenCodeGoApiModelId,
+} from "./models";
 
 describe("isOpenRouterModelSlug", () => {
   test("accepts vendor/model slugs", () => {
@@ -75,6 +80,16 @@ describe("resolveModel", () => {
       "opencode-go/kimi-k2.7-code"
     );
     expect(getDefaultModel("opencode_go")).toBe("opencode-go/kimi-k2.7-code");
+  });
+
+  test("strips the OpenCode Go catalog prefix for HTTP API model ids", () => {
+    expect(toOpenCodeGoApiModelId("opencode-go/kimi-k2.7-code")).toBe(
+      "kimi-k2.7-code"
+    );
+    expect(toOpenCodeGoApiModelId("kimi-k2.7-code")).toBe("kimi-k2.7-code");
+    expect(toOpenCodeGoApiModelId(" opencode-go/qwen3.8-max ")).toBe(
+      "qwen3.8-max"
+    );
   });
 
   test("passes through unknown OpenCode Go model ids", () => {

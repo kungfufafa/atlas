@@ -11,5 +11,10 @@ export { fetchOllamaModels } from "./ollama/models";
 export * from "./openai";
 export * from "./openai-compatible";
 export * from "./opencode-go";
+export {
+  fetchOpenCodeGoGatewayModels,
+  getLiveOpenCodeGoCatalog,
+  withLiveOpenCodeGoCatalog,
+} from "./opencode-go/catalog";
 export * from "./openrouter";
 export * from "./pricing";

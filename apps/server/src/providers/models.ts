@@ -427,6 +427,14 @@ export function isOpenCodeGoModelId(model: string): boolean {
   return model.trim().startsWith("opencode-go/");
 }
 
+/** Atlas catalog IDs use `opencode-go/<id>`; the HTTP API expects the bare `<id>`. */
+export function toOpenCodeGoApiModelId(model: string): string {
+  const trimmed = model.trim();
+  return trimmed.startsWith("opencode-go/")
+    ? trimmed.slice("opencode-go/".length)
+    : trimmed;
+}
+
 export function validateOpenCodeGoCustomModels(
   entries: unknown
 ): CustomModelEntry[] {

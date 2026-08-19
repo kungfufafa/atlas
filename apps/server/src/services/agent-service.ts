@@ -195,10 +195,12 @@ import {
   createProviderFromSources,
   fetchFireworksGatewayModels,
   fetchOllamaModels,
+  fetchOpenCodeGoGatewayModels,
   fetchRemoteOpenAIModels,
   getModelById,
   getModelsForProviderInstance,
   isCostEstimated,
+  withLiveOpenCodeGoCatalog,
 } from "../providers";
 import { isAllowedImageGenerationSelection } from "../providers/models";
 import { wrapProviderForNonVision } from "../providers/non-vision-wrap";
@@ -282,6 +284,7 @@ import {
   buildProviderInstanceFromCreateRequest,
   countModelsForInstance,
   mergeModelsForConfig,
+  mergeModelsForConfigAsync,
   resolveDefaultModelForInstance,
   resolveInitialModel,
   resolveProfileProviderSelection,
@@ -2419,6 +2422,28 @@ export class AgentService {
       };
     }
 
+    if (request.provider === "opencode_go") {
+      const entries = await fetchOpenCodeGoGatewayModels();
+      const staticModels = AVAILABLE_MODELS.filter(
+        (model) => model.provider === "opencode_go"
+      );
+      const models = catalogCustomModelsToCatalog(
+        entries,
+        staticModels,
+        "opencode_go"
+      );
+
+      return {
+        catalog: await withLiveOpenCodeGoCatalog(AVAILABLE_MODELS),
+        currentProviderId: null,
+        customModels: entries,
+        displayName: null,
+        models,
+        provider: "opencode_go",
+        providers: [],
+      };
+    }
+
     const baseUrl = request.baseUrl?.trim();
     if (!baseUrl) {
       throw new Error("baseUrl or providerId is required.");
@@ -2549,6 +2574,22 @@ export class AgentService {
         displayName: instance.label,
         models,
         provider: "fireworks",
+        providers: [],
+      };
+    }
+
+    if (instance.type === "opencode_go") {
+      const entries = await fetchOpenCodeGoGatewayModels();
+      const remoteInstance = { ...instance, customModels: entries };
+      const models = getModelsForProviderInstance(remoteInstance);
+
+      return {
+        catalog: await withLiveOpenCodeGoCatalog(AVAILABLE_MODELS),
+        currentProviderId: providerId,
+        customModels: entries,
+        displayName: instance.label,
+        models,
+        provider: "opencode_go",
         providers: [],
       };
     }
@@ -2759,10 +2800,12 @@ export class AgentService {
     const providers = configuredProviders.map((instance) =>
       toProviderInstanceSummary(instance, countModelsForInstance(instance))
     );
+    const catalog = await withLiveOpenCodeGoCatalog(AVAILABLE_MODELS);
 
     if (configuredProviders.length === 0) {
       return this.buildModelsResponse({
         active: null,
+        catalog,
         currentProviderId: null,
         models: [],
         providers: [],
@@ -2787,6 +2830,7 @@ export class AgentService {
 
       return this.buildModelsResponse({
         active,
+        catalog,
         currentProviderId,
         customModels: remote,
         models,
@@ -2794,10 +2838,11 @@ export class AgentService {
       });
     }
 
-    const models = mergeModelsForConfig(userConfig?.providers ?? []);
+    const models = await mergeModelsForConfigAsync(userConfig?.providers ?? []);
 
     return this.buildModelsResponse({
       active,
+      catalog,
       currentProviderId,
       models,
       providers,
@@ -2806,18 +2851,25 @@ export class AgentService {
 
   private buildModelsResponse(options: {
     active: ReturnType<typeof getActiveProviderInstance>;
+    catalog?: ModelsResponse["catalog"];
     currentProviderId: string | null;
     providers: ReturnType<typeof toProviderInstanceSummary>[];
     models: ModelsResponse["models"];
     customModels?: ModelsResponse["customModels"];
   }): ModelsResponse {
-    const { active, currentProviderId, providers, models, customModels } =
-      options;
+    const {
+      active,
+      catalog,
+      currentProviderId,
+      providers,
+      models,
+      customModels,
+    } = options;
 
     return {
       baseUrl:
         active?.type === "openai_compatible" ? (active.baseUrl ?? null) : null,
-      catalog: AVAILABLE_MODELS,
+      catalog: catalog ?? AVAILABLE_MODELS,
       currentProviderId,
       customModels:
         customModels ??

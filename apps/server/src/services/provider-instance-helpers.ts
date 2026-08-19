@@ -35,6 +35,7 @@ import {
   validateOpenCodeGoCustomModels,
   validateOpenRouterCustomModels,
 } from "../providers";
+import { getModelsForOpenCodeGoInstance } from "../providers/opencode-go/catalog";
 
 export function toProviderInstanceSummary(
   instance: ProviderInstance,
@@ -247,7 +248,9 @@ export function applyProviderInstanceUpdate(
     } else if (instance.type === "ollama") {
       next.customModels = validateOllamaCustomModels(request.customModels);
     } else if (instance.type === "opencode_go") {
-      next.customModels = validateOpenCodeGoCustomModels(request.customModels);
+      next.customModels = request.customModels.length
+        ? validateOpenCodeGoCustomModels(request.customModels)
+        : undefined;
     } else if (
       instance.type === "openai" ||
       instance.type === "anthropic" ||
@@ -310,15 +313,9 @@ function buildProviderFieldsFromRequest(request: CreateProviderRequest): Pick<
   }
 
   if (type === "opencode_go") {
-    let customModels = request.customModels?.length
+    const customModels = request.customModels?.length
       ? validateOpenCodeGoCustomModels(request.customModels)
       : undefined;
-
-    if (!customModels?.length && request.model?.trim()) {
-      customModels = validateOpenCodeGoCustomModels([
-        { default: true, id: request.model.trim() },
-      ]);
-    }
 
     return { ...(customModels ? { customModels } : {}) };
   }
@@ -417,6 +414,27 @@ export function mergeModelsForConfig(
     if (!isProviderInstanceUsable(instance)) {
       continue;
     }
+    models.push(...getModelsForProviderInstance(instance));
+  }
+
+  return models;
+}
+
+export async function mergeModelsForConfigAsync(
+  providers: ProviderInstance[]
+): Promise<ProviderModelOption[]> {
+  const models: ProviderModelOption[] = [];
+
+  for (const instance of providers) {
+    if (!isProviderInstanceUsable(instance)) {
+      continue;
+    }
+
+    if (instance.type === "opencode_go") {
+      models.push(...(await getModelsForOpenCodeGoInstance(instance)));
+      continue;
+    }
+
     models.push(...getModelsForProviderInstance(instance));
   }
 

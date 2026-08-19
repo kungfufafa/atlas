@@ -67,7 +67,10 @@ export function CatalogProviderModelFields({
   const { data: modelsResponse } = useModelsQuery();
   const providerLabel = formatProviderLabel(provider);
   const canDiscoverRemote =
-    provider === "openai" && Boolean(providerInstanceId);
+    (provider === "openai" && Boolean(providerInstanceId)) ||
+    provider === "opencode_go";
+  const discoveryKey =
+    provider === "opencode_go" ? "opencode_go" : (providerInstanceId ?? "");
 
   const staticCatalog = useMemo(() => {
     const fromApi = filterModelsByProvider(
@@ -92,8 +95,11 @@ export function CatalogProviderModelFields({
     error: remoteError,
   } = useQuery({
     enabled: isBrowsing && canDiscoverRemote,
-    queryFn: () => client.discoverModels({ providerId: providerInstanceId! }),
-    queryKey: queryKeys.providerModelDiscovery(providerInstanceId ?? ""),
+    queryFn: () =>
+      provider === "opencode_go"
+        ? client.discoverModels({ provider: "opencode_go" })
+        : client.discoverModels({ providerId: providerInstanceId! }),
+    queryKey: queryKeys.providerModelDiscovery(discoveryKey),
     staleTime: 1000 * 60,
   });
 
@@ -150,10 +156,16 @@ export function CatalogProviderModelFields({
   };
 
   const browseFooter = remoteError
-    ? "Could not load models from OpenAI. Check the API key and try again."
+    ? provider === "opencode_go"
+      ? "Could not load models from OpenCode Go."
+      : "Could not load models from OpenAI. Check the API key and try again."
     : remoteLoading
-      ? "Loading models from OpenAI…"
-      : `Choose which ${providerLabel} models appear in chat for this provider.`;
+      ? provider === "opencode_go"
+        ? "Loading models from OpenCode Go…"
+        : "Loading models from OpenAI…"
+      : provider === "opencode_go"
+        ? "Leave empty to follow the official OpenCode Go catalog."
+        : `Choose which ${providerLabel} models appear in chat for this provider.`;
 
   return (
     <FormField

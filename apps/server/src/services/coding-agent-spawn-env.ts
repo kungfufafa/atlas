@@ -1,5 +1,6 @@
 import type { ProviderName, UserConfig } from "@atlas/core";
 import type { StoredCodingAgentHarnessKind } from "@atlas/db";
+import { toOpenCodeGoApiModelId } from "../providers/models";
 import {
   createHarnessConfigDir,
   writeCodexConfigToml,
@@ -41,7 +42,11 @@ export function formatModelForHarness(
   providerType: ProviderName,
   model: string
 ): string {
-  if (providerType === "openrouter" || providerType === "opencode_go") {
+  if (providerType === "opencode_go") {
+    return toOpenCodeGoApiModelId(model);
+  }
+
+  if (providerType === "openrouter") {
     return model.trim();
   }
 

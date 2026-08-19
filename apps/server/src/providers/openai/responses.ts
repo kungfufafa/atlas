@@ -26,19 +26,26 @@ type ResponseItem = Record<string, unknown>;
 
 export async function generateOpenAIResponsesChat(options: {
   apiKey: string;
+  baseUrl?: string;
   model: string;
   input: GenerateChatInput;
+  label?: string;
   stream: boolean;
   handlers?: StreamChatHandlers;
   customModels?: CustomModelEntry[];
 }): Promise<ChatCompletionResult> {
+  const label = options.label ?? "OpenAI";
+  const baseUrl = (options.baseUrl ?? "https://api.openai.com/v1").replace(
+    /\/+$/,
+    ""
+  );
   const body = await buildResponsesRequestBody(
     options.model,
     options.input,
     options.stream,
     options.customModels
   );
-  const response = await fetch("https://api.openai.com/v1/responses", {
+  const response = await fetch(`${baseUrl}/responses`, {
     body: JSON.stringify(body),
     headers: {
       Authorization: `Bearer ${options.apiKey}`,
@@ -51,13 +58,13 @@ export async function generateOpenAIResponsesChat(options: {
 
   if (!response.ok) {
     throw new Error(
-      `OpenAI request failed (${response.status}): ${await response.text()}`
+      `${label} request failed (${response.status}): ${await response.text()}`
     );
   }
 
   if (options.stream) {
     if (!response.body) {
-      throw new Error("OpenAI returned an empty stream.");
+      throw new Error(`${label} returned an empty stream.`);
     }
 
     return readOpenAIResponsesStream(response.body, options.handlers);
