@@ -574,13 +574,18 @@ export async function saveWhatsAppOutboundPort(
 }
 
 export function resolveWhatsAppConfigFromSources(options: {
+  allowEnvCredentials?: boolean;
   env?: Record<string, string | undefined>;
   file?: WhatsAppConfigFile | null;
 }): WhatsAppConfigFile | null {
   const env = options.env ?? process.env;
   const file = options.file ?? null;
+  const allowEnvCredentials = options.allowEnvCredentials !== false;
+  const envPhone = allowEnvCredentials
+    ? env.WHATSAPP_PHONE_NUMBER?.trim()
+    : undefined;
 
-  if (!(file || env.WHATSAPP_PHONE_NUMBER?.trim())) {
+  if (!(file || envPhone)) {
     return null;
   }
 
@@ -591,10 +596,11 @@ export function resolveWhatsAppConfigFromSources(options: {
     pairedJid: file?.pairedJid ?? null,
     pairedLid: file?.pairedLid ?? null,
     pairingCode: file?.pairingCode ?? null,
-    phoneNumber:
-      env.WHATSAPP_PHONE_NUMBER?.trim() || file?.phoneNumber?.trim() || "",
+    phoneNumber: envPhone || file?.phoneNumber?.trim() || "",
     profileId:
-      env.ATLAS_WHATSAPP_PROFILE_ID?.trim() ||
+      (allowEnvCredentials
+        ? env.ATLAS_WHATSAPP_PROFILE_ID?.trim()
+        : undefined) ||
       file?.profileId?.trim() ||
       DEFAULT_WHATSAPP_PROFILE_ID,
   };

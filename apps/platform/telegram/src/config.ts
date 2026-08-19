@@ -15,7 +15,11 @@ export async function loadConfig(
   orgId?: string | null
 ): Promise<TelegramBridgeConfig> {
   const file = await loadTelegramConfigFile(orgId);
-  const resolved = resolveTelegramConfigFromSources({ env, file });
+  const resolved = resolveTelegramConfigFromSources({
+    allowEnvCredentials: !orgId,
+    env,
+    file,
+  });
 
   if (!resolved) {
     const hasEnvToken = Boolean(env.TELEGRAM_BOT_TOKEN?.trim());

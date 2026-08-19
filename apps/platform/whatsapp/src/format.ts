@@ -155,14 +155,23 @@ function formatWhatsAppTodoLine(todo: AgentTodo): string {
   }
 }
 
-export const HELP_TEXT = `Atlas WhatsApp commands:
+export function formatHelpText(options?: {
+  workspaceLocked?: boolean;
+}): string {
+  const orgLine = options?.workspaceLocked
+    ? ""
+    : "/org \u2014 choose or switch organization\n";
+
+  return `Atlas WhatsApp commands:
 
 /help \u2014 show this message
 /stop \u2014 stop the agent's current reply (works during tool runs)
 /clear \u2014 clear chat history
 /compact \u2014 compact conversation history
 /new \u2014 start a new conversation
-/org \u2014 choose or switch organization
-/status \u2014 server and model status
+${orgLine}/status \u2014 server and model status
 
 Send text to chat with the agent.`;
+}
+
+export const HELP_TEXT = formatHelpText();

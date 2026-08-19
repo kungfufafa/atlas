@@ -15,7 +15,11 @@ export async function loadConfig(
   orgId?: string | null
 ): Promise<WhatsAppBridgeConfig> {
   const file = await loadWhatsAppConfigFile(orgId);
-  const resolved = resolveWhatsAppConfigFromSources({ env, file });
+  const resolved = resolveWhatsAppConfigFromSources({
+    allowEnvCredentials: !orgId,
+    env,
+    file,
+  });
 
   if (!resolved) {
     throw new Error(formatNotConfiguredMessage());

@@ -49,9 +49,9 @@ function accessFromContext(
 }
 
 /**
- * Multi-tenant LLM usage breakdown. RBAC scoping (platform admin → all
- * workspaces; workspace admin → own workspace; member → self) lives in
- * UsageReportService so it stays consistent and testable.
+ * Multi-tenant LLM usage breakdown. RBAC scoping lives in UsageReportService:
+ * platform admin without an active workspace → every workspace; otherwise the
+ * active workspace (admins) or the caller's own usage (members).
  */
 export function registerUsageRoutes(
   app: HonoApp,

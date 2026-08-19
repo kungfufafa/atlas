@@ -226,7 +226,7 @@ export class ProfileService {
     });
 
     await this.copyProfileSoul(orgId, sourceId, profileId);
-    await this.copyProfileAssignments(sourceId, profileId);
+    await this.copyProfileAssignments(orgId, sourceId, profileId);
     await copyProfileAvatarTo(orgId, sourceId, profileId);
     await copyKnowledgeBaseTo(orgId, sourceId, profileId);
 
@@ -410,8 +410,8 @@ export class ProfileService {
 
     const server = await this.db.getMcpServer(request.serverId);
 
-    if (!server) {
-      throw new Error("MCP server not found.");
+    if (!server || server.orgId !== orgId) {
+      throw new AtlasApiError("MCP server not found.", 404);
     }
 
     await this.db.assignMcpServerToProfile(profileId, request.serverId);
@@ -663,6 +663,7 @@ export class ProfileService {
   }
 
   private async copyProfileAssignments(
+    orgId: string,
     sourceId: string,
     profileId: string
   ): Promise<void> {
@@ -675,6 +676,10 @@ export class ProfileService {
     }
 
     for (const server of await this.db.listMcpServersForProfile(sourceId)) {
+      if (server.orgId !== orgId) {
+        continue;
+      }
+
       await this.db.assignMcpServerToProfile(profileId, server.id);
     }
 

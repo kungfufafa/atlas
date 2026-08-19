@@ -705,10 +705,56 @@ describe("organization schema migration", () => {
         ) VALUES
           ('tool_a', 'bash', 'bash', 'bash', '{}', 'org_a', '2026-06-21T00:00:00.000Z', '2026-06-21T00:00:00.000Z'),
           ('tool_b', 'bash', 'bash', 'bash', '{}', 'org_b', '2026-06-21T00:00:00.000Z', '2026-06-21T00:00:00.000Z');
+
+        INSERT INTO mcp_servers (
+          id, name, transport, config, enabled, status, last_error, cached_tools, org_id, created_at, updated_at
+        ) VALUES
+          ('mcp_a', 'github', 'stdio', '{}', 1, 'disconnected', NULL, '[]', 'org_a', '2026-06-21T00:00:00.000Z', '2026-06-21T00:00:00.000Z'),
+          ('mcp_b', 'github', 'stdio', '{}', 1, 'disconnected', NULL, '[]', 'org_b', '2026-06-21T00:00:00.000Z', '2026-06-21T00:00:00.000Z');
       `);
 
       const fkCheck = db.prepare("PRAGMA foreign_key_check").all();
       expect(fkCheck).toEqual([]);
+    } finally {
+      db.close();
+    }
+  });
+
+  test("assigns leftover MCP servers to the earliest workspace", () => {
+    const db = new Database(":memory:");
+
+    try {
+      migrateDatabase(db);
+
+      db.exec(`
+        INSERT INTO organizations (
+          id, name, slug, created_at, updated_at
+        ) VALUES
+          ('org_later', 'Later', 'later', '2026-06-22T00:00:00.000Z', '2026-06-22T00:00:00.000Z'),
+          ('org_first', 'First', 'first', '2026-06-21T00:00:00.000Z', '2026-06-21T00:00:00.000Z');
+
+        INSERT INTO mcp_servers (
+          id, name, transport, config, enabled, status, last_error, cached_tools, created_at, updated_at
+        ) VALUES (
+          'mcp_legacy',
+          'github',
+          'stdio',
+          '{}',
+          1,
+          'disconnected',
+          NULL,
+          '[]',
+          '2026-06-21T00:00:00.000Z',
+          '2026-06-21T00:00:00.000Z'
+        );
+      `);
+
+      migrateDatabase(db);
+
+      const row = db
+        .prepare("SELECT org_id FROM mcp_servers WHERE id = 'mcp_legacy'")
+        .get() as { org_id: string | null };
+      expect(row.org_id).toBe("org_first");
     } finally {
       db.close();
     }

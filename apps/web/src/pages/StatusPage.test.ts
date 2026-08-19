@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import type { SystemStatusResponse } from "@atlas/core/contract";
-import { buildServiceColumns, deriveSummary } from "./status-page.shared";
+import {
+  buildServiceColumns,
+  deriveSummary,
+  usageBreakdownGroups,
+} from "./status-page.shared";
 
 const healthyStatus: SystemStatusResponse = {
   automationWorker: {
@@ -153,5 +157,16 @@ describe("StatusPage helpers", () => {
       title: "Automation",
       tone: "warn",
     });
+  });
+
+  test("keeps usage breakdown inside the active workspace", () => {
+    expect(usageBreakdownGroups(true)).toEqual([
+      "user",
+      "provider",
+      "model",
+      "credential",
+    ]);
+    expect(usageBreakdownGroups(false)).toEqual(["user", "provider", "model"]);
+    expect(usageBreakdownGroups(true)).not.toContain("workspace");
   });
 });

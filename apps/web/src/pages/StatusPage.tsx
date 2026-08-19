@@ -36,6 +36,7 @@ import {
   buildServiceColumns,
   deriveSummary,
   type StatusTone,
+  usageBreakdownGroups,
 } from "@/pages/status-page.shared";
 
 const sectionClass = "rounded-md border border-border bg-card";
@@ -93,7 +94,7 @@ export function StatusPage({ embedded = false }: { embedded?: boolean } = {}) {
           <UsageBreakdownSection
             canManageBudget={canManageWorkers}
             embedded={embedded}
-            isPlatformAdmin={user?.isPlatformAdmin === true}
+            orgId={activeOrg?.id ?? null}
           />
         </>
       ) : null}
@@ -123,23 +124,21 @@ function usageRangeFrom(days: number): string {
 
 function UsageBreakdownSection({
   embedded,
-  isPlatformAdmin,
+  orgId,
   canManageBudget,
 }: {
   embedded: boolean;
-  isPlatformAdmin: boolean;
+  orgId: string | null;
   canManageBudget: boolean;
 }) {
-  const tabs: LlmUsageReportGroupBy[] = isPlatformAdmin
-    ? ["workspace", "user", "provider", "model", "credential"]
-    : ["user", "provider", "model"];
+  const tabs = usageBreakdownGroups(canManageBudget);
   const [groupBy, setGroupBy] = useState<LlmUsageReportGroupBy>(tabs[0]);
   const [days, setDays] = useState<number>(30);
   const from = usageRangeFrom(days);
 
   const { data, isLoading, error } = useQuery({
     queryFn: () => client.getUsageReport({ from, groupBy, limit: 25 }),
-    queryKey: ["usage-report", groupBy, from],
+    queryKey: ["usage-report", orgId, groupBy, from],
   });
 
   const rows = data?.rows ?? [];
@@ -201,7 +200,7 @@ function UsageBreakdownSection({
         ))}
       </div>
 
-      <BudgetCard canManage={canManageBudget} />
+      <BudgetCard canManage={canManageBudget} orgId={orgId} />
 
       <UsageBreakdownTable
         error={error ? formatError(error) : null}
@@ -213,18 +212,24 @@ function UsageBreakdownSection({
   );
 }
 
-function BudgetCard({ canManage }: { canManage: boolean }) {
+function BudgetCard({
+  canManage,
+  orgId,
+}: {
+  canManage: boolean;
+  orgId: string | null;
+}) {
   const queryClient = useQueryClient();
   const { data: budget } = useQuery({
     queryFn: () => client.getUsageBudget(),
-    queryKey: ["usage-budget"],
+    queryKey: ["usage-budget", orgId],
   });
   const [draft, setDraft] = useState("");
 
   const save = useMutation({
     mutationFn: (limit: number) => client.setUsageBudget(limit),
     onSuccess: (next) => {
-      queryClient.setQueryData(["usage-budget"], next);
+      queryClient.setQueryData(["usage-budget", orgId], next);
       setDraft("");
     },
   });
@@ -524,7 +529,7 @@ function LlmUsageSection({
             ) : null}
           </div>
           <p className="text-muted-foreground text-sm">
-            Estimated spend and token volume since the server started.
+            Estimated spend and token volume in this workspace.
           </p>
         </div>
 
@@ -650,13 +655,6 @@ function LlmUsageSection({
           title="Connect a provider to track usage"
         />
       )}
-
-      <div className="border-border border-t bg-muted/15 px-4 py-3 dark:bg-muted/10">
-        <p className="text-muted-foreground text-xs">
-          Tracking since {formatDate(usage.trackedSince)}. Figures reset when
-          the server restarts.
-        </p>
-      </div>
     </section>
   );
 }

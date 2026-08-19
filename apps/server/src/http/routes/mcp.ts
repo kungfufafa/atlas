@@ -279,27 +279,40 @@ export function registerMcpRoutes(app: HonoApp, options: ServerOptions): void {
 
   app.get("/v1/mcp/servers", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
-    return json<ListMcpServersResponse>(await mcpService.listServers());
+    const orgId = requireActiveOrgIdFromContext(c);
+    return json<ListMcpServersResponse>(await mcpService.listServers(orgId));
   });
 
   app.post("/v1/mcp/servers", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<CreateMcpServerRequest>(c.req.raw);
-    return json<McpServerResponse>(await mcpService.createServer(body), 201);
+    return json<McpServerResponse>(
+      await mcpService.createServer(orgId, body),
+      201
+    );
   });
 
   app.post("/v1/mcp/servers/test", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<CreateMcpServerRequest>(c.req.raw);
     return json<TestMcpServerResponse>(
-      await mcpService.testServer(body.transport, body.config, body.serverId)
+      await mcpService.testServer(
+        orgId,
+        body.transport,
+        body.config,
+        body.serverId
+      )
     );
   });
 
   app.post("/v1/mcp/servers/:serverId/connect", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     return json<McpServerResponse>(
       await mcpService.connectServer(
+        orgId,
         decodeURIComponent(c.req.param("serverId"))
       )
     );
@@ -307,23 +320,33 @@ export function registerMcpRoutes(app: HonoApp, options: ServerOptions): void {
 
   app.post("/v1/mcp/servers/:serverId/sync", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     return json<McpServerResponse>(
-      await mcpService.syncServer(decodeURIComponent(c.req.param("serverId")))
+      await mcpService.syncServer(
+        orgId,
+        decodeURIComponent(c.req.param("serverId"))
+      )
     );
   });
 
   app.get("/v1/mcp/servers/:serverId", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     return json<McpServerResponse>(
-      await mcpService.getServer(decodeURIComponent(c.req.param("serverId")))
+      await mcpService.getServer(
+        orgId,
+        decodeURIComponent(c.req.param("serverId"))
+      )
     );
   });
 
   app.patch("/v1/mcp/servers/:serverId", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<UpdateMcpServerRequest>(c.req.raw);
     return json<McpServerResponse>(
       await mcpService.updateServer(
+        orgId,
         decodeURIComponent(c.req.param("serverId")),
         body
       )
@@ -332,7 +355,11 @@ export function registerMcpRoutes(app: HonoApp, options: ServerOptions): void {
 
   app.delete("/v1/mcp/servers/:serverId", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
-    await mcpService.deleteServer(decodeURIComponent(c.req.param("serverId")));
+    const orgId = requireActiveOrgIdFromContext(c);
+    await mcpService.deleteServer(
+      orgId,
+      decodeURIComponent(c.req.param("serverId"))
+    );
     return new Response(null, { status: 204 });
   });
 

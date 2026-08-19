@@ -116,7 +116,14 @@ function formatDiscordTodoLine(todo: AgentTodo): string {
   }
 }
 
-export const HELP_TEXT = `Atlas Discord commands:
+export function formatHelpText(options?: {
+  workspaceLocked?: boolean;
+}): string {
+  const orgLine = options?.workspaceLocked
+    ? ""
+    : "/org — choose or switch organization (send as text)\n";
+
+  return `Atlas Discord commands:
 
 /start — welcome and pairing help
 /help — show this message
@@ -126,8 +133,10 @@ export const HELP_TEXT = `Atlas Discord commands:
 /new — start a new conversation
 /close — close this bot conversation thread
 /allow — add a Discord user to the allowed list (admin)
-/org — choose or switch organization (send as text)
-/profile — choose or switch bot profile (send as text)
+${orgLine}/profile — choose or switch bot profile (send as text)
 /status — server and model status
 
 In servers, @mention the bot (or a role it holds) or reply to it to chat — each mention in a parent channel opens a new thread. @mention inside another thread claims it. Pair in a DM first.`;
+}
+
+export const HELP_TEXT = formatHelpText();

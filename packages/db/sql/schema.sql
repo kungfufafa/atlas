@@ -191,11 +191,13 @@ CREATE TABLE IF NOT EXISTS mcp_servers (
   status TEXT NOT NULL DEFAULT 'disconnected',
   last_error TEXT,
   cached_tools TEXT DEFAULT '[]' NOT NULL,
+  org_id TEXT,
   created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS mcp_servers_name_unique ON mcp_servers (name);
+CREATE UNIQUE INDEX IF NOT EXISTS mcp_servers_org_name_unique ON mcp_servers (org_id, name);
 
 CREATE TABLE IF NOT EXISTS profile_mcp_servers (
   profile_id TEXT NOT NULL,

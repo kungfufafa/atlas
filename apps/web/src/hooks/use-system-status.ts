@@ -3,6 +3,7 @@ import type {
   SystemStatusResponse,
 } from "@atlas/core/contract";
 import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/context/use-auth";
 import { client } from "@/lib/client";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -25,15 +26,18 @@ function normalizeSystemStatus(
   };
 }
 
-export const systemStatusQueryOptions = queryOptions({
-  queryFn: async () => normalizeSystemStatus(await client.getSystemStatus()),
-  queryKey: queryKeys.systemStatus,
-  refetchInterval: REFRESH_INTERVAL_MS,
-  refetchIntervalInBackground: true,
-});
+export function systemStatusQueryOptions(orgId: string | null) {
+  return queryOptions({
+    queryFn: async () => normalizeSystemStatus(await client.getSystemStatus()),
+    queryKey: [...queryKeys.systemStatus, orgId ?? "none"] as const,
+    refetchInterval: REFRESH_INTERVAL_MS,
+    refetchIntervalInBackground: true,
+  });
+}
 
 export function useSystemStatusQuery() {
-  return useQuery(systemStatusQueryOptions);
+  const { activeOrg } = useAuth();
+  return useQuery(systemStatusQueryOptions(activeOrg?.id ?? null));
 }
 
 export function useRefreshSystemStatus() {

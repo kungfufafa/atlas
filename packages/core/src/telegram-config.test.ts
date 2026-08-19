@@ -26,6 +26,33 @@ describe("parseAllowedUserIds", () => {
   });
 });
 
+describe("resolveTelegramConfigFromSources", () => {
+  test("ignores env credentials when workspace-scoped", () => {
+    const resolved = resolveTelegramConfigFromSources({
+      allowEnvCredentials: false,
+      env: {
+        TELEGRAM_ALLOWED_USER_IDS: "42",
+        TELEGRAM_BOT_TOKEN: "env-token",
+      },
+      file: {
+        accessMode: "pairing",
+        allowedUserIds: [99],
+        blockedUserIds: [],
+        botToken: "file-token",
+        handshakeCode: null,
+        pairedUserIds: [1],
+        profileId: "profile_from_file",
+      },
+    });
+
+    expect(resolved).toMatchObject({
+      allowedUserIds: [99],
+      botToken: "file-token",
+      profileId: "profile_from_file",
+    });
+  });
+});
+
 describeSharedChannelConfigTests({
   allowlistInput: "42, 43",
   allowlistParsed: [42, 43],

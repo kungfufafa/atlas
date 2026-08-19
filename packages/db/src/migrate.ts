@@ -24,6 +24,7 @@ export function migrateDatabase(db: Database): void {
   migrateSkillUsageTables(db);
   migrateTenantOrgScope(db);
   migrateSkillOrgIds(db);
+  migrateMcpServerOrgIds(db);
   migrateProfileOrgColumns(db);
   migrateSessionOrgScope(db);
   migrateOrgAiConfigsTable(db);
@@ -713,10 +714,10 @@ function migrateTenantOrgScope(db: Database): void {
 }
 
 /**
- * Tools and MCP servers are install-wide: both create routes are platform admin
- * and neither service takes an org. Nothing writes their org_id, so the indexes
- * above compare NULL to NULL and never fire, which quietly retired the
- * uniqueness schema.sql still declares. These cover the rows they left behind.
+ * Tools remain install-wide: the create route does not take an org and nothing
+ * writes tools.org_id, so tools_org_name_unique compares NULL to NULL and never
+ * fires. MCP servers are workspace-scoped; leftover NULL org_id rows still need
+ * a name unique index until migrateMcpServerOrgIds assigns them.
  */
 function restoreGlobalNameUniqueness(db: Database): void {
   for (const table of ["tools", "mcp_servers"] as const) {
@@ -768,6 +769,32 @@ function migrateSkillOrgIds(db: Database): void {
     `);
   } catch {
     // Same reasoning: legacy duplicates must not stop the server from booting.
+  }
+}
+
+function migrateMcpServerOrgIds(db: Database): void {
+  const firstOrg = db
+    .prepare(
+      "SELECT id FROM organizations ORDER BY created_at ASC, id ASC LIMIT 1"
+    )
+    .get() as { id: string } | null;
+
+  if (!firstOrg) {
+    return;
+  }
+
+  const rows = db
+    .prepare("SELECT id FROM mcp_servers WHERE org_id IS NULL")
+    .all() as { id: string }[];
+  const update = db.prepare("UPDATE mcp_servers SET org_id = ? WHERE id = ?");
+
+  for (const row of rows) {
+    try {
+      update.run(firstOrg.id, row.id);
+    } catch {
+      // A pre-fix duplicate would now collide on (org_id, name). Leaving it
+      // NULL keeps today's boot path instead of failing the whole migrate.
+    }
   }
 }
 

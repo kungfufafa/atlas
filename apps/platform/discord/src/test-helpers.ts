@@ -63,6 +63,16 @@ export function createMockClient(
       isSuper?: boolean;
     }>;
     orgs?: UserOrgSummary[];
+    profilesByOrgId?: Record<
+      string,
+      Array<{
+        id: string;
+        name?: string;
+        model?: string | null;
+        isDefault?: boolean;
+        isSuper?: boolean;
+      }>
+    >;
     listedArtifacts?: Array<{
       filename: string;
       mimeType: string;
@@ -151,16 +161,21 @@ export function createMockClient(
         total: artifacts.length,
       };
     },
-    listProfiles: async () =>
-      parseListProfilesResponse({
-        profiles: profiles.map((profile) => ({
+    listProfiles: async () => {
+      const scopedProfiles =
+        (activeOrgId ? options.profilesByOrgId?.[activeOrgId] : undefined) ??
+        profiles;
+
+      return parseListProfilesResponse({
+        profiles: scopedProfiles.map((profile) => ({
           id: profile.id,
           isDefault: profile.isDefault ?? false,
           isSuper: profile.isSuper ?? false,
           model: profile.model ?? null,
           name: profile.name ?? profile.id,
         })),
-      }),
+      });
+    },
     listUserOrgs: async () => parseListUserOrgsResponse({ orgs }),
     publishProfileArtifactShare: async () => {
       calls.publishProfileArtifactShare += 1;

@@ -44,6 +44,19 @@ export const PREINSTALLED_MCP_SERVER_ID_SET = new Set<string>(
   Object.values(PREINSTALLED_MCP_SERVER_IDS)
 );
 
+export function preinstalledMcpServerIdForOrg(
+  catalogId: string,
+  orgId: string
+): string {
+  return `${catalogId}__${orgId}`;
+}
+
 export function isPreinstalledMcpServerId(serverId: string): boolean {
-  return PREINSTALLED_MCP_SERVER_ID_SET.has(serverId);
+  if (PREINSTALLED_MCP_SERVER_ID_SET.has(serverId)) {
+    return true;
+  }
+
+  return preinstalledMcpServers.some((server) =>
+    serverId.startsWith(`${server.id}__`)
+  );
 }

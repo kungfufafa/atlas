@@ -32,8 +32,8 @@ const DEFAULT_ROWS = 50;
 
 /**
  * Reads the multi-tenant usage rollup with RBAC-aware scoping:
- * - platform admin → every workspace (no org filter),
- * - workspace admin → their workspace only (may still break down by user),
+ * - platform admin without an active workspace → every workspace
+ * - platform admin or workspace admin in a workspace → that workspace only
  * - member/viewer → only their own usage within their workspace.
  */
 export class UsageReportService {
@@ -43,16 +43,18 @@ export class UsageReportService {
     options: UsageReportOptions,
     access: UsageReportAccess
   ): Promise<LlmUsageReportResponse> {
-    const isPlatformAdmin = access.isPlatformAdmin === true;
-    const isWorkspaceAdmin = !isPlatformAdmin && access.orgRole === "admin";
+    const orgId = access.orgId?.trim() || undefined;
+    const isPlatformWide = access.isPlatformAdmin === true && !orgId;
+    const isWorkspaceAdmin =
+      !isPlatformWide &&
+      (access.isPlatformAdmin === true || access.orgRole === "admin");
 
-    const scope = isPlatformAdmin
+    const scope = isPlatformWide
       ? "platform"
       : isWorkspaceAdmin
         ? "workspace"
         : "user";
 
-    const orgId = isPlatformAdmin ? undefined : (access.orgId ?? undefined);
     const userId = scope === "user" ? (access.userId ?? undefined) : undefined;
 
     const emptyReport: LlmUsageReportResponse = {

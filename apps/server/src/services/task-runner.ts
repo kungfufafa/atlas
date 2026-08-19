@@ -55,4 +55,8 @@ export class TaskRunner {
   getActiveRunCount(): number {
     return this.running.size;
   }
+
+  getActiveTaskIds(): string[] {
+    return [...this.running];
+  }
 }

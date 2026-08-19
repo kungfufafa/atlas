@@ -302,6 +302,7 @@ interface McpServerRow {
   id: string;
   last_error: string | null;
   name: string;
+  org_id: string | null;
   status: string;
   transport: string;
   updated_at: string;
@@ -742,15 +743,21 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     ORDER BY request_count DESC, input_tokens + output_tokens DESC, model_id ASC
   `);
   const listMcpServersStmt = db.prepare("SELECT * FROM mcp_servers");
+  const listMcpServersForOrgStmt = db.prepare(
+    "SELECT * FROM mcp_servers WHERE org_id = ? ORDER BY name ASC"
+  );
   const getMcpServerStmt = db.prepare("SELECT * FROM mcp_servers WHERE id = ?");
   const getMcpServerByNameStmt = db.prepare(
-    "SELECT * FROM mcp_servers WHERE name = ?"
+    "SELECT * FROM mcp_servers WHERE name = ? AND org_id IS NULL"
+  );
+  const getMcpServerByOrgNameStmt = db.prepare(
+    "SELECT * FROM mcp_servers WHERE name = ? AND org_id = ?"
   );
   const upsertMcpServerStmt = db.prepare(`
     INSERT INTO mcp_servers (
-      id, name, transport, config, enabled, status, last_error, cached_tools, created_at, updated_at
+      id, name, transport, config, enabled, status, last_error, cached_tools, org_id, created_at, updated_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       name = excluded.name,
       transport = excluded.transport,
@@ -759,6 +766,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       status = excluded.status,
       last_error = excluded.last_error,
       cached_tools = excluded.cached_tools,
+      org_id = excluded.org_id,
       updated_at = excluded.updated_at
   `);
   const deleteMcpServerStmt = db.prepare(
@@ -2124,8 +2132,12 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       return row ? toMcpServerRecord(row) : null;
     },
 
-    async getMcpServerByName(name) {
-      const row = getMcpServerByNameStmt.get(name) as McpServerRow | null;
+    async getMcpServerByName(name, orgId) {
+      const row = (
+        orgId
+          ? getMcpServerByOrgNameStmt.get(name, orgId)
+          : getMcpServerByNameStmt.get(name)
+      ) as McpServerRow | null;
       return row ? toMcpServerRecord(row) : null;
     },
 
@@ -2584,6 +2596,12 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     async listMcpServers() {
       return listMcpServersStmt
         .all()
+        .map((row) => toMcpServerRecord(row as McpServerRow));
+    },
+
+    async listMcpServersForOrg(orgId) {
+      return listMcpServersForOrgStmt
+        .all(orgId)
         .map((row) => toMcpServerRecord(row as McpServerRow));
     },
 
@@ -3228,6 +3246,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.status,
         record.lastError,
         JSON.stringify(record.cachedTools ?? []),
+        record.orgId ?? null,
         record.createdAt,
         record.updatedAt
       );
@@ -3499,6 +3518,7 @@ function toMcpServerRecord(row: McpServerRow): StoredMcpServerRecord {
     id: row.id,
     lastError: row.last_error,
     name: row.name,
+    orgId: row.org_id ?? null,
     status: row.status as StoredMcpServerRecord["status"],
     transport: row.transport as StoredMcpServerRecord["transport"],
     updatedAt: row.updated_at,

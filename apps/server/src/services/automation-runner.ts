@@ -101,6 +101,10 @@ export class AutomationRunner {
   getActiveRunCount(): number {
     return this.running.size;
   }
+
+  getActiveAutomationIds(): string[] {
+    return [...this.running];
+  }
 }
 
 export function shouldSchedule(automation: StoredAutomation): boolean {

@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import {
+  PREINSTALLED_MCP_SERVER_IDS,
+  preinstalledMcpServerIdForOrg,
+} from "@atlas/core/mcp/preinstalled";
+import {
   BUILTIN_TOOL_IDS,
   GENERATE_IMAGE_TOOL_ID,
 } from "@atlas/core/tools/protected";
@@ -401,6 +405,103 @@ describe("seed preinstalled MCP servers", () => {
     expect((await db.getMcpServer("mcp_firecrawl"))?.config).toEqual({
       headers: { Authorization: "Bearer fc-legacy" },
       url: "https://mcp.firecrawl.dev/v2/mcp",
+    });
+  });
+
+  test("seeds a separate catalog copy per workspace without copying secrets", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await db.upsertOrganization({
+      createdAt: now,
+      id: "org_a",
+      name: "Org A",
+      slug: "org-a",
+      updatedAt: now,
+    });
+    await db.upsertOrganization({
+      createdAt: now,
+      id: "org_b",
+      name: "Org B",
+      slug: "org-b",
+      updatedAt: now,
+    });
+
+    await ensurePreinstalledMcpServers(db);
+
+    const firecrawlAId = preinstalledMcpServerIdForOrg(
+      PREINSTALLED_MCP_SERVER_IDS.firecrawl,
+      "org_a"
+    );
+    const firecrawlBId = preinstalledMcpServerIdForOrg(
+      PREINSTALLED_MCP_SERVER_IDS.firecrawl,
+      "org_b"
+    );
+    const firecrawlA = await db.getMcpServer(firecrawlAId);
+    expect(firecrawlA).not.toBeNull();
+
+    await db.upsertMcpServer({
+      ...firecrawlA!,
+      config: {
+        headers: { Authorization: "Bearer fc-org-a" },
+        url: "https://mcp.firecrawl.dev/v2/mcp",
+      },
+      updatedAt: now,
+    });
+
+    await ensurePreinstalledMcpServers(db);
+
+    expect((await db.getMcpServer(firecrawlAId))?.config).toEqual({
+      headers: { Authorization: "Bearer fc-org-a" },
+      url: "https://mcp.firecrawl.dev/v2/mcp",
+    });
+    expect(await db.getMcpServer(firecrawlBId)).toMatchObject({
+      name: "firecrawl",
+      orgId: "org_b",
+    });
+    expect((await db.getMcpServer(firecrawlBId))?.config).toEqual({
+      url: "https://mcp.firecrawl.dev/v2/mcp",
+    });
+    expect((await db.listMcpServersForOrg("org_a")).length).toBe(3);
+    expect((await db.listMcpServersForOrg("org_b")).length).toBe(3);
+  });
+
+  test("claims a legacy catalog server for the first workspace that seeds it", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+
+    await ensurePreinstalledMcpServers(db);
+    await db.upsertOrganization({
+      createdAt: now,
+      id: "org_first",
+      name: "First",
+      slug: "first",
+      updatedAt: now,
+    });
+    await db.upsertOrganization({
+      createdAt: now,
+      id: "org_second",
+      name: "Second",
+      slug: "second",
+      updatedAt: now,
+    });
+
+    await ensurePreinstalledMcpServers(db);
+
+    expect(
+      await db.getMcpServer(PREINSTALLED_MCP_SERVER_IDS.firecrawl)
+    ).toMatchObject({
+      orgId: "org_first",
+    });
+    expect(
+      await db.getMcpServer(
+        preinstalledMcpServerIdForOrg(
+          PREINSTALLED_MCP_SERVER_IDS.firecrawl,
+          "org_second"
+        )
+      )
+    ).toMatchObject({
+      name: "firecrawl",
+      orgId: "org_second",
     });
   });
 });

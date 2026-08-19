@@ -3,7 +3,11 @@ import {
   type McpHttpConfig,
   type McpStdioConfig,
 } from "@atlas/core";
-import { preinstalledMcpServers } from "@atlas/core/mcp/preinstalled";
+import {
+  isPreinstalledMcpServerId,
+  preinstalledMcpServerIdForOrg,
+  preinstalledMcpServers,
+} from "@atlas/core/mcp/preinstalled";
 import {
   BUILTIN_TOOL_IDS,
   PYTHON_EXECUTE_TOOL_ID,
@@ -52,9 +56,9 @@ export async function seedDatabase(db: DatabaseAdapter): Promise<void> {
   await ensureGenerateImageToolDefinition(db);
   await ensurePythonExecuteToolDefinition(db);
   await ensureToolSearchToolDefinition(db);
-  await ensurePreinstalledMcpServers(db);
   await ensureLocalClientAccess(db);
   await ensureOrgSuperAgentProfiles(db);
+  await ensurePreinstalledMcpServers(db);
 }
 
 export async function removeLegacyBuiltinTools(
@@ -220,23 +224,50 @@ const FIRECRAWL_LEGACY_KEY_URL =
   /^https:\/\/mcp\.firecrawl\.dev\/([^/]+)\/v2\/mcp\/?$/i;
 
 export async function ensurePreinstalledMcpServers(
-  db: DatabaseAdapter
+  db: DatabaseAdapter,
+  orgId?: string
+): Promise<void> {
+  if (orgId) {
+    await ensurePreinstalledMcpServersForOrg(db, orgId);
+    return;
+  }
+
+  const orgs = await db.listOrganizations();
+
+  if (orgs.length === 0) {
+    await ensurePreinstalledMcpServersForOrg(db, null);
+    return;
+  }
+
+  for (const org of orgs) {
+    await ensurePreinstalledMcpServersForOrg(db, org.id);
+  }
+}
+
+async function ensurePreinstalledMcpServersForOrg(
+  db: DatabaseAdapter,
+  orgId: string | null
 ): Promise<void> {
   const now = new Date().toISOString();
 
   for (const server of preinstalledMcpServers) {
-    const existing = await db.getMcpServer(server.id);
+    const existing = await findExistingPreinstalledMcpServer(
+      db,
+      server.id,
+      server.name,
+      orgId
+    );
 
-    if (!existing) {
-      const nameOwner = await db.getMcpServerByName(server.name);
-
-      if (nameOwner && nameOwner.id !== server.id) {
-        console.warn(
-          `Preinstalled MCP server "${server.name}" was not inserted: name already used by ${nameOwner.id}.`
-        );
-        continue;
-      }
+    if (existing && !isPreinstalledMcpServerId(existing.id)) {
+      console.warn(
+        `Preinstalled MCP server "${server.name}" was not inserted: name already used by ${existing.id}.`
+      );
+      continue;
     }
+
+    const id =
+      existing?.id ??
+      (orgId ? preinstalledMcpServerIdForOrg(server.id, orgId) : server.id);
 
     await db.upsertMcpServer({
       cachedTools: existing?.cachedTools ?? [],
@@ -245,14 +276,51 @@ export async function ensurePreinstalledMcpServers(
         : server.config,
       createdAt: existing?.createdAt ?? now,
       enabled: existing?.enabled ?? true,
-      id: server.id,
+      id,
       lastError: existing?.lastError ?? null,
       name: server.name,
+      orgId: orgId ?? existing?.orgId ?? null,
       status: existing?.status ?? "disconnected",
       transport: server.transport,
       updatedAt: now,
     });
   }
+}
+
+async function findExistingPreinstalledMcpServer(
+  db: DatabaseAdapter,
+  catalogId: string,
+  catalogName: string,
+  orgId: string | null
+) {
+  if (orgId) {
+    const scoped = await db.getMcpServer(
+      preinstalledMcpServerIdForOrg(catalogId, orgId)
+    );
+
+    if (scoped) {
+      return scoped;
+    }
+
+    const byName = await db.getMcpServerByName(catalogName, orgId);
+
+    if (byName) {
+      return byName;
+    }
+
+    const legacy = await db.getMcpServer(catalogId);
+
+    if (legacy && (legacy.orgId === orgId || !legacy.orgId)) {
+      return legacy;
+    }
+
+    return null;
+  }
+
+  return (
+    (await db.getMcpServer(catalogId)) ??
+    (await db.getMcpServerByName(catalogName))
+  );
 }
 
 function mergePreinstalledHttpConfig(

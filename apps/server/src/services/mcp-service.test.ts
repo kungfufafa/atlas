@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { nanoid } from "@atlas/core";
-import { PREINSTALLED_MCP_SERVER_IDS } from "@atlas/core/mcp/preinstalled";
+import {
+  PREINSTALLED_MCP_SERVER_IDS,
+  preinstalledMcpServerIdForOrg,
+} from "@atlas/core/mcp/preinstalled";
 import {
   createInMemoryDatabaseAdapter,
   ensurePreinstalledMcpServers,
@@ -8,8 +11,26 @@ import {
 import { McpClientManager } from "./mcp-client-manager";
 import { McpService } from "./mcp-service";
 
+const ORG_A = "org_a";
+const ORG_B = "org_b";
+
+async function seedOrg(
+  db: ReturnType<typeof createInMemoryDatabaseAdapter>,
+  orgId: string
+) {
+  const now = new Date().toISOString();
+  await db.upsertOrganization({
+    createdAt: now,
+    id: orgId,
+    name: orgId,
+    slug: orgId,
+    updatedAt: now,
+  });
+}
+
 async function seedProfile(
-  db: ReturnType<typeof createInMemoryDatabaseAdapter>
+  db: ReturnType<typeof createInMemoryDatabaseAdapter>,
+  orgId: string
 ) {
   const now = new Date().toISOString();
   const profile = {
@@ -18,6 +39,7 @@ async function seedProfile(
     isSuper: false,
     model: null,
     name: "Test Bot",
+    orgId,
     systemPrompt: "You are helpful.",
     updatedAt: now,
   };
@@ -30,16 +52,17 @@ async function seedProfile(
 describe("McpService", () => {
   test("creates and lists MCP servers", async () => {
     const db = createInMemoryDatabaseAdapter();
+    await seedOrg(db, ORG_A);
     const service = new McpService(db, new McpClientManager());
 
-    await service.createServer({
+    await service.createServer(ORG_A, {
       config: { url: "https://example.com/mcp" },
       connect: false,
       name: "demo",
       transport: "http",
     });
 
-    const listed = await service.listServers();
+    const listed = await service.listServers(ORG_A);
 
     expect(listed.servers).toHaveLength(1);
     expect(listed.servers[0]?.name).toBe("demo");
@@ -48,18 +71,19 @@ describe("McpService", () => {
 
   test("assigns MCP servers to profiles", async () => {
     const db = createInMemoryDatabaseAdapter();
+    await seedOrg(db, ORG_A);
     const service = new McpService(db, new McpClientManager());
 
-    const created = await service.createServer({
+    const created = await service.createServer(ORG_A, {
       config: { url: "https://example.com/mcp" },
       connect: false,
       name: "demo",
       transport: "http",
     });
 
-    const profileId = await seedProfile(db);
+    const profileId = await seedProfile(db, ORG_A);
 
-    await service.assignServerToProfile(profileId, created.server.id);
+    await service.assignServerToProfile(ORG_A, profileId, created.server.id);
 
     const assigned = await db.listMcpServersForProfile(profileId);
 
@@ -69,9 +93,10 @@ describe("McpService", () => {
 
   test("updates MCP server config while preserving blank header values", async () => {
     const db = createInMemoryDatabaseAdapter();
+    await seedOrg(db, ORG_A);
     const service = new McpService(db, new McpClientManager());
 
-    const created = await service.createServer({
+    const created = await service.createServer(ORG_A, {
       config: {
         headers: {
           Authorization: "secret-token",
@@ -84,7 +109,7 @@ describe("McpService", () => {
       transport: "http",
     });
 
-    const updated = await service.updateServer(created.server.id, {
+    const updated = await service.updateServer(ORG_A, created.server.id, {
       config: {
         headers: {
           Authorization: "",
@@ -111,9 +136,10 @@ describe("McpService", () => {
 
   test("creates and lists stdio MCP servers", async () => {
     const db = createInMemoryDatabaseAdapter();
+    await seedOrg(db, ORG_A);
     const service = new McpService(db, new McpClientManager());
 
-    await service.createServer({
+    await service.createServer(ORG_A, {
       config: {
         args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
         command: "npx",
@@ -123,7 +149,7 @@ describe("McpService", () => {
       transport: "stdio",
     });
 
-    const listed = await service.listServers();
+    const listed = await service.listServers(ORG_A);
 
     expect(listed.servers).toHaveLength(1);
     expect(listed.servers[0]?.name).toBe("filesystem");
@@ -132,10 +158,11 @@ describe("McpService", () => {
 
   test("rejects stdio MCP servers without command", async () => {
     const db = createInMemoryDatabaseAdapter();
+    await seedOrg(db, ORG_A);
     const service = new McpService(db, new McpClientManager());
 
     await expect(
-      service.createServer({
+      service.createServer(ORG_A, {
         config: { command: "" },
         connect: false,
         name: "broken",
@@ -146,9 +173,10 @@ describe("McpService", () => {
 
   test("updates stdio MCP server config while preserving blank env values", async () => {
     const db = createInMemoryDatabaseAdapter();
+    await seedOrg(db, ORG_A);
     const service = new McpService(db, new McpClientManager());
 
-    const created = await service.createServer({
+    const created = await service.createServer(ORG_A, {
       config: {
         args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
         command: "npx",
@@ -162,7 +190,7 @@ describe("McpService", () => {
       transport: "stdio",
     });
 
-    const updated = await service.updateServer(created.server.id, {
+    const updated = await service.updateServer(ORG_A, created.server.id, {
       config: {
         args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
         command: "npx",
@@ -195,9 +223,10 @@ describe("McpService", () => {
 
   test("accepts command as an alias for stdio transport", async () => {
     const db = createInMemoryDatabaseAdapter();
+    await seedOrg(db, ORG_A);
     const service = new McpService(db, new McpClientManager());
 
-    await service.createServer({
+    await service.createServer(ORG_A, {
       config: {
         args: ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
         command: "npx",
@@ -207,17 +236,18 @@ describe("McpService", () => {
       transport: "command" as "stdio",
     });
 
-    const listed = await service.listServers();
+    const listed = await service.listServers(ORG_A);
 
     expect(listed.servers[0]?.transport).toBe("stdio");
   });
 
   test("rejects stdio config when transport is http", async () => {
     const db = createInMemoryDatabaseAdapter();
+    await seedOrg(db, ORG_A);
     const service = new McpService(db, new McpClientManager());
 
     await expect(
-      service.createServer({
+      service.createServer(ORG_A, {
         config: { command: "npx" },
         connect: false,
         name: "broken",
@@ -228,10 +258,11 @@ describe("McpService", () => {
 
   test("rejects HTTP config when transport is stdio", async () => {
     const db = createInMemoryDatabaseAdapter();
+    await seedOrg(db, ORG_A);
     const service = new McpService(db, new McpClientManager());
 
     await expect(
-      service.createServer({
+      service.createServer(ORG_A, {
         config: { url: "https://example.com/mcp" },
         connect: false,
         name: "broken",
@@ -242,83 +273,147 @@ describe("McpService", () => {
 
   test("blocks delete when MCP server is assigned to a profile", async () => {
     const db = createInMemoryDatabaseAdapter();
+    await seedOrg(db, ORG_A);
     const service = new McpService(db, new McpClientManager());
 
-    const created = await service.createServer({
+    const created = await service.createServer(ORG_A, {
       config: { url: "https://example.com/mcp" },
       connect: false,
       name: "demo",
       transport: "http",
     });
 
-    const profileId = await seedProfile(db);
-    await service.assignServerToProfile(profileId, created.server.id);
+    const profileId = await seedProfile(db, ORG_A);
+    await service.assignServerToProfile(ORG_A, profileId, created.server.id);
 
-    await expect(service.deleteServer(created.server.id)).rejects.toMatchObject(
-      {
-        profiles: [{ id: profileId, name: "Test Bot" }],
-        status: 409,
-      }
-    );
+    await expect(
+      service.deleteServer(ORG_A, created.server.id)
+    ).rejects.toMatchObject({
+      profiles: [{ id: profileId, name: "Test Bot" }],
+      status: 409,
+    });
 
     expect(await db.getMcpServer(created.server.id)).not.toBeNull();
   });
 
   test("deletes MCP server when not assigned to any profile", async () => {
     const db = createInMemoryDatabaseAdapter();
+    await seedOrg(db, ORG_A);
     const service = new McpService(db, new McpClientManager());
 
-    const created = await service.createServer({
+    const created = await service.createServer(ORG_A, {
       config: { url: "https://example.com/mcp" },
       connect: false,
       name: "demo",
       transport: "http",
     });
 
-    await service.deleteServer(created.server.id);
+    await service.deleteServer(ORG_A, created.server.id);
 
     expect(await db.getMcpServer(created.server.id)).toBeNull();
   });
 
   test("blocks delete for preinstalled MCP servers", async () => {
     const db = createInMemoryDatabaseAdapter();
+    await seedOrg(db, ORG_A);
     const service = new McpService(db, new McpClientManager());
 
-    await ensurePreinstalledMcpServers(db);
+    await ensurePreinstalledMcpServers(db, ORG_A);
+    const exaId = preinstalledMcpServerIdForOrg(
+      PREINSTALLED_MCP_SERVER_IDS.exa,
+      ORG_A
+    );
+    const firecrawlId = preinstalledMcpServerIdForOrg(
+      PREINSTALLED_MCP_SERVER_IDS.firecrawl,
+      ORG_A
+    );
 
-    await expect(
-      service.deleteServer(PREINSTALLED_MCP_SERVER_IDS.exa)
-    ).rejects.toThrow('Preinstalled MCP server "exa" cannot be deleted.');
+    await expect(service.deleteServer(ORG_A, exaId)).rejects.toThrow(
+      'Preinstalled MCP server "exa" cannot be deleted.'
+    );
 
-    expect(
-      await db.getMcpServer(PREINSTALLED_MCP_SERVER_IDS.exa)
-    ).not.toBeNull();
+    expect(await db.getMcpServer(exaId)).not.toBeNull();
 
-    await expect(
-      service.deleteServer(PREINSTALLED_MCP_SERVER_IDS.firecrawl)
-    ).rejects.toThrow('Preinstalled MCP server "firecrawl" cannot be deleted.');
+    await expect(service.deleteServer(ORG_A, firecrawlId)).rejects.toThrow(
+      'Preinstalled MCP server "firecrawl" cannot be deleted.'
+    );
 
-    expect(
-      await db.getMcpServer(PREINSTALLED_MCP_SERVER_IDS.firecrawl)
-    ).not.toBeNull();
+    expect(await db.getMcpServer(firecrawlId)).not.toBeNull();
   });
 
   test("lists assigned profile counts on MCP servers", async () => {
     const db = createInMemoryDatabaseAdapter();
+    await seedOrg(db, ORG_A);
     const service = new McpService(db, new McpClientManager());
 
-    const created = await service.createServer({
+    const created = await service.createServer(ORG_A, {
       config: { url: "https://example.com/mcp" },
       connect: false,
       name: "demo",
       transport: "http",
     });
 
-    const profileId = await seedProfile(db);
-    await service.assignServerToProfile(profileId, created.server.id);
+    const profileId = await seedProfile(db, ORG_A);
+    await service.assignServerToProfile(ORG_A, profileId, created.server.id);
 
-    const listed = await service.listServers();
+    const listed = await service.listServers(ORG_A);
 
     expect(listed.servers[0]?.assignedProfileCount).toBe(1);
+  });
+
+  test("does not list or mutate another workspace's MCP server", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    await seedOrg(db, ORG_A);
+    await seedOrg(db, ORG_B);
+    const service = new McpService(db, new McpClientManager());
+
+    const created = await service.createServer(ORG_A, {
+      config: {
+        headers: { Authorization: "Bearer workspace-a-secret" },
+        url: "https://example.com/mcp",
+      },
+      connect: false,
+      name: "demo",
+      transport: "http",
+    });
+
+    await service.createServer(ORG_B, {
+      config: { url: "https://example.com/other" },
+      connect: false,
+      name: "demo",
+      transport: "http",
+    });
+
+    const listedA = await service.listServers(ORG_A);
+    const listedB = await service.listServers(ORG_B);
+
+    expect(listedA.servers.map((server) => server.id)).toEqual([
+      created.server.id,
+    ]);
+    expect(listedB.servers).toHaveLength(1);
+    expect(listedB.servers[0]?.id).not.toBe(created.server.id);
+
+    await expect(
+      service.getServer(ORG_B, created.server.id)
+    ).rejects.toMatchObject({
+      status: 404,
+    });
+    await expect(
+      service.updateServer(ORG_B, created.server.id, { name: "stolen" })
+    ).rejects.toMatchObject({ status: 404 });
+    await expect(
+      service.deleteServer(ORG_B, created.server.id)
+    ).rejects.toMatchObject({ status: 404 });
+
+    const profileB = await seedProfile(db, ORG_B);
+    await expect(
+      service.assignServerToProfile(ORG_B, profileB, created.server.id)
+    ).rejects.toMatchObject({ status: 404 });
+
+    expect(await db.listMcpServersForProfile(profileB)).toEqual([]);
+    expect(await db.getMcpServer(created.server.id)).toMatchObject({
+      name: "demo",
+      orgId: ORG_A,
+    });
   });
 });

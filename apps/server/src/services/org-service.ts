@@ -41,6 +41,7 @@ import type {
 } from "@atlas/db";
 import {
   ensureLocalClientAccess,
+  ensurePreinstalledMcpServers,
   ORG_INVITE_EXPIRY_DAYS,
   ORG_ROLES,
   seedOrgDefaultProfile,
@@ -840,6 +841,7 @@ export class OrgService {
       orgId
     );
     await initSoulDirectory(getProfileSoulDir(orgId, superAgentProfile.id));
+    await ensurePreinstalledMcpServers(this.databaseAdapter, orgId);
   }
 }
 

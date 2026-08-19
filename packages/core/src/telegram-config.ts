@@ -392,20 +392,28 @@ export async function verifyAndPairTelegramUser(
 }
 
 export function resolveTelegramConfigFromSources(options: {
+  allowEnvCredentials?: boolean;
   env?: Record<string, string | undefined>;
   file?: TelegramConfigFile | null;
 }): TelegramConfigFile | null {
   const env = options.env ?? process.env;
   const file = options.file ?? null;
+  const allowEnvCredentials = options.allowEnvCredentials !== false;
   const botToken =
-    env.TELEGRAM_BOT_TOKEN?.trim() || file?.botToken?.trim() || "";
+    (allowEnvCredentials ? env.TELEGRAM_BOT_TOKEN?.trim() : "") ||
+    file?.botToken?.trim() ||
+    "";
 
   if (!botToken) {
     return null;
   }
 
-  const envAllowlist = env.TELEGRAM_ALLOWED_USER_IDS?.trim();
-  const envDenylist = env.TELEGRAM_BLOCKED_USER_IDS?.trim();
+  const envAllowlist = allowEnvCredentials
+    ? env.TELEGRAM_ALLOWED_USER_IDS?.trim()
+    : undefined;
+  const envDenylist = allowEnvCredentials
+    ? env.TELEGRAM_BLOCKED_USER_IDS?.trim()
+    : undefined;
 
   return {
     accessMode: file?.accessMode ?? "pairing",
@@ -419,7 +427,9 @@ export function resolveTelegramConfigFromSources(options: {
     handshakeCode: file?.handshakeCode ?? null,
     pairedUserIds: file?.pairedUserIds ?? [],
     profileId:
-      env.ATLAS_TELEGRAM_PROFILE_ID?.trim() ||
+      (allowEnvCredentials
+        ? env.ATLAS_TELEGRAM_PROFILE_ID?.trim()
+        : undefined) ||
       file?.profileId?.trim() ||
       DEFAULT_TELEGRAM_PROFILE_ID,
   };

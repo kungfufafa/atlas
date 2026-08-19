@@ -8,6 +8,7 @@ An **MCP server** is an external tool provider. Atlas acts as an **MCP client**:
 - Register a server once for the workspace (Workspace Admin or Superadmin)
 - Assign it to profiles that need it
 - Tools appear at chat time, namespaced as `{serverName}__{toolName}`
+- Headers and API keys stay in that workspace — they are not shared with other workspaces
 
 Use MCP when you need product-specific or internal capabilities — databases, SaaS APIs, local binaries — without writing custom Atlas code. For capabilities every profile should have by default, use a builtin tool or [bundled skill](/skills) instead.
 
@@ -150,7 +151,7 @@ HTTP headers and stdio `env` values are secrets:
 
 ## Permissions
 
-MCP server definitions are install-wide. Superadmins and Workspace Admins manage them from the active workspace; profile assignments stay workspace-scoped.
+MCP server definitions belong to the **active workspace**. API keys and headers stay in that workspace; another workspace does not see or reuse them. Superadmins and Workspace Admins manage servers from **System → MCP**, then assign them to profiles in the same workspace.
 
 | Actor | Manage MCP | Use MCP tools in chat |
 |-------|------------|----------------------|
