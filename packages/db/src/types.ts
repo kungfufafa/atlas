@@ -729,7 +729,10 @@ export interface DatabaseAdapter {
 
   getLlmUsageStats(): Promise<StoredLlmUsageStatsRecord | null>;
   getMcpServer(id: string): Promise<StoredMcpServerRecord | null>;
-  getMcpServerByName(name: string): Promise<StoredMcpServerRecord | null>;
+  getMcpServerByName(
+    name: string,
+    orgId?: string | null
+  ): Promise<StoredMcpServerRecord | null>;
   getMemory(orgId: string, id: string): Promise<StoredMemoryRecord | null>;
   getNotificationDestination(
     id: string
@@ -875,6 +878,7 @@ export interface DatabaseAdapter {
   listMcpServerProfileCounts(): Promise<Record<string, number>>;
 
   listMcpServers(): Promise<StoredMcpServerRecord[]>;
+  listMcpServersForOrg(orgId: string): Promise<StoredMcpServerRecord[]>;
 
   listMcpServersForProfile(profileId: string): Promise<StoredMcpServerRecord[]>;
   listMemories(

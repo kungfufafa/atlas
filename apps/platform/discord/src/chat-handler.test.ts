@@ -61,6 +61,7 @@ async function createPairedHandler(
     questionnaire?: Parameters<typeof createMockClient>[0]["questionnaire"];
     orgs?: Parameters<typeof createMockClient>[0]["orgs"];
     profiles?: Parameters<typeof createMockClient>[0]["profiles"];
+    profilesByOrgId?: Parameters<typeof createMockClient>[0]["profilesByOrgId"];
     listedArtifacts?: Parameters<typeof createMockClient>[0]["listedArtifacts"];
     artifactContentBytes?: Parameters<
       typeof createMockClient
@@ -1641,13 +1642,15 @@ describe("createChatHandler guild thread routing", () => {
 
   test("locks chat to fixedWorkspaceId and prevents switching workspaces", async () => {
     await withTempHome(async (homeDir) => {
-      const { handleMessage, calls, client } = await createPairedHandler(
-        homeDir,
-        {
+      const { handleMessage, calls, client, orgStore } =
+        await createPairedHandler(homeDir, {
           fixedWorkspaceId: "org_b",
           orgs: createMultiTestOrgs(),
-        }
-      );
+          profilesByOrgId: {
+            org_a: [{ id: "gary", isDefault: true, name: "Gary Vee" }],
+            org_b: [{ id: "default", isDefault: true, name: "Default Agent" }],
+          },
+        });
 
       const dm = createDmMessage({
         content: "hello",
@@ -1676,6 +1679,20 @@ describe("createChatHandler guild thread routing", () => {
           )
         )
       ).toBe(true);
+
+      const profileCmd = createDmMessage({
+        content: "/profile garry-vee",
+        userId: "424242424242424242",
+      });
+      await handleMessage(profileCmd.message);
+
+      expect(orgStore.get("u:424242424242424242")?.orgId).toBe("org_b");
+      expect(
+        profileCmd.sentMessages.some((reply) =>
+          reply.includes("Unknown profile. Send /profile to see the list.")
+        )
+      ).toBe(true);
+      expect(calls.createSession).toBe(1);
     });
   });
 });

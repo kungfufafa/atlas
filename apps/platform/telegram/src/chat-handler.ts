@@ -43,7 +43,7 @@ import {
   maybeSendRequestedTelegramArtifactAttachment,
 } from "./channel-artifact-flow";
 import type { TelegramBridgeConfig } from "./config";
-import { formatError, HELP_TEXT, splitTelegramMessage } from "./format";
+import { formatError, formatHelpText, splitTelegramMessage } from "./format";
 import {
   explainGroupMessageHandling,
   isTelegramGroupChat,
@@ -105,6 +105,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     fixedWorkspaceId,
     getBotInfo = () => undefined,
   } = deps;
+  const helpText = formatHelpText({
+    workspaceLocked: Boolean(fixedWorkspaceId),
+  });
 
   return async function handleMessage(ctx: Context): Promise<void> {
     if (!ctx.chat) {
@@ -324,7 +327,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const hasHandshake = Boolean(fileConfig?.handshakeCode);
 
     if (command === "/help") {
-      await replyChunks(telegram, `${PAIRING_PROMPT}\n\n${HELP_TEXT}`);
+      await replyChunks(telegram, `${PAIRING_PROMPT}\n\n${helpText}`);
       return;
     }
 
@@ -361,7 +364,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     switch (command) {
       case "/start":
       case "/help":
-        await replyChunks(telegram, HELP_TEXT);
+        await replyChunks(telegram, helpText);
         return;
 
       case "/clear": {
@@ -665,8 +668,12 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     isTopic: boolean,
     telegram: TelegramRichMessenger
   ): Promise<void> {
-    const { orgs } = await client.listUserOrgs();
-    const currentOrgId = getOrgSelection(orgStore, channelOrgKey)?.orgId;
+    const workspaceLocked = Boolean(fixedWorkspaceId);
+    const { orgs } = workspaceLocked
+      ? { orgs: [] }
+      : await client.listUserOrgs();
+    const currentOrgId =
+      fixedWorkspaceId ?? getOrgSelection(orgStore, channelOrgKey)?.orgId;
     const currentOrg = currentOrgId
       ? orgs.find((org) => org.id === currentOrgId)
       : undefined;
@@ -714,7 +721,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
               profiles: currentOrgProfiles,
             },
           }
-        : isTopic
+        : isTopic || workspaceLocked
           ? null
           : resolveProfileInScopes(
               await listProfileScopes(orgs, currentOrgId),
@@ -722,7 +729,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
             );
 
     if (!resolved) {
-      if (isTopic && currentOrgId) {
+      if (isTopic && currentOrgId && !workspaceLocked) {
         const crossOrgMatch = resolveProfileInScopes(
           await listProfileScopes(orgs, currentOrgId),
           arg
@@ -742,7 +749,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     if ("ambiguous" in resolved) {
       await telegram.send(
-        `That profile exists in multiple orgs (${resolved.ambiguous}). Send /org first, then /profile.`
+        workspaceLocked
+          ? "Unknown profile. Send /profile to see the list."
+          : `That profile exists in multiple orgs (${resolved.ambiguous}). Send /org first, then /profile.`
       );
       return;
     }
@@ -750,6 +759,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const { scope, profile: picked } = resolved;
 
     if (scope.orgId !== currentOrgId) {
+      if (workspaceLocked) {
+        await telegram.send("Unknown profile. Send /profile to see the list.");
+        return;
+      }
+
       orgStore.set(channelOrgKey, scope.orgId);
       await orgStore.save();
       client.setOrgId(scope.orgId);
@@ -763,7 +777,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
 
     await createAndBindSession(conversationKey, picked.id);
-    const orgNote = scope.orgId === currentOrgId ? "" : ` (${scope.orgName})`;
+    const orgNote =
+      workspaceLocked || scope.orgId === currentOrgId
+        ? ""
+        : ` (${scope.orgName})`;
     await telegram.send(
       `${formatProfileSwitchConfirmation(picked.name)}${orgNote}`
     );

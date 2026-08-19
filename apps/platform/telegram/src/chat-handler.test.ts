@@ -2248,6 +2248,10 @@ describe("createChatHandler artifact delivery", () => {
       await authStore.reload();
       const { client, calls, orgIds } = createMockClient({
         orgs: createMultiTestOrgs(),
+        profilesByOrgId: {
+          org_a: [{ id: "gary", isDefault: true, name: "Gary Vee" }],
+          org_b: [{ id: "default", isDefault: true, name: "Default Agent" }],
+        },
       });
       const sessionStore = new SessionStore(
         path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
@@ -2291,6 +2295,18 @@ describe("createChatHandler artifact delivery", () => {
           )
         )
       ).toBe(true);
+
+      const profileCmd = createMessageContext({
+        text: "/profile garry-vee",
+        userId: 4242,
+      });
+      await handleMessage(profileCmd.ctx);
+
+      expect(orgStore.get("u:4242")?.orgId).toBe("org_b");
+      expect(profileCmd.replies).toEqual([
+        "Unknown profile. Send /profile to see the list.",
+      ]);
+      expect(calls.createSession).toBe(1);
     });
   });
 });

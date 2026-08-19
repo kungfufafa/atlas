@@ -43,6 +43,13 @@ import type {
   StoredWorkspaceSettingsRecord,
 } from "../types";
 
+function mcpServerNameKey(
+  orgId: string | null | undefined,
+  name: string
+): string {
+  return `${orgId ?? ""}\0${name}`;
+}
+
 export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
   const automations = new Map<string, StoredAutomationRecord>();
   const automationRuns = new Map<string, StoredAutomationRunRecord[]>();
@@ -341,7 +348,7 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       }
 
       mcpServers.delete(id);
-      mcpServersByName.delete(existing.name);
+      mcpServersByName.delete(mcpServerNameKey(existing.orgId, existing.name));
 
       for (const assigned of profileMcpServers.values()) {
         assigned.delete(id);
@@ -531,8 +538,8 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       return mcpServers.get(id) ?? null;
     },
 
-    async getMcpServerByName(name) {
-      return mcpServersByName.get(name) ?? null;
+    async getMcpServerByName(name, orgId) {
+      return mcpServersByName.get(mcpServerNameKey(orgId, name)) ?? null;
     },
 
     async getMemory(orgId, id) {
@@ -993,6 +1000,12 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
     async listMcpServers() {
       return Array.from(mcpServers.values());
+    },
+
+    async listMcpServersForOrg(orgId) {
+      return Array.from(mcpServers.values())
+        .filter((server) => server.orgId === orgId)
+        .sort((left, right) => left.name.localeCompare(right.name));
     },
 
     async listMcpServersForProfile(profileId) {
@@ -1578,11 +1591,13 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       const existing = mcpServers.get(record.id);
 
       if (existing) {
-        mcpServersByName.delete(existing.name);
+        mcpServersByName.delete(
+          mcpServerNameKey(existing.orgId, existing.name)
+        );
       }
 
       mcpServers.set(record.id, record);
-      mcpServersByName.set(record.name, record);
+      mcpServersByName.set(mcpServerNameKey(record.orgId, record.name), record);
     },
 
     async upsertNotificationDestination(record) {

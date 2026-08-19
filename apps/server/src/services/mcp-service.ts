@@ -30,8 +30,8 @@ export class McpService {
     private readonly manager: McpClientManager
   ) {}
 
-  async listServers(): Promise<ListMcpServersResponse> {
-    const servers = await this.db.listMcpServers();
+  async listServers(orgId: string): Promise<ListMcpServersResponse> {
+    const servers = await this.db.listMcpServersForOrg(orgId);
     const profileCounts = await this.db.listMcpServerProfileCounts();
 
     return {
@@ -41,14 +41,15 @@ export class McpService {
     };
   }
 
-  async getServer(serverId: string): Promise<McpServerResponse> {
-    const server = await this.requireServer(serverId);
+  async getServer(orgId: string, serverId: string): Promise<McpServerResponse> {
+    const server = await this.requireServer(orgId, serverId);
     const profileCounts = await this.db.listMcpServerProfileCounts();
 
     return { server: toMcpServerDetail(server, profileCounts[serverId] ?? 0) };
   }
 
   async createServer(
+    orgId: string,
     request: CreateMcpServerRequest
   ): Promise<McpServerResponse> {
     const name = request.name.trim();
@@ -60,7 +61,7 @@ export class McpService {
     const transport = normalizeTransport(request.transport);
     validateConfig(transport, request.config);
 
-    const existing = await this.db.getMcpServerByName(name);
+    const existing = await this.db.getMcpServerByName(name, orgId);
 
     if (existing) {
       throw new Error(`MCP server already exists: ${name}`);
@@ -75,6 +76,7 @@ export class McpService {
       id: createId("mcp"),
       lastError: null,
       name,
+      orgId,
       status: "disconnected",
       transport,
       updatedAt: now,
@@ -83,18 +85,19 @@ export class McpService {
     await this.db.upsertMcpServer(record);
 
     if (request.connect !== false && record.enabled) {
-      await this.connectServer(record.id);
-      return this.getServer(record.id);
+      await this.connectServer(orgId, record.id);
+      return this.getServer(orgId, record.id);
     }
 
     return { server: toMcpServerDetail(record) };
   }
 
   async updateServer(
+    orgId: string,
     serverId: string,
     request: UpdateMcpServerRequest
   ): Promise<McpServerResponse> {
-    const server = await this.requireServer(serverId);
+    const server = await this.requireServer(orgId, serverId);
     const nextName = request.name?.trim() ?? server.name;
 
     if (!nextName) {
@@ -102,7 +105,7 @@ export class McpService {
     }
 
     if (nextName !== server.name) {
-      const existing = await this.db.getMcpServerByName(nextName);
+      const existing = await this.db.getMcpServerByName(nextName, orgId);
 
       if (existing && existing.id !== serverId) {
         throw new Error(`MCP server already exists: ${nextName}`);
@@ -133,6 +136,7 @@ export class McpService {
       config,
       enabled: request.enabled ?? server.enabled,
       name: nextName,
+      orgId,
       transport,
       updatedAt: new Date().toISOString(),
     };
@@ -149,11 +153,11 @@ export class McpService {
 
     await this.db.upsertMcpServer(updated);
 
-    return this.getServer(serverId);
+    return this.getServer(orgId, serverId);
   }
 
-  async deleteServer(serverId: string): Promise<void> {
-    const server = await this.requireServer(serverId);
+  async deleteServer(orgId: string, serverId: string): Promise<void> {
+    const server = await this.requireServer(orgId, serverId);
 
     if (isPreinstalledMcpServerId(server.id)) {
       throw new Error(
@@ -162,9 +166,10 @@ export class McpService {
     }
 
     const profiles = await this.db.listProfilesForMcpServer(serverId);
+    const profilesInOrg = profiles.filter((profile) => profile.orgId === orgId);
 
-    if (profiles.length > 0) {
-      const profileRefs = toProfileRefs(profiles);
+    if (profilesInOrg.length > 0) {
+      const profileRefs = toProfileRefs(profilesInOrg);
       throw new AtlasApiError(
         formatMcpServerInUseMessage(profileRefs),
         409,
@@ -173,54 +178,35 @@ export class McpService {
       );
     }
 
+    if (profiles.length > 0) {
+      throw new AtlasApiError("MCP server is assigned to a profile.", 409);
+    }
+
     await this.manager.disconnect(serverId);
 
     const deleted = await this.db.deleteMcpServer(serverId);
 
     if (!deleted) {
-      throw new Error("MCP server not found.");
+      throw new AtlasApiError("MCP server not found.", 404);
     }
   }
 
-  async connectServer(serverId: string): Promise<McpServerResponse> {
-    const server = await this.requireServer(serverId);
-
-    if (!server.enabled) {
-      throw new Error(`MCP server "${server.name}" is disabled.`);
-    }
-
-    try {
-      const cachedTools = await this.manager.connect(server);
-      const updated: StoredMcpServerRecord = {
-        ...server,
-        cachedTools,
-        lastError: null,
-        status: "connected",
-        updatedAt: new Date().toISOString(),
-      };
-
-      await this.db.upsertMcpServer(updated);
-
-      return { server: toMcpServerDetail(updated) };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      const updated: StoredMcpServerRecord = {
-        ...server,
-        lastError: message,
-        status: "error",
-        updatedAt: new Date().toISOString(),
-      };
-
-      await this.db.upsertMcpServer(updated);
-      throw new Error(message);
-    }
+  async connectServer(
+    orgId: string,
+    serverId: string
+  ): Promise<McpServerResponse> {
+    const server = await this.requireServer(orgId, serverId);
+    return this.connectServerRecord(server);
   }
 
-  async syncServer(serverId: string): Promise<McpServerResponse> {
-    const server = await this.requireServer(serverId);
+  async syncServer(
+    orgId: string,
+    serverId: string
+  ): Promise<McpServerResponse> {
+    const server = await this.requireServer(orgId, serverId);
 
     if (!this.manager.isConnected(serverId, server.transport)) {
-      return this.connectServer(serverId);
+      return this.connectServer(orgId, serverId);
     }
 
     try {
@@ -254,6 +240,7 @@ export class McpService {
   }
 
   async testServer(
+    orgId: string,
     transport: McpTransport,
     config: McpServerConfig,
     serverId?: string
@@ -264,7 +251,7 @@ export class McpService {
           normalizedTransport,
           resolveMcpConfig(
             normalizedTransport,
-            (await this.requireServer(serverId)).config
+            (await this.requireServer(orgId, serverId)).config
           ),
           config
         )
@@ -302,7 +289,7 @@ export class McpService {
       }
 
       try {
-        await this.connectServer(server.id);
+        await this.connectServerRecord(server);
       } catch (error) {
         console.warn(
           `Could not connect MCP server "${server.name}":`,
@@ -313,27 +300,29 @@ export class McpService {
   }
 
   async assignServerToProfile(
+    orgId: string,
     profileId: string,
     serverId: string
   ): Promise<void> {
     const profile = await this.db.getProfile(profileId);
 
-    if (!profile) {
-      throw new Error("Profile not found.");
+    if (!profile || profile.orgId !== orgId) {
+      throw new AtlasApiError("Profile not found.", 404);
     }
 
-    await this.requireServer(serverId);
+    await this.requireServer(orgId, serverId);
     await this.db.assignMcpServerToProfile(profileId, serverId);
   }
 
   async unassignServerFromProfile(
+    orgId: string,
     profileId: string,
     serverId: string
   ): Promise<void> {
     const profile = await this.db.getProfile(profileId);
 
-    if (!profile) {
-      throw new Error("Profile not found.");
+    if (!profile || profile.orgId !== orgId) {
+      throw new AtlasApiError("Profile not found.", 404);
     }
 
     const removed = await this.db.unassignMcpServerFromProfile(
@@ -346,30 +335,77 @@ export class McpService {
     }
   }
 
-  async getStatusSummary(): Promise<{
+  async getStatusSummary(orgId?: string): Promise<{
     serverCount: number;
     connectedCount: number;
     assignedProfileCount: number;
   }> {
-    const servers = await this.db.listMcpServers();
+    const servers = orgId
+      ? await this.db.listMcpServersForOrg(orgId)
+      : await this.db.listMcpServers();
+    const profileCounts = await this.db.listMcpServerProfileCounts();
+    let assignedProfileCount = 0;
+    let connectedCount = 0;
+
+    for (const server of servers) {
+      assignedProfileCount += profileCounts[server.id] ?? 0;
+      if (this.manager.isConnected(server.id, server.transport)) {
+        connectedCount += 1;
+      }
+    }
 
     return {
-      assignedProfileCount: await this.db.countProfileMcpAssignments(),
-      connectedCount: this.manager.getConnectedCount(),
+      assignedProfileCount,
+      connectedCount,
       serverCount: servers.length,
     };
   }
 
   private async requireServer(
+    orgId: string,
     serverId: string
   ): Promise<StoredMcpServerRecord> {
     const server = await this.db.getMcpServer(serverId);
 
-    if (!server) {
-      throw new Error("MCP server not found.");
+    if (!server || server.orgId !== orgId) {
+      throw new AtlasApiError("MCP server not found.", 404);
     }
 
     return server;
+  }
+
+  private async connectServerRecord(
+    server: StoredMcpServerRecord
+  ): Promise<McpServerResponse> {
+    if (!server.enabled) {
+      throw new Error(`MCP server "${server.name}" is disabled.`);
+    }
+
+    try {
+      const cachedTools = await this.manager.connect(server);
+      const updated: StoredMcpServerRecord = {
+        ...server,
+        cachedTools,
+        lastError: null,
+        status: "connected",
+        updatedAt: new Date().toISOString(),
+      };
+
+      await this.db.upsertMcpServer(updated);
+
+      return { server: toMcpServerDetail(updated) };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const updated: StoredMcpServerRecord = {
+        ...server,
+        lastError: message,
+        status: "error",
+        updatedAt: new Date().toISOString(),
+      };
+
+      await this.db.upsertMcpServer(updated);
+      throw new Error(message);
+    }
   }
 }
 

@@ -96,7 +96,7 @@ export class SystemStatusService {
         this.agent.getLlmUsageStatsByModel()
       ),
       mcp: this.mcpService
-        ? await this.mcpService.getStatusSummary()
+        ? await this.mcpService.getStatusSummary(orgId)
         : { assignedProfileCount: 0, connectedCount: 0, serverCount: 0 },
       server: await this.getServerStatus(providerConfigured),
       taskWorker: {

@@ -15,7 +15,11 @@ export async function loadConfig(
   orgId?: string | null
 ): Promise<DiscordBridgeConfig> {
   const file = await loadDiscordConfigFile(orgId);
-  const resolved = resolveDiscordConfigFromSources({ env, file });
+  const resolved = resolveDiscordConfigFromSources({
+    allowEnvCredentials: !orgId,
+    env,
+    file,
+  });
 
   if (!resolved) {
     const hasEnvToken = Boolean(env.DISCORD_BOT_TOKEN?.trim());

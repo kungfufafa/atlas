@@ -257,7 +257,14 @@ function formatTelegramTodoLine(todo: AgentTodo): string {
   }
 }
 
-export const HELP_TEXT = `Atlas Telegram commands:
+export function formatHelpText(options?: {
+  workspaceLocked?: boolean;
+}): string {
+  const orgLine = options?.workspaceLocked
+    ? ""
+    : "/org — choose or switch organization\n";
+
+  return `Atlas Telegram commands:
 
 /start — welcome and show this message
 /help — show this message
@@ -265,8 +272,10 @@ export const HELP_TEXT = `Atlas Telegram commands:
 /clear — clear chat history
 /compact — compact conversation history
 /new — start a new conversation
-/org — choose or switch organization
-/profile — choose or switch bot profile
+${orgLine}/profile — choose or switch bot profile
 /status — server and model status
 
 Send text, a photo, or a supported document (pdf, docx, txt, csv — max 5 MB) to chat with the agent.`;
+}
+
+export const HELP_TEXT = formatHelpText();

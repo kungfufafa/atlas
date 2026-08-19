@@ -114,8 +114,10 @@ import {
   DEFAULT_THINKING_EFFORT,
   DEFAULT_THINKING_ENABLED,
   DEFAULT_TIMEZONE,
+  DISCORD_BOT_TOKEN_IN_USE_MESSAGE,
   defaultOllamaBaseUrl,
   deleteArtifactFile,
+  discordBotTokenUsedByAnotherWorkspace,
   emailConfigToMailboxConfig,
   extractImageParts,
   findProviderInstance,
@@ -166,8 +168,12 @@ import {
   saveUserThinkingSettings,
   saveUserTimezone,
   saveWhatsAppConfig,
+  TELEGRAM_BOT_TOKEN_IN_USE_MESSAGE,
+  telegramBotTokenUsedByAnotherWorkspace,
   USER_CONTEXT_TEMPLATE,
   validateTimezone,
+  WHATSAPP_PHONE_IN_USE_MESSAGE,
+  whatsAppPhoneUsedByAnotherWorkspace,
   writeSoulFile,
 } from "@atlas/core";
 import { canAccessSuperAgentProfile } from "@atlas/core/profiles";
@@ -1312,6 +1318,10 @@ export class AgentService {
           400
         );
       }
+
+      if (await telegramBotTokenUsedByAnotherWorkspace(orgId, botToken)) {
+        throw new AtlasApiError(TELEGRAM_BOT_TOKEN_IN_USE_MESSAGE, 409);
+      }
     }
 
     const profileId = input.profileId?.trim();
@@ -1383,6 +1393,13 @@ export class AgentService {
 
     if (!(botToken || existing.configured)) {
       throw new Error("Bot token is required.");
+    }
+
+    if (
+      botToken &&
+      (await discordBotTokenUsedByAnotherWorkspace(orgId, botToken))
+    ) {
+      throw new AtlasApiError(DISCORD_BOT_TOKEN_IN_USE_MESSAGE, 409);
     }
 
     const profileId = input.profileId?.trim();
@@ -1525,6 +1542,14 @@ export class AgentService {
     if (profileId) {
       const profile = await this.requireProfile(orgId, profileId);
       resolvedProfileId = profile.id;
+    }
+
+    const nextPhoneNumber = input.phoneNumber?.trim();
+    if (
+      nextPhoneNumber &&
+      (await whatsAppPhoneUsedByAnotherWorkspace(orgId, nextPhoneNumber))
+    ) {
+      throw new AtlasApiError(WHATSAPP_PHONE_IN_USE_MESSAGE, 409);
     }
 
     if (input.accessMode && input.accessMode !== existing.accessMode) {
@@ -3870,12 +3895,15 @@ export class AgentService {
     }
 
     if (this.mcpClientManager) {
-      const mcpServers = await this.db.listMcpServersForProfile(profile.id);
       const orgId = profile.orgId;
 
       if (!orgId) {
         throw new Error("Profile organization is missing.");
       }
+
+      const mcpServers = (
+        await this.db.listMcpServersForProfile(profile.id)
+      ).filter((server) => server.orgId === orgId);
 
       resolved = [
         ...resolved,

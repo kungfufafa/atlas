@@ -135,7 +135,10 @@ async function findProfileMcpEmailTarget(
   db: DatabaseAdapter,
   profileId: string
 ): Promise<McpEmailTarget | null> {
-  const servers = await db.listMcpServersForProfile(profileId);
+  const profile = await db.getProfile(profileId);
+  const servers = (await db.listMcpServersForProfile(profileId)).filter(
+    (server) => !profile?.orgId || server.orgId === profile.orgId
+  );
   return findBestMcpEmailTarget(servers);
 }
 

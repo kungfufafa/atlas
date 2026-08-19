@@ -24,7 +24,7 @@ import type { WhatsAppAuthStore } from "./auth-store";
 import type { WhatsAppBridgeConfig } from "./config";
 import {
   formatError,
-  HELP_TEXT,
+  formatHelpText,
   prepareWhatsAppReply,
   splitWhatsAppMessage,
 } from "./format";
@@ -67,6 +67,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     getSocket,
     fixedWorkspaceId,
   } = deps;
+  const helpText = formatHelpText({
+    workspaceLocked: Boolean(fixedWorkspaceId),
+  });
 
   return async function handleMessage(data: {
     fromMe?: boolean;
@@ -168,7 +171,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const hasPairingCode = Boolean(fileConfig?.pairingCode);
 
     if (command === "/help") {
-      await sendText(jid, `${PAIRING_PROMPT}\n\n${HELP_TEXT}`);
+      await sendText(jid, `${PAIRING_PROMPT}\n\n${helpText}`);
       return;
     }
 
@@ -197,7 +200,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     switch (command) {
       case "/start":
       case "/help":
-        await sendText(jid, HELP_TEXT);
+        await sendText(jid, helpText);
         return;
 
       case "/clear": {

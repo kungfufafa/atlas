@@ -28,6 +28,18 @@ const WORKER_DIST_SCRIPTS: Partial<Record<string, string>> = {
 };
 
 const VALID_WORKERS = Object.keys(WORKER_SCRIPTS);
+const WORKSPACE_WORKER_ENV_BLOCKLIST = [
+  "ATLAS_DISCORD_PROFILE_ID",
+  "ATLAS_TELEGRAM_PROFILE_ID",
+  "ATLAS_WHATSAPP_PROFILE_ID",
+  "DISCORD_ALLOWED_USER_IDS",
+  "DISCORD_BLOCKED_USER_IDS",
+  "DISCORD_BOT_TOKEN",
+  "TELEGRAM_ALLOWED_USER_IDS",
+  "TELEGRAM_BLOCKED_USER_IDS",
+  "TELEGRAM_BOT_TOKEN",
+  "WHATSAPP_PHONE_NUMBER",
+] as const;
 const WORKSPACE_WORKERS = ["telegram", "discord", "whatsapp"] as const;
 type WorkspaceWorkerName = (typeof WORKSPACE_WORKERS)[number];
 
@@ -668,6 +680,9 @@ export class WorkerManagerService {
 
     if (orgId) {
       env.ATLAS_WORKSPACE_ID = orgId;
+      for (const key of WORKSPACE_WORKER_ENV_BLOCKLIST) {
+        delete env[key];
+      }
     }
 
     return env;

@@ -43,7 +43,7 @@ import {
   uploadDiscordArtifactFromToolResult,
 } from "./channel-artifact-flow";
 import type { DiscordBridgeConfig } from "./config";
-import { formatError, HELP_TEXT, splitDiscordMessage } from "./format";
+import { formatError, formatHelpText, splitDiscordMessage } from "./format";
 import {
   type DiscordBotInfo,
   explainGuildMessageHandling,
@@ -130,6 +130,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     fixedWorkspaceId,
     getBotInfo = () => undefined,
   } = deps;
+  const helpText = formatHelpText({
+    workspaceLocked: Boolean(fixedWorkspaceId),
+  });
 
   return {
     handleMessage,
@@ -542,7 +545,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         interaction.commandName === "start" ||
         interaction.commandName === "help"
       ) {
-        await messenger.send(HELP_TEXT);
+        await messenger.send(helpText);
         return;
       }
 
@@ -625,7 +628,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const hasHandshake = Boolean(fileConfig?.handshakeCode);
 
     if (command === "/help") {
-      await replyChunks(messenger, `${PAIRING_PROMPT}\n\n${HELP_TEXT}`);
+      await replyChunks(messenger, `${PAIRING_PROMPT}\n\n${helpText}`);
       return;
     }
 
@@ -655,7 +658,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const hasHandshake = Boolean(authStore.getConfig()?.handshakeCode);
 
     if (command === "help") {
-      await replyChunks(messenger, `${PAIRING_PROMPT}\n\n${HELP_TEXT}`);
+      await replyChunks(messenger, `${PAIRING_PROMPT}\n\n${helpText}`);
       return;
     }
 
@@ -943,8 +946,12 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     isThread: boolean,
     messenger: DiscordMessenger
   ): Promise<void> {
-    const { orgs } = await client.listUserOrgs();
-    const currentOrgId = getOrgSelection(orgStore, channelOrgKey)?.orgId;
+    const workspaceLocked = Boolean(fixedWorkspaceId);
+    const { orgs } = workspaceLocked
+      ? { orgs: [] }
+      : await client.listUserOrgs();
+    const currentOrgId =
+      fixedWorkspaceId ?? getOrgSelection(orgStore, channelOrgKey)?.orgId;
     const currentOrg = currentOrgId
       ? orgs.find((org) => org.id === currentOrgId)
       : undefined;
@@ -992,7 +999,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
               profiles: currentOrgProfiles,
             },
           }
-        : isThread
+        : isThread || workspaceLocked
           ? null
           : resolveProfileInScopes(
               await listProfileScopes(orgs, currentOrgId),
@@ -1006,7 +1013,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     if ("ambiguous" in resolved) {
       await messenger.send(
-        `That profile exists in multiple orgs (${resolved.ambiguous}). Send /org first, then /profile.`
+        workspaceLocked
+          ? "Unknown profile. Send /profile to see the list."
+          : `That profile exists in multiple orgs (${resolved.ambiguous}). Send /org first, then /profile.`
       );
       return;
     }
@@ -1014,6 +1023,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const { scope, profile: picked } = resolved;
 
     if (scope.orgId !== currentOrgId) {
+      if (workspaceLocked) {
+        await messenger.send("Unknown profile. Send /profile to see the list.");
+        return;
+      }
+
       pendingQuestionnaires.delete(conversationKey);
       orgStore.set(channelOrgKey, scope.orgId);
       await orgStore.save();
@@ -1028,7 +1042,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
 
     await createAndBindSession(conversationKey, picked.id);
-    const orgNote = scope.orgId === currentOrgId ? "" : ` (${scope.orgName})`;
+    const orgNote =
+      workspaceLocked || scope.orgId === currentOrgId
+        ? ""
+        : ` (${scope.orgName})`;
     await messenger.send(
       `${formatProfileSwitchConfirmation(picked.name)}${orgNote}`
     );

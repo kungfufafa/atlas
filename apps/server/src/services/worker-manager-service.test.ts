@@ -75,6 +75,7 @@ describe("WorkerManagerService", () => {
     test("starts an isolated worker for one workspace", async () => {
       const mockPm2 = createMockPm2();
       const service = new WorkerManagerService(projectRoot, mockPm2);
+      process.env.TELEGRAM_BOT_TOKEN = "host-wide-token";
 
       await service.startWorkspaceWorker("telegram", "workspace-a");
 
@@ -85,6 +86,7 @@ describe("WorkerManagerService", () => {
       const opts = (mockPm2.start as ReturnType<typeof mock>).mock.calls[0][0];
       expect(opts.name).toBe("telegram--workspace-a");
       expect(opts.env.ATLAS_WORKSPACE_ID).toBe("workspace-a");
+      expect(opts.env.TELEGRAM_BOT_TOKEN).toBeUndefined();
       expect(opts.args).toContain("apps/platform/telegram/src/index.ts");
     });
 

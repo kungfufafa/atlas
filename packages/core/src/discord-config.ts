@@ -516,20 +516,28 @@ export async function verifyAndPairDiscordUser(
 }
 
 export function resolveDiscordConfigFromSources(options: {
+  allowEnvCredentials?: boolean;
   env?: Record<string, string | undefined>;
   file?: DiscordConfigFile | null;
 }): DiscordConfigFile | null {
   const env = options.env ?? process.env;
   const file = options.file ?? null;
+  const allowEnvCredentials = options.allowEnvCredentials !== false;
   const botToken =
-    env.DISCORD_BOT_TOKEN?.trim() || file?.botToken?.trim() || "";
+    (allowEnvCredentials ? env.DISCORD_BOT_TOKEN?.trim() : "") ||
+    file?.botToken?.trim() ||
+    "";
 
   if (!botToken) {
     return null;
   }
 
-  const envAllowlist = env.DISCORD_ALLOWED_USER_IDS?.trim();
-  const envDenylist = env.DISCORD_BLOCKED_USER_IDS?.trim();
+  const envAllowlist = allowEnvCredentials
+    ? env.DISCORD_ALLOWED_USER_IDS?.trim()
+    : undefined;
+  const envDenylist = allowEnvCredentials
+    ? env.DISCORD_BLOCKED_USER_IDS?.trim()
+    : undefined;
 
   return {
     accessMode: file?.accessMode ?? "pairing",
@@ -543,7 +551,9 @@ export function resolveDiscordConfigFromSources(options: {
     handshakeCode: file?.handshakeCode ?? null,
     pairedUserIds: file?.pairedUserIds ?? [],
     profileId:
-      env.ATLAS_DISCORD_PROFILE_ID?.trim() ||
+      (allowEnvCredentials
+        ? env.ATLAS_DISCORD_PROFILE_ID?.trim()
+        : undefined) ||
       file?.profileId?.trim() ||
       DEFAULT_DISCORD_PROFILE_ID,
   };
