@@ -330,12 +330,12 @@ export function validateOpenCodeGoModelId(model: string): string | null {
 export function validateOpenCodeGoModelsInput(
   models: Array<{ id: string }>
 ): string | null {
-  const listError = validateCustomModelsInput(models);
-  if (listError) {
-    return listError;
+  const valid = models.filter((model) => model.id.trim());
+  if (valid.length === 0) {
+    return null;
   }
 
-  for (const row of models) {
+  for (const row of valid) {
     const idError = validateOpenCodeGoModelId(row.id);
     if (idError) {
       return idError;

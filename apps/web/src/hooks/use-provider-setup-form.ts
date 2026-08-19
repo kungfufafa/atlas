@@ -580,18 +580,7 @@ export function useProviderSetupForm(
                   ? normalizeModelListRows(openRouterModels)
                   : isShortlistCapabilityProvider(selectedProvider)
                     ? normalizeModelListRows(shortlistModels)
-                    : selectedProvider === "opencode_go" && modelToSave
-                      ? normalizeModelListRows([
-                          {
-                            default: true,
-                            id: modelToSave,
-                            name: getModelDisplayName(
-                              filteredModels,
-                              modelToSave
-                            ),
-                          },
-                        ])
-                      : undefined,
+                    : undefined,
             displayName,
             hostMode:
               selectedProvider === "ollama" ? ollamaHostMode : undefined,

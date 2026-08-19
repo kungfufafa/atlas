@@ -139,4 +139,39 @@ describe("createOpenCodeGoProvider", () => {
 
     expect(capturedUrl).toBe("https://opencode.ai/zen/go/v1/messages");
   });
+
+  test("routes Responses models to the OpenAI-style responses endpoint", async () => {
+    let capturedUrl: string | null = null;
+    let capturedBody: Record<string, unknown> | null = null;
+
+    mockFetch(async (request) => {
+      capturedUrl = request.url;
+      capturedBody = (await request.json()) as Record<string, unknown>;
+      return new Response(
+        JSON.stringify({
+          output: [
+            {
+              content: [{ text: "Hello from responses", type: "output_text" }],
+              type: "message",
+            },
+          ],
+        }),
+        { headers: { "Content-Type": "application/json" }, status: 200 }
+      );
+    });
+
+    const provider = createOpenCodeGoProvider({
+      apiKey: "test",
+      model: "opencode-go/grok-4.5",
+    });
+
+    const result = await provider.generateChat({
+      messages: [{ content: "Hi", role: "user" }],
+      system: "You are a helpful assistant.",
+    });
+
+    expect(capturedUrl).toBe("https://opencode.ai/zen/go/v1/responses");
+    expect(capturedBody?.model).toBe("grok-4.5");
+    expect(result.content).toBe("Hello from responses");
+  });
 });
