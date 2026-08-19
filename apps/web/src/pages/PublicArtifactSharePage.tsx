@@ -4,18 +4,8 @@ import { useParams } from "react-router-dom";
 import { ArtifactAttachmentPanelBody } from "@/components/chat/artifact-attachment-panel-body";
 import { usePublicArtifactShare } from "@/hooks/use-public-artifact-share";
 import {
-  artifactCodeLanguage,
-  isDocxFile,
-  isHtmlArtifactMimeType,
-  isImageArtifactMimeType,
-  isLegacyDocFile,
-  isMarkdownArtifactMimeType,
-  isMermaidArtifactFilename,
-  isSvgArtifactMimeType,
-  isTextArtifactMimeType,
-  isUnknownArtifactMimeType,
-  isVideoArtifactMimeType,
-  resolveArtifactMimeType,
+  buildPublicArtifactShareDownloadUrl,
+  resolvePublicArtifactShareView,
 } from "@/lib/chat-artifacts";
 import { client } from "@/lib/client";
 import { cn } from "@/lib/utils";
@@ -34,32 +24,17 @@ export function PublicArtifactSharePage() {
     : "Share link not found.";
   const loading = token.length > 0 && isLoading;
 
-  const mimeType = metadata
-    ? resolveArtifactMimeType(metadata.mimeType, metadata.filename)
-    : "";
-  const isHtml = isHtmlArtifactMimeType(mimeType);
-  const isSvg = isSvgArtifactMimeType(mimeType);
-  const isMermaid = metadata
-    ? isMermaidArtifactFilename(metadata.filename)
-    : false;
-  const isImage = isImageArtifactMimeType(mimeType);
-  const isVideo = isVideoArtifactMimeType(mimeType);
-  const isWordDocument =
-    metadata != null &&
-    (isDocxFile(metadata.filename, mimeType) ||
-      isLegacyDocFile(metadata.filename, mimeType));
-  const isMarkdown = isMarkdownArtifactMimeType(mimeType) || isWordDocument;
-  const language = metadata ? artifactCodeLanguage(metadata.filename) : null;
-  const canPreview =
-    metadata != null &&
-    (isHtml ||
-      isSvg ||
-      isMermaid ||
-      isImage ||
-      isVideo ||
-      isWordDocument ||
-      isTextArtifactMimeType(mimeType) ||
-      isUnknownArtifactMimeType(mimeType));
+  const view = metadata
+    ? resolvePublicArtifactShareView({
+        baseUrl: client.baseUrl,
+        content,
+        filename: metadata.filename,
+        mimeType: metadata.mimeType,
+        token,
+      })
+    : { kind: "download" as const };
+  const isHtml = view.kind === "html";
+  const canPreview = view.kind !== "download";
 
   const artifact = useMemo(
     () =>
@@ -85,7 +60,9 @@ export function PublicArtifactSharePage() {
     };
   }, []);
 
-  const downloadUrl = `${client.baseUrl}/v1/public/artifact-shares/${encodeURIComponent(token)}`;
+  const downloadUrl = token
+    ? buildPublicArtifactShareDownloadUrl(token, client.baseUrl)
+    : "";
 
   return (
     <div
@@ -102,6 +79,7 @@ export function PublicArtifactSharePage() {
           {token ? (
             <a
               className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2 py-1 font-medium text-xs hover:bg-muted"
+              download={metadata?.filename}
               href={downloadUrl}
             >
               <Download04Icon className="h-3 w-3" />
@@ -122,61 +100,60 @@ export function PublicArtifactSharePage() {
           <p className="text-muted-foreground text-sm">Loading…</p>
         ) : error ? (
           <p className="text-destructive text-sm">{error}</p>
-        ) : artifact && canPreview ? (
-          isImage ? (
-            <ArtifactAttachmentPanelBody
-              artifact={artifact}
-              canPreview={canPreview}
-              error={null}
-              imagePreviewUrl={downloadUrl}
-              kind="image"
-              loading={false}
-            />
-          ) : isVideo ? (
-            <ArtifactAttachmentPanelBody
-              artifact={artifact}
-              canPreview={canPreview}
-              error={null}
-              kind="video"
-              loading={false}
-              videoPreviewUrl={downloadUrl}
-            />
-          ) : isHtml ? (
-            <ArtifactAttachmentPanelBody
-              artifact={artifact}
-              canPreview={canPreview}
-              content={content}
-              error={null}
-              kind="html"
-              loading={false}
-            />
-          ) : isSvg ? (
-            <ArtifactAttachmentPanelBody
-              artifact={artifact}
-              canPreview={canPreview}
-              content={content}
-              error={null}
-              kind="svg"
-              loading={false}
-            />
-          ) : (
-            <ArtifactAttachmentPanelBody
-              artifact={artifact}
-              canPreview={canPreview}
-              content={content}
-              error={null}
-              format={isMermaid ? "mermaid" : isMarkdown ? "markdown" : "plain"}
-              kind="text"
-              language={language}
-              loading={false}
-            />
-          )
+        ) : artifact && view.kind === "image" ? (
+          <ArtifactAttachmentPanelBody
+            artifact={artifact}
+            canPreview={canPreview}
+            error={null}
+            imagePreviewUrl={view.previewUrl}
+            kind="image"
+            loading={false}
+          />
+        ) : artifact && view.kind === "video" ? (
+          <ArtifactAttachmentPanelBody
+            artifact={artifact}
+            canPreview={canPreview}
+            error={null}
+            kind="video"
+            loading={false}
+            videoPreviewUrl={view.previewUrl}
+          />
+        ) : artifact && view.kind === "html" ? (
+          <ArtifactAttachmentPanelBody
+            artifact={artifact}
+            canPreview={canPreview}
+            content={view.content}
+            error={null}
+            kind="html"
+            loading={false}
+          />
+        ) : artifact && view.kind === "svg" ? (
+          <ArtifactAttachmentPanelBody
+            artifact={artifact}
+            canPreview={canPreview}
+            content={view.content}
+            error={null}
+            kind="svg"
+            loading={false}
+          />
+        ) : artifact && view.kind === "text" ? (
+          <ArtifactAttachmentPanelBody
+            artifact={artifact}
+            canPreview={canPreview}
+            content={view.content}
+            error={null}
+            format={view.format}
+            kind="text"
+            language={view.language}
+            loading={false}
+          />
         ) : (
           <div className="space-y-3 text-muted-foreground text-sm">
             <p>This file is available for download.</p>
             {downloadUrl ? (
               <a
                 className="font-medium text-foreground underline"
+                download={metadata?.filename}
                 href={downloadUrl}
               >
                 Download {metadata?.filename}

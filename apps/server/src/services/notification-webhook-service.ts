@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import {
   AtlasApiError,
   createTelegramOutboundAdapter,
@@ -7,6 +8,15 @@ import {
 } from "@atlas/core";
 import type { DatabaseAdapter } from "@atlas/db";
 import type { AuthService } from "./auth-service";
+
+function hashesEqual(left: string, right: string): boolean {
+  const leftBytes = Buffer.from(left);
+  const rightBytes = Buffer.from(right);
+  return (
+    leftBytes.length === rightBytes.length &&
+    timingSafeEqual(leftBytes, rightBytes)
+  );
+}
 
 function levelPrefix(level: NotificationWebhookRequest["level"]): string {
   switch (level) {
@@ -53,9 +63,12 @@ export class NotificationWebhookService {
   ): Promise<void> {
     const destination =
       await this.databaseAdapter.getNotificationDestination(destinationId);
+    if (!(destination && apiKey)) {
+      throw new AtlasApiError("Invalid notification credentials.", 401);
+    }
+
     if (
-      !(destination && apiKey) ||
-      this.authService.hashToken(apiKey) !== destination.secretHash
+      !hashesEqual(this.authService.hashToken(apiKey), destination.secretHash)
     ) {
       throw new AtlasApiError("Invalid notification credentials.", 401);
     }

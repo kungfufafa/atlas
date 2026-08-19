@@ -40,8 +40,12 @@ describe("Anthropic provider streaming", () => {
 
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
+    const fetchImpl: typeof fetch = (input, init) => fetchMock(input, init);
+
     const provider = createAnthropicProvider({
       apiKey: "sk-ant-test",
+      baseUrl: "https://api.anthropic.com",
+      fetch: fetchImpl,
       model: "claude-sonnet-4-6",
     });
 

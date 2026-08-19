@@ -51,20 +51,80 @@ describe("profile service createTool", () => {
     );
 
     const service = new ProfileService(createInMemoryDatabaseAdapter());
-    const tool = await service.createTool({
+    const tool = await service.createTool(ORG_ID, {
       description: "Echo input",
       handlerConfig: { modulePath: "echo.js" },
       name: "echo",
     });
 
     expect(tool.handlerType).toBe("javascript");
+    const stored = await service
+      .listTools(ORG_ID)
+      .then((result) => result.tools.find((item) => item.id === tool.id));
+    expect(stored?.id).toBe(tool.id);
+  });
+
+  test("keeps custom tools private to the creating workspace", async () => {
+    tempConfigDir = await mkdtemp(
+      path.join(os.tmpdir(), "atlas-profile-tool-")
+    );
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
+    const toolsDir = path.join(tempConfigDir, "tools");
+    await mkdir(toolsDir, { recursive: true });
+    await writeFile(
+      path.join(toolsDir, "echo.js"),
+      `export async function run(input) {
+  return input;
+}
+`,
+      "utf8"
+    );
+
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await db.upsertOrganization({
+      createdAt: now,
+      id: "org_a",
+      name: "Org A",
+      slug: "org-a",
+      updatedAt: now,
+    });
+    await db.upsertOrganization({
+      createdAt: now,
+      id: "org_b",
+      name: "Org B",
+      slug: "org-b",
+      updatedAt: now,
+    });
+
+    const service = new ProfileService(db);
+    const created = await service.createTool("org_a", {
+      description: "Echo input",
+      handlerConfig: { modulePath: "echo.js" },
+      name: "echo",
+    });
+
+    const listedA = await service.listTools("org_a");
+    const listedB = await service.listTools("org_b");
+    expect(listedA.tools.some((tool) => tool.id === created.id)).toBe(true);
+    expect(listedB.tools.some((tool) => tool.id === created.id)).toBe(false);
+
+    await expect(service.getTool("org_b", created.id)).rejects.toThrow(
+      /not found/i
+    );
+    await expect(service.deleteTool("org_b", created.id)).rejects.toThrow(
+      /not found/i
+    );
+
+    const { tool } = await service.getTool("org_a", created.id);
+    expect(tool.id).toBe(created.id);
   });
 
   test("rejects non-javascript handler types", async () => {
     const service = new ProfileService(createInMemoryDatabaseAdapter());
 
     await expect(
-      service.createTool({
+      service.createTool(ORG_ID, {
         description: "Bad tool",
         handlerConfig: { modulePath: "bad-tool.js" },
         handlerType: "custom",

@@ -774,8 +774,9 @@ export function registerProfileRoutes(
   );
 
   app.get("/v1/profiles/:profileId/avatar", async (c) => {
+    const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
-    const avatar = await agent.getProfileAvatarByProfileId(profileId);
+    const avatar = await agent.getProfileAvatar(orgId, profileId);
     return new Response(avatar.bytes as unknown as BodyInit, {
       headers: { "Content-Type": avatar.mediaType },
     });

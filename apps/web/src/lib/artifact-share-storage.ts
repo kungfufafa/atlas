@@ -54,3 +54,18 @@ export function clearStoredArtifactShare(input: {
     artifactShareStorageKey(input.orgId, input.profileId, input.artifactPath)
   );
 }
+
+/** Drop a locally cached URL when the server says the share is no longer active. */
+export function readStoredArtifactShareIfActive(input: {
+  orgId: string;
+  profileId: string;
+  artifactPath: string;
+  serverActive: boolean | null;
+}): { shareId: string; shareUrl: string } | null {
+  if (input.serverActive === false) {
+    clearStoredArtifactShare(input);
+    return null;
+  }
+
+  return readStoredArtifactShare(input);
+}

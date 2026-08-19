@@ -53,7 +53,10 @@ describe("super agent create_tool", () => {
     const capturedRequests: CreateToolRequest[] = [];
 
     const createTool = getCreateToolTool({
-      async createTool(request: CreateToolRequest): Promise<ToolDetail> {
+      async createTool(
+        _orgId: string,
+        request: CreateToolRequest
+      ): Promise<ToolDetail> {
         capturedRequests.push(request);
 
         return {
@@ -74,7 +77,7 @@ describe("super agent create_tool", () => {
         handlerConfig: { modulePath: "echo.js" },
         name: "echo",
       },
-      { sessionId: SESSION_ID }
+      { orgId: "org_test", sessionId: SESSION_ID }
     );
 
     expect(capturedRequests[0]?.name).toBe("echo");

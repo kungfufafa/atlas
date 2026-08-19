@@ -18,16 +18,12 @@ import {
   copyFileTool,
   createDirectoryTool,
   fileStatTool,
+  fileToolAllowedDirs,
   listDirectoryTool,
   moveFileTool,
 } from "./filesystem";
 import { knowledgeBaseSearchTool } from "./knowledge-base-search";
-import {
-  getCustomToolsDir,
-  guardFilePath,
-  PathGuardError,
-  type PathGuardOptions,
-} from "./paths";
+import { guardFilePath, PathGuardError, type PathGuardOptions } from "./paths";
 import {
   jsonSchemaFromZod,
   parseToolInput,
@@ -261,7 +257,7 @@ function buildFileGuardOptions(
 
   return {
     ...defaultGuardOptions,
-    allowedDirs: [workspaceRoot, getCustomToolsDir()],
+    allowedDirs: fileToolAllowedDirs(workspaceRoot, profileId),
     cwd: workspaceRoot,
   };
 }

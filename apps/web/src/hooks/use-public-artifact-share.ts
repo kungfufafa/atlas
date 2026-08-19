@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { htmlForArtifactPreview } from "@/lib/artifact-html-preview";
 import {
+  isDocxFile,
   isHtmlArtifactMimeType,
   isImageArtifactMimeType,
+  isLegacyDocFile,
   isVideoArtifactMimeType,
   looksLikeUtf8Text,
   resolveArtifactMimeType,
@@ -44,6 +46,13 @@ async function loadPublicArtifactShare(
     isVideoArtifactMimeType(resolvedMime);
 
   if (previewAsBinaryMedia) {
+    return { content: null, metadata };
+  }
+
+  if (
+    isDocxFile(metadata.filename, resolvedMime) ||
+    isLegacyDocFile(metadata.filename, resolvedMime)
+  ) {
     return { content: null, metadata };
   }
 

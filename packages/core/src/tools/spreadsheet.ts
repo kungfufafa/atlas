@@ -227,9 +227,19 @@ async function saveExcelWorkbook(
   }
 }
 
-function buildSpreadsheetGuardOptions(workspaceRoot: string): PathGuardOptions {
+const SUPER_AGENT_PROFILE_ID = "super_agent";
+
+function buildSpreadsheetGuardOptions(
+  workspaceRoot: string,
+  profileId?: string
+): PathGuardOptions {
+  const allowedDirs =
+    profileId?.trim() === SUPER_AGENT_PROFILE_ID
+      ? [workspaceRoot, getCustomToolsDir()]
+      : [workspaceRoot];
+
   return {
-    allowedDirs: [workspaceRoot, getCustomToolsDir()],
+    allowedDirs,
     cwd: workspaceRoot,
   };
 }
@@ -243,7 +253,10 @@ export const spreadsheetTool: ToolDefinition = {
   async run(input: unknown, context: ToolContext) {
     const parsed = SpreadsheetInputSchema.parse(input);
     const workspaceRoot = context.workspaceRoot ?? process.cwd();
-    const guardOptions = buildSpreadsheetGuardOptions(workspaceRoot);
+    const guardOptions = buildSpreadsheetGuardOptions(
+      workspaceRoot,
+      context.profileId
+    );
     const guarded = await guardFilePath(
       parsed.path,
       parsed.cwd,

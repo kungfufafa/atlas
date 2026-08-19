@@ -349,6 +349,46 @@ describe("tool playground routes", () => {
 });
 
 describe("tool definition routes", () => {
+  test("unauthenticated GET /v1/tools is 401", async () => {
+    const { app } = createApp();
+    const response = await app.fetch(
+      new Request("http://localhost:4310/v1/tools")
+    );
+
+    expect(response.status).toBe(401);
+  });
+
+  test("authenticated GET /v1/tools lists tools", async () => {
+    let listedOrgId = "";
+    const { app, authService, databaseAdapter } = createApp({
+      listTools: async (orgId: string) => {
+        listedOrgId = orgId;
+        return {
+          tools: [{ id: "tool_echo", name: "echo" }],
+        };
+      },
+    });
+    const { orgId, adminSession } = await createOrgAdminSession(
+      app,
+      authService,
+      databaseAdapter,
+      "acme-list-tools",
+      "admin-list-tools@acme.com"
+    );
+
+    const response = await app.fetch(
+      new Request("http://localhost:4310/v1/tools", {
+        headers: adminSession.headers({}, orgId),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(listedOrgId).toBe(orgId);
+    await expect(response.json()).resolves.toEqual({
+      tools: [{ id: "tool_echo", name: "echo" }],
+    });
+  });
+
   test("org admin can create and delete a custom tool", async () => {
     const { app, authService, databaseAdapter } = createApp();
     const { orgId, adminSession } = await createOrgAdminSession(

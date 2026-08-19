@@ -25,14 +25,13 @@ export function isPublicRouteRequest(
     return method === "GET";
   }
 
-  if (pathname === "/v1/tools") {
+  if (pathname === "/v1/tasks/__capability_probe__/messages") {
     return method === "GET";
   }
 
   return (
     PUBLIC_ROUTES.has(pathname) ||
     /^\/v1\/notify\/[^/]+$/.test(pathname) ||
-    (method === "GET" && /^\/v1\/profiles\/[^/]+\/avatar$/.test(pathname)) ||
     (method === "GET" &&
       /^\/v1\/public\/artifact-shares\/[^/]+$/.test(pathname))
   );

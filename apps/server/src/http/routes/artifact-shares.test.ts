@@ -317,4 +317,51 @@ describe("artifact share routes", () => {
       }
     );
   });
+
+  test("download=1 forces attachment even for inline-allowed types", async () => {
+    const { app, databaseAdapter } = createApp();
+    const session = await setupFreshInstallSession(app, databaseAdapter);
+    const orgId = session.orgId!;
+    const profileId = "profile_share_download";
+
+    await seedProfileArtifact({
+      content: "# Shared report",
+      databaseAdapter,
+      filename: "report.md",
+      name: "Share Download",
+      orgId,
+      profileId,
+    });
+
+    const publishResponse = await app.fetch(
+      publishArtifactShareRequest({
+        body: { path: "report.md" },
+        orgId,
+        profileId,
+        session,
+      })
+    );
+    expect(publishResponse.status).toBe(201);
+    const published = (await publishResponse.json()) as { token: string };
+
+    const inlineResponse = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/public/artifact-shares/${encodeURIComponent(published.token)}`
+      )
+    );
+    expect(inlineResponse.headers.get("Content-Disposition")).toContain(
+      "inline"
+    );
+
+    const downloadResponse = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/public/artifact-shares/${encodeURIComponent(published.token)}?download=1`
+      )
+    );
+    expect(downloadResponse.status).toBe(200);
+    expect(downloadResponse.headers.get("Content-Disposition")).toContain(
+      "attachment"
+    );
+    expect(await downloadResponse.text()).toBe("# Shared report");
+  });
 });

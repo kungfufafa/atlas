@@ -158,8 +158,8 @@ export function createSuperAgentTools(
       description: "List all registered tools.",
       name: "list_tools",
       parameters: emptyObjectSchema(),
-      async run() {
-        return profileService.listTools();
+      async run(_input, context: ToolContext) {
+        return profileService.listTools(requireOrgId(context));
       },
     },
     {
@@ -213,7 +213,7 @@ export function createSuperAgentTools(
 
         await validateJavascriptToolModule(modulePath);
 
-        const tool = await profileService.createTool({
+        const tool = await profileService.createTool(requireOrgId(context), {
           description,
           handlerConfig,
           handlerType,

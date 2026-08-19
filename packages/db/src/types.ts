@@ -812,7 +812,10 @@ export interface DatabaseAdapter {
   ): Promise<StoredSkillUsageRecord | null>;
   getTask(id: string): Promise<StoredTaskRecord | null>;
   getTool(id: string): Promise<StoredToolRecord | null>;
-  getToolByName(name: string): Promise<StoredToolRecord | null>;
+  getToolByName(
+    name: string,
+    orgId?: string | null
+  ): Promise<StoredToolRecord | null>;
   getUserByEmail(email: string): Promise<StoredUserRecord | null>;
   getUserById(id: string): Promise<StoredUserRecord | null>;
   getUserContext(orgId: string, userId: string): Promise<string | null>;
@@ -950,6 +953,7 @@ export interface DatabaseAdapter {
   ): Promise<StoredToolOutputSavingsRecord[]>;
 
   listTools(): Promise<StoredToolRecord[]>;
+  listToolsForOrg(orgId: string): Promise<StoredToolRecord[]>;
 
   listToolsForProfile(profileId: string): Promise<StoredToolRecord[]>;
   listUserOrganizations(

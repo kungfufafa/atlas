@@ -3166,25 +3166,28 @@ export class AgentService {
     return this.profileService.deleteProfile(orgId, profileId);
   }
 
-  async listTools(): Promise<ListToolsResponse> {
-    return this.profileService.listTools();
+  async listTools(orgId: string): Promise<ListToolsResponse> {
+    return this.profileService.listTools(orgId);
   }
 
-  async getTool(toolId: string): Promise<ToolResponse> {
-    return this.profileService.getTool(toolId);
+  async getTool(orgId: string, toolId: string): Promise<ToolResponse> {
+    return this.profileService.getTool(orgId, toolId);
   }
 
-  async getToolSource(toolId: string): Promise<ToolSourceResponse> {
-    return this.profileService.getToolSource(toolId);
+  async getToolSource(
+    orgId: string,
+    toolId: string
+  ): Promise<ToolSourceResponse> {
+    return this.profileService.getToolSource(orgId, toolId);
   }
 
-  async createTool(request: CreateToolRequest) {
-    const tool = await this.profileService.createTool(request);
+  async createTool(orgId: string, request: CreateToolRequest) {
+    const tool = await this.profileService.createTool(orgId, request);
     return { tool };
   }
 
-  async deleteTool(toolId: string): Promise<void> {
-    return this.profileService.deleteTool(toolId);
+  async deleteTool(orgId: string, toolId: string): Promise<void> {
+    return this.profileService.deleteTool(orgId, toolId);
   }
 
   async runToolPlayground(
@@ -3192,7 +3195,7 @@ export class AgentService {
     parameters: Record<string, unknown>,
     context: { orgId: string; userId: string }
   ): Promise<RunToolResponse> {
-    const { tool } = await this.profileService.getTool(toolId);
+    const { tool } = await this.profileService.getTool(context.orgId, toolId);
 
     if (tool.handlerType !== "javascript") {
       throw new Error(
@@ -3202,7 +3205,7 @@ export class AgentService {
 
     const record = await this.db.getTool(toolId);
 
-    if (!record) {
+    if (!record || (record.orgId != null && record.orgId !== context.orgId)) {
       throw new Error("Tool not found.");
     }
 
@@ -3265,7 +3268,7 @@ export class AgentService {
     toolId: string,
     prompt: string
   ): Promise<SuggestToolParamsResponse> {
-    const { tool } = await this.profileService.getTool(toolId);
+    const { tool } = await this.profileService.getTool(orgId, toolId);
 
     if (tool.handlerType !== "javascript") {
       throw new Error(
@@ -3275,7 +3278,7 @@ export class AgentService {
 
     const record = await this.db.getTool(toolId);
 
-    if (!record) {
+    if (!record || (record.orgId != null && record.orgId !== orgId)) {
       throw new Error("Tool not found.");
     }
 
@@ -3928,7 +3931,9 @@ export class AgentService {
         options.sessionId
       );
       if (activeToolNames.length > 0) {
-        const allOrgTools = await this.db.listTools();
+        const allOrgTools = profile.orgId
+          ? await this.db.listToolsForOrg(profile.orgId)
+          : [];
         const activeStored = allOrgTools.filter((t) =>
           activeToolNames.includes(t.name)
         );
@@ -4198,7 +4203,9 @@ export class AgentService {
                     profile.isSuper &&
                     matched.some((skill) => skill.name === "create-profile")
                   ) {
-                    parts.push(await this.formatProfileAuthoringToolContext());
+                    parts.push(
+                      await this.formatProfileAuthoringToolContext(orgId)
+                    );
                   }
 
                   if (matched.some((skill) => skill.name === "coding-agent")) {
@@ -4251,8 +4258,10 @@ export class AgentService {
     });
   }
 
-  private async formatProfileAuthoringToolContext(): Promise<string> {
-    const { tools } = await this.profileService.listTools();
+  private async formatProfileAuthoringToolContext(
+    orgId: string
+  ): Promise<string> {
+    const { tools } = await this.profileService.listTools(orgId);
     const lines = tools
       .slice()
       .sort((left, right) => left.name.localeCompare(right.name))

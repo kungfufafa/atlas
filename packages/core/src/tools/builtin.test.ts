@@ -146,7 +146,7 @@ describe("file builtin tools", () => {
         content: "export async function run() { return null; }",
         path: targetPath,
       },
-      PROFILE_CONTEXT,
+      { orgId: "org_test", profileId: "super_agent" },
       { workspaceRoot: tempDir }
     );
 
@@ -154,6 +154,17 @@ describe("file builtin tools", () => {
     expect(await readFile(targetPath, "utf8")).toContain(
       "export async function run"
     );
+
+    await expect(
+      runWriteFile(
+        {
+          content: "export async function run() { return null; }",
+          path: path.join(toolsDir, "denied.js"),
+        },
+        PROFILE_CONTEXT,
+        { workspaceRoot: tempDir }
+      )
+    ).rejects.toThrow(PathGuardError);
   });
 
   test("delete_file removes a file", async () => {
@@ -651,9 +662,13 @@ describe("file builtin tools", () => {
     const targetPath = path.join(toolsDir, "echo.js");
     await writeFile(targetPath, "export async function run() {}", "utf8");
 
-    const result = await runReadFile({ path: targetPath }, PROFILE_CONTEXT, {
-      workspaceRoot: tempDir,
-    });
+    const result = await runReadFile(
+      { path: targetPath },
+      { orgId: "org_test", profileId: "super_agent" },
+      {
+        workspaceRoot: tempDir,
+      }
+    );
 
     expect(result.path).toBe(await realpath(targetPath));
     expect(result.content).toContain("export async function run");

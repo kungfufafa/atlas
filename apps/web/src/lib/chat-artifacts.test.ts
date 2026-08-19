@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import type { ChatListItem } from "@/lib/chat-history";
 import {
+  buildPublicArtifactShareDownloadUrl,
   extractArtifactPathsFromText,
   extractTurnArtifacts,
   inferArtifactMimeType,
+  resolvePublicArtifactShareView,
   toArtifactsRelativePath,
 } from "./chat-artifacts";
 
@@ -554,5 +556,36 @@ describe("inferArtifactMimeType", () => {
     expect(inferArtifactMimeType("slides.html")).toBe("text/html");
     expect(inferArtifactMimeType("notes.md")).toBe("text/markdown");
     expect(inferArtifactMimeType("data.json")).toBe("application/json");
+  });
+});
+
+describe("resolvePublicArtifactShareView", () => {
+  test("does not treat Word files as markdown previews", () => {
+    expect(
+      resolvePublicArtifactShareView({
+        content: null,
+        filename: "brief.docx",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        token: "tok",
+      })
+    ).toEqual({ kind: "download" });
+  });
+
+  test("falls back to download when text bytes cannot be decoded", () => {
+    expect(
+      resolvePublicArtifactShareView({
+        content: null,
+        filename: "notes.md",
+        mimeType: "text/markdown",
+        token: "tok",
+      })
+    ).toEqual({ kind: "download" });
+  });
+
+  test("builds a download URL that forces attachment", () => {
+    expect(buildPublicArtifactShareDownloadUrl("abc")).toBe(
+      "/v1/public/artifact-shares/abc?download=1"
+    );
   });
 });

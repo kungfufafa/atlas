@@ -26,9 +26,30 @@ describe("isPublicRouteRequest", () => {
     expect(isPublicRouteRequest("POST", "/v1/auth/invite")).toBe(false);
   });
 
-  test("allows only the tool catalog GET without auth", () => {
-    expect(isPublicRouteRequest("GET", "/v1/tools")).toBe(true);
+  test("requires auth for the tool catalog", () => {
+    expect(isPublicRouteRequest("GET", "/v1/tools")).toBe(false);
     expect(isPublicRouteRequest("POST", "/v1/tools")).toBe(false);
     expect(isPublicRouteRequest("DELETE", "/v1/tools")).toBe(false);
+  });
+
+  test("requires auth for profile avatars", () => {
+    expect(isPublicRouteRequest("GET", "/v1/profiles/profile_1/avatar")).toBe(
+      false
+    );
+    expect(isPublicRouteRequest("PUT", "/v1/profiles/profile_1/avatar")).toBe(
+      false
+    );
+  });
+
+  test("allows only GET on the task capability probe", () => {
+    expect(
+      isPublicRouteRequest("GET", "/v1/tasks/__capability_probe__/messages")
+    ).toBe(true);
+    expect(
+      isPublicRouteRequest("POST", "/v1/tasks/__capability_probe__/messages")
+    ).toBe(false);
+    expect(
+      isPublicRouteRequest("DELETE", "/v1/tasks/__capability_probe__/messages")
+    ).toBe(false);
   });
 });

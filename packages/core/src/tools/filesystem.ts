@@ -52,6 +52,19 @@ function requireProfileScope(context: ToolContext): {
   return { orgId, profileId };
 }
 
+const SUPER_AGENT_PROFILE_ID = "super_agent";
+
+export function fileToolAllowedDirs(
+  workspaceRoot: string,
+  profileId?: string
+): string[] {
+  if (profileId?.trim() === SUPER_AGENT_PROFILE_ID) {
+    return [workspaceRoot, getCustomToolsDir()];
+  }
+
+  return [workspaceRoot];
+}
+
 function buildFileGuardOptions(
   context: ToolContext,
   options: FileToolRunOptions = {}
@@ -62,7 +75,7 @@ function buildFileGuardOptions(
 
   return {
     ...defaultGuardOptions,
-    allowedDirs: [workspaceRoot, getCustomToolsDir()],
+    allowedDirs: fileToolAllowedDirs(workspaceRoot, profileId),
     cwd: workspaceRoot,
   };
 }

@@ -7,7 +7,7 @@ import {
 } from "@/hooks/use-resource-mutations";
 import {
   clearStoredArtifactShare,
-  readStoredArtifactShare,
+  readStoredArtifactShareIfActive,
   writeStoredArtifactShare,
 } from "@/lib/artifact-share-storage";
 import { formatError } from "@/lib/client";
@@ -41,6 +41,9 @@ export function useArtifactShareControls({
   const revokeMutation = useRevokeArtifactShareMutation();
 
   const shareUrl = storedUrl;
+  const serverActive = statusQuery.isSuccess
+    ? Boolean(statusQuery.data?.active)
+    : null;
   const isShared = Boolean(statusQuery.data?.active || storedUrl);
   const publishDialogSucceeded = publishedUrl !== null;
   const busy =
@@ -53,10 +56,15 @@ export function useArtifactShareControls({
       return;
     }
 
-    const stored = readStoredArtifactShare({ artifactPath, orgId, profileId });
+    const stored = readStoredArtifactShareIfActive({
+      artifactPath,
+      orgId,
+      profileId,
+      serverActive,
+    });
     setStoredUrl(stored?.shareUrl ?? null);
     storedShareIdRef.current = stored?.shareId ?? null;
-  }, [orgId, profileId, artifactPath, statusQuery.dataUpdatedAt]);
+  }, [orgId, profileId, artifactPath, statusQuery.dataUpdatedAt, serverActive]);
 
   useEffect(() => {
     if (!copied) {

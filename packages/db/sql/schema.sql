@@ -23,11 +23,14 @@ CREATE TABLE IF NOT EXISTS tools (
   description TEXT NOT NULL,
   handler_type TEXT NOT NULL,
   handler_config TEXT DEFAULT '{}' NOT NULL,
+  org_id TEXT,
   created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS tools_name_unique ON tools (name);
+CREATE UNIQUE INDEX IF NOT EXISTS tools_org_name_unique ON tools (org_id, name);
+CREATE UNIQUE INDEX IF NOT EXISTS tools_global_name_unique ON tools (name) WHERE org_id IS NULL;
 
 CREATE TABLE IF NOT EXISTS profile_tools (
   profile_id TEXT NOT NULL,

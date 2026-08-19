@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { orgIdFromSkillSourcePath } from "@atlas/core";
+import { isProtectedToolId } from "@atlas/core/tools/protected";
 export function migrateDatabase(db: Database): void {
   const schemaPath = resolveSchemaPath();
   const sql = readFileSync(schemaPath, "utf8");
@@ -25,6 +26,7 @@ export function migrateDatabase(db: Database): void {
   migrateTenantOrgScope(db);
   migrateSkillOrgIds(db);
   migrateMcpServerOrgIds(db);
+  migrateToolOrgIds(db);
   migrateProfileOrgColumns(db);
   migrateSessionOrgScope(db);
   migrateOrgAiConfigsTable(db);
@@ -714,10 +716,9 @@ function migrateTenantOrgScope(db: Database): void {
 }
 
 /**
- * Tools remain install-wide: the create route does not take an org and nothing
- * writes tools.org_id, so tools_org_name_unique compares NULL to NULL and never
- * fires. MCP servers are workspace-scoped; leftover NULL org_id rows still need
- * a name unique index until migrateMcpServerOrgIds assigns them.
+ * Built-in tools stay install-wide (`org_id` NULL) and need a name unique
+ * index. Custom JS tools are workspace-scoped after migrateToolOrgIds; leftover
+ * NULL MCP rows still need the same until migrateMcpServerOrgIds assigns them.
  */
 function restoreGlobalNameUniqueness(db: Database): void {
   for (const table of ["tools", "mcp_servers"] as const) {
@@ -769,6 +770,36 @@ function migrateSkillOrgIds(db: Database): void {
     `);
   } catch {
     // Same reasoning: legacy duplicates must not stop the server from booting.
+  }
+}
+
+function migrateToolOrgIds(db: Database): void {
+  const firstOrg = db
+    .prepare(
+      "SELECT id FROM organizations ORDER BY created_at ASC, id ASC LIMIT 1"
+    )
+    .get() as { id: string } | null;
+
+  if (!firstOrg) {
+    return;
+  }
+
+  const rows = db
+    .prepare("SELECT id FROM tools WHERE org_id IS NULL")
+    .all() as { id: string }[];
+  const update = db.prepare("UPDATE tools SET org_id = ? WHERE id = ?");
+
+  for (const row of rows) {
+    if (isProtectedToolId(row.id)) {
+      continue;
+    }
+
+    try {
+      update.run(firstOrg.id, row.id);
+    } catch {
+      // A pre-fix duplicate would now collide on (org_id, name). Leaving it
+      // NULL keeps today's boot path instead of failing the whole migrate.
+    }
   }
 }
 

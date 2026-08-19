@@ -96,6 +96,7 @@ interface ToolRow {
   handler_type: string;
   id: string;
   name: string;
+  org_id: string | null;
   updated_at: string;
 }
 
@@ -580,16 +581,30 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   const deleteProfileStmt = db.prepare("DELETE FROM profiles WHERE id = ?");
 
   const listToolsStmt = db.prepare("SELECT * FROM tools");
+  const listToolsForOrgStmt = db.prepare(`
+    SELECT * FROM tools
+    WHERE org_id IS NULL OR org_id = ?
+    ORDER BY name ASC
+  `);
   const getToolStmt = db.prepare("SELECT * FROM tools WHERE id = ?");
-  const getToolByNameStmt = db.prepare("SELECT * FROM tools WHERE name = ?");
+  const getToolByNameStmt = db.prepare(
+    "SELECT * FROM tools WHERE name = ? AND org_id IS NULL"
+  );
+  const getToolByOrgNameStmt = db.prepare(`
+    SELECT * FROM tools
+    WHERE name = ? AND (org_id IS NULL OR org_id = ?)
+    ORDER BY org_id IS NULL
+    LIMIT 1
+  `);
   const upsertToolStmt = db.prepare(`
-    INSERT INTO tools (id, name, description, handler_type, handler_config, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO tools (id, name, description, handler_type, handler_config, org_id, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       name = excluded.name,
       description = excluded.description,
       handler_type = excluded.handler_type,
       handler_config = excluded.handler_config,
+      org_id = excluded.org_id,
       updated_at = excluded.updated_at
   `);
   const deleteToolStmt = db.prepare("DELETE FROM tools WHERE id = ?");
@@ -2360,8 +2375,12 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       return row ? toToolRecord(row) : null;
     },
 
-    async getToolByName(name) {
-      const row = getToolByNameStmt.get(name) as ToolRow | null;
+    async getToolByName(name, orgId) {
+      const row = (
+        orgId
+          ? getToolByOrgNameStmt.get(name, orgId)
+          : getToolByNameStmt.get(name)
+      ) as ToolRow | null;
       return row ? toToolRecord(row) : null;
     },
     async getUserByEmail(email) {
@@ -2850,6 +2869,12 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
 
     async listTools() {
       return listToolsStmt.all().map((row) => toToolRecord(row as ToolRow));
+    },
+
+    async listToolsForOrg(orgId) {
+      return listToolsForOrgStmt
+        .all(orgId)
+        .map((row) => toToolRecord(row as ToolRow));
     },
 
     async listToolsForProfile(profileId) {
@@ -3385,6 +3410,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.description,
         record.handlerType,
         JSON.stringify(record.handlerConfig ?? {}),
+        record.orgId ?? null,
         record.createdAt,
         record.updatedAt
       );
@@ -3533,6 +3559,7 @@ function toToolRecord(row: ToolRow): StoredToolRecord {
     handlerType: row.handler_type,
     id: row.id,
     name: row.name,
+    orgId: row.org_id ?? null,
     updatedAt: row.updated_at,
   };
 }

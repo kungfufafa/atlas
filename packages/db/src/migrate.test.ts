@@ -720,6 +720,57 @@ describe("organization schema migration", () => {
     }
   });
 
+  test("assigns leftover custom tools to the earliest workspace and keeps builtins global", () => {
+    const db = new Database(":memory:");
+
+    try {
+      migrateDatabase(db);
+
+      db.exec(`
+        INSERT INTO organizations (
+          id, name, slug, created_at, updated_at
+        ) VALUES
+          ('org_later', 'Later', 'later', '2026-06-22T00:00:00.000Z', '2026-06-22T00:00:00.000Z'),
+          ('org_first', 'First', 'first', '2026-06-21T00:00:00.000Z', '2026-06-21T00:00:00.000Z');
+
+        INSERT INTO tools (
+          id, name, description, handler_type, handler_config, created_at, updated_at
+        ) VALUES
+          (
+            'tool_bash',
+            'bash',
+            'bash tool',
+            'bash',
+            '{}',
+            '2026-06-21T00:00:00.000Z',
+            '2026-06-21T00:00:00.000Z'
+          ),
+          (
+            'tool_legacy_custom',
+            'echo',
+            'custom echo',
+            'javascript',
+            '{"modulePath":"echo.js"}',
+            '2026-06-21T00:00:00.000Z',
+            '2026-06-21T00:00:00.000Z'
+          );
+      `);
+
+      migrateDatabase(db);
+
+      const builtin = db
+        .prepare("SELECT org_id FROM tools WHERE id = 'tool_bash'")
+        .get() as { org_id: string | null };
+      const custom = db
+        .prepare("SELECT org_id FROM tools WHERE id = 'tool_legacy_custom'")
+        .get() as { org_id: string | null };
+      expect(builtin.org_id).toBeNull();
+      expect(custom.org_id).toBe("org_first");
+    } finally {
+      db.close();
+    }
+  });
+
   test("assigns leftover MCP servers to the earliest workspace", () => {
     const db = new Database(":memory:");
 

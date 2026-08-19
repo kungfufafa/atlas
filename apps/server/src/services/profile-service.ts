@@ -73,6 +73,10 @@ const CLONED_SOUL_FILE_KEYS = ["instructions", "soul", "style"] as const;
 /** How many `-2`, `-3` suffixes to try before giving up on a generated id. */
 const CLONE_ID_ATTEMPTS = 50;
 
+function isToolVisibleToOrg(tool: StoredToolRecord, orgId: string): boolean {
+  return tool.orgId == null || tool.orgId === orgId;
+}
+
 function slugifyProfileName(name: string): string {
   return (
     name
@@ -283,19 +287,22 @@ export class ProfileService {
     });
   }
 
-  async listTools(): Promise<ListToolsResponse> {
+  async listTools(orgId: string): Promise<ListToolsResponse> {
     await ensureBuiltinToolDefinitions(this.db);
-    const tools = await this.db.listTools();
+    const tools = await this.db.listToolsForOrg(orgId);
     return { tools: tools.map(toToolDetail) };
   }
 
-  async getTool(toolId: string): Promise<ToolResponse> {
-    const tool = await this.requireTool(toolId);
+  async getTool(orgId: string, toolId: string): Promise<ToolResponse> {
+    const tool = await this.requireTool(orgId, toolId);
     return { tool: await enrichToolParameters(toToolDetail(tool)) };
   }
 
-  async getToolSource(toolId: string): Promise<ToolSourceResponse> {
-    const tool = await this.requireTool(toolId);
+  async getToolSource(
+    orgId: string,
+    toolId: string
+  ): Promise<ToolSourceResponse> {
+    const tool = await this.requireTool(orgId, toolId);
     return readToolSource(tool);
   }
 
@@ -304,18 +311,16 @@ export class ProfileService {
     profileId: string
   ): Promise<ListToolsResponse> {
     await this.requireProfile(orgId, profileId);
-    const tools = await this.db.listToolsForProfile(profileId);
+    const tools = (await this.db.listToolsForProfile(profileId)).filter(
+      (tool) => isToolVisibleToOrg(tool, orgId)
+    );
     return { tools: tools.map((tool) => toToolDetail(tool)) };
   }
 
-  async deleteTool(toolId: string): Promise<void> {
-    const tool = await this.db.getTool(toolId);
+  async deleteTool(orgId: string, toolId: string): Promise<void> {
+    const tool = await this.requireTool(orgId, toolId);
 
-    if (!tool) {
-      throw new Error("Tool not found.");
-    }
-
-    if (isProtectedToolId(tool.id)) {
+    if (isProtectedToolId(tool.id) || tool.orgId == null) {
       throw new Error(`Built-in tool "${tool.name}" cannot be deleted.`);
     }
 
@@ -326,7 +331,10 @@ export class ProfileService {
     }
   }
 
-  async createTool(request: CreateToolRequest): Promise<ToolDetail> {
+  async createTool(
+    orgId: string,
+    request: CreateToolRequest
+  ): Promise<ToolDetail> {
     const name = request.name.trim();
     const description = request.description.trim();
 
@@ -338,7 +346,7 @@ export class ProfileService {
       throw new Error("Tool description is required.");
     }
 
-    const existing = await this.db.getToolByName(name);
+    const existing = await this.db.getToolByName(name, orgId);
 
     if (existing) {
       throw new Error(`Tool already exists: ${name}`);
@@ -359,6 +367,7 @@ export class ProfileService {
       handlerType,
       id: createId("tool"),
       name,
+      orgId,
       updatedAt: now,
     };
 
@@ -374,13 +383,9 @@ export class ProfileService {
   ): Promise<ProfileResponse> {
     await this.requireProfile(orgId, profileId);
 
-    const tool = await this.db.getTool(request.toolId);
+    const tool = await this.requireTool(orgId, request.toolId);
 
-    if (!tool) {
-      throw new Error("Tool not found.");
-    }
-
-    await this.db.assignToolToProfile(profileId, request.toolId);
+    await this.db.assignToolToProfile(profileId, tool.id);
 
     return this.getProfile(orgId, profileId);
   }
@@ -668,6 +673,10 @@ export class ProfileService {
     profileId: string
   ): Promise<void> {
     for (const tool of await this.db.listToolsForProfile(sourceId)) {
+      if (!isToolVisibleToOrg(tool, orgId)) {
+        continue;
+      }
+
       await this.db.assignToolToProfile(profileId, tool.id);
     }
 
@@ -731,10 +740,13 @@ export class ProfileService {
     }
   }
 
-  private async requireTool(toolId: string): Promise<StoredToolRecord> {
+  private async requireTool(
+    orgId: string,
+    toolId: string
+  ): Promise<StoredToolRecord> {
     const tool = await this.db.getTool(toolId);
 
-    if (!tool) {
+    if (!(tool && isToolVisibleToOrg(tool, orgId))) {
       throw new AtlasApiError("Tool not found.", 404);
     }
 

@@ -103,7 +103,9 @@ export function registerArtifactShareRoutes(
       }
 
       const downloadName = metadata.filename.replace(/["\\]/g, "_");
-      const disposition = metadata.inlineAllowed ? "inline" : "attachment";
+      const forceDownload = c.req.query("download") === "1";
+      const disposition =
+        forceDownload || !metadata.inlineAllowed ? "attachment" : "inline";
       const contentType = metadata.inlineAllowed
         ? metadata.mimeType
         : metadata.mimeType.startsWith("text/")

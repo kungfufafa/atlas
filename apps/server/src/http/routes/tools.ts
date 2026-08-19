@@ -304,33 +304,41 @@ export function registerToolRoutes(app: HonoApp, options: ServerOptions): void {
     })
   );
 
-  app.get("/v1/tools", async () =>
-    json<ListToolsResponse>(await agent.listTools())
-  );
+  app.get("/v1/tools", async (c) => {
+    const orgId = requireActiveOrgIdFromContext(c);
+    return json<ListToolsResponse>(await agent.listTools(orgId));
+  });
 
   app.post("/v1/tools", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<CreateToolRequest>(c.req.raw);
-    return json(await agent.createTool(body), 201);
+    return json(await agent.createTool(orgId, body), 201);
   });
 
   app.get("/v1/tools/:toolId/source", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     return json<ToolSourceResponse>(
-      await agent.getToolSource(decodeURIComponent(c.req.param("toolId")))
+      await agent.getToolSource(
+        orgId,
+        decodeURIComponent(c.req.param("toolId"))
+      )
     );
   });
 
   app.get("/v1/tools/:toolId", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     return json<ToolResponse>(
-      await agent.getTool(decodeURIComponent(c.req.param("toolId")))
+      await agent.getTool(orgId, decodeURIComponent(c.req.param("toolId")))
     );
   });
 
   app.delete("/v1/tools/:toolId", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
-    await agent.deleteTool(decodeURIComponent(c.req.param("toolId")));
+    const orgId = requireActiveOrgIdFromContext(c);
+    await agent.deleteTool(orgId, decodeURIComponent(c.req.param("toolId")));
     return new Response(null, { status: 204 });
   });
 

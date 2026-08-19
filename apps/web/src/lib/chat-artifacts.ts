@@ -1,4 +1,21 @@
-import { inferArtifactMimeType } from "@atlas/core/artifact-mime";
+import {
+  artifactCodeLanguage,
+  inferArtifactMimeType,
+  isDocxFile,
+  isHtmlArtifactMimeType,
+  isImageArtifactMimeType,
+  isJsxArtifactFilename,
+  isLegacyDocFile,
+  isMarkdownArtifactMimeType,
+  isMermaidArtifactFilename,
+  isSvgArtifactMimeType,
+  isTextArtifactMimeType,
+  isUnknownArtifactMimeType,
+  isVideoArtifactMimeType,
+  LEGACY_DOC_UNSUPPORTED_MESSAGE,
+  looksLikeUtf8Text,
+  resolveArtifactMimeType,
+} from "@atlas/core/artifact-mime";
 import type { ChatListItem } from "@/lib/chat-history";
 
 export {
@@ -18,7 +35,7 @@ export {
   LEGACY_DOC_UNSUPPORTED_MESSAGE,
   looksLikeUtf8Text,
   resolveArtifactMimeType,
-} from "@atlas/core/artifact-mime";
+};
 
 const ARTIFACT_META_SUFFIX = ".atlas-meta.json";
 const ARTIFACTS_SEGMENT = "/artifacts/";
@@ -503,4 +520,92 @@ export function buildArtifactThumbnailUrl(
 ): string {
   const query = new URLSearchParams({ path: artifactPath });
   return `/v1/profiles/${encodeURIComponent(profileId)}/artifacts/thumbnail?${query.toString()}`;
+}
+
+export type PublicArtifactShareView =
+  | { kind: "image"; previewUrl: string }
+  | { kind: "video"; previewUrl: string }
+  | { kind: "html"; content: string }
+  | { kind: "svg"; content: string }
+  | {
+      format: "markdown" | "mermaid" | "plain";
+      kind: "text";
+      content: string;
+      language: string | null;
+    }
+  | { kind: "download" };
+
+export function buildPublicArtifactShareContentUrl(
+  token: string,
+  baseUrl = ""
+): string {
+  return `${baseUrl}/v1/public/artifact-shares/${encodeURIComponent(token)}`;
+}
+
+export function buildPublicArtifactShareDownloadUrl(
+  token: string,
+  baseUrl = ""
+): string {
+  return `${buildPublicArtifactShareContentUrl(token, baseUrl)}?download=1`;
+}
+
+export function resolvePublicArtifactShareView(input: {
+  token: string;
+  filename: string;
+  mimeType: string;
+  content: string | null;
+  baseUrl?: string;
+}): PublicArtifactShareView {
+  const mimeType = resolveArtifactMimeType(input.mimeType, input.filename);
+  const previewUrl = buildPublicArtifactShareContentUrl(
+    input.token,
+    input.baseUrl ?? ""
+  );
+
+  if (isImageArtifactMimeType(mimeType)) {
+    return { kind: "image", previewUrl };
+  }
+
+  if (isVideoArtifactMimeType(mimeType)) {
+    return { kind: "video", previewUrl };
+  }
+
+  if (
+    isDocxFile(input.filename, mimeType) ||
+    isLegacyDocFile(input.filename, mimeType)
+  ) {
+    return { kind: "download" };
+  }
+
+  if (!input.content) {
+    return { kind: "download" };
+  }
+
+  if (isHtmlArtifactMimeType(mimeType)) {
+    return { content: input.content, kind: "html" };
+  }
+
+  if (isSvgArtifactMimeType(mimeType)) {
+    return { content: input.content, kind: "svg" };
+  }
+
+  if (
+    isMermaidArtifactFilename(input.filename) ||
+    isMarkdownArtifactMimeType(mimeType) ||
+    isTextArtifactMimeType(mimeType) ||
+    isUnknownArtifactMimeType(mimeType)
+  ) {
+    return {
+      content: input.content,
+      format: isMermaidArtifactFilename(input.filename)
+        ? "mermaid"
+        : isMarkdownArtifactMimeType(mimeType)
+          ? "markdown"
+          : "plain",
+      kind: "text",
+      language: artifactCodeLanguage(input.filename),
+    };
+  }
+
+  return { kind: "download" };
 }

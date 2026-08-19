@@ -50,6 +50,10 @@ function mcpServerNameKey(
   return `${orgId ?? ""}\0${name}`;
 }
 
+function toolNameKey(orgId: string | null | undefined, name: string): string {
+  return `${orgId ?? ""}\0${name}`;
+}
+
 export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
   const automations = new Map<string, StoredAutomationRecord>();
   const automationRuns = new Map<string, StoredAutomationRunRecord[]>();
@@ -418,7 +422,7 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       }
 
       tools.delete(id);
-      toolsByName.delete(existing.name);
+      toolsByName.delete(toolNameKey(existing.orgId, existing.name));
 
       for (const assigned of profileTools.values()) {
         assigned.delete(id);
@@ -732,8 +736,16 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       return tools.get(id) ?? null;
     },
 
-    async getToolByName(name) {
-      return toolsByName.get(name) ?? null;
+    async getToolByName(name, orgId) {
+      if (orgId) {
+        return (
+          toolsByName.get(toolNameKey(orgId, name)) ??
+          toolsByName.get(toolNameKey(null, name)) ??
+          null
+        );
+      }
+
+      return toolsByName.get(toolNameKey(null, name)) ?? null;
     },
     async getUserByEmail(email) {
       return usersByEmail.get(email) ?? null;
@@ -1239,6 +1251,12 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       return Array.from(tools.values());
     },
 
+    async listToolsForOrg(orgId) {
+      return Array.from(tools.values()).filter(
+        (tool) => tool.orgId == null || tool.orgId === orgId
+      );
+    },
+
     async listToolsForProfile(profileId) {
       const assigned = profileTools.get(profileId);
 
@@ -1661,11 +1679,11 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       const existing = tools.get(record.id);
 
       if (existing) {
-        toolsByName.delete(existing.name);
+        toolsByName.delete(toolNameKey(existing.orgId, existing.name));
       }
 
       tools.set(record.id, record);
-      toolsByName.set(record.name, record);
+      toolsByName.set(toolNameKey(record.orgId, record.name), record);
     },
 
     async upsertWorkspaceSettings(record) {
