@@ -1,4 +1,10 @@
 import { describe, expect, test } from "bun:test";
+import {
+  mcpServersQueryOptions,
+  profilesQueryOptions,
+  toolsQueryOptions,
+} from "@/hooks/use-app-queries";
+import { systemStatusQueryOptions } from "@/hooks/use-system-status";
 import { resolveSystemTab, visibleSystemTabs } from "./system-page.shared";
 
 describe("SystemPage tab access", () => {
@@ -19,5 +25,26 @@ describe("SystemPage tab access", () => {
     expect(resolveSystemTab("data")).toBe("tools");
     expect(resolveSystemTab("unknown")).toBe("tools");
     expect(resolveSystemTab(null)).toBe("tools");
+  });
+
+  test("keys System queries by the active workspace", () => {
+    expect(systemStatusQueryOptions("org_a").queryKey).toEqual([
+      "systemStatus",
+      "org_a",
+    ]);
+    expect(profilesQueryOptions("org_a").queryKey).toEqual([
+      "profiles",
+      "org_a",
+    ]);
+    expect(toolsQueryOptions("org_a").queryKey).toEqual(["tools", "org_a"]);
+    expect(mcpServersQueryOptions("org_b").queryKey).toEqual([
+      "mcp",
+      "servers",
+      "org_b",
+    ]);
+    expect(systemStatusQueryOptions(null).queryKey).toEqual([
+      "systemStatus",
+      "none",
+    ]);
   });
 });

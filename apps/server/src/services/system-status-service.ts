@@ -1,6 +1,8 @@
 import type {
+  AutomationTrigger,
   DiscordWorkerStatus,
   HealthResponse,
+  LlmUsageModelStats,
   LlmUsageStatus,
   SystemStatusResponse,
   WhatsAppWorkerStatus,
@@ -13,8 +15,9 @@ import {
   getTelegramWorkerStatus,
   getWhatsAppWorkerStatus,
   isComposioConfiguredAsync,
+  isWorkerSchedulable,
 } from "@atlas/core";
-import type { DatabaseAdapter } from "@atlas/db";
+import type { DatabaseAdapter, StoredAutomationRecord } from "@atlas/db";
 import type { AgentService } from "./agent-service";
 import type { AutomationRunner } from "./automation-runner";
 import type { ComposioService } from "./composio-service";
@@ -50,6 +53,14 @@ export class SystemStatusService {
     const automationManagedOnline =
       automationProcess?.managed === true &&
       automationProcess.status === "online";
+    const automationCounts = orgId
+      ? await this.getWorkspaceAutomationCounts(orgId)
+      : {
+          activeRuns: this.automationRunner.getActiveRunCount(),
+          scheduledJobs: automationRunning
+            ? automationHeartbeat.scheduledJobs
+            : 0,
+        };
 
     const canReadWorkspaceProcesses =
       typeof this.workerManager.getWorkspaceWorkerStatus === "function";
@@ -77,30 +88,30 @@ export class SystemStatusService {
 
     return {
       automationWorker: {
-        activeRuns: this.automationRunner.getActiveRunCount(),
+        activeRuns: automationCounts.activeRuns,
         ok: automationManagedOnline && automationRunning,
         process: automationProcess ?? undefined,
         providerConfigured,
         running: automationRunning,
-        scheduledJobs: automationRunning
-          ? automationHeartbeat.scheduledJobs
-          : 0,
+        scheduledJobs: automationCounts.scheduledJobs,
       },
       checkedAt: new Date().toISOString(),
       discordWorker: discordStatus as DiscordWorkerStatus,
-      llmUsage: this.getLlmUsage(
+      llmUsage: await this.getLlmUsage(
+        orgId,
         models.provider,
         usageFields.currentModel,
         providerConfigured,
-        usageFields,
-        this.agent.getLlmUsageStatsByModel()
+        usageFields
       ),
       mcp: this.mcpService
         ? await this.mcpService.getStatusSummary(orgId)
         : { assignedProfileCount: 0, connectedCount: 0, serverCount: 0 },
       server: await this.getServerStatus(providerConfigured),
       taskWorker: {
-        activeRuns: this.taskRunner.getActiveRunCount(),
+        activeRuns: orgId
+          ? await this.countWorkspaceTaskRuns(orgId)
+          : this.taskRunner.getActiveRunCount(),
         ok: true,
         providerConfigured,
       },
@@ -142,22 +153,123 @@ export class SystemStatusService {
     };
   }
 
-  private getLlmUsage(
+  private async getLlmUsage(
+    orgId: string | undefined,
     provider: LlmUsageStatus["provider"],
     currentModel: string | null,
     providerConfigured: boolean,
-    usageFields: { displayName: string | null; costEstimated: boolean },
-    models: LlmUsageStatus["models"]
-  ): LlmUsageStatus {
+    usageFields: { displayName: string | null; costEstimated: boolean }
+  ): Promise<LlmUsageStatus> {
+    const usage = orgId
+      ? await this.getWorkspaceLlmUsage(orgId)
+      : {
+          ...this.agent.getLlmUsageStats(),
+          models: this.agent.getLlmUsageStatsByModel(),
+        };
+
     return {
-      ...this.agent.getLlmUsageStats(),
+      ...usage,
       costEstimated: usageFields.costEstimated,
       currentModel,
       displayName: usageFields.displayName,
-      models,
       provider,
       providerConfigured,
     };
+  }
+
+  private async getWorkspaceLlmUsage(orgId: string): Promise<{
+    estimatedCostUsd: number;
+    inputTokens: number;
+    models: LlmUsageModelStats[];
+    outputTokens: number;
+    requestCount: number;
+    totalTokens: number;
+    trackedSince: string;
+  }> {
+    const empty = {
+      estimatedCostUsd: 0,
+      inputTokens: 0,
+      models: [] as LlmUsageModelStats[],
+      outputTokens: 0,
+      requestCount: 0,
+      totalTokens: 0,
+      trackedSince: new Date().toISOString(),
+    };
+
+    if (!this.databaseAdapter) {
+      return empty;
+    }
+
+    const rows = await this.databaseAdapter.aggregateLlmUsage({
+      groupBy: "model",
+      orgId,
+    });
+    const trackedSince = empty.trackedSince;
+    const models: LlmUsageModelStats[] = rows.map((row) => ({
+      estimatedCostUsd: row.estimatedCostUsd,
+      inputTokens: row.inputTokens,
+      modelId: row.key,
+      outputTokens: row.outputTokens,
+      requestCount: row.requestCount,
+      totalTokens: row.totalTokens,
+      trackedSince,
+    }));
+    const totals = models.reduce(
+      (sum, model) => ({
+        estimatedCostUsd: sum.estimatedCostUsd + model.estimatedCostUsd,
+        inputTokens: sum.inputTokens + model.inputTokens,
+        outputTokens: sum.outputTokens + model.outputTokens,
+        requestCount: sum.requestCount + model.requestCount,
+        totalTokens: sum.totalTokens + model.totalTokens,
+      }),
+      {
+        estimatedCostUsd: 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        requestCount: 0,
+        totalTokens: 0,
+      }
+    );
+
+    return { ...totals, models, trackedSince };
+  }
+
+  private async getWorkspaceAutomationCounts(orgId: string): Promise<{
+    activeRuns: number;
+    scheduledJobs: number;
+  }> {
+    const automations =
+      (await this.databaseAdapter?.listAutomationsForOrg(orgId)) ?? [];
+    const scheduledJobs = automations.filter((record) =>
+      isWorkerSchedulable({
+        enabled: record.enabled,
+        trigger: automationTrigger(record),
+      })
+    ).length;
+    const runningIds =
+      typeof this.automationRunner.getActiveAutomationIds === "function"
+        ? this.automationRunner.getActiveAutomationIds()
+        : [];
+    const automationIds = new Set(automations.map((record) => record.id));
+    const activeRuns = runningIds.filter((id) => automationIds.has(id)).length;
+
+    return { activeRuns, scheduledJobs };
+  }
+
+  private async countWorkspaceTaskRuns(orgId: string): Promise<number> {
+    if (typeof this.taskRunner.getActiveTaskIds !== "function") {
+      return 0;
+    }
+
+    const runningIds = this.taskRunner.getActiveTaskIds();
+    if (!(this.databaseAdapter && runningIds.length > 0)) {
+      return 0;
+    }
+
+    const tasks = await Promise.all(
+      runningIds.map((id) => this.databaseAdapter?.getTask(id))
+    );
+    return tasks.filter((task) => task?.orgId === orgId).length;
   }
 
   private async getServerStatus(
@@ -178,4 +290,19 @@ export class SystemStatusService {
       userConfigured: humanUserCount > 0,
     };
   }
+}
+
+function automationTrigger(record: StoredAutomationRecord): AutomationTrigger {
+  if (typeof record.definition !== "object" || record.definition === null) {
+    return { type: "manual" };
+  }
+
+  const trigger = (record.definition as { trigger?: AutomationTrigger })
+    .trigger;
+
+  if (!trigger || typeof trigger !== "object" || !("type" in trigger)) {
+    return { type: "manual" };
+  }
+
+  return trigger;
 }

@@ -29,23 +29,29 @@ export const modelsQueryOptions = queryOptions({
   staleTime: defaultStaleTime,
 });
 
-export const profilesQueryOptions = queryOptions({
-  queryFn: async () => (await client.listProfiles()).profiles,
-  queryKey: queryKeys.profiles.all,
-  staleTime: defaultStaleTime,
-});
+export function profilesQueryOptions(orgId: string | null) {
+  return queryOptions({
+    queryFn: async () => (await client.listProfiles()).profiles,
+    queryKey: [...queryKeys.profiles.all, orgId ?? "none"] as const,
+    staleTime: defaultStaleTime,
+  });
+}
 
-export const toolsQueryOptions = queryOptions({
-  queryFn: async () => (await client.listTools()).tools,
-  queryKey: queryKeys.tools.all,
-  staleTime: defaultStaleTime,
-});
+export function toolsQueryOptions(orgId: string | null) {
+  return queryOptions({
+    queryFn: async () => (await client.listTools()).tools,
+    queryKey: [...queryKeys.tools.all, orgId ?? "none"] as const,
+    staleTime: defaultStaleTime,
+  });
+}
 
-export const mcpServersQueryOptions = queryOptions({
-  queryFn: async () => (await client.listMcpServers()).servers,
-  queryKey: queryKeys.mcp.all,
-  staleTime: defaultStaleTime,
-});
+export function mcpServersQueryOptions(orgId: string | null) {
+  return queryOptions({
+    queryFn: async () => (await client.listMcpServers()).servers,
+    queryKey: [...queryKeys.mcp.all, orgId ?? "none"] as const,
+    staleTime: defaultStaleTime,
+  });
+}
 
 export const skillsQueryOptions = queryOptions({
   queryFn: async () => (await client.listSkills()).skills,
@@ -71,7 +77,7 @@ export function profileQueryOptions(profileId: string) {
 
 export function prefetchAppData(
   queryClient: QueryClient,
-  options?: { canAccessSystem?: boolean }
+  options?: { canAccessSystem?: boolean; orgId?: string | null }
 ): void {
   prefetchTimezoneData(queryClient);
   void queryClient.prefetchQuery(thinkingSettingsQueryOptions);
@@ -79,12 +85,14 @@ export function prefetchAppData(
   void queryClient.prefetchQuery(whatsappSettingsQueryOptions);
   void queryClient.prefetchQuery(healthQueryOptions);
   void queryClient.prefetchQuery(modelsQueryOptions);
-  void queryClient.prefetchQuery(profilesQueryOptions);
+  void queryClient.prefetchQuery(profilesQueryOptions(options?.orgId ?? null));
   void queryClient.prefetchQuery(automationsQueryOptions);
   if (options?.canAccessSystem) {
-    void queryClient.prefetchQuery(toolsQueryOptions);
+    void queryClient.prefetchQuery(toolsQueryOptions(options.orgId ?? null));
     void queryClient.prefetchQuery(skillsQueryOptions);
-    void queryClient.prefetchQuery(mcpServersQueryOptions);
+    void queryClient.prefetchQuery(
+      mcpServersQueryOptions(options.orgId ?? null)
+    );
   }
 }
 
@@ -101,8 +109,11 @@ export function AppQueryPrefetch() {
       return;
     }
 
-    prefetchAppData(queryClient, { canAccessSystem });
-  }, [queryClient, isAuthenticated, isLoading, canAccessSystem]);
+    prefetchAppData(queryClient, {
+      canAccessSystem,
+      orgId: activeOrg?.id ?? null,
+    });
+  }, [queryClient, isAuthenticated, isLoading, canAccessSystem, activeOrg?.id]);
 
   return null;
 }
@@ -119,7 +130,8 @@ export function useModelsQuery(options?: { enabled?: boolean }) {
 }
 
 export function useProfilesQuery() {
-  return useQuery(profilesQueryOptions);
+  const { activeOrg } = useAuth();
+  return useQuery(profilesQueryOptions(activeOrg?.id ?? null));
 }
 
 export function useProfileQuery(profileId: string | null) {
@@ -130,11 +142,13 @@ export function useProfileQuery(profileId: string | null) {
 }
 
 export function useToolsQuery() {
-  return useQuery(toolsQueryOptions);
+  const { activeOrg } = useAuth();
+  return useQuery(toolsQueryOptions(activeOrg?.id ?? null));
 }
 
 export function useMcpServersQuery() {
-  return useQuery(mcpServersQueryOptions);
+  const { activeOrg } = useAuth();
+  return useQuery(mcpServersQueryOptions(activeOrg?.id ?? null));
 }
 
 export function useSkillsQuery() {
@@ -271,6 +285,9 @@ export function usePrefetchAppData() {
   );
 
   return useCallback(() => {
-    prefetchAppData(queryClient, { canAccessSystem });
-  }, [queryClient, canAccessSystem]);
+    prefetchAppData(queryClient, {
+      canAccessSystem,
+      orgId: activeOrg?.id ?? null,
+    });
+  }, [queryClient, canAccessSystem, activeOrg?.id]);
 }

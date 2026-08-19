@@ -68,6 +68,23 @@ Workspace Admins configure providers, profiles, Super Agent, files, tools, MCP,
 and skills only in their active workspace. Creating additional workspaces, data
 import/export, the public web URL, and host installation remain Superadmin-only.
 
+## System page
+
+**System** always reflects the **active workspace**, so switching workspaces
+replaces the numbers and lists instead of mixing teams together.
+
+| Tab | What you see |
+|---|---|
+| **Status** | LLM usage, scheduled automations, running jobs, and this workspace's Telegram / WhatsApp / Discord workers |
+| **Workspace** | Members, skill-approval settings, and workspace memory |
+| **Tools** | Builtin catalog plus assignment to profiles in this workspace |
+| **MCP** | Servers registered in this workspace, with keys that stay here |
+
+Superadmins see the same in-workspace Status page after switching. Usage
+breakdowns stay inside the selected workspace — they do not include other
+workspaces' tokens or spend. Channel bots and MCP servers on this page are the
+ones configured for this workspace only.
+
 ## Next steps
 
 - [Org memory](/org-memory) — shared facts for every profile in a workspace

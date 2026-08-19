@@ -1,4 +1,7 @@
-import type { SystemStatusResponse } from "@atlas/core/contract";
+import type {
+  LlmUsageReportGroupBy,
+  SystemStatusResponse,
+} from "@atlas/core/contract";
 import {
   Clock01Icon,
   HashtagIcon,
@@ -192,4 +195,12 @@ export function deriveSummary(status: SystemStatusResponse): {
     title: "All systems operational",
     tone: "ok",
   };
+}
+
+export function usageBreakdownGroups(
+  canManageBudget: boolean
+): LlmUsageReportGroupBy[] {
+  return canManageBudget
+    ? ["user", "provider", "model", "credential"]
+    : ["user", "provider", "model"];
 }

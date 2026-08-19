@@ -66,6 +66,15 @@ beforeEach(async () => {
 });
 
 describe("UsageReportService RBAC scoping", () => {
+  test("platform admin in a workspace only sees that workspace", async () => {
+    const report = await service.getReport(
+      { groupBy: "workspace" },
+      { isPlatformAdmin: true, orgId: "org_a" }
+    );
+    expect(report.scope).toBe("workspace");
+    expect(report.rows.map((row) => row.label)).toEqual(["Acme"]);
+  });
+
   test("platform admin sees every workspace with resolved names", async () => {
     const report = await service.getReport(
       { groupBy: "workspace" },
@@ -104,6 +113,16 @@ describe("UsageReportService RBAC scoping", () => {
       { orgRole: "admin" }
     );
     expect(report.rows).toEqual([]);
+  });
+
+  test("shared credential in one workspace does not include other workspaces", async () => {
+    const report = await service.getReport(
+      { groupBy: "credential" },
+      { isPlatformAdmin: true, orgId: "org_a" }
+    );
+    const shared = report.rows.find((row) => row.key === "cred_shared");
+    expect(shared?.requestCount).toBe(2);
+    expect(shared?.totalTokens).toBe(400);
   });
 
   test("shared credential aggregates across workspaces for platform admin", async () => {
