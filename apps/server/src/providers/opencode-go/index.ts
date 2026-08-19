@@ -5,19 +5,21 @@ import type {
   StreamChatHandlers,
 } from "@atlas/core";
 import { createAnthropicProvider } from "../anthropic";
+import { toOpenCodeGoApiModelId } from "../models";
 import { createOpenAIProvider } from "../openai";
 
 const OPENCODE_GO_CHAT_BASE_URL = "https://opencode.ai/zen/go/v1";
 const OPENCODE_GO_MESSAGES_BASE_URL = "https://opencode.ai/zen/go";
 
 const MESSAGES_MODELS = new Set([
-  "opencode-go/minimax-m3",
-  "opencode-go/minimax-m2.7",
-  "opencode-go/minimax-m2.5",
-  "opencode-go/qwen3.7-max",
-  "opencode-go/qwen3.7-plus",
-  "opencode-go/qwen3.6-plus",
-  "opencode-go/qwen3.5-plus",
+  "minimax-m3",
+  "minimax-m2.7",
+  "minimax-m2.5",
+  "qwen3.8-max",
+  "qwen3.7-max",
+  "qwen3.7-plus",
+  "qwen3.6-plus",
+  "qwen3.5-plus",
 ]);
 
 export interface OpenCodeGoProviderOptions {
@@ -28,7 +30,9 @@ export interface OpenCodeGoProviderOptions {
 export function createOpenCodeGoProvider(
   options: OpenCodeGoProviderOptions
 ): ProviderClient {
-  const model = options.model ?? "opencode-go/kimi-k2.7-code";
+  const model = toOpenCodeGoApiModelId(
+    options.model ?? "opencode-go/kimi-k2.7-code"
+  );
   const useMessages = MESSAGES_MODELS.has(model);
 
   if (useMessages) {

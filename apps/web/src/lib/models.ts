@@ -187,10 +187,6 @@ export function apiKeyPlaceholder(provider: SelectedProvider): string {
     return "Optional for local endpoints";
   }
 
-  if (provider === "opencode_go") {
-    return "oc-…";
-  }
-
   return "sk-…";
 }
 

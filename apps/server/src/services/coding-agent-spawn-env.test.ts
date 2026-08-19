@@ -6,8 +6,10 @@ import {
 import {
   buildClaudeCodeSpawnEnv,
   buildCodexSpawnEnv,
+  buildOpenCodeSpawnEnv,
   buildPiSpawnEnv,
   buildSpawnEnvForHarness,
+  formatModelForHarness,
   mergeCodingAgentSpawnEnv,
   normalizeCodingAgentModel,
   redactSpawnEnvForPrompt,
@@ -21,6 +23,19 @@ describe("coding-agent spawn env", () => {
     expect(normalizeCodingAgentModel("anthropic/claude-sonnet-4-6")).toBe(
       "claude-sonnet-4-6"
     );
+  });
+
+  test("strips the OpenCode Go catalog prefix for harness API model ids", () => {
+    expect(
+      formatModelForHarness(
+        "opencode",
+        "opencode_go",
+        "opencode-go/kimi-k2.7-code"
+      )
+    ).toBe("kimi-k2.7-code");
+    expect(
+      formatModelForHarness("codex", "opencode_go", "opencode-go/glm-5.1")
+    ).toBe("glm-5.1");
   });
 
   test("returns no env overrides when routing is inactive", () => {
@@ -213,5 +228,32 @@ describe("coding-agent spawn env", () => {
       ANTHROPIC_BASE_URL: "https://api.anthropic.com",
       OPENAI_MODEL: "gpt-4.1",
     });
+  });
+
+  test("writes OpenCode config without doubling the opencode-go prefix", async () => {
+    const spawn = await buildOpenCodeSpawnEnv(
+      activeAnthropicRouting({
+        apiKey: "sk-go-test",
+        baseUrl: "https://opencode.ai/zen/go/v1",
+        model: "opencode-go/kimi-k2.7-code",
+        providerLabel: "OpenCode Go",
+        providerType: "opencode_go",
+      }),
+      "opencode_go"
+    );
+
+    try {
+      const { readFile } = await import("node:fs/promises");
+      const config = JSON.parse(
+        await readFile(
+          `${spawn.env.XDG_CONFIG_HOME}/opencode/opencode.json`,
+          "utf-8"
+        )
+      ) as { model?: string };
+
+      expect(config.model).toBe("opencode-go/kimi-k2.7-code");
+    } finally {
+      await spawn.cleanup?.();
+    }
   });
 });
