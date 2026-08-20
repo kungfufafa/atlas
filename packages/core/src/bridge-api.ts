@@ -10,6 +10,7 @@ export const BRIDGE_CLIENT_METHODS = [
   "listUserOrgs",
   "listProfiles",
   "setOrgId",
+  "isolateOrgId",
   "createSession",
   "createChatSession",
 ] as const;

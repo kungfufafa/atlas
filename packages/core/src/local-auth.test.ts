@@ -25,6 +25,7 @@ describe("loadLocalAuthToken", () => {
     }
 
     delete process.env.ATLAS_CONFIG_DIR;
+    delete process.env.ATLAS_LOCAL_AUTH_TOKEN;
     delete process.env.atlas_LOCAL_AUTH_TOKEN;
   });
 
@@ -85,11 +86,25 @@ describe("loadLocalAuthToken", () => {
   });
 
   test("prefers env token for production-style setup", async () => {
-    process.env.atlas_LOCAL_AUTH_TOKEN = "tc_local_from_env";
+    process.env.ATLAS_LOCAL_AUTH_TOKEN = "tc_local_from_env";
     await expect(loadLocalAuthToken()).resolves.toBe("tc_local_from_env");
     await expect(verifyLocalAuthToken("tc_local_from_env")).resolves.toEqual({
       email: "local-client@atlas.internal",
     });
+  });
+
+  test("ATLAS_LOCAL_AUTH_TOKEN wins over the lowercase alias", async () => {
+    process.env.ATLAS_LOCAL_AUTH_TOKEN = "tc_local_uppercase_env";
+    process.env.atlas_LOCAL_AUTH_TOKEN = "tc_local_lowercase_env";
+    await expect(loadLocalAuthToken()).resolves.toBe("tc_local_uppercase_env");
+    await expect(rotateLocalAuthToken()).rejects.toBeInstanceOf(
+      LocalAuthTokenManagedExternallyError
+    );
+  });
+
+  test("still honors the lowercase atlas_LOCAL_AUTH_TOKEN alias", async () => {
+    process.env.atlas_LOCAL_AUTH_TOKEN = "tc_local_from_env";
+    await expect(loadLocalAuthToken()).resolves.toBe("tc_local_from_env");
   });
 
   test("rotateLocalAuthToken replaces the stored token and invalidates the old one", async () => {
@@ -109,7 +124,7 @@ describe("loadLocalAuthToken", () => {
   });
 
   test("rotateLocalAuthToken refuses when the token comes from env", async () => {
-    process.env.atlas_LOCAL_AUTH_TOKEN = "tc_local_from_env";
+    process.env.ATLAS_LOCAL_AUTH_TOKEN = "tc_local_from_env";
     await expect(rotateLocalAuthToken()).rejects.toBeInstanceOf(
       LocalAuthTokenManagedExternallyError
     );

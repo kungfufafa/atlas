@@ -1,5 +1,5 @@
 import { expect } from "bun:test";
-import type { OrgRole } from "@atlas/core";
+import { normalizeSetupEmail, type OrgRole } from "@atlas/core";
 import type { DatabaseAdapter } from "@atlas/db";
 import { AuthService } from "../services/auth-service";
 import {
@@ -160,7 +160,7 @@ export async function seedOrgAdmin(
   databaseAdapter: DatabaseAdapter,
   opts: SeedOrgAdminOptions = {}
 ) {
-  const email = opts.email ?? "admin@example.com";
+  const email = normalizeSetupEmail(opts.email ?? "admin@example.com");
   const password = opts.password ?? "password123";
   const orgId = opts.orgId ?? "org_test";
   const userId = opts.userId ?? "user_admin";

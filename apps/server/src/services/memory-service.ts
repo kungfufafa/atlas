@@ -164,6 +164,99 @@ export class MemoryService {
     );
   }
 
+  async listVisibleMemories(
+    orgId: string,
+    visibility: {
+      limit?: number;
+      profileId?: string | null;
+      userId?: string | null;
+    }
+  ): Promise<StoredMemoryRecord[]> {
+    const limit = visibility.limit ?? 10;
+    const buckets = await Promise.all([
+      this.listMemories(orgId, {
+        limit,
+        ownerId: orgId,
+        scope: "organization",
+      }),
+      visibility.profileId
+        ? this.listMemories(orgId, {
+            limit,
+            ownerId: visibility.profileId,
+            scope: "agent",
+          })
+        : Promise.resolve([]),
+      visibility.userId
+        ? this.listMemories(orgId, {
+            limit,
+            ownerId: visibility.userId,
+            scope: "user",
+          })
+        : Promise.resolve([]),
+    ]);
+    const seen = new Set<string>();
+    const merged: StoredMemoryRecord[] = [];
+    for (const record of buckets.flat()) {
+      if (seen.has(record.id)) {
+        continue;
+      }
+      seen.add(record.id);
+      merged.push(record);
+    }
+    merged.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+    return merged.slice(0, limit);
+  }
+
+  async searchVisibleMemories(
+    orgId: string,
+    query: string,
+    visibility: {
+      limit?: number;
+      profileId?: string | null;
+      userId?: string | null;
+    }
+  ): Promise<StoredMemoryRecord[]> {
+    const limit = visibility.limit ?? 10;
+    const buckets = await Promise.all([
+      this.searchMemories(orgId, query, {
+        limit,
+        ownerId: orgId,
+        scope: "organization",
+      }),
+      visibility.profileId
+        ? this.searchMemories(orgId, query, {
+            limit,
+            ownerId: visibility.profileId,
+            scope: "agent",
+          })
+        : Promise.resolve([]),
+      visibility.userId
+        ? this.searchMemories(orgId, query, {
+            limit,
+            ownerId: visibility.userId,
+            scope: "user",
+          })
+        : Promise.resolve([]),
+    ]);
+    const seen = new Set<string>();
+    const merged: StoredMemoryRecord[] = [];
+    for (const record of buckets.flat()) {
+      if (seen.has(record.id)) {
+        continue;
+      }
+      seen.add(record.id);
+      merged.push(record);
+    }
+    return merged.slice(0, limit);
+  }
+
+  async getMemory(
+    orgId: string,
+    id: string
+  ): Promise<StoredMemoryRecord | null> {
+    return this.db.getMemory(orgId, id);
+  }
+
   async updateMemory(
     orgId: string,
     id: string,

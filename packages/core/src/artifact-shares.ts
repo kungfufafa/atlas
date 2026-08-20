@@ -14,6 +14,10 @@ export function buildArtifactSharePath(token: string): string {
   return `/s/${token}`;
 }
 
+export function sanitizeArtifactShareFilename(filename: string): string {
+  return path.basename(filename).replace(/[^\w.\-()+ ]+/g, "_") || "artifact";
+}
+
 export async function writeArtifactShareSnapshot(input: {
   orgId: string;
   shareId: string;
@@ -24,8 +28,7 @@ export async function writeArtifactShareSnapshot(input: {
   const shareDir = path.join(sharesDir, input.shareId);
   await mkdir(shareDir, { recursive: true });
 
-  const safeName =
-    path.basename(input.filename).replace(/[^\w.\-()+ ]+/g, "_") || "artifact";
+  const safeName = sanitizeArtifactShareFilename(input.filename);
   const storagePath = path.join(shareDir, safeName);
   await writeFile(storagePath, input.bytes);
   return storagePath;
@@ -35,7 +38,7 @@ export async function readArtifactShareSnapshot(
   storagePath: string
 ): Promise<Buffer> {
   if (!(await pathExists(storagePath))) {
-    throw new Error(`Artifact share snapshot not found: ${storagePath}`);
+    throw new Error("Artifact share snapshot not found");
   }
 
   return readFile(storagePath);

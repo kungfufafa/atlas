@@ -446,6 +446,49 @@ describe("createHonoApp", () => {
     }
   });
 
+  test("requires X-Org-Id when the local token belongs to more than one org", async () => {
+    const configDir = await mkdtemp(
+      join(tmpdir(), "atlas-bearer-auth-multi-org-")
+    );
+    process.env.ATLAS_CONFIG_DIR = configDir;
+
+    try {
+      const options = createServerOptions();
+      const token = await loadLocalAuthToken();
+      await seedLocalClientUser(options.databaseAdapter);
+      await seedOrgForUser(options.databaseAdapter, LOCAL_CLIENT_EMAIL);
+      const now = new Date().toISOString();
+      await options.databaseAdapter.upsertOrganization({
+        createdAt: now,
+        id: "org_beta",
+        name: "Beta Org",
+        slug: "beta-org",
+        updatedAt: now,
+      });
+      await options.databaseAdapter.upsertOrgMember({
+        createdAt: now,
+        orgId: "org_beta",
+        role: "admin",
+        userId: "user_local_client",
+      });
+      const app = createHonoApp(options);
+
+      const profilesResponse = await app.fetch(
+        new Request("http://localhost:4310/v1/profiles", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      );
+
+      expect(profilesResponse.status).toBe(400);
+      await expect(profilesResponse.json()).resolves.toEqual({
+        error: "Organization context required",
+      });
+    } finally {
+      delete process.env.ATLAS_CONFIG_DIR;
+      await rm(configDir, { force: true, recursive: true });
+    }
+  });
+
   test("rejects invalid bearer auth with 401 instead of 500", async () => {
     const options = createServerOptions();
     const app = createHonoApp(options);
@@ -538,6 +581,65 @@ describe("createHonoApp", () => {
     }
   });
 
+  for (const role of ["admin", "member", "viewer"] as const) {
+    test(`rejects local auth token rotation from a workspace ${role} who is not Superadmin`, async () => {
+      const configDir = await mkdtemp(
+        join(tmpdir(), `atlas-rotate-auth-${role}-`)
+      );
+      process.env.ATLAS_CONFIG_DIR = configDir;
+
+      try {
+        const options = createServerOptions();
+        const app = createHonoApp(options);
+        const setup = await setupFreshInstallSession(
+          app,
+          options.databaseAdapter
+        );
+        const orgId = setup.orgId!;
+        const email = `${role}@example.com`;
+        const now = new Date().toISOString();
+        await options.databaseAdapter.createUser({
+          createdAt: now,
+          email,
+          id: `user_${role}`,
+          isPlatformAdmin: false,
+          passwordHash: await options.authService.hashPassword("password123"),
+          updatedAt: now,
+        });
+        await options.databaseAdapter.upsertOrgMember({
+          createdAt: now,
+          orgId,
+          role,
+          userId: `user_${role}`,
+        });
+        const session = await loginUserSession(
+          app,
+          email,
+          "password123",
+          orgId
+        );
+
+        const response = await app.fetch(
+          new Request("http://localhost:4310/v1/auth/local-token/rotate", {
+            headers: session.headers(
+              { "X-CSRF-Token": session.csrfToken },
+              orgId
+            ),
+            method: "POST",
+          })
+        );
+
+        expect(response.status).toBe(403);
+        await expect(response.json()).resolves.toEqual({
+          error: "Superadmin access required",
+        });
+      } finally {
+        delete process.env.ATLAS_CONFIG_DIR;
+        await rm(configDir, { force: true, recursive: true });
+      }
+    });
+  }
+
   test("serves health through the Hono fetch boundary", async () => {
     const options = createServerOptions();
     const app = createHonoApp(options);
@@ -585,6 +687,39 @@ describe("createHonoApp", () => {
     );
 
     expect(response.status).toBe(201);
+  });
+
+  test("serializes concurrent first-run setup so only one admin is created", async () => {
+    const options = createServerOptions();
+    const app = createHonoApp(options);
+
+    const [first, second] = await Promise.all([
+      app.fetch(
+        new Request("http://localhost:4310/v1/auth/setup", {
+          body: JSON.stringify(
+            buildSetupAuthBody("alpha@example.com", {
+              organization: { name: "Alpha", slug: "alpha" },
+            })
+          ),
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+        })
+      ),
+      app.fetch(
+        new Request("http://localhost:4310/v1/auth/setup", {
+          body: JSON.stringify(
+            buildSetupAuthBody("beta@example.com", {
+              organization: { name: "Beta", slug: "beta" },
+            })
+          ),
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+        })
+      ),
+    ]);
+
+    expect([first.status, second.status].sort()).toEqual([201, 409]);
+    expect(await options.databaseAdapter.countHumanUsers()).toBe(1);
   });
 
   const secureCookieCases = [
@@ -774,6 +909,72 @@ describe("createHonoApp", () => {
     expect(meBody.email).toBe("admin@example.com");
     expect(meBody.activeOrgId).toStartWith("org_");
     expect(meBody.isPlatformAdmin).toBe(true);
+  });
+
+  test("login matches email case-insensitively", async () => {
+    const options = createServerOptions();
+    const app = createHonoApp(options);
+    const setupResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/setup", {
+        body: JSON.stringify(buildSetupAuthBody("admin@example.com")),
+        method: "POST",
+      })
+    );
+    expect(setupResponse.status).toBe(201);
+
+    const loginResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/login", {
+        body: JSON.stringify({
+          email: "Admin@Example.com",
+          password: "password123",
+        }),
+        method: "POST",
+      })
+    );
+    expect(loginResponse.status).toBe(200);
+  });
+
+  test("change-password revokes other browser sessions", async () => {
+    const options = createServerOptions();
+    const app = createHonoApp(options);
+    const sessionA = await setupFreshInstallSession(
+      app,
+      options.databaseAdapter
+    );
+    const sessionB = await loginUserSession(
+      app,
+      "admin@example.com",
+      "password123",
+      sessionA.orgId
+    );
+
+    const changeResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/change-password", {
+        body: JSON.stringify({
+          currentPassword: "password123",
+          newPassword: "new-password-123",
+        }),
+        headers: sessionA.headers({
+          "X-CSRF-Token": sessionA.csrfToken,
+        }),
+        method: "POST",
+      })
+    );
+    expect(changeResponse.status).toBe(200);
+
+    const meA = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/me", {
+        headers: { Cookie: sessionA.cookieHeader },
+      })
+    );
+    expect(meA.status).toBe(200);
+
+    const meB = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/me", {
+        headers: { Cookie: sessionB.cookieHeader },
+      })
+    );
+    expect(meB.status).toBe(401);
   });
 
   test("preserves CSRF rejection through the Hono middleware", async () => {

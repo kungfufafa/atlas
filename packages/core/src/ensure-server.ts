@@ -1,10 +1,12 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ATLAS_API_VERSION } from "./contract";
+import { loadLocalAuthToken } from "./local-auth";
 import { resolveServerUrl } from "./runtime";
 
 const STARTUP_TIMEOUT_MS = 30_000;
 const POLL_INTERVAL_MS = 200;
+const HEALTH_CHECK_TIMEOUT_MS = 2000;
 
 export interface EnsureServerResult {
   serverUrl: string;
@@ -86,9 +88,12 @@ export async function serverHasTaskChat(
   }
 }
 
-async function isServerHealthy(serverUrl: string): Promise<boolean> {
+export async function isServerHealthy(serverUrl: string): Promise<boolean> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 800);
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    HEALTH_CHECK_TIMEOUT_MS
+  );
 
   try {
     const response = await fetch(`${serverUrl}/health`, {
@@ -112,9 +117,47 @@ async function isServerHealthy(serverUrl: string): Promise<boolean> {
       return false;
     }
 
-    const toolsResponse = await fetch(`${serverUrl}/v1/tools`, {
-      signal: controller.signal,
+    return await serverHasRequiredBuiltinTools(serverUrl, controller.signal);
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function serverHasRequiredBuiltinTools(
+  serverUrl: string,
+  signal?: AbortSignal
+): Promise<boolean> {
+  try {
+    const authHeaders = await localAuthHeaders();
+    if (!authHeaders) {
+      return false;
+    }
+
+    let toolsResponse = await fetch(`${serverUrl}/v1/tools`, {
+      headers: authHeaders,
+      signal,
     });
+
+    if (toolsResponse.status === 400) {
+      const orgId = await resolveLocalClientOrgId(
+        serverUrl,
+        authHeaders,
+        signal
+      );
+      if (!orgId) {
+        return false;
+      }
+
+      toolsResponse = await fetch(`${serverUrl}/v1/tools`, {
+        headers: {
+          ...authHeaders,
+          "X-Org-Id": orgId,
+        },
+        signal,
+      });
+    }
 
     if (!toolsResponse.ok) {
       return false;
@@ -132,9 +175,41 @@ async function isServerHealthy(serverUrl: string): Promise<boolean> {
     return REQUIRED_BUILTIN_TOOLS.every((name) => toolNames.has(name));
   } catch {
     return false;
-  } finally {
-    clearTimeout(timeoutId);
   }
+}
+
+async function localAuthHeaders(): Promise<Record<string, string> | null> {
+  const token = await loadLocalAuthToken();
+  if (!token) {
+    return null;
+  }
+
+  return { Authorization: `Bearer ${token}` };
+}
+
+async function resolveLocalClientOrgId(
+  serverUrl: string,
+  headers: Record<string, string>,
+  signal?: AbortSignal
+): Promise<string | null> {
+  const response = await fetch(`${serverUrl}/v1/auth/orgs`, {
+    headers,
+    signal,
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const payload = (await response.json()) as {
+    orgs?: Array<{ id?: string }>;
+  };
+
+  const orgId = payload.orgs?.find(
+    (org) => typeof org.id === "string" && org.id.trim().length > 0
+  )?.id;
+
+  return orgId?.trim() || null;
 }
 
 async function waitForServer(timeoutMs: number): Promise<string | null> {

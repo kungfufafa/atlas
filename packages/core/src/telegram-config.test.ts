@@ -10,7 +10,11 @@ import {
   saveTelegramConfig,
   verifyAndPairTelegramUser,
 } from "./telegram-config";
-import { describeSharedChannelConfigTests } from "./testing/channel-config-fixtures";
+import {
+  describeSharedChannelConfigTests,
+  withTempHomedir,
+  writeChannelIniConfig,
+} from "./testing/channel-config-fixtures";
 
 describe("parseAllowedUserIds", () => {
   test("parses comma-separated ids", () => {
@@ -83,4 +87,26 @@ describeSharedChannelConfigTests({
   sampleId: 9001,
   saveConfig: saveTelegramConfig,
   verifyAndPair: verifyAndPairTelegramUser,
+});
+
+describe("verifyAndPairTelegramUser concurrency", () => {
+  test("serializes concurrent pairing so only one user consumes the code", async () => {
+    await withTempHomedir("atlas-tg-pair-race-", async (homeDir) => {
+      await writeChannelIniConfig(homeDir, "telegram", {
+        botToken: "1234567890:TEST",
+        handshakeCode: "AABBCCDD",
+      });
+
+      const [first, second] = await Promise.all([
+        verifyAndPairTelegramUser("AABBCCDD", 111),
+        verifyAndPairTelegramUser("AABBCCDD", 222),
+      ]);
+
+      expect([first.ok, second.ok].sort()).toEqual([false, true]);
+      const saved = await loadTelegramConfigFile();
+      expect(saved?.handshakeCode).toBeNull();
+      expect(saved?.pairedUserIds).toHaveLength(1);
+      expect([111, 222]).toContain(saved?.pairedUserIds[0]);
+    });
+  });
 });

@@ -7,28 +7,40 @@ import {
   type WebPublicUrlSettingsResponse,
 } from "@atlas/core";
 
+function normalizePublicHttpOrigin(
+  value: string | null | undefined
+): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return;
+  }
+
+  const normalized = trimmed.replace(/\/$/, "");
+  return isValidBaseUrl(normalized) ? normalized : undefined;
+}
+
 export function resolveRequestClientOrigin(
   request?: Request,
   explicitOrigin?: string
 ): string | undefined {
-  const explicit = explicitOrigin?.trim();
+  const explicit = normalizePublicHttpOrigin(explicitOrigin);
   if (explicit) {
-    return explicit.replace(/\/$/, "");
+    return explicit;
   }
 
   if (!request) {
     return;
   }
 
-  const origin = request.headers.get("origin")?.trim();
+  const origin = normalizePublicHttpOrigin(request.headers.get("origin"));
   if (origin) {
-    return origin.replace(/\/$/, "");
+    return origin;
   }
 
   const referer = request.headers.get("referer")?.trim();
   if (referer) {
     try {
-      return new URL(referer).origin;
+      return normalizePublicHttpOrigin(new URL(referer).origin);
     } catch {
       // ignore invalid referer
     }
@@ -55,6 +67,41 @@ export async function getWebPublicUrlSettings(): Promise<WebPublicUrlSettingsRes
   };
 }
 
+/** OAuth redirect callback host: request origin or configured public URL only. */
+export function resolveComposioOAuthCallbackBaseUrl(options: {
+  clientOrigin?: string;
+  request: Request;
+}): string {
+  const requestOrigin = normalizePublicHttpOrigin(
+    new URL(options.request.url).origin
+  );
+  const configured = normalizePublicHttpOrigin(
+    resolveWebPublicUrl() ?? undefined
+  );
+  const allowed = new Set(
+    [requestOrigin, configured].filter((value): value is string =>
+      Boolean(value)
+    )
+  );
+  const explicit = normalizePublicHttpOrigin(options.clientOrigin);
+  if (explicit && allowed.has(explicit)) {
+    return explicit;
+  }
+
+  const headerOrigin = normalizePublicHttpOrigin(
+    options.request.headers.get("origin")
+  );
+  if (headerOrigin && allowed.has(headerOrigin)) {
+    return headerOrigin;
+  }
+
+  if (configured) {
+    return configured;
+  }
+
+  return requestOrigin ?? "http://127.0.0.1:3000";
+}
+
 /** OAuth callback base URL — prefers the browser origin from the active request. */
 export function resolveComposioCallbackBaseUrl(
   options: { clientOrigin?: string; request?: Request } = {}
@@ -72,7 +119,12 @@ export function resolveComposioCallbackBaseUrl(
     if (forwardedHost) {
       const forwardedProto =
         options.request.headers.get("x-forwarded-proto") ?? "http";
-      return `${forwardedProto}://${forwardedHost}`;
+      const forwardedOrigin = normalizePublicHttpOrigin(
+        `${forwardedProto}://${forwardedHost}`
+      );
+      if (forwardedOrigin) {
+        return forwardedOrigin;
+      }
     }
 
     const url = new URL(options.request.url);

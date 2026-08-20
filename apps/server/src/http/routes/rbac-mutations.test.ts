@@ -50,6 +50,7 @@ function createApp() {
         calls.push("agent.runTask");
         return { skipped: false };
       },
+      setComposioSettings: record("agent.setComposioSettings"),
       testProvider: record("agent.testProvider"),
       updateProvider: record("agent.updateProvider"),
     },
@@ -123,6 +124,7 @@ const MUTATING_ROUTES: Array<{ method: string; path: string; body?: unknown }> =
     { method: "DELETE", path: "/v1/automations/a1" },
     { method: "POST", path: "/v1/automations/a1/run" },
     { method: "DELETE", path: "/v1/automations/a1/runs/r1" },
+    { method: "POST", path: "/v1/automations/a1/runs/mark-read" },
     {
       body: { description: "x", title: "x" },
       method: "POST",
@@ -180,12 +182,14 @@ const PROVIDER_MANAGEMENT_ROUTES: Array<{
 const WORKSPACE_ADMIN_SETTINGS_ROUTES = [
   "/v1/settings/email",
   "/v1/settings/agent-browser",
-  "/v1/settings/composio",
   "/v1/skills",
   "/v1/mcp/servers",
 ] as const;
 
-const HOST_SETTINGS_ROUTES = ["/v1/system/web-public-url"] as const;
+const HOST_SETTINGS_ROUTES = [
+  "/v1/system/web-public-url",
+  "/v1/settings/composio",
+] as const;
 
 const WORKSPACE_CHANNEL_ROUTES = [
   "/v1/settings/telegram",
@@ -395,6 +399,39 @@ describe("RBAC: host settings remain Superadmin", () => {
       expect(calls).toEqual([]);
     });
   }
+
+  test("PUT /v1/settings/composio -> 403 for Workspace Admin", async () => {
+    const { app, databaseAdapter, authService, calls } = createApp();
+    await seedUser(
+      databaseAdapter,
+      authService,
+      "workspace-admin@example.com",
+      "admin"
+    );
+    const admin = await loginUserSession(
+      app,
+      "workspace-admin@example.com",
+      PASSWORD,
+      ORG_ID
+    );
+
+    const response = await app.fetch(
+      new Request("http://localhost:4310/v1/settings/composio", {
+        body: JSON.stringify({ apiKey: "ck_workspace_admin" }),
+        headers: admin.headers({
+          "Content-Type": "application/json",
+          "X-CSRF-Token": admin.csrfToken,
+        }),
+        method: "PUT",
+      })
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: "Superadmin access required",
+    });
+    expect(calls).toEqual([]);
+  });
 });
 
 describe("RBAC: channel settings belong to the workspace", () => {

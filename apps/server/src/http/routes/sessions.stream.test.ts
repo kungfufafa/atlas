@@ -98,6 +98,25 @@ describe("streamTurnSubscribe", () => {
 
     sessionTurnRegistry.endTurn(sessionId, { reply: "hello", type: "done" });
   });
+
+  test("returns 429 when the subscriber cap is reached", async () => {
+    const sessionId = `session_stream_cap_${Date.now()}`;
+    sessionTurnRegistry.beginTurn(sessionId);
+    const open: Response[] = [];
+    for (let index = 0; index < 3; index += 1) {
+      const response = streamTurnSubscribe(sessionId);
+      expect(response?.status).toBe(200);
+      open.push(response!);
+    }
+
+    const fourth = streamTurnSubscribe(sessionId);
+    expect(fourth?.status).toBe(429);
+
+    await Promise.all(open.map((response) => response.body?.cancel()));
+    const afterCancel = streamTurnSubscribe(sessionId);
+    expect(afterCancel?.status).toBe(200);
+    sessionTurnRegistry.endTurn(sessionId, { reply: "ok", type: "done" });
+  });
 });
 
 describe("streamMessage cancellation", () => {

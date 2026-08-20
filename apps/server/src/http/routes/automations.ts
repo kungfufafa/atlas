@@ -482,7 +482,7 @@ export function registerAutomationRoutes(
 
   app.post("/v1/automations/:automationId/runs/mark-read", async (c) => {
     const orgId = requireActiveOrgIdFromContext(c);
-    const auth = getRequestAuth(c);
+    const auth = requireNotViewerFromContext(c);
     const automationId = decodeURIComponent(c.req.param("automationId"));
 
     try {

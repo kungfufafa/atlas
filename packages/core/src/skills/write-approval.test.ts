@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { resolveSkillWriteApprovalRequired } from "./write-approval";
+import {
+  assignedSkillsForbidMarkdownWrites,
+  resolveSkillWriteApprovalRequired,
+} from "./write-approval";
 
 describe("resolveSkillWriteApprovalRequired", () => {
   test("defaults to false when org and profile unset", () => {
@@ -31,5 +34,15 @@ describe("resolveSkillWriteApprovalRequired", () => {
         profileSkillsWriteApproval: true,
       })
     ).toBe(true);
+  });
+});
+
+describe("assignedSkillsForbidMarkdownWrites", () => {
+  test("is true when manage-skills is assigned", () => {
+    expect(assignedSkillsForbidMarkdownWrites(["manage-skills"])).toBe(true);
+  });
+
+  test("is false when manage-skills is not assigned", () => {
+    expect(assignedSkillsForbidMarkdownWrites(["other-skill"])).toBe(false);
   });
 });

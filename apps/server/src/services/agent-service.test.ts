@@ -10,6 +10,7 @@ import {
   WORKSPACE_SETTINGS_ID,
 } from "@atlas/db";
 import { AgentService } from "./agent-service";
+import { sessionTurnRegistry } from "./session-turn-registry";
 import { SkillsService } from "./skills-service";
 
 const ORG_ID = "org_test";
@@ -201,6 +202,25 @@ describe("AgentService branching", () => {
       expect(session?.profileId).toBe("profile_custom");
     } finally {
       database.close();
+    }
+  });
+
+  test("refuses compact while a turn is in progress", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    await db.upsertProfile(createDefaultProfile());
+    const service = new AgentService(null, null, db);
+    const sessionId = await service.createSession(
+      ORG_ID,
+      "web",
+      "profile_default"
+    );
+    sessionTurnRegistry.beginTurn(sessionId);
+    try {
+      await expect(
+        service.compactSession(ORG_ID, sessionId, { force: true })
+      ).rejects.toMatchObject({ status: 409 });
+    } finally {
+      sessionTurnRegistry.endTurn(sessionId, { reply: "ok", type: "done" });
     }
   });
 });
@@ -595,6 +615,32 @@ describe("AgentService skill_manage injection", () => {
     expect(automationTools.some((tool) => tool.name === "skill_manage")).toBe(
       false
     );
+  });
+
+  test("forbids skill markdown writes when manage-skills is assigned even without skill_manage", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    await db.upsertProfile(createDefaultProfile());
+    const skills = new SkillsService(db);
+    await ensureBundledSkillFiles();
+    await skills.syncDiscoveredSkills();
+    const manage = (await skills.listSkills()).skills.find(
+      (skill) => skill.name === "manage-skills"
+    );
+    expect(manage).toBeDefined();
+    await db.assignSkillToProfile("profile_default", manage!.id);
+
+    const service = new AgentService(null, null, db);
+    service.setSkillsService(skills);
+
+    const forbid = await (
+      service as unknown as {
+        shouldForbidProfileSkillMarkdownWrites(
+          profileId: string
+        ): Promise<boolean>;
+      }
+    ).shouldForbidProfileSkillMarkdownWrites("profile_default");
+
+    expect(forbid).toBe(true);
   });
 });
 

@@ -71,7 +71,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     workspaceLocked: Boolean(fixedWorkspaceId),
   });
 
-  return async function handleMessage(data: {
+  async function handleMessage(data: {
     fromMe?: boolean;
     jid: string;
     text: string;
@@ -163,7 +163,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
       await handleChatMessage(jid, { message: trimmed });
     });
-  };
+  }
 
   async function handlePairing(jid: string, text: string): Promise<void> {
     const command = parseCommand(text);
@@ -489,6 +489,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       await socket.sendMessage(jid, { text: chunk });
     }
   }
+
+  return (data: { fromMe?: boolean; jid: string; text: string }) =>
+    client.isolateOrgId(() => handleMessage(data));
 }
 
 function parseCommand(text: string): string {

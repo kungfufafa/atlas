@@ -245,6 +245,12 @@ export function isBrowserExecutableArtifactMimeType(mimeType: string): boolean {
   return (
     normalized === "text/html" ||
     normalized === "application/xhtml+xml" ||
+    normalized === "application/javascript" ||
+    normalized === "text/javascript" ||
+    normalized === "application/x-javascript" ||
+    normalized === "text/css" ||
+    normalized === "application/xml" ||
+    normalized === "text/xml" ||
     normalized.startsWith("image/svg")
   );
 }

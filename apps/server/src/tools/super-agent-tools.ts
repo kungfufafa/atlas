@@ -7,6 +7,7 @@ import {
 import { validateJavascriptToolModule } from "../services/javascript-tool-loader";
 import type { ProfileService } from "../services/profile-service";
 import {
+  PROFILE_CREATE_CONFIRMATION_MESSAGE,
   type SuperAgentSessionState,
   TOOL_ASSIGNMENT_CONFIRMATION_MESSAGE,
 } from "../services/super-agent-session-state";
@@ -109,11 +110,24 @@ export function createSuperAgentTools(
           throw new Error("name is required.");
         }
 
+        const soulFiles = readSoulFiles(input);
+
+        if (
+          !sessionState.consumeProfileCreateConfirmation(
+            context.sessionId,
+            name
+          )
+        ) {
+          return {
+            message: PROFILE_CREATE_CONFIRMATION_MESSAGE,
+            outcome: "needs_confirmation",
+          };
+        }
+
         return profileService.createProfile(requireOrgId(context), {
-          isSuper: readBoolean(input, "isSuper") ?? false,
           model: readOptionalString(input, "model"),
           name,
-          soulFiles: readSoulFiles(input),
+          soulFiles,
           systemPrompt: readString(input, "systemPrompt") ?? undefined,
         });
       },
@@ -252,15 +266,6 @@ function readOptionalString(
   }
 
   return typeof value === "string" ? value : undefined;
-}
-
-function readBoolean(input: unknown, key: string): boolean | null {
-  if (typeof input !== "object" || input === null || !(key in input)) {
-    return null;
-  }
-
-  const value = (input as Record<string, unknown>)[key];
-  return typeof value === "boolean" ? value : null;
 }
 
 function readObject(input: unknown, key: string): unknown {

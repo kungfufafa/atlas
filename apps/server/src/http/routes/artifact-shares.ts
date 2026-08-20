@@ -1,4 +1,4 @@
-import { AtlasApiError } from "@atlas/core";
+import { AtlasApiError, sanitizeArtifactShareFilename } from "@atlas/core";
 import type {
   ArtifactShareStatusResponse,
   PublishArtifactShareRequest,
@@ -102,7 +102,7 @@ export function registerArtifactShareRoutes(
         return json(metadata);
       }
 
-      const downloadName = metadata.filename.replace(/["\\]/g, "_");
+      const downloadName = sanitizeArtifactShareFilename(metadata.filename);
       const forceDownload = c.req.query("download") === "1";
       const disposition =
         forceDownload || !metadata.inlineAllowed ? "attachment" : "inline";
@@ -117,7 +117,7 @@ export function registerArtifactShareRoutes(
           "Content-Disposition": `${disposition}; filename="${downloadName}"`,
           "Content-Type": contentType,
           "Referrer-Policy": "no-referrer",
-          "X-Artifact-Filename": metadata.filename,
+          "X-Artifact-Filename": downloadName,
           "X-Inline-Allowed": metadata.inlineAllowed ? "1" : "0",
         },
       });

@@ -6,6 +6,19 @@ describe("isPublicRouteRequest", () => {
     expect(isPublicRouteRequest("GET", "/v1/composio/oauth/callback")).toBe(
       true
     );
+    expect(isPublicRouteRequest("HEAD", "/v1/composio/oauth/callback")).toBe(
+      false
+    );
+    expect(isPublicRouteRequest("POST", "/v1/composio/oauth/callback")).toBe(
+      false
+    );
+  });
+
+  test("notification webhook is public only for POST", () => {
+    expect(isPublicRouteRequest("POST", "/v1/notify/dest_1")).toBe(true);
+    expect(isPublicRouteRequest("GET", "/v1/notify/dest_1")).toBe(false);
+    expect(isPublicRouteRequest("PUT", "/v1/notify/dest_1")).toBe(false);
+    expect(isPublicRouteRequest("DELETE", "/v1/notify/dest_1")).toBe(false);
   });
 
   test("still requires auth for other Composio routes", () => {
@@ -24,6 +37,16 @@ describe("isPublicRouteRequest", () => {
   test("allows GET /v1/auth/invite without auth but not other methods", () => {
     expect(isPublicRouteRequest("GET", "/v1/auth/invite")).toBe(true);
     expect(isPublicRouteRequest("POST", "/v1/auth/invite")).toBe(false);
+  });
+
+  test("auth setup and login are public only for POST", () => {
+    expect(isPublicRouteRequest("POST", "/v1/auth/setup")).toBe(true);
+    expect(isPublicRouteRequest("GET", "/v1/auth/setup")).toBe(false);
+    expect(isPublicRouteRequest("POST", "/v1/auth/login")).toBe(true);
+    expect(isPublicRouteRequest("GET", "/v1/auth/login")).toBe(false);
+    expect(isPublicRouteRequest("DELETE", "/v1/auth/accept-invite")).toBe(
+      false
+    );
   });
 
   test("requires auth for the tool catalog", () => {

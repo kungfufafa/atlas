@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { getProfileArtifactsDir } from "@atlas/core";
+import { getArtifactSharesDir, getProfileArtifactsDir } from "@atlas/core";
 import { createInMemoryDatabaseAdapter, type DatabaseAdapter } from "@atlas/db";
 import { setupTestConfigDir } from "../../test-config-dir";
 import { isPublicRouteRequest } from "../public-routes";
@@ -363,5 +363,205 @@ describe("artifact share routes", () => {
       "attachment"
     );
     expect(await downloadResponse.text()).toBe("# Shared report");
+  });
+
+  test("does not put a live share token on a loopback URL", async () => {
+    await withEnv(
+      { ATLAS_PUBLIC_URL: undefined, ATLAS_WEB_PUBLIC_URL: undefined },
+      async () => {
+        const { app, databaseAdapter } = createApp();
+        const session = await setupFreshInstallSession(app, databaseAdapter);
+        const orgId = session.orgId!;
+        const profileId = "profile_share_loopback";
+
+        await seedProfileArtifact({
+          content: "hello",
+          databaseAdapter,
+          filename: "note.md",
+          name: "Share Loopback",
+          orgId,
+          profileId,
+        });
+
+        const publishResponse = await app.fetch(
+          publishArtifactShareRequest({
+            body: { path: "note.md" },
+            host: "127.0.0.1",
+            orgId,
+            profileId,
+            session,
+          })
+        );
+
+        expect(publishResponse.status).toBe(201);
+        const published = (await publishResponse.json()) as {
+          shareUrl: string | null;
+          token: string;
+          webPublicUrlConfigured: boolean;
+        };
+        expect(published.token.length).toBeGreaterThan(20);
+        expect(published.shareUrl).toBeNull();
+        expect(published.webPublicUrlConfigured).toBe(false);
+      }
+    );
+  });
+
+  test("rejects non-http clientOrigin when building shareUrl", async () => {
+    const { app, databaseAdapter } = createApp();
+    const session = await setupFreshInstallSession(app, databaseAdapter);
+    const orgId = session.orgId!;
+    const profileId = "profile_share_js_origin";
+
+    await seedProfileArtifact({
+      content: "hello",
+      databaseAdapter,
+      filename: "note.md",
+      name: "Share JS Origin",
+      orgId,
+      profileId,
+    });
+
+    const publishResponse = await app.fetch(
+      publishArtifactShareRequest({
+        body: {
+          clientOrigin: "javascript:alert(1)",
+          path: "note.md",
+        },
+        host: "127.0.0.1",
+        orgId,
+        profileId,
+        session,
+      })
+    );
+
+    expect(publishResponse.status).toBe(201);
+    const published = (await publishResponse.json()) as {
+      shareUrl: string | null;
+    };
+    expect(published.shareUrl).toBeNull();
+  });
+
+  test("serves javascript shares as attachment, not inline", async () => {
+    const { app, databaseAdapter } = createApp();
+    const session = await setupFreshInstallSession(app, databaseAdapter);
+    const orgId = session.orgId!;
+    const profileId = "profile_share_js";
+
+    await seedProfileArtifact({
+      content: "alert(1)",
+      databaseAdapter,
+      filename: "payload.js",
+      name: "Share JS",
+      orgId,
+      profileId,
+    });
+
+    const publishResponse = await app.fetch(
+      publishArtifactShareRequest({
+        body: { path: "payload.js" },
+        orgId,
+        profileId,
+        session,
+      })
+    );
+    expect(publishResponse.status).toBe(201);
+    const published = (await publishResponse.json()) as { token: string };
+
+    const publicResponse = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/public/artifact-shares/${encodeURIComponent(published.token)}`
+      )
+    );
+    expect(publicResponse.status).toBe(200);
+    expect(publicResponse.headers.get("Content-Disposition")).toContain(
+      "attachment"
+    );
+    expect(publicResponse.headers.get("Content-Type")).not.toContain(
+      "javascript"
+    );
+  });
+
+  test("missing snapshot returns 404 without leaking storage paths", async () => {
+    const { app, databaseAdapter } = createApp();
+    const session = await setupFreshInstallSession(app, databaseAdapter);
+    const orgId = session.orgId!;
+    const profileId = "profile_share_missing";
+
+    await seedProfileArtifact({
+      content: "hello",
+      databaseAdapter,
+      filename: "note.md",
+      name: "Share Missing",
+      orgId,
+      profileId,
+    });
+
+    const publishResponse = await app.fetch(
+      publishArtifactShareRequest({
+        body: { path: "note.md" },
+        orgId,
+        profileId,
+        session,
+      })
+    );
+    expect(publishResponse.status).toBe(201);
+    const published = (await publishResponse.json()) as {
+      id: string;
+      token: string;
+    };
+
+    await rm(join(getArtifactSharesDir(orgId), published.id), {
+      force: true,
+      recursive: true,
+    });
+
+    const publicResponse = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/public/artifact-shares/${encodeURIComponent(published.token)}`
+      )
+    );
+    expect(publicResponse.status).toBe(404);
+    const body = await publicResponse.text();
+    expect(body).toContain("Not found");
+    expect(body).not.toContain("artifact-shares");
+    expect(body).not.toContain(orgId);
+  });
+
+  test("CR/LF in artifact filename does not break public Content-Disposition", async () => {
+    const { app, databaseAdapter } = createApp();
+    const session = await setupFreshInstallSession(app, databaseAdapter);
+    const orgId = session.orgId!;
+    const profileId = "profile_share_crlf";
+    const filename = "evil\r\nname.md";
+
+    await seedProfileArtifact({
+      content: "hello",
+      databaseAdapter,
+      filename,
+      name: "Share CRLF",
+      orgId,
+      profileId,
+    });
+
+    const publishResponse = await app.fetch(
+      publishArtifactShareRequest({
+        body: { path: filename },
+        orgId,
+        profileId,
+        session,
+      })
+    );
+    expect(publishResponse.status).toBe(201);
+    const published = (await publishResponse.json()) as { token: string };
+
+    const publicResponse = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/public/artifact-shares/${encodeURIComponent(published.token)}`
+      )
+    );
+    expect(publicResponse.status).toBe(200);
+    const disposition = publicResponse.headers.get("Content-Disposition") ?? "";
+    expect(disposition).not.toContain("\r");
+    expect(disposition).not.toContain("\n");
   });
 });

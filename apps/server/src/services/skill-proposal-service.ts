@@ -54,10 +54,25 @@ export interface StageSkillProposalResult {
 }
 
 export class SkillProposalService {
+  private readonly stageLocks = new Map<string, Promise<unknown>>();
+
   constructor(
     private readonly database: DatabaseAdapter | null = null,
     private readonly skillsService: SkillsService | null = null
   ) {}
+
+  private runSerializedStage<T>(key: string, fn: () => Promise<T>): Promise<T> {
+    const previous = this.stageLocks.get(key) ?? Promise.resolve();
+    const next = previous.then(fn, fn);
+    this.stageLocks.set(
+      key,
+      next.then(
+        () => undefined,
+        () => undefined
+      )
+    );
+    return next;
+  }
 
   async isWriteApprovalRequired(
     orgId: string,
@@ -291,36 +306,39 @@ export class SkillProposalService {
       );
     }
 
-    const pending = await db.getPendingSkillProposalForSkill(
-      input.orgId,
-      input.profileId,
-      name
-    );
-    if (pending) {
+    const lockKey = `${input.orgId}:${input.profileId}:${name}:create`;
+    return this.runSerializedStage(lockKey, async () => {
+      const pending = await db.getPendingSkillProposalForSkill(
+        input.orgId,
+        input.profileId,
+        name
+      );
+      if (pending) {
+        return {
+          message: `A pending proposal already exists for skill "${name}".`,
+          outcome: "already_pending",
+          proposalId: pending.id,
+          warnings: this.warningsForContent(content),
+        };
+      }
+
+      const proposal = await this.insertProposal({
+        ...input,
+        action: "create",
+        content,
+        patchNewString: null,
+        patchOldString: null,
+        relativePath: null,
+        skillName: name,
+      });
+
       return {
-        message: `A pending proposal already exists for skill "${name}".`,
-        outcome: "already_pending",
-        proposalId: pending.id,
+        message: `Staged create for skill "${name}" (proposal ${proposal.id}). A Workspace Admin must approve before it goes live.`,
+        outcome: "created",
+        proposalId: proposal.id,
         warnings: this.warningsForContent(content),
       };
-    }
-
-    const proposal = await this.insertProposal({
-      ...input,
-      action: "create",
-      content,
-      patchNewString: null,
-      patchOldString: null,
-      relativePath: null,
-      skillName: name,
     });
-
-    return {
-      message: `Staged create for skill "${name}" (proposal ${proposal.id}). A Workspace Admin must approve before it goes live.`,
-      outcome: "created",
-      proposalId: proposal.id,
-      warnings: this.warningsForContent(content),
-    };
   }
 
   private async stagePatch(

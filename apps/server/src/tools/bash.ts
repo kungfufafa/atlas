@@ -13,6 +13,7 @@ import {
   guardFilePath,
   type ToolContext,
   type ToolDefinition,
+  withProtectedProfileSkillTree,
 } from "@atlas/core";
 import { mergeCodingAgentSpawnEnv } from "../services/coding-agent-spawn-env";
 import {
@@ -128,11 +129,13 @@ export async function runBash(
     readOptionalBoolean(input, "codingAgent") === true ||
     commandLooksLikeCursorAgent(command);
 
-  return runShellCommand(command, cwd, timeoutMs, env, {
-    codingAgentMode,
-    signal: context.signal,
-    workspaceRoot,
-  });
+  return withProtectedProfileSkillTree(context, workspaceRoot, () =>
+    runShellCommand(command, cwd, timeoutMs, env, {
+      codingAgentMode,
+      signal: context.signal,
+      workspaceRoot,
+    })
+  );
 }
 
 function runShellCommand(

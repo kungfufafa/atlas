@@ -60,6 +60,10 @@ export function createOrgContextMiddleware(
       const memberships = await databaseAdapter.listUserOrganizations(
         auth.user.id
       );
+      if (memberships.length > 1) {
+        c.res = errorResponse("Organization context required", 400);
+        return;
+      }
       orgId = memberships[0]?.organization.id ?? null;
     }
     if (!orgId) {

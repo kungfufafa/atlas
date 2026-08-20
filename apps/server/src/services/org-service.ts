@@ -50,10 +50,28 @@ import {
 import type { AuthService } from "./auth-service";
 
 export class OrgService {
+  private readonly membershipLocks = new Map<string, Promise<unknown>>();
+
   constructor(
     private readonly databaseAdapter: DatabaseAdapter,
     private readonly authService: AuthService
   ) {}
+
+  private runSerializedMembershipChange<T>(
+    orgId: string,
+    fn: () => Promise<T>
+  ): Promise<T> {
+    const previous = this.membershipLocks.get(orgId) ?? Promise.resolve();
+    const next = previous.then(fn, fn);
+    this.membershipLocks.set(
+      orgId,
+      next.then(
+        () => undefined,
+        () => undefined
+      )
+    );
+    return next;
+  }
 
   async listOrganizations(): Promise<OrganizationSummary[]> {
     const organizations = await this.databaseAdapter.listOrganizations();
@@ -459,12 +477,14 @@ export class OrgService {
   }
 
   async removeMember(orgId: string, userId: string): Promise<void> {
-    await this.assertCanChangeAdminMembership(orgId, userId);
+    await this.runSerializedMembershipChange(orgId, async () => {
+      await this.assertCanChangeAdminMembership(orgId, userId);
 
-    const deleted = await this.databaseAdapter.deleteOrgMember(orgId, userId);
-    if (!deleted) {
-      throw new AtlasApiError("Not found", 404);
-    }
+      const deleted = await this.databaseAdapter.deleteOrgMember(orgId, userId);
+      if (!deleted) {
+        throw new AtlasApiError("Not found", 404);
+      }
+    });
   }
 
   async updateMember(
@@ -477,51 +497,53 @@ export class OrgService {
       throw new AtlasApiError("Invalid org role.", 400);
     }
 
-    const member = await this.assertCanChangeAdminMembership(
-      orgId,
-      userId,
-      nextRole
-    );
-    const user = await this.databaseAdapter.getUserById(userId);
-    if (!user) {
-      throw new AtlasApiError("Not found", 404);
-    }
-
-    const now = new Date().toISOString();
-    const name =
-      input.name === undefined
-        ? (user.name ?? null)
-        : normalizeOptionalName(input.name);
-    const phone =
-      input.phone === undefined
-        ? (user.phone ?? null)
-        : normalizeOptionalPhone(input.phone);
-    const role = nextRole ?? member.role;
-
-    if (user.name !== name || user.phone !== phone) {
-      await this.databaseAdapter.updateUserProfile(
-        userId,
-        { name, phone },
-        now
-      );
-    }
-
-    if (member.role !== role) {
-      await this.databaseAdapter.upsertOrgMember({
-        createdAt: member.createdAt,
+    return this.runSerializedMembershipChange(orgId, async () => {
+      const member = await this.assertCanChangeAdminMembership(
         orgId,
-        role,
         userId,
-      });
-    }
+        nextRole
+      );
+      const user = await this.databaseAdapter.getUserById(userId);
+      if (!user) {
+        throw new AtlasApiError("Not found", 404);
+      }
 
-    return {
-      member: toOrgMemberSummary(
-        { ...user, name, phone, updatedAt: now },
-        role,
-        member.createdAt
-      ),
-    };
+      const now = new Date().toISOString();
+      const name =
+        input.name === undefined
+          ? (user.name ?? null)
+          : normalizeOptionalName(input.name);
+      const phone =
+        input.phone === undefined
+          ? (user.phone ?? null)
+          : normalizeOptionalPhone(input.phone);
+      const role = nextRole ?? member.role;
+
+      if (user.name !== name || user.phone !== phone) {
+        await this.databaseAdapter.updateUserProfile(
+          userId,
+          { name, phone },
+          now
+        );
+      }
+
+      if (member.role !== role) {
+        await this.databaseAdapter.upsertOrgMember({
+          createdAt: member.createdAt,
+          orgId,
+          role,
+          userId,
+        });
+      }
+
+      return {
+        member: toOrgMemberSummary(
+          { ...user, name, phone, updatedAt: now },
+          role,
+          member.createdAt
+        ),
+      };
+    });
   }
 
   async createInvite(input: {
@@ -741,13 +763,15 @@ export class OrgService {
       throw new AtlasApiError("Not found", 404);
     }
 
-    if (member.role !== "admin") {
+    if (member.role !== "admin" || member.userId === LOCAL_CLIENT_USER_ID) {
       return member;
     }
 
     const members = await this.databaseAdapter.listOrgMembers(orgId);
-    const adminCount = members.filter((entry) => entry.role === "admin").length;
-    if (adminCount > 1) {
+    const humanAdminCount = members.filter(
+      (entry) => entry.role === "admin" && entry.userId !== LOCAL_CLIENT_USER_ID
+    ).length;
+    if (humanAdminCount > 1) {
       return member;
     }
 

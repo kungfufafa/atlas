@@ -130,6 +130,31 @@ describe("SkillProposalService", () => {
     expect(proposals).toHaveLength(1);
   });
 
+  test("concurrent create stages only one pending proposal", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const profile = await seedOrg(db);
+    const service = new SkillProposalService(db, new SkillsService(db));
+    const input = {
+      action: "create" as const,
+      content: sampleSkillMarkdown,
+      orgId: ORG_ID,
+      profileId: profile.id,
+    };
+
+    const [first, second] = await Promise.all([
+      service.stageProposal(input),
+      service.stageProposal(input),
+    ]);
+    const outcomes = [first.outcome, second.outcome].sort();
+    expect(outcomes).toEqual(["already_pending", "created"]);
+    expect(first.proposalId).toBe(second.proposalId);
+
+    const { proposals } = await service.listProposals(ORG_ID, {
+      profileId: profile.id,
+    });
+    expect(proposals).toHaveLength(1);
+  });
+
   test("approve create applies skill via SkillsService", async () => {
     const db = createInMemoryDatabaseAdapter();
     const profile = await seedOrg(db);

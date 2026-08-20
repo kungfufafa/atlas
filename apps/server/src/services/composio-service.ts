@@ -441,7 +441,7 @@ export class ComposioService {
     state: string,
     options: { connectedAccountId?: string | null } = {}
   ): Promise<{ orgId: string; toolkitSlug: string }> {
-    await this.requireAvailable();
+    const apiClient = await this.requireAvailable();
 
     let payload: ComposioOAuthStatePayload;
 
@@ -453,10 +453,24 @@ export class ComposioService {
       throw new AtlasApiError("Invalid OAuth state.", 400);
     }
 
-    const orgToolkit = await this.getOwnedToolkit(
-      payload.orgId,
-      payload.toolkitId
-    );
+    if (
+      !payload ||
+      typeof payload !== "object" ||
+      typeof payload.connectionId !== "string" ||
+      typeof payload.nonce !== "string" ||
+      typeof payload.orgId !== "string" ||
+      typeof payload.toolkitId !== "string" ||
+      typeof payload.userId !== "string"
+    ) {
+      throw new AtlasApiError("Invalid OAuth state.", 400);
+    }
+
+    let orgToolkit: StoredComposioToolkitRecord;
+    try {
+      orgToolkit = await this.getOwnedToolkit(payload.orgId, payload.toolkitId);
+    } catch {
+      throw new AtlasApiError("Invalid OAuth state.", 400);
+    }
     const connection = await this.databaseAdapter.getComposioUserConnectionById(
       payload.connectionId
     );
@@ -477,28 +491,45 @@ export class ComposioService {
       throw new AtlasApiError("Invalid OAuth state.", 400);
     }
 
-    const connectedAccountId =
-      options.connectedAccountId?.trim() ||
-      connection.connectedAccountId ||
-      null;
+    const connectedAccountId = await this.resolveVerifiedConnectedAccountId(
+      apiClient,
+      payload.userId,
+      connection.connectedAccountId,
+      options.connectedAccountId
+    );
 
-    const updatedConnection: StoredComposioUserConnectionRecord = {
+    await this.databaseAdapter.upsertComposioUserConnection({
       ...connection,
       connectedAccountId,
       lastError: null,
-      oauthStateHash: null,
       status: "connected",
       updatedAt: new Date().toISOString(),
-    };
+    });
 
-    await this.databaseAdapter.upsertComposioUserConnection(updatedConnection);
-    this.invalidateProfileSessionCachesForUser(payload.userId);
-    await this.syncUserToolkit(
-      payload.orgId,
-      payload.userId,
-      orgToolkit.toolkitSlug
+    try {
+      await this.syncUserToolkit(
+        payload.orgId,
+        payload.userId,
+        orgToolkit.toolkitSlug
+      );
+    } catch {
+      await this.databaseAdapter.upsertComposioUserConnection(connection);
+      throw new AtlasApiError("Could not complete Composio connection.", 400);
+    }
+
+    const synced = await this.databaseAdapter.getComposioUserConnectionById(
+      connection.id
     );
+    if (synced) {
+      await this.databaseAdapter.upsertComposioUserConnection({
+        ...synced,
+        oauthStateHash: null,
+        status: "connected",
+        updatedAt: new Date().toISOString(),
+      });
+    }
 
+    this.invalidateProfileSessionCachesForUser(payload.userId);
     return { orgId: payload.orgId, toolkitSlug: orgToolkit.toolkitSlug };
   }
 
@@ -902,6 +933,25 @@ export class ComposioService {
     }
 
     return encryptComposioSecret(sessionId, secret);
+  }
+
+  private async resolveVerifiedConnectedAccountId(
+    apiClient: ComposioApiClient,
+    atlasUserId: string,
+    storedId: string | null,
+    queryId?: string | null
+  ): Promise<string | null> {
+    const requestedId = queryId?.trim() || "";
+    if (!requestedId || requestedId === storedId) {
+      return storedId;
+    }
+
+    const owned = await apiClient.getConnectedAccount(requestedId);
+    if (!owned?.userId || owned.userId !== composioUserId(atlasUserId)) {
+      throw new AtlasApiError("Invalid OAuth state.", 400);
+    }
+
+    return requestedId;
   }
 
   private async requireAvailable(): Promise<ComposioApiClient> {

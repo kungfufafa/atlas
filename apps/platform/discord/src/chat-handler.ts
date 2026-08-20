@@ -135,8 +135,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   });
 
   return {
-    handleMessage,
-    handleSlashCommand,
+    handleMessage: (message: Message) =>
+      client.isolateOrgId(() => handleMessage(message)),
+    handleSlashCommand: (interaction: ChatInputCommandInteraction) =>
+      client.isolateOrgId(() => handleSlashCommand(interaction)),
   };
 
   async function handleMessage(message: Message): Promise<void> {
@@ -185,7 +187,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
-    if (isThread && groupDecision?.reason === "claim-thread") {
+    await authStore.reload();
+    const isAuthorized = authStore.isAuthorized(userId);
+
+    if (isAuthorized && isThread && groupDecision?.reason === "claim-thread") {
       await trackOwnedThread(channelId);
       console.log("[discord] claimed thread", channelId);
     }
@@ -217,9 +222,6 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     // Auth/org/thread-create run without the agent-stream lock so parallel parent mentions
     // can each open a thread. Agent work locks per conversation/thread key below.
-    await authStore.reload();
-    const isAuthorized = authStore.isAuthorized(userId);
-
     if (!isAuthorized) {
       console.log("[discord] unauthorized", userId);
       const fileConfig = authStore.getConfig();

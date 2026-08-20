@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { getUserConfigDir } from "@atlas/core";
+import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import {
   createAtlasDataExport,
   previewAtlasDataImport,
@@ -140,6 +141,57 @@ describe("setup import routes", () => {
     await expect(
       readFile(join(getUserConfigDir(), "config.ini"), "utf8")
     ).resolves.toBe("original");
+  });
+
+  test("setup restore re-checks empty install after decoding the archive", async () => {
+    const inner = createInMemoryDatabaseAdapter();
+    let countCalls = 0;
+    const databaseAdapter = new Proxy(inner, {
+      get(target, prop, receiver) {
+        if (prop === "countHumanUsers") {
+          return async () => {
+            countCalls += 1;
+            return countCalls >= 2 ? 1 : 0;
+          };
+        }
+
+        const value = Reflect.get(target, prop, receiver);
+        return typeof value === "function"
+          ? (value as (...args: unknown[]) => unknown).bind(target)
+          : value;
+      },
+    }) as typeof inner;
+
+    const { app } = createMinimalHonoApp({
+      agent: {
+        listProfiles: async () => ({ profiles: [{ id: "default" }] }),
+        providerConfigured: true,
+      },
+      databaseAdapter,
+    });
+
+    await writeFile(join(getUserConfigDir(), "config.ini"), "keep-me");
+    const archive = (
+      await createAtlasDataExport({ rootDir: getUserConfigDir() })
+    ).data;
+    await writeFile(join(getUserConfigDir(), "config.ini"), "changed");
+
+    const restoreResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/setup/import/restore", {
+        body: JSON.stringify({
+          confirm: true,
+          data: archive.toString("base64"),
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      })
+    );
+
+    expect(restoreResponse.status).toBe(409);
+    expect(countCalls).toBeGreaterThanOrEqual(2);
+    await expect(
+      readFile(join(getUserConfigDir(), "config.ini"), "utf8")
+    ).resolves.toBe("changed");
   });
 
   test("setup import is blocked after the first admin account exists", async () => {

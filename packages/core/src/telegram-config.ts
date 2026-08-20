@@ -335,60 +335,81 @@ export async function regenerateTelegramHandshake(
   return toTelegramSettingsPublic(next);
 }
 
+const telegramPairLocks = new Map<string, Promise<unknown>>();
+
+function runSerializedTelegramPair<T>(
+  orgId: string | null | undefined,
+  fn: () => Promise<T>
+): Promise<T> {
+  const key = orgId ?? "";
+  const previous = telegramPairLocks.get(key) ?? Promise.resolve();
+  const next = previous.then(fn, fn);
+  telegramPairLocks.set(
+    key,
+    next.then(
+      () => undefined,
+      () => undefined
+    )
+  );
+  return next;
+}
+
 export async function verifyAndPairTelegramUser(
   handshakeInput: string,
   userId: number,
   orgId?: string | null
 ): Promise<{ ok: true; message: string } | { ok: false; message: string }> {
-  const config = await loadTelegramConfigFile(orgId);
+  return runSerializedTelegramPair(orgId, async () => {
+    const config = await loadTelegramConfigFile(orgId);
 
-  if (!config) {
+    if (!config) {
+      return {
+        message: "Telegram is not configured on the server yet.",
+        ok: false,
+      };
+    }
+
+    if (isTelegramUserAuthorized(userId, config)) {
+      return { message: "This chat is already linked.", ok: true };
+    }
+
+    const expected = config.handshakeCode;
+
+    if (!expected) {
+      return {
+        message:
+          "No pairing code is active. Open Atlas Integrations → Telegram and generate a new code.",
+        ok: false,
+      };
+    }
+
+    if (
+      normalizeHandshakeInput(handshakeInput) !==
+      normalizeHandshakeInput(expected)
+    ) {
+      return {
+        message:
+          "Invalid pairing code. Copy it from Integrations → Telegram and try again.",
+        ok: false,
+      };
+    }
+
+    const pairedUserIds = [...new Set([...config.pairedUserIds, userId])];
+
+    await writeTelegramConfigFile(
+      {
+        ...config,
+        handshakeCode: null,
+        pairedUserIds,
+      },
+      orgId
+    );
+
     return {
-      message: "Telegram is not configured on the server yet.",
-      ok: false,
+      message: "Linked successfully. You can chat with Atlas now.",
+      ok: true,
     };
-  }
-
-  if (isTelegramUserAuthorized(userId, config)) {
-    return { message: "This chat is already linked.", ok: true };
-  }
-
-  const expected = config.handshakeCode;
-
-  if (!expected) {
-    return {
-      message:
-        "No pairing code is active. Open Atlas Integrations → Telegram and generate a new code.",
-      ok: false,
-    };
-  }
-
-  if (
-    normalizeHandshakeInput(handshakeInput) !==
-    normalizeHandshakeInput(expected)
-  ) {
-    return {
-      message:
-        "Invalid pairing code. Copy it from Integrations → Telegram and try again.",
-      ok: false,
-    };
-  }
-
-  const pairedUserIds = [...new Set([...config.pairedUserIds, userId])];
-
-  await writeTelegramConfigFile(
-    {
-      ...config,
-      handshakeCode: null,
-      pairedUserIds,
-    },
-    orgId
-  );
-
-  return {
-    message: "Linked successfully. You can chat with Atlas now.",
-    ok: true,
-  };
+  });
 }
 
 export function resolveTelegramConfigFromSources(options: {

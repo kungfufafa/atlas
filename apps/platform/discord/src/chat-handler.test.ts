@@ -860,6 +860,27 @@ describe("createChatHandler guild thread routing", () => {
     });
   });
 
+  test("email and username-prefix substrings do not start a guild thread", async () => {
+    await withTempHome(async (homeDir) => {
+      const { handleMessage, calls } = await createPairedHandler(homeDir);
+
+      const email = createGuildChatMessage({
+        content: "ping ops@atlasbot.com",
+      });
+      await handleMessage(email.message);
+
+      const prefix = createGuildChatMessage({
+        content: "@atlasbotify can you help",
+      });
+      await handleMessage(prefix.message);
+
+      expect(email.startThreadCalls).toBe(0);
+      expect(prefix.startThreadCalls).toBe(0);
+      expect(calls.sendStream).toBe(0);
+      expect(calls.createSession).toBe(0);
+    });
+  });
+
   test("role mention of a role the bot holds creates a thread", async () => {
     await withTempHome(async (homeDir) => {
       const streamedInputs: unknown[] = [];
@@ -1111,6 +1132,44 @@ describe("createChatHandler guild thread routing", () => {
       await handleMessage(followUp.message);
 
       expect(followUp.threadSentMessages.length).toBeGreaterThan(0);
+    });
+  });
+
+  test("unpaired mention does not claim a foreign thread for later paired follow-up", async () => {
+    await withTempHome(async (homeDir) => {
+      const streamCalls: string[] = [];
+      const { handleMessage, threadStore } = await createPairedHandler(
+        homeDir,
+        {
+          onSendStream: async () => {
+            streamCalls.push("invoked");
+            return "should not run after unpaired claim";
+          },
+        }
+      );
+
+      const stranger = createGuildChatMessage({
+        content: "<@bot_id> please join this thread",
+        inThread: true,
+        mentionsBot: true,
+        parentId: "guild_channel_1",
+        threadId: "user_thread_busy",
+        userId: "555555555555555555",
+      });
+      await handleMessage(stranger.message);
+
+      expect(threadStore.hasThreadId("user_thread_busy")).toBe(false);
+      expect(streamCalls).toEqual([]);
+
+      const followUp = createGuildChatMessage({
+        content: "just chatting in this human thread",
+        inThread: true,
+        parentId: "guild_channel_1",
+        threadId: "user_thread_busy",
+      });
+      await handleMessage(followUp.message);
+
+      expect(streamCalls).toEqual([]);
     });
   });
 

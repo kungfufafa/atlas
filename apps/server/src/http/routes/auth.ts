@@ -6,9 +6,9 @@ import {
   type CreateOrganizationResponse,
   type ListUserOrgsResponse,
   LocalAuthTokenManagedExternallyError,
+  normalizeSetupEmail,
   type PreviewOrgInviteResponse,
   type RotateLocalAuthTokenResponse,
-  rotateLocalAuthToken,
   type SetActiveOrgRequest,
   type SetupAuthRequest,
   type UpdateAuthProfileRequest,
@@ -19,7 +19,10 @@ import {
   resolveRequestClientOrigin,
 } from "../../services/composio-callback-url";
 import type { ServerOptions } from "../context";
-import { requirePlatformAdminFromContext } from "../org-guards";
+import {
+  requirePlatformAdmin,
+  requirePlatformAdminFromContext,
+} from "../org-guards";
 import {
   assertBrowserCsrf,
   authenticateRequest,
@@ -406,80 +409,95 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
     tags: ["Auth"],
   });
 
-  app.openAPIRegistry.registerPath(setupRoute);
-  app.post("/v1/auth/setup", async (c) => {
-    if (!(authService && databaseAdapter && orgService)) {
-      return errorResponse("Authentication not configured", 500);
-    }
-
-    const humanUserCount = await databaseAdapter.countHumanUsers();
-    if (humanUserCount > 0) {
-      return errorResponse("Admin user already exists", 409);
-    }
-
-    const body = await readJson<SetupAuthRequest>(c.req.raw);
-    const password = body.admin?.password?.trim() ?? "";
-    if (
-      !(
-        body.organization?.name?.trim() &&
-        body.organization?.slug?.trim() &&
-        body.admin?.name?.trim() &&
-        body.admin?.email?.trim() &&
-        password
-      )
-    ) {
-      return errorResponse("Organization and admin details are required.", 400);
-    }
-
-    if (password.length < 8) {
-      return errorResponse("Password must be at least 8 characters.", 400);
-    }
-
-    const webPublicUrl = resolveRequestClientOrigin(
-      c.req.raw,
-      body.webPublicUrl
+  let setupLock: Promise<unknown> = Promise.resolve();
+  const runSerializedSetup = <T>(fn: () => Promise<T>): Promise<T> => {
+    const next = setupLock.then(fn, fn);
+    setupLock = next.then(
+      () => undefined,
+      () => undefined
     );
-    if (webPublicUrl) {
-      try {
-        await persistWebPublicUrl(webPublicUrl);
-      } catch (error) {
+    return next;
+  };
+
+  app.openAPIRegistry.registerPath(setupRoute);
+  app.post("/v1/auth/setup", async (c) =>
+    runSerializedSetup(async () => {
+      if (!(authService && databaseAdapter && orgService)) {
+        return errorResponse("Authentication not configured", 500);
+      }
+
+      const humanUserCount = await databaseAdapter.countHumanUsers();
+      if (humanUserCount > 0) {
+        return errorResponse("Admin user already exists", 409);
+      }
+
+      const body = await readJson<SetupAuthRequest>(c.req.raw);
+      const password = body.admin?.password?.trim() ?? "";
+      if (
+        !(
+          body.organization?.name?.trim() &&
+          body.organization?.slug?.trim() &&
+          body.admin?.name?.trim() &&
+          body.admin?.email?.trim() &&
+          password
+        )
+      ) {
         return errorResponse(
-          error instanceof Error ? error.message : String(error),
+          "Organization and admin details are required.",
           400
         );
       }
-    }
 
-    const { user, organization } = await orgService.bootstrapInitialSetup({
-      admin: {
-        email: body.admin.email,
-        name: body.admin.name,
-        passwordHash: await authService.hashPassword(password),
-        phone: body.admin.phone ?? "",
-      },
-      organization: {
-        name: body.organization.name,
-        slug: body.organization.slug,
-      },
-    });
-
-    const response = await createBrowserSessionResponse(
-      authService,
-      databaseAdapter,
-      user,
-      {
-        activeOrgId: organization.id,
-        request: c.req.raw,
+      if (password.length < 8) {
+        return errorResponse("Password must be at least 8 characters.", 400);
       }
-    );
-    const authBody = await orgService.buildAuthUserResponse(
-      user,
-      response.session.id,
-      organization.id
-    );
 
-    return json<AuthUserResponse>(authBody, 201, response.headers);
-  });
+      const webPublicUrl = resolveRequestClientOrigin(
+        c.req.raw,
+        body.webPublicUrl
+      );
+      if (webPublicUrl) {
+        try {
+          await persistWebPublicUrl(webPublicUrl);
+        } catch (error) {
+          return errorResponse(
+            error instanceof Error ? error.message : String(error),
+            400
+          );
+        }
+      }
+
+      const { user, organization } = await orgService.bootstrapInitialSetup({
+        admin: {
+          email: body.admin.email,
+          name: body.admin.name,
+          passwordHash: await authService.hashPassword(password),
+          phone: body.admin.phone ?? "",
+        },
+        organization: {
+          name: body.organization.name,
+          slug: body.organization.slug,
+        },
+      });
+
+      const response = await createBrowserSessionResponse(
+        authService,
+        databaseAdapter,
+        user,
+        {
+          activeOrgId: organization.id,
+          request: c.req.raw,
+        }
+      );
+      const authBody = await orgService.buildAuthUserResponse(
+        user,
+        response.session.id,
+        organization.id
+      );
+
+      return json<AuthUserResponse>(authBody, 201, response.headers);
+    })
+  );
 
   app.openAPIRegistry.registerPath(loginRoute);
   app.post("/v1/auth/login", async (c) => {
@@ -488,7 +506,9 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
     }
 
     const body = await readJson<{ email: string; password: string }>(c.req.raw);
-    const user = await databaseAdapter.getUserByEmail(body.email);
+    const user = await databaseAdapter.getUserByEmail(
+      normalizeSetupEmail(body.email ?? "")
+    );
     if (!user) {
       return errorResponse("Invalid credentials", 401);
     }
@@ -589,7 +609,7 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
 
   app.openAPIRegistry.registerPath(changePasswordRoute);
   app.post("/v1/auth/change-password", async (c) => {
-    if (!(authService && orgService)) {
+    if (!(authService && databaseAdapter && orgService)) {
       return errorResponse("Authentication not configured", 500);
     }
 
@@ -602,6 +622,14 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
       newPassword: body.newPassword,
       userId: auth.user.id,
     });
+
+    if (auth.session) {
+      await databaseAdapter.revokeOtherBrowserSessionsForUser(
+        auth.user.id,
+        auth.session.sessionTokenHash,
+        new Date().toISOString()
+      );
+    }
 
     return json({ ok: true });
   });
@@ -667,9 +695,12 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
     }
 
     assertBrowserCsrf(c.req.raw, auth, authService);
+    requirePlatformAdmin(auth);
 
     try {
-      const token = await rotateLocalAuthToken();
+      const token = await authService.rotateHostLocalAuthToken(
+        auth.isPlatformAdmin
+      );
       return json<RotateLocalAuthTokenResponse>({ token }, 200);
     } catch (error) {
       if (error instanceof LocalAuthTokenManagedExternallyError) {

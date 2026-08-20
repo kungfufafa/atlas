@@ -35,7 +35,10 @@ import {
 } from "@atlas/db";
 import { createProviderForInstance } from "../providers/create";
 import { ProfileService } from "../services/profile-service";
-import { SuperAgentSessionState } from "../services/super-agent-session-state";
+import {
+  PROFILE_CREATE_CONFIRMATION_MESSAGE,
+  SuperAgentSessionState,
+} from "../services/super-agent-session-state";
 import {
   cassetteFilePath,
   loadCassette,
@@ -264,6 +267,12 @@ test(
         if ("MEMORY.md" in soul) {
           expect(String(soul["MEMORY.md"] ?? "").trim()).toBe("");
         }
+
+        const draft = await createProfileTool.run(args, toolContext);
+        expect(draft).toMatchObject({
+          message: PROFILE_CREATE_CONFIRMATION_MESSAGE,
+          outcome: "needs_confirmation",
+        });
 
         const created = (await createProfileTool.run(args, toolContext)) as {
           profile: {

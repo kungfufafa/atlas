@@ -136,4 +136,29 @@ describe("MemoryService", () => {
     });
     expect(projSearch.length).toBe(0);
   });
+
+  test("listVisibleMemories excludes another user's user-scope rows", async () => {
+    const orgId = "org-alpha";
+    await memoryService.writeMemory(orgId, {
+      content: "Alice peanut allergy",
+      ownerId: "user-alice",
+      scope: "user",
+    });
+    await memoryService.writeMemory(orgId, {
+      content: "Company holiday is Friday",
+      ownerId: orgId,
+      scope: "organization",
+    });
+
+    const bobVisible = await memoryService.listVisibleMemories(orgId, {
+      profileId: "profile-bob",
+      userId: "user-bob",
+    });
+    expect(bobVisible.map((row) => row.content)).toEqual([
+      "Company holiday is Friday",
+    ]);
+
+    const unscoped = await memoryService.listMemories(orgId, { limit: 10 });
+    expect(unscoped.some((row) => row.content.includes("peanut"))).toBe(true);
+  });
 });

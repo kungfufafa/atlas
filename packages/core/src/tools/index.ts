@@ -10,6 +10,7 @@ export * from "./filesystem";
 export * from "./knowledge-base-search";
 export * from "./paths";
 export * from "./permissions";
+export * from "./protect-profile-skill-tree";
 export * from "./protected";
 export * from "./ripgrep";
 export * from "./schema";

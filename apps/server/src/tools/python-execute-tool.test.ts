@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { ToolContext } from "@atlas/core";
@@ -130,6 +130,31 @@ with open('summary.txt', 'w') as f:
       } catch (err) {
         expect(String(err)).toContain("cancelled");
       }
+    });
+  });
+
+  test("refuses and reverts skills/*/SKILL.md writes when forbidProfileSkillMarkdownWrites is set", async () => {
+    await withTempWorkspace(async (workspaceRoot, context) => {
+      const skillDir = path.join(workspaceRoot, "skills", "deploy-notes");
+      await mkdir(skillDir, { recursive: true });
+      const skillPath = path.join(skillDir, "SKILL.md");
+      await writeFile(skillPath, "---\nname: deploy-notes\n---\noriginal\n");
+
+      const guarded: ToolContext = {
+        ...context,
+        forbidProfileSkillMarkdownWrites: true,
+      };
+
+      await expect(
+        runPythonExecute(
+          {
+            code: "from pathlib import Path\nPath('skills/deploy-notes/SKILL.md').write_text('hijacked')\n",
+          },
+          guarded
+        )
+      ).rejects.toThrow("Use skill_manage");
+
+      expect(await readFile(skillPath, "utf8")).toContain("original");
     });
   });
 

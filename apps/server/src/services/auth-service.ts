@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { AtlasApiError, rotateLocalAuthToken } from "@atlas/core";
 import bcrypt from "bcryptjs";
 
 const SALT_ROUNDS = 10;
@@ -29,6 +30,17 @@ export class AuthService {
 
   hashToken(token: string): string {
     return createHash("sha256").update(token).digest("base64url");
+  }
+
+  assertCanRotateHostLocalAuthToken(isPlatformAdmin: boolean): void {
+    if (!isPlatformAdmin) {
+      throw new AtlasApiError("Superadmin access required", 403);
+    }
+  }
+
+  async rotateHostLocalAuthToken(isPlatformAdmin: boolean): Promise<string> {
+    this.assertCanRotateHostLocalAuthToken(isPlatformAdmin);
+    return rotateLocalAuthToken();
   }
 }
 

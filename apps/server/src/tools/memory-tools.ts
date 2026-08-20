@@ -62,6 +62,10 @@ export const memoryListInputSchema = z.object({
   scope: memoryScopeSchema.optional(),
 });
 
+function canWriteOrganizationMemory(context: ToolContext): boolean {
+  return context.orgRole === "admin" || context.isPlatformAdmin === true;
+}
+
 function resolveOwnerId(
   scope: MemoryScope,
   context: ToolContext,
@@ -79,6 +83,32 @@ function resolveOwnerId(
   return context.orgId || "org_default";
 }
 
+async function assertCanMutateMemory(
+  memoryService: MemoryService,
+  orgId: string,
+  id: string,
+  context: ToolContext
+): Promise<void> {
+  const existing = await memoryService.getMemory(orgId, id);
+  if (!existing) {
+    throw new Error(`Memory with ID '${id}' not found.`);
+  }
+
+  if (existing.scope === "organization") {
+    if (!canWriteOrganizationMemory(context)) {
+      throw new Error(
+        "Workspace Admin access required to change organization memories."
+      );
+    }
+    return;
+  }
+
+  const ownerId = resolveOwnerId(existing.scope, context);
+  if (existing.ownerId !== ownerId) {
+    throw new Error(`Memory with ID '${id}' not found.`);
+  }
+}
+
 export function createMemoryTools(
   memoryService: MemoryService
 ): ToolDefinition[] {
@@ -91,15 +121,17 @@ export function createMemoryTools(
     async run(input, context) {
       const parsed = memorySearchInputSchema.parse(input);
       const orgId = context.orgId || "org_default";
-      const ownerId = parsed.scope
-        ? resolveOwnerId(parsed.scope, context)
-        : undefined;
-
-      const results = await memoryService.searchMemories(orgId, parsed.query, {
-        limit: parsed.limit,
-        ownerId,
-        scope: parsed.scope,
-      });
+      const results = parsed.scope
+        ? await memoryService.searchMemories(orgId, parsed.query, {
+            limit: parsed.limit,
+            ownerId: resolveOwnerId(parsed.scope, context),
+            scope: parsed.scope,
+          })
+        : await memoryService.searchVisibleMemories(orgId, parsed.query, {
+            limit: parsed.limit,
+            profileId: context.profileId,
+            userId: context.userId,
+          });
 
       return {
         count: results.length,
@@ -125,6 +157,14 @@ export function createMemoryTools(
     async run(input, context) {
       const parsed = memoryWriteInputSchema.parse(input);
       const orgId = context.orgId || "org_default";
+      if (
+        parsed.scope === "organization" &&
+        !canWriteOrganizationMemory(context)
+      ) {
+        throw new Error(
+          "Workspace Admin access required to write organization memories."
+        );
+      }
       const ownerId = resolveOwnerId(parsed.scope, context, parsed.projectId);
 
       const saved = await memoryService.writeMemory(orgId, {
@@ -153,6 +193,7 @@ export function createMemoryTools(
     async run(input, context) {
       const parsed = memoryUpdateInputSchema.parse(input);
       const orgId = context.orgId || "org_default";
+      await assertCanMutateMemory(memoryService, orgId, parsed.id, context);
 
       const updated = await memoryService.updateMemory(orgId, parsed.id, {
         confidence: parsed.confidence,
@@ -180,6 +221,7 @@ export function createMemoryTools(
     async run(input, context) {
       const parsed = memoryDeleteInputSchema.parse(input);
       const orgId = context.orgId || "org_default";
+      await assertCanMutateMemory(memoryService, orgId, parsed.id, context);
       const deleted = await memoryService.deleteMemory(orgId, parsed.id);
       return {
         deleted,
@@ -198,15 +240,17 @@ export function createMemoryTools(
     async run(input, context) {
       const parsed = memoryListInputSchema.parse(input);
       const orgId = context.orgId || "org_default";
-      const ownerId = parsed.scope
-        ? resolveOwnerId(parsed.scope, context)
-        : undefined;
-
-      const memories = await memoryService.listMemories(orgId, {
-        limit: parsed.limit,
-        ownerId,
-        scope: parsed.scope,
-      });
+      const memories = parsed.scope
+        ? await memoryService.listMemories(orgId, {
+            limit: parsed.limit,
+            ownerId: resolveOwnerId(parsed.scope, context),
+            scope: parsed.scope,
+          })
+        : await memoryService.listVisibleMemories(orgId, {
+            limit: parsed.limit,
+            profileId: context.profileId,
+            userId: context.userId,
+          });
 
       return {
         count: memories.length,

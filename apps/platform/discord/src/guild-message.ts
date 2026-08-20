@@ -238,8 +238,11 @@ function hasBotMention(message: Message, botInfo: DiscordBotInfo): boolean {
   }
 
   if (botInfo.username) {
-    const mention = `@${botInfo.username}`;
-    return message.content.toLowerCase().includes(mention.toLowerCase());
+    const escaped = botInfo.username.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    // Token match only — `ops@atlasbot.com` and `@atlasbotify` must not trigger.
+    return new RegExp(`(^|[^\\w.])@${escaped}(?![\\w.])`, "i").test(
+      message.content
+    );
   }
 
   return false;

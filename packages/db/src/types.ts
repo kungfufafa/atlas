@@ -981,6 +981,11 @@ export interface DatabaseAdapter {
     sessionTokenHash: string,
     revokedAt: string
   ): Promise<boolean>;
+  revokeOtherBrowserSessionsForUser(
+    userId: string,
+    keepSessionTokenHash: string,
+    revokedAt: string
+  ): Promise<number>;
 
   // Conversation Retrieval Methods
   searchConversationMessages(

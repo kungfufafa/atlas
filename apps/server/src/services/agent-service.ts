@@ -105,6 +105,7 @@ import {
   AtlasApiError,
   apiKeyEnvVarForProvider,
   appendOrgMemorySection,
+  assignedSkillsForbidMarkdownWrites,
   buildThinkingProviderOptions,
   buildToolExecutionContext,
   buildUserContextStatus,
@@ -1623,7 +1624,9 @@ export class AgentService {
       orgId,
       profileId,
       profile.systemPrompt,
-      "member"
+      "member",
+      undefined,
+      undefined
     );
     const resolvedSystemPrompt = appendRuntimeProfileRules(
       profile.isSuper,
@@ -1641,6 +1644,8 @@ export class AgentService {
       toolContext: buildToolExecutionContext({
         automationId,
         automationRunId,
+        forbidProfileSkillMarkdownWrites:
+          await this.shouldForbidProfileSkillMarkdownWrites(profile.id),
         orgId,
         orgRole: "member",
         profileId,
@@ -1689,7 +1694,9 @@ export class AgentService {
       input.orgId,
       input.profileId,
       profile.systemPrompt,
-      "member"
+      "member",
+      undefined,
+      input.userId
     );
     const resolvedSystemPrompt = appendRuntimeProfileRules(
       profile.isSuper,
@@ -1718,6 +1725,8 @@ export class AgentService {
       toolContext: buildToolExecutionContext({
         agentDepth: input.agentDepth,
         clientOrigin: input.clientOrigin,
+        forbidProfileSkillMarkdownWrites:
+          await this.shouldForbidProfileSkillMarkdownWrites(input.profileId),
         orgId: input.orgId,
         orgRole: "member",
         profileId: input.profileId,
@@ -2219,6 +2228,7 @@ export class AgentService {
       return false;
     }
 
+    sessionTurnRegistry.cancelTurn(sessionId);
     this.sessions.delete(sessionId);
     this.superAgentSessionState.clearSession(sessionId);
     this.agentTodoState.clearSession(sessionId);
@@ -2275,6 +2285,8 @@ export class AgentService {
       return false;
     }
 
+    sessionTurnRegistry.cancelTurn(sessionId);
+
     const stored = this.sessions.get(sessionId);
 
     if (stored) {
@@ -2295,6 +2307,13 @@ export class AgentService {
 
     if (!session) {
       return null;
+    }
+
+    if (sessionTurnRegistry.isActive(sessionId)) {
+      throw new AtlasApiError(
+        "A response is already in progress for this session.",
+        409
+      );
     }
 
     return session.compact(options);
@@ -4053,6 +4072,19 @@ export class AgentService {
     return resolved;
   }
 
+  private async shouldForbidProfileSkillMarkdownWrites(
+    profileId: string
+  ): Promise<boolean> {
+    if (!this.skillsService) {
+      return false;
+    }
+
+    const assigned = await this.skillsService.listSkillsForProfile(profileId);
+    return assignedSkillsForbidMarkdownWrites(
+      assigned.map((skill) => skill.name)
+    );
+  }
+
   private async buildChatSession(
     channel: AgentChannel,
     orgId: string,
@@ -4085,7 +4117,8 @@ export class AgentService {
       profileId,
       profile.systemPrompt,
       orgRole,
-      skillUsageContext
+      skillUsageContext,
+      userId
     );
     // Per-org override for the tool-output optimiser. Undefined leaves the
     // decision to the server's env var, so an operator who never opened the UI
@@ -4111,7 +4144,8 @@ export class AgentService {
       orgId,
       profileId,
     });
-    const hasSkillManage = tools.some((tool) => tool.name === "skill_manage");
+    const forbidProfileSkillMarkdownWrites =
+      await this.shouldForbidProfileSkillMarkdownWrites(profile.id);
 
     const session = harness.createChatSession({
       channel,
@@ -4231,7 +4265,7 @@ export class AgentService {
       systemPrompt: resolvedSystemPrompt,
       toolContext: buildToolExecutionContext({
         channel,
-        forbidProfileSkillMarkdownWrites: hasSkillManage,
+        forbidProfileSkillMarkdownWrites,
         loadAttachment,
         orgId,
         orgRole: orgRole ?? undefined,
@@ -4371,7 +4405,8 @@ export class AgentService {
     profileId: string,
     profilePrompt: string,
     orgRole?: OrgRole | null,
-    usageContext?: import("./skills-service").SkillUsageRecordingContext
+    usageContext?: import("./skills-service").SkillUsageRecordingContext,
+    userId?: string | null
   ): Promise<{ systemPrompt: string; soulActive: boolean }> {
     const stack = await resolveSoulStackForProfile(orgId, profileId);
     let systemPrompt = stack
@@ -4417,9 +4452,14 @@ export class AgentService {
     }
 
     try {
-      const activeMemories = await this.memoryService.listMemories(orgId, {
-        limit: 10,
-      });
+      const activeMemories = await this.memoryService.listVisibleMemories(
+        orgId,
+        {
+          limit: 10,
+          profileId,
+          userId,
+        }
+      );
       if (activeMemories.length > 0) {
         const memLines = activeMemories.map(
           (m) =>

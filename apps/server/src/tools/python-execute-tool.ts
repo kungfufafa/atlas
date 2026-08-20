@@ -11,6 +11,7 @@ import {
   type ToolArtifact,
   type ToolContext,
   type ToolDefinition,
+  withProtectedProfileSkillTree,
 } from "@atlas/core";
 import { z } from "zod";
 
@@ -183,134 +184,141 @@ export async function runPythonExecute(
 
   const beforeScan = await scanWorkspaceArtifacts(workspaceRoot, workspaceRoot);
 
-  return new Promise<PythonExecuteOutput>((resolve, reject) => {
-    if (context.signal?.aborted) {
-      return reject(
-        new Error("Execution cancelled before starting Python process.")
-      );
-    }
-
-    const child = spawn("python3", ["-c", parsed.code], {
-      cwd: workspaceRoot,
-      env: buildSanitizedEnv(),
-      stdio: ["pipe", "pipe", "pipe"],
-    });
-
-    let stdoutData = "";
-    let stderrData = "";
-    let truncated = false;
-    const MAX_OUTPUT_BYTES = 64 * 1024; // 64KB
-
-    child.stdout.on("data", (chunk: Buffer) => {
-      if (stdoutData.length < MAX_OUTPUT_BYTES) {
-        stdoutData += chunk.toString("utf8");
-      } else {
-        truncated = true;
-      }
-    });
-
-    child.stderr.on("data", (chunk: Buffer) => {
-      if (stderrData.length < MAX_OUTPUT_BYTES) {
-        stderrData += chunk.toString("utf8");
-      } else {
-        truncated = true;
-      }
-    });
-
-    let timedOut = false;
-    let cancelled = false;
-
-    const timer = setTimeout(() => {
-      timedOut = true;
-      child.kill("SIGKILL");
-    }, parsed.timeout);
-
-    const onAbort = () => {
-      cancelled = true;
-      clearTimeout(timer);
-      child.kill("SIGTERM");
-      setTimeout(() => {
-        child.kill("SIGKILL");
-      }, 500);
-    };
-
-    context.signal?.addEventListener("abort", onAbort, { once: true });
-
-    child.on("error", (err: Error) => {
-      clearTimeout(timer);
-      if (context.signal?.removeEventListener) {
-        context.signal.removeEventListener("abort", onAbort);
-      }
-      reject(new Error(`Failed to spawn Python process: ${err.message}`));
-    });
-
-    child.on("close", async (code) => {
-      clearTimeout(timer);
-      if (context.signal?.removeEventListener) {
-        context.signal.removeEventListener("abort", onAbort);
-      }
-
-      if (cancelled) {
-        return reject(new Error("Python execution was cancelled by the user."));
-      }
-
-      const exitCode = timedOut ? -1 : (code ?? 0);
-      const success = !timedOut && exitCode === 0;
-
-      let finalStderr = stderrData;
-      if (timedOut) {
-        finalStderr += `\nExecution timed out after ${parsed.timeout}ms.`;
-      }
-
-      const afterScan = await scanWorkspaceArtifacts(
-        workspaceRoot,
-        workspaceRoot
-      );
-      const generated: GeneratedArtifact[] = [];
-      const standardArtifacts: ToolArtifact[] = [];
-
-      for (const [relPath, mtime] of afterScan) {
-        const prevMtime = beforeScan.get(relPath);
-        if (prevMtime === undefined || mtime > prevMtime) {
-          try {
-            const fileStat = await stat(path.join(workspaceRoot, relPath));
-            const mime = detectArtifactMimeType(relPath);
-            const name = path.basename(relPath);
-            generated.push({
-              mimeType: mime,
-              name,
-              path: relPath,
-              size: fileStat.size,
-            });
-            standardArtifacts.push({
-              createdAt: new Date().toISOString(),
-              filename: name,
-              id: nanoid(12),
-              mimeType: mime,
-              path: relPath,
-              sessionId: context.sessionId,
-              sizeBytes: fileStat.size,
-            });
-          } catch {
-            // file might have been transient
-          }
+  return withProtectedProfileSkillTree(
+    context,
+    workspaceRoot,
+    () =>
+      new Promise<PythonExecuteOutput>((resolve, reject) => {
+        if (context.signal?.aborted) {
+          return reject(
+            new Error("Execution cancelled before starting Python process.")
+          );
         }
-      }
 
-      resolve({
-        artifacts: standardArtifacts,
-        artifactsGenerated: generated,
-        exitCode,
-        metadata: {
-          durationMs: Date.now() - startTime,
-          truncated,
-        },
-        stderr: finalStderr.trim(),
-        stdout: stdoutData.trim(),
-        success,
-      });
-    });
-  });
+        const child = spawn("python3", ["-c", parsed.code], {
+          cwd: workspaceRoot,
+          env: buildSanitizedEnv(),
+          stdio: ["pipe", "pipe", "pipe"],
+        });
+
+        let stdoutData = "";
+        let stderrData = "";
+        let truncated = false;
+        const MAX_OUTPUT_BYTES = 64 * 1024; // 64KB
+
+        child.stdout.on("data", (chunk: Buffer) => {
+          if (stdoutData.length < MAX_OUTPUT_BYTES) {
+            stdoutData += chunk.toString("utf8");
+          } else {
+            truncated = true;
+          }
+        });
+
+        child.stderr.on("data", (chunk: Buffer) => {
+          if (stderrData.length < MAX_OUTPUT_BYTES) {
+            stderrData += chunk.toString("utf8");
+          } else {
+            truncated = true;
+          }
+        });
+
+        let timedOut = false;
+        let cancelled = false;
+
+        const timer = setTimeout(() => {
+          timedOut = true;
+          child.kill("SIGKILL");
+        }, parsed.timeout);
+
+        const onAbort = () => {
+          cancelled = true;
+          clearTimeout(timer);
+          child.kill("SIGTERM");
+          setTimeout(() => {
+            child.kill("SIGKILL");
+          }, 500);
+        };
+
+        context.signal?.addEventListener("abort", onAbort, { once: true });
+
+        child.on("error", (err: Error) => {
+          clearTimeout(timer);
+          if (context.signal?.removeEventListener) {
+            context.signal.removeEventListener("abort", onAbort);
+          }
+          reject(new Error(`Failed to spawn Python process: ${err.message}`));
+        });
+
+        child.on("close", async (code) => {
+          clearTimeout(timer);
+          if (context.signal?.removeEventListener) {
+            context.signal.removeEventListener("abort", onAbort);
+          }
+
+          if (cancelled) {
+            return reject(
+              new Error("Python execution was cancelled by the user.")
+            );
+          }
+
+          const exitCode = timedOut ? -1 : (code ?? 0);
+          const success = !timedOut && exitCode === 0;
+
+          let finalStderr = stderrData;
+          if (timedOut) {
+            finalStderr += `\nExecution timed out after ${parsed.timeout}ms.`;
+          }
+
+          const afterScan = await scanWorkspaceArtifacts(
+            workspaceRoot,
+            workspaceRoot
+          );
+          const generated: GeneratedArtifact[] = [];
+          const standardArtifacts: ToolArtifact[] = [];
+
+          for (const [relPath, mtime] of afterScan) {
+            const prevMtime = beforeScan.get(relPath);
+            if (prevMtime === undefined || mtime > prevMtime) {
+              try {
+                const fileStat = await stat(path.join(workspaceRoot, relPath));
+                const mime = detectArtifactMimeType(relPath);
+                const name = path.basename(relPath);
+                generated.push({
+                  mimeType: mime,
+                  name,
+                  path: relPath,
+                  size: fileStat.size,
+                });
+                standardArtifacts.push({
+                  createdAt: new Date().toISOString(),
+                  filename: name,
+                  id: nanoid(12),
+                  mimeType: mime,
+                  path: relPath,
+                  sessionId: context.sessionId,
+                  sizeBytes: fileStat.size,
+                });
+              } catch {
+                // file might have been transient
+              }
+            }
+          }
+
+          resolve({
+            artifacts: standardArtifacts,
+            artifactsGenerated: generated,
+            exitCode,
+            metadata: {
+              durationMs: Date.now() - startTime,
+              truncated,
+            },
+            stderr: finalStderr.trim(),
+            stdout: stdoutData.trim(),
+            success,
+          });
+        });
+      })
+  );
 }
 
 export const pythonExecuteTool: ToolDefinition<

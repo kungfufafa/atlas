@@ -90,6 +90,32 @@ describe("explainGuildMessageHandling", () => {
     expect(decision.reason).toBe("bot-mention");
   });
 
+  test("handles a typed @username token without a user mention entity", () => {
+    const decision = explainGuildMessageHandling(
+      createGuildMessage({ content: "hey @atlasbot pull latest" }),
+      BOT_INFO
+    );
+
+    expect(decision.shouldHandle).toBe(true);
+    expect(decision.reason).toBe("bot-mention");
+  });
+
+  test("ignores email and username-prefix substrings of the bot name", () => {
+    expect(
+      explainGuildMessageHandling(
+        createGuildMessage({ content: "ping ops@atlasbot.com" }),
+        BOT_INFO
+      )
+    ).toEqual({ reason: "no-trigger", shouldHandle: false });
+
+    expect(
+      explainGuildMessageHandling(
+        createGuildMessage({ content: "@atlasbotify can you help" }),
+        BOT_INFO
+      )
+    ).toEqual({ reason: "no-trigger", shouldHandle: false });
+  });
+
   test("handles @mention of a role the bot holds", () => {
     const decision = explainGuildMessageHandling(
       createGuildMessage({

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { saveComposioConfig } from "@atlas/core";
+import { composioUserId, saveComposioConfig } from "@atlas/core";
 import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
 import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { AuthService } from "./auth-service";
@@ -30,6 +30,9 @@ function createMockClient(): ComposioApiClient {
       };
     },
     async deleteConnectedAccount() {},
+    async getConnectedAccount() {
+      return null;
+    },
     async linkToolkitAccount(_userId, _toolkitSlug) {
       return {
         connectedAccountId: "ca_1",
@@ -480,6 +483,194 @@ describe("ComposioService", () => {
       );
 
       expect(context).toBe("");
+    } finally {
+      restore();
+    }
+  });
+
+  test("completeOAuth rejects an unverified connected_account_id query", async () => {
+    const { db, service, restore } = await createConfiguredService();
+    const authService = new AuthService();
+    const nonce = "oauth-nonce-unverified-account-id";
+    const now = "2026-01-01T00:00:00.000Z";
+
+    try {
+      await seedOrgWithAdmin(db);
+      const toolkit = await service.enableToolkit(ORG_ID, {
+        toolkitSlug: "gmail",
+      });
+      await db.upsertComposioUserConnection({
+        connectedAccountId: "ca_from_link",
+        createdAt: now,
+        id: "cuc_oauth",
+        lastError: null,
+        oauthStateHash: authService.hashToken(nonce),
+        orgId: ORG_ID,
+        sessionIdEnc: null,
+        status: "oauth_in_progress",
+        toolkitId: toolkit.id,
+        updatedAt: now,
+        userId: USER_ID,
+      });
+
+      const state = Buffer.from(
+        JSON.stringify({
+          connectionId: "cuc_oauth",
+          nonce,
+          orgId: ORG_ID,
+          toolkitId: toolkit.id,
+          userId: USER_ID,
+        })
+      ).toString("base64url");
+
+      await expect(
+        service.completeOAuth(state, {
+          connectedAccountId: "ca_attacker_hijack",
+        })
+      ).rejects.toMatchObject({
+        message: "Invalid OAuth state.",
+        status: 400,
+      });
+
+      const connection = await db.getComposioUserConnectionById("cuc_oauth");
+      expect(connection?.status).toBe("oauth_in_progress");
+      expect(connection?.connectedAccountId).toBe("ca_from_link");
+      expect(connection?.oauthStateHash).toBe(authService.hashToken(nonce));
+    } finally {
+      restore();
+    }
+  });
+
+  test("completeOAuth accepts a query id only after Composio confirms ownership", async () => {
+    const { db, service, restore } = await createConfiguredService();
+    const authService = new AuthService();
+    const nonce = "oauth-nonce-verified-account-id";
+    const now = "2026-01-01T00:00:00.000Z";
+
+    injectMockComposioClient(service, {
+      ...createMockClient(),
+      async createProfileSession() {
+        return {
+          headers: { Authorization: "Bearer test" },
+          sessionId: "sess_1",
+          url: "https://mcp.composio.dev/sess_1",
+        };
+      },
+      async getConnectedAccount(connectedAccountId) {
+        if (connectedAccountId !== "ca_verified") {
+          return null;
+        }
+        return { userId: composioUserId(USER_ID) };
+      },
+    });
+
+    try {
+      await seedOrgWithAdmin(db);
+      const toolkit = await service.enableToolkit(ORG_ID, {
+        toolkitSlug: "gmail",
+      });
+      await db.upsertComposioUserConnection({
+        connectedAccountId: "ca_from_link",
+        createdAt: now,
+        id: "cuc_oauth_ok",
+        lastError: null,
+        oauthStateHash: authService.hashToken(nonce),
+        orgId: ORG_ID,
+        sessionIdEnc: null,
+        status: "oauth_in_progress",
+        toolkitId: toolkit.id,
+        updatedAt: now,
+        userId: USER_ID,
+      });
+
+      const state = Buffer.from(
+        JSON.stringify({
+          connectionId: "cuc_oauth_ok",
+          nonce,
+          orgId: ORG_ID,
+          toolkitId: toolkit.id,
+          userId: USER_ID,
+        })
+      ).toString("base64url");
+
+      const result = await service.completeOAuth(state, {
+        connectedAccountId: "ca_verified",
+      });
+      expect(result.toolkitSlug).toBe("gmail");
+
+      const connection = await db.getComposioUserConnectionById("cuc_oauth_ok");
+      expect(connection?.status).toBe("connected");
+      expect(connection?.connectedAccountId).toBe("ca_verified");
+    } finally {
+      restore();
+    }
+  });
+
+  test("completeOAuth reverts oauth_in_progress when sync fails", async () => {
+    const { db, service, restore } = await createConfiguredService();
+    const authService = new AuthService();
+    const nonce = "oauth-nonce-sync-fail";
+    const now = "2026-01-01T00:00:00.000Z";
+
+    injectMockComposioClient(service, {
+      ...createMockClient(),
+      async createProfileSession() {
+        throw new Error("composio secret leaked: ck_live_abc123");
+      },
+    });
+
+    try {
+      await seedOrgWithAdmin(db);
+      const toolkit = await service.enableToolkit(ORG_ID, {
+        toolkitSlug: "gmail",
+      });
+      await db.upsertComposioUserConnection({
+        connectedAccountId: "ca_from_link",
+        createdAt: now,
+        id: "cuc_oauth_fail",
+        lastError: null,
+        oauthStateHash: authService.hashToken(nonce),
+        orgId: ORG_ID,
+        sessionIdEnc: null,
+        status: "oauth_in_progress",
+        toolkitId: toolkit.id,
+        updatedAt: now,
+        userId: USER_ID,
+      });
+
+      const state = Buffer.from(
+        JSON.stringify({
+          connectionId: "cuc_oauth_fail",
+          nonce,
+          orgId: ORG_ID,
+          toolkitId: toolkit.id,
+          userId: USER_ID,
+        })
+      ).toString("base64url");
+
+      await expect(service.completeOAuth(state)).rejects.toMatchObject({
+        message: "Could not complete Composio connection.",
+        status: 400,
+      });
+
+      const connection =
+        await db.getComposioUserConnectionById("cuc_oauth_fail");
+      expect(connection?.status).toBe("oauth_in_progress");
+      expect(connection?.oauthStateHash).toBe(authService.hashToken(nonce));
+    } finally {
+      restore();
+    }
+  });
+
+  test("completeOAuth maps a null state payload to invalid OAuth state", async () => {
+    const { service, restore } = await createConfiguredService();
+
+    try {
+      const state = Buffer.from("null").toString("base64url");
+      await expect(service.completeOAuth(state)).rejects.toMatchObject({
+        message: "Invalid OAuth state.",
+        status: 400,
+      });
     } finally {
       restore();
     }

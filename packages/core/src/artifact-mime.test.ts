@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   artifactCodeLanguage,
   inferArtifactMimeType,
+  isBrowserExecutableArtifactMimeType,
   isHtmlArtifactMimeType,
   isImageArtifactMimeType,
   isMarkdownArtifactMimeType,
@@ -84,6 +85,16 @@ describe("mime predicates", () => {
     expect(isVideoArtifactMimeType("image/png")).toBe(false);
     expect(isUnknownArtifactMimeType("application/octet-stream")).toBe(true);
     expect(isUnknownArtifactMimeType("text/plain")).toBe(false);
+  });
+
+  test("treats javascript, css, and xml as browser-executable", () => {
+    expect(isBrowserExecutableArtifactMimeType("application/javascript")).toBe(
+      true
+    );
+    expect(isBrowserExecutableArtifactMimeType("text/javascript")).toBe(true);
+    expect(isBrowserExecutableArtifactMimeType("text/css")).toBe(true);
+    expect(isBrowserExecutableArtifactMimeType("application/xml")).toBe(true);
+    expect(isBrowserExecutableArtifactMimeType("text/markdown")).toBe(false);
   });
 });
 

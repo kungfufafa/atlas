@@ -61,15 +61,16 @@ export class NotificationWebhookService {
     apiKey: string | null,
     payload: unknown
   ): Promise<void> {
-    const destination =
-      await this.databaseAdapter.getNotificationDestination(destinationId);
-    if (!(destination && apiKey)) {
+    if (!apiKey) {
       throw new AtlasApiError("Invalid notification credentials.", 401);
     }
 
-    if (
-      !hashesEqual(this.authService.hashToken(apiKey), destination.secretHash)
-    ) {
+    const destination =
+      await this.databaseAdapter.getNotificationDestination(destinationId);
+    const presented = this.authService.hashToken(apiKey);
+    const expected =
+      destination?.secretHash ?? this.authService.hashToken("\0");
+    if (!(hashesEqual(presented, expected) && destination)) {
       throw new AtlasApiError("Invalid notification credentials.", 401);
     }
 

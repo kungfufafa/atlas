@@ -158,9 +158,10 @@ export class ArtifactShareService {
     const webPublicUrlConfigured = Boolean(
       baseUrl && !isLoopbackComposioCallbackBaseUrl(baseUrl)
     );
-    const shareUrl = token
-      ? `${baseUrl}${buildArtifactSharePath(token)}`
-      : null;
+    const shareUrl =
+      token && webPublicUrlConfigured
+        ? `${baseUrl}${buildArtifactSharePath(token)}`
+        : null;
 
     return {
       id: record.id,
@@ -254,7 +255,12 @@ export class ArtifactShareService {
       throw new AtlasApiError("Not found", 404);
     }
 
-    const bytes = await readArtifactShareSnapshot(share.storagePath);
+    let bytes: Buffer;
+    try {
+      bytes = await readArtifactShareSnapshot(share.storagePath);
+    } catch {
+      throw new AtlasApiError("Not found", 404);
+    }
     // Sidecars sometimes store application/octet-stream; resolve from the filename
     // so <video>/<img> can play with X-Content-Type-Options: nosniff.
     const mimeType = resolveArtifactMimeType(share.mimeType, share.filename);

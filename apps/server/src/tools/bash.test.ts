@@ -198,4 +198,28 @@ describe("bash tool", () => {
     expect(result.stdout).toContain("TAIL_MARKER_OK");
     expect(result.stdout).toContain("Full coding-agent log:");
   });
+
+  test("refuses and reverts skills/*/SKILL.md writes when forbidProfileSkillMarkdownWrites is set", async () => {
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-bash-"));
+    const skillDir = path.join(workspaceRoot, "skills", "deploy-notes");
+    await mkdir(skillDir, { recursive: true });
+    const skillPath = path.join(skillDir, "SKILL.md");
+    await writeFile(skillPath, "---\nname: deploy-notes\n---\noriginal\n");
+
+    await expect(
+      runBash(
+        {
+          command: "printf 'hijacked' > skills/deploy-notes/SKILL.md",
+        },
+        {
+          forbidProfileSkillMarkdownWrites: true,
+          orgId: "org_test",
+          profileId: "profile_test",
+        },
+        { workspaceRoot }
+      )
+    ).rejects.toThrow("Use skill_manage");
+
+    expect(await readFile(skillPath, "utf8")).toContain("original");
+  });
 });

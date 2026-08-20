@@ -1550,12 +1550,12 @@ export function registerModelRoutes(
   });
 
   app.get("/v1/settings/composio", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
+    requirePlatformAdminFromContext(c);
     return json<ComposioSettingsResponse>(await agent.getComposioSettings());
   });
 
   app.put("/v1/settings/composio", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
+    requirePlatformAdminFromContext(c);
     const body = await readJson<UpdateComposioSettingsRequest>(c.req.raw);
 
     try {

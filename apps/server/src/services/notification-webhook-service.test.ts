@@ -82,5 +82,12 @@ describe("NotificationWebhookService", () => {
     await expect(
       service.deliver("dest_1", "wrong", { body: "Hello" })
     ).rejects.toMatchObject({ status: 401 });
+
+    await expect(
+      service.deliver("missing_dest", "wrong", { body: "Hello" })
+    ).rejects.toMatchObject({
+      message: "Invalid notification credentials.",
+      status: 401,
+    });
   });
 });

@@ -88,6 +88,32 @@ test("clients send org context on authenticated requests", async () => {
   expect(headers.get("X-Org-Id")).toBe("org_test");
 });
 
+test("isolateOrgId keeps concurrent setOrgId from racing X-Org-Id", async () => {
+  const orgHeaders: string[] = [];
+  const client = createClient({
+    authToken: "local-auth-token",
+    baseUrl: "http://localhost:4310",
+    fetch: async (_input, init) => {
+      await Bun.sleep(40);
+      orgHeaders.push(new Headers(init?.headers).get("X-Org-Id") ?? "none");
+      return Response.json({ profiles: [] });
+    },
+  });
+
+  await Promise.all([
+    client.isolateOrgId(async () => {
+      client.setOrgId("org_a");
+      await client.listProfiles();
+    }),
+    client.isolateOrgId(async () => {
+      client.setOrgId("org_b");
+      await client.listProfiles();
+    }),
+  ]);
+
+  expect(orgHeaders.sort()).toEqual(["org_a", "org_b"]);
+});
+
 test("preview and accept invite hit public auth routes", async () => {
   const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
     [];

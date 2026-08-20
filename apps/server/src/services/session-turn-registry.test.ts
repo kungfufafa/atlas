@@ -61,6 +61,26 @@ describe("SessionTurnRegistry", () => {
     expect(second).toEqual(["hmm", "..."]);
   });
 
+  test("canSubscribe is false after three subscribers", () => {
+    const registry = new SessionTurnRegistry();
+    registry.beginTurn("session_1");
+    registry.subscribe("session_1", () => {});
+    registry.subscribe("session_1", () => {});
+    registry.subscribe("session_1", () => {});
+    expect(registry.canSubscribe("session_1")).toBe(false);
+    expect(registry.subscribe("session_1", () => {})).toBeNull();
+  });
+
+  test("cancelTurn aborts the attached controller and ends the turn", () => {
+    const registry = new SessionTurnRegistry();
+    const abort = new AbortController();
+    registry.beginTurn("session_1");
+    registry.attachAbort("session_1", abort);
+    registry.cancelTurn("session_1");
+    expect(abort.signal.aborted).toBe(true);
+    expect(registry.isActive("session_1")).toBe(false);
+  });
+
   test("endTurn clears state and later subscribe returns null", () => {
     const registry = new SessionTurnRegistry();
     registry.beginTurn("session_1");

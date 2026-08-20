@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
+import { AtlasApiError } from "@atlas/core";
 import { AuthService } from "./auth-service";
 
 describe("AuthService", () => {
@@ -49,6 +50,36 @@ describe("AuthService", () => {
       expect(authService.hashToken(session.sessionToken)).not.toBe(
         session.sessionToken
       );
+    });
+  });
+
+  describe("rotateHostLocalAuthToken", () => {
+    test("rejects callers who are not Superadmin", async () => {
+      expect(() =>
+        authService.assertCanRotateHostLocalAuthToken(false)
+      ).toThrow(AtlasApiError);
+
+      try {
+        authService.assertCanRotateHostLocalAuthToken(false);
+      } catch (error) {
+        expect(error).toMatchObject({
+          message: "Superadmin access required",
+          status: 403,
+        });
+      }
+
+      await expect(
+        authService.rotateHostLocalAuthToken(false)
+      ).rejects.toMatchObject({
+        message: "Superadmin access required",
+        status: 403,
+      });
+    });
+
+    test("allows Superadmin through the host-token guard", () => {
+      expect(() =>
+        authService.assertCanRotateHostLocalAuthToken(true)
+      ).not.toThrow();
     });
   });
 });

@@ -19,6 +19,7 @@ type Subscriber = {
 };
 
 type ActiveTurn = {
+  abort?: AbortController;
   startedAt: string;
   events: StreamEvent[];
   bufferBytes: number;
@@ -186,6 +187,28 @@ export class SessionTurnRegistry {
     });
 
     return { started: true };
+  }
+
+  attachAbort(sessionId: string, abort: AbortController): void {
+    const turn = this.turns.get(sessionId);
+    if (turn) {
+      turn.abort = abort;
+    }
+  }
+
+  canSubscribe(sessionId: string): boolean {
+    const turn = this.turns.get(sessionId);
+    return Boolean(turn && turn.subscribers.size < MAX_SUBSCRIBERS_PER_SESSION);
+  }
+
+  cancelTurn(sessionId: string): void {
+    const turn = this.turns.get(sessionId);
+    if (!turn) {
+      return;
+    }
+
+    turn.abort?.abort();
+    this.endTurn(sessionId, { error: "Turn cancelled.", type: "error" });
   }
 
   getStatus(sessionId: string): TurnStatus {

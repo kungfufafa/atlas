@@ -1360,6 +1360,25 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       return true;
     },
 
+    async revokeOtherBrowserSessionsForUser(
+      userId,
+      keepSessionTokenHash,
+      revokedAt
+    ) {
+      let revoked = 0;
+      for (const [hash, session] of browserSessionsByHash.entries()) {
+        if (
+          session.userId === userId &&
+          hash !== keepSessionTokenHash &&
+          !session.revokedAt
+        ) {
+          browserSessionsByHash.set(hash, { ...session, revokedAt });
+          revoked += 1;
+        }
+      }
+      return revoked;
+    },
+
     searchConversationMessages() {
       return Promise.resolve([]);
     },

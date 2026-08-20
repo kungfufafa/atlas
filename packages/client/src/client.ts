@@ -198,6 +198,7 @@ import type {
 import { loadLocalAuthToken } from "@atlas/core/local-auth";
 import { resolveServerUrl } from "@atlas/core/runtime";
 import { readBrowserOrigin, readCookie } from "./browser";
+import { getOrgIdScope, runWithOrgIdScope } from "./org-scope";
 import {
   normalizeStreamHandlers,
   readAgentBrowserInstallStream,
@@ -240,7 +241,22 @@ export class AtlasClient {
   }
 
   setOrgId(orgId: string | null): void {
-    this.orgId = orgId?.trim() || null;
+    const next = orgId?.trim() || null;
+    const scope = getOrgIdScope();
+    if (scope) {
+      scope.orgId = next;
+      return;
+    }
+    this.orgId = next;
+  }
+
+  /** Request-scoped org so concurrent channel chats do not share `X-Org-Id`. */
+  isolateOrgId<T>(fn: () => T | Promise<T>): Promise<T> {
+    try {
+      return Promise.resolve(runWithOrgIdScope(this.orgId, fn));
+    } catch (error) {
+      return Promise.reject(error);
+    }
   }
 
   private applyAuthUserResponse(response: AuthUserResponse): void {
@@ -2503,8 +2519,10 @@ export class AtlasClient {
       merged["Authorization"] = `Bearer ${this.authToken}`;
     }
 
-    if (this.orgId && !merged["X-Org-Id"]) {
-      merged["X-Org-Id"] = this.orgId;
+    const scope = getOrgIdScope();
+    const orgId = scope === undefined ? this.orgId : scope.orgId;
+    if (orgId && !merged["X-Org-Id"]) {
+      merged["X-Org-Id"] = orgId;
     }
 
     if (isMutatingMethod(method)) {

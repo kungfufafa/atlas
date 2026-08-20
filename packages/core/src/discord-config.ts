@@ -459,60 +459,81 @@ export async function regenerateDiscordHandshake(
   return withDiscordInviteUrl(base, next.botToken);
 }
 
+const discordPairLocks = new Map<string, Promise<unknown>>();
+
+function runSerializedDiscordPair<T>(
+  orgId: string | null | undefined,
+  fn: () => Promise<T>
+): Promise<T> {
+  const key = orgId ?? "";
+  const previous = discordPairLocks.get(key) ?? Promise.resolve();
+  const next = previous.then(fn, fn);
+  discordPairLocks.set(
+    key,
+    next.then(
+      () => undefined,
+      () => undefined
+    )
+  );
+  return next;
+}
+
 export async function verifyAndPairDiscordUser(
   handshakeInput: string,
   userId: string,
   orgId?: string | null
 ): Promise<{ ok: true; message: string } | { ok: false; message: string }> {
-  const config = await loadDiscordConfigFile(orgId);
+  return runSerializedDiscordPair(orgId, async () => {
+    const config = await loadDiscordConfigFile(orgId);
 
-  if (!config) {
+    if (!config) {
+      return {
+        message: "Discord is not configured on the server yet.",
+        ok: false,
+      };
+    }
+
+    if (isDiscordUserAuthorized(userId, config)) {
+      return { message: "This chat is already linked.", ok: true };
+    }
+
+    const expected = config.handshakeCode;
+
+    if (!expected) {
+      return {
+        message:
+          "No pairing code is active. Open Atlas Integrations → Discord and generate a new code.",
+        ok: false,
+      };
+    }
+
+    if (
+      normalizeHandshakeInput(handshakeInput) !==
+      normalizeHandshakeInput(expected)
+    ) {
+      return {
+        message:
+          "Invalid pairing code. Copy it from Integrations → Discord and try again.",
+        ok: false,
+      };
+    }
+
+    const pairedUserIds = [...new Set([...config.pairedUserIds, userId])];
+
+    await writeDiscordConfigFile(
+      {
+        ...config,
+        handshakeCode: null,
+        pairedUserIds,
+      },
+      orgId
+    );
+
     return {
-      message: "Discord is not configured on the server yet.",
-      ok: false,
+      message: "Linked successfully. You can chat with Atlas now.",
+      ok: true,
     };
-  }
-
-  if (isDiscordUserAuthorized(userId, config)) {
-    return { message: "This chat is already linked.", ok: true };
-  }
-
-  const expected = config.handshakeCode;
-
-  if (!expected) {
-    return {
-      message:
-        "No pairing code is active. Open Atlas Integrations → Discord and generate a new code.",
-      ok: false,
-    };
-  }
-
-  if (
-    normalizeHandshakeInput(handshakeInput) !==
-    normalizeHandshakeInput(expected)
-  ) {
-    return {
-      message:
-        "Invalid pairing code. Copy it from Integrations → Discord and try again.",
-      ok: false,
-    };
-  }
-
-  const pairedUserIds = [...new Set([...config.pairedUserIds, userId])];
-
-  await writeDiscordConfigFile(
-    {
-      ...config,
-      handshakeCode: null,
-      pairedUserIds,
-    },
-    orgId
-  );
-
-  return {
-    message: "Linked successfully. You can chat with Atlas now.",
-    ok: true,
-  };
+  });
 }
 
 export function resolveDiscordConfigFromSources(options: {

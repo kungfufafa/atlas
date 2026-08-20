@@ -8,6 +8,7 @@ export interface TelegramBotInfo {
 export interface GroupMessageHandlingDecision {
   reason:
     | "slash-command"
+    | "foreign-bot"
     | "missing-bot-info"
     | "reply-to-bot"
     | "bot-mention"
@@ -84,6 +85,15 @@ export function explainGroupMessageHandling(
   const botInfo = resolveBotInfo(ctx, storedBotInfo);
 
   if (text.startsWith("/")) {
+    if (
+      parseTelegramSlashCommand(text, {
+        botUsername: botInfo?.username,
+        requireBotTarget: true,
+      }) === null
+    ) {
+      return { reason: "foreign-bot", shouldHandle: false };
+    }
+
     return { reason: "slash-command", shouldHandle: true };
   }
 
@@ -103,6 +113,35 @@ export function explainGroupMessageHandling(
     reason: text ? "no-trigger" : "no-text",
     shouldHandle: false,
   };
+}
+
+/**
+ * First slash token. `/cmd@otherbot` is ignored when `requireBotTarget` is set
+ * and the suffix is missing or not this bot's username. Private chats omit
+ * `requireBotTarget` so `/start@AnyName` still works.
+ */
+export function parseTelegramSlashCommand(
+  text: string,
+  options?: { botUsername?: string; requireBotTarget?: boolean }
+): string | null {
+  const token = text.trim().split(/\s+/)[0]?.toLowerCase() ?? "";
+  const at = token.indexOf("@");
+  if (at === -1) {
+    return token;
+  }
+
+  const command = token.slice(0, at);
+  if (!options?.requireBotTarget) {
+    return command;
+  }
+
+  const username = options.botUsername?.trim().toLowerCase();
+  const target = token.slice(at + 1);
+  if (!username || target !== username) {
+    return null;
+  }
+
+  return command;
 }
 
 export function stripBotMention(

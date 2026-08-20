@@ -536,6 +536,180 @@ describe("createChatHandler group chats", () => {
     });
   });
 
+  test("group /clear@otherbot does not clear this bot's history", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        botToken: "1234567890:TEST",
+        pairedUserIds: [42],
+      });
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        getBotInfo: () => TEST_BOT_INFO,
+        orgStore,
+        sessionStore,
+      });
+
+      const foreign = createMessageContext({
+        chatId: -100_123,
+        chatType: "supergroup",
+        text: "/clear@moderationbot",
+        userId: 42,
+      });
+      await handleMessage(foreign.ctx);
+
+      expect(foreign.replies).toEqual([]);
+      expect(calls.createSession).toBe(0);
+      expect(calls.sendStream).toBe(0);
+
+      const ours = createMessageContext({
+        chatId: -100_123,
+        chatType: "supergroup",
+        text: "/clear@mybot",
+        userId: 42,
+      });
+      await handleMessage(ours.ctx);
+
+      expect(ours.replies).toEqual(["History cleared."]);
+    });
+  });
+
+  test("unpaired /stop in a group topic does not abort an in-flight stream", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        botToken: "1234567890:TEST",
+        handshakeCode: "ABCD1234",
+        pairedUserIds: [42],
+      });
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, getStreamControls } = createMockClient({
+        autoComplete: false,
+        streaming: true,
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        getBotInfo: () => TEST_BOT_INFO,
+        orgStore,
+        sessionStore,
+      });
+
+      const topic10 = createMessageContext({
+        chatId: -100_123,
+        chatType: "supergroup",
+        entities: [{ length: 6, offset: 0, type: "mention" }],
+        messageThreadId: 10,
+        text: "@mybot hello",
+        userId: 42,
+      });
+      const topicPromise = handleMessage(topic10.ctx);
+
+      try {
+        await waitForCondition(
+          () => getStreamControls().length === 1,
+          "Expected topic 10 stream to start"
+        );
+
+        const unpairedStop = createMessageContext({
+          chatId: -100_123,
+          chatType: "supergroup",
+          messageThreadId: 10,
+          text: "/stop",
+          userId: 9999,
+        });
+        await handleMessage(unpairedStop.ctx);
+
+        expect(getStreamControls()[0]?.signal?.aborted).toBe(false);
+        expect(unpairedStop.replies).toEqual([
+          "Link your account in a private chat with this bot first.",
+        ]);
+        expect(authStore.isAuthorized(9999)).toBe(false);
+      } finally {
+        getStreamControls()[0]?.complete();
+        await topicPromise;
+      }
+    });
+  });
+
+  test("group /stop@otherbot does not abort an in-flight stream", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        botToken: "1234567890:TEST",
+        pairedUserIds: [42],
+      });
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, getStreamControls } = createMockClient({
+        autoComplete: false,
+        streaming: true,
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        getBotInfo: () => TEST_BOT_INFO,
+        orgStore,
+        sessionStore,
+      });
+
+      const topic10 = createMessageContext({
+        chatId: -100_123,
+        chatType: "supergroup",
+        entities: [{ length: 6, offset: 0, type: "mention" }],
+        messageThreadId: 10,
+        text: "@mybot hello",
+        userId: 42,
+      });
+      const topicPromise = handleMessage(topic10.ctx);
+
+      try {
+        await waitForCondition(
+          () => getStreamControls().length === 1,
+          "Expected topic 10 stream to start"
+        );
+
+        const foreignStop = createMessageContext({
+          chatId: -100_123,
+          chatType: "supergroup",
+          messageThreadId: 10,
+          text: "/stop@moderationbot",
+          userId: 42,
+        });
+        await handleMessage(foreignStop.ctx);
+
+        expect(getStreamControls()[0]?.signal?.aborted).toBe(false);
+        expect(foreignStop.replies).toEqual([]);
+      } finally {
+        getStreamControls()[0]?.complete();
+        await topicPromise;
+      }
+    });
+  });
+
   test("unpaired @mention redirects to private chat without pairing", async () => {
     await withTempHome(async (homeDir) => {
       await writeTelegramConfigIni(homeDir, {
@@ -1502,6 +1676,65 @@ describe("bridge API integration", () => {
         replies.some((reply) => reply.includes("Choose an organization"))
       ).toBe(false);
       expect(orgStore.get("u:1001")?.orgId).toBe("org_test");
+    });
+  });
+
+  test("legacy concurrent chats keep their own org on createSession", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        botToken: "1234567890:TEST",
+        pairedUserIds: [1001, 2002],
+      });
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, getCreateSessionOrgIds } = createMockClient({
+        orgs: createMultiTestOrgs(),
+        profilesByOrgId: {
+          org_a: [{ id: "alpha", isDefault: true, name: "Alpha Agent" }],
+          org_b: [{ id: "beta", isDefault: true, name: "Beta Agent" }],
+        },
+      });
+      const originalCreate = client.createSession.bind(client);
+      client.createSession = async (
+        channel,
+        options?: { profileId?: string }
+      ) => {
+        await Bun.sleep(40);
+        return originalCreate(channel, options);
+      };
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      orgStore.set("u:1001", "org_a");
+      orgStore.set("u:2002", "org_b");
+      await orgStore.save();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        orgStore,
+        sessionStore,
+      });
+
+      const userA = createMessageContext({
+        chatId: 1001,
+        text: "hello from a",
+        userId: 1001,
+      });
+      const userB = createMessageContext({
+        chatId: 2002,
+        text: "hello from b",
+        userId: 2002,
+      });
+      await Promise.all([handleMessage(userA.ctx), handleMessage(userB.ctx)]);
+
+      expect(getCreateSessionOrgIds().slice().sort()).toEqual([
+        "org_a",
+        "org_b",
+      ]);
     });
   });
 

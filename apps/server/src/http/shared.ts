@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import type { AgentChatSession } from "@atlas/agent";
 import type { OrgRole } from "@atlas/core";
 import {
@@ -231,6 +232,15 @@ export async function authenticateRequest(
   };
 }
 
+function csrfTokensEqual(left: string, right: string): boolean {
+  const leftBytes = Buffer.from(left);
+  const rightBytes = Buffer.from(right);
+  return (
+    leftBytes.length === rightBytes.length &&
+    timingSafeEqual(leftBytes, rightBytes)
+  );
+}
+
 export function assertBrowserCsrf(
   request: Request,
   auth: RequestAuthContext,
@@ -241,9 +251,9 @@ export function assertBrowserCsrf(
   }
 
   const csrfToken = getRequestTokenFromCookies(request, CSRF_COOKIE_NAME);
-  const csrfHeader = request.headers.get(CSRF_HEADER_NAME);
+  const csrfHeader = request.headers.get(CSRF_HEADER_NAME)?.trim() ?? "";
 
-  if (!(csrfToken && csrfHeader) || csrfToken !== csrfHeader.trim()) {
+  if (!(csrfToken && csrfHeader && csrfTokensEqual(csrfToken, csrfHeader))) {
     throw new AtlasApiError("CSRF validation failed.", 403);
   }
 
@@ -532,22 +542,43 @@ export function streamTurnSubscribe(sessionId: string): Response | null {
     return null;
   }
 
+  if (!sessionTurnRegistry.canSubscribe(sessionId)) {
+    return json(
+      { error: "Too many stream subscribers for this session." },
+      429
+    );
+  }
+
   const encoder = new TextEncoder();
   const keepaliveIntervalMs = 4000;
+  let subscription: { unsubscribe: () => void } | null = null;
+  let keepalive: ReturnType<typeof setInterval> | undefined;
 
   const stream = new ReadableStream<Uint8Array>({
+    cancel() {
+      if (keepalive) {
+        clearInterval(keepalive);
+      }
+      subscription?.unsubscribe();
+    },
     start(controller) {
-      const subscription = sessionTurnRegistry.subscribe(sessionId, (event) => {
+      subscription = sessionTurnRegistry.subscribe(sessionId, (event) => {
         try {
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify(event)}\n\n`)
           );
 
           if (event.type === "done" || event.type === "error") {
+            if (keepalive) {
+              clearInterval(keepalive);
+            }
             subscription?.unsubscribe();
             controller.close();
           }
         } catch {
+          if (keepalive) {
+            clearInterval(keepalive);
+          }
           subscription?.unsubscribe();
         }
       });
@@ -557,12 +588,14 @@ export function streamTurnSubscribe(sessionId: string): Response | null {
         return;
       }
 
-      const keepalive = setInterval(() => {
+      keepalive = setInterval(() => {
         try {
           controller.enqueue(encoder.encode(": ping\n\n"));
         } catch {
-          clearInterval(keepalive);
-          subscription.unsubscribe();
+          if (keepalive) {
+            clearInterval(keepalive);
+          }
+          subscription?.unsubscribe();
         }
       }, keepaliveIntervalMs);
     },
@@ -596,6 +629,7 @@ export function streamMessage(
   // runs to completion and endTurn is late, which is what returned 409 to the next
   // message in the session.
   const turnAbort = new AbortController();
+  sessionTurnRegistry.attachAbort(sessionId, turnAbort);
   const turnSignal = requestSignal
     ? AbortSignal.any([turnAbort.signal, requestSignal])
     : turnAbort.signal;

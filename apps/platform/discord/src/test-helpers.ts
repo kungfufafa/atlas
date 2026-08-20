@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import * as os from "node:os";
 import path from "node:path";
@@ -123,6 +124,8 @@ export function createMockClient(
   const profiles = options.profiles ?? [{ id: "default", model: null }];
   const orgs = options.orgs ?? createDefaultTestOrgs();
   let activeOrgId: string | null = orgs[0]?.id ?? null;
+  const orgIdScope = new AsyncLocalStorage<{ orgId: string | null }>();
+  const currentOrgId = () => orgIdScope.getStore()?.orgId ?? activeOrgId;
 
   const client = {
     createChatSession: () => session,
@@ -151,6 +154,8 @@ export function createMockClient(
       };
     },
     health: async () => ({ ok: true, providerConfigured: false }),
+    isolateOrgId: <T>(fn: () => T | Promise<T>) =>
+      orgIdScope.run({ orgId: activeOrgId }, fn),
     listProfileArtifacts: async () => {
       calls.listProfileArtifacts += 1;
       const artifacts = options.listedArtifacts ?? [];
@@ -162,9 +167,9 @@ export function createMockClient(
       };
     },
     listProfiles: async () => {
+      const orgId = currentOrgId();
       const scopedProfiles =
-        (activeOrgId ? options.profilesByOrgId?.[activeOrgId] : undefined) ??
-        profiles;
+        (orgId ? options.profilesByOrgId?.[orgId] : undefined) ?? profiles;
 
       return parseListProfilesResponse({
         profiles: scopedProfiles.map((profile) => ({
@@ -201,7 +206,13 @@ export function createMockClient(
       };
     },
     setOrgId: (orgId: string | null) => {
-      activeOrgId = orgId?.trim() || null;
+      const next = orgId?.trim() || null;
+      const scope = orgIdScope.getStore();
+      if (scope) {
+        scope.orgId = next;
+      } else {
+        activeOrgId = next;
+      }
     },
   } as unknown as AtlasClient;
 

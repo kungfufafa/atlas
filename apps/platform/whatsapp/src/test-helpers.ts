@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import * as os from "node:os";
 import path from "node:path";
@@ -196,6 +197,8 @@ export function createMockClient(
   };
 
   const orgs = options.orgs ?? createDefaultTestOrgs();
+  let activeOrgId: string | null = orgs[0]?.id ?? null;
+  const orgIdScope = new AsyncLocalStorage<{ orgId: string | null }>();
 
   const client = {
     createChatSession: () => session,
@@ -215,6 +218,8 @@ export function createMockClient(
       providers: [],
     }),
     health: async () => ({ ok: true, providerConfigured: false }),
+    isolateOrgId: <T>(fn: () => T | Promise<T>) =>
+      orgIdScope.run({ orgId: activeOrgId }, fn),
     listProfiles: async () => {
       calls.listProfiles += 1;
       return parseListProfilesResponse({
@@ -227,7 +232,14 @@ export function createMockClient(
     },
     setOrgId: (orgId: string | null) => {
       calls.setOrgId += 1;
-      orgIds.push(orgId ?? "");
+      const next = orgId?.trim() || null;
+      const scope = orgIdScope.getStore();
+      if (scope) {
+        scope.orgId = next;
+      } else {
+        activeOrgId = next;
+      }
+      orgIds.push(next ?? "");
     },
   } as unknown as AtlasClient;
 

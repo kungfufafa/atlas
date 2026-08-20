@@ -48,6 +48,7 @@ import {
   explainGroupMessageHandling,
   isTelegramGroupChat,
   isTelegramTopicMessage,
+  parseTelegramSlashCommand,
   resolveBotInfo,
   resolveChannelOrgKey,
   resolveConversationKey,
@@ -109,7 +110,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     workspaceLocked: Boolean(fixedWorkspaceId),
   });
 
-  return async function handleMessage(ctx: Context): Promise<void> {
+  async function handleMessage(ctx: Context): Promise<void> {
     if (!ctx.chat) {
       return;
     }
@@ -146,7 +147,21 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const conversationKey = resolveConversationKey(ctx, chatId, isGroup);
     const isTopic = isTelegramTopicMessage(ctx);
 
-    if (text && isStopCommand(text)) {
+    if (text && isStopCommand(text, botInfo?.username, isGroup)) {
+      await authStore.reload();
+      if (!authStore.isAuthorized(userId)) {
+        if (isGroup) {
+          const fileConfig = authStore.getConfig();
+          if (
+            fileConfig?.accessMode !== "allowlist" &&
+            fileConfig?.accessMode !== "denylist"
+          ) {
+            await telegram.send(LINK_IN_PRIVATE_REPLY);
+          }
+        }
+        return;
+      }
+
       if (!stopActiveStream(conversationKey)) {
         await telegram.send("Nothing to stop.");
       }
@@ -223,7 +238,12 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         return;
       }
 
-      const command = text?.startsWith("/") ? parseTelegramCommand(text) : null;
+      const command = text?.startsWith("/")
+        ? parseTelegramSlashCommand(text, {
+            botUsername: botInfo?.username,
+            requireBotTarget: isGroup,
+          })
+        : null;
       const bypassOrgGate =
         command === "/help" || command === "/start" || command === "/org";
 
@@ -314,7 +334,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         messageText
       );
     });
-  };
+  }
 
   async function handlePairing(
     ctx: Context,
@@ -322,7 +342,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     userId: number,
     telegram: TelegramRichMessenger
   ): Promise<void> {
-    const command = parseTelegramCommand(text);
+    const command = parseTelegramSlashCommand(text);
     const fileConfig = authStore.getConfig();
     const hasHandshake = Boolean(fileConfig?.handshakeCode);
 
@@ -359,7 +379,13 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     isTopic: boolean,
     telegram: TelegramRichMessenger
   ): Promise<void> {
-    const command = parseTelegramCommand(text);
+    const command = parseTelegramSlashCommand(text, {
+      botUsername: resolveBotInfo(ctx, getBotInfo())?.username,
+      requireBotTarget: isTelegramGroupChat(ctx),
+    });
+    if (command === null) {
+      return;
+    }
 
     switch (command) {
       case "/start":
@@ -912,6 +938,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     });
     await sessionStore.save();
   }
+
+  return (ctx: Context) => client.isolateOrgId(() => handleMessage(ctx));
 }
 
 function withGroupContext(
@@ -960,15 +988,15 @@ function looksLikeHandshakeAttempt(text: string): boolean {
   return /^[0-9A-F]{8}$/.test(normalizeHandshakeInput(text));
 }
 
-function parseTelegramCommand(text: string): string {
-  const token = text.trim().split(/\s+/)[0]?.toLowerCase() ?? "";
-  const at = token.indexOf("@");
-
-  return at === -1 ? token : token.slice(0, at);
-}
-
-function isStopCommand(text: string): boolean {
-  return parseTelegramCommand(text) === "/stop";
+function isStopCommand(
+  text: string,
+  botUsername?: string,
+  requireBotTarget = false
+): boolean {
+  return (
+    parseTelegramSlashCommand(text, { botUsername, requireBotTarget }) ===
+    "/stop"
+  );
 }
 
 export function resetChatLocksForTests(): void {

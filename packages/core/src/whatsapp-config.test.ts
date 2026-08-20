@@ -13,6 +13,7 @@ import {
   resolveWhatsAppConfigFromSources,
   saveWhatsAppConfig,
   syncWhatsAppOwnerPairing,
+  verifyAndPairWhatsAppUser,
 } from "./whatsapp-config";
 
 describe("maskPhoneNumber", () => {
@@ -440,6 +441,114 @@ describe("syncWhatsAppOwnerPairing", () => {
       expect(saved?.accessMode).toBe("open");
       expect(saved?.allowedNumbers).toEqual(["6281234567890", "62811223344"]);
       expect(saved?.blockedNumbers).toEqual(["6289999999"]);
+    });
+  });
+});
+
+describe("verifyAndPairWhatsAppUser", () => {
+  test("LID pair with an existing owner phone binds only the inbound LID", async () => {
+    await withTempHomedir("atlas-core-wa-pair-lid-", async (tempHome) => {
+      const dir = path.join(tempHome, ".atlas", "whatsapp");
+      await mkdir(dir, { recursive: true });
+      await writeFile(
+        path.join(dir, "config.ini"),
+        [
+          "# Atlas WhatsApp bridge",
+          "profile_id=default",
+          "access_mode=pairing",
+          "phone_number=628111111111",
+          "paired_jid=628111111111@s.whatsapp.net",
+          "pairing_code=ABCD1234",
+          "",
+        ].join("\n"),
+        "utf8"
+      );
+
+      const guest = await verifyAndPairWhatsAppUser(
+        "ABCD1234",
+        "154352568283178@lid"
+      );
+      expect(guest.ok).toBe(true);
+
+      const saved = await loadWhatsAppConfigFile();
+      expect(saved?.pairedLid).toBe("154352568283178@lid");
+      expect(saved?.pairedJid).toBeNull();
+      expect(saved?.pairingCode).toBeNull();
+      expect(
+        isWhatsAppUserAuthorized("628111111111@s.whatsapp.net", saved!)
+      ).toBe(false);
+      expect(isWhatsAppUserAuthorized("154352568283178@lid", saved!)).toBe(
+        true
+      );
+    });
+  });
+
+  test("phone pair with an existing owner LID binds only the inbound phone", async () => {
+    await withTempHomedir("atlas-core-wa-pair-phone-", async (tempHome) => {
+      const dir = path.join(tempHome, ".atlas", "whatsapp");
+      await mkdir(dir, { recursive: true });
+      await writeFile(
+        path.join(dir, "config.ini"),
+        [
+          "# Atlas WhatsApp bridge",
+          "profile_id=default",
+          "access_mode=pairing",
+          "phone_number=628111111111",
+          "paired_lid=154352568283178@lid",
+          "pairing_code=ABCD1234",
+          "",
+        ].join("\n"),
+        "utf8"
+      );
+
+      const guest = await verifyAndPairWhatsAppUser(
+        "ABCD1234",
+        "628999999999@s.whatsapp.net"
+      );
+      expect(guest.ok).toBe(true);
+
+      const saved = await loadWhatsAppConfigFile();
+      expect(saved?.pairedJid).toBe("628999999999@s.whatsapp.net");
+      expect(saved?.pairedLid).toBeNull();
+      expect(saved?.pairingCode).toBeNull();
+      expect(isWhatsAppUserAuthorized("154352568283178@lid", saved!)).toBe(
+        false
+      );
+      expect(
+        isWhatsAppUserAuthorized("628999999999@s.whatsapp.net", saved!)
+      ).toBe(true);
+    });
+  });
+
+  test("serializes concurrent pairing so only one JID consumes the code", async () => {
+    await withTempHomedir("atlas-core-wa-pair-race-", async (tempHome) => {
+      const dir = path.join(tempHome, ".atlas", "whatsapp");
+      await mkdir(dir, { recursive: true });
+      await writeFile(
+        path.join(dir, "config.ini"),
+        [
+          "# Atlas WhatsApp bridge",
+          "profile_id=default",
+          "access_mode=pairing",
+          "pairing_code=AABBCCDD",
+          "",
+        ].join("\n"),
+        "utf8"
+      );
+
+      const [first, second] = await Promise.all([
+        verifyAndPairWhatsAppUser("AABBCCDD", "628111111111@s.whatsapp.net"),
+        verifyAndPairWhatsAppUser("AABBCCDD", "628222222222@s.whatsapp.net"),
+      ]);
+
+      expect([first.ok, second.ok].sort()).toEqual([false, true]);
+      const saved = await loadWhatsAppConfigFile();
+      expect(saved?.pairingCode).toBeNull();
+      const authorized = [
+        isWhatsAppUserAuthorized("628111111111@s.whatsapp.net", saved!),
+        isWhatsAppUserAuthorized("628222222222@s.whatsapp.net", saved!),
+      ].filter(Boolean);
+      expect(authorized).toHaveLength(1);
     });
   });
 });

@@ -3,6 +3,7 @@ import path from "node:path";
 import ExcelJS from "exceljs";
 import { z } from "zod";
 import type { ToolContext, ToolDefinition } from "../contract";
+import { getProfileSoulDir } from "../soul/resolve";
 import {
   getCustomToolsDir,
   guardFilePath,
@@ -252,7 +253,15 @@ export const spreadsheetTool: ToolDefinition = {
   parameters: jsonSchemaFromZod(SpreadsheetInputSchema),
   async run(input: unknown, context: ToolContext) {
     const parsed = SpreadsheetInputSchema.parse(input);
-    const workspaceRoot = context.workspaceRoot ?? process.cwd();
+    const orgId = context.orgId?.trim();
+    const profileId = context.profileId?.trim();
+    const workspaceRoot =
+      context.workspaceRoot?.trim() ||
+      (orgId && profileId ? getProfileSoulDir(orgId, profileId) : "");
+    if (!workspaceRoot) {
+      throw new Error("orgId and profileId are required.");
+    }
+    await mkdir(workspaceRoot, { recursive: true });
     const guardOptions = buildSpreadsheetGuardOptions(
       workspaceRoot,
       context.profileId

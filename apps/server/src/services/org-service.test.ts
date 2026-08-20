@@ -501,26 +501,71 @@ describe("OrgService", () => {
     });
 
     const adminUserId = created.adminMember!.member.userId;
-    const localClientUserId = LOCAL_CLIENT_USER_ID;
-
-    expect(localClientUserId).toBeTruthy();
-
-    await orgService.removeMember(created.organization.id, adminUserId);
 
     await expect(
-      orgService.removeMember(created.organization.id, localClientUserId!)
+      orgService.removeMember(created.organization.id, adminUserId)
     ).rejects.toMatchObject({
       message: "Cannot remove the last Workspace Admin.",
       status: 409,
     });
 
     await expect(
-      orgService.updateMember(created.organization.id, localClientUserId!, {
+      orgService.updateMember(created.organization.id, adminUserId, {
         role: "member",
       })
     ).rejects.toMatchObject({
       message: "Cannot change the role of the last Workspace Admin.",
       status: 409,
     });
+  });
+
+  test("serializes concurrent last-admin demotions so one remains admin", async () => {
+    const { orgService, databaseAdapter } = createOrgService();
+    const created = await orgService.createOrganization({
+      admin: {
+        email: "admin@acme.com",
+        name: "Acme Admin",
+        phone: "+628123456789",
+      },
+      name: "Acme",
+      slug: "acme",
+    });
+    const firstAdminId = created.adminMember!.member.userId;
+    const second = await orgService.addMember({
+      email: "second@acme.com",
+      name: "Second Admin",
+      orgId: created.organization.id,
+      phone: "+628123456780",
+      role: "admin",
+    });
+
+    await databaseAdapter.deleteOrgMember(
+      created.organization.id,
+      LOCAL_CLIENT_USER_ID
+    );
+
+    const results = await Promise.allSettled([
+      orgService.updateMember(created.organization.id, firstAdminId, {
+        role: "member",
+      }),
+      orgService.updateMember(created.organization.id, second.member.userId, {
+        role: "member",
+      }),
+    ]);
+
+    const fulfilled = results.filter((result) => result.status === "fulfilled");
+    const rejected = results.filter((result) => result.status === "rejected");
+    expect(fulfilled).toHaveLength(1);
+    expect(rejected).toHaveLength(1);
+    expect((rejected[0] as PromiseRejectedResult).reason).toMatchObject({
+      status: 409,
+    });
+
+    const remaining = await databaseAdapter.listOrgMembers(
+      created.organization.id
+    );
+    expect(remaining.filter((member) => member.role === "admin")).toHaveLength(
+      1
+    );
   });
 });

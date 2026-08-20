@@ -19,6 +19,10 @@ export interface ComposioSessionMcpEndpoint {
   url: string;
 }
 
+export interface ComposioConnectedAccountOwner {
+  userId: string | null;
+}
+
 export interface ComposioApiClient {
   createProfileSession(
     userId: string,
@@ -27,6 +31,9 @@ export interface ComposioApiClient {
     connectedAccountsByToolkit?: Record<string, string>
   ): Promise<ComposioSessionMcpEndpoint>;
   deleteConnectedAccount(connectedAccountId: string): Promise<void>;
+  getConnectedAccount(
+    connectedAccountId: string
+  ): Promise<ComposioConnectedAccountOwner | null>;
   linkToolkitAccount(
     userId: string,
     toolkitSlug: string,
@@ -294,6 +301,33 @@ export class SdkComposioApiClient implements ComposioApiClient {
 
   async deleteConnectedAccount(connectedAccountId: string): Promise<void> {
     await this.composio.connectedAccounts.delete(connectedAccountId);
+  }
+
+  async getConnectedAccount(
+    connectedAccountId: string
+  ): Promise<ComposioConnectedAccountOwner | null> {
+    const accounts = this.composio.connectedAccounts as unknown as {
+      get?: (id: string) => Promise<{
+        userId?: unknown;
+        user_id?: unknown;
+      }>;
+    };
+    if (typeof accounts.get !== "function") {
+      return null;
+    }
+
+    try {
+      const record = await accounts.get(connectedAccountId);
+      const userId =
+        typeof record.userId === "string"
+          ? record.userId
+          : typeof record.user_id === "string"
+            ? record.user_id
+            : null;
+      return { userId };
+    } catch {
+      return null;
+    }
   }
 
   async createProfileSession(

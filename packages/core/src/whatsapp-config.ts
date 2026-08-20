@@ -108,14 +108,6 @@ export function parsePhoneNumberList(raw: string | string[]): string[] {
   return [...items];
 }
 
-function phoneDigits(phone: string): string {
-  return phone.replace(/\D/g, "");
-}
-
-function phoneToWhatsAppJid(phone: string): string {
-  return `${phoneDigits(phone)}@s.whatsapp.net`;
-}
-
 export function whatsAppUserDigits(jid: string): string {
   return normalizePhoneNumberDigits(jid.split("@")[0]?.split(":")[0] ?? "");
 }
@@ -455,67 +447,89 @@ export async function regenerateWhatsAppPairingCode(
   return toWhatsAppSettingsPublic(next);
 }
 
+const whatsAppPairLocks = new Map<string, Promise<unknown>>();
+
+function runSerializedWhatsAppPair<T>(
+  orgId: string | null | undefined,
+  fn: () => Promise<T>
+): Promise<T> {
+  const key = orgId ?? "";
+  const previous = whatsAppPairLocks.get(key) ?? Promise.resolve();
+  const next = previous.then(fn, fn);
+  whatsAppPairLocks.set(
+    key,
+    next.then(
+      () => undefined,
+      () => undefined
+    )
+  );
+  return next;
+}
+
 export async function verifyAndPairWhatsAppUser(
   pairingCodeInput: string,
   jid: string,
   orgId?: string | null
 ): Promise<{ ok: true; message: string } | { ok: false; message: string }> {
-  const config = await loadWhatsAppConfigFile(orgId);
+  return runSerializedWhatsAppPair(orgId, async () => {
+    const config = await loadWhatsAppConfigFile(orgId);
 
-  if (!config) {
+    if (!config) {
+      return {
+        message: "WhatsApp is not configured on the server yet.",
+        ok: false,
+      };
+    }
+
+    if (isWhatsAppUserAuthorized(jid, config)) {
+      return { message: "This chat is already authorized.", ok: true };
+    }
+
+    const expected = config.pairingCode;
+
+    if (!expected) {
+      return {
+        message:
+          "No chat access code is active. Generate one in Integrations → WhatsApp, then send it here.",
+        ok: false,
+      };
+    }
+
+    if (
+      normalizePairingCode(pairingCodeInput) !== normalizePairingCode(expected)
+    ) {
+      return {
+        message:
+          "That chat access code is invalid. Copy the current code from Integrations → WhatsApp and try again.",
+        ok: false,
+      };
+    }
+
+    const isLid = jid.endsWith("@lid");
+    const phoneFromJid = isLid ? "" : whatsAppUserDigits(jid);
+    const sameAsPairedJid = Boolean(
+      config.pairedJid && isSameWhatsAppUserJid(jid, config.pairedJid)
+    );
+    const sameAsPairedLid = Boolean(
+      config.pairedLid && isSameWhatsAppUserJid(jid, config.pairedLid)
+    );
+
+    await writeWhatsAppConfigFile(
+      {
+        ...config,
+        pairedJid: isLid ? (sameAsPairedJid ? config.pairedJid : null) : jid,
+        pairedLid: isLid ? jid : sameAsPairedLid ? config.pairedLid : null,
+        pairingCode: null,
+        phoneNumber: phoneFromJid || config.phoneNumber,
+      },
+      orgId
+    );
+
     return {
-      message: "WhatsApp is not configured on the server yet.",
-      ok: false,
+      message: "Chat authorized. Send a message to start chatting with Atlas.",
+      ok: true,
     };
-  }
-
-  if (isWhatsAppUserAuthorized(jid, config)) {
-    return { message: "This chat is already authorized.", ok: true };
-  }
-
-  const expected = config.pairingCode;
-
-  if (!expected) {
-    return {
-      message:
-        "No chat access code is active. Generate one in Integrations → WhatsApp, then send it here.",
-      ok: false,
-    };
-  }
-
-  if (
-    normalizePairingCode(pairingCodeInput) !== normalizePairingCode(expected)
-  ) {
-    return {
-      message:
-        "That chat access code is invalid. Copy the current code from Integrations → WhatsApp and try again.",
-      ok: false,
-    };
-  }
-
-  const isLid = jid.endsWith("@lid");
-  const phoneFromJid = isLid ? "" : whatsAppUserDigits(jid);
-  const pairedLid = isLid ? jid : config.pairedLid;
-  const pairedJid = isLid
-    ? (config.pairedJid ??
-      (config.phoneNumber ? phoneToWhatsAppJid(config.phoneNumber) : null))
-    : jid;
-
-  await writeWhatsAppConfigFile(
-    {
-      ...config,
-      pairedJid,
-      pairedLid,
-      pairingCode: null,
-      phoneNumber: phoneFromJid || config.phoneNumber,
-    },
-    orgId
-  );
-
-  return {
-    message: "Chat authorized. Send a message to start chatting with Atlas.",
-    ok: true,
-  };
+  });
 }
 
 /** After QR link, pair the owner and store their LID for inbound routing. */

@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import * as os from "node:os";
 import path from "node:path";
@@ -192,8 +193,10 @@ export function createMockClient(
     transcribeAudio: 0,
   };
   const orgIds: string[] = [];
+  const createSessionOrgIds: Array<string | null> = [];
   let lastCreateSessionProfileId: string | undefined;
   let lastStreamInput: unknown;
+  const orgIdScope = new AsyncLocalStorage<{ orgId: string | null }>();
 
   let streamControl: MockStreamControl | null = null;
   const streamControls: MockStreamControl[] = [];
@@ -320,11 +323,14 @@ export function createMockClient(
   const orgs = options.orgs ?? createDefaultTestOrgs();
   let activeOrgId: string | null = orgs[0]?.id ?? null;
 
+  const currentOrgId = () => orgIdScope.getStore()?.orgId ?? activeOrgId;
+
   const client = {
     createChatSession: () => session,
     createSession: async (_channel: string, input?: { profileId?: string }) => {
       calls.createSession += 1;
       lastCreateSessionProfileId = input?.profileId;
+      createSessionOrgIds.push(currentOrgId());
       return session;
     },
     getModels: async () => ({
@@ -338,11 +344,13 @@ export function createMockClient(
       ok: true,
       providerConfigured: options.providerConfigured ?? false,
     }),
+    isolateOrgId: <T>(fn: () => T | Promise<T>) =>
+      orgIdScope.run({ orgId: activeOrgId }, fn),
     listProfiles: async () => {
       calls.listProfiles += 1;
+      const orgId = currentOrgId();
       const scopedProfiles =
-        (activeOrgId ? options.profilesByOrgId?.[activeOrgId] : undefined) ??
-        profiles;
+        (orgId ? options.profilesByOrgId?.[orgId] : undefined) ?? profiles;
 
       return parseListProfilesResponse({
         profiles: scopedProfiles.map((profile) => ({
@@ -378,8 +386,14 @@ export function createMockClient(
     },
     setOrgId: (orgId: string | null) => {
       calls.setOrgId += 1;
-      activeOrgId = orgId?.trim() || null;
-      orgIds.push(orgId ?? "");
+      const next = orgId?.trim() || null;
+      const scope = orgIdScope.getStore();
+      if (scope) {
+        scope.orgId = next;
+      } else {
+        activeOrgId = next;
+      }
+      orgIds.push(next ?? "");
     },
     transcribeAudio: async () => {
       calls.transcribeAudio += 1;
@@ -392,6 +406,7 @@ export function createMockClient(
   return {
     calls,
     client,
+    getCreateSessionOrgIds: () => createSessionOrgIds,
     getLastCreateSessionProfileId: () => lastCreateSessionProfileId,
     getLastStreamInput: () => lastStreamInput,
     getStreamControl: () => streamControl,

@@ -148,14 +148,24 @@ export function registerSetupImportRoutes(
 
     const body = await readJson<RestoreDataImportRequest>(c.req.raw);
 
+    let archive;
+    try {
+      archive = decodeArchiveRequestData(body.data);
+    } catch (error) {
+      return errorResponse(formatImportError(error), 400);
+    }
+
+    try {
+      await assertSetupImportAllowed(databaseAdapter);
+    } catch (error) {
+      return setupImportErrorResponse(error);
+    }
+
     let restore;
     try {
-      restore = await restoreAtlasDataImport(
-        decodeArchiveRequestData(body.data),
-        {
-          confirm: body.confirm,
-        }
-      );
+      restore = await restoreAtlasDataImport(archive, {
+        confirm: body.confirm,
+      });
     } catch (error) {
       return errorResponse(formatImportError(error), 400);
     }

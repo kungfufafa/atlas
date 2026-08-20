@@ -2,13 +2,14 @@ import { describe, expect, test } from "bun:test";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { saveComposioConfig } from "@atlas/core";
+import { loadComposioConfigFile, saveComposioConfig } from "@atlas/core";
 import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { AgentService } from "../../services/agent-service";
 import { AuthService } from "../../services/auth-service";
 import type { ComposioApiClient } from "../../services/composio-api-client";
 import { ComposioService } from "../../services/composio-service";
 import { createMinimalHonoApp } from "../test-app-helpers";
+import { createPlatformAdminUser } from "../test-org-helpers";
 import { loginUserSession, seedOrgAdmin } from "../test-session-helpers";
 
 const TEST_API_KEY = "ck_test";
@@ -23,6 +24,9 @@ function createMockClient(): ComposioApiClient {
       };
     },
     async deleteConnectedAccount() {},
+    async getConnectedAccount() {
+      return null;
+    },
     async linkToolkitAccount() {
       return { redirectUrl: "https://example.com/oauth" };
     },
@@ -234,6 +238,104 @@ describe("composio routes", () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toMatchObject({
       error: "Invalid OAuth state.",
+    });
+  });
+
+  test("oauth callback HEAD is not a public mutation", async () => {
+    const { app } = await createApp();
+
+    const response = await app.fetch(
+      new Request(
+        "http://localhost:4310/v1/composio/oauth/callback?state=abc",
+        {
+          method: "HEAD",
+        }
+      )
+    );
+
+    expect(response.status).toBe(401);
+  });
+
+  test("workspace admin cannot read or write the host Composio API key", async () => {
+    const { app, databaseAdapter } = await createApp();
+    const { email, password, orgId } = await seedOrgAdmin(databaseAdapter, {
+      profileId: "profile_test",
+    });
+    const session = await loginUserSession(app, email, password, orgId);
+
+    const getResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/settings/composio", {
+        headers: session.headers(),
+      })
+    );
+    expect(getResponse.status).toBe(403);
+    await expect(getResponse.json()).resolves.toEqual({
+      error: "Superadmin access required",
+    });
+
+    const putResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/settings/composio", {
+        body: JSON.stringify({ apiKey: "ck_workspace_admin" }),
+        headers: session.headers({
+          "Content-Type": "application/json",
+          "X-CSRF-Token": session.csrfToken,
+        }),
+        method: "PUT",
+      })
+    );
+    expect(putResponse.status).toBe(403);
+    expect(await loadComposioConfigFile()).toMatchObject({
+      apiKey: TEST_API_KEY,
+    });
+  });
+
+  test("superadmin with membership can set the host Composio API key", async () => {
+    const { app, authService, databaseAdapter } = await createApp();
+    const { orgId } = await seedOrgAdmin(databaseAdapter, {
+      profileId: "profile_test",
+    });
+    await createPlatformAdminUser(
+      databaseAdapter,
+      authService,
+      "platform@example.com",
+      "password123"
+    );
+    const platformUser = await databaseAdapter.getUserByEmail(
+      "platform@example.com"
+    );
+    await databaseAdapter.upsertOrgMember({
+      createdAt: new Date().toISOString(),
+      orgId,
+      role: "admin",
+      userId: platformUser!.id,
+    });
+    const session = await loginUserSession(
+      app,
+      "platform@example.com",
+      "password123",
+      orgId
+    );
+
+    const getResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/settings/composio", {
+        headers: session.headers(),
+      })
+    );
+    expect(getResponse.status).toBe(200);
+
+    const putResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/settings/composio", {
+        body: JSON.stringify({ apiKey: "ck_superadmin_host_key" }),
+        headers: session.headers({
+          "Content-Type": "application/json",
+          "X-CSRF-Token": session.csrfToken,
+        }),
+        method: "PUT",
+      })
+    );
+    expect(putResponse.status).toBe(200);
+    expect(await loadComposioConfigFile()).toMatchObject({
+      apiKey: "ck_superadmin_host_key",
     });
   });
 });

@@ -7,6 +7,7 @@ import {
   deleteArtifactShareSnapshot,
   generateArtifactShareToken,
   readArtifactShareSnapshot,
+  sanitizeArtifactShareFilename,
   writeArtifactShareSnapshot,
 } from "./artifact-shares";
 import { getArtifactSharesDir } from "./soul/resolve";
@@ -51,5 +52,11 @@ describe("artifact shares", () => {
     expect(storagePath.startsWith(getArtifactSharesDir(orgId))).toBe(true);
     expect(await readArtifactShareSnapshot(storagePath)).toEqual(bytes);
     await deleteArtifactShareSnapshot(storagePath);
+  });
+
+  test("sanitizeArtifactShareFilename strips CR/LF and quotes", () => {
+    expect(sanitizeArtifactShareFilename('evil\r\nname".md')).toBe(
+      "evil_name_.md"
+    );
   });
 });

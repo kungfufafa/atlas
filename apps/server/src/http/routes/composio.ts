@@ -8,7 +8,7 @@ import type {
   UpdateProfileComposioToolkitsRequest,
 } from "@atlas/core";
 import { AtlasApiError } from "@atlas/core";
-import { resolveComposioCallbackBaseUrl } from "../../services/composio-callback-url";
+import { resolveComposioOAuthCallbackBaseUrl } from "../../services/composio-callback-url";
 import type { ServerOptions } from "../context";
 import {
   requireNotViewerFromContext,
@@ -69,13 +69,13 @@ export function registerComposioOAuthRoutes(
       );
     } catch (error) {
       if (error instanceof AtlasApiError) {
-        return errorResponse(error.message, error.status);
+        return errorResponse(
+          error.status === 404 ? "Invalid OAuth state." : error.message,
+          error.status === 404 ? 400 : error.status
+        );
       }
 
-      return errorResponse(
-        error instanceof Error ? error.message : String(error),
-        400
-      );
+      return errorResponse("Could not complete Composio connection.", 400);
     }
   });
 }
@@ -160,7 +160,7 @@ export function registerComposioRoutes(
           auth.activeOrgId!,
           auth.user.id,
           c.req.param("toolkitSlug"),
-          resolveComposioCallbackBaseUrl({
+          resolveComposioOAuthCallbackBaseUrl({
             clientOrigin: body.callbackOrigin,
             request: c.req.raw,
           })

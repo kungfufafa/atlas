@@ -136,3 +136,27 @@ describeSharedChannelConfigTests({
   saveConfig: saveDiscordConfig,
   verifyAndPair: verifyAndPairDiscordUser,
 });
+
+describe("verifyAndPairDiscordUser concurrency", () => {
+  test("serializes concurrent pairing so only one user consumes the code", async () => {
+    await withTempHomedir("atlas-dc-pair-race-", async (homeDir) => {
+      await writeChannelIniConfig(homeDir, "discord", {
+        botToken: "discord-bot-token",
+        handshakeCode: "AABBCCDD",
+      });
+
+      const [first, second] = await Promise.all([
+        verifyAndPairDiscordUser("AABBCCDD", "111111111111111111"),
+        verifyAndPairDiscordUser("AABBCCDD", "222222222222222222"),
+      ]);
+
+      expect([first.ok, second.ok].sort()).toEqual([false, true]);
+      const saved = await loadDiscordConfigFile();
+      expect(saved?.handshakeCode).toBeNull();
+      expect(saved?.pairedUserIds).toHaveLength(1);
+      expect(["111111111111111111", "222222222222222222"]).toContain(
+        saved?.pairedUserIds[0]
+      );
+    });
+  });
+});

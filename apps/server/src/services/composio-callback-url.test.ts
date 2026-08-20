@@ -6,6 +6,7 @@ import {
   isLoopbackComposioCallbackBaseUrl,
   persistWebPublicUrl,
   resolveComposioCallbackBaseUrl,
+  resolveComposioOAuthCallbackBaseUrl,
   resolveRequestClientOrigin,
 } from "./composio-callback-url";
 
@@ -21,6 +22,25 @@ describe("composio-callback-url", () => {
     expect(
       resolveRequestClientOrigin(request, "https://app.example.com/")
     ).toBe("https://app.example.com");
+  });
+
+  test("resolveComposioOAuthCallbackBaseUrl ignores off-origin callbackOrigin", () => {
+    const request = new Request(
+      "http://localhost:4310/v1/composio/toolkits/gmail/connect"
+    );
+
+    const resolved = resolveComposioOAuthCallbackBaseUrl({
+      clientOrigin: "https://evil.example",
+      request,
+    });
+    expect(resolved).not.toBe("https://evil.example");
+    expect(resolved.startsWith("http://localhost")).toBe(true);
+  });
+
+  test("resolveRequestClientOrigin ignores non-http origins", () => {
+    expect(
+      resolveRequestClientOrigin(undefined, "javascript:alert(1)")
+    ).toBeUndefined();
   });
 
   test("resolveRequestClientOrigin reads Origin header", () => {

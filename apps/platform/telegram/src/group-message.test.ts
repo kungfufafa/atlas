@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import type { Context } from "grammy";
 import {
+  explainGroupMessageHandling,
   isTelegramGroupChat,
+  parseTelegramSlashCommand,
   resolveBotInfo,
   resolveChannelOrgKey,
   resolveConversationKey,
@@ -74,6 +76,41 @@ describe("group-message helpers", () => {
     expect(
       shouldHandleGroupMessage(groupContext({ text: "/status@mybot" }), botInfo)
     ).toBe(true);
+
+    expect(
+      shouldHandleGroupMessage(
+        groupContext({ text: "/clear@moderationbot" }),
+        botInfo
+      )
+    ).toBe(false);
+  });
+
+  test("ignores slash commands aimed at another bot", () => {
+    const decision = explainGroupMessageHandling(
+      groupContext({ text: "/clear@moderationbot" }),
+      botInfo
+    );
+
+    expect(decision.shouldHandle).toBe(false);
+    expect(decision.reason).toBe("foreign-bot");
+    expect(
+      parseTelegramSlashCommand("/stop@moderationbot", {
+        botUsername: "mybot",
+        requireBotTarget: true,
+      })
+    ).toBeNull();
+    expect(
+      parseTelegramSlashCommand("/clear@mybot", {
+        botUsername: "mybot",
+        requireBotTarget: true,
+      })
+    ).toBe("/clear");
+    expect(
+      parseTelegramSlashCommand("/clear", {
+        botUsername: "mybot",
+        requireBotTarget: true,
+      })
+    ).toBe("/clear");
   });
 
   test("shouldHandleGroupMessage matches @username using ctx.me", () => {

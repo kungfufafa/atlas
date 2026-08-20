@@ -78,8 +78,16 @@ function compareTokenHash(token: string, expectedHashHex: string): boolean {
   );
 }
 
+function envManagedLocalAuthToken(): string | undefined {
+  return (
+    process.env.ATLAS_LOCAL_AUTH_TOKEN?.trim() ||
+    process.env.atlas_LOCAL_AUTH_TOKEN?.trim() ||
+    undefined
+  );
+}
+
 export async function resolveLocalAuthToken(): Promise<string> {
-  const envToken = process.env.atlas_LOCAL_AUTH_TOKEN?.trim();
+  const envToken = envManagedLocalAuthToken();
   if (envToken) {
     return envToken;
   }
@@ -122,7 +130,7 @@ export async function loadLocalAuthToken(
 }
 
 export async function rotateLocalAuthToken(): Promise<string> {
-  if (process.env.atlas_LOCAL_AUTH_TOKEN?.trim()) {
+  if (envManagedLocalAuthToken()) {
     throw new LocalAuthTokenManagedExternallyError();
   }
 
@@ -145,7 +153,7 @@ export async function verifyLocalAuthToken(
     return null;
   }
 
-  const envToken = process.env.atlas_LOCAL_AUTH_TOKEN?.trim();
+  const envToken = envManagedLocalAuthToken();
   if (envToken) {
     return compareTokenHash(token, hashLocalAuthToken(envToken))
       ? { email: LOCAL_CLIENT_EMAIL }

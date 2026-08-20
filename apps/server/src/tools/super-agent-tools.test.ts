@@ -10,6 +10,7 @@ import type {
 } from "@atlas/core";
 import type { ProfileService } from "../services/profile-service";
 import {
+  PROFILE_CREATE_CONFIRMATION_MESSAGE,
   SuperAgentSessionState,
   TOOL_ASSIGNMENT_CONFIRMATION_MESSAGE,
 } from "../services/super-agent-session-state";
@@ -305,6 +306,22 @@ describe("super agent create_profile", () => {
       },
     });
 
+    const draft = await createProfile.run(
+      {
+        name: "Support Bot",
+        soulFiles: {
+          "INSTRUCTIONS.md": "# Instructions",
+          "SOUL.md": "# Support Bot",
+          "STYLE.md": "# Style",
+        },
+      },
+      { orgId: ORG_ID, sessionId: SESSION_ID }
+    );
+    expect(draft).toMatchObject({
+      message: PROFILE_CREATE_CONFIRMATION_MESSAGE,
+      outcome: "needs_confirmation",
+    });
+
     await createProfile.run(
       {
         name: "Support Bot",
@@ -321,12 +338,50 @@ describe("super agent create_profile", () => {
     expect(capturedRequests[0]?.name).toBe("Support Bot");
     expect(capturedRequests[0]?.systemPrompt).toBeUndefined();
     expect(capturedRequests[0]?.model).toBeUndefined();
-    expect(capturedRequests[0]?.isSuper).toBe(false);
+    expect(capturedRequests[0]?.isSuper).toBeUndefined();
     expect(capturedRequests[0]?.soulFiles).toEqual({
       "INSTRUCTIONS.md": "# Instructions",
       "SOUL.md": "# Support Bot",
       "STYLE.md": "# Style",
     });
+  });
+
+  test("ignores isSuper so Super Agent cannot mint another Super Agent", async () => {
+    const capturedRequests: CreateProfileRequest[] = [];
+
+    const createProfile = getCreateProfileTool({
+      async createProfile(
+        _orgId: string,
+        request: CreateProfileRequest
+      ): Promise<ProfileResponse> {
+        capturedRequests.push(request);
+
+        return {
+          profile: {
+            createdAt: "2026-01-01T00:00:00.000Z",
+            hasAvatar: false,
+            id: "shadow-super",
+            isSuper: request.isSuper ?? false,
+            mcpServerCount: 0,
+            mcpServers: [],
+            model: null,
+            name: request.name,
+            skills: [],
+            soulActive: false,
+            systemPrompt: "",
+            toolCount: 0,
+            tools: [],
+            updatedAt: "2026-01-01T00:00:00.000Z",
+          },
+        };
+      },
+    });
+
+    const args = { isSuper: true, name: "Shadow Super" };
+    await createProfile.run(args, { orgId: ORG_ID, sessionId: SESSION_ID });
+    await createProfile.run(args, { orgId: ORG_ID, sessionId: SESSION_ID });
+
+    expect(capturedRequests[0]?.isSuper).toBeUndefined();
   });
 
   test("ignores a client-supplied id so profile ids are server-generated", async () => {
@@ -369,13 +424,12 @@ describe("super agent create_profile", () => {
         .properties
     ).not.toHaveProperty("id");
 
-    await createProfile.run(
-      {
-        id: "8dp3bHu3biH538Z9twIj7",
-        name: "Newsletter Manager",
-      },
-      { orgId: ORG_ID, sessionId: SESSION_ID }
-    );
+    const args = {
+      id: "8dp3bHu3biH538Z9twIj7",
+      name: "Newsletter Manager",
+    };
+    await createProfile.run(args, { orgId: ORG_ID, sessionId: SESSION_ID });
+    await createProfile.run(args, { orgId: ORG_ID, sessionId: SESSION_ID });
 
     expect(capturedRequests[0]?.id).toBeUndefined();
     expect(capturedRequests[0]?.name).toBe("Newsletter Manager");

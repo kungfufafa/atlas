@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtemp, realpath, rm } from "node:fs/promises";
+import { access, mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import type { ToolContext } from "../contract";
+import { getProfileSoulDir } from "../soul/resolve";
 import {
   parseA1Range,
   sanitizeCsvFormulaInjection,
@@ -125,6 +126,35 @@ describe("spreadsheet tool V2", () => {
       expect(exportRes.status).toBe("csv_exported");
       expect(exportRes.exportedRows).toBe(2);
     });
+  });
+
+  test("uses profile soul dir when workspaceRoot is omitted", async () => {
+    const configDir = await mkdtemp(path.join(tmpdir(), "atlas-sheet-soul-"));
+    const previous = process.env.ATLAS_CONFIG_DIR;
+    process.env.ATLAS_CONFIG_DIR = configDir;
+    try {
+      const soulDir = getProfileSoulDir("org_test", "profile_test");
+      await spreadsheetTool.run(
+        {
+          action: "create",
+          columns: ["A"],
+          data: [[1]],
+          path: "soul-only.xlsx",
+        },
+        { orgId: "org_test", profileId: "profile_test" }
+      );
+      await access(path.join(soulDir, "soul-only.xlsx"));
+      await expect(
+        access(path.join(process.cwd(), "soul-only.xlsx"))
+      ).rejects.toThrow();
+    } finally {
+      if (previous === undefined) {
+        delete process.env.ATLAS_CONFIG_DIR;
+      } else {
+        process.env.ATLAS_CONFIG_DIR = previous;
+      }
+      await rm(configDir, { force: true, recursive: true });
+    }
   });
 
   test("formula injection sanitization escapes dangerous spreadsheet prefixes", () => {
