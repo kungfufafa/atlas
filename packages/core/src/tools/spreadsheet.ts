@@ -2,7 +2,9 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import ExcelJS from "exceljs";
 import { z } from "zod";
+import { coerceDeliverableArtifactPath } from "../artifact-path";
 import type { ToolContext, ToolDefinition } from "../contract";
+import { pathExists } from "../fs";
 import { getProfileSoulDir } from "../soul/resolve";
 import {
   getCustomToolsDir,
@@ -45,7 +47,10 @@ const SpreadsheetInputSchema = z
       .optional(),
     endCol: z.number().int().min(1).optional(),
     endRow: z.number().int().min(1).optional(),
-    path: z.string().min(1),
+    path: z
+      .string()
+      .min(1)
+      .describe("Workbook path under artifacts/ (e.g. artifacts/sales.xlsx)"),
     range: z.string().optional(),
     sheetName: z.string().optional(),
     startCol: z.number().int().min(1).optional(),
@@ -245,9 +250,46 @@ function buildSpreadsheetGuardOptions(
   };
 }
 
+const SPREADSHEET_CREATE_ACTIONS = new Set(["create"]);
+
+async function resolveSpreadsheetPath(
+  requestedPath: string,
+  cwd: string | undefined,
+  guardOptions: PathGuardOptions,
+  mode: "create" | "existing"
+): Promise<string> {
+  const coercedRelative = coerceDeliverableArtifactPath(requestedPath);
+  const coerced = await guardFilePath(
+    coercedRelative,
+    cwd ?? null,
+    undefined,
+    guardOptions
+  );
+
+  if (mode === "create" || (await pathExists(coerced.resolved))) {
+    return coerced.resolved;
+  }
+
+  if (coercedRelative === requestedPath) {
+    return coerced.resolved;
+  }
+
+  const legacy = await guardFilePath(
+    requestedPath,
+    cwd ?? null,
+    undefined,
+    guardOptions
+  );
+  if (await pathExists(legacy.resolved)) {
+    return legacy.resolved;
+  }
+
+  return coerced.resolved;
+}
+
 export const spreadsheetTool: ToolDefinition = {
   description:
-    "Create, inspect, modify, read, write, import and export spreadsheets and Excel workbooks (.xlsx, .csv, .json) deterministically with support for multi-sheet, formulas, styles, and cell ranges.",
+    "Create, inspect, modify, read, write, import and export spreadsheets and Excel workbooks (.xlsx, .csv, .json) under artifacts/. Use this whenever the user asks for a spreadsheet or workbook.",
   name: "spreadsheet",
   parallelSafe: false,
   parameters: jsonSchemaFromZod(SpreadsheetInputSchema),
@@ -266,13 +308,12 @@ export const spreadsheetTool: ToolDefinition = {
       workspaceRoot,
       context.profileId
     );
-    const guarded = await guardFilePath(
+    const filePath = await resolveSpreadsheetPath(
       parsed.path,
       parsed.cwd,
-      undefined,
-      guardOptions
+      guardOptions,
+      SPREADSHEET_CREATE_ACTIONS.has(parsed.action) ? "create" : "existing"
     );
-    const filePath = guarded.resolved;
 
     switch (parsed.action) {
       case "create": {
@@ -532,7 +573,7 @@ export const spreadsheetTool: ToolDefinition = {
         });
 
         const guardedTarget = await guardFilePath(
-          parsed.targetCsvPath,
+          coerceDeliverableArtifactPath(parsed.targetCsvPath),
           parsed.cwd,
           undefined,
           guardOptions
@@ -554,7 +595,7 @@ export const spreadsheetTool: ToolDefinition = {
         }
         const wb = await loadExcelWorkbook(filePath);
         const guardedTarget = await guardFilePath(
-          parsed.targetXlsxPath,
+          coerceDeliverableArtifactPath(parsed.targetXlsxPath),
           parsed.cwd,
           undefined,
           guardOptions

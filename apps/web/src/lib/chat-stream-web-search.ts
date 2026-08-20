@@ -1,3 +1,4 @@
+import type { SourceItem } from "@atlas/core";
 import type {
   WebSearchSource,
   WebSearchToolState,
@@ -86,6 +87,63 @@ function sourceFromRecord(
     title,
     url: normalized.url,
   };
+}
+
+function domainFromUrl(url: string): string | undefined {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {}
+}
+
+function toSourceItem(source: WebSearchSource): SourceItem {
+  const url = source.href ?? source.url;
+  return {
+    domain: domainFromUrl(url),
+    id: url,
+    title: source.title,
+    url,
+  };
+}
+
+export function collectTurnWebSources(messages: ChatListItem[]): SourceItem[] {
+  const collected: WebSearchSource[] = [];
+
+  for (const message of messages) {
+    if (
+      !isWebSearchTool(message.tool) ||
+      message.toolStatus === "running" ||
+      message.toolResult == null
+    ) {
+      continue;
+    }
+
+    collected.push(...parseWebSearchSourcesFromResult(message.toolResult));
+  }
+
+  return dedupeSources(collected).map(toSourceItem);
+}
+
+function mergeSourceItems(existing: SourceItem[]): SourceItem[] {
+  const seen = new Set<string>();
+  const next: SourceItem[] = [];
+
+  for (const source of existing) {
+    const key = source.url || source.id;
+    if (!key || seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    next.push(source);
+  }
+
+  return next;
+}
+
+export function mergeTurnSources(
+  streamed: SourceItem[] | undefined,
+  fromTools: SourceItem[]
+): SourceItem[] {
+  return mergeSourceItems([...(streamed ?? []), ...fromTools]);
 }
 
 function dedupeSources(sources: WebSearchSource[]): WebSearchSource[] {

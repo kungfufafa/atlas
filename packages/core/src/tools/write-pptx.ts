@@ -13,7 +13,7 @@ export const writePptxInputSchema = z
     company: z.string().optional().describe("Company or organization name"),
     cwd: trimmedOptionalString,
     path: requiredTrimmedString("path").describe(
-      "Path ending in .pptx relative to profile workspace (e.g. 'atlas_overview.pptx')"
+      "Path ending in .pptx under artifacts/ (e.g. artifacts/weekly-review.pptx)"
     ),
     slides: z
       .array(presentationSlideSchema)

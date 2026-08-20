@@ -1,5 +1,5 @@
 import type { SpreadsheetPreview } from "@atlas/core";
-import { Download01Icon, Search01Icon, TableIcon } from "hugeicons-react";
+import { Search01Icon } from "hugeicons-react";
 import { useMemo, useState } from "react";
 
 function columnNumberToLetter(colIndex: number): string {
@@ -14,7 +14,6 @@ function columnNumberToLetter(colIndex: number): string {
 
 export function SpreadsheetViewer({
   preview,
-  downloadUrl,
   onSelectSheet,
 }: {
   preview: SpreadsheetPreview;
@@ -67,59 +66,26 @@ export function SpreadsheetViewer({
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-background">
       {/* Top Toolbar & Formula Bar */}
-      <div className="flex flex-col border-border border-b bg-card">
-        <div className="flex items-center justify-between gap-3 border-border/50 border-b px-4 py-2 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="flex size-7 items-center justify-center rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <TableIcon className="size-4" />
-            </div>
-            <span className="font-semibold text-foreground text-xs sm:text-sm">
-              {preview.filename}
-            </span>
-            <span className="rounded bg-muted px-2 py-0.5 font-medium text-[11px] text-muted-foreground">
-              {activeSheet?.rowCount ?? 0} rows × {maxCols} cols
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Quick Search */}
-            <div className="relative">
-              <Search01Icon className="absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-              <input
-                className="h-7 w-32 rounded-md border border-border bg-background pr-2 pl-8 font-normal text-foreground text-xs placeholder:text-muted-foreground focus:w-48 focus:outline-hidden focus:ring-1 focus:ring-primary sm:w-40"
-                onChange={(e) => setFilterQuery(e.target.value)}
-                placeholder="Search cells…"
-                type="text"
-                value={filterQuery}
-              />
-            </div>
-
-            <a
-              aria-label="Download spreadsheet"
-              className="inline-flex h-7 items-center gap-1 rounded-md border border-border bg-background px-2.5 font-medium text-foreground text-xs shadow-2xs transition-colors hover:bg-accent hover:text-foreground"
-              download={preview.filename}
-              href={downloadUrl}
-            >
-              <Download01Icon className="size-3.5" />
-              Download
-            </a>
-          </div>
+      <div className="flex items-center gap-2 border-border border-b px-3 py-1.5 font-mono text-xs">
+        <div className="flex h-6 min-w-12 items-center justify-center rounded border border-border bg-muted/40 px-2 font-medium text-foreground">
+          {selectedCellName}
         </div>
-
-        {/* Formula Bar */}
-        <div className="flex items-center gap-2 px-3 py-1.5 font-mono text-xs">
-          <div className="flex h-6 min-w-14 items-center justify-center rounded border border-border bg-muted/30 px-2 font-bold text-foreground">
-            {selectedCellName}
-          </div>
-          <div className="h-4 w-px bg-border" />
-          <span className="shrink-0 font-semibold text-muted-foreground italic">
-            fx
-          </span>
-          <div className="min-w-0 flex-1 truncate font-normal text-foreground">
-            {selectedValue || (
-              <span className="text-muted-foreground/50">Empty</span>
-            )}
-          </div>
+        <div className="h-4 w-px bg-border" />
+        <span className="shrink-0 text-muted-foreground">fx</span>
+        <div className="min-w-0 flex-1 truncate text-foreground">
+          {selectedValue || (
+            <span className="text-muted-foreground/50">Empty</span>
+          )}
+        </div>
+        <div className="relative">
+          <Search01Icon className="absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            className="h-7 w-36 rounded-md border border-border bg-background pr-2 pl-7 text-foreground text-xs placeholder:text-muted-foreground focus:outline-hidden focus:ring-1 focus:ring-ring"
+            onChange={(e) => setFilterQuery(e.target.value)}
+            placeholder="Search"
+            type="text"
+            value={filterQuery}
+          />
         </div>
       </div>
 
@@ -137,9 +103,9 @@ export function SpreadsheetViewer({
                 const isSelectedCol = selectedCell.col === c;
                 return (
                   <th
-                    className={`min-w-28 border-border border-r border-b px-3 py-1.5 text-center font-bold text-xs transition-colors ${
+                    className={`min-w-28 border-border border-r border-b px-3 py-1.5 text-center font-medium text-xs ${
                       isSelectedCol
-                        ? "bg-primary/15 text-primary"
+                        ? "bg-muted text-foreground"
                         : "text-muted-foreground"
                     }`}
                     key={colLetter}
@@ -169,16 +135,16 @@ export function SpreadsheetViewer({
 
                 return (
                   <tr
-                    className={`border-border/40 border-b transition-colors ${
-                      isSelectedRow ? "bg-primary/5" : "hover:bg-muted/30"
+                    className={`border-border/40 border-b ${
+                      isSelectedRow ? "bg-muted/40" : "hover:bg-muted/30"
                     }`}
                     key={`row-${rIdx}`}
                   >
                     {/* Row Number Header */}
                     <td
-                      className={`sticky left-0 z-10 w-12 select-none border-border border-r p-1.5 text-center font-bold text-[11px] tabular-nums ${
+                      className={`sticky left-0 z-10 w-12 select-none border-border border-r p-1.5 text-center font-medium text-[11px] tabular-nums ${
                         isSelectedRow
-                          ? "bg-primary/20 text-primary"
+                          ? "bg-muted text-foreground"
                           : "bg-muted/80 text-muted-foreground"
                       }`}
                     >
@@ -225,7 +191,7 @@ export function SpreadsheetViewer({
                               : "text-foreground/90"
                           } ${
                             isSelected
-                              ? "bg-primary/20 ring-2 ring-primary ring-inset"
+                              ? "bg-muted outline outline-1 outline-foreground/20 outline-offset-[-1px]"
                               : ""
                           }`}
                           key={`cell-${rIdx}-${cIdx}`}
@@ -247,26 +213,24 @@ export function SpreadsheetViewer({
 
       {/* Bottom Sheet Tabs Bar */}
       {preview.sheetNames && preview.sheetNames.length > 0 ? (
-        <div className="flex items-center gap-1 overflow-x-auto border-border border-t bg-card px-3 py-1.5 shadow-xs">
-          <div className="flex items-center gap-1">
-            {preview.sheetNames.map((sheetName, sIdx) => {
-              const isActive = sIdx === (preview.activeSheetIndex ?? 0);
-              return (
-                <button
-                  className={`rounded-md px-3 py-1 font-semibold text-xs transition-all ${
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-xs"
-                      : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
-                  key={sheetName}
-                  onClick={() => onSelectSheet?.(sheetName, sIdx)}
-                  type="button"
-                >
-                  {sheetName}
-                </button>
-              );
-            })}
-          </div>
+        <div className="flex items-center gap-1 overflow-x-auto border-border border-t px-2 py-1">
+          {preview.sheetNames.map((sheetName, sIdx) => {
+            const isActive = sIdx === (preview.activeSheetIndex ?? 0);
+            return (
+              <button
+                className={`rounded-md px-2.5 py-1 font-medium text-xs ${
+                  isActive
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                }`}
+                key={sheetName}
+                onClick={() => onSelectSheet?.(sheetName, sIdx)}
+                type="button"
+              >
+                {sheetName}
+              </button>
+            );
+          })}
         </div>
       ) : null}
     </div>

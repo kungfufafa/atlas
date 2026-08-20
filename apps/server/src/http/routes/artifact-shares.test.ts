@@ -1,7 +1,13 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import { mkdir, rm, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { join } from "node:path";
-import { getArtifactSharesDir, getProfileArtifactsDir } from "@atlas/core";
+import { fileURLToPath } from "node:url";
+import {
+  getArtifactSharesDir,
+  getProfileArtifactsDir,
+  previewService,
+} from "@atlas/core";
 import { createInMemoryDatabaseAdapter, type DatabaseAdapter } from "@atlas/db";
 import { setupTestConfigDir } from "../../test-config-dir";
 import { isPublicRouteRequest } from "../public-routes";
@@ -48,7 +54,7 @@ async function withEnv<T>(
 }
 
 async function seedProfileArtifact(params: {
-  content: string;
+  content: string | Uint8Array;
   databaseAdapter: DatabaseAdapter;
   filename: string;
   meta?: string;
@@ -109,7 +115,13 @@ describe("artifact share routes", () => {
       isPublicRouteRequest("GET", "/v1/public/artifact-shares/abc123")
     ).toBe(true);
     expect(
+      isPublicRouteRequest("GET", "/v1/public/artifact-shares/abc123/preview")
+    ).toBe(true);
+    expect(
       isPublicRouteRequest("POST", "/v1/public/artifact-shares/abc123")
+    ).toBe(false);
+    expect(
+      isPublicRouteRequest("POST", "/v1/public/artifact-shares/abc123/preview")
     ).toBe(false);
   });
 
@@ -563,5 +575,146 @@ describe("artifact share routes", () => {
     const disposition = publicResponse.headers.get("Content-Disposition") ?? "";
     expect(disposition).not.toContain("\r");
     expect(disposition).not.toContain("\n");
+  });
+
+  test("public spreadsheet share exposes a grid preview without leaking workspace paths", async () => {
+    const requireFromCore = createRequire(
+      fileURLToPath(
+        new URL("../../../../../packages/core/package.json", import.meta.url)
+      )
+    );
+    const ExcelJS = requireFromCore("exceljs");
+    const workbook = new ExcelJS.Workbook();
+    const clients = workbook.addWorksheet("Clients");
+    clients.addRow(["Name", "City"]);
+    clients.addRow(["OceanSpace", "Jakarta"]);
+    const details = workbook.addWorksheet("Details");
+    details.addRow(["ID", "Note"]);
+    details.addRow([1, "Primary client"]);
+    const xlsxBytes = Buffer.from(await workbook.xlsx.writeBuffer());
+
+    const { app, databaseAdapter } = createApp();
+    const session = await setupFreshInstallSession(app, databaseAdapter);
+    const orgId = session.orgId!;
+    const profileId = "profile_share_xlsx";
+
+    await seedProfileArtifact({
+      content: xlsxBytes,
+      databaseAdapter,
+      filename: "OceanSpace_Data_Klien.xlsx",
+      name: "Share Xlsx",
+      orgId,
+      profileId,
+    });
+
+    const publishResponse = await app.fetch(
+      publishArtifactShareRequest({
+        body: { path: "OceanSpace_Data_Klien.xlsx" },
+        orgId,
+        profileId,
+        session,
+      })
+    );
+    expect(publishResponse.status).toBe(201);
+    const published = (await publishResponse.json()) as { token: string };
+
+    const previewResponse = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/public/artifact-shares/${encodeURIComponent(published.token)}/preview`
+      )
+    );
+    expect(previewResponse.status).toBe(200);
+    const preview = (await previewResponse.json()) as {
+      type: string;
+      sheetNames: string[];
+      activeSheet: { data: unknown[][] };
+      downloadUrl: string;
+      artifactId?: string;
+    };
+    expect(preview.type).toBe("spreadsheet");
+    expect(preview.sheetNames).toEqual(["Clients", "Details"]);
+    expect(preview.activeSheet.data[1]?.[0]).toBe("OceanSpace");
+    expect(preview.downloadUrl).toBe(
+      `/v1/public/artifact-shares/${published.token}`
+    );
+    expect(preview.artifactId).toBeUndefined();
+    const body = JSON.stringify(preview);
+    expect(body).not.toContain("/v1/profiles/");
+    expect(body).not.toContain(orgId);
+    expect(body).not.toContain(profileId);
+
+    const sheetResponse = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/public/artifact-shares/${encodeURIComponent(published.token)}/preview?sheet=Details`
+      )
+    );
+    expect(sheetResponse.status).toBe(200);
+    const sheetPreview = (await sheetResponse.json()) as {
+      activeSheet: { name: string; data: unknown[][] };
+    };
+    expect(sheetPreview.activeSheet.name).toBe("Details");
+    expect(sheetPreview.activeSheet.data[1]?.[1]).toBe("Primary client");
+  });
+
+  test("public preview 500 does not leak internal error details", async () => {
+    const generateSpy = spyOn(previewService, "generate").mockRejectedValue(
+      new Error(
+        "Office conversion worker timed out after 25000ms. /secret/path"
+      )
+    );
+    const errorSpy = spyOn(console, "error").mockImplementation(
+      () => undefined
+    );
+
+    try {
+      const requireFromCore = createRequire(
+        fileURLToPath(
+          new URL("../../../../../packages/core/package.json", import.meta.url)
+        )
+      );
+      const ExcelJS = requireFromCore("exceljs");
+      const workbook = new ExcelJS.Workbook();
+      workbook.addWorksheet("Clients").addRow(["Name"]);
+      const xlsxBytes = Buffer.from(await workbook.xlsx.writeBuffer());
+
+      const { app, databaseAdapter } = createApp();
+      const session = await setupFreshInstallSession(app, databaseAdapter);
+      const orgId = session.orgId!;
+      const profileId = "profile_share_preview_500";
+
+      await seedProfileArtifact({
+        content: xlsxBytes,
+        databaseAdapter,
+        filename: "clients.xlsx",
+        name: "Share Preview 500",
+        orgId,
+        profileId,
+      });
+
+      const publishResponse = await app.fetch(
+        publishArtifactShareRequest({
+          body: { path: "clients.xlsx" },
+          orgId,
+          profileId,
+          session,
+        })
+      );
+      expect(publishResponse.status).toBe(201);
+      const published = (await publishResponse.json()) as { token: string };
+
+      const previewResponse = await app.fetch(
+        new Request(
+          `http://localhost:4310/v1/public/artifact-shares/${encodeURIComponent(published.token)}/preview`
+        )
+      );
+      expect(previewResponse.status).toBe(500);
+      const body = await previewResponse.text();
+      expect(body).toContain("Failed to load preview");
+      expect(body).not.toContain("25000");
+      expect(body).not.toContain("/secret/path");
+    } finally {
+      generateSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
   });
 });

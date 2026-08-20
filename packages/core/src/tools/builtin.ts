@@ -2,6 +2,7 @@ import { mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import { isDocxFile, isLegacyDocFile } from "../artifact-mime";
+import { coerceDeliverableArtifactPath } from "../artifact-path";
 import type { ToolContext, ToolDefinition } from "../contract";
 import { convertDocxToMarkdown } from "../docx-text";
 import { markdownToDocx } from "../docx-write";
@@ -50,7 +51,9 @@ export const writeDocxInputSchema = z
   .object({
     cwd: trimmedOptionalString,
     markdown: requiredTrimmedString("markdown"),
-    path: requiredTrimmedString("path"),
+    path: requiredTrimmedString("path").describe(
+      "Path ending in .docx under artifacts/ (e.g. artifacts/report.docx)"
+    ),
   })
   .strict();
 
@@ -419,15 +422,16 @@ export async function runWriteDocx(
   options: FileToolRunOptions = {}
 ): Promise<WriteFileOutput> {
   const parsed = parseToolInput(writeDocxInputSchema, input);
+  const relativePath = coerceDeliverableArtifactPath(parsed.path);
 
-  if (!isDocxFile(path.basename(parsed.path))) {
+  if (!isDocxFile(path.basename(relativePath))) {
     throw new Error("write_docx requires a path ending in .docx");
   }
 
   const bytes = await markdownToDocx(parsed.markdown);
   const guardOptions = buildFileGuardOptions(context, options);
   const guarded = await guardFilePath(
-    parsed.path,
+    relativePath,
     parsed.cwd ?? null,
     bytes.length,
     guardOptions
@@ -435,14 +439,14 @@ export async function runWriteDocx(
   refuseProfileSkillMarkdownWrite(context, guarded.resolved);
   refuseSkillLocalToolFileWrite(guarded.resolved);
   // Same rule as write_file: never silently overwrite an existing artifact.
-  const filePath = isArtifactPath(parsed.path)
+  const filePath = isArtifactPath(relativePath)
     ? await uniqueArtifactPath(guarded.resolved)
     : guarded.resolved;
 
   await mkdir(path.dirname(filePath), { recursive: true });
   await writeFile(filePath, bytes);
 
-  if (isArtifactPath(parsed.path)) {
+  if (isArtifactPath(relativePath)) {
     const { stampArtifactLineage } = await import("../artifact-lineage");
     await stampArtifactLineage({
       parentFilePath:
@@ -462,7 +466,9 @@ export async function runWritePptx(
 ): Promise<{ bytesWritten: number; path: string; slideCount: number }> {
   const parsed = parseToolInput(writePptxInputSchema, input);
 
-  if (!parsed.path.toLowerCase().endsWith(".pptx")) {
+  const relativePath = coerceDeliverableArtifactPath(parsed.path);
+
+  if (!relativePath.toLowerCase().endsWith(".pptx")) {
     throw new Error("write_pptx requires a path ending in .pptx");
   }
 
@@ -476,7 +482,7 @@ export async function runWritePptx(
 
   const guardOptions = buildFileGuardOptions(context, options);
   const guarded = await guardFilePath(
-    parsed.path,
+    relativePath,
     parsed.cwd ?? null,
     bytes.length,
     guardOptions
@@ -484,14 +490,14 @@ export async function runWritePptx(
   refuseProfileSkillMarkdownWrite(context, guarded.resolved);
   refuseSkillLocalToolFileWrite(guarded.resolved);
 
-  const filePath = isArtifactPath(parsed.path)
+  const filePath = isArtifactPath(relativePath)
     ? await uniqueArtifactPath(guarded.resolved)
     : guarded.resolved;
 
   await mkdir(path.dirname(filePath), { recursive: true });
   await writeFile(filePath, bytes);
 
-  if (isArtifactPath(parsed.path)) {
+  if (isArtifactPath(relativePath)) {
     const { stampArtifactLineage } = await import("../artifact-lineage");
     await stampArtifactLineage({
       extraDetails: { slideCount: parsed.slides.length },

@@ -28,19 +28,27 @@ export function artifactPanelBodyClassName({
   isSvg = false,
   isVideo = false,
   isMarkdown,
+  isMermaid = false,
+  mode = "preview",
 }: {
   isHtml: boolean;
   isImage: boolean;
   isSvg?: boolean;
   isVideo?: boolean;
   isMarkdown: boolean;
-}): string | undefined {
-  if (isHtml || isImage || isSvg || isVideo) {
-    return "flex flex-col overflow-hidden p-0";
+  isMermaid?: boolean;
+  mode?: "preview" | "code";
+}): string {
+  if (mode === "code") {
+    return "flex flex-col overflow-hidden";
+  }
+
+  if (isHtml || isImage || isSvg || isVideo || isMermaid) {
+    return "flex flex-col overflow-hidden";
   }
 
   if (isMarkdown) {
-    return "overflow-y-auto px-6 py-6 sm:px-8 sm:py-8";
+    return "overflow-y-auto px-8 py-10";
   }
 
   return "flex flex-col overflow-hidden";

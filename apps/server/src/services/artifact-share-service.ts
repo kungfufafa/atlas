@@ -1,11 +1,14 @@
 import crypto from "node:crypto";
 import {
+  type ArtifactPreview,
   AtlasApiError,
   buildArtifactSharePath,
   deleteArtifactShareSnapshot,
   generateArtifactShareToken,
   isBrowserExecutableArtifactMimeType,
   mapArtifactReadError,
+  type PreviewOptions,
+  previewService,
   readArtifactFile,
   readArtifactShareSnapshot,
   resolveArtifactMimeType,
@@ -46,6 +49,28 @@ export function resolveArtifactShareBaseUrl(options: {
   }
 
   return resolved;
+}
+
+function toPublicSharePreview(
+  preview: ArtifactPreview,
+  token: string
+): ArtifactPreview {
+  const downloadUrl = `/v1/public/artifact-shares/${encodeURIComponent(token)}`;
+  if (preview.type === "pdf") {
+    return {
+      ...preview,
+      artifactId: undefined,
+      downloadUrl,
+      previewUrl: downloadUrl,
+      thumbnailUrl: undefined,
+    };
+  }
+
+  return {
+    ...preview,
+    artifactId: undefined,
+    downloadUrl,
+  };
 }
 
 export class ArtifactShareService {
@@ -241,6 +266,8 @@ export class ArtifactShareService {
   async readPublicArtifactShare(token: string): Promise<{
     bytes: Buffer;
     metadata: PublicArtifactShareResponse;
+    orgId: string;
+    profileId: string;
   }> {
     const trimmed = token.trim();
     if (!trimmed) {
@@ -274,7 +301,29 @@ export class ArtifactShareService {
         mimeType,
         sizeBytes: share.sizeBytes,
       },
+      orgId: share.orgId,
+      profileId: share.profileId,
     };
+  }
+
+  async previewPublicArtifactShare(
+    token: string,
+    options: PreviewOptions = {}
+  ): Promise<ArtifactPreview> {
+    const { bytes, metadata, orgId, profileId } =
+      await this.readPublicArtifactShare(token);
+    const preview = await previewService.generate(
+      {
+        filename: metadata.filename,
+        mimeType: metadata.mimeType,
+        sizeBytes: metadata.sizeBytes,
+      },
+      bytes,
+      { ...options, strategy: "semantic" },
+      { orgId, profileId }
+    );
+
+    return toPublicSharePreview(preview, token.trim());
   }
 
   private async requireProfile(

@@ -7,6 +7,10 @@ import {
   isImageArtifactMimeType,
   isMarkdownArtifactMimeType,
   isMermaidArtifactFilename,
+  isPdfFile,
+  isPresentationFile,
+  isRichPreviewArtifact,
+  isSpreadsheetFile,
   isSvgArtifactMimeType,
   isTextArtifactMimeType,
   isUnknownArtifactMimeType,
@@ -24,6 +28,15 @@ describe("inferArtifactMimeType", () => {
     expect(inferArtifactMimeType("slides.html")).toBe("text/html");
     expect(inferArtifactMimeType("flow.mmd")).toBe("text/plain");
     expect(inferArtifactMimeType("data.json")).toBe("application/json");
+  });
+
+  test("maps office deliverable extensions", () => {
+    expect(inferArtifactMimeType("deck.pptx")).toBe(
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    );
+    expect(inferArtifactMimeType("sales.xlsx")).toBe(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
   });
 
   test("maps common video extensions", () => {
@@ -85,6 +98,26 @@ describe("mime predicates", () => {
     expect(isVideoArtifactMimeType("image/png")).toBe(false);
     expect(isUnknownArtifactMimeType("application/octet-stream")).toBe(true);
     expect(isUnknownArtifactMimeType("text/plain")).toBe(false);
+  });
+
+  test("classifies spreadsheets, decks, PDFs, and rich preview artifacts", () => {
+    expect(isSpreadsheetFile("OceanSpace_Data_Klien.xlsx")).toBe(true);
+    expect(
+      isSpreadsheetFile(
+        "sales.bin",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      )
+    ).toBe(true);
+    expect(isSpreadsheetFile("export.csv")).toBe(true);
+    expect(isSpreadsheetFile("notes.md")).toBe(false);
+    expect(isPresentationFile("deck.pptx")).toBe(true);
+    expect(isPdfFile("brief.pdf")).toBe(true);
+    expect(isRichPreviewArtifact("OceanSpace_Data_Klien.xlsx")).toBe(true);
+    expect(isRichPreviewArtifact("deck.pptx")).toBe(true);
+    expect(isRichPreviewArtifact("brief.pdf")).toBe(true);
+    expect(isRichPreviewArtifact("memo.docx")).toBe(true);
+    expect(isRichPreviewArtifact("legacy.doc")).toBe(false);
+    expect(isRichPreviewArtifact("notes.md")).toBe(false);
   });
 
   test("treats javascript, css, and xml as browser-executable", () => {

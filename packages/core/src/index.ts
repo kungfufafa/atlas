@@ -5,6 +5,7 @@ export * from "./api-error";
 export * from "./approval-grant";
 export * from "./artifact-lineage";
 export * from "./artifact-mime";
+export * from "./artifact-path";
 export * from "./artifact-preview";
 export * from "./artifact-resolver";
 export * from "./artifact-shares";

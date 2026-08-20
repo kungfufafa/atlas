@@ -1,6 +1,6 @@
 import type { ArtifactPreview } from "@atlas/core";
-import { CodeBlock } from "@/components/ai-elements/code-block";
-import { MessageResponse } from "@/components/ai-elements/message";
+import type { ReactNode } from "react";
+import { ArtifactCodeCanvas } from "@/components/artifacts/ArtifactCodeCanvas";
 import { HtmlPreviewFrame } from "@/components/artifacts/HtmlPreviewFrame";
 import { SafeMarkdownPreview } from "@/components/artifacts/SafeMarkdownPreview";
 import { SvgPreview } from "@/components/artifacts/SvgPreview";
@@ -13,7 +13,6 @@ import {
   markdownForMermaidSource,
   mermaidPreviewError,
 } from "@/lib/artifact-mermaid-preview";
-import { MAX_HIGHLIGHTED_CHARS } from "@/lib/artifact-preview-limits";
 import type { ChatArtifactRef } from "@/lib/chat-artifacts";
 import { cn } from "@/lib/utils";
 
@@ -55,94 +54,67 @@ export type ArtifactAttachmentPanelBodyProps =
       streaming?: boolean;
     });
 
-function toCodeFence(content: string, language: string): string {
-  const longestRun = Math.max(
-    0,
-    ...[...content.matchAll(/`+/g)].map((match) => match[0].length)
-  );
-  const fence = "`".repeat(Math.max(3, longestRun + 1));
-  return `${fence}${language}\n${content}\n${fence}`;
-}
-
-function usesPlainCodeBlock(
-  content: string,
-  format: "markdown" | "plain" | "mermaid",
-  language: string | null
-): boolean {
-  return (
-    format !== "markdown" &&
-    format !== "mermaid" &&
-    !(language !== null && content.length <= MAX_HIGHLIGHTED_CHARS)
-  );
-}
-
 function renderTextContent({
   content,
   format,
   language,
   streaming = false,
-  fillHeight = false,
 }: {
   content: string;
   format: "markdown" | "plain" | "mermaid";
   language: string | null;
   streaming?: boolean;
-  fillHeight?: boolean;
 }) {
   if (format === "mermaid") {
     const mermaidError = mermaidPreviewError(content);
     if (mermaidError) {
-      return <p className="text-muted-foreground text-sm">{mermaidError}</p>;
+      return (
+        <p className="p-6 text-muted-foreground text-sm">{mermaidError}</p>
+      );
     }
     return (
-      <SafeMarkdownPreview
-        content={markdownForMermaidSource(content)}
-        streaming={streaming}
-      />
+      <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-8">
+        <SafeMarkdownPreview
+          content={markdownForMermaidSource(content)}
+          streaming={streaming}
+        />
+      </div>
     );
   }
 
   if (format === "markdown") {
-    return <SafeMarkdownPreview content={content} streaming={streaming} />;
-  }
-
-  if (language && content.length <= MAX_HIGHLIGHTED_CHARS) {
     return (
-      <MessageResponse className="text-sm" isAnimating={streaming}>
-        {toCodeFence(content, language)}
-      </MessageResponse>
+      <div className="mx-auto w-full max-w-[42rem]">
+        <SafeMarkdownPreview
+          className="artifact-canvas-markdown leading-7"
+          content={content}
+          streaming={streaming}
+        />
+      </div>
     );
   }
 
-  return <CodeBlock code={content} fillHeight={fillHeight} lang={language} />;
+  return (
+    <ArtifactCodeCanvas
+      code={content}
+      language={language}
+      streaming={streaming}
+    />
+  );
 }
 
-function LoadingState({ compact = false }: { compact?: boolean }) {
+function LoadingState() {
   return (
-    <div
-      className={
-        compact
-          ? "flex items-center gap-2 text-muted-foreground text-sm"
-          : "flex flex-1 items-center justify-center gap-2 p-4 text-muted-foreground text-sm"
-      }
-    >
-      <Spinner className="size-4" />
-      Loading preview…
+    <div className="flex flex-1 items-center justify-center p-6 text-muted-foreground">
+      <Spinner className="size-5" />
     </div>
   );
 }
 
-function UnavailablePreview({ padded }: { padded: boolean }) {
+function UnavailablePreview() {
   return (
-    <p
-      className={
-        padded
-          ? "p-4 text-muted-foreground text-sm"
-          : "text-muted-foreground text-sm"
-      }
-    >
-      Preview is not available for this file type. Download the artifact
-      instead.
+    <p className="p-6 text-muted-foreground text-sm">
+      Preview is not available for this file type.
     </p>
   );
 }
@@ -155,20 +127,20 @@ function ArtifactAttachmentImageBody({
   artifact,
 }: Extract<ArtifactAttachmentPanelBodyProps, { kind: "image" }>) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col bg-muted/20">
       {loading ? <LoadingState /> : null}
-      {error ? <p className="p-4 text-destructive text-sm">{error}</p> : null}
+      {error ? <p className="p-6 text-destructive text-sm">{error}</p> : null}
       {!(loading || error) && imagePreviewUrl ? (
-        <div className="flex min-h-0 flex-1 items-center justify-center p-4">
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-6">
           <img
             alt={artifact.filename}
-            className="max-h-[min(70vh,48rem)] max-w-full rounded-lg border border-border bg-muted/20 object-contain"
+            className="max-h-full max-w-full object-contain"
             src={imagePreviewUrl}
           />
         </div>
       ) : null}
       {loading || error || imagePreviewUrl || canPreview ? null : (
-        <UnavailablePreview padded />
+        <UnavailablePreview />
       )}
     </div>
   );
@@ -182,14 +154,14 @@ function ArtifactAttachmentVideoBody({
   artifact,
 }: Extract<ArtifactAttachmentPanelBodyProps, { kind: "video" }>) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col bg-black">
       {loading ? <LoadingState /> : null}
-      {error ? <p className="p-4 text-destructive text-sm">{error}</p> : null}
+      {error ? <p className="p-6 text-destructive text-sm">{error}</p> : null}
       {!(loading || error) && videoPreviewUrl ? (
-        <div className="flex min-h-0 flex-1 items-center justify-center p-4">
+        <div className="flex min-h-0 flex-1 items-center justify-center">
           <video
             aria-label={artifact.filename}
-            className="max-h-[min(70vh,48rem)] w-full max-w-[min(100%,24rem)] rounded-lg border border-border bg-black object-contain"
+            className="max-h-full max-w-full object-contain"
             controls
             playsInline
             preload="metadata"
@@ -198,7 +170,7 @@ function ArtifactAttachmentVideoBody({
         </div>
       ) : null}
       {loading || error || videoPreviewUrl || canPreview ? null : (
-        <UnavailablePreview padded />
+        <UnavailablePreview />
       )}
     </div>
   );
@@ -214,7 +186,7 @@ function ArtifactAttachmentHtmlBody({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {loading ? <LoadingState /> : null}
-      {error ? <p className="p-4 text-destructive text-sm">{error}</p> : null}
+      {error ? <p className="p-6 text-destructive text-sm">{error}</p> : null}
       {!(loading || error) && content ? (
         <HtmlPreviewFrame
           filename={artifact.filename}
@@ -223,7 +195,7 @@ function ArtifactAttachmentHtmlBody({
         />
       ) : null}
       {loading || error || content || canPreview ? null : (
-        <UnavailablePreview padded />
+        <UnavailablePreview />
       )}
     </div>
   );
@@ -237,16 +209,16 @@ function ArtifactAttachmentSvgBody({
   artifact,
 }: Extract<ArtifactAttachmentPanelBodyProps, { kind: "svg" }>) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col bg-muted/20">
       {loading ? <LoadingState /> : null}
-      {error ? <p className="p-4 text-destructive text-sm">{error}</p> : null}
+      {error ? <p className="p-6 text-destructive text-sm">{error}</p> : null}
       {!(loading || error) && content ? (
-        <div className="flex min-h-0 flex-1 items-center justify-center p-4">
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto p-6">
           <SvgPreview content={content} filename={artifact.filename} />
         </div>
       ) : null}
       {loading || error || content || canPreview ? null : (
-        <UnavailablePreview padded />
+        <UnavailablePreview />
       )}
     </div>
   );
@@ -261,30 +233,24 @@ function ArtifactAttachmentTextBody({
   streaming = false,
   canPreview,
 }: Extract<ArtifactAttachmentPanelBodyProps, { kind: "text" }>) {
-  const showCodeBlock = Boolean(
-    content && usesPlainCodeBlock(content, format, language)
-  );
-
   return (
     <div
       className={cn(
-        showCodeBlock ? "flex min-h-0 flex-1 flex-col gap-4" : "space-y-4"
+        "flex min-h-0 flex-1 flex-col",
+        format === "markdown" && "overflow-y-auto"
       )}
     >
-      {loading ? <LoadingState compact /> : null}
-      {error ? <p className="text-destructive text-sm">{error}</p> : null}
+      {loading ? <LoadingState /> : null}
+      {error ? <p className="p-6 text-destructive text-sm">{error}</p> : null}
       {!(loading || error) && content
         ? renderTextContent({
             content,
-            fillHeight: showCodeBlock,
             format,
             language,
             streaming,
           })
         : null}
-      {loading || error || canPreview ? null : (
-        <UnavailablePreview padded={false} />
-      )}
+      {loading || error || canPreview ? null : <UnavailablePreview />}
     </div>
   );
 }
@@ -301,31 +267,44 @@ function ArtifactAttachmentRichBody({
   }
 
   if (error) {
-    return <p className="p-4 text-destructive text-sm">{error}</p>;
+    return <p className="p-6 text-destructive text-sm">{error}</p>;
   }
 
   if (!preview) {
-    return <UnavailablePreview padded />;
+    return <UnavailablePreview />;
   }
 
+  let viewer: ReactNode;
   switch (preview.type) {
     case "presentation":
-      return <PresentationViewer downloadUrl={downloadUrl} preview={preview} />;
+      viewer = (
+        <PresentationViewer downloadUrl={downloadUrl} preview={preview} />
+      );
+      break;
     case "spreadsheet":
-      return (
+      viewer = (
         <SpreadsheetViewer
           downloadUrl={downloadUrl}
           onSelectSheet={onSelectSheet}
           preview={preview}
         />
       );
+      break;
     case "pdf":
-      return <PdfViewer downloadUrl={downloadUrl} preview={preview} />;
+      viewer = <PdfViewer downloadUrl={downloadUrl} preview={preview} />;
+      break;
     case "document":
-      return <DocumentViewer downloadUrl={downloadUrl} preview={preview} />;
+      viewer = <DocumentViewer downloadUrl={downloadUrl} preview={preview} />;
+      break;
     default:
-      return <UnavailablePreview padded />;
+      viewer = <UnavailablePreview />;
   }
+
+  return (
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+      {viewer}
+    </div>
+  );
 }
 
 export function ArtifactAttachmentPanelBody(

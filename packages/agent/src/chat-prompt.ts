@@ -172,13 +172,13 @@ export function buildChatSystemPrompt(
 
     if (tools.some((tool) => tool.name === "write_pptx")) {
       sections.push(
-        "When the user asks for a presentation or slides, use write_pptx. Do not leave a slide outline in chat as a substitute."
+        "When the user asks for a presentation or slides, use write_pptx with a path under artifacts/ (for example artifacts/weekly-review.pptx). Do not leave a slide outline in chat as a substitute."
       );
     }
 
     if (tools.some((tool) => tool.name === "spreadsheet")) {
       sections.push(
-        "When the user asks for a spreadsheet, model, or workbook, use spreadsheet. Do not leave a table dump in chat as a substitute."
+        "When the user asks for a spreadsheet, model, or workbook, use spreadsheet with a path under artifacts/ (for example artifacts/sales.xlsx). Do not leave a table dump in chat as a substitute."
       );
     }
 
@@ -212,7 +212,9 @@ export function buildChatSystemPrompt(
     if (tools.some((tool) => tool.name === "write_file")) {
       sections.push(
         "Skills are workflow instructions, not callable tools — never invoke save-artifact (or other skills) as a tool.",
-        "When the user wants output kept or mentions artifacts, use write_file to save under artifacts/ (follow the save-artifact skill when active, including the metadata sidecar). The same applies when they ask for a report, document, export, or anything they would reopen later — do not leave that work only in chat.",
+        "When producing something the user can open, preview, or download, write it under artifacts/ (follow the save-artifact skill when active, including the metadata sidecar). Do not paste the full file in chat.",
+        "That includes interactive or visual output (HTML, React/JSX, SVG, Mermaid, substantial Markdown) and source the user would copy or rerun.",
+        "The chat reply is a short summary. The web UI opens a live preview for these files.",
         "Durable deliverables such as reports, slide decks, and exports belong under artifacts/, not the profile workspace root.",
         "Do not use artifacts/ for soul files or MEMORY.md."
       );
@@ -220,7 +222,7 @@ export function buildChatSystemPrompt(
 
     if (tools.some((tool) => tool.name === "write_docx")) {
       sections.push(
-        "When the user asks for a Word document, use write_docx with Markdown content. Never write HTML or WordprocessingML to a .docx or .doc path with write_file — those formats are archives, not text, and Word will show the markup as raw text."
+        "When the user asks for a Word document, use write_docx with Markdown content and a path under artifacts/ (for example artifacts/report.docx). Never write HTML or WordprocessingML to a .docx or .doc path with write_file — those formats are archives, not text, and Word will show the markup as raw text."
       );
     }
 

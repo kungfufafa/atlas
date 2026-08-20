@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { ChatListItem } from "@/lib/chat-history";
 import {
   buildPublicArtifactShareDownloadUrl,
+  buildPublicArtifactSharePreviewUrl,
   extractArtifactPathsFromText,
   extractTurnArtifacts,
   inferArtifactMimeType,
@@ -477,6 +478,82 @@ describe("extractTurnArtifacts", () => {
     ).toEqual([]);
   });
 
+  test("extracts write_pptx results under artifacts/", () => {
+    expect(
+      extractTurnArtifacts([
+        {
+          content: "",
+          id: "tool-pptx",
+          role: "tool",
+          tool: "write_pptx",
+          toolCallId: "pptx_1",
+          toolInput: { path: "artifacts/deck.pptx", title: "Deck" },
+          toolResult: {
+            bytesWritten: 4096,
+            path: `${ARTIFACTS_ROOT}/deck.pptx`,
+            slideCount: 4,
+          },
+          toolStatus: "done",
+        },
+      ])
+    ).toEqual([
+      {
+        filename: "deck.pptx",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        path: "deck.pptx",
+        savedAt: "",
+        sizeBytes: 4096,
+      },
+    ]);
+  });
+
+  test("extracts spreadsheet create results under artifacts/", () => {
+    expect(
+      extractTurnArtifacts([
+        {
+          content: "",
+          id: "tool-sheet",
+          role: "tool",
+          tool: "spreadsheet",
+          toolCallId: "sheet_1",
+          toolInput: { action: "create", path: "artifacts/sales.xlsx" },
+          toolResult: {
+            path: "artifacts/sales.xlsx",
+            status: "created",
+          },
+          toolStatus: "done",
+        },
+      ])
+    ).toEqual([
+      {
+        filename: "sales.xlsx",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        path: "sales.xlsx",
+        savedAt: "",
+        sizeBytes: 0,
+      },
+    ]);
+  });
+
+  test("ignores spreadsheet inspect reads", () => {
+    expect(
+      extractTurnArtifacts([
+        {
+          content: "",
+          id: "tool-inspect",
+          role: "tool",
+          tool: "spreadsheet",
+          toolCallId: "sheet_2",
+          toolInput: { action: "inspect", path: "artifacts/sales.xlsx" },
+          toolResult: { path: "artifacts/sales.xlsx", sheetCount: 1 },
+          toolStatus: "done",
+        },
+      ])
+    ).toEqual([]);
+  });
+
   test("extracts write_file pairs and generate_image together in one turn", () => {
     const messages: ChatListItem[] = [
       writeFileTool(
@@ -560,13 +637,56 @@ describe("inferArtifactMimeType", () => {
 });
 
 describe("resolvePublicArtifactShareView", () => {
-  test("does not treat Word files as markdown previews", () => {
+  test("previews Word .docx via the rich document viewer", () => {
     expect(
       resolvePublicArtifactShareView({
         content: null,
         filename: "brief.docx",
         mimeType:
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        token: "tok",
+      })
+    ).toEqual({ kind: "rich" });
+  });
+
+  test("previews spreadsheet shares in the grid viewer", () => {
+    expect(
+      resolvePublicArtifactShareView({
+        content: null,
+        filename: "OceanSpace_Data_Klien.xlsx",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        token: "tok",
+      })
+    ).toEqual({ kind: "rich" });
+  });
+
+  test("previews decks and PDFs via the rich viewer", () => {
+    expect(
+      resolvePublicArtifactShareView({
+        content: null,
+        filename: "deck.pptx",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        token: "tok",
+      })
+    ).toEqual({ kind: "rich" });
+    expect(
+      resolvePublicArtifactShareView({
+        content: null,
+        filename: "brief.pdf",
+        mimeType: "application/pdf",
+        token: "tok",
+      })
+    ).toEqual({ kind: "rich" });
+  });
+
+  test("legacy .doc stays download-only", () => {
+    expect(
+      resolvePublicArtifactShareView({
+        content: null,
+        filename: "legacy.doc",
+        mimeType: "application/msword",
         token: "tok",
       })
     ).toEqual({ kind: "download" });
@@ -587,5 +707,17 @@ describe("resolvePublicArtifactShareView", () => {
     expect(buildPublicArtifactShareDownloadUrl("abc")).toBe(
       "/v1/public/artifact-shares/abc?download=1"
     );
+  });
+
+  test("builds a public preview URL with optional sheet params", () => {
+    expect(buildPublicArtifactSharePreviewUrl("abc")).toBe(
+      "/v1/public/artifact-shares/abc/preview"
+    );
+    expect(
+      buildPublicArtifactSharePreviewUrl("abc", "", {
+        sheet: "Clients",
+        sheetIndex: 1,
+      })
+    ).toBe("/v1/public/artifact-shares/abc/preview?sheet=Clients&sheetIndex=1");
   });
 });

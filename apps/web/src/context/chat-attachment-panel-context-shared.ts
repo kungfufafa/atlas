@@ -6,6 +6,7 @@ export interface ChatAttachmentPanelConfig {
   defaultWidth?: number;
   fullscreen?: boolean;
   headerActions?: ReactNode;
+  headerLeading?: ReactNode;
   id: string;
   onClose?: () => void;
   resizable?: boolean;

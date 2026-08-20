@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { access, mkdtemp, realpath, rm } from "node:fs/promises";
+import { access, copyFile, mkdtemp, realpath, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import ExcelJS from "exceljs";
 import type { ToolContext } from "../contract";
 import { getProfileSoulDir } from "../soul/resolve";
 import {
@@ -42,8 +43,9 @@ describe("spreadsheet tool V2", () => {
           sheetName: "Q1",
         },
         context
-      )) as { status: string };
+      )) as { path: string; status: string };
       expect(createRes.status).toBe("created");
+      expect(createRes.path).toBe("artifacts/sales.xlsx");
 
       const inspectRes = (await spreadsheetTool.run(
         {
@@ -128,6 +130,99 @@ describe("spreadsheet tool V2", () => {
     });
   });
 
+  test("prefers artifacts/ over a leftover workspace-root workbook", async () => {
+    await withTempWorkspace(async (workspaceRoot, context) => {
+      await spreadsheetTool.run(
+        {
+          action: "create",
+          columns: ["Item"],
+          data: [["legacy"]],
+          path: "sales.xlsx",
+          sheetName: "Legacy",
+        },
+        context
+      );
+      await copyFile(
+        path.join(workspaceRoot, "artifacts", "sales.xlsx"),
+        path.join(workspaceRoot, "sales.xlsx")
+      );
+
+      await spreadsheetTool.run(
+        {
+          action: "create",
+          columns: ["Item"],
+          data: [["canvas"]],
+          path: "sales.xlsx",
+          sheetName: "Canvas",
+        },
+        context
+      );
+
+      const writeRes = (await spreadsheetTool.run(
+        {
+          action: "write_range",
+          path: "sales.xlsx",
+          startCol: 1,
+          startRow: 2,
+          values: [["updated"]],
+        },
+        context
+      )) as { path: string; status: string };
+      expect(writeRes.status).toBe("updated");
+      expect(writeRes.path).toBe("artifacts/sales.xlsx");
+
+      const inspectRes = (await spreadsheetTool.run(
+        {
+          action: "inspect",
+          path: "sales.xlsx",
+        },
+        context
+      )) as {
+        path: string;
+        sheets: Array<{ name: string }>;
+      };
+      expect(inspectRes.path).toBe("artifacts/sales.xlsx");
+      expect(inspectRes.sheets[0]?.name).toBe("Canvas");
+
+      const leftover = new ExcelJS.Workbook();
+      await leftover.xlsx.readFile(path.join(workspaceRoot, "sales.xlsx"));
+      expect(leftover.worksheets[0]?.name).toBe("Legacy");
+    });
+  });
+
+  test("inspects a leftover workspace-root workbook when artifacts/ is missing", async () => {
+    await withTempWorkspace(async (workspaceRoot, context) => {
+      await spreadsheetTool.run(
+        {
+          action: "create",
+          columns: ["Item"],
+          data: [["legacy"]],
+          path: "sales.xlsx",
+          sheetName: "Legacy",
+        },
+        context
+      );
+      await copyFile(
+        path.join(workspaceRoot, "artifacts", "sales.xlsx"),
+        path.join(workspaceRoot, "sales.xlsx")
+      );
+      await rm(path.join(workspaceRoot, "artifacts", "sales.xlsx"));
+
+      const inspectRes = (await spreadsheetTool.run(
+        {
+          action: "inspect",
+          path: "sales.xlsx",
+        },
+        context
+      )) as {
+        path: string;
+        sheets: Array<{ name: string }>;
+      };
+      expect(inspectRes.path).toBe("sales.xlsx");
+      expect(inspectRes.sheets[0]?.name).toBe("Legacy");
+    });
+  });
+
   test("uses profile soul dir when workspaceRoot is omitted", async () => {
     const configDir = await mkdtemp(path.join(tmpdir(), "atlas-sheet-soul-"));
     const previous = process.env.ATLAS_CONFIG_DIR;
@@ -143,7 +238,7 @@ describe("spreadsheet tool V2", () => {
         },
         { orgId: "org_test", profileId: "profile_test" }
       );
-      await access(path.join(soulDir, "soul-only.xlsx"));
+      await access(path.join(soulDir, "artifacts", "soul-only.xlsx"));
       await expect(
         access(path.join(process.cwd(), "soul-only.xlsx"))
       ).rejects.toThrow();

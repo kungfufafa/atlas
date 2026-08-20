@@ -7,7 +7,6 @@ import {
   artifactPanelBodyClassName,
   artifactPanelDefaultWidth,
   artifactPanelSubtitle,
-  downloadActionLabel,
 } from "@/components/chat/artifact-attachment-panel-body.shared";
 import { useKnowledgeDocumentPreviewContent } from "@/components/soul-tools/use-knowledge-document-preview-content";
 import { Button } from "@/components/ui/button";
@@ -69,7 +68,6 @@ export function KnowledgeDocumentPreview({
   const downloadUrl = `${client.baseUrl}${buildKnowledgeDocumentContentUrl(profileId, document.id)}`;
   const isMarkdown = isMarkdownArtifactMimeType(document.mediaType);
   const language = artifactCodeLanguage(document.filename);
-  const downloadLabel = downloadActionLabel(document.mediaType);
   const artifactRef = toArtifactRef(document);
 
   const { loading, error, content, setContent } =
@@ -114,10 +112,8 @@ export function KnowledgeDocumentPreview({
       fullscreen,
       headerActions: (
         <ArtifactAttachmentPanelActions
-          additionalMenuItems={null}
           content={content}
           copied={copied}
-          downloadLabel={downloadLabel}
           downloadUrl={downloadUrl}
           filename={document.filename}
           fullscreen={fullscreen}
@@ -155,7 +151,6 @@ export function KnowledgeDocumentPreview({
     content,
     canPreview,
     copied,
-    downloadLabel,
     downloadUrl,
   ]);
 

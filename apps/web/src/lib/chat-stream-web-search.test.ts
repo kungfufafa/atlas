@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { ChatListItem } from "./chat-history";
 import {
   buildWebSearchToolState,
+  collectTurnWebSources,
   extractWebSearchBlocksFromProviderContent,
   isWebSearchTool,
   parseWebSearchQuery,
@@ -253,6 +254,54 @@ describe("chat-stream-web-search", () => {
       status: "done",
     });
     expect(buildWebSearchToolState(done).sources).toHaveLength(1);
+  });
+
+  test("collectTurnWebSources aggregates unique results across searches", () => {
+    const sources = collectTurnWebSources([
+      {
+        content: "",
+        id: "a",
+        role: "tool",
+        tool: "web_search",
+        toolResult: {
+          results: [
+            {
+              domain: "auth0.com",
+              id: "1",
+              title: "JWT",
+              url: "https://auth0.com/jwt",
+            },
+          ],
+        },
+        toolStatus: "done",
+      },
+      {
+        content: "",
+        id: "b",
+        role: "tool",
+        tool: "exa__web_search_exa",
+        toolResult: {
+          results: [
+            {
+              title: "JWT",
+              url: "https://auth0.com/jwt",
+            },
+            {
+              title: "OWASP",
+              url: "https://owasp.org/jwt",
+            },
+          ],
+        },
+        toolStatus: "done",
+      },
+    ]);
+
+    expect(sources.map((source) => source.url)).toEqual([
+      "https://auth0.com/jwt",
+      "https://owasp.org/jwt",
+    ]);
+    expect(sources[0]?.title).toBe("JWT");
+    expect(sources[0]?.domain).toBe("auth0.com");
   });
 });
 

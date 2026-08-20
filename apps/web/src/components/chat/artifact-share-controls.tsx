@@ -29,6 +29,38 @@ export function ArtifactShareMenuItem({
   );
 }
 
+export function ArtifactShareIconButton({
+  share,
+}: {
+  share: ArtifactShareControlsState;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            aria-label="Share"
+            disabled={share.busy || !share.orgId}
+            onClick={share.handleShareClick}
+            size="icon-sm"
+            type="button"
+            variant="ghost"
+          >
+            {share.busy ? (
+              <Loading03Icon aria-hidden className="size-4 animate-spin" />
+            ) : (
+              <Share04Icon aria-hidden className="size-4" />
+            )}
+          </Button>
+        }
+      />
+      <TooltipContent side="bottom" sideOffset={6}>
+        Share
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 export function ArtifactSharePublishDialogFromState({
   share,
   artifactPath,

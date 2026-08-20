@@ -656,8 +656,14 @@
     max-width: none;
   }
 
+  .chat-markdown.artifact-canvas-markdown {
+    max-width: none;
+    font-size: 0.9375rem;
+    line-height: 1.7;
+  }
+
   /* Streamdown code fences in chat — single compact block, no 200px placeholder */
-  .chat-markdown [data-streamdown="code-block"] {
+  .chat-markdown:not(.artifact-canvas-code) [data-streamdown="code-block"] {
     display: flex !important;
     flex-flow: row wrap !important;
     gap: 0 !important;
@@ -672,7 +678,8 @@
     border-radius: var(--radius-md);
   }
 
-  .chat-markdown [data-streamdown="code-block-header"] {
+  .chat-markdown:not(.artifact-canvas-code)
+    [data-streamdown="code-block-header"] {
     display: flex !important;
     flex: 1 1 auto;
     align-items: center !important;
@@ -685,14 +692,16 @@
     background: transparent;
   }
 
-  .chat-markdown [data-streamdown="code-block-header"] > span {
+  .chat-markdown:not(.artifact-canvas-code)
+    [data-streamdown="code-block-header"]
+    > span {
     display: flex;
     align-items: center;
     line-height: 1;
   }
 
   /* Inline copy button beside language label (cancel Streamdown sticky/-mt-10 overlay) */
-  .chat-markdown
+  .chat-markdown:not(.artifact-canvas-code)
     [data-streamdown="code-block"]
     > div:has([data-streamdown="code-block-actions"]) {
     position: static !important;
@@ -713,7 +722,8 @@
     transform: none !important;
   }
 
-  .chat-markdown [data-streamdown="code-block-actions"] {
+  .chat-markdown:not(.artifact-canvas-code)
+    [data-streamdown="code-block-actions"] {
     display: flex !important;
     gap: 0;
     align-items: center !important;
@@ -724,7 +734,8 @@
     backdrop-filter: none !important;
   }
 
-  .chat-markdown [data-streamdown="code-block-copy-button"] {
+  .chat-markdown:not(.artifact-canvas-code)
+    [data-streamdown="code-block-copy-button"] {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -734,11 +745,13 @@
     border-radius: calc(var(--radius-sm) * 0.9);
   }
 
-  .chat-markdown [data-streamdown="code-block-copy-button"]:hover {
+  .chat-markdown:not(.artifact-canvas-code)
+    [data-streamdown="code-block-copy-button"]:hover {
     background: var(--accent);
   }
 
-  .chat-markdown [data-streamdown="code-block-body"] {
+  .chat-markdown:not(.artifact-canvas-code)
+    [data-streamdown="code-block-body"] {
     flex: 1 1 100%;
     width: 100%;
     padding: 0.625rem 0.875rem !important;
@@ -748,7 +761,9 @@
     border-radius: 0 !important;
   }
 
-  .chat-markdown [data-streamdown="code-block-body"] pre {
+  .chat-markdown:not(.artifact-canvas-code)
+    [data-streamdown="code-block-body"]
+    pre {
     padding: 0;
     margin: 0;
     overflow-x: auto;
@@ -757,7 +772,9 @@
     background: transparent;
   }
 
-  .chat-markdown [data-streamdown="code-block-body"] code {
+  .chat-markdown:not(.artifact-canvas-code)
+    [data-streamdown="code-block-body"]
+    code {
     display: block;
     font-family: var(--font-mono);
     font-size: 0.8125rem;
@@ -766,7 +783,11 @@
   }
 
   /* Streamdown renders each line as a bare <span> unless lineNumbers is enabled */
-  .chat-markdown [data-streamdown="code-block-body"] pre code > span {
+  .chat-markdown:not(.artifact-canvas-code)
+    [data-streamdown="code-block-body"]
+    pre
+    code
+    > span {
     display: block;
     white-space: pre-wrap;
   }
@@ -1128,4 +1149,149 @@
   --sidebar-accent-foreground: #fafafa;
   --sidebar-border: #27272a;
   --sidebar-ring: #2563eb;
+}
+
+/*
+  Code artifact canvas — unlayered so it beats Streamdown's Tailwind utilities
+  (rounded-xl, p-2, my-4, bg-sidebar) and the 200px contain-intrinsic-size.
+*/
+.artifact-code-canvas {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--background);
+}
+
+.artifact-code-canvas .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0 !important;
+}
+
+.artifact-code-canvas .chat-markdown.artifact-canvas-code {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  max-width: none;
+  height: 100%;
+  min-height: 0;
+}
+
+.artifact-code-canvas
+  .chat-markdown.artifact-canvas-code
+  [data-streamdown="code-block"] {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-flow: column nowrap !important;
+  gap: 0 !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  contain-intrinsic-size: none !important;
+  padding-top: 0 !important;
+  padding-right: 0 !important;
+  padding-bottom: 0 !important;
+  padding-left: 0 !important;
+  margin: 0 !important;
+  content-visibility: visible !important;
+  overflow: hidden !important;
+  background: var(--background) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+.artifact-code-canvas
+  .chat-markdown.artifact-canvas-code
+  [data-streamdown="code-block-header"],
+.artifact-code-canvas
+  .chat-markdown.artifact-canvas-code
+  [data-streamdown="code-block-actions"],
+.artifact-code-canvas
+  .chat-markdown.artifact-canvas-code
+  [data-streamdown="code-block"]
+  > .sticky,
+.artifact-code-canvas
+  .chat-markdown.artifact-canvas-code
+  [data-streamdown="code-block"]
+  > div:has([data-streamdown="code-block-actions"]) {
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
+.artifact-code-canvas
+  .chat-markdown.artifact-canvas-code
+  [data-streamdown="code-block-body"] {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 0 !important;
+  overflow: auto !important;
+  background: var(--background) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+
+.artifact-code-canvas
+  .chat-markdown.artifact-canvas-code
+  [data-streamdown="code-block-body"]
+  pre {
+  width: max-content;
+  min-width: 100%;
+  min-height: 100%;
+  padding: 0.5rem 0 !important;
+  margin: 0 !important;
+  overflow: visible;
+  font-size: 0.8125rem;
+  line-height: 1.5rem;
+  white-space: pre;
+  background: transparent !important;
+}
+
+.artifact-code-canvas
+  .chat-markdown.artifact-canvas-code
+  [data-streamdown="code-block-body"]
+  code {
+  display: block;
+  min-height: 100%;
+  padding: 0 !important;
+  font-size: 0.8125rem;
+  line-height: 1.5rem;
+  background: transparent !important;
+}
+
+.artifact-code-canvas
+  .chat-markdown.artifact-canvas-code
+  [data-streamdown="code-block-body"]
+  pre
+  code
+  > span {
+  display: block !important;
+  min-height: 1.5rem;
+  padding-right: 1rem;
+  white-space: pre !important;
+}
+
+.artifact-code-canvas
+  .chat-markdown.artifact-canvas-code
+  [data-streamdown="code-block-body"]
+  pre
+  code
+  > span::before {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  box-sizing: border-box;
+  width: 3.25rem !important;
+  padding-right: 0.75rem !important;
+  margin-right: 0.75rem !important;
+  background: var(--background);
+  box-shadow: 1px 0 0 var(--border);
 }

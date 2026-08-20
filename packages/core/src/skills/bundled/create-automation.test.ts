@@ -191,6 +191,12 @@ describe("bundled save-artifact skill", () => {
         (skill) => skill.name
       )
     ).toEqual(["save-artifact"]);
+
+    expect(
+      matchSkillsForMessage([discovered], "buat dashboard HTML interaktif").map(
+        (skill) => skill.name
+      )
+    ).toEqual(["save-artifact"]);
   });
 });
 

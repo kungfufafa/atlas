@@ -32,6 +32,12 @@ describe("isPublicRouteRequest", () => {
     expect(
       isPublicRouteRequest("GET", "/v1/public/artifact-shares/tok123")
     ).toBe(true);
+    expect(
+      isPublicRouteRequest("GET", "/v1/public/artifact-shares/tok123/preview")
+    ).toBe(true);
+    expect(
+      isPublicRouteRequest("POST", "/v1/public/artifact-shares/tok123/preview")
+    ).toBe(false);
   });
 
   test("allows GET /v1/auth/invite without auth but not other methods", () => {

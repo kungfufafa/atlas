@@ -752,7 +752,20 @@ export function buildStreamHandlers(
         const next = [...current];
         const last = next[next.length - 1];
         if (last && last.role === "assistant") {
-          next[next.length - 1] = { ...last, sources: event.sources };
+          const existing = last.sources ?? [];
+          const seen = new Set(
+            existing.map((source) => source.url || source.id)
+          );
+          const merged = [...existing];
+          for (const source of event.sources) {
+            const key = source.url || source.id;
+            if (!key || seen.has(key)) {
+              continue;
+            }
+            seen.add(key);
+            merged.push(source);
+          }
+          next[next.length - 1] = { ...last, sources: merged };
           return next;
         }
         return current;

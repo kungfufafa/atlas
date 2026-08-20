@@ -1,4 +1,8 @@
-import { AtlasApiError, sanitizeArtifactShareFilename } from "@atlas/core";
+import {
+  type ArtifactPreview,
+  AtlasApiError,
+  sanitizeArtifactShareFilename,
+} from "@atlas/core";
 import type {
   ArtifactShareStatusResponse,
   PublishArtifactShareRequest,
@@ -89,6 +93,34 @@ export function registerArtifactShareRoutes(
     return json<RevokeArtifactShareResponse>(
       await service.revokeArtifactShare({ orgId, profileId, shareId })
     );
+  });
+
+  app.get("/v1/public/artifact-shares/:token/preview", async (c) => {
+    const token = decodeURIComponent(c.req.param("token"));
+    const sheet = c.req.query("sheet");
+    const sheetIndexRaw = c.req.query("sheetIndex");
+    const sheetIndex =
+      sheetIndexRaw === undefined
+        ? undefined
+        : Number.parseInt(sheetIndexRaw, 10);
+    const range = c.req.query("range");
+
+    try {
+      const preview = await service.previewPublicArtifactShare(token, {
+        range,
+        sheet,
+        sheetIndex: Number.isFinite(sheetIndex) ? sheetIndex : undefined,
+        strategy: "semantic",
+      });
+      return json<ArtifactPreview>(preview);
+    } catch (error) {
+      if (error instanceof AtlasApiError && error.status === 404) {
+        return json({ error: "Not found" }, 404);
+      }
+
+      console.error("Public artifact share preview failed:", error);
+      return json({ error: "Failed to load preview" }, 500);
+    }
   });
 
   app.get("/v1/public/artifact-shares/:token", async (c) => {

@@ -1,10 +1,12 @@
+import type { ArtifactPreview } from "@atlas/core";
 import { useQuery } from "@tanstack/react-query";
 import { htmlForArtifactPreview } from "@/lib/artifact-html-preview";
 import {
-  isDocxFile,
+  buildPublicArtifactSharePreviewUrl,
   isHtmlArtifactMimeType,
   isImageArtifactMimeType,
   isLegacyDocFile,
+  isRichPreviewArtifact,
   isVideoArtifactMimeType,
   looksLikeUtf8Text,
   resolveArtifactMimeType,
@@ -21,10 +23,18 @@ export interface PublicShareMetadata {
 export interface PublicArtifactShareData {
   content: string | null;
   metadata: PublicShareMetadata;
+  preview: ArtifactPreview | null;
 }
 
-async function loadPublicArtifactShare(
-  token: string
+export interface PublicArtifactSharePreviewOptions {
+  range?: string;
+  sheet?: string;
+  sheetIndex?: number;
+}
+
+export async function loadPublicArtifactShare(
+  token: string,
+  options: PublicArtifactSharePreviewOptions = {}
 ): Promise<PublicArtifactShareData> {
   const metaResponse = await fetch(
     `${client.baseUrl}/v1/public/artifact-shares/${encodeURIComponent(token)}?meta=1`
@@ -45,19 +55,33 @@ async function loadPublicArtifactShare(
     isImageArtifactMimeType(resolvedMime) ||
     isVideoArtifactMimeType(resolvedMime);
 
-  if (previewAsBinaryMedia) {
-    return { content: null, metadata };
+  if (isRichPreviewArtifact(metadata.filename, resolvedMime)) {
+    const previewResponse = await fetch(
+      buildPublicArtifactSharePreviewUrl(token, client.baseUrl, options)
+    );
+
+    if (!previewResponse.ok) {
+      return { content: null, metadata, preview: null };
+    }
+
+    try {
+      const preview = (await previewResponse.json()) as ArtifactPreview;
+      return { content: null, metadata, preview };
+    } catch {
+      return { content: null, metadata, preview: null };
+    }
   }
 
-  if (
-    isDocxFile(metadata.filename, resolvedMime) ||
-    isLegacyDocFile(metadata.filename, resolvedMime)
-  ) {
-    return { content: null, metadata };
+  if (previewAsBinaryMedia) {
+    return { content: null, metadata, preview: null };
+  }
+
+  if (isLegacyDocFile(metadata.filename, resolvedMime)) {
+    return { content: null, metadata, preview: null };
   }
 
   if (!(metadata.inlineAllowed || previewAsHtml)) {
-    return { content: null, metadata };
+    return { content: null, metadata, preview: null };
   }
 
   const contentResponse = await fetch(
@@ -78,6 +102,7 @@ async function loadPublicArtifactShare(
     return {
       content: htmlForArtifactPreview(new TextDecoder().decode(bytes)),
       metadata,
+      preview: null,
     };
   }
 
@@ -85,16 +110,31 @@ async function loadPublicArtifactShare(
     return {
       content: new TextDecoder().decode(bytes),
       metadata,
+      preview: null,
     };
   }
 
-  return { content: null, metadata };
+  return { content: null, metadata, preview: null };
 }
 
-export function usePublicArtifactShare(token: string) {
+export function usePublicArtifactShare(
+  token: string,
+  options: PublicArtifactSharePreviewOptions = {}
+) {
   return useQuery({
     enabled: token.length > 0,
-    queryFn: () => loadPublicArtifactShare(token),
-    queryKey: ["public-artifact-share", token],
+    placeholderData: (previousData, previousQuery) => {
+      if (previousQuery?.queryKey[1] === token) {
+        return previousData;
+      }
+    },
+    queryFn: () => loadPublicArtifactShare(token, options),
+    queryKey: [
+      "public-artifact-share",
+      token,
+      options.sheet ?? null,
+      options.sheetIndex ?? null,
+      options.range ?? null,
+    ],
   });
 }

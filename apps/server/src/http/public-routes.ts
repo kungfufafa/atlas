@@ -52,6 +52,6 @@ export function isPublicRouteRequest(
   return (
     PUBLIC_ROUTES.has(pathname) ||
     (method === "GET" &&
-      /^\/v1\/public\/artifact-shares\/[^/]+$/.test(pathname))
+      /^\/v1\/public\/artifact-shares\/[^/]+(?:\/preview)?$/.test(pathname))
   );
 }

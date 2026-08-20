@@ -51,6 +51,8 @@ const MIME_TYPE_BY_EXTENSION: Record<string, string> = {
   pdf: "application/pdf",
   php: "text/plain",
   png: "image/png",
+  ppt: "application/vnd.ms-powerpoint",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   py: "text/plain",
   rb: "text/plain",
   rs: "text/plain",
@@ -65,6 +67,8 @@ const MIME_TYPE_BY_EXTENSION: Record<string, string> = {
   webm: "video/webm",
   webp: "image/webp",
   xhtml: "application/xhtml+xml",
+  xls: "application/vnd.ms-excel",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   xml: "application/xml",
   yaml: "text/plain",
   yml: "text/plain",
@@ -177,6 +181,58 @@ export function isLegacyDocFile(filename: string, mediaType = ""): boolean {
   return (
     fileExtension(filename) === "doc" ||
     normalizeMimeType(mediaType) === LEGACY_DOC_MEDIA_TYPE
+  );
+}
+
+const XLSX_MEDIA_TYPE =
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+const XLS_MEDIA_TYPE = "application/vnd.ms-excel";
+const PPTX_MEDIA_TYPE =
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+const PPT_MEDIA_TYPE = "application/vnd.ms-powerpoint";
+const PDF_MEDIA_TYPE = "application/pdf";
+
+export function isSpreadsheetFile(filename: string, mediaType = ""): boolean {
+  const ext = fileExtension(filename);
+  const mime = normalizeMimeType(mediaType);
+  return (
+    ext === "xlsx" ||
+    ext === "xls" ||
+    ext === "csv" ||
+    mime === XLSX_MEDIA_TYPE ||
+    mime === XLS_MEDIA_TYPE ||
+    mime === "text/csv"
+  );
+}
+
+export function isPresentationFile(filename: string, mediaType = ""): boolean {
+  const ext = fileExtension(filename);
+  const mime = normalizeMimeType(mediaType);
+  return (
+    ext === "pptx" ||
+    ext === "ppt" ||
+    mime === PPTX_MEDIA_TYPE ||
+    mime === PPT_MEDIA_TYPE
+  );
+}
+
+export function isPdfFile(filename: string, mediaType = ""): boolean {
+  return (
+    fileExtension(filename) === "pdf" ||
+    normalizeMimeType(mediaType) === PDF_MEDIA_TYPE
+  );
+}
+
+/** Spreadsheets, decks, PDFs, and Word docs need a derived JSON preview. */
+export function isRichPreviewArtifact(
+  filename: string,
+  mediaType = ""
+): boolean {
+  return (
+    isSpreadsheetFile(filename, mediaType) ||
+    isPresentationFile(filename, mediaType) ||
+    isPdfFile(filename, mediaType) ||
+    isDocxFile(filename, mediaType)
   );
 }
 

@@ -53,6 +53,10 @@ import {
   turnKey,
 } from "@/lib/chat-message-turns";
 import { awaitingModelLabel, isAwaitingModelResponse } from "@/lib/chat-stream";
+import {
+  collectTurnWebSources,
+  mergeTurnSources,
+} from "@/lib/chat-stream-web-search";
 import { formatElapsedSeconds, useElapsedSeconds } from "@/lib/elapsed-time";
 import { isPastedTextDocument } from "@/lib/pasted-text";
 import { cn } from "@/lib/utils";
@@ -383,7 +387,10 @@ function AssistantTurn({
   const showArtifacts = turnComplete && artifacts.length > 0;
   const showActions = !streamActive && turnComplete && anchorMessage != null;
 
-  const sources = lastAssistantMsg?.sources;
+  const sources = mergeTurnSources(
+    lastAssistantMsg?.sources,
+    collectTurnWebSources(turnMessages)
+  );
   const approval = turnMessages.find((m) => m.approval)?.approval;
   const memorySaved = turnMessages.find((m) => m.memorySaved)?.memorySaved;
 
@@ -409,7 +416,7 @@ function AssistantTurn({
           showThinking={showThinking}
         />
       ))}
-      {sources && sources.length > 0 ? (
+      {turnComplete && sources.length > 0 ? (
         <SourcesPanel sources={sources} />
       ) : null}
       {showAwaiting ? <TurnAwaitingElapsed startedAt={turnStartedAt} /> : null}
@@ -444,19 +451,11 @@ function AssistantTurn({
       showActions &&
       lastAssistantMsg?.relatedQuestions?.length &&
       onSuggestedQuestion ? (
-        <div className="flex w-full flex-wrap gap-2 pt-1">
-          {lastAssistantMsg.relatedQuestions.map((question) => (
-            <button
-              className="rounded-full border border-border bg-background px-3 py-1.5 text-foreground/90 text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
-              disabled={actionsDisabled}
-              key={question}
-              onClick={() => onSuggestedQuestion(question)}
-              type="button"
-            >
-              {question}
-            </button>
-          ))}
-        </div>
+        <RelatedQuestions
+          disabled={actionsDisabled}
+          onSelect={onSuggestedQuestion}
+          questions={lastAssistantMsg.relatedQuestions}
+        />
       ) : null}
     </div>
   );
@@ -526,6 +525,32 @@ function assistantTurnContent(messages: ChatListItem[]): string {
   }
 
   return parts.join("\n\n");
+}
+
+function RelatedQuestions({
+  questions,
+  disabled,
+  onSelect,
+}: {
+  questions: string[];
+  disabled: boolean;
+  onSelect: (question: string) => void;
+}) {
+  return (
+    <div className="flex w-full max-w-xl flex-col pt-1">
+      {questions.map((question) => (
+        <button
+          className="rounded-md px-2 py-1.5 text-left text-muted-foreground text-sm leading-snug transition-colors hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+          disabled={disabled}
+          key={question}
+          onClick={() => onSelect(question)}
+          type="button"
+        >
+          {question}
+        </button>
+      ))}
+    </div>
+  );
 }
 
 function isBranchableAssistantMessage(message: ChatListItem): boolean {
@@ -659,26 +684,18 @@ function AssistantMessageActions({
 function UserMessageContent({ message }: { message: ChatListItem }) {
   if (message.questionnaireAnswers?.length) {
     return (
-      <div className="rounded-2xl border border-border/70 bg-muted/40 px-4 py-3">
-        <p className="mb-2 font-medium text-muted-foreground text-sm">
-          Answers
-        </p>
-        <div className="space-y-3">
-          {message.questionnaireAnswers.map((entry) => (
-            <div
-              className="space-y-1"
-              key={`${entry.questionId}:${entry.prompt}`}
-            >
-              <p className="whitespace-pre-wrap text-foreground">
-                {entry.prompt}
-              </p>
-              <p className="whitespace-pre-wrap text-muted-foreground text-sm">
-                {entry.answer}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
+      <dl aria-label="Answers" className="space-y-2.5">
+        {message.questionnaireAnswers.map((entry) => (
+          <div key={`${entry.questionId}:${entry.prompt}`}>
+            <dt className="text-2xs text-muted-foreground leading-4">
+              {entry.prompt}
+            </dt>
+            <dd className="mt-1 whitespace-pre-wrap text-foreground">
+              {entry.answer}
+            </dd>
+          </div>
+        ))}
+      </dl>
     );
   }
 

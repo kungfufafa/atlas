@@ -73,6 +73,50 @@ export interface WebSearchOutput {
   totalResults: number;
 }
 
+export function sourceItemsFromSearchToolResult(
+  result: unknown
+): import("../contract").SourceItem[] {
+  if (!result || typeof result !== "object") {
+    return [];
+  }
+
+  const record = result as Record<string, unknown>;
+  const rows = Array.isArray(record.results)
+    ? record.results
+    : Array.isArray(record.sources)
+      ? record.sources
+      : [];
+  const items: import("../contract").SourceItem[] = [];
+
+  for (const row of rows) {
+    if (!row || typeof row !== "object") {
+      continue;
+    }
+
+    const entry = row as Record<string, unknown>;
+    const url = typeof entry.url === "string" ? entry.url.trim() : "";
+    if (!url) {
+      continue;
+    }
+
+    items.push({
+      domain: typeof entry.domain === "string" ? entry.domain : undefined,
+      id: typeof entry.id === "string" ? entry.id : url,
+      snippet: typeof entry.snippet === "string" ? entry.snippet : undefined,
+      title: typeof entry.title === "string" ? entry.title : url,
+      type:
+        entry.sourceType === "primary" ||
+        entry.sourceType === "secondary" ||
+        entry.sourceType === "community"
+          ? entry.sourceType
+          : undefined,
+      url,
+    });
+  }
+
+  return items;
+}
+
 export interface PartitionedTools {
   hasWebSearch: boolean;
   localTools: ToolDefinition[];

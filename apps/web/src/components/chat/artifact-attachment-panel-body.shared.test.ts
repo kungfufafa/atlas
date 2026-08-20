@@ -43,13 +43,24 @@ describe("artifactPanelBodyClassName", () => {
         isImage: false,
         isMarkdown: false,
       })
-    ).toContain("p-0");
+    ).toContain("overflow-hidden");
     expect(
       artifactPanelBodyClassName({
         isHtml: false,
         isImage: false,
         isMarkdown: true,
       })
-    ).toContain("px-6");
+    ).toContain("px-8");
+  });
+
+  test("uses a full-bleed code canvas when source is showing", () => {
+    expect(
+      artifactPanelBodyClassName({
+        isHtml: true,
+        isImage: false,
+        isMarkdown: false,
+        mode: "code",
+      })
+    ).toBe("flex flex-col overflow-hidden");
   });
 });

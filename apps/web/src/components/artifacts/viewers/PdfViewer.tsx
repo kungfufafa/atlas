@@ -2,7 +2,6 @@ import type { PdfPreview } from "@atlas/core";
 import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
-  Download01Icon,
   SidebarLeftIcon,
   ZoomInAreaIcon,
   ZoomOutAreaIcon,
@@ -168,8 +167,8 @@ export function PdfViewer({
   }, [pageCount]);
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden bg-muted/10">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-border border-b bg-card px-4 py-2 text-sm shadow-xs">
+    <div className="flex h-full w-full flex-col overflow-hidden bg-muted/20">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-border border-b px-2 py-1.5">
         <div className="flex items-center gap-1.5">
           <Button
             aria-label="Toggle thumbnails"
@@ -260,33 +259,19 @@ export function PdfViewer({
           >
             <ZoomInAreaIcon className="size-4" />
           </Button>
-
-          <div className="h-4 w-px bg-border" />
-
-          <a
-            aria-label="Download PDF"
-            className="inline-flex size-8 items-center justify-center rounded-md border border-border bg-background text-foreground transition-colors hover:bg-accent hover:text-foreground"
-            download={preview.filename}
-            href={downloadUrl}
-          >
-            <Download01Icon className="size-4" />
-          </a>
         </div>
       </div>
 
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
         {showThumbnails ? (
-          <aside className="w-48 shrink-0 overflow-y-auto border-border border-r bg-card/60 p-3">
-            <h4 className="mb-2 font-semibold text-muted-foreground text-xs uppercase tracking-wider">
-              Pages ({pageCount})
-            </h4>
-            <div className="space-y-2">
+          <aside className="w-40 shrink-0 overflow-y-auto border-border border-r p-2">
+            <div className="space-y-1.5">
               {Array.from({ length: pageCount }, (_, i) => i + 1).map((p) => (
                 <button
-                  className={`w-full rounded-md border p-2 text-left transition-all ${
+                  className={`w-full rounded-md border p-1.5 text-left ${
                     currentPage === p
-                      ? "border-primary bg-primary/10 shadow-xs"
-                      : "border-border/60 bg-background hover:border-border"
+                      ? "border-foreground/20 bg-muted"
+                      : "border-transparent hover:bg-muted/60"
                   }`}
                   key={p}
                   onClick={() => setCurrentPage(p)}
@@ -304,29 +289,19 @@ export function PdfViewer({
           </aside>
         ) : null}
 
-        <main className="relative min-h-0 flex-1 overflow-auto bg-muted/20 p-4">
-          <div className="mx-auto flex min-h-[500px] w-full max-w-5xl items-center justify-center overflow-auto rounded-lg border border-border bg-background shadow-sm">
+        <main className="relative min-h-0 flex-1 overflow-auto">
+          <div className="mx-auto flex min-h-full w-full items-center justify-center p-6">
             {loadingPdf ? (
-              <div className="flex flex-col items-center justify-center gap-2 p-8 text-muted-foreground">
-                <Spinner className="size-6 text-primary" />
-                <p className="font-medium text-xs">Loading document preview…</p>
-              </div>
+              <Spinner className="size-5 text-muted-foreground" />
             ) : pdfError || renderError ? (
-              <div className="flex flex-col items-center justify-center gap-3 p-8 text-center text-muted-foreground">
-                <p className="text-sm">
-                  {pdfError || renderError || "This PDF couldn't be previewed."}
-                </p>
-                <a
-                  className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 font-semibold text-primary-foreground text-xs shadow-xs"
-                  download={preview.filename}
-                  href={downloadUrl}
-                >
-                  <Download01Icon className="size-3.5" />
-                  Download File
-                </a>
-              </div>
+              <p className="text-muted-foreground text-sm">
+                {pdfError || renderError || "This PDF couldn't be previewed."}
+              </p>
             ) : (
-              <canvas className="max-h-full max-w-full" ref={canvasRef} />
+              <canvas
+                className="max-h-full max-w-full bg-background shadow-sm"
+                ref={canvasRef}
+              />
             )}
           </div>
         </main>

@@ -39,6 +39,7 @@ export function CodeBlock({
   fillHeight = false,
   maxScrollHeightClass = "max-h-[min(50vh,28rem)]",
   showEdit = false,
+  showHeader = true,
   onEdit,
 }: {
   code: string;
@@ -47,6 +48,7 @@ export function CodeBlock({
   fillHeight?: boolean;
   maxScrollHeightClass?: string;
   showEdit?: boolean;
+  showHeader?: boolean;
   onEdit?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
@@ -88,56 +90,69 @@ export function CodeBlock({
   return (
     <div
       className={cn(
-        "overflow-hidden bg-card",
-        fillHeight && "flex min-h-0 flex-1 flex-col",
+        "overflow-hidden",
+        fillHeight ? "flex min-h-0 flex-1 flex-col bg-background" : "bg-card",
         className
       )}
     >
-      <div className="flex shrink-0 items-center justify-between gap-2 border-border/70 border-b px-3 py-2">
-        <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground text-xs">
-          <CodeBlockChevronIcon className="shrink-0 opacity-70" />
-          <span className="truncate font-medium">{label}</span>
-        </span>
-        <div className="flex shrink-0 items-center gap-1">
-          {showEdit && onEdit ? (
+      {showHeader ? (
+        <div className="flex shrink-0 items-center justify-between gap-2 border-border/70 border-b px-3 py-2">
+          <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground text-xs">
+            <CodeBlockChevronIcon className="shrink-0 opacity-70" />
+            <span className="truncate font-medium">{label}</span>
+          </span>
+          <div className="flex shrink-0 items-center gap-1">
+            {showEdit && onEdit ? (
+              <button
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-muted-foreground text-xs transition-colors hover:bg-accent hover:text-foreground"
+                onClick={onEdit}
+                type="button"
+              >
+                Edit
+              </button>
+            ) : null}
             <button
+              aria-label={copied ? "Copied" : "Copy code"}
               className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-muted-foreground text-xs transition-colors hover:bg-accent hover:text-foreground"
-              onClick={onEdit}
+              onClick={() => void copy()}
               type="button"
             >
-              Edit
+              {copied ? (
+                <CheckmarkCircle01Icon
+                  aria-hidden
+                  className="size-3.5 text-emerald-600 dark:text-emerald-400"
+                />
+              ) : (
+                <Copy01Icon aria-hidden className="size-3.5" />
+              )}
+              <span>{copied ? "Copied" : "Copy"}</span>
             </button>
-          ) : null}
-          <button
-            aria-label={copied ? "Copied" : "Copy code"}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-muted-foreground text-xs transition-colors hover:bg-accent hover:text-foreground"
-            onClick={() => void copy()}
-            type="button"
-          >
-            {copied ? (
-              <CheckmarkCircle01Icon
-                aria-hidden
-                className="size-3.5 text-emerald-600 dark:text-emerald-400"
-              />
-            ) : (
-              <Copy01Icon aria-hidden className="size-3.5" />
-            )}
-            <span>{copied ? "Copied" : "Copy"}</span>
-          </button>
+          </div>
         </div>
-      </div>
+      ) : null}
       <div
         className={cn(
-          "relative overflow-auto bg-muted/20",
-          fillHeight ? "min-h-0 flex-1" : maxScrollHeightClass
+          "relative overflow-auto",
+          fillHeight
+            ? "min-h-0 flex-1 bg-background"
+            : cn("bg-muted/20", maxScrollHeightClass)
         )}
         style={gridStyle}
       >
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 left-0 w-(--code-block-gutter) border-border/70 border-r bg-muted/50"
+          className={cn(
+            "pointer-events-none absolute inset-y-0 left-0 w-(--code-block-gutter) border-border/70 border-r",
+            fillHeight ? "bg-background" : "bg-muted/50"
+          )}
         />
-        <div className="relative grid min-w-full pb-2" style={gridStyle}>
+        <div
+          className={cn(
+            "relative grid min-w-full",
+            fillHeight ? "min-h-full py-2" : "pb-2"
+          )}
+          style={gridStyle}
+        >
           {lines.map((line, index) => (
             <Fragment key={index}>
               <span
@@ -146,7 +161,14 @@ export function CodeBlock({
               >
                 {index + 1}
               </span>
-              <code className="block min-w-0 whitespace-pre-wrap break-words px-2 pl-3 font-mono text-foreground text-xs leading-6">
+              <code
+                className={cn(
+                  "block min-w-0 px-2 pl-3 font-mono text-foreground text-xs leading-6",
+                  fillHeight
+                    ? "whitespace-pre"
+                    : "whitespace-pre-wrap break-words"
+                )}
+              >
                 {line || "\u00A0"}
               </code>
             </Fragment>

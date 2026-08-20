@@ -1,5 +1,5 @@
 import { Download04Icon } from "hugeicons-react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ArtifactAttachmentPanelBody } from "@/components/chat/artifact-attachment-panel-body";
 import { usePublicArtifactShare } from "@/hooks/use-public-artifact-share";
@@ -12,9 +12,18 @@ import { cn } from "@/lib/utils";
 
 export function PublicArtifactSharePage() {
   const { token = "" } = useParams();
-  const { data, isLoading, error: loadError } = usePublicArtifactShare(token);
+  const [sheetOptions, setSheetOptions] = useState<{
+    sheet?: string;
+    sheetIndex?: number;
+  }>({});
+  const {
+    data,
+    isLoading,
+    error: loadError,
+  } = usePublicArtifactShare(token, sheetOptions);
   const metadata = data?.metadata ?? null;
   const content = data?.content ?? null;
+  const preview = data?.preview ?? null;
   const error = token
     ? loadError instanceof Error
       ? loadError.message
@@ -33,7 +42,13 @@ export function PublicArtifactSharePage() {
         token,
       })
     : { kind: "download" as const };
-  const isHtml = view.kind === "html";
+  const showRichPreview =
+    view.kind === "rich" &&
+    preview != null &&
+    preview.status !== "failed" &&
+    preview.status !== "unsupported";
+  const isFullBleed =
+    view.kind === "html" || (view.kind === "rich" && showRichPreview);
   const canPreview = view.kind !== "download";
 
   const artifact = useMemo(
@@ -68,7 +83,9 @@ export function PublicArtifactSharePage() {
     <div
       className={cn(
         "artifact-share-page bg-background text-foreground",
-        isHtml ? "flex h-svh flex-col overflow-hidden" : "h-svh overflow-y-auto"
+        isFullBleed
+          ? "flex h-svh flex-col overflow-hidden"
+          : "h-svh overflow-y-auto"
       )}
     >
       <header className="border-border border-b px-3 py-1.5">
@@ -91,7 +108,7 @@ export function PublicArtifactSharePage() {
 
       <main
         className={cn(
-          isHtml
+          isFullBleed
             ? "flex min-h-0 flex-1 flex-col overflow-hidden"
             : "mx-auto max-w-5xl px-4 py-6"
         )}
@@ -146,6 +163,19 @@ export function PublicArtifactSharePage() {
             kind="text"
             language={view.language}
             loading={false}
+          />
+        ) : artifact && showRichPreview ? (
+          <ArtifactAttachmentPanelBody
+            artifact={artifact}
+            canPreview={canPreview}
+            downloadUrl={downloadUrl}
+            error={null}
+            kind="rich"
+            loading={false}
+            onSelectSheet={(sheetName, sheetIndex) => {
+              setSheetOptions({ sheet: sheetName, sheetIndex });
+            }}
+            preview={preview}
           />
         ) : (
           <div className="space-y-3 text-muted-foreground text-sm">

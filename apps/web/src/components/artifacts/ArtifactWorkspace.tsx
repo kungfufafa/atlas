@@ -1,19 +1,35 @@
 import {
   Cancel01Icon,
+  Copy01Icon,
   Download01Icon,
   Maximize01Icon,
   Minimize01Icon,
-  RefreshIcon,
 } from "hugeicons-react";
 import { useEffect, useState } from "react";
+import {
+  type ArtifactPreviewMode,
+  ArtifactPreviewModeToggle,
+} from "@/components/artifacts/ArtifactPreviewModeToggle";
 import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  artifactPreviewCanCopy,
+  artifactPreviewUsesFetchedSource,
+  artifactSupportsPreviewCodeToggle,
+} from "@/lib/artifact-canvas";
 import {
   isMermaidArtifactFilename,
   markdownForMermaidSource,
   mermaidPreviewError,
 } from "@/lib/artifact-mermaid-preview";
 import { client } from "@/lib/client";
+import { cn } from "@/lib/utils";
 import { useArtifactWorkspace } from "./ArtifactWorkspaceContext";
 import { CodeViewer } from "./viewers/CodeViewer";
 import { DocumentViewer } from "./viewers/DocumentViewer";
@@ -40,8 +56,15 @@ export function ArtifactWorkspace() {
   } = useArtifactWorkspace();
 
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [previewMode, setPreviewMode] =
+    useState<ArtifactPreviewMode>("preview");
+  const [copied, setCopied] = useState(false);
 
-  // Close on Escape key
+  useEffect(() => {
+    setPreviewMode("preview");
+    setCopied(false);
+  }, [activeArtifact?.path, activeArtifact?.artifactId]);
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape" && isOpen) {
@@ -62,49 +85,76 @@ export function ArtifactWorkspace() {
     : client.getProfileArtifactDownloadUrl(artifact.profileId, artifact.path);
 
   const revision = activePreview?.revision ?? activeArtifact.revision ?? 1;
+  const showModeToggle = artifactSupportsPreviewCodeToggle(
+    artifact.filename,
+    artifact.mimeType ?? ""
+  );
+
+  async function handleCopy() {
+    if (!activePreview) {
+      return;
+    }
+    let text: string | null = null;
+    if (artifactPreviewUsesFetchedSource(activePreview)) {
+      try {
+        const response = await fetch(downloadUrl, { credentials: "include" });
+        if (response.ok) {
+          text = await response.text();
+        }
+      } catch {
+        text = null;
+      }
+      if (!text && "safeHtml" in activePreview) {
+        text = activePreview.safeHtml;
+      }
+    } else if ("content" in activePreview) {
+      text = activePreview.content;
+    } else if ("formatted" in activePreview) {
+      text = activePreview.formatted;
+    }
+    if (!text) {
+      return;
+    }
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
+  }
+
+  const canCopy = artifactPreviewCanCopy(activePreview);
 
   function renderViewer() {
     if (loading) {
       return (
-        <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-muted/10 p-8 text-muted-foreground">
-          <Spinner className="size-6 text-primary" />
-          <p className="font-medium text-sm">Preparing preview…</p>
+        <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+          <Spinner className="size-5" />
         </div>
       );
     }
 
     if (error || !activePreview || activePreview.status === "failed") {
       return (
-        <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-muted/10 p-6 text-center">
-          <div className="max-w-md rounded-2xl border border-destructive/20 bg-destructive/5 p-6 text-foreground shadow-xs">
-            <h4 className="font-semibold text-base text-destructive">
-              We couldn't generate a preview for this file
-            </h4>
-            <p className="mt-2 text-muted-foreground text-xs leading-relaxed">
-              {activePreview?.error ||
-                error ||
-                "An unexpected issue occurred while rendering the document preview. You can still download the original."}
-            </p>
-            <div className="mt-5 flex items-center justify-center gap-3">
-              <Button
-                className="gap-1.5"
-                onClick={() => void refreshPreview()}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                <RefreshIcon className="size-3.5" />
-                Try again
-              </Button>
-              <a
-                className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 font-semibold text-primary-foreground text-xs shadow-xs transition-colors hover:bg-primary/90"
-                download={activeArtifact?.filename}
-                href={downloadUrl}
-              >
-                <Download01Icon className="size-3.5" />
-                Download Original
-              </a>
-            </div>
+        <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-6 text-center">
+          <p className="max-w-md text-muted-foreground text-sm">
+            {activePreview?.error ||
+              error ||
+              "This file couldn't be previewed."}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => void refreshPreview()}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Try again
+            </Button>
+            <a
+              className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
+              download={activeArtifact?.filename}
+              href={downloadUrl}
+            >
+              Download
+            </a>
           </div>
         </div>
       );
@@ -142,6 +192,18 @@ export function ArtifactWorkspace() {
       case "text": {
         if (isMermaidArtifactFilename(artifact.filename)) {
           const source = activePreview.content;
+          if (previewMode === "code") {
+            return (
+              <CodeViewer
+                downloadUrl={downloadUrl}
+                preview={{
+                  ...activePreview,
+                  language: "mermaid",
+                  type: "code",
+                }}
+              />
+            );
+          }
           const mermaidError = mermaidPreviewError(source);
           return (
             <MarkdownViewer
@@ -177,10 +239,20 @@ export function ArtifactWorkspace() {
         return <JsonViewer downloadUrl={downloadUrl} preview={activePreview} />;
       case "image":
         return (
-          <ImageViewer downloadUrl={downloadUrl} preview={activePreview} />
+          <ImageViewer
+            downloadUrl={downloadUrl}
+            mode={previewMode}
+            preview={activePreview}
+          />
         );
       case "html":
-        return <HtmlViewer downloadUrl={downloadUrl} preview={activePreview} />;
+        return (
+          <HtmlViewer
+            downloadUrl={downloadUrl}
+            mode={previewMode}
+            preview={activePreview}
+          />
+        );
       default:
         return (
           <GenericViewer downloadUrl={downloadUrl} preview={activePreview} />
@@ -191,59 +263,100 @@ export function ArtifactWorkspace() {
   return (
     <div
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-0 backdrop-blur-xs sm:p-4 md:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-0 sm:p-4"
       role="dialog"
     >
       <div
-        className={`flex w-full flex-col overflow-hidden bg-background shadow-2xl transition-all ${
+        className={cn(
+          "flex w-full flex-col overflow-hidden bg-background shadow-2xl",
           isFullscreen
-            ? "fixed inset-0 h-full w-full rounded-none"
-            : "h-full max-h-[92vh] max-w-6xl rounded-none border border-border sm:rounded-2xl"
-        }`}
+            ? "fixed inset-0 h-full w-full"
+            : "h-full max-h-[92vh] max-w-6xl rounded-none border border-border sm:rounded-xl"
+        )}
       >
-        {/* Modal Shell Header */}
-        <header className="flex shrink-0 items-center justify-between border-border border-b bg-card px-4 py-2.5 shadow-xs sm:px-6">
-          <div className="flex min-w-0 items-center gap-3">
-            <h3 className="truncate font-bold text-foreground text-sm sm:text-base">
+        <header className="flex h-11 shrink-0 items-center gap-2 border-border border-b px-2.5">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <h3 className="truncate font-medium text-sm">
               {activeArtifact.filename}
             </h3>
-
-            {/* Revision Badge / Selector */}
-            <div className="flex items-center gap-1">
-              {activeArtifact.revision && activeArtifact.revision > 1 ? (
-                <div className="flex items-center gap-0.5 rounded-md bg-muted/80 p-0.5">
-                  {Array.from(
-                    { length: activeArtifact.revision },
-                    (_, i) => i + 1
-                  ).map((rev) => (
-                    <button
-                      className={`rounded px-1.5 py-0.5 font-bold text-[10px] uppercase transition-colors ${
-                        revision === rev
-                          ? "bg-background text-foreground shadow-2xs"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                      key={rev}
-                      onClick={() => setRevision(rev)}
-                      type="button"
-                    >
-                      v{rev}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <span className="shrink-0 rounded-md bg-muted px-2 py-0.5 font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
-                  v{revision}
-                </span>
-              )}
-            </div>
+            {activeArtifact.revision && activeArtifact.revision > 1 ? (
+              <div className="flex items-center rounded-md bg-muted p-0.5">
+                {Array.from(
+                  { length: activeArtifact.revision },
+                  (_, i) => i + 1
+                ).map((rev) => (
+                  <button
+                    className={cn(
+                      "rounded px-1.5 py-0.5 font-medium text-2xs",
+                      revision === rev
+                        ? "bg-background text-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                    key={rev}
+                    onClick={() => setRevision(rev)}
+                    type="button"
+                  >
+                    v{rev}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
 
-          <div className="flex items-center gap-1.5">
+          {showModeToggle ? (
+            <ArtifactPreviewModeToggle
+              mode={previewMode}
+              onChange={setPreviewMode}
+            />
+          ) : null}
+
+          <div className="flex shrink-0 items-center">
+            {canCopy ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      aria-label={copied ? "Copied" : "Copy"}
+                      onClick={() => void handleCopy()}
+                      size="icon-sm"
+                      type="button"
+                      variant="ghost"
+                    >
+                      <Copy01Icon className="size-4" />
+                    </Button>
+                  }
+                />
+                <TooltipContent side="bottom" sideOffset={6}>
+                  {copied ? "Copied" : "Copy"}
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
+
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <a
+                    aria-label="Download"
+                    className={cn(
+                      buttonVariants({ size: "icon-sm", variant: "ghost" })
+                    )}
+                    download={activeArtifact.filename}
+                    href={downloadUrl}
+                    rel="noopener"
+                  >
+                    <Download01Icon className="size-4" />
+                  </a>
+                }
+              />
+              <TooltipContent side="bottom" sideOffset={6}>
+                Download
+              </TooltipContent>
+            </Tooltip>
+
             <Button
               aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-              className="size-8 p-0"
               onClick={() => setIsFullscreen((v) => !v)}
-              size="sm"
+              size="icon-sm"
               type="button"
               variant="ghost"
             >
@@ -255,10 +368,9 @@ export function ArtifactWorkspace() {
             </Button>
 
             <Button
-              aria-label="Close artifact preview"
-              className="size-8 p-0 text-muted-foreground hover:text-foreground"
+              aria-label="Close"
               onClick={closeArtifact}
-              size="sm"
+              size="icon-sm"
               type="button"
               variant="ghost"
             >
@@ -267,8 +379,9 @@ export function ArtifactWorkspace() {
           </div>
         </header>
 
-        {/* Viewer Canvas Area */}
-        <div className="min-h-0 flex-1 overflow-hidden">{renderViewer()}</div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {renderViewer()}
+        </div>
       </div>
     </div>
   );

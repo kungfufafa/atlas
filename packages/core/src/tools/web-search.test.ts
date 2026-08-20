@@ -270,3 +270,33 @@ describe("web_search caching", () => {
     }
   });
 });
+
+describe("sourceItemsFromSearchToolResult", () => {
+  test("maps builtin web_search results", async () => {
+    const { sourceItemsFromSearchToolResult } = await import("./web-search");
+    expect(
+      sourceItemsFromSearchToolResult({
+        query: "jwt",
+        results: [
+          {
+            domain: "auth0.com",
+            id: "r1",
+            snippet: "Use RS256",
+            title: "JWT best practices",
+            url: "https://auth0.com/jwt",
+          },
+        ],
+        totalResults: 1,
+      })
+    ).toEqual([
+      {
+        domain: "auth0.com",
+        id: "r1",
+        snippet: "Use RS256",
+        title: "JWT best practices",
+        type: undefined,
+        url: "https://auth0.com/jwt",
+      },
+    ]);
+  });
+});

@@ -64,6 +64,19 @@ function buildStreamingPanelBody({
   const isMarkdown = isMarkdownArtifactMimeType(mimeType) || isWordDocument;
   const language = artifactCodeLanguage(artifact.filename);
 
+  if (isHtml) {
+    return (
+      <ArtifactAttachmentPanelBody
+        artifact={artifact}
+        canPreview
+        content={content || null}
+        error={null}
+        kind="html"
+        loading={false}
+      />
+    );
+  }
+
   return (
     <ArtifactAttachmentPanelBody
       artifact={artifact}
@@ -204,14 +217,14 @@ export function ArtifactStreamingPanelBridge({
     const isWordDocument =
       isDocxFile(artifact.filename, artifact.mimeType) ||
       isLegacyDocFile(artifact.filename, artifact.mimeType);
+    const isMermaid = isMermaidArtifactFilename(artifact.filename);
     const isMarkdown =
-      isMarkdownArtifactMimeType(artifact.mimeType) ||
-      isWordDocument ||
-      isMermaidArtifactFilename(artifact.filename);
+      isMarkdownArtifactMimeType(artifact.mimeType) || isWordDocument;
     const bodyClassName = artifactPanelBodyClassName({
       isHtml,
       isImage: false,
       isMarkdown,
+      isMermaid,
       isSvg,
     });
     const widthPatch = autoWidthAppliedRef.current.has(panelId)
@@ -310,16 +323,16 @@ export function ArtifactStreamingPanelBridge({
         const isWordDocument =
           isDocxFile(artifact.filename, artifact.mimeType) ||
           isLegacyDocFile(artifact.filename, artifact.mimeType);
+        const isMermaid = isMermaidArtifactFilename(artifact.filename);
         const isMarkdown =
-          isMarkdownArtifactMimeType(artifact.mimeType) ||
-          isWordDocument ||
-          isMermaidArtifactFilename(artifact.filename);
+          isMarkdownArtifactMimeType(artifact.mimeType) || isWordDocument;
 
         update(canvasId, {
           bodyClassName: artifactPanelBodyClassName({
             isHtml,
             isImage: false,
             isMarkdown,
+            isMermaid,
             isSvg,
           }),
           content: buildStablePanelBody({

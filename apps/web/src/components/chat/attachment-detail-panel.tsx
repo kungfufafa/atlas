@@ -16,6 +16,7 @@ interface AttachmentDetailPanelProps {
   className?: string;
   fullscreen?: boolean;
   headerActions?: ReactNode;
+  headerLeading?: ReactNode;
   onClose: () => void;
   onWidthChange: (width: number) => void;
   resizable?: boolean;
@@ -29,6 +30,7 @@ export function AttachmentDetailPanel({
   subtitle,
   children,
   headerActions,
+  headerLeading,
   bodyClassName,
   resizable = true,
   fullscreen = false,
@@ -127,19 +129,20 @@ export function AttachmentDetailPanel({
         />
       ) : null}
       <div className="relative flex min-h-0 flex-1 flex-col">
-        <div className="flex h-11 items-center justify-between gap-3 border-border border-b px-3">
-          <div className="min-w-0 flex-1">
+        <div className="flex h-11 shrink-0 items-center gap-2 border-border border-b px-2.5">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
             <h2 className="truncate font-medium text-sm">{title}</h2>
             {subtitle ? (
-              <p className="truncate text-muted-foreground text-xs">
+              <span className="shrink-0 text-muted-foreground text-xs">
                 {subtitle}
-              </p>
+              </span>
             ) : null}
           </div>
-          <div className="flex shrink-0 items-center gap-1">
+          {headerLeading}
+          <div className="flex shrink-0 items-center">
             {headerActions}
             <Button
-              aria-label="Close attachment panel"
+              aria-label="Close"
               onClick={onClose}
               size="icon-sm"
               type="button"
@@ -150,7 +153,10 @@ export function AttachmentDetailPanel({
           </div>
         </div>
         <div
-          className={cn("min-h-0 flex-1 overflow-y-auto p-4", bodyClassName)}
+          className={cn(
+            "flex min-h-0 flex-1 flex-col overflow-hidden",
+            bodyClassName
+          )}
         >
           {children}
         </div>

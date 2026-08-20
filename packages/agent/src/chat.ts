@@ -32,7 +32,9 @@ import {
   messagesIncludeUserImages,
   normalizeUserContent,
   partitionTools,
+  sourceItemsFromSearchToolResult,
   toLlmToolDefinitions,
+  WEB_SEARCH_TOOL_NAME,
 } from "@atlas/core";
 import {
   buildChatSystemPrompt,
@@ -693,6 +695,51 @@ async function runConversation(
   }
 }
 
+function isSearchToolName(name: string): boolean {
+  return (
+    name === "deep_research" ||
+    name === WEB_SEARCH_TOOL_NAME ||
+    /web_search(?:_advanced)?_exa/.test(name)
+  );
+}
+
+function emitSourcesFromToolResult(
+  tool: string,
+  result: unknown,
+  handlers?: StreamHandlers
+): void {
+  if (!isSearchToolName(tool) || result == null || typeof result !== "object") {
+    return;
+  }
+
+  const record = result as Record<string, unknown>;
+  if (tool === "deep_research" && Array.isArray(record.sources)) {
+    const sources = record.sources as SourceItem[];
+    if (sources.length === 0) {
+      return;
+    }
+    handlers?.onSourcesUpdated?.({
+      citedCount: Array.isArray(record.citations)
+        ? record.citations.length
+        : sources.length,
+      reviewedCount: sources.length,
+      sources,
+    });
+    return;
+  }
+
+  const sources = sourceItemsFromSearchToolResult(result);
+  if (sources.length === 0) {
+    return;
+  }
+
+  handlers?.onSourcesUpdated?.({
+    citedCount: sources.length,
+    reviewedCount: sources.length,
+    sources,
+  });
+}
+
 async function executeToolCalls(
   tools: ToolDefinition[],
   toolCalls: ToolCall[],
@@ -773,22 +820,7 @@ async function executeToolCalls(
             updateActivityCompletion(activity, true)
           );
 
-          if (
-            call.name === "deep_research" &&
-            typeof result === "object" &&
-            result !== null
-          ) {
-            const r = result as Record<string, unknown>;
-            if (Array.isArray(r.sources) && r.sources.length > 0) {
-              handlers?.onSourcesUpdated?.({
-                citedCount: Array.isArray(r.citations)
-                  ? r.citations.length
-                  : r.sources.length,
-                reviewedCount: r.sources.length,
-                sources: r.sources as SourceItem[],
-              });
-            }
-          }
+          emitSourcesFromToolResult(call.name, result, handlers);
 
           if (
             (call.name === "memory_write" ||
@@ -856,22 +888,7 @@ async function executeToolCalls(
 
     handlers?.onActivityComplete?.(updateActivityCompletion(activity, true));
 
-    if (
-      call.name === "deep_research" &&
-      typeof result === "object" &&
-      result !== null
-    ) {
-      const r = result as Record<string, unknown>;
-      if (Array.isArray(r.sources) && r.sources.length > 0) {
-        handlers?.onSourcesUpdated?.({
-          citedCount: Array.isArray(r.citations)
-            ? r.citations.length
-            : r.sources.length,
-          reviewedCount: r.sources.length,
-          sources: r.sources as SourceItem[],
-        });
-      }
-    }
+    emitSourcesFromToolResult(call.name, result, handlers);
 
     if (
       (call.name === "memory_write" || call.name === "update_profile_memory") &&
@@ -902,12 +919,12 @@ function formatCurrentDate(): string {
 const RELATED_QUESTIONS_TIMEOUT_MS = 12_000;
 const RELATED_QUESTIONS_MIN_REPLY_CHARS = 200;
 const RELATED_QUESTIONS_MAX = 3;
-const RELATED_QUESTIONS_MAX_QUESTION_CHARS = 120;
+const RELATED_QUESTIONS_MAX_QUESTION_CHARS = 90;
 
 const RELATED_QUESTIONS_SYSTEM_PROMPT = [
   "You suggest follow-up questions for a chat assistant reply.",
   'Return ONLY a JSON object: {"questions": ["...", "..."]}.',
-  "Rules: at most 3 questions; each concrete and specific to the reply; write them in the same language as the user's message; never ask something the reply already answered; no numbering, no explanations.",
+  "Rules: at most 3 questions; each one short line (under 80 characters); concrete and specific to the reply; write them in the same language as the user's message; never ask something the reply already answered; no numbering, no explanations, no compound clauses.",
 ].join(" ");
 
 /**

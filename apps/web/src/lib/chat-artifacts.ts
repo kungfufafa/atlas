@@ -8,6 +8,10 @@ import {
   isLegacyDocFile,
   isMarkdownArtifactMimeType,
   isMermaidArtifactFilename,
+  isPdfFile,
+  isPresentationFile,
+  isRichPreviewArtifact,
+  isSpreadsheetFile,
   isSvgArtifactMimeType,
   isTextArtifactMimeType,
   isUnknownArtifactMimeType,
@@ -28,6 +32,10 @@ export {
   isLegacyDocFile,
   isMarkdownArtifactMimeType,
   isMermaidArtifactFilename,
+  isPdfFile,
+  isPresentationFile,
+  isRichPreviewArtifact,
+  isSpreadsheetFile,
   isSvgArtifactMimeType,
   isTextArtifactMimeType,
   isUnknownArtifactMimeType,
@@ -66,17 +74,53 @@ interface GenerateImageResult {
   sizeBytes?: number;
 }
 
+const SPREADSHEET_ARTIFACT_ACTIONS = new Set([
+  "create",
+  "export_csv",
+  "export_xlsx",
+  "import_csv",
+  "write_range",
+  "add_sheet",
+]);
+
 function isWriteFileTool(message: ChatListItem): boolean {
-  // write_docx reports the same { path, bytesWritten } result, so its output becomes
-  // an artifact chip too.
-  return (
-    message.role === "tool" &&
-    (message.tool === "write_file" || message.tool === "write_docx")
-  );
+  // write_docx / write_pptx / spreadsheet writes report a path so they become chips.
+  if (message.role !== "tool") {
+    return false;
+  }
+
+  if (
+    message.tool === "write_file" ||
+    message.tool === "write_docx" ||
+    message.tool === "write_pptx"
+  ) {
+    return true;
+  }
+
+  if (message.tool !== "spreadsheet") {
+    return false;
+  }
+
+  const action =
+    typeof message.toolInput?.action === "string"
+      ? message.toolInput.action
+      : "";
+  return SPREADSHEET_ARTIFACT_ACTIONS.has(action);
 }
 
 function isGenerateImageTool(message: ChatListItem): boolean {
   return message.role === "tool" && message.tool === "generate_image";
+}
+
+function pathFromToolResult(result: Record<string, unknown>): string | null {
+  for (const key of ["path", "targetCsvPath", "targetXlsxPath"] as const) {
+    const value = result[key];
+    if (typeof value === "string" && value.trim()) {
+      return value;
+    }
+  }
+
+  return null;
 }
 
 function getWriteFileResult(message: ChatListItem): WriteFileResult | null {
@@ -88,7 +132,18 @@ function getWriteFileResult(message: ChatListItem): WriteFileResult | null {
     return null;
   }
 
-  return message.toolResult as WriteFileResult;
+  const record = message.toolResult as Record<string, unknown>;
+  const resultPath = pathFromToolResult(record);
+  if (!resultPath) {
+    return null;
+  }
+
+  return {
+    bytesWritten:
+      typeof record.bytesWritten === "number" ? record.bytesWritten : undefined,
+    error: typeof record.error === "string" ? record.error : undefined,
+    path: resultPath,
+  };
 }
 
 function isSuccessfulWrite(message: ChatListItem): boolean {
@@ -533,6 +588,7 @@ export type PublicArtifactShareView =
       content: string;
       language: string | null;
     }
+  | { kind: "rich" }
   | { kind: "download" };
 
 export function buildPublicArtifactShareContentUrl(
@@ -547,6 +603,25 @@ export function buildPublicArtifactShareDownloadUrl(
   baseUrl = ""
 ): string {
   return `${buildPublicArtifactShareContentUrl(token, baseUrl)}?download=1`;
+}
+
+export function buildPublicArtifactSharePreviewUrl(
+  token: string,
+  baseUrl = "",
+  options: { range?: string; sheet?: string; sheetIndex?: number } = {}
+): string {
+  const query = new URLSearchParams();
+  if (options.sheet) {
+    query.set("sheet", options.sheet);
+  }
+  if (options.sheetIndex !== undefined) {
+    query.set("sheetIndex", String(options.sheetIndex));
+  }
+  if (options.range) {
+    query.set("range", options.range);
+  }
+  const qs = query.toString();
+  return `${buildPublicArtifactShareContentUrl(token, baseUrl)}/preview${qs ? `?${qs}` : ""}`;
 }
 
 export function resolvePublicArtifactShareView(input: {
@@ -570,10 +645,11 @@ export function resolvePublicArtifactShareView(input: {
     return { kind: "video", previewUrl };
   }
 
-  if (
-    isDocxFile(input.filename, mimeType) ||
-    isLegacyDocFile(input.filename, mimeType)
-  ) {
+  if (isRichPreviewArtifact(input.filename, mimeType)) {
+    return { kind: "rich" };
+  }
+
+  if (isLegacyDocFile(input.filename, mimeType)) {
     return { kind: "download" };
   }
 
