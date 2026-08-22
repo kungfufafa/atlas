@@ -212,7 +212,7 @@ export async function readStreamEvents(
     }
   );
 
-  if (doneReply) {
+  if (doneReply !== undefined) {
     return doneReply;
   }
 

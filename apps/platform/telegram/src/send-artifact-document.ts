@@ -20,7 +20,7 @@ export async function sendTelegramArtifactDocument(
 ): Promise<SendArtifactDocumentResult> {
   if (input.bytes.byteLength > TELEGRAM_ARTIFACT_DOCUMENT_MAX_BYTES) {
     return {
-      error: `File is too large for Telegram (${formatMegabytes(input.bytes.byteLength)}; max ${formatMegabytes(TELEGRAM_ARTIFACT_DOCUMENT_MAX_BYTES)}). Use the share link instead.`,
+      error: formatTelegramArtifactTooLargeMessage(input.bytes.byteLength),
       ok: false,
     };
   }
@@ -30,9 +30,11 @@ export async function sendTelegramArtifactDocument(
   }
 
   try {
+    const threadId = ctx.message?.message_thread_id;
     await ctx.api.sendDocument(
       ctx.chat.id,
-      new InputFile(input.bytes, input.filename)
+      new InputFile(input.bytes, input.filename),
+      threadId === undefined ? undefined : { message_thread_id: threadId }
     );
     return { ok: true };
   } catch (error) {
@@ -42,6 +44,10 @@ export async function sendTelegramArtifactDocument(
       ok: false,
     };
   }
+}
+
+export function formatTelegramArtifactTooLargeMessage(bytes: number): string {
+  return `File is too large for Telegram (${formatMegabytes(bytes)}; max ${formatMegabytes(TELEGRAM_ARTIFACT_DOCUMENT_MAX_BYTES)}). Use the share link instead.`;
 }
 
 function formatMegabytes(bytes: number): string {

@@ -77,6 +77,7 @@ describe("seedOrgDefaultProfile", () => {
     expect(toolIds).toContain(BUILTIN_TOOL_IDS.deep_research);
     expect(toolIds).toContain(BUILTIN_TOOL_IDS.write_pptx);
     expect(toolIds).toContain(BUILTIN_TOOL_IDS.browser);
+    expect(toolIds).toContain(BUILTIN_TOOL_IDS.send_whatsapp);
     expect(toolIds).not.toContain(BASH_TOOL_ID);
     expect(toolIds).not.toContain(GENERATE_IMAGE_TOOL_ID);
   });

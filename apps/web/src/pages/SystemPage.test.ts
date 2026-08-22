@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import {
+  automationsQueryOptions,
   mcpServersQueryOptions,
+  modelsQueryOptions,
   profilesQueryOptions,
+  skillsQueryOptions,
   toolsQueryOptions,
 } from "@/hooks/use-app-queries";
 import { systemStatusQueryOptions } from "@/hooks/use-system-status";
@@ -45,9 +48,22 @@ describe("SystemPage tab access", () => {
       "servers",
       "org_b",
     ]);
+    expect([...modelsQueryOptions("org_a").queryKey]).toEqual([
+      "models",
+      "org_a",
+    ]);
+    expect([...skillsQueryOptions("org_b").queryKey]).toEqual([
+      "skills",
+      "org_b",
+    ]);
+    expect([...automationsQueryOptions("org_a").queryKey]).toEqual([
+      "automations",
+      "org_a",
+    ]);
     expect([...systemStatusQueryOptions(null).queryKey]).toEqual([
       "systemStatus",
       "none",
     ]);
+    expect([...modelsQueryOptions(null).queryKey]).toEqual(["models", "none"]);
   });
 });

@@ -13,17 +13,23 @@ import { Spinner } from "@/components/ui/spinner";
 export function FilesDeleteDialog({
   deleteTarget,
   deletePending,
+  deleteError = null,
   onClose,
   onConfirm,
 }: {
   deleteTarget: ArtifactFile | null;
   deletePending: boolean;
+  deleteError?: string | null;
   onClose: () => void;
   onConfirm: () => void;
 }) {
   return (
     <Dialog
-      onOpenChange={(open) => !open && onClose()}
+      onOpenChange={(open) => {
+        if (!(open || deletePending)) {
+          onClose();
+        }
+      }}
       open={deleteTarget !== null}
     >
       <DialogContent>
@@ -33,8 +39,16 @@ export function FilesDeleteDialog({
             Remove {deleteTarget?.filename} from this profile?
           </DialogDescription>
         </DialogHeader>
+        {deleteError ? (
+          <p className="text-destructive text-sm">{deleteError}</p>
+        ) : null}
         <DialogFooter>
-          <Button onClick={onClose} type="button" variant="outline">
+          <Button
+            disabled={deletePending}
+            onClick={onClose}
+            type="button"
+            variant="outline"
+          >
             Cancel
           </Button>
           <Button

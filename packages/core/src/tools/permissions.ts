@@ -147,6 +147,16 @@ export const DEFAULT_TOOL_CAPABILITIES: Record<string, ToolCapability> = {
     privileged: false,
     risk: "read",
   },
+  send_whatsapp: {
+    cancellable: true,
+    category: "communication",
+    id: "send_whatsapp",
+    longRunning: false,
+    privileged: false,
+    requiresAuth: true,
+    requiresNetwork: true,
+    risk: "external-write",
+  },
   spreadsheet: {
     cancellable: true,
     category: "artifact",

@@ -92,7 +92,7 @@ describe("buildTelegramDocumentInput", () => {
     }
   });
 
-  test("rejects xlsx documents", async () => {
+  test("accepts xlsx documents", async () => {
     fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
       new Response("xlsx-bytes", {
         headers: {
@@ -107,6 +107,31 @@ describe("buildTelegramDocumentInput", () => {
         fileName: "sheet.xlsx",
         mimeType:
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      })
+    );
+
+    expect(result).toEqual({
+      input: {
+        documents: [
+          expect.objectContaining({
+            filename: "sheet.xlsx",
+            mediaType:
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          }),
+        ],
+        message: "",
+      },
+      kind: "input",
+    });
+  });
+
+  test("rejects zip documents", async () => {
+    fetchSpy = spyOn(globalThis, "fetch");
+
+    const result = await buildTelegramDocumentInput(
+      createDocumentContext({
+        fileName: "archive.zip",
+        mimeType: "application/zip",
       })
     );
 

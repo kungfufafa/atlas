@@ -166,6 +166,28 @@ describe("provider shared helpers", () => {
     ).toEqual([user("Hi")]);
   });
 
+  test("sanitizeToolCallHistory drops empty assistant messages", () => {
+    expect(
+      sanitizeToolCallHistory([
+        user("Hi"),
+        { content: "", role: "assistant" },
+        user("Again"),
+      ])
+    ).toEqual([user("Hi"), user("Again")]);
+  });
+
+  test("sanitizeToolCallHistory keeps thinking-only assistants", () => {
+    const thinkingOnly: ChatMessage = {
+      content: "",
+      role: "assistant",
+      thinking: "plan the answer",
+    };
+    expect(sanitizeToolCallHistory([user("Hi"), thinkingOnly])).toEqual([
+      user("Hi"),
+      thinkingOnly,
+    ]);
+  });
+
   test("sanitizeToolCallHistory leaves intact tool pairs untouched", () => {
     const messages: ChatMessage[] = [
       user("Use the tool"),

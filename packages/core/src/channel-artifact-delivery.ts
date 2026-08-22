@@ -13,7 +13,7 @@ export interface PublishArtifactShareResult {
 }
 
 const ATTACH_NOUN =
-  "file|document|attachment|artifact|pdf|csv|zip|image|photo|screenshot|report|deck";
+  "file|document|attachment|artifact|pdf|csv|xlsx|xls|docx|pptx|zip|image|photo|screenshot|report|deck|spreadsheet";
 
 /** Phrase matching for Telegram (and legacy callers). Discord natural-language
  * sends use the send_discord_artifact tool instead. */
@@ -26,7 +26,7 @@ const ATTACH_INTENT_PATTERNS = [
     String.raw`\b(?:download|get)\s+(?:me\s+)?(?:the\s+)?(?:${ATTACH_NOUN})\b`,
     "i"
   ),
-  /\bsend\s+(?:me\s+)?(?:the\s+)?\S+\.(?:pdf|csv|png|jpe?g|gif|webp|zip|txt|md)\b/i,
+  /\bsend\s+(?:me\s+)?(?:the\s+)?\S+\.(?:pdf|csv|xlsx|xls|docx|pptx|png|jpe?g|gif|webp|zip|txt|md)\b/i,
   /\battach\s+it\b/i,
   /^\/attach(?:@\w+)?(?:\s|$)/i,
 ];
@@ -186,7 +186,12 @@ export async function mintDeliverableArtifacts(input: {
         shareUrl: resolved.shareUrl,
       });
     } catch {
-      // Skip failed publishes; text reply still goes out.
+      // Share minting is additive. The file must still go out on the channel.
+      delivered.push({
+        ...artifact,
+        sharePath: null,
+        shareUrl: input.shareUrlCache[artifact.path] ?? null,
+      });
     }
   }
 

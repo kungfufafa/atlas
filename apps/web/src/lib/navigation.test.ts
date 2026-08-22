@@ -1,5 +1,9 @@
 import { describe, expect, it } from "bun:test";
-import { visibleNavGroups } from "./navigation";
+import {
+  loginPathWithReturn,
+  safeInternalPath,
+  visibleNavGroups,
+} from "./navigation";
 
 const WORKSPACE_ADMIN_NAV = [
   "chat",
@@ -64,5 +68,16 @@ describe("visibleNavGroups", () => {
     expect(pageIds).not.toContain("integrations");
     expect(pageIds).not.toContain("soul");
     expect(pageIds).not.toContain("files");
+  });
+});
+
+describe("safeInternalPath", () => {
+  it("accepts in-app paths and rejects open redirects", () => {
+    expect(safeInternalPath("/settings")).toBe("/settings");
+    expect(safeInternalPath("/history?profile=p1")).toBe("/history?profile=p1");
+    expect(safeInternalPath("//evil.example")).toBeNull();
+    expect(safeInternalPath("https://evil.example")).toBeNull();
+    expect(safeInternalPath("/login")).toBeNull();
+    expect(loginPathWithReturn("/files")).toBe("/login?from=%2Ffiles");
   });
 });

@@ -10,6 +10,7 @@ import {
 } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { readLineageMeta } from "../artifact-lineage";
 import { convertDocxToMarkdown } from "../docx-text";
 import {
   PathGuardError,
@@ -131,6 +132,35 @@ describe("file builtin tools", () => {
         `report-${dateSuffix}.md.atlas-meta.json`
       )
     );
+  });
+
+  test("write_file sidecar stamp keeps the content file size, not the sidecar payload length", async () => {
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-write-"));
+    const body = "# Brief rapat\n\nEmpat kalimat fakta Tokopedia.\n";
+    const context = { ...PROFILE_CONTEXT, sessionId: "session_sidecar_size" };
+
+    const contentResult = await runWriteFile(
+      { content: body, path: "artifacts/brief.md" },
+      context,
+      { workspaceRoot: tempDir }
+    );
+
+    await runWriteFile(
+      {
+        content: JSON.stringify({
+          mimeType: "text/markdown",
+          savedAt: "2026-08-21T13:06:00.000Z",
+          sizeBytes: 95,
+        }),
+        path: "artifacts/brief.md.atlas-meta.json",
+      },
+      context,
+      { workspaceRoot: tempDir }
+    );
+
+    const meta = await readLineageMeta(contentResult.path);
+    expect(meta?.sizeBytes).toBe(contentResult.bytesWritten);
+    expect(meta?.sizeBytes).not.toBe(95);
   });
 
   test("write_file allows custom tool modules outside profile workspace", async () => {

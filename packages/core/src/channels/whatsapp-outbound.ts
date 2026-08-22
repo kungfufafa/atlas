@@ -2,27 +2,35 @@ import { loadWhatsAppConfigFile } from "../whatsapp-config";
 import type { ChannelSendResult, WhatsAppOutboundAdapter } from "./types";
 
 const DEFAULT_OUTBOUND_PORT = 4312;
+const EPHEMERAL_LISTEN_PORT = 0;
 
 export interface WhatsAppOutboundOptions {
   fetchImpl?: typeof fetch;
 }
 
-export function resolveWhatsAppOutboundPort(
+export function resolveWhatsAppOutboundListenPort(
   config: { outboundPort?: string | null } | null
 ): number {
   const raw = config?.outboundPort?.trim();
 
   if (!raw) {
-    return DEFAULT_OUTBOUND_PORT;
+    return EPHEMERAL_LISTEN_PORT;
   }
 
   const parsed = Number(raw);
 
-  if (!Number.isInteger(parsed) || parsed <= 0 || parsed > 65_535) {
-    return DEFAULT_OUTBOUND_PORT;
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 65_535) {
+    return EPHEMERAL_LISTEN_PORT;
   }
 
   return parsed;
+}
+
+export function resolveWhatsAppOutboundPort(
+  config: { outboundPort?: string | null } | null
+): number {
+  const listenPort = resolveWhatsAppOutboundListenPort(config);
+  return listenPort > 0 ? listenPort : DEFAULT_OUTBOUND_PORT;
 }
 
 export function createWhatsAppOutboundAdapter(
@@ -40,8 +48,14 @@ export function createWhatsAppOutboundAdapter(
         }
 
         const port = resolveWhatsAppOutboundPort(config);
+        const payload: { text: string; to?: string } = { text: input.text };
+        const to = input.to?.trim();
+        if (to) {
+          payload.to = to;
+        }
+
         const response = await fetchImpl(`http://127.0.0.1:${port}/send`, {
-          body: JSON.stringify({ text: input.text }),
+          body: JSON.stringify(payload),
           headers: { "Content-Type": "application/json" },
           method: "POST",
         });

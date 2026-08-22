@@ -4,6 +4,8 @@ import {
   countUserImages,
   estimateUserContentTokens,
   getUserMessageText,
+  isSupportedDocumentMediaType,
+  isSupportedImageMediaType,
   normalizeUserContent,
   parseDataUrl,
   stripImagesForCompaction,
@@ -14,6 +16,29 @@ import {
 
 const tinyPngBase64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
+describe("shared attachment allowlist", () => {
+  test("accepts web document types including xlsx", () => {
+    expect(
+      isSupportedDocumentMediaType(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "sheet.xlsx"
+      )
+    ).toBe(true);
+    expect(isSupportedDocumentMediaType("application/pdf", "report.pdf")).toBe(
+      true
+    );
+    expect(isSupportedDocumentMediaType("application/zip", "archive.zip")).toBe(
+      false
+    );
+  });
+
+  test("accepts jpeg png gif webp images", () => {
+    expect(isSupportedImageMediaType("image/jpeg")).toBe(true);
+    expect(isSupportedImageMediaType("image/jpg")).toBe(true);
+    expect(isSupportedImageMediaType("image/heic")).toBe(false);
+  });
+});
 
 describe("normalizeUserContent", () => {
   test("returns parts when images present", () => {

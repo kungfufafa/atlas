@@ -16,6 +16,11 @@ describe("isAttachIntent", () => {
     expect(isAttachIntent("/attach")).toBe(true);
     expect(isAttachIntent("send the pdf")).toBe(true);
     expect(isAttachIntent("send me the csv")).toBe(true);
+    expect(isAttachIntent("send the spreadsheet")).toBe(true);
+    expect(isAttachIntent("send me the xlsx")).toBe(true);
+    expect(isAttachIntent("send results.xlsx")).toBe(true);
+    expect(isAttachIntent("send the pptx")).toBe(true);
+    expect(isAttachIntent("send deck.pptx")).toBe(true);
     expect(isAttachIntent("attach the image")).toBe(true);
     expect(isAttachIntent("send atlas-pitch-deck.pdf")).toBe(true);
   });
@@ -151,7 +156,7 @@ describe("formatArtifactShareFooter", () => {
 });
 
 describe("mintDeliverableArtifacts", () => {
-  test("skips artifacts when publish fails", async () => {
+  test("keeps artifacts without a share URL when publish fails", async () => {
     const delivered = await mintDeliverableArtifacts({
       artifacts: [
         {
@@ -168,7 +173,37 @@ describe("mintDeliverableArtifacts", () => {
       shareUrlCache: {},
     });
 
-    expect(delivered).toEqual([]);
+    expect(delivered).toEqual([
+      {
+        filename: "report.md",
+        mimeType: "text/markdown",
+        path: "report.md",
+        savedAt: "2026-07-13T10:00:00.000Z",
+        sharePath: null,
+        shareUrl: null,
+        sizeBytes: 1,
+      },
+    ]);
+  });
+
+  test("reuses a cached share URL when publish fails", async () => {
+    const delivered = await mintDeliverableArtifacts({
+      artifacts: [
+        {
+          filename: "report.md",
+          mimeType: "text/markdown",
+          path: "report.md",
+          savedAt: "2026-07-13T10:00:00.000Z",
+          sizeBytes: 1,
+        },
+      ],
+      publish: async () => {
+        throw new Error("publish failed");
+      },
+      shareUrlCache: { "report.md": "https://app.example/s/tok_cached" },
+    });
+
+    expect(delivered[0]?.shareUrl).toBe("https://app.example/s/tok_cached");
   });
 });
 

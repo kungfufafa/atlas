@@ -30,3 +30,4 @@ tmp-repro-setup-auth.mjs
 cookies.txt
 release-gate-report.json
 release-gate-report.md
+scripts/live-human-e2e/out/

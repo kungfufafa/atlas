@@ -94,7 +94,7 @@ async function main() {
     // Check 1: Static Checks / Ultracite
     const staticStart = Date.now();
     try {
-      execSync("bun x ultracite check --diagnostic-level=error || true", {
+      execSync("bun x ultracite check --diagnostic-level=error", {
         cwd: process.cwd(),
         stdio: "pipe",
       });

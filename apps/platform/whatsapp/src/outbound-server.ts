@@ -1,8 +1,10 @@
 import {
   loadWhatsAppConfigFile,
-  resolveWhatsAppOutboundPort,
+  resolveWhatsAppOutboundDestination,
+  resolveWhatsAppOutboundListenPort,
   saveWhatsAppOutboundPort,
 } from "@atlas/core";
+import { splitWhatsAppMessage } from "./format";
 
 export interface WhatsAppOutboundSendHandle {
   sendMessage: (jid: string, content: { text: string }) => Promise<unknown>;
@@ -17,7 +19,7 @@ export async function startWhatsAppOutboundServer(
   options: WhatsAppOutboundServerOptions
 ): Promise<{ port: number; stop: () => void }> {
   const config = await loadWhatsAppConfigFile(options.orgId);
-  const port = config?.outboundPort ? resolveWhatsAppOutboundPort(config) : 0;
+  const port = resolveWhatsAppOutboundListenPort(config);
   let stopped = false;
 
   const server = Bun.serve({
@@ -32,17 +34,17 @@ export async function startWhatsAppOutboundServer(
         const latestConfig = await loadWhatsAppConfigFile(options.orgId);
         const pairedJid = latestConfig?.pairedJid?.trim();
 
-        if (!pairedJid) {
+        if (!(latestConfig && pairedJid)) {
           return Response.json(
             { error: "WhatsApp is not paired." },
             { status: 400 }
           );
         }
 
-        let body: { text?: string };
+        let body: { text?: string; to?: string };
 
         try {
-          body = (await request.json()) as { text?: string };
+          body = (await request.json()) as { text?: string; to?: string };
         } catch {
           return Response.json(
             { error: "Invalid JSON body." },
@@ -56,6 +58,14 @@ export async function startWhatsAppOutboundServer(
           return Response.json({ error: "text is required." }, { status: 400 });
         }
 
+        const destination = resolveWhatsAppOutboundDestination(
+          latestConfig,
+          body.to
+        );
+        if ("error" in destination) {
+          return Response.json({ error: destination.error }, { status: 400 });
+        }
+
         const handle = options.getSendHandle();
 
         if (!handle) {
@@ -66,8 +76,14 @@ export async function startWhatsAppOutboundServer(
         }
 
         try {
-          await handle.sendMessage(pairedJid, { text });
-          return Response.json({ ok: true });
+          for (const chunk of splitWhatsAppMessage(text)) {
+            await handle.sendMessage(destination.jid, { text: chunk });
+          }
+          return Response.json({
+            jid: destination.jid,
+            ok: true,
+            sender: pairedJid,
+          });
         } catch (error) {
           const message =
             error instanceof Error ? error.message : String(error);
@@ -89,7 +105,7 @@ export async function startWhatsAppOutboundServer(
     port: server.port ?? port,
     stop: () => {
       stopped = true;
-      server.stop();
+      server.stop(true);
     },
   };
 }

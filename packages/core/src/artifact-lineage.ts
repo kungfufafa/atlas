@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { nanoid } from "nanoid";
 import { inferArtifactMimeType } from "./artifact-mime";
@@ -98,6 +98,15 @@ export async function readLineageMeta(
   }
 }
 
+async function sizeOnDisk(filePath: string): Promise<number | null> {
+  try {
+    const info = await stat(filePath);
+    return info.isFile() ? info.size : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function stampArtifactLineage(input: {
   extraDetails?: ArtifactFormatDetails;
   parentFilePath?: string;
@@ -106,6 +115,7 @@ export async function stampArtifactLineage(input: {
 }): Promise<ArtifactLineageMeta> {
   const filename = path.basename(input.writtenPath);
   const mimeType = inferArtifactMimeType(filename);
+  const sizeBytes = (await sizeOnDisk(input.writtenPath)) ?? input.sizeBytes;
   const existing = await readLineageMeta(input.writtenPath);
   let parent = input.parentFilePath
     ? await readLineageMeta(input.parentFilePath)
@@ -154,7 +164,7 @@ export async function stampArtifactLineage(input: {
     revision,
     rootArtifactId: rootId,
     savedAt: new Date().toISOString(),
-    sizeBytes: input.sizeBytes,
+    sizeBytes,
   };
 
   const current = await readLineageMeta(input.writtenPath);

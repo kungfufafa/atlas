@@ -109,7 +109,235 @@ export function parsePhoneNumberList(raw: string | string[]): string[] {
 }
 
 export function whatsAppUserDigits(jid: string): string {
+  if (isWhatsAppLidJid(jid)) {
+    return "";
+  }
+
   return normalizePhoneNumberDigits(jid.split("@")[0]?.split(":")[0] ?? "");
+}
+
+export interface WhatsAppAuthorizationInput {
+  jid: string;
+  mappedPhoneJid?: string | null;
+  participantPn?: string | null;
+  senderPn?: string | null;
+}
+
+export interface WhatsAppAuthIdentity {
+  jid: string;
+  phoneDigits: string;
+  phoneJid: string | null;
+}
+
+export function isWhatsAppLidJid(jid: string): boolean {
+  return whatsAppJidServer(jid).toLowerCase() === "lid";
+}
+
+export function toWhatsAppPhoneJid(
+  value: string | null | undefined
+): string | null {
+  if (!value?.trim()) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (isWhatsAppLidJid(trimmed)) {
+    return null;
+  }
+
+  const digits = trimmed.includes("@")
+    ? whatsAppUserDigits(trimmed)
+    : normalizePhoneNumberDigits(trimmed);
+
+  if (!digits) {
+    return null;
+  }
+
+  return `${digits}@s.whatsapp.net`;
+}
+
+export function isWhatsAppOutboundDestinationAllowed(
+  config: WhatsAppConfigFile,
+  destinationJid: string
+): boolean {
+  const destDigits = whatsAppUserDigits(destinationJid);
+  if (!destDigits) {
+    return false;
+  }
+
+  const ownerDigits =
+    whatsAppUserDigits(config.pairedJid ?? "") ||
+    normalizePhoneNumberDigits(config.phoneNumber);
+  if (ownerDigits && destDigits === ownerDigits) {
+    return true;
+  }
+
+  if (config.accessMode === "allowlist") {
+    return config.allowedNumbers.includes(destDigits);
+  }
+
+  if (config.accessMode === "denylist") {
+    return !config.blockedNumbers.includes(destDigits);
+  }
+
+  return true;
+}
+
+export function resolveWhatsAppOutboundDestination(
+  config: WhatsAppConfigFile,
+  to?: string | null
+): { error: string } | { jid: string } {
+  if (!config.pairedJid?.trim()) {
+    return { error: "WhatsApp is not paired in this workspace." };
+  }
+
+  const jid = to?.trim() ? toWhatsAppPhoneJid(to) : config.pairedJid.trim();
+
+  if (!jid) {
+    return {
+      error:
+        "Need a WhatsApp phone number to send to (for example 6281234567890).",
+    };
+  }
+
+  if (!isWhatsAppOutboundDestinationAllowed(config, jid)) {
+    return {
+      error:
+        "That number is not on this workspace WhatsApp allowlist. Add it under Integrations → WhatsApp, then send again.",
+    };
+  }
+
+  return { jid };
+}
+
+export function resolveWhatsAppAuthIdentity(
+  input: WhatsAppAuthorizationInput
+): WhatsAppAuthIdentity {
+  const jid = input.jid.trim();
+  const candidates = [
+    isWhatsAppLidJid(jid) ? null : jid,
+    input.senderPn,
+    input.participantPn,
+    input.mappedPhoneJid,
+  ];
+
+  for (const candidate of candidates) {
+    const phoneJid = toWhatsAppPhoneJid(candidate);
+    if (phoneJid) {
+      return {
+        jid,
+        phoneDigits: whatsAppUserDigits(phoneJid),
+        phoneJid,
+      };
+    }
+  }
+
+  return { jid, phoneDigits: "", phoneJid: null };
+}
+
+export function getWhatsAppLidMapPath(orgId?: string | null): string {
+  return join(getWhatsAppConfigDir(orgId), "lid-map.json");
+}
+
+export function whatsAppLidMapKey(jid: string): string | null {
+  if (!isWhatsAppLidJid(jid)) {
+    return null;
+  }
+
+  const user = jid.split("@")[0]?.split(":")[0] ?? "";
+  if (!user) {
+    return null;
+  }
+
+  return `${user}@lid`;
+}
+
+export function lookupWhatsAppLidPhone(
+  map: Record<string, string>,
+  lid: string
+): string | null {
+  const key = whatsAppLidMapKey(lid);
+  if (!key) {
+    return null;
+  }
+
+  return map[key] ?? null;
+}
+
+export async function loadWhatsAppLidMap(
+  orgId?: string | null
+): Promise<Record<string, string>> {
+  const raw = await readTextOrNull(getWhatsAppLidMapPath(orgId));
+  if (!raw) {
+    return {};
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {};
+    }
+
+    const map: Record<string, string> = {};
+    for (const [lid, phone] of Object.entries(
+      parsed as Record<string, unknown>
+    )) {
+      if (typeof phone !== "string") {
+        continue;
+      }
+
+      const lidKey = whatsAppLidMapKey(lid);
+      const phoneJid = toWhatsAppPhoneJid(phone);
+      if (lidKey && phoneJid) {
+        map[lidKey] = phoneJid;
+      }
+    }
+
+    return map;
+  } catch {
+    return {};
+  }
+}
+
+const whatsAppLidMapLocks = new Map<string, Promise<unknown>>();
+
+export async function rememberWhatsAppLidPhone(
+  lid: string,
+  phone: string,
+  orgId?: string | null
+): Promise<string | null> {
+  const lidKey = whatsAppLidMapKey(lid);
+  const phoneJid = toWhatsAppPhoneJid(phone);
+  if (!(lidKey && phoneJid)) {
+    return null;
+  }
+
+  const lockKey = orgId ?? "";
+  const previous = whatsAppLidMapLocks.get(lockKey) ?? Promise.resolve();
+  const next = previous.then(async () => {
+    const current = await loadWhatsAppLidMap(orgId);
+    if (current[lidKey] === phoneJid) {
+      return phoneJid;
+    }
+
+    current[lidKey] = phoneJid;
+    await writePrivateTextFile(
+      getWhatsAppLidMapPath(orgId),
+      `${JSON.stringify(current, null, 2)}\n`,
+      { ensureDir: getWhatsAppConfigDir(orgId) }
+    );
+    return phoneJid;
+  });
+
+  whatsAppLidMapLocks.set(
+    lockKey,
+    next.then(
+      () => undefined,
+      () => undefined
+    )
+  );
+
+  return next;
 }
 
 function maskPhoneNumberFromJid(jid: string | null): string | null {
@@ -125,7 +353,7 @@ function whatsAppJidServer(jid: string): string {
   return jid.split("@")[1]?.trim() ?? "";
 }
 
-function normalizeWhatsAppUserJid(jid: string): string {
+export function normalizeWhatsAppUserJid(jid: string): string {
   const server = whatsAppJidServer(jid);
   const user = jid.split("@")[0]?.split(":")[0] ?? "";
 
@@ -157,58 +385,75 @@ function isSameWhatsAppUserJid(left: string, right: string): boolean {
   return Boolean(leftDigits && leftDigits === rightDigits);
 }
 
-export function isWhatsAppUserAuthorized(
-  jid: string,
-  config: Pick<
-    WhatsAppConfigFile,
-    | "accessMode"
-    | "allowedNumbers"
-    | "blockedNumbers"
-    | "pairedJid"
-    | "pairedLid"
-  >
+function isWhatsAppOwnerIdentity(
+  identity: WhatsAppAuthIdentity,
+  config: Pick<WhatsAppConfigFile, "pairedJid" | "pairedLid">
 ): boolean {
+  const jid = identity.jid;
+
+  if (config.pairedJid && isSameWhatsAppUserJid(jid, config.pairedJid)) {
+    return true;
+  }
+
+  if (config.pairedLid && isSameWhatsAppUserJid(jid, config.pairedLid)) {
+    return true;
+  }
+
+  return Boolean(
+    identity.phoneJid &&
+      config.pairedJid &&
+      isSameWhatsAppUserJid(identity.phoneJid, config.pairedJid)
+  );
+}
+
+export function isWhatsAppUserAuthorized(
+  jidOrIdentity: string | WhatsAppAuthorizationInput,
+  config: Pick<WhatsAppConfigFile, "pairedJid" | "pairedLid"> &
+    Partial<
+      Pick<
+        WhatsAppConfigFile,
+        "accessMode" | "allowedNumbers" | "blockedNumbers"
+      >
+    >
+): boolean {
+  const identity =
+    typeof jidOrIdentity === "string"
+      ? resolveWhatsAppAuthIdentity({ jid: jidOrIdentity })
+      : resolveWhatsAppAuthIdentity(jidOrIdentity);
   const accessMode = config.accessMode || "pairing";
-  const userDigits = whatsAppUserDigits(jid);
+  const phoneDigits = identity.phoneDigits;
 
   if (accessMode === "open") {
     return true;
   }
 
+  const isOwner = isWhatsAppOwnerIdentity(identity, config);
+
   if (accessMode === "allowlist") {
-    if (config.allowedNumbers && config.allowedNumbers.includes(userDigits)) {
+    if (phoneDigits && config.allowedNumbers?.includes(phoneDigits)) {
       return true;
     }
 
-    if (
-      (config.pairedJid
-        ? isSameWhatsAppUserJid(jid, config.pairedJid)
-        : false) ||
-      (config.pairedLid ? isSameWhatsAppUserJid(jid, config.pairedLid) : false)
-    ) {
-      return true;
-    }
-
-    return false;
+    return isOwner;
   }
 
   if (accessMode === "denylist") {
-    if (config.blockedNumbers && config.blockedNumbers.includes(userDigits)) {
+    if (phoneDigits && config.blockedNumbers?.includes(phoneDigits)) {
+      return false;
+    }
+
+    if (isOwner) {
+      return true;
+    }
+
+    if (!phoneDigits && isWhatsAppLidJid(identity.jid)) {
       return false;
     }
 
     return true;
   }
 
-  // "pairing" mode: strictly requires pairedJid / pairedLid
-  if (
-    (config.pairedJid ? isSameWhatsAppUserJid(jid, config.pairedJid) : false) ||
-    (config.pairedLid ? isSameWhatsAppUserJid(jid, config.pairedLid) : false)
-  ) {
-    return true;
-  }
-
-  return false;
+  return isOwner;
 }
 
 export async function loadWhatsAppConfigFile(

@@ -1,25 +1,18 @@
 import type { SendMessageInput } from "@atlas/core/contract";
 import {
+  isSupportedDocumentMediaType,
   MAX_DOCUMENT_BYTES,
   normalizeDocumentMediaType,
+  SUPPORTED_DOCUMENT_TYPE_LABEL,
   validateDocumentAttachments,
 } from "@atlas/core/message-content";
 import type { Context } from "grammy";
 
-const ALLOWED_DOCUMENT_MEDIA_TYPES = new Set([
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "text/plain",
-  "text/csv",
-]);
-
-export const UNSUPPORTED_DOCUMENT_TYPES_REPLY =
-  "Unsupported file type. Send pdf, docx, txt, or csv (max 5 MB).";
+export const UNSUPPORTED_DOCUMENT_TYPES_REPLY = `Unsupported file type. Send ${SUPPORTED_DOCUMENT_TYPE_LABEL} (max 5 MB).`;
 
 export const OVERSIZED_FILE_REPLY = "File is too large. Maximum size is 5 MB.";
 
-export const UNSUPPORTED_MEDIA_REPLY =
-  "Send text, a photo, voice message, or a supported document (pdf, docx, txt, csv — max 5 MB).";
+export const UNSUPPORTED_MEDIA_REPLY = `Send text, a photo, voice message, or a supported document (${SUPPORTED_DOCUMENT_TYPE_LABEL} — max 5 MB).`;
 
 export const DOWNLOAD_FAILED_REPLY = "Could not download that file. Try again.";
 
@@ -96,7 +89,7 @@ export async function buildTelegramDocumentInput(
     filename
   );
 
-  if (!ALLOWED_DOCUMENT_MEDIA_TYPES.has(mediaType)) {
+  if (!isSupportedDocumentMediaType(mediaType, filename)) {
     return { kind: "reject", message: UNSUPPORTED_DOCUMENT_TYPES_REPLY };
   }
 

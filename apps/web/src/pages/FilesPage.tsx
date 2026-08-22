@@ -15,6 +15,7 @@ import {
   useArtifactsInfiniteQuery,
   useDeleteArtifactMutation,
 } from "@/hooks/use-resource-mutations";
+import { formatError } from "@/lib/client";
 import {
   type FilesViewMode,
   getStoredFilesViewMode,
@@ -38,6 +39,7 @@ export function FilesPage() {
     searchParams.get("tab") === "knowledge" ? "knowledge" : "artifacts";
 
   const [deleteTarget, setDeleteTarget] = useState<ArtifactFile | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [previewTarget, setPreviewTarget] = useState<ArtifactFile | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<ArtifactTypeFilter>("all");
@@ -110,14 +112,19 @@ export function FilesPage() {
       return;
     }
 
-    await deleteMutation.mutateAsync({
-      filename: deleteTarget.filename,
-      profileId,
-    });
-    if (previewTarget?.filename === deleteTarget.filename) {
-      setPreviewTarget(null);
+    setDeleteError(null);
+    try {
+      await deleteMutation.mutateAsync({
+        filename: deleteTarget.filename,
+        profileId,
+      });
+      if (previewTarget?.filename === deleteTarget.filename) {
+        setPreviewTarget(null);
+      }
+      setDeleteTarget(null);
+    } catch (error) {
+      setDeleteError(formatError(error));
     }
-    setDeleteTarget(null);
   }
 
   const emptyFilterMessage = (() => {
@@ -176,7 +183,10 @@ export function FilesPage() {
                   hasMore={hasNextPage ?? false}
                   isLoading={isLoading}
                   isLoadingMore={isFetchingNextPage}
-                  onDelete={setDeleteTarget}
+                  onDelete={(artifact) => {
+                    setDeleteError(null);
+                    setDeleteTarget(artifact);
+                  }}
                   onPreview={setPreviewTarget}
                   onShowMore={() => void fetchNextPage()}
                   profileId={profileId}
@@ -206,9 +216,16 @@ export function FilesPage() {
       </div>
 
       <FilesDeleteDialog
+        deleteError={deleteError}
         deletePending={deleteMutation.isPending}
         deleteTarget={deleteTarget}
-        onClose={() => setDeleteTarget(null)}
+        onClose={() => {
+          if (deleteMutation.isPending) {
+            return;
+          }
+          setDeleteError(null);
+          setDeleteTarget(null);
+        }}
         onConfirm={() => void handleDelete()}
       />
     </ChatAttachmentPanelProvider>

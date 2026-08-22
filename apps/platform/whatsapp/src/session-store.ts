@@ -1,8 +1,14 @@
 import { dirname, join } from "node:path";
+import type { DeliverableChannelArtifact } from "@atlas/core/channel-artifact-delivery";
 import { readTextOrNull, writePrivateTextFile } from "@atlas/core/fs";
-import { getWhatsAppConfigDir } from "@atlas/core/whatsapp-config";
+import {
+  getWhatsAppConfigDir,
+  normalizeWhatsAppUserJid,
+} from "@atlas/core/whatsapp-config";
 
 export interface ChatSessionRecord {
+  artifactShareUrls?: Record<string, string>;
+  deliverableArtifacts?: DeliverableChannelArtifact[];
   profileId: string;
   sessionId: string;
   updatedAt: string;
@@ -41,15 +47,50 @@ export class SessionStore {
   }
 
   get(jid: string): ChatSessionRecord | undefined {
-    return this.map[jid];
+    const key = normalizeWhatsAppUserJid(jid);
+    return this.map[key] ?? this.map[jid];
   }
 
   set(jid: string, record: ChatSessionRecord): void {
-    this.map[jid] = record;
+    const key = normalizeWhatsAppUserJid(jid);
+    if (key !== jid) {
+      delete this.map[jid];
+    }
+    this.map[key] = record;
   }
 
   delete(jid: string): void {
+    const key = normalizeWhatsAppUserJid(jid);
+    delete this.map[key];
     delete this.map[jid];
+  }
+
+  getArtifactShareUrls(jid: string): Record<string, string> {
+    return { ...(this.get(jid)?.artifactShareUrls ?? {}) };
+  }
+
+  getDeliverableArtifacts(jid: string): DeliverableChannelArtifact[] {
+    return [...(this.get(jid)?.deliverableArtifacts ?? [])];
+  }
+
+  updateArtifactState(
+    jid: string,
+    update: {
+      artifactShareUrls?: Record<string, string>;
+      deliverableArtifacts?: DeliverableChannelArtifact[];
+    }
+  ): void {
+    const existing = this.get(jid);
+    if (!existing) {
+      return;
+    }
+
+    this.set(jid, {
+      ...existing,
+      artifactShareUrls: update.artifactShareUrls ?? existing.artifactShareUrls,
+      deliverableArtifacts:
+        update.deliverableArtifacts ?? existing.deliverableArtifacts,
+    });
   }
 
   async save(): Promise<void> {

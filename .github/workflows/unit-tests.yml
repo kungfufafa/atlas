@@ -51,3 +51,6 @@ jobs:
 
       - name: Run tests
         run: bun run test
+
+      - name: Channel file-in/file-out loop
+        run: bun test scripts/channel-loop-harness/channel-loop-harness.test.ts

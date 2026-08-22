@@ -21,6 +21,7 @@ export const BUILTIN_TOOL_IDS = {
   read_file: "tool_read_file",
   search_chats: "tool_search_chats",
   search_files: "tool_search_files",
+  send_whatsapp: "tool_send_whatsapp",
   spreadsheet: "tool_spreadsheet",
   web_fetch: "tool_web_fetch",
   web_search: "tool_web_search",

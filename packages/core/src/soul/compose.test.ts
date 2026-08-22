@@ -16,6 +16,18 @@ describe("composeSoulSystemPrompt", () => {
     expect(INSTRUCTIONS_TEMPLATE).toContain("artifacts/");
   });
 
+  test("presence line is part of the composed identity wrapper", () => {
+    const prompt = composeSoulSystemPrompt({
+      directory: "/tmp",
+      files: { soul: SOUL_TEMPLATE },
+      loaded: ["SOUL.md"],
+    });
+
+    expect(prompt).toContain("You are present in this conversation.");
+    expect(prompt).toContain("Speak in first person as that identity.");
+    expect(SOUL_TEMPLATE).toContain("I'm in this conversation now");
+  });
+
   test("does not append Profile Instructions when profilePrompt is empty", () => {
     const prompt = composeSoulSystemPrompt(
       {

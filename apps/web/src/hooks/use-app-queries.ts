@@ -23,11 +23,13 @@ export const healthQueryOptions = queryOptions({
   staleTime: defaultStaleTime,
 });
 
-export const modelsQueryOptions = queryOptions({
-  queryFn: () => client.getModels(),
-  queryKey: queryKeys.models,
-  staleTime: defaultStaleTime,
-});
+export function modelsQueryOptions(orgId: string | null) {
+  return queryOptions({
+    queryFn: () => client.getModels(),
+    queryKey: [...queryKeys.models, orgId ?? "none"] as const,
+    staleTime: defaultStaleTime,
+  });
+}
 
 export function profilesQueryOptions(orgId: string | null) {
   return queryOptions({
@@ -53,18 +55,22 @@ export function mcpServersQueryOptions(orgId: string | null) {
   });
 }
 
-export const skillsQueryOptions = queryOptions({
-  queryFn: async () => (await client.listSkills()).skills,
-  queryKey: queryKeys.skills.all,
-  staleTime: defaultStaleTime,
-});
+export function skillsQueryOptions(orgId: string | null) {
+  return queryOptions({
+    queryFn: async () => (await client.listSkills()).skills,
+    queryKey: [...queryKeys.skills.all, orgId ?? "none"] as const,
+    staleTime: defaultStaleTime,
+  });
+}
 
-export const automationsQueryOptions = queryOptions({
-  queryFn: () => client.listAutomations(),
-  queryKey: queryKeys.automations.all,
-  refetchInterval: 30_000,
-  staleTime: defaultStaleTime,
-});
+export function automationsQueryOptions(orgId: string | null) {
+  return queryOptions({
+    queryFn: () => client.listAutomations(),
+    queryKey: [...queryKeys.automations.all, orgId ?? "none"] as const,
+    refetchInterval: 30_000,
+    staleTime: defaultStaleTime,
+  });
+}
 
 export function profileQueryOptions(profileId: string) {
   return queryOptions({
@@ -84,12 +90,14 @@ export function prefetchAppData(
   void queryClient.prefetchQuery(telegramSettingsQueryOptions);
   void queryClient.prefetchQuery(whatsappSettingsQueryOptions);
   void queryClient.prefetchQuery(healthQueryOptions);
-  void queryClient.prefetchQuery(modelsQueryOptions);
+  void queryClient.prefetchQuery(modelsQueryOptions(options?.orgId ?? null));
   void queryClient.prefetchQuery(profilesQueryOptions(options?.orgId ?? null));
-  void queryClient.prefetchQuery(automationsQueryOptions);
+  void queryClient.prefetchQuery(
+    automationsQueryOptions(options?.orgId ?? null)
+  );
   if (options?.canAccessSystem) {
     void queryClient.prefetchQuery(toolsQueryOptions(options.orgId ?? null));
-    void queryClient.prefetchQuery(skillsQueryOptions);
+    void queryClient.prefetchQuery(skillsQueryOptions(options.orgId ?? null));
     void queryClient.prefetchQuery(
       mcpServersQueryOptions(options.orgId ?? null)
     );
@@ -123,8 +131,9 @@ export function useHealthQuery() {
 }
 
 export function useModelsQuery(options?: { enabled?: boolean }) {
+  const { activeOrg } = useAuth();
   return useQuery({
-    ...modelsQueryOptions,
+    ...modelsQueryOptions(activeOrg?.id ?? null),
     enabled: options?.enabled ?? true,
   });
 }
@@ -152,7 +161,8 @@ export function useMcpServersQuery() {
 }
 
 export function useSkillsQuery() {
-  return useQuery(skillsQueryOptions);
+  const { activeOrg } = useAuth();
+  return useQuery(skillsQueryOptions(activeOrg?.id ?? null));
 }
 
 export function skillQueryOptions(skillId: string) {

@@ -1,4 +1,5 @@
 import type { AtlasClient, RemoteChatSession } from "@atlas/client";
+import { formatMissingAttachArtifactMessage } from "@atlas/core";
 import {
   type ChannelOrgStore,
   findOrgBySelectionInput,
@@ -262,6 +263,18 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         }
       }
 
+      if (command && text) {
+        await handleCommand(
+          ctx,
+          text,
+          conversationKey,
+          channelOrgKey,
+          isTopic,
+          telegram
+        );
+        return;
+      }
+
       const imageInput = await tryBuildImageInput(ctx, telegram);
 
       if (imageInput) {
@@ -307,18 +320,6 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
       if (!text) {
         await telegram.send(UNSUPPORTED_MEDIA_REPLY);
-        return;
-      }
-
-      if (text.startsWith("/")) {
-        await handleCommand(
-          ctx,
-          text,
-          conversationKey,
-          channelOrgKey,
-          isTopic,
-          telegram
-        );
         return;
       }
 
@@ -419,6 +420,26 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       case "/status":
         await replyStatus(telegram, conversationKey);
         return;
+
+      case "/attach": {
+        await resolveSession(conversationKey);
+        const profileId = sessionStore.get(conversationKey)?.profileId;
+        if (!profileId) {
+          await telegram.send(formatMissingAttachArtifactMessage());
+          return;
+        }
+
+        await maybeSendRequestedTelegramArtifactAttachment({
+          attachUserText: text,
+          client,
+          conversationKey,
+          ctx,
+          messenger: telegram,
+          profileId,
+          sessionStore,
+        });
+        return;
+      }
 
       case "/org":
         await handleOrgCommand(text, channelOrgKey, conversationKey, telegram);
@@ -582,6 +603,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       await deliverTelegramTurnArtifactShares({
         client,
         conversationKey,
+        ctx,
         messenger: telegram,
         profileId,
         session,

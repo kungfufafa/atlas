@@ -83,6 +83,16 @@ async function runSendDiscordArtifact(
     requireDiscordChannel(context);
     const { orgId, profileId } = requireOrgAndProfile(context);
     const relativePath = normalizeArtifactRelativePath(input.path);
+    if (
+      relativePath.endsWith(".atlas-meta.json") ||
+      relativePath.endsWith(".meta.json") ||
+      relativePath.includes(".atlas-meta")
+    ) {
+      return {
+        error: "Artifact metadata sidecars cannot be sent as attachments.",
+        ok: false,
+      };
+    }
     const artifactsDir = getProfileArtifactsDir(orgId, profileId);
     const guarded = await guardFilePath(relativePath, null, undefined, {
       allowedDirs: [artifactsDir],

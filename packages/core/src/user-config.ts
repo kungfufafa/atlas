@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, join } from "node:path";
@@ -210,16 +211,31 @@ export function validateTimezone(
   return value;
 }
 
+const userConfigDirStore = new AsyncLocalStorage<string>();
+
+function assertAbsoluteConfigDir(dir: string): string {
+  if (!isAbsolute(dir)) {
+    throw new Error(
+      "ATLAS_CONFIG_DIR must be an absolute path; relative paths resolve against process.cwd() and break profile isolation."
+    );
+  }
+  return dir;
+}
+
+export function runWithUserConfigDir<T>(dir: string, run: () => T): T {
+  return userConfigDirStore.run(assertAbsoluteConfigDir(dir.trim()), run);
+}
+
 export function getUserConfigDir(): string {
+  const fromStore = userConfigDirStore.getStore()?.trim();
+  if (fromStore) {
+    return assertAbsoluteConfigDir(fromStore);
+  }
+
   const override = process.env.ATLAS_CONFIG_DIR?.trim();
 
   if (override) {
-    if (!isAbsolute(override)) {
-      throw new Error(
-        "ATLAS_CONFIG_DIR must be an absolute path; relative paths resolve against process.cwd() and break profile isolation."
-      );
-    }
-    return override;
+    return assertAbsoluteConfigDir(override);
   }
 
   return join(homedir(), ".atlas");

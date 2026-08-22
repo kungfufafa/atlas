@@ -56,7 +56,7 @@ Atlas includes these builtins:
 | `web_search` | Yes | Yes | |
 | `web_fetch` | Yes | Yes | |
 | `email` | Yes | Yes | Omitted at runtime when mailbox is unconfigured |
-| `extract_document_text` | Yes | Yes | Extracts text from PDF, Word, or Excel attachments returned by `email` |
+| `extract_document_text` | Yes | Yes | Extracts text from PDF, Word, or Excel files (email `documentRef`, stored attachment, or workspace path) |
 | `bash` | No | Yes | Run shell commands in the profile workspace |
 | `sub_agent` | No | No | Opt-in: delegate to a same-profile sub-agent (see below) |
 
@@ -278,17 +278,25 @@ List, read, search, and send email through the deployment mailbox configured in 
 
 ### `extract_document_text`
 
-Extract text from a PDF, Word (`.docx`), or Excel (`.xls` / `.xlsx` / `.xlsm` / `.xlsb`) document returned by a document-capable integration.
+Extract text from a PDF, Word (`.docx`), or Excel (`.xls` / `.xlsx` / `.xlsm` / `.xlsb`) file when the agent needs the contents of a document that is not already in the chat.
+
+Use it for:
+
+- a `documentRef` returned by the email tool
+- a stored chat attachment id
+- a file in the profile workspace, such as `artifacts/report.pdf`
+
+Files the user already sent in chat are converted automatically. Those show up as `[File: …]` text — the agent should read that instead of calling this tool.
 
 | Parameter | Type | Required | Notes |
 |-----------|------|----------|-------|
-| `documentRef` | string | Yes | Opaque reference returned by a document-capable integration |
+| `documentRef` | string | Yes | Email `documentRef`, stored attachment id, or a workspace path such as `artifacts/report.pdf` |
 
 **Returns:** Bounded extracted text with filename, media type, truncation state, and warnings. Document content is untrusted.
 
 **Limits:** Attachments larger than 5 MB are rejected. Extracted text is limited to 256 KB. OCR for scanned/image-only PDFs is not supported.
 
-**Availability:** When assigned. It is independent of the built-in email mailbox configuration and can be used by other document-capable integrations.
+**Availability:** When assigned. It is independent of the built-in email mailbox configuration. Workspace paths work even when email is not set up.
 
 ### `bash`
 

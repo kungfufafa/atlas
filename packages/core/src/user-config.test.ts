@@ -6,10 +6,12 @@ import { pathExists } from "./fs";
 import {
   createProviderInstanceId,
   ensureUserConfigDir,
+  getUserConfigDir,
   getUserConfigPath,
   loadUserConfig,
   loadUserWebPublicUrl,
   normalizeProviderInstanceLabel,
+  runWithUserConfigDir,
   saveUserConfig,
   saveUserWebPublicUrl,
 } from "./user-config";
@@ -33,6 +35,18 @@ describe("ensureUserConfigDir", () => {
     expect(await pathExists(configDir)).toBe(false);
     await expect(ensureUserConfigDir()).resolves.toBe(configDir);
     expect(await pathExists(configDir)).toBe(true);
+  });
+
+  test("async store overrides ATLAS_CONFIG_DIR for the current call", async () => {
+    const envDir = join(tmpdir(), `atlas-config-env-${Date.now()}`);
+    const storeDir = join(tmpdir(), `atlas-config-store-${Date.now()}`);
+    process.env.ATLAS_CONFIG_DIR = envDir;
+
+    expect(getUserConfigDir()).toBe(envDir);
+    expect(runWithUserConfigDir(storeDir, () => getUserConfigDir())).toBe(
+      storeDir
+    );
+    expect(getUserConfigDir()).toBe(envDir);
   });
 });
 

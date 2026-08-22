@@ -1,6 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import * as os from "node:os";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { AtlasClient, StreamHandlers } from "@atlas/client";
 import {
@@ -14,6 +13,7 @@ import type {
   ChatMessage,
   UserOrgSummary,
 } from "@atlas/core/contract";
+import { withIsolatedAtlasHome } from "@atlas/core/testing/atlas-home";
 import type { Message } from "discord.js";
 
 export function createDefaultTestOrgs(): UserOrgSummary[] {
@@ -86,6 +86,8 @@ export function createMockClient(
       handlers?: StreamHandlers
     ) => Promise<string>;
     artifactContentBytes?: Uint8Array;
+    failPublishShare?: boolean;
+    failReadArtifact?: boolean;
   } = {}
 ) {
   const calls = {
@@ -95,6 +97,7 @@ export function createMockClient(
     publishProfileArtifactShare: 0,
     readProfileArtifactContent: 0,
     sendStream: 0,
+    transcribeAudio: 0,
   };
   const createdSessionProfileIds: string[] = [];
 
@@ -184,6 +187,9 @@ export function createMockClient(
     listUserOrgs: async () => parseListUserOrgsResponse({ orgs }),
     publishProfileArtifactShare: async () => {
       calls.publishProfileArtifactShare += 1;
+      if (options.failPublishShare) {
+        throw new Error("publish failed");
+      }
       return {
         id: "share_test",
         refreshed: false,
@@ -195,6 +201,9 @@ export function createMockClient(
     },
     readProfileArtifactContent: async () => {
       calls.readProfileArtifactContent += 1;
+      if (options.failReadArtifact) {
+        throw new Error("Failed to read the saved file.");
+      }
       const data =
         options.artifactContentBytes ?? new TextEncoder().encode("# Report");
       return {
@@ -214,6 +223,10 @@ export function createMockClient(
         activeOrgId = next;
       }
     },
+    transcribeAudio: async () => {
+      calls.transcribeAudio += 1;
+      return { text: "Transcribed voice message" };
+    },
   } as unknown as AtlasClient;
 
   assertBridgeClientMethods(client);
@@ -231,6 +244,12 @@ export function createDmMessage(options: {
   userId?: string;
   channelId?: string;
   content?: string;
+  attachments?: Array<{
+    contentType?: string | null;
+    name?: string;
+    size?: number;
+    url?: string;
+  }>;
 }): MockDmMessage {
   const sentMessages: string[] = [];
   let fileSendCalls = 0;
@@ -259,7 +278,24 @@ export function createDmMessage(options: {
     sendTyping: async () => {},
   };
 
+  const attachmentItems = options.attachments ?? [];
+  const attachments = new Map(
+    attachmentItems.map((item, index) => [
+      item.url ?? `att_${index}`,
+      {
+        contentType: item.contentType ?? null,
+        name: item.name ?? "file",
+        size: item.size ?? 12,
+        url: item.url ?? `https://cdn.example/${item.name ?? "file"}`,
+      },
+    ])
+  );
+
   const message = {
+    attachments: {
+      size: attachments.size,
+      values: () => attachments.values(),
+    },
     author: { bot: false, id: options.userId ?? "424242424242424242" },
     channel,
     client: { user: { id: "bot_id", username: "atlasbot" } },
@@ -606,35 +642,8 @@ export function createTestOrgStore(homeDir: string): ChannelOrgStore {
   );
 }
 
-let tempHomeChain: Promise<void> = Promise.resolve();
-
 export async function withTempHome<T>(
   run: (homeDir: string) => Promise<T>
 ): Promise<T> {
-  let release!: () => void;
-  const gate = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  const previous = tempHomeChain;
-  tempHomeChain = previous.then(() => gate);
-
-  await previous;
-
-  const homeDir = await mkdtemp(path.join(os.tmpdir(), "atlas-discord-home-"));
-  const configDir = path.join(homeDir, ".atlas");
-  const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
-  process.env.ATLAS_CONFIG_DIR = configDir;
-
-  try {
-    return await run(homeDir);
-  } finally {
-    if (previousConfigDir === undefined) {
-      delete process.env.ATLAS_CONFIG_DIR;
-    } else {
-      process.env.ATLAS_CONFIG_DIR = previousConfigDir;
-    }
-
-    await rm(homeDir, { force: true, recursive: true });
-    release();
-  }
+  return withIsolatedAtlasHome("atlas-discord-home-", run);
 }

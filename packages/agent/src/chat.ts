@@ -255,7 +255,7 @@ export function createAgentChatSession(
       return null;
     }
 
-    const dateLine = `Today is ${formatCurrentDate()}.`;
+    const dateLine = currentTurnClockLine(options.userTimezone);
     const usedTokens = estimateHistoryTokens(
       history,
       `${systemPrompt}\n\n${dateLine}`,
@@ -332,6 +332,7 @@ export function createAgentChatSession(
           resolvePromptContext: options.resolvePromptContext,
           runCompaction,
           toolContext,
+          userTimezone: options.userTimezone,
         }
       );
     },
@@ -353,6 +354,7 @@ export function createAgentChatSession(
           runCompaction,
           signal: streamOptions?.signal,
           toolContext,
+          userTimezone: options.userTimezone,
         }
       );
     },
@@ -389,6 +391,7 @@ async function sendMessage(
       messages: readonly ChatMessage[]
     ) => Promise<ChatMessage[]>;
     signal?: AbortSignal;
+    userTimezone?: string;
   }
 ): Promise<string> {
   let userContent = normalizeUserContent(
@@ -498,7 +501,8 @@ async function sendMessage(
       effectiveToolContext,
       options.rehydrateMessagesForProvider,
       options.onContextUsage,
-      options.signal
+      options.signal,
+      options.userTimezone
     );
 
     if (
@@ -587,7 +591,8 @@ async function runConversation(
     usedTokens: number,
     source: ChatContextUsage["source"]
   ) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  userTimezone?: string
 ): Promise<string> {
   const toolCallSignatures: string[] = [];
   let totalTurns = 0;
@@ -607,14 +612,15 @@ async function runConversation(
         mode,
         handlers,
         rehydrateMessagesForProvider,
-        signal
+        signal,
+        userTimezone
       );
 
       const usedTokens =
         result.usage?.inputTokens ??
         estimateHistoryTokens(
           history,
-          `${systemPrompt}\n\nToday is ${formatCurrentDate()}.`,
+          `${systemPrompt}\n\n${currentTurnClockLine(userTimezone)}`,
           llmTools
         );
       onContextUsage?.(
@@ -907,13 +913,30 @@ async function executeToolCalls(
   }
 }
 
-function formatCurrentDate(): string {
-  return new Date().toLocaleDateString("en-US", {
+function currentTurnClockLine(timeZone?: string): string {
+  return `Current local time: ${formatCurrentDate(timeZone)}.`;
+}
+
+function formatCurrentDate(timeZone?: string): string {
+  const zone = timeZone?.trim();
+  const options: Intl.DateTimeFormatOptions = {
     day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
     month: "long",
+    timeZoneName: "short",
     weekday: "long",
     year: "numeric",
-  });
+  };
+
+  try {
+    return new Date().toLocaleString("en-US", {
+      ...options,
+      ...(zone ? { timeZone: zone } : {}),
+    });
+  } catch {
+    return new Date().toLocaleString("en-US", options);
+  }
 }
 
 const RELATED_QUESTIONS_TIMEOUT_MS = 12_000;
@@ -1005,9 +1028,10 @@ async function generateReply(
   rehydrateMessagesForProvider?: (
     messages: readonly ChatMessage[]
   ) => Promise<ChatMessage[]>,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  userTimezone?: string
 ) {
-  const dateLine = `Today is ${formatCurrentDate()}.`;
+  const dateLine = currentTurnClockLine(userTimezone);
   const replaySafeHistory = history.map((message) =>
     message.role === "assistant" && message.relatedQuestions
       ? { ...message, relatedQuestions: undefined }

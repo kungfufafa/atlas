@@ -57,11 +57,9 @@ function AppShell() {
                       element={<Navigate replace to={statusTabPath()} />}
                       path="/status"
                     />
-                    <Route element={<ChatPage />} path="/chat" />
-                    <Route
-                      element={<ChatPage />}
-                      path="/chat/:profileId/:sessionId"
-                    />
+                    <Route element={<ChatPage />} path="/chat">
+                      <Route path=":profileId/:sessionId" />
+                    </Route>
                     <Route element={<HistoryPage />} path="/history" />
                     <Route
                       element={<ToolPlaygroundPage />}

@@ -6,14 +6,21 @@ import {
   generatePairingCode,
   isWhatsAppUserAuthorized,
   loadWhatsAppConfigFile,
+  loadWhatsAppLidMap,
+  lookupWhatsAppLidPhone,
   maskPhoneNumber,
   normalizePairingCode,
   normalizePhoneNumberDigits,
+  normalizeWhatsAppUserJid,
+  rememberWhatsAppLidPhone,
   resetWhatsAppSessionForReconnect,
+  resolveWhatsAppAuthIdentity,
   resolveWhatsAppConfigFromSources,
+  resolveWhatsAppOutboundDestination,
   saveWhatsAppConfig,
   syncWhatsAppOwnerPairing,
   verifyAndPairWhatsAppUser,
+  whatsAppUserDigits,
 } from "./whatsapp-config";
 
 describe("maskPhoneNumber", () => {
@@ -29,6 +36,17 @@ describe("maskPhoneNumber", () => {
 
   test("masks short numbers", () => {
     expect(maskPhoneNumber("1234")).toBe("+••••");
+  });
+});
+
+describe("normalizeWhatsAppUserJid", () => {
+  test("strips device suffixes from phone and LID JIDs", () => {
+    expect(normalizeWhatsAppUserJid("6281379292556:12@s.whatsapp.net")).toBe(
+      "6281379292556@s.whatsapp.net"
+    );
+    expect(normalizeWhatsAppUserJid("236283431522503:0@lid")).toBe(
+      "236283431522503@lid"
+    );
   });
 });
 
@@ -553,6 +571,75 @@ describe("verifyAndPairWhatsAppUser", () => {
   });
 });
 
+describe("resolveWhatsAppOutboundDestination", () => {
+  const base = {
+    accessMode: "pairing" as const,
+    allowedNumbers: [] as string[],
+    blockedNumbers: [] as string[],
+    pairedJid: "6281111111111@s.whatsapp.net",
+    pairedLid: null,
+    pairingCode: null,
+    phoneNumber: "6281111111111",
+    profileId: "default",
+  };
+
+  test("uses the workspace paired number as sender and the given phone as destination", () => {
+    expect(resolveWhatsAppOutboundDestination(base, "6289500000001")).toEqual({
+      jid: "6289500000001@s.whatsapp.net",
+    });
+  });
+
+  test("normalizes local 08 numbers", () => {
+    expect(resolveWhatsAppOutboundDestination(base, "089500000001")).toEqual({
+      jid: "6289500000001@s.whatsapp.net",
+    });
+  });
+
+  test("defaults to the paired owner when to is omitted", () => {
+    expect(resolveWhatsAppOutboundDestination(base)).toEqual({
+      jid: "6281111111111@s.whatsapp.net",
+    });
+  });
+
+  test("blocks destinations outside an allowlist", () => {
+    const result = resolveWhatsAppOutboundDestination(
+      {
+        ...base,
+        accessMode: "allowlist",
+        allowedNumbers: ["6282222222222"],
+      },
+      "6289500000001"
+    );
+    expect("error" in result).toBe(true);
+  });
+
+  test("allows an allowlisted destination", () => {
+    expect(
+      resolveWhatsAppOutboundDestination(
+        {
+          ...base,
+          accessMode: "allowlist",
+          allowedNumbers: ["6289500000001"],
+        },
+        "6289500000001"
+      )
+    ).toEqual({ jid: "6289500000001@s.whatsapp.net" });
+  });
+
+  test("does not keep leftover allowed numbers after leaving allowlist mode", () => {
+    expect(
+      resolveWhatsAppOutboundDestination(
+        {
+          ...base,
+          accessMode: "pairing",
+          allowedNumbers: ["6282222222222"],
+        },
+        "6289500000001"
+      )
+    ).toEqual({ jid: "6289500000001@s.whatsapp.net" });
+  });
+});
+
 describe("normalizePhoneNumberDigits & parsePhoneNumberList", () => {
   test("handles various international and local phone number formats", () => {
     expect(normalizePhoneNumberDigits("+62 812-3456-7890")).toBe(
@@ -562,6 +649,42 @@ describe("normalizePhoneNumberDigits & parsePhoneNumberList", () => {
     expect(normalizePhoneNumberDigits("+1 (555) 123-4567")).toBe("15551234567");
     expect(normalizePhoneNumberDigits("6281234567890")).toBe("6281234567890");
     expect(normalizePhoneNumberDigits("")).toBe("");
+  });
+});
+
+describe("WhatsApp LID identity", () => {
+  test("does not treat LID identifiers as phone digits", () => {
+    expect(whatsAppUserDigits("236283431522503@lid")).toBe("");
+    expect(whatsAppUserDigits("236283431522503:0@lid")).toBe("");
+    expect(whatsAppUserDigits("6281234567890@s.whatsapp.net")).toBe(
+      "6281234567890"
+    );
+  });
+
+  test("resolves a LID chat to a phone via senderPn", () => {
+    expect(
+      resolveWhatsAppAuthIdentity({
+        jid: "236283431522503@lid",
+        senderPn: "6281234567890@s.whatsapp.net",
+      })
+    ).toEqual({
+      jid: "236283431522503@lid",
+      phoneDigits: "6281234567890",
+      phoneJid: "6281234567890@s.whatsapp.net",
+    });
+  });
+
+  test("falls back to a stored LID mapping when senderPn is absent", () => {
+    expect(
+      resolveWhatsAppAuthIdentity({
+        jid: "236283431522503:12@lid",
+        mappedPhoneJid: "6281234567890@s.whatsapp.net",
+      })
+    ).toEqual({
+      jid: "236283431522503:12@lid",
+      phoneDigits: "6281234567890",
+      phoneJid: "6281234567890@s.whatsapp.net",
+    });
   });
 });
 
@@ -613,5 +736,111 @@ describe("isWhatsAppUserAuthorized with access modes", () => {
     expect(isWhatsAppUserAuthorized("62811111111@s.whatsapp.net", config)).toBe(
       true
     );
+  });
+
+  test("allowlist authorizes a LID chat after resolving senderPn to a listed number", () => {
+    const config = {
+      accessMode: "allowlist" as const,
+      allowedNumbers: ["6281234567890"],
+      blockedNumbers: [],
+      pairedJid: "6289999999@s.whatsapp.net",
+      pairedLid: "111111111111111@lid",
+    };
+
+    expect(
+      isWhatsAppUserAuthorized(
+        {
+          jid: "236283431522503@lid",
+          senderPn: "6281234567890@s.whatsapp.net",
+        },
+        config
+      )
+    ).toBe(true);
+  });
+
+  test("allowlist does not match LID identifiers against phone numbers", () => {
+    const config = {
+      accessMode: "allowlist" as const,
+      allowedNumbers: ["236283431522503"],
+      blockedNumbers: [],
+      pairedJid: null,
+      pairedLid: "111111111111111@lid",
+    };
+
+    expect(isWhatsAppUserAuthorized("236283431522503@lid", config)).toBe(false);
+    expect(
+      isWhatsAppUserAuthorized(
+        {
+          jid: "236283431522503@lid",
+          senderPn: "6281234567890@s.whatsapp.net",
+        },
+        config
+      )
+    ).toBe(false);
+  });
+
+  test("allowlist still authorizes the owner LID without senderPn", () => {
+    const config = {
+      accessMode: "allowlist" as const,
+      allowedNumbers: ["6281234567890"],
+      blockedNumbers: [],
+      pairedJid: "6289999999@s.whatsapp.net",
+      pairedLid: "236283431522503@lid",
+    };
+
+    expect(isWhatsAppUserAuthorized("236283431522503@lid", config)).toBe(true);
+  });
+
+  test("denylist blocks a LID chat once senderPn maps to a blocked number", () => {
+    const config = {
+      accessMode: "denylist" as const,
+      allowedNumbers: [],
+      blockedNumbers: ["6286666666"],
+      pairedJid: null,
+      pairedLid: null,
+    };
+
+    expect(
+      isWhatsAppUserAuthorized(
+        {
+          jid: "236283431522503@lid",
+          senderPn: "6286666666@s.whatsapp.net",
+        },
+        config
+      )
+    ).toBe(false);
+    expect(isWhatsAppUserAuthorized("236283431522503@lid", config)).toBe(false);
+  });
+});
+
+describe("WhatsApp LID phone map", () => {
+  test("persists LID to phone JID and looks up device-suffixed inbound LIDs", async () => {
+    await withTempHomedir("atlas-core-wa-lid-map-", async () => {
+      const phoneJid = await rememberWhatsAppLidPhone(
+        "236283431522503:12@lid",
+        "6281234567890@s.whatsapp.net"
+      );
+      expect(phoneJid).toBe("6281234567890@s.whatsapp.net");
+
+      const map = await loadWhatsAppLidMap();
+      expect(lookupWhatsAppLidPhone(map, "236283431522503@lid")).toBe(
+        "6281234567890@s.whatsapp.net"
+      );
+      expect(
+        isWhatsAppUserAuthorized(
+          {
+            jid: "236283431522503@lid",
+            mappedPhoneJid: lookupWhatsAppLidPhone(map, "236283431522503@lid"),
+          },
+          {
+            accessMode: "allowlist",
+            allowedNumbers: ["6281234567890"],
+            blockedNumbers: [],
+            pairedJid: null,
+            pairedLid: null,
+          }
+        )
+      ).toBe(true);
+    });
   });
 });

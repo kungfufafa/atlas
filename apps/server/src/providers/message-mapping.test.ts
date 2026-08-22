@@ -177,6 +177,24 @@ describe("provider user content mapping", () => {
     });
   });
 
+  test("toOpenAIMessages does not send null content without tool_calls", async () => {
+    const result = await toOpenAIMessages(
+      "system",
+      [
+        { content: "hi", role: "user" },
+        { content: "", role: "assistant", thinking: "plan" },
+      ],
+      "opencode_go"
+    );
+    const assistant = result.find((entry) => entry.role === "assistant");
+
+    expect(assistant).toEqual({
+      content: "",
+      reasoning_content: "plan",
+      role: "assistant",
+    });
+  });
+
   test("toResponsesInput maps document parts", async () => {
     const result = await toResponsesInput([documentUserMessage]);
     const user = result[0] as {

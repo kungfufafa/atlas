@@ -87,7 +87,6 @@ export function buildHarnessNonInteractiveArgs(
     options.cwd,
     "--format",
     "default",
-    "--dangerously-skip-permissions",
     prompt,
   ];
 }
@@ -221,7 +220,6 @@ export async function buildCodingAgentCommandTemplate(
       shellEscape(cwd),
       "--format",
       "default",
-      "--dangerously-skip-permissions",
       escapedTask,
     ].join(" "),
     notes: [

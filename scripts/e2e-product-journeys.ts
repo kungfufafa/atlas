@@ -78,14 +78,18 @@ describe("Atlas Master Golden User Journeys (Journeys A through P) E2E Suite", (
       await sendMessage("Explain what a vector database is.");
       await page.waitForFunction(
         () =>
-          document.body.innerText.includes("vector database") ||
           document.body.innerText.includes("embeddings") ||
-          document.body.innerText.includes("ANN"),
+          document.body.innerText.includes("ANN") ||
+          document.body.innerText.includes("HNSW"),
         undefined,
         { timeout: 20_000 }
       );
       const content = await page.textContent("body");
-      expect(content).toContain("vector database");
+      expect(
+        content?.includes("HNSW") ||
+          content?.includes("embeddings") ||
+          content?.includes("ANN")
+      ).toBe(true);
       await page.screenshot({
         path: join(SCREENSHOTS_DIR, "golden-journey-a-simple-answer.png"),
       });
@@ -107,17 +111,14 @@ describe("Atlas Master Golden User Journeys (Journeys A through P) E2E Suite", (
       await page.waitForFunction(
         () =>
           document.body.innerText.includes("bun add") ||
-          document.body.innerText.includes("bun.sh") ||
-          document.body.innerText.includes("Searching the web"),
+          document.body.innerText.includes("bun.sh"),
         undefined,
         { timeout: 25_000 }
       );
       const content = await page.textContent("body");
-      expect(
-        content?.includes("bun add") ||
-          content?.includes("bun.sh") ||
-          content?.includes("Searching the web")
-      ).toBe(true);
+      expect(content?.includes("bun add") || content?.includes("bun.sh")).toBe(
+        true
+      );
       await page.screenshot({
         path: join(SCREENSHOTS_DIR, "golden-journey-b-fresh-web.png"),
       });

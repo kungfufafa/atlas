@@ -94,6 +94,8 @@ import {
 import {
   findRetryCheckpoint,
   findRetryPrompt,
+  isSupersededChatTurn,
+  shouldResetChatOnWorkspaceChange,
 } from "@/pages/chat/chat-page.shared";
 
 interface SendMessageOptions {
@@ -155,12 +157,15 @@ export function useChatPage() {
     []
   );
   const streamAbortRef = useRef<AbortController | null>(null);
+  const streamGenerationRef = useRef(0);
   const messageQueueRef = useRef<QueuedSend[]>([]);
   const isSendingRef = useRef(false);
+  const sessionRef = useRef<RemoteChatSession | null>(null);
   const skipNextProfileSessionRef = useRef(false);
   const loadedRouteRef = useRef<string | null>(null);
   const profileIdRef = useRef(profileId);
   const busyRef = useRef(busy);
+  const workspaceIdRef = useRef(activeOrg?.id ?? null);
 
   useEffect(() => {
     profileIdRef.current = profileId;
@@ -169,6 +174,25 @@ export function useChatPage() {
   useEffect(() => {
     busyRef.current = busy;
   }, [busy]);
+
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
+
+  const supersedeInFlightTurn = useCallback(() => {
+    streamGenerationRef.current += 1;
+    streamAbortRef.current?.abort();
+    streamAbortRef.current = null;
+    isSendingRef.current = false;
+    return streamGenerationRef.current;
+  }, []);
+
+  useEffect(
+    () => () => {
+      supersedeInFlightTurn();
+    },
+    [supersedeInFlightTurn]
+  );
 
   // Composer / in-page switches update profileId first; push to shared context.
   useEffect(() => {
@@ -308,8 +332,12 @@ export function useChatPage() {
   );
 
   const loadProfiles = useCallback(async () => {
+    const requestedOrgId = activeOrg?.id ?? null;
     try {
       const response = await client.listProfiles();
+      if (workspaceIdRef.current !== requestedOrgId) {
+        return;
+      }
       setProfiles(response.profiles);
       if (!routeSession && response.profiles.length > 0) {
         setProfileId((current) => {
@@ -325,20 +353,23 @@ export function useChatPage() {
         });
       }
     } catch (err) {
+      if (workspaceIdRef.current !== requestedOrgId) {
+        return;
+      }
       setError(formatError(err));
     }
-  }, [routeSession]);
+  }, [routeSession, activeOrg?.id]);
 
   const enterDraftChat = useCallback(
     (nextProfileId: string) => {
-      streamAbortRef.current?.abort();
-      streamAbortRef.current = null;
+      supersedeInFlightTurn();
       localStorage.removeItem(sessionStorageKey(nextProfileId));
       skipNextProfileSessionRef.current = true;
       loadedRouteRef.current = null;
       messageQueueRef.current = [];
       isSendingRef.current = false;
       setQueuedMessages([]);
+      sessionRef.current = null;
       setSession(null);
       setSessionChannel("web");
       setMessages([]);
@@ -346,14 +377,49 @@ export function useChatPage() {
       setAgentTodos([]);
       setAgentQuestionnaire(null);
       setContextUsage(null);
-      // Session routes remount ChatPage on /chat — pass profile in the query so it survives.
-      // The ?new=1 handler then replaces the URL with bare /chat.
+      setBusy(false);
+      setCanStop(false);
+      setTurnStartedAt(null);
+      // Keep ChatPage mounted; ?new=1 still carries the profile if we left /chat.
       if (location.pathname !== buildChatBasePath()) {
         navigate(buildNewChatPath(nextProfileId), { replace: true });
       }
     },
-    [location.pathname, navigate]
+    [location.pathname, navigate, supersedeInFlightTurn]
   );
+
+  useEffect(() => {
+    const nextOrgId = activeOrg?.id ?? null;
+    const previousOrgId = workspaceIdRef.current;
+    workspaceIdRef.current = nextOrgId;
+    if (!shouldResetChatOnWorkspaceChange(previousOrgId, nextOrgId)) {
+      return;
+    }
+
+    supersedeInFlightTurn();
+    messageQueueRef.current = [];
+    isSendingRef.current = false;
+    skipNextProfileSessionRef.current = true;
+    loadedRouteRef.current = null;
+    setQueuedMessages([]);
+    sessionRef.current = null;
+    setSession(null);
+    setSessionChannel("web");
+    setMessages([]);
+    setError(null);
+    setAgentTodos([]);
+    setAgentQuestionnaire(null);
+    setContextUsage(null);
+    setBusy(false);
+    setCanStop(false);
+    setTurnStartedAt(null);
+    setComposerDraft("");
+    setProfileId("");
+
+    if (location.pathname !== buildChatBasePath()) {
+      navigate(buildChatBasePath(), { replace: true });
+    }
+  }, [activeOrg?.id, location.pathname, navigate, supersedeInFlightTurn]);
 
   const handleThinkingEffortChange = useCallback(
     (effort: ThinkingEffort) => {
@@ -444,10 +510,11 @@ export function useChatPage() {
 
   const resumeSession = useCallback(
     async (nextProfileId: string, sessionId: string) => {
+      const generation = supersedeInFlightTurn();
+      isSendingRef.current = true;
       setBusy(true);
       setError(null);
       try {
-        localStorage.setItem(sessionStorageKey(nextProfileId), sessionId);
         skipNextProfileSessionRef.current = nextProfileId !== profileId;
         const {
           channel,
@@ -457,10 +524,15 @@ export function useChatPage() {
           questionnaire,
           contextUsage: nextContextUsage,
         } = await client.getSessionMessages(sessionId);
+        if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+          return;
+        }
+        localStorage.setItem(sessionStorageKey(nextProfileId), sessionId);
         const nextSession = client.createChatSession(sessionId, channel);
         let listItems = chatMessagesToListItems(storedMessages, messageMeta);
         setProfileId(nextProfileId);
         setSessionChannel(channel);
+        sessionRef.current = nextSession;
         setSession(nextSession);
         setMessages(listItems);
         setAgentTodos(todos);
@@ -470,8 +542,13 @@ export function useChatPage() {
 
         if (channel === "web") {
           const status = await client.getSessionStatus(sessionId);
+          if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+            return;
+          }
 
           if (status.active) {
+            isSendingRef.current = true;
+            setCanStop(true);
             setTurnStartedAt(status.startedAt ?? new Date().toISOString());
             listItems = seedStreamingStateForActiveTurn(listItems);
             setMessages(listItems);
@@ -489,8 +566,14 @@ export function useChatPage() {
               sessionId,
               signal: abortController.signal,
             });
+            if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+              return;
+            }
 
             const refreshed = await client.getSessionMessages(sessionId);
+            if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+              return;
+            }
             setMessages(
               chatMessagesToListItems(refreshed.messages, refreshed.messageMeta)
             );
@@ -508,6 +591,9 @@ export function useChatPage() {
           }
         }
       } catch (err) {
+        if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+          return;
+        }
         if (isAbortError(err)) {
           setMessages((current) => finalizeStreamingMessages(current));
           return;
@@ -515,12 +601,16 @@ export function useChatPage() {
 
         setError(formatError(err));
       } finally {
-        streamAbortRef.current = null;
-        setBusy(false);
-        setTurnStartedAt(null);
+        if (!isSupersededChatTurn(streamGenerationRef.current, generation)) {
+          streamAbortRef.current = null;
+          isSendingRef.current = false;
+          setCanStop(false);
+          setBusy(false);
+          setTurnStartedAt(null);
+        }
       }
     },
-    [profileId, syncChatUrl]
+    [profileId, supersedeInFlightTurn, syncChatUrl]
   );
 
   const handleBranchMessage = useCallback(
@@ -534,6 +624,7 @@ export function useChatPage() {
       }
       setBranchingMessageId(message.id);
       setError(null);
+      const generation = streamGenerationRef.current;
       try {
         const result = await branchSessionMutation.mutateAsync({
           channel: "web",
@@ -541,8 +632,14 @@ export function useChatPage() {
           profileId,
           sessionId: session.id,
         });
+        if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+          return;
+        }
         await resumeSession(profileId, result.sessionId);
       } catch (err) {
+        if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+          return;
+        }
         setError(formatError(err));
       } finally {
         setBranchingMessageId(null);
@@ -603,8 +700,9 @@ export function useChatPage() {
     skipNextProfileSessionRef.current = true;
     loadedRouteRef.current = null;
     messageQueueRef.current = [];
-    isSendingRef.current = false;
+    supersedeInFlightTurn();
     setQueuedMessages([]);
+    sessionRef.current = null;
     setSession(null);
     setSessionChannel("web");
     setMessages([]);
@@ -612,6 +710,9 @@ export function useChatPage() {
     setAgentTodos([]);
     setAgentQuestionnaire(null);
     setContextUsage(null);
+    setBusy(false);
+    setCanStop(false);
+    setTurnStartedAt(null);
 
     if (requestedProfile && requestedProfile !== profileIdRef.current) {
       setProfileId(requestedProfile);
@@ -622,7 +723,7 @@ export function useChatPage() {
     }
 
     navigate(buildChatBasePath(), { replace: true });
-  }, [searchParams, navigate, location.search]);
+  }, [searchParams, navigate, location.search, supersedeInFlightTurn]);
 
   useEffect(() => {
     if (!profileId || routeSession) {
@@ -675,6 +776,7 @@ export function useChatPage() {
       options: SendMessageOptions = {},
       queueItem?: QueuedSend
     ) => {
+      const generation = ++streamGenerationRef.current;
       isSendingRef.current = true;
       setBusy(true);
       setTurnStartedAt(new Date().toISOString());
@@ -714,17 +816,24 @@ export function useChatPage() {
         outgoingOptions
       );
 
-      let activeSession = options.sessionOverride ?? session;
+      let activeSession = options.sessionOverride ?? sessionRef.current;
       let shouldDrainQueue = true;
 
       if (!activeSession) {
         try {
           activeSession = await client.createSession("web", { profileId });
+          if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+            return;
+          }
           localStorage.setItem(sessionStorageKey(profileId), activeSession.id);
           setSessionChannel("web");
+          sessionRef.current = activeSession;
           setSession(activeSession);
           syncChatUrl(profileId, activeSession.id);
         } catch (err) {
+          if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+            return;
+          }
           setError(formatError(err));
           shouldDrainQueue = false;
           setMessages((current) => current.slice(0, -2));
@@ -762,6 +871,9 @@ export function useChatPage() {
           }),
           { signal: abortController.signal }
         );
+        if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+          return;
+        }
 
         const {
           messages: storedMessages,
@@ -770,12 +882,18 @@ export function useChatPage() {
           questionnaire,
           contextUsage: nextContextUsage,
         } = await client.getSessionMessages(activeSession.id);
+        if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+          return;
+        }
         setMessages(chatMessagesToListItems(storedMessages, messageMeta));
         setAgentTodos(todos);
         setAgentQuestionnaire(questionnaire);
         setContextUsage(nextContextUsage ?? null);
         setLastSuccessfulTurnAt(Date.now());
       } catch (err) {
+        if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+          return;
+        }
         if (isAbortError(err)) {
           setMessages((current) => finalizeStreamingMessages(current));
           return;
@@ -784,7 +902,9 @@ export function useChatPage() {
         const message = formatError(err);
 
         if (isActiveTurnConflictError(message) && activeSession) {
+          shouldDrainQueue = false;
           setError("The agent is still responding to your last message.");
+          setMessages((current) => current.slice(0, -2));
           return;
         }
 
@@ -793,6 +913,9 @@ export function useChatPage() {
             const nextSession = await client.createSession("web", {
               profileId,
             });
+            if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+              return;
+            }
             localStorage.setItem(sessionStorageKey(profileId), nextSession.id);
             setSessionChannel("web");
             setSession(nextSession);
@@ -805,6 +928,9 @@ export function useChatPage() {
             setAgentQuestionnaire(null);
             return;
           } catch (retryErr) {
+            if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+              return;
+            }
             setError(formatError(retryErr));
             setMessages((current) =>
               current.filter((message) => !message.streaming)
@@ -818,23 +944,27 @@ export function useChatPage() {
           current.filter((message) => !message.streaming)
         );
       } finally {
-        streamAbortRef.current = null;
-        setCanStop(false);
-        setBusy(false);
-        setTurnStartedAt(null);
+        if (!isSupersededChatTurn(streamGenerationRef.current, generation)) {
+          streamAbortRef.current = null;
+          setCanStop(false);
+          setBusy(false);
+          setTurnStartedAt(null);
 
-        const next = shouldDrainQueue ? messageQueueRef.current.shift() : null;
-        if (next) {
-          setQueuedMessages((current) =>
-            current.filter((item) => item.id !== next.id)
-          );
-          void executeSend(next.text, next.files, next.options, next);
-        } else {
-          isSendingRef.current = false;
+          const next = shouldDrainQueue
+            ? messageQueueRef.current.shift()
+            : null;
+          if (next) {
+            setQueuedMessages((current) =>
+              current.filter((item) => item.id !== next.id)
+            );
+            void executeSend(next.text, next.files, next.options, next);
+          } else {
+            isSendingRef.current = false;
+          }
         }
       }
     },
-    [session, profileId, syncChatUrl, showThinking, activeModelSupportsVision]
+    [profileId, syncChatUrl, showThinking, activeModelSupportsVision]
   );
 
   const sendMessage = useCallback(
@@ -910,6 +1040,7 @@ export function useChatPage() {
 
       setBranchingMessageId(message.id);
       setError(null);
+      const generation = streamGenerationRef.current;
 
       try {
         let retrySession: RemoteChatSession;
@@ -932,6 +1063,10 @@ export function useChatPage() {
           retrySession = await client.createSession("web", { profileId });
         }
 
+        if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+          return;
+        }
+
         localStorage.setItem(sessionStorageKey(profileId), retrySession.id);
         setSession(retrySession);
         syncChatUrl(profileId, retrySession.id);
@@ -941,6 +1076,9 @@ export function useChatPage() {
           sessionOverride: retrySession,
         });
       } catch (err) {
+        if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+          return;
+        }
         setError(formatError(err));
       } finally {
         setBranchingMessageId(null);

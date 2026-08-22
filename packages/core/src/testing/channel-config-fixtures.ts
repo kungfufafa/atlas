@@ -1,7 +1,7 @@
-import { describe, expect, spyOn, test } from "bun:test";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import * as os from "node:os";
+import { describe, expect, test } from "bun:test";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { withIsolatedAtlasHome } from "./atlas-home";
 
 export const HANDSHAKE_CODE_PATTERN = /^[0-9A-F]{8}$/;
 
@@ -30,15 +30,7 @@ export async function withTempHomedir(
   prefix: string,
   run: (homeDir: string) => Promise<void>
 ): Promise<void> {
-  const tempHome = await mkdtemp(path.join(os.tmpdir(), prefix));
-  const homedirSpy = spyOn(os, "homedir").mockReturnValue(tempHome);
-
-  try {
-    await run(tempHome);
-  } finally {
-    homedirSpy.mockRestore();
-    await rm(tempHome, { force: true, recursive: true });
-  }
+  await withIsolatedAtlasHome(prefix, run);
 }
 
 export type ChannelIniConfig = {

@@ -21,7 +21,7 @@ With Discord enabled, users can:
 - stop, clear, compact, or restart conversations
 - receive streaming replies with typing indicators and live todo progress
 
-Discord currently supports **text messages only**. Attachments and voice are not forwarded to the agent.
+Discord accepts the same work files as the web app: text, photos, voice notes, and documents (`pdf`, `docx`, `xls`, `xlsx`, `csv`, `txt`, `md`). Voice notes are transcribed, then handled like text. When the agent saves an artifact, Atlas attaches the file in the chat (when it fits Discord’s size limit) and posts a share link.
 
 ## Step 1: Create the bot in Discord
 
@@ -167,15 +167,13 @@ Discord has a 2000-character limit per message. Atlas automatically chunks longe
 
 ## Saved artifacts and share links
 
-When your agent saves a file for you with the `save-artifact` skill (content file plus `.atlas-meta.json` sidecar in the same turn), Atlas posts a **Publish-style share link** after the reply in Discord.
+When the agent saves a file (spreadsheet, document, deck, or other artifact), Atlas attaches that file in Discord when it is within Discord’s size limit, then posts a **Publish-style share link**.
 
 - The link uses the same unguessable `/s/{token}` URLs as dashboard Publish — no Atlas login required to open it.
 - Anyone who can read the Discord message can open the link until the share is revoked from the web app.
 - Set **Web Public URL** in Atlas settings (or `ATLAS_WEB_PUBLIC_URL`) so channel footers include absolute links.
 
-To receive the file itself in Discord, ask in plain language — for example, “send the file” or “attach the PDF”. The agent uses the Discord-only `send_discord_artifact` tool to upload a native attachment when the file is within Discord’s size limit. You can also type `/attach` as a shortcut for the most recent saved artifact. If the file is too large, use the share link instead.
-
-Unpaired saves (content without a sidecar in the same turn) do not produce share links or attachments.
+To get the latest saved file again later, type `/attach`, or ask in plain language — for example, “send the file” or “attach the PDF”. If the file is too large for Discord, use the share link instead.
 
 ## Configuration notes
 

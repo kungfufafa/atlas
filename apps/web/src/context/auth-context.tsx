@@ -100,12 +100,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     client.setOrgId(null);
     setUser(null);
     setOrgs([]);
+    queryClient.clear();
   }, []);
 
   const switchOrg = useCallback(async (orgId: string) => {
     const nextUser = await client.setActiveOrg(orgId);
     setUser(nextUser);
-    refreshAuthenticatedQueries();
+    await queryClient.resetQueries();
   }, []);
 
   const createOrg = useCallback(

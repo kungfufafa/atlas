@@ -34,6 +34,7 @@ import {
   trimmedOptionalString,
 } from "./schema";
 import { searchFilesTool } from "./search-files";
+import { sendWhatsAppTool } from "./send-whatsapp";
 import { spreadsheetTool } from "./spreadsheet";
 import { webFetchTool } from "./web-fetch";
 import { webSearchTool } from "./web-search";
@@ -394,12 +395,21 @@ export async function runWriteFile(
     const { stampArtifactLineage } = await import("../artifact-lineage");
     const parentFilePath =
       filePath === guarded.resolved ? undefined : guarded.resolved;
+    const contentPath = filePath.endsWith(ARTIFACT_META_SUFFIX)
+      ? filePath.slice(0, -ARTIFACT_META_SUFFIX.length)
+      : filePath;
+    let stampSize = contentBytes;
+    if (filePath.endsWith(ARTIFACT_META_SUFFIX)) {
+      try {
+        stampSize = (await stat(contentPath)).size;
+      } catch {
+        stampSize = contentBytes;
+      }
+    }
     await stampArtifactLineage({
       parentFilePath,
-      sizeBytes: contentBytes,
-      writtenPath: filePath.endsWith(ARTIFACT_META_SUFFIX)
-        ? filePath.slice(0, -ARTIFACT_META_SUFFIX.length)
-        : filePath,
+      sizeBytes: stampSize,
+      writtenPath: contentPath,
     });
   }
 
@@ -1012,6 +1022,7 @@ export const builtinTools: ToolDefinition[] = [
   deepResearchTool,
   emailTool,
   extractDocumentTextTool,
+  sendWhatsAppTool,
   // Gated on the server-wide env var, not the per-org toggle: the env var says
   // the binary exists here, the toggle says whether an org uses it. Publishing
   // the expander per-org would let an org flip folding on and have no way to

@@ -47,4 +47,21 @@ describe("stampArtifactLineage", () => {
     const reread = await readLineageMeta(v2);
     expect(reread?.parentArtifactId).toBe(first.id);
   });
+
+  test("records the content file size even when the caller passes the sidecar length", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "atlas-lineage-size-"));
+    const filePath = join(dir, "brief.md");
+    const body = "# Brief\n\nTokopedia facts for the meeting.\n";
+    await writeFile(filePath, body, "utf8");
+
+    const stamped = await stampArtifactLineage({
+      sizeBytes: 95,
+      writtenPath: filePath,
+    });
+
+    expect(stamped.sizeBytes).toBe(Buffer.byteLength(body, "utf8"));
+    expect((await readLineageMeta(filePath))?.sizeBytes).toBe(
+      Buffer.byteLength(body, "utf8")
+    );
+  });
 });

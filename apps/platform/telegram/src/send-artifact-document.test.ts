@@ -17,4 +17,31 @@ describe("sendTelegramArtifactDocument", () => {
     expect(result.ok).toBe(false);
     expect(result.error).toContain("too large");
   });
+
+  test("sends documents into the originating forum topic", async () => {
+    const sent: Array<{ options?: { message_thread_id?: number } }> = [];
+    const result = await sendTelegramArtifactDocument(
+      {
+        api: {
+          sendDocument: async (
+            _chatId: number,
+            _file: unknown,
+            options?: { message_thread_id?: number }
+          ) => {
+            sent.push({ options });
+            return {};
+          },
+        },
+        chat: { id: 1 },
+        message: { message_thread_id: 77 },
+      } as never,
+      {
+        bytes: new Uint8Array([1, 2, 3]),
+        filename: "note.md",
+      }
+    );
+
+    expect(result.ok).toBe(true);
+    expect(sent).toEqual([{ options: { message_thread_id: 77 } }]);
+  });
 });

@@ -246,6 +246,10 @@ function isPrivateIp(ip: string): boolean {
   return true;
 }
 
+export function isPrivateOrReservedIp(ip: string): boolean {
+  return isPrivateIp(ip);
+}
+
 async function assertPublicHostname(hostname: string): Promise<void> {
   const bare = hostname.replace(/^\[|\]$/g, "");
 

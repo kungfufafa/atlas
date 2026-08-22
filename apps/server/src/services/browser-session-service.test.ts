@@ -4,12 +4,25 @@ import {
   registerBrowserHandler,
 } from "@atlas/core/tools/browser-tool";
 import { serve } from "bun";
-import { browserSessionService } from "./browser-session-service";
+import {
+  assertBrowserNavigationUrl,
+  BROWSER_CHROMIUM_LAUNCH_ARGS,
+  BROWSER_DEFAULT_LOCALE,
+  BROWSER_USER_AGENT,
+  browserAcceptLanguageForLocale,
+  browserLaunchArgs,
+  browserSessionService,
+  isHttp2ProtocolError,
+  isRetryableBrowserNavigationError,
+  resolveBrowserLocale,
+  shouldLaunchHeadlessBrowser,
+} from "./browser-session-service";
 
 let testServer: ReturnType<typeof serve> | null = null;
 let testServerUrl = "";
 
 beforeAll(() => {
+  process.env.ATLAS_BROWSER_HEADED = "0";
   testServer = serve({
     fetch(req) {
       const url = new URL(req.url);
@@ -209,5 +222,139 @@ describe("BrowserSessionService and browserTool", () => {
     );
 
     expect(closeOutput.status).toBe("success");
+  });
+
+  test("closing one org browser session leaves another org's session intact", async () => {
+    await browserTool.run(
+      { action: "open", url: `${testServerUrl}/` },
+      { orgId: "org-a", profileId: "prof-a", sessionId: "sess-a" }
+    );
+    await browserTool.run(
+      { action: "open", url: `${testServerUrl}/products` },
+      { orgId: "org-b", profileId: "prof-b", sessionId: "sess-b" }
+    );
+
+    const closeOutput = await browserTool.run(
+      { action: "close" },
+      { orgId: "org-a", profileId: "prof-a", sessionId: "sess-a" }
+    );
+    expect(closeOutput.status).toBe("success");
+
+    const remaining = await browserTool.run(
+      { action: "find", query: "Product Catalog" },
+      { orgId: "org-b", profileId: "prof-b", sessionId: "sess-b" }
+    );
+    expect(remaining.status).toBe("success");
+    expect(remaining.message).toContain("Product Catalog");
+
+    await browserTool.run(
+      { action: "close" },
+      { orgId: "org-b", profileId: "prof-b", sessionId: "sess-b" }
+    );
+  });
+});
+
+describe("browser navigation hardening", () => {
+  test("does not fingerprint as AtlasBrowser", () => {
+    expect(BROWSER_CHROMIUM_LAUNCH_ARGS).not.toContain("--disable-http2");
+    expect(browserLaunchArgs()).not.toContain("--disable-http2");
+    expect(browserLaunchArgs({ http1: true })).toContain("--disable-http2");
+    expect(BROWSER_CHROMIUM_LAUNCH_ARGS).toContain(
+      "--disable-blink-features=AutomationControlled"
+    );
+    expect(BROWSER_USER_AGENT).not.toContain("AtlasBrowser");
+    expect(BROWSER_USER_AGENT).toContain("Chrome/");
+  });
+
+  test("retries HTTP/2 protocol failures and navigation timeouts", () => {
+    expect(
+      isRetryableBrowserNavigationError(
+        new Error(
+          "goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.tokopedia.com/about"
+        )
+      )
+    ).toBe(true);
+    expect(
+      isRetryableBrowserNavigationError(
+        new Error("goto: net::ERR_CONNECTION_RESET at https://example.com")
+      )
+    ).toBe(true);
+    expect(
+      isRetryableBrowserNavigationError(
+        new Error("goto: Timeout 30000ms exceeded.")
+      )
+    ).toBe(true);
+    expect(
+      isRetryableBrowserNavigationError(
+        new Error("net::ERR_NAME_NOT_RESOLVED at https://missing.example")
+      )
+    ).toBe(false);
+    expect(
+      isHttp2ProtocolError(
+        new Error(
+          "goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://www.tokopedia.com/about"
+        )
+      )
+    ).toBe(true);
+    expect(
+      isHttp2ProtocolError(new Error("goto: Timeout 30000ms exceeded."))
+    ).toBe(false);
+  });
+
+  test("ATLAS_BROWSER_HEADED opts into headed Chromium; default is headless", () => {
+    expect(shouldLaunchHeadlessBrowser({})).toBe(true);
+    expect(shouldLaunchHeadlessBrowser({ ATLAS_BROWSER_HEADED: "0" })).toBe(
+      true
+    );
+    expect(shouldLaunchHeadlessBrowser({ ATLAS_BROWSER_HEADED: "1" })).toBe(
+      false
+    );
+    expect(shouldLaunchHeadlessBrowser({ CI: "true" })).toBe(true);
+  });
+
+  test("browser locale defaults to en-US and can be overridden", () => {
+    expect(resolveBrowserLocale({})).toBe(BROWSER_DEFAULT_LOCALE);
+    expect(resolveBrowserLocale({ ATLAS_BROWSER_LOCALE: "id-ID" })).toBe(
+      "id-ID"
+    );
+    expect(browserAcceptLanguageForLocale("en-US")).toBe("en-US,en;q=0.9");
+    expect(browserAcceptLanguageForLocale("id-ID")).toBe(
+      "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7"
+    );
+  });
+
+  test("blocks private, link-local, and RFC1918 addresses", async () => {
+    await expect(
+      assertBrowserNavigationUrl("http://172.16.1.9/admin")
+    ).rejects.toThrow(/private address/);
+    await expect(
+      assertBrowserNavigationUrl("http://10.0.0.5/")
+    ).rejects.toThrow(/private address/);
+    await expect(
+      assertBrowserNavigationUrl("http://192.168.1.1/")
+    ).rejects.toThrow(/private address/);
+    await expect(
+      assertBrowserNavigationUrl("http://169.254.169.254/latest/meta-data")
+    ).rejects.toThrow(/private address/);
+    await expect(
+      assertBrowserNavigationUrl("http://127.0.0.1/")
+    ).rejects.toThrow(/private address/);
+  });
+
+  test("allows loopback only on local fixture ports", async () => {
+    await assertBrowserNavigationUrl("http://127.0.0.1:4310/health");
+    await assertBrowserNavigationUrl("http://localhost:3000/");
+    await expect(
+      assertBrowserNavigationUrl("http://localhost:80/")
+    ).rejects.toThrow(/private address/);
+  });
+
+  test("rejects non-http protocols and unresolvable hosts", async () => {
+    await expect(
+      assertBrowserNavigationUrl("file:///etc/passwd")
+    ).rejects.toThrow(/Unsupported protocol/);
+    await expect(
+      assertBrowserNavigationUrl("http://atlas-ssrf-test.invalid/")
+    ).rejects.toThrow(/could not be resolved/);
   });
 });

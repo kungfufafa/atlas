@@ -368,6 +368,86 @@ function getGenerateImageResult(
   return message.toolResult as GenerateImageResult;
 }
 
+function artifactRefsFromEmbeddedToolArtifacts(
+  message: ChatListItem
+): ChatArtifactRef[] {
+  if (message.role !== "tool" || message.toolStatus === "running") {
+    return [];
+  }
+
+  const result = message.toolResult;
+  if (typeof result !== "object" || result === null) {
+    return [];
+  }
+
+  const record = result as Record<string, unknown>;
+  const candidates: unknown[] = [];
+
+  if (Array.isArray(record.artifacts)) {
+    candidates.push(...record.artifacts);
+  }
+
+  const snapshot =
+    typeof record.snapshot === "object" && record.snapshot !== null
+      ? (record.snapshot as Record<string, unknown>)
+      : null;
+  if (snapshot) {
+    candidates.push(snapshot.screenshotArtifact, snapshot.downloadArtifact);
+  }
+
+  const refs: ChatArtifactRef[] = [];
+  for (const candidate of candidates) {
+    const ref = artifactRefFromEmbeddedCandidate(candidate);
+    if (ref) {
+      refs.push(ref);
+    }
+  }
+
+  return refs;
+}
+
+function artifactRefFromEmbeddedCandidate(
+  candidate: unknown
+): ChatArtifactRef | null {
+  if (typeof candidate !== "object" || candidate === null) {
+    return null;
+  }
+
+  const record = candidate as Record<string, unknown>;
+  if (typeof record.path !== "string" || !record.path.trim()) {
+    return null;
+  }
+
+  const relativePath = toArtifactsRelativePath(record.path.trim());
+  if (!relativePath || isArtifactMetaRelativePath(relativePath)) {
+    return null;
+  }
+
+  const filename =
+    typeof record.filename === "string" && record.filename.trim()
+      ? record.filename.trim()
+      : (relativePath.split("/").pop() ?? relativePath);
+  const mimeType =
+    typeof record.mimeType === "string" && record.mimeType.trim()
+      ? record.mimeType.trim()
+      : inferArtifactMimeType(relativePath);
+  const sizeBytes =
+    typeof record.sizeBytes === "number" &&
+    Number.isInteger(record.sizeBytes) &&
+    record.sizeBytes >= 0
+      ? record.sizeBytes
+      : 0;
+  const savedAt = typeof record.createdAt === "string" ? record.createdAt : "";
+
+  return {
+    filename,
+    mimeType,
+    path: relativePath,
+    savedAt,
+    sizeBytes,
+  };
+}
+
 function artifactRefFromGenerateImage(
   message: ChatListItem
 ): ChatArtifactRef | null {
@@ -529,11 +609,13 @@ export function extractTurnArtifacts(
 
   for (const message of messages) {
     const generated = artifactRefFromGenerateImage(message);
-    if (!generated) {
-      continue;
+    if (generated) {
+      artifactsByPath.set(generated.path, generated);
     }
 
-    artifactsByPath.set(generated.path, generated);
+    for (const embedded of artifactRefsFromEmbeddedToolArtifacts(message)) {
+      artifactsByPath.set(embedded.path, embedded);
+    }
   }
 
   for (const message of messages) {

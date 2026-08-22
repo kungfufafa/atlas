@@ -52,4 +52,16 @@ describe("sendDiscordArtifactTool", () => {
       sizeBytes: 8,
     });
   });
+
+  test("refuses artifact metadata sidecars", async () => {
+    const result = await sendDiscordArtifactTool.run(
+      { path: "artifacts/report.md.atlas-meta.json" },
+      { channel: "discord", orgId: "org", profileId: "profile" }
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toContain("sidecar");
+    }
+  });
 });

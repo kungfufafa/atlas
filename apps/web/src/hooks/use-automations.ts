@@ -6,19 +6,19 @@ import { client } from "@/lib/client";
 import { queryKeys } from "@/lib/query-keys";
 
 export function useAutomationsQuery() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, activeOrg } = useAuth();
 
   return useQuery({
-    ...automationsQueryOptions,
+    ...automationsQueryOptions(activeOrg?.id ?? null),
     enabled: isAuthenticated && !isLoading,
   });
 }
 
 export function useAutomationUnreadTotal() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, activeOrg } = useAuth();
 
   return useQuery({
-    ...automationsQueryOptions,
+    ...automationsQueryOptions(activeOrg?.id ?? null),
     enabled: isAuthenticated && !isLoading,
     select: (data) => data.unread?.totalUnread ?? 0,
   });

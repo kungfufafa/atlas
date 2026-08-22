@@ -64,6 +64,7 @@ const DEFAULT_IGNORE_PATTERNS = [
   /\.sqlite$/,
   /\.lock$/,
   /cassettes\//,
+  /\.local-poc\//,
   /secret-scanner\.ts$/,
   /secret-redaction\.ts$/,
   /secret-redaction\.test\.ts$/,

@@ -557,6 +557,23 @@ export class MockLLMServerHarness {
       return { content: "4" };
     }
 
+    if (
+      prompt.includes("research our competitors") &&
+      prompt.includes("spreadsheet")
+    ) {
+      return {
+        content:
+          "Competitor scan complete. Saved competitive_analysis.pptx and financial_model.xlsx with pricing, security, and enterprise notes.",
+      };
+    }
+
+    if (prompt.includes("update the deck") && prompt.includes("appendix")) {
+      return {
+        content:
+          "Updated the deck with the pricing changes and added source links to the appendix.",
+      };
+    }
+
     return {
       content: "Hello! I am your Atlas agent. How can I help you today?",
     };

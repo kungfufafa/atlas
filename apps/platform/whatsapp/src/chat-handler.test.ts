@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import path from "node:path";
+import type { ChatMessage } from "@atlas/core/contract";
 import { resetActiveStreamsForTests } from "./active-stream";
 import { WhatsAppAuthStore } from "./auth-store";
 import { createChatHandler, resetChatLocksForTests } from "./chat-handler";
@@ -16,7 +17,15 @@ import {
 const PAIRED_JID = "1234567890@s.whatsapp.net";
 
 function createMockSocket() {
-  const sent: Array<{ jid: string; text: string }> = [];
+  const sent: Array<{
+    document?: unknown;
+    fileName?: string;
+    image?: unknown;
+    jid: string;
+    mimetype?: string;
+    quoted?: unknown;
+    text?: string;
+  }> = [];
 
   const socket = {
     end: () => {},
@@ -24,8 +33,26 @@ function createMockSocket() {
       off: () => {},
       on: () => {},
     },
-    sendMessage: async (jid: string, content: { text: string }) => {
-      sent.push({ jid, text: content.text });
+    sendMessage: async (
+      jid: string,
+      content: {
+        document?: unknown;
+        fileName?: string;
+        image?: unknown;
+        mimetype?: string;
+        text?: string;
+      },
+      options?: { quoted?: unknown }
+    ) => {
+      sent.push({
+        document: content.document,
+        fileName: content.fileName,
+        image: content.image,
+        jid,
+        mimetype: content.mimetype,
+        quoted: options?.quoted,
+        text: content.text,
+      });
     },
     sendPresenceUpdate: async () => {},
   };
@@ -340,6 +367,48 @@ describe("createChatHandler", () => {
     });
   });
 
+  test("quotes the inbound message on the first reply bubble", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      const inbound = {
+        key: { fromMe: false, id: "m1", remoteJid: PAIRED_JID },
+        message: { conversation: "hello agent" },
+      };
+
+      await handleMessage({
+        inbound,
+        jid: PAIRED_JID,
+        text: "hello agent",
+      });
+
+      expect(
+        sent.find((message) => message.text === "Agent reply")?.quoted
+      ).toBe(inbound);
+    });
+  });
+
   test("allows device-suffixed inbound JID for a paired phone JID", async () => {
     await withTempHome(async (homeDir) => {
       await writeWhatsAppConfigIni(homeDir, {
@@ -400,6 +469,112 @@ describe("createChatHandler", () => {
 
       expect(calls.createSession).toBe(1);
       expect(calls.sendStream).toBe(1);
+
+      await handleMessage({
+        jid: "6281379292556@s.whatsapp.net",
+        text: "follow up",
+      });
+
+      expect(calls.createSession).toBe(1);
+      expect(calls.sendStream).toBe(2);
+      expect(
+        sessionStore.get("6281379292556:12@s.whatsapp.net")?.sessionId
+      ).toBe(sessionStore.get("6281379292556@s.whatsapp.net")?.sessionId);
+    });
+  });
+
+  test("pairs when an unauthorized photo caption is the access code", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairingCode: "ABCD1234",
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({
+        inbound: {
+          key: { fromMe: false, remoteJid: "6282000000001@s.whatsapp.net" },
+          message: {
+            imageMessage: {
+              caption: "ABCD1234",
+              mimetype: "image/jpeg",
+            },
+          },
+        } as never,
+        jid: "6282000000001@s.whatsapp.net",
+        text: "ABCD1234",
+      });
+
+      expect(calls.sendStream).toBe(0);
+      expect(authStore.isAuthorized("6282000000001@s.whatsapp.net")).toBe(true);
+      expect(
+        sent.some((message) => message.text?.includes("Chat authorized"))
+      ).toBe(true);
+    });
+  });
+
+  test("handles /help as an unauthorized photo caption", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairingCode: "ABCD1234",
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+      const jid = "6282000000001@s.whatsapp.net";
+
+      await handleMessage({
+        inbound: {
+          key: { fromMe: false, remoteJid: jid },
+          message: {
+            imageMessage: {
+              caption: "/help",
+              mimetype: "image/jpeg",
+            },
+          },
+        } as never,
+        jid,
+        text: "/help",
+      });
+
+      expect(calls.sendStream).toBe(0);
+      expect(authStore.isAuthorized(jid)).toBe(false);
+      const reply = sent.map((message) => message.text ?? "").join("\n");
+      expect(reply).toContain("has not authorized");
+      expect(reply).toContain("/help");
     });
   });
 
@@ -431,9 +606,57 @@ describe("createChatHandler", () => {
 
       await handleMessage({ jid: PAIRED_JID, text: "/help" });
 
-      expect(sent.length).toBe(1);
-      expect(sent[0].text).toContain("/help");
+      expect(sent.some((message) => message.text?.includes("/help"))).toBe(
+        true
+      );
       expect(calls.sendStream).toBe(0);
+    });
+  });
+
+  test("handles /help even when the same message includes a photo", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        downloadMedia: async () => Buffer.from("image-bytes"),
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({
+        inbound: {
+          key: { fromMe: false, id: "img-1", remoteJid: PAIRED_JID },
+          message: {
+            imageMessage: {
+              caption: "/help",
+              mimetype: "image/jpeg",
+            },
+          },
+        },
+        jid: PAIRED_JID,
+        text: "/help",
+      });
+
+      expect(calls.sendStream).toBe(0);
+      expect(sent.some((message) => message.text?.includes("/help"))).toBe(
+        true
+      );
     });
   });
 
@@ -861,6 +1084,426 @@ describe("bridge API integration", () => {
     });
   });
 
+  test("forwards a supported pdf document to sendStream", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls, getLastStreamInput } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const pdfBytes = Buffer.from("pdf-content");
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        downloadMedia: async () => pdfBytes,
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({
+        inbound: {
+          key: { fromMe: false, id: "doc-1", remoteJid: PAIRED_JID },
+          message: {
+            documentMessage: {
+              caption: "Summarize",
+              fileName: "report.pdf",
+              mimetype: "application/pdf",
+            },
+          },
+        },
+        jid: PAIRED_JID,
+        text: "Summarize",
+      });
+
+      expect(calls.sendStream).toBe(1);
+      expect(getLastStreamInput()).toEqual({
+        documents: [
+          {
+            data: pdfBytes.toString("base64"),
+            filename: "report.pdf",
+            mediaType: "application/pdf",
+          },
+        ],
+        message: "Summarize",
+      });
+      expect(sent.at(-1)?.text).toBe("Agent reply");
+    });
+  });
+
+  test("forwards a captionless pdf to sendStream", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls, getLastStreamInput } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket } = createMockSocket();
+      const pdfBytes = Buffer.from("pdf-content");
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        downloadMedia: async () => pdfBytes,
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({
+        inbound: {
+          key: { fromMe: false, id: "doc-2", remoteJid: PAIRED_JID },
+          message: {
+            documentMessage: {
+              fileName: "report.pdf",
+              mimetype: "application/pdf",
+            },
+          },
+        },
+        jid: PAIRED_JID,
+        text: "",
+      });
+
+      expect(calls.sendStream).toBe(1);
+      expect(getLastStreamInput()).toEqual({
+        documents: [
+          {
+            data: pdfBytes.toString("base64"),
+            filename: "report.pdf",
+            mediaType: "application/pdf",
+          },
+        ],
+        message: "",
+      });
+    });
+  });
+
+  test("forwards an xlsx document to sendStream", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls, getLastStreamInput } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket } = createMockSocket();
+      const xlsxBytes = Buffer.from("xlsx-content");
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        downloadMedia: async () => xlsxBytes,
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({
+        inbound: {
+          key: { fromMe: false, id: "xlsx-1", remoteJid: PAIRED_JID },
+          message: {
+            documentMessage: {
+              caption: "Analyze",
+              fileName: "sales.xlsx",
+              mimetype:
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            },
+          },
+        },
+        jid: PAIRED_JID,
+        text: "Analyze",
+      });
+
+      expect(calls.sendStream).toBe(1);
+      expect(getLastStreamInput()).toEqual({
+        documents: [
+          {
+            data: xlsxBytes.toString("base64"),
+            filename: "sales.xlsx",
+            mediaType:
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          },
+        ],
+        message: "Analyze",
+      });
+    });
+  });
+
+  test("forwards a captionless photo to sendStream", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls, getLastStreamInput } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket } = createMockSocket();
+      const imageBytes = Buffer.from("jpeg-bytes");
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        downloadMedia: async () => imageBytes,
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({
+        inbound: {
+          key: { fromMe: false, id: "img-1", remoteJid: PAIRED_JID },
+          message: { imageMessage: { mimetype: "image/jpeg" } },
+        },
+        jid: PAIRED_JID,
+        text: "",
+      });
+
+      expect(calls.sendStream).toBe(1);
+      expect(getLastStreamInput()).toEqual({
+        images: [
+          { data: imageBytes.toString("base64"), mediaType: "image/jpeg" },
+        ],
+        message: "",
+      });
+    });
+  });
+
+  test("transcribes a voice note and forwards text to the agent", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls, getLastStreamInput } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        downloadMedia: async () => Buffer.from("ogg-bytes"),
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({
+        inbound: {
+          key: { fromMe: false, id: "voice-1", remoteJid: PAIRED_JID },
+          message: { audioMessage: { mimetype: "audio/ogg", ptt: true } },
+        },
+        jid: PAIRED_JID,
+        text: "",
+      });
+
+      expect(calls.transcribeAudio).toBe(1);
+      expect(calls.sendStream).toBe(1);
+      expect(getLastStreamInput()).toEqual({
+        message: "Transcribed voice message",
+      });
+    });
+  });
+
+  test("rejects unsupported documents without calling sendStream", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        downloadMedia: async () => Buffer.from("zip"),
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({
+        inbound: {
+          key: { fromMe: false, id: "zip-1", remoteJid: PAIRED_JID },
+          message: {
+            documentMessage: {
+              fileName: "archive.zip",
+              mimetype: "application/zip",
+            },
+          },
+        },
+        jid: PAIRED_JID,
+        text: "",
+      });
+
+      expect(calls.sendStream).toBe(0);
+      expect(sent[0]?.text).toContain("Unsupported file type");
+    });
+  });
+
+  test("allowlist drops LID chats that cannot resolve to a listed phone number", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        accessMode: "allowlist",
+        allowedNumbers: ["6281234567890"],
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      const lid = "236283431522503@lid";
+      await handleMessage({ jid: lid, text: "hello agent" });
+      expect(calls.sendStream).toBe(0);
+      expect(sent).toEqual([]);
+
+      await handleMessage({ jid: lid, text: "/help" });
+      expect(calls.sendStream).toBe(0);
+      expect(sent[0]?.text).toContain("not authorized for this chat");
+    });
+  });
+
+  test("allowlist authorizes a LID chat after resolving senderPn", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        accessMode: "allowlist",
+        allowedNumbers: ["6281234567890"],
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      const lid = "236283431522503@lid";
+      await handleMessage({
+        jid: lid,
+        senderPn: "6281234567890@s.whatsapp.net",
+        text: "hello agent",
+      });
+      expect(calls.createSession).toBe(1);
+      expect(calls.sendStream).toBe(1);
+
+      await handleMessage({ jid: lid, text: "follow up" });
+      expect(calls.sendStream).toBe(2);
+    });
+  });
+
+  test("allowlist still authorizes the owner LID without senderPn", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        accessMode: "allowlist",
+        allowedNumbers: ["6281234567890"],
+        pairedJid: PAIRED_JID,
+        pairedLid: "154352568283178@lid",
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({
+        jid: "154352568283178@lid",
+        text: "hello from owner",
+      });
+      expect(calls.createSession).toBe(1);
+      expect(calls.sendStream).toBe(1);
+    });
+  });
+
   test("auto-authorizes incoming callers in open mode without pairing code", async () => {
     await withTempHome(async (homeDir) => {
       await writeWhatsAppConfigIni(homeDir, {
@@ -931,6 +1574,469 @@ describe("bridge API integration", () => {
       expect(sent.some((m) => m.text.includes("Message is too long"))).toBe(
         true
       );
+    });
+  });
+});
+
+describe("createChatHandler artifact delivery", () => {
+  const metaJson = JSON.stringify({
+    mimeType: "text/markdown",
+    savedAt: "2026-07-13T10:00:00.000Z",
+    sizeBytes: 42,
+  });
+
+  const artifactMessages: ChatMessage[] = [
+    { content: "save report", role: "user" },
+    {
+      content: "",
+      role: "assistant",
+      toolCalls: [
+        {
+          arguments: { content: "# Report", path: "artifacts/report.md" },
+          id: "tool_1",
+          name: "write_file",
+        },
+        {
+          arguments: {
+            content: metaJson,
+            path: "artifacts/report.md.atlas-meta.json",
+          },
+          id: "tool_2",
+          name: "write_file",
+        },
+      ],
+    },
+    {
+      content: JSON.stringify({
+        bytesWritten: 8,
+        path: "/home/.atlas/orgs/org/profiles/default/artifacts/report.md",
+      }),
+      name: "write_file",
+      role: "tool",
+      toolCallId: "tool_1",
+    },
+    {
+      content: JSON.stringify({
+        bytesWritten: metaJson.length,
+        path: "/home/.atlas/orgs/org/profiles/default/artifacts/report.md.atlas-meta.json",
+      }),
+      name: "write_file",
+      role: "tool",
+      toolCallId: "tool_2",
+    },
+    { content: "Saved the report.", role: "assistant" },
+  ];
+
+  test("posts a publish share link after a paired save-artifact turn", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        messages: artifactMessages,
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      await sessionStore.load();
+      sessionStore.set(PAIRED_JID, {
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({ jid: PAIRED_JID, text: "thanks" });
+
+      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(sent.some((message) => message.document)).toBe(true);
+      expect(
+        sent.some((message) =>
+          message.text?.includes("https://app.example/s/tok_test")
+        )
+      ).toBe(true);
+    });
+  });
+
+  test("posts a share link and file after an unpaired write_file artifact", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        artifactContentBytes: new TextEncoder().encode("draft"),
+        messages: [
+          { content: "save", role: "user" },
+          {
+            content: "",
+            role: "assistant",
+            toolCalls: [
+              {
+                arguments: { content: "draft", path: "artifacts/draft.md" },
+                id: "tool_1",
+                name: "write_file",
+              },
+            ],
+          },
+          {
+            content: JSON.stringify({
+              bytesWritten: 5,
+              path: "/home/.atlas/orgs/org/profiles/default/artifacts/draft.md",
+            }),
+            name: "write_file",
+            role: "tool",
+            toolCallId: "tool_1",
+          },
+        ],
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      await sessionStore.load();
+      sessionStore.set(PAIRED_JID, {
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({ jid: PAIRED_JID, text: "thanks" });
+
+      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(sent.some((message) => message.document)).toBe(true);
+    });
+  });
+
+  test("sends a spreadsheet created in the turn", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        artifactContentBytes: new TextEncoder().encode("xlsx-bytes"),
+        messages: [
+          { content: "make a sheet", role: "user" },
+          {
+            content: "",
+            role: "assistant",
+            toolCalls: [
+              {
+                arguments: {
+                  action: "create",
+                  path: "artifacts/sales.xlsx",
+                },
+                id: "tool_1",
+                name: "spreadsheet",
+              },
+            ],
+          },
+          {
+            content: JSON.stringify({
+              path: "artifacts/sales.xlsx",
+              status: "created",
+            }),
+            name: "spreadsheet",
+            role: "tool",
+            toolCallId: "tool_1",
+          },
+          { content: "Saved the sheet.", role: "assistant" },
+        ],
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      await sessionStore.load();
+      sessionStore.set(PAIRED_JID, {
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({ jid: PAIRED_JID, text: "thanks" });
+
+      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(sent.some((message) => message.fileName === "sales.xlsx")).toBe(
+        true
+      );
+    });
+  });
+
+  test("sends the latest artifact when the user asks for the file", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        artifactContentBytes: new TextEncoder().encode("# Report"),
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      await sessionStore.load();
+      sessionStore.set(PAIRED_JID, {
+        deliverableArtifacts: [
+          {
+            filename: "report.md",
+            mimeType: "text/markdown",
+            path: "report.md",
+            savedAt: "2026-07-13T10:00:00.000Z",
+            sharePath: "/s/tok_test",
+            shareUrl: "https://app.example/s/tok_test",
+            sizeBytes: 8,
+          },
+        ],
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({ jid: PAIRED_JID, text: "send me the file" });
+
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(sent.some((message) => message.document)).toBe(true);
+      expect(sent.some((message) => message.fileName === "report.md")).toBe(
+        true
+      );
+    });
+  });
+
+  test("still sends the file when share publishing fails", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        failPublishShare: true,
+        messages: artifactMessages,
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      await sessionStore.load();
+      sessionStore.set(PAIRED_JID, {
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({ jid: PAIRED_JID, text: "thanks" });
+
+      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(sent.some((message) => message.fileName === "report.md")).toBe(
+        true
+      );
+      expect(
+        sent.some((message) =>
+          message.text?.includes("https://app.example/s/tok_test")
+        )
+      ).toBe(false);
+    });
+  });
+
+  test("keeps the agent turn going when attach download fails", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        failReadArtifact: true,
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      await sessionStore.load();
+      sessionStore.set(PAIRED_JID, {
+        deliverableArtifacts: [
+          {
+            filename: "report.md",
+            mimeType: "text/markdown",
+            path: "report.md",
+            savedAt: "2026-07-13T10:00:00.000Z",
+            sharePath: "/s/tok_test",
+            shareUrl: "https://app.example/s/tok_test",
+            sizeBytes: 8,
+          },
+        ],
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({ jid: PAIRED_JID, text: "send me the file" });
+
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(calls.sendStream).toBe(1);
+      expect(
+        sent.some((message) =>
+          message.text?.includes("Failed to read the saved file.")
+        )
+      ).toBe(true);
+    });
+  });
+
+  test("tells the user when a saved artifact is too large to send", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        messages: [
+          { content: "save", role: "user" },
+          {
+            content: "",
+            role: "assistant",
+            toolCalls: [
+              {
+                arguments: { content: "huge", path: "artifacts/huge.bin" },
+                id: "tool_1",
+                name: "write_file",
+              },
+            ],
+          },
+          {
+            content: JSON.stringify({
+              bytesWritten: 6 * 1024 * 1024,
+              path: "/home/.atlas/orgs/org/profiles/default/artifacts/huge.bin",
+            }),
+            name: "write_file",
+            role: "tool",
+            toolCallId: "tool_1",
+          },
+        ],
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      await sessionStore.load();
+      sessionStore.set(PAIRED_JID, {
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({ jid: PAIRED_JID, text: "thanks" });
+
+      expect(calls.readProfileArtifactContent).toBe(0);
+      expect(sent.some((message) => message.document)).toBe(false);
+      expect(
+        sent.some((message) =>
+          message.text?.includes("File is too large for WhatsApp")
+        )
+      ).toBe(true);
     });
   });
 });

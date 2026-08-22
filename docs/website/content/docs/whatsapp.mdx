@@ -21,6 +21,8 @@ WhatsApp works well for:
 With WhatsApp enabled, users can:
 
 - chat with an Atlas profile in a private WhatsApp chat
+- send photos, voice notes, and supported documents the same way as in the web app
+- get saved files back in the chat, not only as a link
 - switch org with commands
 - start a new conversation or clear history
 - stop an in-progress reply
@@ -89,8 +91,38 @@ WhatsApp currently works as a **private chat** channel.
 - direct chats are supported
 - group chats are not handled by the current bridge
 - each authorized WhatsApp chat keeps its own Atlas session
+- allowlists and denylists match the sender **phone number**. If WhatsApp identifies the chat as a LID (`…@lid`) instead of `…@s.whatsapp.net`, Atlas resolves the phone from the message (or a saved mapping) before checking the list. The linked owner account is still recognized by its paired LID.
 
 If you change the reply profile, new messages use that profile. Starting a new conversation with `/new` gives you a fresh session.
+
+## Supported message types
+
+WhatsApp can send more than plain text into Atlas.
+
+Supported inputs include:
+
+- text messages
+- photos
+- voice notes (transcribed, then handled like text)
+- supported documents such as `pdf`, `docx`, `xls`, `xlsx`, `csv`, `txt`, and `md`
+
+Small supported files are downloaded and forwarded into the same Atlas chat flow as the web app. A caption on the photo or file becomes the message text. Unsupported media gets a rejection instead of failing silently.
+
+When the agent saves a file (spreadsheet, document, deck, or other artifact), Atlas sends the file in the WhatsApp chat when it is within 5 MB, and posts a **Publish-style share link** after the reply. Ask “send the file” to get the latest saved file again. If the file is larger than 5 MB, use the share link. Replies quote the message you sent.
+
+## Send to a number from this workspace
+
+The WhatsApp account paired in a workspace is the **sender**. A profile that has the `send_whatsapp` tool can message a destination number as that workspace — for example Finance asks “kirim ke Apri 62895… meeting jam 3”.
+
+How it works:
+
+1. Enable WhatsApp for that workspace and scan the QR so the workspace number is connected
+2. Start the WhatsApp worker
+3. Assign **send_whatsapp** to the profile that should send (new Default Agent profiles get it with the standard toolkit)
+4. If **Allowed numbers** is set (or access is allowlist), only those numbers can be contacted
+5. Ask the agent to send — it uses the workspace WhatsApp as sender
+
+The recipient sees a chat from the **workspace number**, not from your personal login. The WhatsApp worker must be running. Meta can restrict unsolicited messages to numbers that have never chatted with that sender.
 
 ## Commands
 
@@ -116,6 +148,7 @@ Check:
 2. the WhatsApp bridge is running with `bun run dev:whatsapp`
 3. **Integrations → WhatsApp** shows **Connected**
 4. Atlas has authorized the chat; if Atlas asks for a code, generate a chat access code and send it from that chat
+5. if access is an allowlist, confirm the sender's **phone number** is listed. WhatsApp may deliver the chat as a LID; Atlas still checks the resolved phone, and `/help` from an unmatched chat replies that the chat is not authorized
 
 ### Chat access code does not work
 

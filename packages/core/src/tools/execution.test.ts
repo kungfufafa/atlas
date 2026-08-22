@@ -21,6 +21,7 @@ describe("standardizeToolError", () => {
     timeoutErr.name = "TimeoutError";
     const std = standardizeToolError(timeoutErr);
     expect(std.code).toBe("TIMEOUT");
+    expect(std.message).toContain("timed out after 30000ms");
     expect(std.retryable).toBe(false);
   });
 
@@ -39,6 +40,11 @@ describe("standardizeToolError", () => {
   });
 
   test("categorizes network errors as retryable", () => {
+    expect(
+      standardizeToolError(
+        new Error("goto: net::ERR_HTTP2_PROTOCOL_ERROR at https://example.com")
+      ).code
+    ).toBe("NETWORK_ERROR");
     const std = standardizeToolError(new Error("fetch failed: ECONNREFUSED"));
     expect(std.code).toBe("NETWORK_ERROR");
     expect(std.retryable).toBe(true);

@@ -137,6 +137,35 @@ export const NAV_ITEM_ICONS: Record<PageId, NavIcon> = {
 };
 
 export const SETUP_PATH = "/setup";
+export const LOGIN_PATH = "/login";
+
+/** Same-origin app paths only — rejects protocol-relative and off-site URLs. */
+export function safeInternalPath(
+  value: string | null | undefined
+): string | null {
+  if (!value) {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//")) {
+    return null;
+  }
+  if (trimmed.includes("://") || trimmed.includes("\\")) {
+    return null;
+  }
+  if (trimmed === LOGIN_PATH || trimmed.startsWith(`${LOGIN_PATH}?`)) {
+    return null;
+  }
+  return trimmed;
+}
+
+export function loginPathWithReturn(from: string | null | undefined): string {
+  const safe = safeInternalPath(from);
+  if (!safe) {
+    return LOGIN_PATH;
+  }
+  return `${LOGIN_PATH}?from=${encodeURIComponent(safe)}`;
+}
 
 export function canAccessSystemPage(
   isPlatformAdmin: boolean,

@@ -185,6 +185,7 @@ export function ChatPageContent(state: ChatPageState) {
                   : (question) => void sendMessage(question)
               }
               profileId={profileId}
+              sessionId={session?.id ?? null}
               showThinking={showThinking}
               streamActive={busy}
               turnStartedAt={turnStartedAt}

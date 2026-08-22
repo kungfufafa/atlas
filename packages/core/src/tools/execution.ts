@@ -70,7 +70,7 @@ export function standardizeToolError(
   ) {
     return {
       code: "TIMEOUT",
-      message: "The tool execution timed out.",
+      message: rawMessage,
       retryable: false,
     };
   }
@@ -104,7 +104,9 @@ export function standardizeToolError(
   }
 
   if (
-    /ECONNREFUSED|ETIMEDOUT|ENOTFOUND|fetch failed|network/i.test(rawMessage)
+    /ECONNREFUSED|ETIMEDOUT|ENOTFOUND|fetch failed|network|ERR_HTTP2|PROTOCOL_ERROR/i.test(
+      rawMessage
+    )
   ) {
     return {
       code: "NETWORK_ERROR",

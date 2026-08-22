@@ -6,6 +6,7 @@ import {
   isValidLlmToolName,
   namespacedMcpToolName,
   sanitizeLlmToolNamePart,
+  shouldExposeMcpServerTools,
 } from "./mcp-tool-bridge";
 
 describe("mcp tool bridge", () => {
@@ -125,5 +126,52 @@ describe("mcp tool bridge", () => {
     expect(result).toEqual({
       error: 'MCP server "filesystem" is not connected.',
     });
+  });
+
+  test("exposes keyless Firecrawl tools when the assigned server is enabled", () => {
+    const manager = new McpClientManager();
+    const firecrawl: StoredMcpServerRecord = {
+      cachedTools: [
+        { description: "Search the web", name: "firecrawl_search" },
+      ],
+      config: { url: "https://mcp.firecrawl.dev/v2/mcp" },
+      createdAt: "2026-01-01T00:00:00.000Z",
+      enabled: true,
+      id: "mcp_firecrawl",
+      lastError: null,
+      name: "firecrawl",
+      status: "connected",
+      transport: "http",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+    const exa: StoredMcpServerRecord = {
+      cachedTools: [{ description: "Exa search", name: "web_search_exa" }],
+      config: { url: "https://mcp.exa.ai/mcp" },
+      createdAt: "2026-01-01T00:00:00.000Z",
+      enabled: true,
+      id: "mcp_exa",
+      lastError: null,
+      name: "exa",
+      status: "connected",
+      transport: "http",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+
+    expect(shouldExposeMcpServerTools(firecrawl)).toBe(true);
+    expect(shouldExposeMcpServerTools(exa)).toBe(true);
+    expect(
+      shouldExposeMcpServerTools({
+        ...firecrawl,
+        enabled: false,
+      })
+    ).toBe(false);
+    expect(
+      buildMcpToolDefinitions(
+        [firecrawl, exa],
+        manager,
+        "org_test",
+        "profile_test"
+      ).map((tool) => tool.name)
+    ).toEqual(["firecrawl__firecrawl_search", "exa__web_search_exa"]);
   });
 });

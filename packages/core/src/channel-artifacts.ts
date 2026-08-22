@@ -1,3 +1,4 @@
+import { inferArtifactMimeType } from "./artifact-mime";
 import type { ChatMessage } from "./contract";
 
 const ARTIFACT_META_SUFFIX = ".atlas-meta.json";
@@ -41,6 +42,17 @@ function isGenerateImageToolName(name: string): boolean {
   return name === "generate_image";
 }
 
+function pathFromToolResult(result: Record<string, unknown>): string | null {
+  for (const key of ["path", "targetCsvPath", "targetXlsxPath"] as const) {
+    const value = result[key];
+    if (typeof value === "string" && value.trim()) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
 function getWriteFileResult(
   message: Extract<ChatMessage, { role: "tool" }>
 ): WriteFileResult | null {
@@ -50,7 +62,18 @@ function getWriteFileResult(
     return null;
   }
 
-  return parsed as WriteFileResult;
+  const record = parsed as Record<string, unknown>;
+  const resultPath = pathFromToolResult(record);
+  if (!resultPath) {
+    return record as WriteFileResult;
+  }
+
+  return {
+    bytesWritten:
+      typeof record.bytesWritten === "number" ? record.bytesWritten : undefined,
+    error: typeof record.error === "string" ? record.error : undefined,
+    path: resultPath,
+  };
 }
 
 function isSuccessfulWrite(
@@ -255,6 +278,83 @@ function getGenerateImageResult(
   return parsed as GenerateImageResult;
 }
 
+function artifactRefsFromEmbeddedToolArtifacts(
+  message: Extract<ChatMessage, { role: "tool" }>
+): ChannelArtifactRef[] {
+  const parsed = parseToolResult(message.content);
+  if (typeof parsed !== "object" || parsed === null) {
+    return [];
+  }
+
+  const record = parsed as Record<string, unknown>;
+  const candidates: unknown[] = [];
+
+  if (Array.isArray(record.artifacts)) {
+    candidates.push(...record.artifacts);
+  }
+
+  const snapshot =
+    typeof record.snapshot === "object" && record.snapshot !== null
+      ? (record.snapshot as Record<string, unknown>)
+      : null;
+  if (snapshot) {
+    candidates.push(snapshot.screenshotArtifact, snapshot.downloadArtifact);
+  }
+
+  const refs: ChannelArtifactRef[] = [];
+
+  for (const candidate of candidates) {
+    const ref = artifactRefFromEmbeddedCandidate(candidate);
+    if (ref) {
+      refs.push(ref);
+    }
+  }
+
+  return refs;
+}
+
+function artifactRefFromEmbeddedCandidate(
+  candidate: unknown
+): ChannelArtifactRef | null {
+  if (typeof candidate !== "object" || candidate === null) {
+    return null;
+  }
+
+  const record = candidate as Record<string, unknown>;
+  if (typeof record.path !== "string" || !record.path.trim()) {
+    return null;
+  }
+
+  const relativePath = toArtifactsRelativePath(record.path.trim());
+  if (!relativePath || isArtifactMetaRelativePath(relativePath)) {
+    return null;
+  }
+
+  const filename =
+    typeof record.filename === "string" && record.filename.trim()
+      ? record.filename.trim()
+      : (relativePath.split("/").pop() ?? relativePath);
+  const mimeType =
+    typeof record.mimeType === "string" && record.mimeType.trim()
+      ? record.mimeType.trim()
+      : inferArtifactMimeType(relativePath);
+  const sizeBytes =
+    typeof record.sizeBytes === "number" &&
+    Number.isInteger(record.sizeBytes) &&
+    record.sizeBytes >= 0
+      ? record.sizeBytes
+      : 0;
+  const savedAt = typeof record.createdAt === "string" ? record.createdAt : "";
+
+  return {
+    filename,
+    mimeType,
+    path: relativePath,
+    savedAt,
+    sizeBytes,
+  };
+}
+
 function artifactRefFromGenerateImage(
   message: Extract<ChatMessage, { role: "tool" }>
 ): ChannelArtifactRef | null {
@@ -394,12 +494,104 @@ export function extractPairedTurnArtifacts(
     }
 
     const generated = artifactRefFromGenerateImage(message);
-    if (!generated) {
-      continue;
+    if (generated) {
+      artifactsByPath.set(generated.path, generated);
     }
 
-    artifactsByPath.set(generated.path, generated);
+    for (const embedded of artifactRefsFromEmbeddedToolArtifacts(message)) {
+      artifactsByPath.set(embedded.path, embedded);
+    }
   }
 
   return [...artifactsByPath.values()];
+}
+
+const DELIVERABLE_WRITE_TOOLS = new Set([
+  "write_file",
+  "write_docx",
+  "write_pptx",
+  "spreadsheet",
+]);
+
+const SPREADSHEET_NON_DELIVERABLE_ACTIONS = new Set(["inspect", "read_range"]);
+
+/**
+ * Artifacts the channel should send back after a turn: paired save-artifact
+ * sidecars first, then unpaired writes under artifacts/ (spreadsheet, docx,
+ * pptx, write_file without sidecar).
+ */
+export function extractTurnDeliverableArtifacts(
+  messages: ChatMessage[]
+): ChannelArtifactRef[] {
+  const paired = extractPairedTurnArtifacts(messages);
+  const artifactsByPath = new Map(
+    paired.map((artifact) => [artifact.path, artifact])
+  );
+  const toolInputs = buildToolInputMap(messages);
+
+  for (const message of extractLatestTurnMessages(messages)) {
+    if (message.role !== "tool") {
+      continue;
+    }
+
+    const artifact = artifactRefFromUnpairedWrite(message, toolInputs);
+    if (artifact && !artifactsByPath.has(artifact.path)) {
+      artifactsByPath.set(artifact.path, artifact);
+    }
+
+    for (const embedded of artifactRefsFromEmbeddedToolArtifacts(message)) {
+      if (!artifactsByPath.has(embedded.path)) {
+        artifactsByPath.set(embedded.path, embedded);
+      }
+    }
+  }
+
+  return [...artifactsByPath.values()];
+}
+
+function artifactRefFromUnpairedWrite(
+  message: Extract<ChatMessage, { role: "tool" }>,
+  toolInputs: Map<string, Record<string, unknown>>
+): ChannelArtifactRef | null {
+  const toolName = message.name ?? "";
+  if (!DELIVERABLE_WRITE_TOOLS.has(toolName)) {
+    return null;
+  }
+
+  if (toolName === "spreadsheet") {
+    const action = toolInputs.get(message.toolCallId)?.action;
+    if (
+      typeof action === "string" &&
+      SPREADSHEET_NON_DELIVERABLE_ACTIONS.has(action)
+    ) {
+      return null;
+    }
+  }
+
+  const result = getWriteFileResult(message);
+  if (
+    !result ||
+    typeof result.error === "string" ||
+    typeof result.path !== "string"
+  ) {
+    return null;
+  }
+
+  const relativePath = relativePathFromWriteMessage(message, toolInputs);
+  if (!relativePath || isArtifactMetaRelativePath(relativePath)) {
+    return null;
+  }
+
+  const sizeBytes =
+    typeof result.bytesWritten === "number" &&
+    Number.isInteger(result.bytesWritten) &&
+    result.bytesWritten >= 0
+      ? result.bytesWritten
+      : 0;
+
+  return buildArtifactRef(relativePath, {
+    mimeType: inferArtifactMimeType(relativePath),
+    savedAt: new Date().toISOString(),
+    sizeBytes,
+  });
 }

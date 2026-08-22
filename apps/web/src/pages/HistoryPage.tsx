@@ -9,9 +9,9 @@ import {
   useHistorySessionsQuery,
   usePurgeSessionMutation,
 } from "@/hooks/use-resource-mutations";
-import { resolveHistoryProfileId } from "@/lib/chat-history";
 import { formatError } from "@/lib/client";
 import { canMutateWorkspace } from "@/lib/org-roles";
+import { resolveProfileIdForWorkspaceProfiles } from "@/pages/chat/chat-page.shared";
 import { HistoryDeleteDialog } from "@/pages/history-delete-dialog";
 import { HistorySessionsPanel } from "@/pages/history-sessions-panel";
 
@@ -68,20 +68,26 @@ export function HistoryPage() {
   }, [profilesError, sessionsError]);
 
   useEffect(() => {
-    if (profiles.length === 0 || profileInitializedRef.current) {
+    profileInitializedRef.current = false;
+  }, [activeOrg?.id]);
+
+  useEffect(() => {
+    if (profiles.length === 0) {
       return;
     }
 
-    profileInitializedRef.current = true;
-    const resolvedProfileId = resolveHistoryProfileId({
+    const resolvedProfileId = resolveProfileIdForWorkspaceProfiles({
+      currentProfileId: profileInitializedRef.current ? profileId : "",
       liveChatProfileId,
       profiles,
       search: searchParams.toString(),
     });
-    if (resolvedProfileId) {
+
+    profileInitializedRef.current = true;
+    if (resolvedProfileId && resolvedProfileId !== profileId) {
       setProfileId(resolvedProfileId);
     }
-  }, [liveChatProfileId, profiles, searchParams, setProfileId]);
+  }, [liveChatProfileId, profileId, profiles, searchParams, setProfileId]);
 
   // Sync from URL when the profile rail switches the active profile after init.
   useEffect(() => {

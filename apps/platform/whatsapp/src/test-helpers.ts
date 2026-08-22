@@ -1,6 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import * as os from "node:os";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { AtlasClient, StreamHandlers } from "@atlas/client";
 import {
@@ -9,7 +8,12 @@ import {
   parseListUserOrgsResponse,
 } from "@atlas/core/bridge-api";
 import { ChannelOrgStore } from "@atlas/core/channel-org";
-import type { ProfileSummary, UserOrgSummary } from "@atlas/core/contract";
+import type {
+  ChatMessage,
+  ProfileSummary,
+  UserOrgSummary,
+} from "@atlas/core/contract";
+import { withIsolatedAtlasHome } from "@atlas/core/testing/atlas-home";
 
 export interface MockStreamControl {
   complete(reply?: string): void;
@@ -68,6 +72,10 @@ export function createMockClient(
     autoComplete?: boolean;
     profiles?: ProfileSummary[];
     orgs?: UserOrgSummary[];
+    messages?: ChatMessage[];
+    artifactContentBytes?: Uint8Array;
+    failPublishShare?: boolean;
+    failReadArtifact?: boolean;
   } = {}
 ) {
   const calls = {
@@ -76,19 +84,24 @@ export function createMockClient(
     listProfiles: 0,
     listUserOrgs: 0,
     profileIds: [] as string[],
+    publishProfileArtifactShare: 0,
+    readProfileArtifactContent: 0,
     sendStream: 0,
     setOrgId: 0,
+    transcribeAudio: 0,
   };
   const orgIds: string[] = [];
+  let lastStreamInput: unknown;
 
   let streamControl: MockStreamControl | null = null;
 
   const sendStream = async (
-    _input: unknown,
+    input: unknown,
     handlers: unknown,
     streamOptions?: { signal?: AbortSignal }
   ) => {
     calls.sendStream += 1;
+    lastStreamInput = input;
 
     if (!options.streaming) {
       return "Agent reply";
@@ -189,7 +202,7 @@ export function createMockClient(
       };
     },
     createAutomation: async () => ({}),
-    getMessages: async () => [],
+    getMessages: async () => options.messages ?? [],
     id: "session_test",
     purge: async () => {},
     send: async () => "ok",
@@ -230,6 +243,32 @@ export function createMockClient(
       calls.listUserOrgs += 1;
       return parseListUserOrgsResponse({ orgs });
     },
+    publishProfileArtifactShare: async () => {
+      calls.publishProfileArtifactShare += 1;
+      if (options.failPublishShare) {
+        throw new Error("publish failed");
+      }
+      return {
+        id: "share_test",
+        refreshed: false,
+        sharePath: "/s/tok_test",
+        shareUrl: "https://app.example/s/tok_test",
+        token: "tok_test",
+        webPublicUrlConfigured: true,
+      };
+    },
+    readProfileArtifactContent: async () => {
+      calls.readProfileArtifactContent += 1;
+      if (options.failReadArtifact) {
+        throw new Error("Failed to read the saved file.");
+      }
+      const data =
+        options.artifactContentBytes ?? new TextEncoder().encode("# Report");
+      return {
+        contentType: "text/markdown",
+        data: data.buffer,
+      };
+    },
     setOrgId: (orgId: string | null) => {
       calls.setOrgId += 1;
       const next = orgId?.trim() || null;
@@ -241,6 +280,10 @@ export function createMockClient(
       }
       orgIds.push(next ?? "");
     },
+    transcribeAudio: async () => {
+      calls.transcribeAudio += 1;
+      return { text: "Transcribed voice message" };
+    },
   } as unknown as AtlasClient;
 
   assertBridgeClientMethods(client);
@@ -248,6 +291,7 @@ export function createMockClient(
   return {
     calls,
     client,
+    getLastStreamInput: () => lastStreamInput,
     getStreamControl: () => streamControl,
     orgIds,
   };
@@ -276,6 +320,7 @@ export async function writeWhatsAppConfigIni(
     profileId?: string;
     pairingCode?: string | null;
     pairedJid?: string | null;
+    pairedLid?: string | null;
     accessMode?: string;
     allowedNumbers?: string[];
     blockedNumbers?: string[];
@@ -310,6 +355,10 @@ export async function writeWhatsAppConfigIni(
     lines.push(`paired_jid=${config.pairedJid}`);
   }
 
+  if (config.pairedLid) {
+    lines.push(`paired_lid=${config.pairedLid}`);
+  }
+
   lines.push("");
   await writeFile(path.join(dir, "config.ini"), lines.join("\n"), "utf8");
 }
@@ -319,8 +368,6 @@ export function createTestOrgStore(homeDir: string): ChannelOrgStore {
     path.join(homeDir, ".atlas", "whatsapp", "org-selection.json")
   );
 }
-
-let tempHomeChain: Promise<void> = Promise.resolve();
 
 export async function waitForStreamControl(
   getStreamControl: () => MockStreamControl | null,
@@ -344,30 +391,5 @@ export async function waitForStreamControl(
 export async function withTempHome<T>(
   run: (homeDir: string) => Promise<T>
 ): Promise<T> {
-  let release!: () => void;
-  const gate = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  const previous = tempHomeChain;
-  tempHomeChain = previous.then(() => gate);
-
-  await previous;
-
-  const homeDir = await mkdtemp(path.join(os.tmpdir(), "atlas-whatsapp-home-"));
-  const configDir = path.join(homeDir, ".atlas");
-  const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
-  process.env.ATLAS_CONFIG_DIR = configDir;
-
-  try {
-    return await run(homeDir);
-  } finally {
-    if (previousConfigDir === undefined) {
-      delete process.env.ATLAS_CONFIG_DIR;
-    } else {
-      process.env.ATLAS_CONFIG_DIR = previousConfigDir;
-    }
-
-    await rm(homeDir, { force: true, recursive: true });
-    release();
-  }
+  return withIsolatedAtlasHome("atlas-whatsapp-home-", run);
 }

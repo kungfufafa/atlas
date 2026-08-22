@@ -111,6 +111,7 @@ interface ChatMessageListProps {
   onRetryMessage?: (message: ChatListItem) => void;
   onSuggestedQuestion?: (question: string) => void;
   profileId?: string | null;
+  sessionId?: string | null;
   showThinking?: boolean;
   /** True while the assistant reply SSE stream is in flight. */
   streamActive?: boolean;
@@ -118,7 +119,7 @@ interface ChatMessageListProps {
 }
 
 export function ChatMessageList(props: ChatMessageListProps) {
-  const sessionAnchor = props.messages[0]?.id ?? "empty";
+  const sessionAnchor = props.sessionId ?? props.messages[0]?.id ?? "empty";
   return <ChatMessageListSession key={sessionAnchor} {...props} />;
 }
 
@@ -344,7 +345,7 @@ function AssistantTurn({
   showThinking,
   modelLabel,
   branchingMessageId,
-  actionsDisabled,
+  actionsDisabled = false,
   streamActive,
   showAwaiting,
   turnStartedAt,
@@ -383,8 +384,7 @@ function AssistantTurn({
   const artifactTurnKey = messages.map(({ message }) => message.id).join(":");
   const anchorMessage = findAssistantTurnAnchor(turnMessages);
   const turnComplete = isAssistantTurnComplete(turnMessages);
-  // Wait for the full SSE reply (tools + final summary), not the brief gap after tool_end.
-  const showArtifacts = turnComplete && artifacts.length > 0;
+  const showArtifacts = artifacts.length > 0;
   const showActions = !streamActive && turnComplete && anchorMessage != null;
 
   const sources = mergeTurnSources(

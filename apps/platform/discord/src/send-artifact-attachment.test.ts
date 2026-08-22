@@ -31,6 +31,20 @@ describe("sendDiscordArtifactAttachment limits", () => {
         mimeType: "application/zip",
       })
     ).toBe(true);
+    expect(
+      isDiscordAttachableArtifact({
+        filename: "sales.xlsx",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      })
+    ).toBe(true);
+    expect(
+      isDiscordAttachableArtifact({
+        filename: "deck.pptx",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      })
+    ).toBe(true);
   });
 
   test("rejects unsupported attachment types with a clear reason", () => {

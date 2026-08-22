@@ -85,7 +85,7 @@ describe("buildCodingAgentCommandTemplate", () => {
     expect(template.command).toContain("opencode run");
     expect(template.command).toContain("--dir");
     expect(template.command).toContain("'/tmp/workspace'");
-    expect(template.command).toContain("--dangerously-skip-permissions");
+    expect(template.command).not.toContain("--dangerously-skip-permissions");
     expect(template.command).toContain("'Fix lint errors'");
   });
 

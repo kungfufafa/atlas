@@ -63,9 +63,9 @@ Supported inputs include:
 - text messages
 - photos
 - voice notes and audio messages
-- supported documents such as `pdf`, `docx`, `txt`, and `csv`
+- supported documents such as `pdf`, `docx`, `xls`, `xlsx`, `csv`, `txt`, and `md`
 
-Small supported documents are downloaded and forwarded into the Atlas chat flow. Voice notes and audio messages are first transcribed with the configured OpenAI audio transcription model. Unsupported media gets a friendly rejection message instead of silently failing.
+Small supported documents are downloaded and forwarded into the Atlas chat flow. Voice notes and audio messages are first transcribed, then handled like text. When the agent saves a file, Atlas sends it in the Telegram chat (when it is within 5 MB) and posts a share link. Unsupported media gets a friendly rejection message instead of silently failing.
 
 ## Rich Markdown replies
 
@@ -85,15 +85,13 @@ If Telegram rejects the rich rendering, Atlas falls back to plain text.
 
 ## Saved artifacts and share links
 
-When your agent saves a file for you with the `save-artifact` skill (content file plus `.atlas-meta.json` sidecar in the same turn), Atlas posts a **Publish-style share link** after the reply in Telegram chat.
+When the agent saves a file (spreadsheet, document, deck, or other artifact), Atlas sends that file in the Telegram chat when it is within 5 MB, then posts a **Publish-style share link**.
 
 - The link uses the same unguessable `/s/{token}` URLs as dashboard Publish — no Atlas login required to open it.
 - Anyone who can read the Telegram message can open the link until the share is revoked from the web app.
 - Set **Web Public URL** in Atlas settings (or `ATLAS_WEB_PUBLIC_URL`) so channel footers include absolute links.
 
-To receive the file itself in Telegram, ask in plain language — for example, “send the file” or “attach it”. Atlas sends a native Telegram document when the file is within Telegram’s size limit. If the file is too large, use the share link instead.
-
-Unpaired saves (content without a sidecar in the same turn) do not produce share links or attachments.
+To get the latest saved file again later, ask in plain language — for example, “send the file” or “attach it”. If the file is too large for Telegram, use the share link instead.
 
 ## Next steps
 

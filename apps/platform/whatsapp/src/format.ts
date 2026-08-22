@@ -171,7 +171,7 @@ export function formatHelpText(options?: {
 /new \u2014 start a new conversation
 ${orgLine}/status \u2014 server and model status
 
-Send text to chat with the agent.`;
+Send text, a photo, a voice note, or a document. Saved files come back in the chat.`;
 }
 
 export const HELP_TEXT = formatHelpText();

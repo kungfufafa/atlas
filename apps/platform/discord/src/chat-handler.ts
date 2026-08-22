@@ -36,6 +36,13 @@ import {
   registerActiveStream,
   stopActiveStream,
 } from "./active-stream";
+import {
+  ATTACH_COMMAND_WITH_FILE_REPLY,
+  buildDiscordAttachmentInput,
+  hasDiscordAttachments,
+  PAIRING_MEDIA_REPLY,
+  UNSUPPORTED_MEDIA_REPLY,
+} from "./attachments";
 import type { DiscordAuthStore } from "./auth-store";
 import {
   deliverDiscordTurnArtifactShares,
@@ -244,7 +251,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
       if (!text) {
         await messenger.send(
-          "Send your pairing code as text to link this chat."
+          hasDiscordAttachments(message)
+            ? PAIRING_MEDIA_REPLY
+            : "Send your pairing code as text to link this chat."
         );
         return;
       }
@@ -284,12 +293,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       }
     }
 
-    if (!text) {
-      await messenger.send("Text messages only.");
-      return;
-    }
-
-    if (command === "/org" || command === "/profile") {
+    if (text && (command === "/org" || command === "/profile")) {
       await withChatLock(conversationKey, async () => {
         await handleTextCommand(
           text,
@@ -303,19 +307,39 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
-    if (text.startsWith("/") && !isAttachOnlyCommand(text)) {
+    if (text && isAttachOnlyCommand(text) && hasDiscordAttachments(message)) {
+      await messenger.send(ATTACH_COMMAND_WITH_FILE_REPLY);
+      return;
+    }
+
+    const attachmentInput = await tryBuildAttachmentInput(message, messenger);
+    if (attachmentInput === "reject") {
+      return;
+    }
+
+    if (!(text || attachmentInput)) {
+      await messenger.send(UNSUPPORTED_MEDIA_REPLY);
+      return;
+    }
+
+    if (
+      text?.startsWith("/") &&
+      !isAttachOnlyCommand(text) &&
+      !attachmentInput
+    ) {
       await messenger.send(
         "Use slash commands from Discord's command menu for session control."
       );
       return;
     }
 
-    const messageText =
-      isGuild && botInfo
+    const strippedText =
+      isGuild && botInfo && text
         ? stripBotMention(text, botInfo, mentionedBotRoleIds)
-        : text;
+        : (text ?? "");
+    const messageText = strippedText.trim();
 
-    if (!messageText) {
+    if (!(messageText || attachmentInput)) {
       return;
     }
 
@@ -357,9 +381,15 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         replyChannel,
         replyConversationKey,
         replyMessenger,
-        messageText,
+        messageText || attachmentInput?.message || "",
         isGuild,
-        replyIsThread
+        replyIsThread,
+        attachmentInput
+          ? {
+              documents: attachmentInput.documents,
+              images: attachmentInput.images,
+            }
+          : undefined
       );
     });
 
@@ -691,13 +721,43 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
   }
 
+  async function tryBuildAttachmentInput(
+    message: Message,
+    messenger: DiscordMessenger
+  ): Promise<SendMessageInput | "reject" | null> {
+    if (!hasDiscordAttachments(message)) {
+      return null;
+    }
+
+    try {
+      const result = await buildDiscordAttachmentInput(message, {
+        transcribeAudio: (input) => client.transcribeAudio(input),
+      });
+
+      if (!result) {
+        return null;
+      }
+
+      if (result.kind === "reject") {
+        await messenger.send(result.message);
+        return "reject";
+      }
+
+      return result.input;
+    } catch {
+      await messenger.send("Could not download that file. Try again.");
+      return "reject";
+    }
+  }
+
   async function handleChatMessage(
     channel: TextBasedChannel,
     conversationKey: string,
     messenger: DiscordMessenger,
     attachUserText: string,
     isGuild: boolean,
-    isThread: boolean
+    isThread: boolean,
+    attachments?: Pick<SendMessageInput, "documents" | "images">
   ): Promise<void> {
     const session = await resolveSession(conversationKey);
     const profileId = sessionStore.get(conversationKey)?.profileId;
@@ -719,7 +779,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     // Forward free text to the agent — do not gate Discord replies on questionnaire parsing.
     const streamInput = withGroupContext(
-      { message: attachUserText },
+      {
+        documents: attachments?.documents,
+        images: attachments?.images,
+        message: attachUserText,
+      },
       isGuild,
       isThread
     );
@@ -734,6 +798,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     let earlyAck: Promise<void> | undefined;
     let postedQuestionnaire = false;
     const pendingArtifactUploads: Promise<unknown>[] = [];
+    const uploadedArtifactPaths = new Set<string>();
 
     try {
       reply = await session.sendStream(
@@ -767,13 +832,18 @@ export function createChatHandler(deps: ChatHandlerDeps) {
             }
 
             pendingArtifactUploads.push(
-              uploadDiscordArtifactFromToolResult({
-                channel,
-                client,
-                messenger,
-                profileId,
-                result: event.result,
-              })
+              (async () => {
+                const path = await uploadDiscordArtifactFromToolResult({
+                  channel,
+                  client,
+                  messenger,
+                  profileId,
+                  result: event.result,
+                });
+                if (path) {
+                  uploadedArtifactPaths.add(path);
+                }
+              })()
             );
           },
           onToolStart: () => {
@@ -837,6 +907,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         profileId,
         session,
         sessionStore,
+        skipPaths: uploadedArtifactPaths,
       });
     }
   }

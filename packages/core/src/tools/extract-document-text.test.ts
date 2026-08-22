@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import {
   type EmailConfigFile,
   emailConfigToMailboxConfig,
@@ -10,15 +12,18 @@ import {
   getMailboxIdentity,
 } from "../mail/attachment-reference";
 import type { MailReader } from "../mail/types";
-import { runExtractDocumentText } from "./extract-document-text";
+import {
+  MISSING_DOCUMENT_REF_ERROR,
+  runExtractDocumentText,
+} from "./extract-document-text";
 
 process.env.ATLAS_EMAIL_ATTACHMENT_SECRET ??=
   "test-email-attachment-secret-32-chars";
 
-const FIXTURES = join(import.meta.dir, "..", "__fixtures__");
-const SAMPLE_PDF = readFileSync(join(FIXTURES, "sample.pdf"));
-const SAMPLE_DOCX = readFileSync(join(FIXTURES, "sample.docx"));
-const SAMPLE_XLSX = readFileSync(join(FIXTURES, "sample.xlsx"));
+const FIXTURES = path.join(import.meta.dir, "..", "__fixtures__");
+const SAMPLE_PDF = readFileSync(path.join(FIXTURES, "sample.pdf"));
+const SAMPLE_DOCX = readFileSync(path.join(FIXTURES, "sample.docx"));
+const SAMPLE_XLSX = readFileSync(path.join(FIXTURES, "sample.xlsx"));
 
 const completeConfig: EmailConfigFile = {
   from: "user@example.com",
@@ -144,6 +149,62 @@ describe("extract_document_text tool", () => {
       untrustedContent: true,
     });
     expect("text" in result && result.text).toContain("Widget");
+  });
+
+  test("extracts from a PDF in the profile workspace", async () => {
+    const workspaceRoot = await mkdtemp(
+      path.join(os.tmpdir(), "atlas-extract-")
+    );
+
+    try {
+      const artifactsDir = path.join(workspaceRoot, "artifacts");
+      await mkdir(artifactsDir, { recursive: true });
+      await writeFile(path.join(artifactsDir, "report.pdf"), SAMPLE_PDF);
+
+      const result = await runExtractDocumentText(
+        { documentRef: "artifacts/report.pdf" },
+        { ...context, workspaceRoot },
+        { loadConfig: async () => ({}) as typeof completeConfig }
+      );
+
+      expect(result).toMatchObject({
+        filename: "report.pdf",
+        mediaType: "application/pdf",
+        untrustedContent: true,
+      });
+      expect("text" in result && result.text.toLowerCase()).toContain("dummy");
+    } finally {
+      await rm(workspaceRoot, { force: true, recursive: true });
+    }
+  });
+
+  test("does not treat a guessed filename as an email document provider", async () => {
+    const workspaceRoot = await mkdtemp(
+      path.join(os.tmpdir(), "atlas-extract-empty-")
+    );
+
+    try {
+      const result = await runExtractDocumentText(
+        { documentRef: "invoice.pdf" },
+        { ...context, workspaceRoot },
+        { loadConfig: async () => ({}) as typeof completeConfig }
+      );
+
+      expect("error" in result).toBe(true);
+      expect("text" in result).toBe(false);
+    } finally {
+      await rm(workspaceRoot, { force: true, recursive: true });
+    }
+  });
+
+  test("rejects a guessed non-path reference without retrying email", async () => {
+    const result = await runExtractDocumentText(
+      { documentRef: "gmail-attachment-123" },
+      context,
+      { loadConfig: async () => null }
+    );
+
+    expect(result).toEqual({ error: MISSING_DOCUMENT_REF_ERROR });
   });
 
   test("extracts from a provider-neutral stored document reference", async () => {

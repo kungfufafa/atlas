@@ -485,13 +485,17 @@ export function useProfilesPage() {
 
   useEffect(
     () => () => {
-      clearScheduledSave();
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      void performSaveRef.current();
 
       if (savedHintTimerRef.current) {
         clearTimeout(savedHintTimerRef.current);
       }
     },
-    [clearScheduledSave]
+    []
   );
 
   const availableTools = allTools.filter(

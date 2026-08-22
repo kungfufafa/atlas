@@ -2123,6 +2123,112 @@ describe("createChatHandler document attachments", () => {
     });
   });
 
+  test("forwards a captionless pdf to sendStream", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        allowedUserIds: [4242],
+        botToken: "1234567890:TEST",
+      });
+
+      fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response("pdf-content", {
+          headers: { "content-type": "application/pdf" },
+        })
+      );
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls, getLastStreamInput } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        orgStore,
+        sessionStore,
+      });
+
+      const { ctx } = createDocumentContext({
+        fileName: "report.pdf",
+        mimeType: "application/pdf",
+        userId: 4242,
+      });
+
+      await handleMessage(ctx);
+
+      expect(calls.sendStream).toBe(1);
+      expect(getLastStreamInput()).toEqual({
+        documents: [
+          expect.objectContaining({
+            filename: "report.pdf",
+            mediaType: "application/pdf",
+          }),
+        ],
+        message: "",
+      });
+    });
+  });
+
+  test("forwards an xlsx document to sendStream", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        allowedUserIds: [4242],
+        botToken: "1234567890:TEST",
+      });
+
+      fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response("xlsx-content", {
+          headers: {
+            "content-type":
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          },
+        })
+      );
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls, getLastStreamInput } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        orgStore,
+        sessionStore,
+      });
+
+      const { ctx } = createDocumentContext({
+        caption: "Analyze",
+        fileName: "sales.xlsx",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        userId: 4242,
+      });
+
+      await handleMessage(ctx);
+
+      expect(calls.sendStream).toBe(1);
+      expect(getLastStreamInput()).toEqual({
+        documents: [
+          expect.objectContaining({
+            filename: "sales.xlsx",
+            mediaType:
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          }),
+        ],
+        message: "Analyze",
+      });
+    });
+  });
+
   test("rejects unsupported documents without calling sendStream", async () => {
     await withTempHome(async (homeDir) => {
       await writeTelegramConfigIni(homeDir, {
@@ -2149,9 +2255,8 @@ describe("createChatHandler document attachments", () => {
       });
 
       const { ctx, replies } = createDocumentContext({
-        fileName: "sheet.xlsx",
-        mimeType:
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        fileName: "archive.zip",
+        mimeType: "application/zip",
         userId: 4242,
       });
 
@@ -2248,6 +2353,50 @@ describe("createChatHandler document attachments", () => {
       expect(replies).toEqual([UNSUPPORTED_MEDIA_REPLY]);
     });
   });
+
+  test("runs /help even when the same message includes a document", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        allowedUserIds: [4242],
+        botToken: "1234567890:TEST",
+      });
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        orgStore,
+        sessionStore,
+      });
+
+      const { ctx, replies } = createMessageContext({
+        text: "/help",
+        userId: 4242,
+      });
+      (ctx as { message: Record<string, unknown> }).message = {
+        ...(ctx.message as Record<string, unknown>),
+        document: {
+          file_id: "doc-1",
+          file_name: "report.pdf",
+          mime_type: "application/pdf",
+        },
+        text: "/help",
+      };
+
+      await handleMessage(ctx);
+
+      expect(calls.sendStream).toBe(0);
+      expect(replies.join("\n")).toContain("/help");
+    });
+  });
 });
 
 describe("createChatHandler artifact delivery", () => {
@@ -2331,22 +2480,24 @@ describe("createChatHandler artifact delivery", () => {
         sessionStore,
       });
 
-      const { ctx, replies } = createMessageContext({
+      const mock = createMessageContext({
         text: "thanks",
         userId: 4242,
       });
-      await handleMessage(ctx);
+      await handleMessage(mock.ctx);
 
       expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(mock.documentSends).toBe(1);
       expect(
-        replies.some((reply) =>
+        mock.replies.some((reply) =>
           reply.includes("https://app.example/s/tok_test")
         )
       ).toBe(true);
     });
   });
 
-  test("does not publish when the turn has no sidecar pair", async () => {
+  test("publishes and sends when write_file saved an artifact without sidecar", async () => {
     await withTempHome(async (homeDir) => {
       await writeTelegramConfigIni(homeDir, {
         botToken: "1234567890:TEST",
@@ -2356,6 +2507,7 @@ describe("createChatHandler artifact delivery", () => {
       const authStore = new TelegramAuthStore();
       await authStore.reload();
       const { client, calls } = createMockClient({
+        artifactContentBytes: new TextEncoder().encode("draft"),
         messages: [
           { content: "save", role: "user" },
           {
@@ -2378,6 +2530,129 @@ describe("createChatHandler artifact delivery", () => {
             role: "tool",
             toolCallId: "tool_1",
           },
+        ],
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      await sessionStore.load();
+      sessionStore.set("4242", {
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        orgStore,
+        sessionStore,
+      });
+
+      const mock = createMessageContext({
+        text: "thanks",
+        userId: 4242,
+      });
+      await handleMessage(mock.ctx);
+
+      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(mock.documentSends).toBe(1);
+      expect(
+        mock.replies.some((reply) =>
+          reply.includes("https://app.example/s/tok_test")
+        )
+      ).toBe(true);
+    });
+  });
+
+  test("publishes and sends a spreadsheet created in the turn", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        botToken: "1234567890:TEST",
+        pairedUserIds: [4242],
+      });
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        artifactContentBytes: new TextEncoder().encode("xlsx-bytes"),
+        messages: [
+          { content: "make a sheet", role: "user" },
+          {
+            content: "",
+            role: "assistant",
+            toolCalls: [
+              {
+                arguments: {
+                  action: "create",
+                  path: "artifacts/sales.xlsx",
+                },
+                id: "tool_1",
+                name: "spreadsheet",
+              },
+            ],
+          },
+          {
+            content: JSON.stringify({
+              path: "artifacts/sales.xlsx",
+              status: "created",
+            }),
+            name: "spreadsheet",
+            role: "tool",
+            toolCallId: "tool_1",
+          },
+          { content: "Saved the sheet.", role: "assistant" },
+        ],
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      await sessionStore.load();
+      sessionStore.set("4242", {
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        orgStore,
+        sessionStore,
+      });
+
+      const mock = createMessageContext({
+        text: "thanks",
+        userId: 4242,
+      });
+      await handleMessage(mock.ctx);
+
+      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(mock.documentSends).toBe(1);
+    });
+  });
+
+  test("does not publish when the turn wrote nothing under artifacts/", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        botToken: "1234567890:TEST",
+        pairedUserIds: [4242],
+      });
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        messages: [
+          { content: "hello", role: "user" },
+          { content: "hi", role: "assistant" },
         ],
       });
       const sessionStore = new SessionStore(
@@ -2467,6 +2742,249 @@ describe("createChatHandler artifact delivery", () => {
 
       expect(calls.readProfileArtifactContent).toBe(1);
       expect(sendDocumentCalls).toBe(1);
+    });
+  });
+
+  test("typed /attach sends the last saved artifact without an agent turn", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        botToken: "1234567890:TEST",
+        pairedUserIds: [4242],
+      });
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      await sessionStore.load();
+      sessionStore.set("4242", {
+        deliverableArtifacts: [
+          {
+            filename: "report.md",
+            mimeType: "text/markdown",
+            path: "report.md",
+            savedAt: "2026-07-13T10:00:00.000Z",
+            sharePath: "/s/tok_test",
+            shareUrl: "https://app.example/s/tok_test",
+            sizeBytes: 42,
+          },
+        ],
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        orgStore,
+        sessionStore,
+      });
+
+      let sendDocumentCalls = 0;
+      const mock = createMessageContext({
+        text: "/attach",
+        userId: 4242,
+      });
+      (
+        mock.ctx.api as { sendDocument: typeof mock.ctx.api.sendMessage }
+      ).sendDocument = async () => {
+        sendDocumentCalls += 1;
+        return { message_id: 99 };
+      };
+
+      await handleMessage(mock.ctx);
+
+      expect(calls.sendStream).toBe(0);
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(sendDocumentCalls).toBe(1);
+      expect(mock.replies.some((reply) => /unknown command/i.test(reply))).toBe(
+        false
+      );
+    });
+  });
+
+  test("still sends the file when share publishing fails", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        botToken: "1234567890:TEST",
+        pairedUserIds: [4242],
+      });
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        failPublishShare: true,
+        messages: artifactMessages,
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      await sessionStore.load();
+      sessionStore.set("4242", {
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        orgStore,
+        sessionStore,
+      });
+
+      const mock = createMessageContext({
+        text: "thanks",
+        userId: 4242,
+      });
+      await handleMessage(mock.ctx);
+
+      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(mock.documentSends).toBe(1);
+      expect(
+        mock.replies.some((reply) =>
+          reply.includes("https://app.example/s/tok_test")
+        )
+      ).toBe(false);
+    });
+  });
+
+  test("keeps the agent turn going when attach download fails", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        botToken: "1234567890:TEST",
+        pairedUserIds: [4242],
+      });
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        failReadArtifact: true,
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      await sessionStore.load();
+      sessionStore.set("4242", {
+        deliverableArtifacts: [
+          {
+            filename: "report.md",
+            mimeType: "text/markdown",
+            path: "report.md",
+            savedAt: "2026-07-13T10:00:00.000Z",
+            sharePath: "/s/tok_test",
+            shareUrl: "https://app.example/s/tok_test",
+            sizeBytes: 42,
+          },
+        ],
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        orgStore,
+        sessionStore,
+      });
+
+      const mock = createMessageContext({
+        text: "send me the file",
+        userId: 4242,
+      });
+      await handleMessage(mock.ctx);
+
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(calls.sendStream).toBe(1);
+      expect(
+        mock.replies.some((reply) =>
+          reply.includes("Failed to read the saved file.")
+        )
+      ).toBe(true);
+    });
+  });
+
+  test("tells the user when a saved artifact is too large to send", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        botToken: "1234567890:TEST",
+        pairedUserIds: [4242],
+      });
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        messages: [
+          { content: "save", role: "user" },
+          {
+            content: "",
+            role: "assistant",
+            toolCalls: [
+              {
+                arguments: { content: "huge", path: "artifacts/huge.bin" },
+                id: "tool_1",
+                name: "write_file",
+              },
+            ],
+          },
+          {
+            content: JSON.stringify({
+              bytesWritten: 6 * 1024 * 1024,
+              path: "/home/.atlas/orgs/org/profiles/default/artifacts/huge.bin",
+            }),
+            name: "write_file",
+            role: "tool",
+            toolCallId: "tool_1",
+          },
+        ],
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      await sessionStore.load();
+      sessionStore.set("4242", {
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        orgStore,
+        sessionStore,
+      });
+
+      const mock = createMessageContext({
+        text: "thanks",
+        userId: 4242,
+      });
+      await handleMessage(mock.ctx);
+
+      expect(calls.readProfileArtifactContent).toBe(0);
+      expect(mock.documentSends).toBe(0);
+      expect(
+        mock.replies.some((reply) =>
+          reply.includes("File is too large for Telegram")
+        )
+      ).toBe(true);
     });
   });
 

@@ -1,12 +1,13 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { Spinner } from "@/components/ui/spinner";
 import { useAppContext } from "@/context/use-app-context";
 import { useAuth } from "@/context/use-auth";
-import { SETUP_PATH } from "@/lib/navigation";
+import { LOGIN_PATH, SETUP_PATH } from "@/lib/navigation";
 
 export function AuthGuard() {
   const { isAuthenticated, isLoading } = useAuth();
   const { error: healthError, health } = useAppContext();
+  const location = useLocation();
 
   if (isLoading || (health == null && !healthError)) {
     return (
@@ -21,7 +22,13 @@ export function AuthGuard() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate replace to="/login" />;
+    return (
+      <Navigate
+        replace
+        state={{ from: `${location.pathname}${location.search}` }}
+        to={LOGIN_PATH}
+      />
+    );
   }
 
   return <Outlet />;

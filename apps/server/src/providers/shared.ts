@@ -168,6 +168,10 @@ export function sanitizeToolCallHistory(
       return message.toolCalls.every((call) => validToolCallIds.has(call.id));
     }
 
+    if (message.role === "assistant") {
+      return Boolean(message.content.trim() || message.thinking?.trim());
+    }
+
     if (message.role === "tool") {
       return validToolCallIds.has(message.toolCallId);
     }

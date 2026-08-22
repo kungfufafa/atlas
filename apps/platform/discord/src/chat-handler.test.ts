@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import path from "node:path";
 import type { ChatMessage } from "@atlas/core/contract";
 import { loadDiscordConfigFile } from "@atlas/core/discord-config";
+import { ATTACH_COMMAND_WITH_FILE_REPLY } from "./attachments";
 import { DiscordAuthStore } from "./auth-store";
 import {
   chatLockOptions,
@@ -66,6 +67,12 @@ async function createPairedHandler(
     artifactContentBytes?: Parameters<
       typeof createMockClient
     >[0]["artifactContentBytes"];
+    failPublishShare?: Parameters<
+      typeof createMockClient
+    >[0]["failPublishShare"];
+    failReadArtifact?: Parameters<
+      typeof createMockClient
+    >[0]["failReadArtifact"];
     configProfileId?: string;
     pairedUserIds?: string[];
     allowedUserIds?: string[];
@@ -191,6 +198,93 @@ describe("createChatHandler artifact delivery", () => {
       expect(
         dm.sentMessages.some((reply) =>
           reply.includes("https://app.example/s/tok_test")
+        )
+      ).toBe(true);
+    });
+  });
+
+  test("still uploads the file when share publishing fails", async () => {
+    await withTempHome(async (homeDir) => {
+      const { handleMessage, calls, sessionStore } = await createPairedHandler(
+        homeDir,
+        {
+          failPublishShare: true,
+          messages: artifactMessages,
+        }
+      );
+      sessionStore.set("dm_channel_1", {
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+
+      const dm = createDmMessage({
+        content: "thanks",
+        userId: "424242424242424242",
+      });
+      await handleMessage(dm.message);
+
+      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(dm.fileSendCalls).toBe(1);
+      expect(
+        dm.sentMessages.some((reply) =>
+          reply.includes("https://app.example/s/tok_test")
+        )
+      ).toBe(false);
+    });
+  });
+
+  test("tells the user when a saved artifact is too large and has no share link", async () => {
+    await withTempHome(async (homeDir) => {
+      const { handleMessage, calls, sessionStore } = await createPairedHandler(
+        homeDir,
+        {
+          failPublishShare: true,
+          messages: [
+            { content: "save", role: "user" },
+            {
+              content: "",
+              role: "assistant",
+              toolCalls: [
+                {
+                  arguments: { content: "huge", path: "artifacts/huge.md" },
+                  id: "tool_1",
+                  name: "write_file",
+                },
+              ],
+            },
+            {
+              content: JSON.stringify({
+                bytesWritten: 9 * 1024 * 1024,
+                path: "/home/.atlas/orgs/org/profiles/default/artifacts/huge.md",
+              }),
+              name: "write_file",
+              role: "tool",
+              toolCallId: "tool_1",
+            },
+          ],
+        }
+      );
+      sessionStore.set("dm_channel_1", {
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+
+      const dm = createDmMessage({
+        content: "thanks",
+        userId: "424242424242424242",
+      });
+      await handleMessage(dm.message);
+
+      expect(calls.readProfileArtifactContent).toBe(0);
+      expect(dm.fileSendCalls).toBe(0);
+      expect(
+        dm.sentMessages.some((reply) =>
+          reply.includes("File is too large for Discord")
         )
       ).toBe(true);
     });
@@ -431,11 +525,12 @@ describe("createChatHandler artifact delivery", () => {
     });
   });
 
-  test("does not publish when the turn has no sidecar pair", async () => {
+  test("publishes and sends when write_file saved an artifact without sidecar", async () => {
     await withTempHome(async (homeDir) => {
       const { handleMessage, calls, sessionStore } = await createPairedHandler(
         homeDir,
         {
+          artifactContentBytes: new TextEncoder().encode("draft"),
           messages: [
             { content: "save", role: "user" },
             {
@@ -458,6 +553,95 @@ describe("createChatHandler artifact delivery", () => {
               role: "tool",
               toolCallId: "tool_1",
             },
+          ],
+        }
+      );
+      sessionStore.set("dm_channel_1", {
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+
+      const dm = createDmMessage({
+        content: "thanks",
+        userId: "424242424242424242",
+      });
+      await handleMessage(dm.message);
+
+      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(dm.fileSendCalls).toBe(1);
+      expect(
+        dm.sentMessages.some((reply) =>
+          reply.includes("https://app.example/s/tok_test")
+        )
+      ).toBe(true);
+    });
+  });
+
+  test("publishes and sends a spreadsheet created in the turn", async () => {
+    await withTempHome(async (homeDir) => {
+      const { handleMessage, calls, sessionStore } = await createPairedHandler(
+        homeDir,
+        {
+          artifactContentBytes: new TextEncoder().encode("xlsx-bytes"),
+          messages: [
+            { content: "make a sheet", role: "user" },
+            {
+              content: "",
+              role: "assistant",
+              toolCalls: [
+                {
+                  arguments: {
+                    action: "create",
+                    path: "artifacts/sales.xlsx",
+                  },
+                  id: "tool_1",
+                  name: "spreadsheet",
+                },
+              ],
+            },
+            {
+              content: JSON.stringify({
+                path: "artifacts/sales.xlsx",
+                status: "created",
+              }),
+              name: "spreadsheet",
+              role: "tool",
+              toolCallId: "tool_1",
+            },
+            { content: "Saved the sheet.", role: "assistant" },
+          ],
+        }
+      );
+      sessionStore.set("dm_channel_1", {
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+
+      const dm = createDmMessage({
+        content: "thanks",
+        userId: "424242424242424242",
+      });
+      await handleMessage(dm.message);
+
+      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(dm.fileSendCalls).toBe(1);
+    });
+  });
+
+  test("does not publish when the turn wrote nothing under artifacts/", async () => {
+    await withTempHome(async (homeDir) => {
+      const { handleMessage, calls, sessionStore } = await createPairedHandler(
+        homeDir,
+        {
+          messages: [
+            { content: "hello", role: "user" },
+            { content: "hi", role: "assistant" },
           ],
         }
       );
@@ -524,6 +708,96 @@ describe("createChatHandler artifact delivery", () => {
       expect(calls.readProfileArtifactContent).toBe(1);
       expect(dm.fileSendCalls).toBe(1);
       expect(dm.sentMessages.at(-1)).toBe("Here's the pitch deck.");
+    });
+  });
+
+  test("does not upload the same file twice when write_file and send_discord_artifact run together", async () => {
+    await withTempHome(async (homeDir) => {
+      const { calls, handleMessage, sessionStore } = await createPairedHandler(
+        homeDir,
+        {
+          artifactContentBytes: new TextEncoder().encode("%PDF-1.4"),
+          messages: [
+            { content: "make the deck", role: "user" },
+            {
+              content: "",
+              role: "assistant",
+              toolCalls: [
+                {
+                  arguments: {
+                    content: "%PDF-1.4",
+                    path: "artifacts/atlas-pitch-deck.pdf",
+                  },
+                  id: "tool_write",
+                  name: "write_file",
+                },
+                {
+                  arguments: { path: "artifacts/atlas-pitch-deck.pdf" },
+                  id: "tool_send",
+                  name: "send_discord_artifact",
+                },
+              ],
+            },
+            {
+              content: JSON.stringify({
+                bytesWritten: 8,
+                path: "/home/.atlas/orgs/org/profiles/default/artifacts/atlas-pitch-deck.pdf",
+              }),
+              name: "write_file",
+              role: "tool",
+              toolCallId: "tool_write",
+            },
+            {
+              content: JSON.stringify({
+                filename: "atlas-pitch-deck.pdf",
+                mimeType: "application/pdf",
+                ok: true,
+                path: "atlas-pitch-deck.pdf",
+                sizeBytes: 8,
+              }),
+              name: "send_discord_artifact",
+              role: "tool",
+              toolCallId: "tool_send",
+            },
+          ],
+          onSendStream: async (_input, handlers) => {
+            handlers?.onToolStart?.({
+              input: { path: "atlas-pitch-deck.pdf" },
+              tool: "send_discord_artifact",
+              toolCallId: "tool_send",
+            });
+            handlers?.onToolEnd?.({
+              result: {
+                filename: "atlas-pitch-deck.pdf",
+                mimeType: "application/pdf",
+                ok: true,
+                path: "atlas-pitch-deck.pdf",
+                sizeBytes: 8,
+              },
+              tool: "send_discord_artifact",
+              toolCallId: "tool_send",
+            });
+            handlers?.onChunk?.("Here's the pitch deck.");
+            return "Here's the pitch deck.";
+          },
+        }
+      );
+      sessionStore.set("dm_channel_1", {
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+
+      const dm = createDmMessage({
+        content: "make the deck and send it",
+        userId: "424242424242424242",
+      });
+      await handleMessage(dm.message);
+
+      expect(calls.sendStream).toBe(1);
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(dm.fileSendCalls).toBe(1);
     });
   });
 
@@ -1752,6 +2026,258 @@ describe("createChatHandler guild thread routing", () => {
         )
       ).toBe(true);
       expect(calls.createSession).toBe(1);
+    });
+  });
+});
+
+describe("createChatHandler inbound files", () => {
+  let fetchSpy: ReturnType<typeof spyOn> | undefined;
+
+  afterEach(() => {
+    fetchSpy?.mockRestore();
+  });
+
+  test("forwards a pdf attachment to sendStream", async () => {
+    await withTempHome(async (homeDir) => {
+      fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response("pdf-content", {
+          headers: { "content-type": "application/pdf" },
+        })
+      );
+
+      let lastInput: unknown;
+      const { handleMessage, calls } = await createPairedHandler(homeDir, {
+        onSendStream: async (input) => {
+          lastInput = input;
+          return "Agent reply";
+        },
+      });
+
+      const dm = createDmMessage({
+        attachments: [
+          {
+            contentType: "application/pdf",
+            name: "report.pdf",
+          },
+        ],
+        content: "Summarize",
+        userId: "424242424242424242",
+      });
+      await handleMessage(dm.message);
+
+      expect(calls.sendStream).toBe(1);
+      expect(lastInput).toEqual({
+        documents: [
+          expect.objectContaining({
+            filename: "report.pdf",
+            mediaType: "application/pdf",
+          }),
+        ],
+        images: undefined,
+        message: "Summarize",
+      });
+    });
+  });
+
+  test("forwards a captionless pdf attachment to sendStream", async () => {
+    await withTempHome(async (homeDir) => {
+      fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response("pdf-content", {
+          headers: { "content-type": "application/pdf" },
+        })
+      );
+
+      let lastInput: unknown;
+      const { handleMessage, calls } = await createPairedHandler(homeDir, {
+        onSendStream: async (input) => {
+          lastInput = input;
+          return "Agent reply";
+        },
+      });
+
+      const dm = createDmMessage({
+        attachments: [
+          {
+            contentType: "application/pdf",
+            name: "report.pdf",
+          },
+        ],
+        userId: "424242424242424242",
+      });
+      await handleMessage(dm.message);
+
+      expect(calls.sendStream).toBe(1);
+      expect(lastInput).toEqual({
+        documents: [
+          expect.objectContaining({
+            filename: "report.pdf",
+            mediaType: "application/pdf",
+          }),
+        ],
+        images: undefined,
+        message: "",
+      });
+    });
+  });
+
+  test("forwards an xlsx attachment to sendStream", async () => {
+    await withTempHome(async (homeDir) => {
+      fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response("xlsx-content", {
+          headers: {
+            "content-type":
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          },
+        })
+      );
+
+      let lastInput: unknown;
+      const { handleMessage, calls } = await createPairedHandler(homeDir, {
+        onSendStream: async (input) => {
+          lastInput = input;
+          return "Agent reply";
+        },
+      });
+
+      const dm = createDmMessage({
+        attachments: [
+          {
+            contentType:
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            name: "sales.xlsx",
+          },
+        ],
+        content: "Analyze",
+        userId: "424242424242424242",
+      });
+      await handleMessage(dm.message);
+
+      expect(calls.sendStream).toBe(1);
+      expect(lastInput).toEqual({
+        documents: [
+          expect.objectContaining({
+            filename: "sales.xlsx",
+            mediaType:
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          }),
+        ],
+        images: undefined,
+        message: "Analyze",
+      });
+    });
+  });
+
+  test("transcribes a voice attachment and forwards text to the agent", async () => {
+    await withTempHome(async (homeDir) => {
+      fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response("ogg-bytes", {
+          headers: { "content-type": "audio/ogg" },
+        })
+      );
+
+      let lastInput: unknown;
+      const { handleMessage, calls } = await createPairedHandler(homeDir, {
+        onSendStream: async (input) => {
+          lastInput = input;
+          return "Agent reply";
+        },
+      });
+
+      const dm = createDmMessage({
+        attachments: [
+          {
+            contentType: "audio/ogg",
+            name: "voice-message.ogg",
+          },
+        ],
+        userId: "424242424242424242",
+      });
+      await handleMessage(dm.message);
+
+      expect(calls.transcribeAudio).toBe(1);
+      expect(calls.sendStream).toBe(1);
+      expect(lastInput).toEqual({
+        documents: undefined,
+        images: undefined,
+        message: "Transcribed voice message",
+      });
+    });
+  });
+
+  test("runs /org even when the same message has an unsupported file", async () => {
+    await withTempHome(async (homeDir) => {
+      const { handleMessage, calls } = await createPairedHandler(homeDir, {
+        orgs: createMultiTestOrgs(),
+      });
+
+      const dm = createDmMessage({
+        attachments: [
+          {
+            contentType: "application/zip",
+            name: "bundle.zip",
+          },
+        ],
+        content: "/org",
+        userId: "424242424242424242",
+      });
+      await handleMessage(dm.message);
+
+      expect(calls.sendStream).toBe(0);
+      expect(
+        dm.sentMessages.some((reply) => /unsupported file type/i.test(reply))
+      ).toBe(false);
+      expect(
+        dm.sentMessages.some((reply) =>
+          /Choose an organization|organization/i.test(reply)
+        )
+      ).toBe(true);
+    });
+  });
+
+  test("does not drop an inbound file silently on /attach", async () => {
+    await withTempHome(async (homeDir) => {
+      fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response("pdf-content", {
+          headers: { "content-type": "application/pdf" },
+        })
+      );
+
+      const { handleMessage, calls, sessionStore } = await createPairedHandler(
+        homeDir,
+        {
+          listedArtifacts: [
+            {
+              filename: "atlas-pitch-deck.pdf",
+              mimeType: "application/pdf",
+              path: "/tmp/artifacts/atlas-pitch-deck.pdf",
+              sizeBytes: 8,
+              updatedAt: "2026-08-08T12:51:00.000Z",
+            },
+          ],
+        }
+      );
+      sessionStore.set("dm_channel_1", {
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+
+      const dm = createDmMessage({
+        attachments: [
+          {
+            contentType: "application/pdf",
+            name: "report.pdf",
+          },
+        ],
+        content: "/attach",
+        userId: "424242424242424242",
+      });
+      await handleMessage(dm.message);
+
+      expect(calls.sendStream).toBe(0);
+      expect(dm.fileSendCalls).toBe(0);
+      expect(dm.sentMessages).toEqual([ATTACH_COMMAND_WITH_FILE_REPLY]);
     });
   });
 });

@@ -6,10 +6,13 @@ import {
   getContentType,
   makeWASocket,
   useMultiFileAuthState,
+  type WAMessage,
   type WASocket,
 } from "@whiskeysockets/baileys";
 import {
+  extractInboundPhoneHint,
   extractInboundText,
+  inspectInboundWhatsAppMedia,
   isPrivateWhatsAppChat,
   shouldHandleInboundMessage,
 } from "./inbound-message";
@@ -19,9 +22,12 @@ export interface WhatsAppSocketDeps {
   onDisconnected?: () => void;
   onMessage: (data: {
     fromMe?: boolean;
+    inbound?: WAMessage | null;
     jid: string;
+    senderPn?: string | null;
     text: string;
   }) => Promise<void>;
+  onPhoneNumberShare?: (lid: string, phoneJid: string) => void;
   onQr?: (qr: string) => void;
 }
 
@@ -42,6 +48,7 @@ export async function createWhatsAppSocket(
   let stopped = false;
   let loggedMissingTextPayload = false;
   const baileysLogger = createBaileysLogger();
+  const inboundDedupe = createInboundMessageDedupe();
 
   const handle = {
     get socket() {
@@ -52,6 +59,7 @@ export async function createWhatsAppSocket(
         return;
       }
 
+      await disposeWhatsAppSocket(socket);
       socket = makeWASocket({
         auth: state,
         browser: ["Atlas", "Chrome", "4.0.0"] as [string, string, string],
@@ -66,7 +74,13 @@ export async function createWhatsAppSocket(
         version,
       });
 
+      const current = socket;
+
       socket.ev.on("connection.update", async (update) => {
+        if (socket !== current) {
+          return;
+        }
+
         const { connection, lastDisconnect, qr } = update;
 
         if (qr) {
@@ -82,19 +96,23 @@ export async function createWhatsAppSocket(
 
         if (connection === "close") {
           deps.onDisconnected?.();
-          const statusCode = lastDisconnect?.error?.message
-            ? (lastDisconnect.error as any)?.output?.statusCode
-            : (lastDisconnect as { statusCode?: number } | undefined)
-                ?.statusCode;
-          const shouldReconnect =
-            statusCode !== DisconnectReason.loggedOut && !stopped;
+          const statusCode = extractDisconnectStatusCode(lastDisconnect);
+          const loggedOut = statusCode === DisconnectReason.loggedOut;
+          const shouldReconnect = !(loggedOut || stopped);
+
+          if (loggedOut) {
+            await disposeWhatsAppSocket(socket);
+            if (socket === current) {
+              socket = null;
+            }
+          }
 
           const isRestartRequired =
             statusCode === DisconnectReason.restartRequired ||
             statusCode === 515;
           const statusText = isRestartRequired
             ? "515 - restart required"
-            : String(statusCode);
+            : String(statusCode ?? "unknown");
 
           console.log(
             `WhatsApp disconnected (code: ${statusText}).${shouldReconnect ? " Reconnecting..." : ""}`
@@ -108,7 +126,17 @@ export async function createWhatsAppSocket(
 
       socket.ev.on("creds.update", saveCreds);
 
+      socket.ev.on("chats.phoneNumberShare", (share) => {
+        if (share.lid && share.jid) {
+          deps.onPhoneNumberShare?.(share.lid, share.jid);
+        }
+      });
+
       socket.ev.on("messages.upsert", async (m) => {
+        if (socket !== current) {
+          return;
+        }
+
         const isVerbose = isVerboseLoggingEnabled(
           process.env.WHATSAPP_VERBOSE_LOGS
         );
@@ -127,12 +155,15 @@ export async function createWhatsAppSocket(
 
         for (const msg of m.messages) {
           const remoteJid = msg.key.remoteJid ?? null;
+          const messageId = msg.key.id?.trim();
           const text = extractInboundText(msg.message);
+          const senderPn = extractInboundPhoneHint(msg);
+          const mediaKind = inspectInboundWhatsAppMedia(msg.message)?.kind;
           const shouldHandle = shouldHandleInboundMessage(msg, me);
 
           if (isVerbose && remoteJid) {
             console.log(
-              `WhatsApp upsert item jid=${remoteJid} fromMe=${msg.key.fromMe ? "yes" : "no"} participant=${msg.key.participant ?? "-"} text=${text ? "yes" : "no"} handle=${shouldHandle ? "yes" : "no"}`
+              `WhatsApp upsert item jid=${remoteJid} fromMe=${msg.key.fromMe ? "yes" : "no"} participant=${msg.key.participant ?? "-"} senderPn=${senderPn ?? "-"} text=${text ? "yes" : "no"} media=${mediaKind ?? "-"} handle=${shouldHandle ? "yes" : "no"}`
             );
           }
 
@@ -159,7 +190,16 @@ export async function createWhatsAppSocket(
             );
           }
 
-          if (!(shouldHandle && remoteJid)) {
+          if (
+            !claimInboundDelivery(inboundDedupe, {
+              messageId,
+              remoteJid,
+              shouldHandle,
+            })
+          ) {
+            continue;
+          }
+          if (!remoteJid) {
             continue;
           }
 
@@ -171,7 +211,9 @@ export async function createWhatsAppSocket(
           try {
             await deps.onMessage({
               fromMe: Boolean(msg.key.fromMe),
+              inbound: msg,
               jid: remoteJid,
+              senderPn,
               text,
             });
           } catch (error) {
@@ -185,10 +227,9 @@ export async function createWhatsAppSocket(
     },
     stop() {
       stopped = true;
-      if (socket) {
-        socket.end(undefined);
-        socket = null;
-      }
+      const current = socket;
+      socket = null;
+      void disposeWhatsAppSocket(current);
     },
   };
 
@@ -199,8 +240,91 @@ function isVerboseLoggingEnabled(value: string | undefined): boolean {
   return value?.trim().toLowerCase() === "true";
 }
 
-function isSupportedUpsertType(type: string): boolean {
+export function isSupportedUpsertType(type: string): boolean {
   return type === "notify" || type === "append";
+}
+
+export function extractDisconnectStatusCode(
+  lastDisconnect: unknown
+): number | undefined {
+  if (!lastDisconnect || typeof lastDisconnect !== "object") {
+    return;
+  }
+
+  const record = lastDisconnect as {
+    error?: { output?: { statusCode?: unknown }; message?: unknown };
+    statusCode?: unknown;
+  };
+  const fromError = record.error?.output?.statusCode;
+  if (typeof fromError === "number") {
+    return fromError;
+  }
+
+  if (typeof record.statusCode === "number") {
+    return record.statusCode;
+  }
+}
+
+const INBOUND_DEDUPE_TTL_MS = 5 * 60 * 1000;
+
+export function createInboundMessageDedupe(ttlMs = INBOUND_DEDUPE_TTL_MS) {
+  const seen = new Map<string, number>();
+
+  return {
+    remember(id: string): boolean {
+      const now = Date.now();
+      for (const [key, seenAt] of seen) {
+        if (now - seenAt > ttlMs) {
+          seen.delete(key);
+        }
+      }
+
+      if (seen.has(id)) {
+        return false;
+      }
+
+      seen.set(id, now);
+      return true;
+    },
+  };
+}
+
+export function claimInboundDelivery(
+  dedupe: { remember: (id: string) => boolean },
+  input: {
+    messageId?: string | null;
+    remoteJid: string | null;
+    shouldHandle: boolean;
+  }
+): boolean {
+  if (!(input.shouldHandle && input.remoteJid)) {
+    return false;
+  }
+
+  const messageId = input.messageId?.trim();
+  if (!messageId) {
+    return true;
+  }
+
+  return dedupe.remember(`${input.remoteJid}:${messageId}`);
+}
+
+async function disposeWhatsAppSocket(target: WASocket | null): Promise<void> {
+  if (!target) {
+    return;
+  }
+
+  try {
+    target.ev.removeAllListeners();
+  } catch {
+    // Best-effort: Baileys versions differ on listener APIs.
+  }
+
+  try {
+    target.end(undefined);
+  } catch {
+    // Socket may already be closed.
+  }
 }
 
 function summarizeMissingTextPayload(msg: {

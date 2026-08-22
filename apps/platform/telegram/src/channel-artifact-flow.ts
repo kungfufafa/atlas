@@ -1,15 +1,21 @@
 import type { AtlasClient, RemoteChatSession } from "@atlas/client";
 import {
-  extractPairedTurnArtifacts,
+  extractTurnDeliverableArtifacts,
   formatArtifactShareFooter,
+  formatMissingAttachArtifactMessage,
   getMostRecentDeliverableArtifact,
   isAttachIntent,
+  isAttachOnlyCommand,
   mintDeliverableArtifacts,
   pushDeliverableArtifact,
 } from "@atlas/core";
 import type { Context } from "grammy";
 import type { TelegramRichMessenger } from "./rich-message";
-import { sendTelegramArtifactDocument } from "./send-artifact-document";
+import {
+  formatTelegramArtifactTooLargeMessage,
+  sendTelegramArtifactDocument,
+  TELEGRAM_ARTIFACT_DOCUMENT_MAX_BYTES,
+} from "./send-artifact-document";
 import type { SessionStore } from "./session-store";
 
 export async function maybeSendRequestedTelegramArtifactAttachment(input: {
@@ -30,25 +36,35 @@ export async function maybeSendRequestedTelegramArtifactAttachment(input: {
     input.sessionStore.getDeliverableArtifacts(input.conversationKey)
   );
   if (!artifact) {
+    if (isAttachOnlyCommand(input.attachUserText)) {
+      await input.messenger.sendPlain(formatMissingAttachArtifactMessage());
+    }
     return;
   }
 
-  const { data } = await input.client.readProfileArtifactContent(
-    input.profileId,
-    artifact.path
-  );
-  const result = await sendTelegramArtifactDocument(input.ctx, {
-    bytes: new Uint8Array(data),
-    filename: artifact.filename,
-  });
+  try {
+    const { data } = await input.client.readProfileArtifactContent(
+      input.profileId,
+      artifact.path
+    );
+    const result = await sendTelegramArtifactDocument(input.ctx, {
+      bytes: new Uint8Array(data),
+      filename: artifact.filename,
+    });
 
-  if (!result.ok && result.error) {
-    await input.messenger.sendPlain(result.error);
+    if (!result.ok && result.error) {
+      await input.messenger.sendPlain(result.error);
+    }
+  } catch (error) {
+    await input.messenger.sendPlain(
+      error instanceof Error ? error.message : "Failed to send the saved file."
+    );
   }
 }
 
 export async function deliverTelegramTurnArtifactShares(input: {
   client: AtlasClient;
+  ctx: Context;
   session: RemoteChatSession;
   conversationKey: string;
   profileId: string;
@@ -56,7 +72,7 @@ export async function deliverTelegramTurnArtifactShares(input: {
   messenger: TelegramRichMessenger;
 }): Promise<void> {
   const messages = await input.session.getMessages();
-  const paired = extractPairedTurnArtifacts(messages);
+  const paired = extractTurnDeliverableArtifacts(messages);
   if (paired.length === 0) {
     return;
   }
@@ -94,6 +110,36 @@ export async function deliverTelegramTurnArtifactShares(input: {
     deliverableArtifacts: registry,
   });
   await input.sessionStore.save();
+
+  for (const artifact of delivered) {
+    if (artifact.sizeBytes > TELEGRAM_ARTIFACT_DOCUMENT_MAX_BYTES) {
+      await input.messenger.sendPlain(
+        formatTelegramArtifactTooLargeMessage(artifact.sizeBytes)
+      );
+      continue;
+    }
+
+    try {
+      const { data } = await input.client.readProfileArtifactContent(
+        input.profileId,
+        artifact.path
+      );
+      const result = await sendTelegramArtifactDocument(input.ctx, {
+        bytes: new Uint8Array(data),
+        filename: artifact.filename,
+      });
+
+      if (!result.ok && result.error) {
+        await input.messenger.sendPlain(result.error);
+      }
+    } catch (error) {
+      await input.messenger.sendPlain(
+        error instanceof Error
+          ? error.message
+          : "Failed to send the saved file."
+      );
+    }
+  }
 
   const footer = formatArtifactShareFooter(delivered, {
     webPublicUrlConfigured,

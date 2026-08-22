@@ -39,6 +39,8 @@ describe("DEFAULT_AGENT_WORK_RULES", () => {
     expect(DEFAULT_AGENT_WORK_RULES).toContain("artifacts/");
     expect(DEFAULT_AGENT_WORK_RULES).not.toContain("create_profile");
     expect(DEFAULT_AGENT_WORK_RULES).not.toContain("create_tool");
+    expect(DEFAULT_AGENT_WORK_RULES).toMatch(/generic chatbot overlay/i);
+    expect(DEFAULT_AGENT_WORK_RULES).toMatch(/personal assistant/i);
   });
 });
 

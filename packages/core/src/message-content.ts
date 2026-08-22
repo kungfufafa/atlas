@@ -196,6 +196,24 @@ export function normalizeDocumentMediaType(
   return DOCUMENT_EXTENSION_MEDIA_TYPES[extension] ?? trimmed;
 }
 
+export const SUPPORTED_DOCUMENT_TYPE_LABEL =
+  "pdf, docx, xls, xlsx, xlsm, xlsb, csv, txt, or md";
+
+export function isSupportedDocumentMediaType(
+  mediaType: string,
+  filename: string
+): boolean {
+  return ALLOWED_DOCUMENT_MEDIA_TYPES.has(
+    normalizeDocumentMediaType(mediaType, filename)
+  );
+}
+
+export function isSupportedImageMediaType(mediaType: string): boolean {
+  const trimmed = mediaType.split(";")[0]?.trim().toLowerCase() ?? "";
+  const normalized = trimmed === "image/jpg" ? "image/jpeg" : trimmed;
+  return ALLOWED_IMAGE_MEDIA_TYPES.has(normalized);
+}
+
 function validateAttachmentBytes(
   data: string,
   maxBytes: number,

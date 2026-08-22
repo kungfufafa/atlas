@@ -15,6 +15,10 @@ export function buildMcpToolDefinitions(
   const usedNames = new Set<string>();
 
   for (const server of servers) {
+    if (!shouldExposeMcpServerTools(server)) {
+      continue;
+    }
+
     for (const cachedTool of server.cachedTools) {
       const name = uniqueLlmToolName(
         namespacedMcpToolName(server.name, cachedTool.name),
@@ -55,6 +59,12 @@ export function buildMcpToolDefinitions(
   }
 
   return tools;
+}
+
+export function shouldExposeMcpServerTools(
+  server: StoredMcpServerRecord
+): boolean {
+  return server.enabled !== false;
 }
 
 export function sanitizeLlmToolNamePart(name: string): string {

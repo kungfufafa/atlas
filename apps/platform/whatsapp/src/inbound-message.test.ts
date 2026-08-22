@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import {
+  extractInboundPhoneHint,
   extractInboundText,
+  inspectInboundWhatsAppMedia,
   isPrivateWhatsAppChat,
   isSelfWhatsAppChat,
   shouldHandleInboundMessage,
@@ -41,6 +43,71 @@ describe("inbound message routing", () => {
         { id: "6281379292556@s.whatsapp.net", lid: "236283431522503@lid" }
       )
     ).toBe(false);
+  });
+
+  test("prefers senderPn over participantPn for phone identity", () => {
+    expect(
+      extractInboundPhoneHint({
+        key: {
+          participantPn: "628111111111@s.whatsapp.net",
+          senderPn: "6281234567890@s.whatsapp.net",
+        },
+      })
+    ).toBe("6281234567890@s.whatsapp.net");
+    expect(
+      extractInboundPhoneHint({
+        key: { participantPn: "628111111111@s.whatsapp.net" },
+      })
+    ).toBe("628111111111@s.whatsapp.net");
+    expect(extractInboundPhoneHint({ key: {} })).toBeNull();
+  });
+
+  test("handles captionless documents and photos", () => {
+    expect(
+      shouldHandleInboundMessage(
+        {
+          key: { fromMe: false, remoteJid: "6281234567890@s.whatsapp.net" },
+          message: {
+            documentMessage: {
+              fileName: "report.pdf",
+              mimetype: "application/pdf",
+            },
+          },
+        },
+        undefined
+      )
+    ).toBe(true);
+    expect(
+      shouldHandleInboundMessage(
+        {
+          key: { fromMe: false, remoteJid: "6281234567890@s.whatsapp.net" },
+          message: { imageMessage: { mimetype: "image/jpeg" } },
+        },
+        undefined
+      )
+    ).toBe(true);
+    expect(
+      extractInboundText({
+        documentMessage: {
+          caption: "Summarize this",
+          fileName: "report.pdf",
+          mimetype: "application/pdf",
+        },
+      })
+    ).toBe("Summarize this");
+    expect(
+      inspectInboundWhatsAppMedia({
+        documentMessage: {
+          fileName: "report.pdf",
+          mimetype: "application/pdf",
+        },
+      })
+    ).toMatchObject({ filename: "report.pdf", kind: "document" });
+    expect(
+      inspectInboundWhatsAppMedia({
+        audioMessage: { mimetype: "audio/ogg", ptt: true },
+      })
+    ).toMatchObject({ kind: "audio" });
   });
 
   test("extracts text from ephemeral wrapped messages", () => {

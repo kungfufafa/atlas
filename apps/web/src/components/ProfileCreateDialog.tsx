@@ -232,30 +232,31 @@ function ProfileCreateDialogContent({
     dispatch({ type: "patch", values: { submitError: null } });
 
     try {
+      const avatarFile = avatarFileRef.current;
+      const attachment = avatarFile
+        ? await fileToImageAttachment(avatarFile)
+        : null;
+      if (avatarFile && !attachment) {
+        dispatch({
+          type: "patch",
+          values: {
+            submitError: "The selected image could not be read.",
+          },
+        });
+        return;
+      }
+
       const response = await createMutation.mutateAsync({
         id: profileIdTrimmed,
         name: form.name.trim(),
         systemPrompt: defaultCreatePrompt,
       });
 
-      const avatarFile = avatarFileRef.current;
-      if (avatarFile) {
-        const attachment = await fileToImageAttachment(avatarFile);
-
-        if (attachment) {
-          await uploadAvatarMutation.mutateAsync({
-            attachment,
-            profileId: response.profile.id,
-          });
-        } else {
-          dispatch({
-            type: "patch",
-            values: {
-              submitError:
-                "Profile created, but the selected image could not be read.",
-            },
-          });
-        }
+      if (attachment) {
+        await uploadAvatarMutation.mutateAsync({
+          attachment,
+          profileId: response.profile.id,
+        });
       }
 
       await Promise.all(

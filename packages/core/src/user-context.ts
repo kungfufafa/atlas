@@ -1,5 +1,7 @@
 export const USER_CONTEXT_TEMPLATE = `# About Me
 
+Who my Atlas assistant should know I am.
+
 - Name / nickname:
 - What you do:
 - Current projects:
@@ -7,6 +9,7 @@ export const USER_CONTEXT_TEMPLATE = `# About Me
 - How you like replies (concise, detailed, casual, formal):
 - Always:
 - Never:
+- People or orgs I work with:
 `;
 
 export function normalizeUserContextContent(

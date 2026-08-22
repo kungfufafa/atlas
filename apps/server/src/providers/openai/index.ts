@@ -258,13 +258,15 @@ function toOpenAIAssistantMessage(
   message: Extract<ChatMessage, { role: "assistant" }>
 ): Extract<OpenAIMessage, { role: "assistant" }> {
   const thinking = message.thinking?.trim();
+  const hasToolCalls = Boolean(message.toolCalls?.length);
 
   return {
-    content: message.content || null,
+    // DeepSeek / OpenCode Go reject `{ content: null }` unless tool_calls is set.
+    content: hasToolCalls ? message.content || null : (message.content ?? ""),
     role: "assistant",
     ...(thinking ? { reasoning_content: thinking } : {}),
-    ...(message.toolCalls?.length
-      ? { tool_calls: toOpenAIAssistantToolCalls(message.toolCalls) }
+    ...(hasToolCalls
+      ? { tool_calls: toOpenAIAssistantToolCalls(message.toolCalls ?? []) }
       : {}),
   };
 }

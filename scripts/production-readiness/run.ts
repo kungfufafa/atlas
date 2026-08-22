@@ -284,8 +284,8 @@ async function main() {
     "\n[Phase 73, 80] Running Chaos & Provider Degradation Recovery Tests..."
   );
   chaosInjector.configure({
-    provider5xxProbability: 0.25,
     rateLimit429Probability: 0.25,
+    serverError5xxProbability: 0.25,
   });
 
   const chaosBatch = await harness.runBatch(
@@ -385,19 +385,19 @@ async function main() {
     cancellationStress,
     cascadeTimeline,
     chaosResults: {
-      provider5xxRecovery: true,
-      providerTimeoutRecovery: true,
-      rateLimit429Recovery: true,
-      retrySafety: true,
+      provider5xxRecovery: chaosBatch.failed > 0,
+      providerTimeoutRecovery: false,
+      rateLimit429Recovery: chaosBatch.failed > 0,
+      retrySafety: false,
     },
     commitSha,
     concurrencyBaseline: batchResults,
     coreRegression: {
-      filesChecked: 1281,
-      goldenJourneys: "PASS (16 / 16 journeys passing)",
+      filesChecked: 0,
+      goldenJourneys: "NOT_RUN (use atlas:release-gate)",
       lintErrors: 0,
       testsFailed: 0,
-      testsPassed: 2298,
+      testsPassed: 0,
     },
     decision:
       localProdLikeRollback.passed && soak.status === "pass"
@@ -431,12 +431,16 @@ async function main() {
     `📄 Generated Reports:\n- JSON: ${paths.jsonPath}\n- Markdown: ${paths.mdPath}`
   );
   console.log("============================================================");
+  const ready =
+    soak.status === "pass" &&
+    leakAudit.passed &&
+    rollbackSimulation.passed &&
+    localProdLikeRollback.passed;
+
   console.log("============================================================");
   console.log(`ATLAS PRODUCTION OPERATIONS: ${reportData.decision}`);
-  console.log("CONTROLLED BETA: GO");
+  console.log(`CONTROLLED BETA: ${ready ? "GO" : "NO-GO"}`);
   console.log(`SOAK STABILITY: ${soak.status.toUpperCase()}`);
-  console.log("TARGETED CANCELLATION: VERIFIED");
-  console.log("USER/ORG ADMISSION: VERIFIED");
   console.log(
     `LEVEL 1 ROLLBACK SIMULATION: ${rollbackSimulation.status.toUpperCase()}`
   );
@@ -447,6 +451,10 @@ async function main() {
     `LEVEL 3 REAL STAGING DEPLOYMENT: ${stagingDeployment.status.toUpperCase()}`
   );
   console.log("============================================================");
+
+  if (!ready) {
+    process.exit(1);
+  }
 }
 
 main().catch((err) => {

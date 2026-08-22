@@ -13,7 +13,7 @@ import {
   isDemoLoginHost,
 } from "@/lib/demo-login";
 import { INVITE_PATH } from "@/lib/invite";
-import { SETUP_PATH } from "@/lib/navigation";
+import { SETUP_PATH, safeInternalPath } from "@/lib/navigation";
 import { ditherLogoSrc } from "@/lib/theme";
 
 function resolvePostAuthPath(
@@ -40,7 +40,9 @@ export function LoginPage() {
   const { resolvedTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: string } | null)?.from;
+  const from =
+    safeInternalPath((location.state as { from?: string } | null)?.from) ??
+    safeInternalPath(new URLSearchParams(location.search).get("from"));
 
   if (health == null && !healthError) {
     return (

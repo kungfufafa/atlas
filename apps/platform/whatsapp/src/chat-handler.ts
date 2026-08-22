@@ -11,16 +11,29 @@ import type { SendMessageInput } from "@atlas/core/contract";
 import { pickProfileForOrg } from "@atlas/core/profiles";
 import {
   normalizePairingCode,
+  normalizeWhatsAppUserJid,
   syncWhatsAppOwnerPairing,
 } from "@atlas/core/whatsapp-config";
-import type { WASocket } from "@whiskeysockets/baileys";
+import type { WAMessage, WASocket } from "@whiskeysockets/baileys";
 import {
   clearActiveStream,
   isAbortError,
   registerActiveStream,
   stopActiveStream,
 } from "./active-stream";
+import {
+  buildWhatsAppMediaInput,
+  downloadWhatsAppMedia,
+  PAIRING_MEDIA_REPLY,
+  UNSUPPORTED_MEDIA_REPLY,
+  type WhatsAppMediaDownload,
+} from "./attachments";
+import { buildWhatsAppAudioInput } from "./audio";
 import type { WhatsAppAuthStore } from "./auth-store";
+import {
+  deliverWhatsAppTurnArtifactShares,
+  maybeSendRequestedWhatsAppArtifactAttachment,
+} from "./channel-artifact-flow";
 import type { WhatsAppBridgeConfig } from "./config";
 import {
   formatError,
@@ -28,6 +41,7 @@ import {
   prepareWhatsAppReply,
   splitWhatsAppMessage,
 } from "./format";
+import { inspectInboundWhatsAppMedia } from "./inbound-message";
 import type { SessionStore } from "./session-store";
 import { WhatsAppTodoStatusMessage } from "./todo-status-message";
 import { createTypingLoop } from "./typing-indicator";
@@ -51,6 +65,7 @@ export interface ChatHandlerDeps {
   authStore: WhatsAppAuthStore;
   client: AtlasClient;
   config: WhatsAppBridgeConfig;
+  downloadMedia?: WhatsAppMediaDownload;
   fixedWorkspaceId?: string;
   getSocket: () => WASocket | null;
   orgStore: ChannelOrgStore;
@@ -66,6 +81,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     orgStore,
     getSocket,
     fixedWorkspaceId,
+    downloadMedia,
   } = deps;
   const helpText = formatHelpText({
     workspaceLocked: Boolean(fixedWorkspaceId),
@@ -73,19 +89,21 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
   async function handleMessage(data: {
     fromMe?: boolean;
+    inbound?: WAMessage | null;
     jid: string;
+    senderPn?: string | null;
     text: string;
   }): Promise<void> {
-    const { jid, text, fromMe } = data;
+    const { jid, text, fromMe, senderPn, inbound } = data;
+    const trimmed = text.trim();
+    const media = inspectInboundWhatsAppMedia(inbound?.message);
 
-    if (!(text && text.trim())) {
+    if (!(trimmed || media)) {
       return;
     }
 
-    const trimmed = text.trim();
-
-    if (isStopCommand(trimmed)) {
-      if (!stopActiveStream(jid)) {
+    if (trimmed && isStopCommand(trimmed)) {
+      if (!stopActiveStream(chatKey(jid))) {
         await sendText(jid, "Nothing to stop.");
       }
 
@@ -100,8 +118,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
-    if (!rateLimiter.isAllowed(jid)) {
-      if (rateLimiter.shouldSendCooldownNotice(jid)) {
+    if (!rateLimiter.isAllowed(chatKey(jid))) {
+      if (rateLimiter.shouldSendCooldownNotice(chatKey(jid))) {
         await sendText(
           jid,
           "You are sending messages too quickly. Please wait a moment before trying again."
@@ -110,10 +128,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
-    await withChatLock(jid, async () => {
+    await withChatLock(chatKey(jid), async () => {
       await authStore.reload();
       const fileConfig = authStore.getConfig();
-      let authorized = authStore.isAuthorized(jid);
+      await authStore.rememberSenderPn(jid, senderPn);
+      let authorized = authStore.isAuthorized(jid, { senderPn });
 
       if (!authorized && fromMe && fileConfig?.pairedJid) {
         await syncWhatsAppOwnerPairing({
@@ -123,7 +142,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           ownerLid: jid,
         });
         await authStore.reload();
-        authorized = authStore.isAuthorized(jid);
+        authorized = authStore.isAuthorized(jid, { senderPn });
       }
 
       if (!authorized) {
@@ -141,6 +160,15 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           return;
         }
 
+        if (
+          media &&
+          !trimmed.startsWith("/") &&
+          !looksLikePairingCodeAttempt(trimmed)
+        ) {
+          await sendText(jid, PAIRING_MEDIA_REPLY);
+          return;
+        }
+
         await handlePairing(jid, trimmed);
         return;
       }
@@ -150,18 +178,65 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         command === "/help" || command === "/start" || command === "/org";
 
       if (!bypassOrgGate) {
-        const orgReady = await ensureOrgReady(jid, trimmed);
+        const orgReady = await ensureOrgReady(chatKey(jid), trimmed);
         if (!orgReady) {
           return;
         }
       }
 
       if (trimmed.startsWith("/")) {
-        await handleCommand(jid, trimmed);
+        await handleCommand(chatKey(jid), jid, trimmed);
         return;
       }
 
-      await handleChatMessage(jid, { message: trimmed });
+      const mediaInput = await tryBuildMediaInput(jid, inbound);
+      if (mediaInput === "reject") {
+        return;
+      }
+
+      if (mediaInput) {
+        await handleChatMessage(
+          jid,
+          {
+            ...mediaInput,
+            message: trimmed || mediaInput.message,
+          },
+          inbound
+        );
+        return;
+      }
+
+      if (media?.kind === "audio") {
+        const audioInput = await tryBuildAudioInput(jid, inbound);
+        if (audioInput === "reject") {
+          return;
+        }
+
+        if (audioInput) {
+          await handleChatMessage(
+            jid,
+            {
+              ...audioInput,
+              message: trimmed
+                ? `${audioInput.message}\n\n${trimmed}`
+                : audioInput.message,
+            },
+            inbound
+          );
+          return;
+        }
+      }
+
+      if (media?.kind === "unsupported" && !trimmed) {
+        await sendText(jid, UNSUPPORTED_MEDIA_REPLY);
+        return;
+      }
+
+      if (!trimmed) {
+        return;
+      }
+
+      await handleChatMessage(jid, { message: trimmed }, inbound);
     });
   }
 
@@ -190,52 +265,56 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
-    const result = await authStore.tryPair(text, jid);
+    const result = await authStore.tryPair(text, chatKey(jid));
     await sendText(jid, result.message);
   }
 
-  async function handleCommand(jid: string, text: string): Promise<void> {
+  async function handleCommand(
+    conversationKey: string,
+    sendJid: string,
+    text: string
+  ): Promise<void> {
     const command = parseCommand(text);
 
     switch (command) {
       case "/start":
       case "/help":
-        await sendText(jid, helpText);
+        await sendText(sendJid, helpText);
         return;
 
       case "/clear": {
-        const session = await resolveSession(jid);
+        const session = await resolveSession(conversationKey);
         await session.clear();
-        await sendText(jid, "History cleared.");
+        await sendText(sendJid, "History cleared.");
         return;
       }
 
       case "/compact": {
-        const session = await resolveSession(jid);
+        const session = await resolveSession(conversationKey);
         const result = await session.compact({ force: true });
         await sendText(
-          jid,
+          sendJid,
           `Compacted (${result.action}). Messages: ${result.messagesAfter}.`
         );
         return;
       }
 
       case "/new": {
-        await createAndBindSession(jid);
-        await sendText(jid, "Started a new conversation.");
+        await createAndBindSession(conversationKey);
+        await sendText(sendJid, "Started a new conversation.");
         return;
       }
 
       case "/status":
-        await replyStatus(jid);
+        await replyStatus(sendJid);
         return;
 
       case "/org":
-        await handleOrgCommand(jid, text);
+        await handleOrgCommand(conversationKey, sendJid, text);
         return;
 
       default:
-        await sendText(jid, "Unknown command. Try /help");
+        await sendText(sendJid, "Unknown command. Try /help");
     }
   }
 
@@ -282,10 +361,14 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     return true;
   }
 
-  async function handleOrgCommand(jid: string, text: string): Promise<void> {
+  async function handleOrgCommand(
+    conversationKey: string,
+    sendJid: string,
+    text: string
+  ): Promise<void> {
     if (fixedWorkspaceId) {
       await sendText(
-        jid,
+        sendJid,
         "This WhatsApp integration belongs to one workspace and cannot switch workspaces."
       );
       return;
@@ -294,46 +377,122 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const { orgs } = await client.listUserOrgs();
 
     if (orgs.length === 0) {
-      await sendText(jid, "No organizations are configured yet.");
+      await sendText(sendJid, "No organizations are configured yet.");
       return;
     }
 
     const arg = text.trim().split(/\s+/).slice(1).join(" ");
     if (!arg) {
       await sendText(
-        jid,
-        formatOrgSelectionPrompt(orgs, orgStore.get(jid)?.orgId)
+        sendJid,
+        formatOrgSelectionPrompt(orgs, orgStore.get(conversationKey)?.orgId)
       );
       return;
     }
 
     const picked = findOrgBySelectionInput(arg, orgs);
     if (!picked) {
-      await sendText(jid, "Unknown organization. Send /org to see the list.");
+      await sendText(
+        sendJid,
+        "Unknown organization. Send /org to see the list."
+      );
       return;
     }
 
-    const previousOrgId = orgStore.get(jid)?.orgId;
-    orgStore.set(jid, picked.id);
+    const previousOrgId = orgStore.get(conversationKey)?.orgId;
+    orgStore.set(conversationKey, picked.id);
     await orgStore.save();
     client.setOrgId(picked.id);
 
     if (previousOrgId && previousOrgId !== picked.id) {
-      sessionStore.delete(jid);
+      sessionStore.delete(conversationKey);
       await sessionStore.save();
     }
 
-    await sendText(jid, formatOrgSwitchConfirmation(picked.name));
+    await sendText(sendJid, formatOrgSwitchConfirmation(picked.name));
+  }
+
+  async function tryBuildMediaInput(
+    jid: string,
+    inbound: WAMessage | null | undefined
+  ): Promise<SendMessageInput | "reject" | null> {
+    if (!inbound?.message) {
+      return null;
+    }
+
+    const media = inspectInboundWhatsAppMedia(inbound.message);
+    if (!media || media.kind === "unsupported" || media.kind === "audio") {
+      return null;
+    }
+
+    const result = await buildWhatsAppMediaInput(inbound, (message) =>
+      downloadMedia
+        ? downloadMedia(message)
+        : downloadWhatsAppMedia(message, getSocket())
+    );
+
+    if (!result) {
+      return null;
+    }
+
+    if (result.kind === "reject") {
+      await sendText(jid, result.message);
+      return "reject";
+    }
+
+    return result.input;
+  }
+
+  async function tryBuildAudioInput(
+    jid: string,
+    inbound: WAMessage | null | undefined
+  ): Promise<SendMessageInput | "reject" | null> {
+    if (!inbound?.message) {
+      return null;
+    }
+
+    const result = await buildWhatsAppAudioInput(
+      inbound,
+      (message) =>
+        downloadMedia
+          ? downloadMedia(message)
+          : downloadWhatsAppMedia(message, getSocket()),
+      (input) => client.transcribeAudio(input)
+    );
+
+    if (result.kind === "reject") {
+      await sendText(jid, result.message);
+      return "reject";
+    }
+
+    return result.input;
   }
 
   async function handleChatMessage(
     jid: string,
-    input: SendMessageInput
+    input: SendMessageInput,
+    inbound?: WAMessage | null
   ): Promise<void> {
-    const session = await resolveSession(jid);
+    const conversationKey = chatKey(jid);
+    const session = await resolveSession(conversationKey);
+    const profileId = sessionStore.get(conversationKey)?.profileId;
+
+    if (profileId) {
+      await maybeSendRequestedWhatsAppArtifactAttachment({
+        attachUserText: input.message,
+        client,
+        conversationKey,
+        getSocket,
+        jid,
+        profileId,
+        sendText,
+        sessionStore,
+      });
+    }
+
     const typingLoop = createTypingLoop(getSocket(), jid);
     const todoStatus = new WhatsAppTodoStatusMessage(getSocket(), jid);
-    const signal = registerActiveStream(jid);
+    const signal = registerActiveStream(conversationKey);
     let reply = "";
 
     typingLoop.start();
@@ -366,7 +525,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
       if (signal.aborted) {
         if (reply.trim()) {
-          await sendText(jid, reply.trim());
+          await sendText(jid, reply.trim(), { quoted: inbound });
         }
 
         await sendText(jid, "Stopped.");
@@ -376,7 +535,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       if (isAbortError(error)) {
         await todoStatus.stop();
         if (reply.trim()) {
-          await sendText(jid, reply.trim());
+          await sendText(jid, reply.trim(), { quoted: inbound });
         }
 
         await sendText(jid, "Stopped.");
@@ -387,16 +546,28 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       await sendText(jid, formatError(error));
       return;
     } finally {
-      clearActiveStream(jid);
+      clearActiveStream(conversationKey);
       typingLoop.stop();
     }
 
     if (reply.trim()) {
-      await sendText(jid, reply.trim());
-      return;
+      await sendText(jid, reply.trim(), { quoted: inbound });
+    } else {
+      await sendText(jid, "(empty reply)");
     }
 
-    await sendText(jid, "(empty reply)");
+    if (profileId) {
+      await deliverWhatsAppTurnArtifactShares({
+        client,
+        conversationKey,
+        getSocket,
+        jid,
+        profileId,
+        sendText: (target, text) => sendText(target, text, { raw: true }),
+        session,
+        sessionStore,
+      });
+    }
   }
 
   async function replyStatus(jid: string): Promise<void> {
@@ -474,24 +645,43 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     return session;
   }
 
-  async function sendText(jid: string, text: string): Promise<void> {
+  async function sendText(
+    jid: string,
+    text: string,
+    options?: { quoted?: WAMessage | null; raw?: boolean }
+  ): Promise<void> {
     const socket = getSocket();
     if (!socket) {
+      console.error("WhatsApp is not connected; dropping outbound text.");
       return;
     }
 
-    const prepared = prepareWhatsAppReply(text);
+    const prepared = options?.raw ? text.trim() : prepareWhatsAppReply(text);
     if (!prepared) {
       return;
     }
 
-    for (const chunk of splitWhatsAppMessage(prepared)) {
-      await socket.sendMessage(jid, { text: chunk });
+    const chunks = splitWhatsAppMessage(prepared);
+    for (const [index, chunk] of chunks.entries()) {
+      await socket.sendMessage(
+        jid,
+        { text: chunk },
+        index === 0 && options?.quoted ? { quoted: options.quoted } : undefined
+      );
     }
   }
 
-  return (data: { fromMe?: boolean; jid: string; text: string }) =>
-    client.isolateOrgId(() => handleMessage(data));
+  return (data: {
+    fromMe?: boolean;
+    inbound?: WAMessage | null;
+    jid: string;
+    senderPn?: string | null;
+    text: string;
+  }) => client.isolateOrgId(() => handleMessage(data));
+}
+
+function chatKey(jid: string): string {
+  return normalizeWhatsAppUserJid(jid);
 }
 
 function parseCommand(text: string): string {

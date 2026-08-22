@@ -13,6 +13,8 @@ import { syncWhatsAppOwnerPairing } from "@atlas/core/whatsapp-config";
 import {
   clearWhatsAppQrCode,
   clearWhatsAppWorkerHeartbeat,
+  isWhatsAppHeartbeatAlive,
+  readWhatsAppWorkerHeartbeat,
   writeWhatsAppQrCode,
   writeWhatsAppWorkerHeartbeat,
 } from "@atlas/core/whatsapp-worker";
@@ -56,6 +58,20 @@ registerCleanupHandlers(() => {
 
 try {
   const workspaceId = process.env.ATLAS_WORKSPACE_ID?.trim() || undefined;
+  const existingHeartbeat = await readWhatsAppWorkerHeartbeat();
+
+  if (
+    existingHeartbeat &&
+    existingHeartbeat.pid !== process.pid &&
+    isWhatsAppHeartbeatAlive(existingHeartbeat)
+  ) {
+    console.error(
+      `Another Atlas WhatsApp bridge is already running (pid ${existingHeartbeat.pid}). ` +
+        "Stop the existing bridge worker or disable it in the dashboard before starting a new one."
+    );
+    process.exit(1);
+  }
+
   const config = await loadConfig(process.env, workspaceId);
   const { serverUrl, spawnedChild: child } = await ensureServerRunning();
   spawnedChild = child;
@@ -114,6 +130,9 @@ try {
       persistWorkerHeartbeat();
     },
     onMessage: handleMessage,
+    onPhoneNumberShare: (lid, phoneJid) => {
+      void authStore.rememberSenderPn(lid, phoneJid);
+    },
     onQr: (qr) => {
       void writeWhatsAppQrCode(qr);
     },

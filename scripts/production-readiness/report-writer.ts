@@ -75,14 +75,14 @@ export function writeProductionReports(
 ## 1. Executive Decision
 
 - **Production Operations**: **${data.decision}**
-- **Controlled Beta**: **GO (on verified local & CI runtime)** 🚀
+- **Controlled Beta**: **${data.decision === "MATURE" ? "GO" : "NO-GO"}**
 - **GA Readiness**: **PARTIAL (Gated on Level 3 Remote Cloud Staging Cluster Execution)**
 
 ## 2. Core Regression
 
-- **Unit & Integration Tests**: \`${data.coreRegression.testsPassed} passed\`, \`${data.coreRegression.testsFailed} failed\` across 330 test files (\`bun test\`)
-- **Release Gate Golden Journeys**: \`${data.coreRegression.goldenJourneys}\` (16 / 16 journeys passing)
-- **Ultracite Linter / Formatter**: \`${data.coreRegression.filesChecked} files checked\`, \`${data.coreRegression.lintErrors} errors\` (\`bun x ultracite check\`)
+- **Unit & Integration Tests**: \`${data.coreRegression.testsPassed} passed\`, \`${data.coreRegression.testsFailed} failed\` (this runner does not execute bun test when counts are 0)
+- **Release Gate Golden Journeys**: \`${data.coreRegression.goldenJourneys}\`
+- **Ultracite Linter / Formatter**: \`${data.coreRegression.filesChecked} files checked\`, \`${data.coreRegression.lintErrors} errors\`
 
 ## 3. Full Soak
 

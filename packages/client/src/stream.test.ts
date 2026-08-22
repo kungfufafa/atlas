@@ -144,6 +144,15 @@ describe("readStreamEvents", () => {
     await expect(pending).rejects.toMatchObject({ name: "AbortError" });
   });
 
+  test("accepts a done event with an empty reply", async () => {
+    await expect(
+      readStreamEvents(
+        streamFromChunks(['data: {"type":"done","reply":""}\n\n']),
+        { onChunk: () => {} }
+      )
+    ).resolves.toBe("");
+  });
+
   test("surfaces server error events", async () => {
     await expect(
       readStreamEvents(

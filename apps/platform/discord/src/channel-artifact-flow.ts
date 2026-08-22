@@ -1,7 +1,7 @@
 import type { AtlasClient, RemoteChatSession } from "@atlas/client";
 import {
   type DeliverableChannelArtifact,
-  extractPairedTurnArtifacts,
+  extractTurnDeliverableArtifacts,
   formatArtifactShareFooter,
   formatMissingAttachArtifactMessage,
   isAttachOnlyCommand,
@@ -9,6 +9,7 @@ import {
   pushDeliverableArtifact,
   resolveArtifactForAttach,
 } from "@atlas/core";
+import { formatDiscordAttachmentSizeLimitMessage } from "@atlas/core/discord-attachment";
 import type { TextBasedChannel } from "discord.js";
 import type { DiscordMessenger } from "./messenger";
 import {
@@ -23,10 +24,10 @@ export async function uploadDiscordArtifactFromToolResult(input: {
   messenger: DiscordMessenger;
   profileId: string;
   result: unknown;
-}): Promise<boolean> {
+}): Promise<string | null> {
   const artifact = parseSendDiscordArtifactResult(input.result);
   if (!artifact) {
-    return false;
+    return null;
   }
 
   try {
@@ -42,17 +43,17 @@ export async function uploadDiscordArtifactFromToolResult(input: {
 
     if (!result.ok && result.error) {
       await input.messenger.send(result.error);
-      return false;
+      return null;
     }
 
-    return result.ok;
+    return result.ok ? artifact.path : null;
   } catch (error) {
     await input.messenger.send(
       error instanceof Error
         ? error.message
         : "Failed to read the artifact for attachment."
     );
-    return false;
+    return null;
   }
 }
 
@@ -171,9 +172,10 @@ export async function deliverDiscordTurnArtifactShares(input: {
   profileId: string;
   sessionStore: SessionStore;
   messenger: DiscordMessenger;
+  skipPaths?: Iterable<string>;
 }): Promise<void> {
   const messages = await input.session.getMessages();
-  const paired = extractPairedTurnArtifacts(messages);
+  const paired = extractTurnDeliverableArtifacts(messages);
   if (paired.length === 0) {
     return;
   }
@@ -212,13 +214,27 @@ export async function deliverDiscordTurnArtifactShares(input: {
   });
   await input.sessionStore.save();
 
+  const alreadyUploaded = new Set(input.skipPaths ?? []);
+
   for (const artifact of delivered) {
-    await tryUploadDiscordArtifact({
+    if (alreadyUploaded.has(artifact.path)) {
+      continue;
+    }
+
+    const uploaded = await tryUploadDiscordArtifact({
       artifact,
       channel: input.channel,
       client: input.client,
       profileId: input.profileId,
     });
+
+    if (!(uploaded || artifact.shareUrl || artifact.sharePath)) {
+      const error =
+        artifact.sizeBytes > DISCORD_ARTIFACT_ATTACHMENT_MAX_BYTES
+          ? formatDiscordAttachmentSizeLimitMessage(artifact.sizeBytes)
+          : `Failed to send ${artifact.filename}.`;
+      await input.messenger.send(error);
+    }
   }
 
   // Always post share links (like Telegram); attachment upload is additive.

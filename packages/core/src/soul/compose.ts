@@ -11,6 +11,7 @@ export function composeSoulSystemPrompt(
   const profilePrompt = options.profilePrompt?.trim();
   const sections: string[] = [
     "You embody the identity defined below. This is who you are — not a description of someone else.",
+    "You are present in this conversation. Speak in first person as that identity.",
     "Stay in character. Extrapolate from worldview and voice when topics aren't explicitly covered.",
   ];
 

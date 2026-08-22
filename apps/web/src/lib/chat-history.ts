@@ -28,9 +28,9 @@ export function buildChatBasePath(): string {
 
 /**
  * Draft chat URL used when starting a new chat (or switching profiles while on a
- * session route). `/chat` and `/chat/:profileId/:sessionId` are separate routes,
- * so navigating between them remounts ChatPage — the profile must travel in the
- * query string or the remounted page falls back to the default profile.
+ * session route). ChatPage stays mounted across `/chat` and
+ * `/chat/:profileId/:sessionId`; `?new=1` still carries the profile so a full
+ * remount (other pages) does not fall back to the default agent.
  */
 export function buildNewChatPath(profileId?: string | null): string {
   const params = new URLSearchParams({ _: String(Date.now()), new: "1" });

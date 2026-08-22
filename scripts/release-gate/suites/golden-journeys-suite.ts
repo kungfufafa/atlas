@@ -2,6 +2,33 @@ import type { BrowserHarness } from "../browser-harness";
 import type { ReleaseGateCheck } from "../decision-engine";
 import type { TestTenantData } from "../test-factories";
 
+async function requireAssistantTokens(
+  page: {
+    textContent: (selector: string) => Promise<string | null>;
+    waitForFunction: (
+      fn: (expected: string[]) => boolean,
+      arg: string[],
+      options: { timeout: number }
+    ) => Promise<unknown>;
+  },
+  tokens: string[]
+): Promise<void> {
+  await page.waitForFunction(
+    (expected: string[]) => {
+      const text = document.body.innerText;
+      return expected.some((token) => text.includes(token));
+    },
+    tokens,
+    { timeout: 25_000 }
+  );
+  const content = (await page.textContent("body")) as string | null;
+  if (!tokens.some((token) => content?.includes(token))) {
+    throw new Error(
+      `Assistant reply missing expected tokens: ${tokens.join(", ")}`
+    );
+  }
+}
+
 export async function runGoldenJourneysSuite(
   browserHarness: BrowserHarness,
   serverBaseUrl: string,
@@ -60,25 +87,11 @@ export async function runGoldenJourneysSuite(
     "Journey A: Simple Answer",
     async ({ page, sendMessage, screenshot }) => {
       await sendMessage("Explain what a vector database is.");
-      await page.waitForFunction(
-        () =>
-          document.body.innerText.includes("embeddings") ||
-          document.body.innerText.includes("approximate nearest neighbor") ||
-          document.body.innerText.includes("ANN") ||
-          document.body.innerText.includes("HNSW"),
-        undefined,
-        { timeout: 25_000 }
-      );
-      await page.waitForTimeout(500);
-      const content = await page.textContent("body");
-      if (
-        !(
-          content?.includes("embeddings") ||
-          content?.includes("vector database")
-        )
-      ) {
-        throw new Error("Vector database definition not found in response");
-      }
+      await requireAssistantTokens(page, [
+        "HNSW",
+        "embeddings",
+        "approximate nearest neighbor",
+      ]);
       await screenshot("journey_a_simple_answer.png");
     }
   );
@@ -91,19 +104,7 @@ export async function runGoldenJourneysSuite(
       await sendMessage(
         "Search the web for the official Bun documentation and tell me the command used to install a package."
       );
-      await page.waitForFunction(
-        () =>
-          document.body.innerText.toLowerCase().includes("bun add") ||
-          document.body.innerText.toLowerCase().includes("bun.sh") ||
-          document.body.innerText.toLowerCase().includes("package"),
-        undefined,
-        { timeout: 25_000 }
-      );
-      await page.waitForTimeout(500);
-      const content = await page.textContent("body");
-      if (!content?.toLowerCase().includes("bun")) {
-        throw new Error("Fresh web retrieval content missing");
-      }
+      await requireAssistantTokens(page, ["bun add"]);
       await screenshot("journey_b_fresh_web.png");
     }
   );
@@ -116,15 +117,11 @@ export async function runGoldenJourneysSuite(
       await sendMessage(
         "Research three competitors, compare pricing, security, integrations and enterprise positioning."
       );
-      await page.waitForFunction(
-        () =>
-          document.body.innerText.includes("Research Report") ||
-          document.body.innerText.includes("OpenAI") ||
-          document.body.innerText.includes("Anthropic") ||
-          document.body.innerText.includes("Researching"),
-        undefined,
-        { timeout: 25_000 }
-      );
+      await requireAssistantTokens(page, [
+        "Research Report",
+        "OpenAI",
+        "Anthropic",
+      ]);
       await screenshot("journey_c_deep_research.png");
     }
   );
@@ -137,15 +134,7 @@ export async function runGoldenJourneysSuite(
       await sendMessage(
         "Turn that research into a board-ready 8-slide presentation."
       );
-      await page.waitForFunction(
-        () =>
-          document.body.innerText.includes("competitive_analysis.pptx") ||
-          document.body.innerText.includes("atlas_overview.pptx") ||
-          document.body.innerText.includes("presentation") ||
-          document.body.innerText.includes("Building presentation"),
-        undefined,
-        { timeout: 25_000 }
-      );
+      await requireAssistantTokens(page, ["competitive_analysis.pptx"]);
       await screenshot("journey_d_presentation.png");
     }
   );
@@ -156,18 +145,12 @@ export async function runGoldenJourneysSuite(
     "Journey E: Artifact Revision",
     async ({ page, sendMessage, screenshot }) => {
       await sendMessage("Make a presentation about Atlas.");
-      await page.waitForFunction(
-        () =>
-          document.body.innerText.includes("atlas_overview.pptx") ||
-          document.body.innerText.includes("Building presentation") ||
-          document.body.innerText.includes("presentation"),
-        undefined,
-        { timeout: 25_000 }
-      );
-
-      // Follow-up revision
+      await requireAssistantTokens(page, ["atlas_overview.pptx"]);
       await sendMessage("Make slide 4 more visual and cut the text by half.");
-      await page.waitForTimeout(2000);
+      await requireAssistantTokens(page, [
+        "atlas_overview.pptx",
+        "executive summary",
+      ]);
       await screenshot("journey_e_artifact_revision.png");
     }
   );
@@ -178,17 +161,9 @@ export async function runGoldenJourneysSuite(
     "Journey F: Spreadsheet",
     async ({ page, sendMessage, screenshot }) => {
       await sendMessage("Create a financial model from these assumptions.");
-      await page.waitForFunction(
-        () =>
-          document.body.innerText.includes("financial_model.xlsx") ||
-          document.body.innerText.includes("Financial model") ||
-          document.body.innerText.includes("Creating spreadsheet"),
-        undefined,
-        { timeout: 25_000 }
-      );
-
+      await requireAssistantTokens(page, ["financial_model.xlsx"]);
       await sendMessage("Add a downside case.");
-      await page.waitForTimeout(2000);
+      await requireAssistantTokens(page, ["scenario projections"]);
       await screenshot("journey_f_spreadsheet.png");
     }
   );
@@ -201,15 +176,7 @@ export async function runGoldenJourneysSuite(
       await sendMessage(
         "Open the pricing page and check which plan has SSO and audit logs."
       );
-      await page.waitForFunction(
-        () =>
-          document.body.innerText.includes("Enterprise Plan") ||
-          document.body.innerText.includes("SSO") ||
-          document.body.innerText.includes("pricing.example.com") ||
-          document.body.innerText.includes("Browsing"),
-        undefined,
-        { timeout: 25_000 }
-      );
+      await requireAssistantTokens(page, ["Enterprise Plan"]);
       await screenshot("journey_g_browser_agent.png");
     }
   );
@@ -222,17 +189,9 @@ export async function runGoldenJourneysSuite(
       await sendMessage(
         "For future presentations, keep them concise and executive-friendly."
       );
-      await page.waitForFunction(
-        () =>
-          document.body.innerText.includes("saved your preference") ||
-          document.body.innerText.includes("executive-friendly") ||
-          document.body.innerText.includes("Updating memory"),
-        undefined,
-        { timeout: 25_000 }
-      );
-
+      await requireAssistantTokens(page, ["saved your preference"]);
       await sendMessage("How should you present technical explanations?");
-      await page.waitForTimeout(2000);
+      await requireAssistantTokens(page, ["saved preferences"]);
       await screenshot("journey_h_memory.png");
     }
   );
@@ -243,14 +202,7 @@ export async function runGoldenJourneysSuite(
     "Journey I: History Retrieval",
     async ({ page, sendMessage, screenshot }) => {
       await sendMessage("When did I say Apollo launches?");
-      await page.waitForFunction(
-        () =>
-          document.body.innerText.includes("October 12") ||
-          document.body.innerText.includes("Searching previous chats") ||
-          document.body.innerText.includes("Apollo"),
-        undefined,
-        { timeout: 25_000 }
-      );
+      await requireAssistantTokens(page, ["October 12"]);
       await screenshot("journey_i_history_retrieval.png");
     }
   );
@@ -261,7 +213,7 @@ export async function runGoldenJourneysSuite(
     "Journey J: Approval",
     async ({ page, sendMessage, screenshot }) => {
       await sendMessage("Place the order for Atlas Pro.");
-      await page.waitForTimeout(2000);
+      await requireAssistantTokens(page, ["Confirmation #ORD-9821"]);
       await screenshot("journey_j_approval.png");
     }
   );
@@ -283,7 +235,7 @@ export async function runGoldenJourneysSuite(
         await page.waitForTimeout(400);
       }
       await sendMessage("What is 2 + 2?");
-      await page.waitForTimeout(1500);
+      await requireAssistantTokens(page, ["4"]);
       await screenshot("journey_k_cancellation.png");
     }
   );
@@ -296,15 +248,10 @@ export async function runGoldenJourneysSuite(
       await sendMessage(
         "Fetch data from broken-source.example.com and alternative-source.com."
       );
-      await page.waitForFunction(
-        () =>
-          document.body.innerText.includes("continued with the others") ||
-          document.body.innerText.includes("couldn't reach") ||
-          document.body.innerText.includes("Reading sources") ||
-          document.body.innerText.includes("broken-source"),
-        undefined,
-        { timeout: 25_000 }
-      );
+      await requireAssistantTokens(page, [
+        "couldn't reach",
+        "continued with the others",
+      ]);
       await screenshot("journey_l_failure_recovery.png");
     }
   );
@@ -315,14 +262,7 @@ export async function runGoldenJourneysSuite(
     "Journey M: Generated Office Artifact",
     async ({ page, sendMessage, screenshot }) => {
       await sendMessage("Create a 3-slide presentation about Atlas.");
-      await page.waitForFunction(
-        () =>
-          document.body.innerText.includes("atlas_overview.pptx") ||
-          document.body.innerText.includes("Atlas Architecture") ||
-          document.body.innerText.includes("presentation"),
-        undefined,
-        { timeout: 25_000 }
-      );
+      await requireAssistantTokens(page, ["atlas_overview.pptx"]);
       await screenshot("journey_m_generated_office.png");
     }
   );
@@ -335,7 +275,16 @@ export async function runGoldenJourneysSuite(
       await page.goto(`${serverBaseUrl}/chat`, {
         waitUntil: "domcontentloaded",
       });
-      await page.waitForTimeout(1000);
+      await page.locator("textarea").first().waitFor({
+        state: "visible",
+        timeout: 10_000,
+      });
+      const fileInput = page.locator('input[type="file"]').first();
+      if ((await fileInput.count()) === 0) {
+        throw new Error(
+          "Chat has no file upload control; uploaded-office journey was not exercised."
+        );
+      }
       await screenshot("journey_n_uploaded_office.png");
     }
   );
@@ -348,7 +297,10 @@ export async function runGoldenJourneysSuite(
       await sendMessage(
         "Research our competitors, check their current pricing pages directly, summarize the findings, and build a spreadsheet plus presentation."
       );
-      await page.waitForTimeout(2000);
+      await requireAssistantTokens(page, [
+        "competitive_analysis.pptx",
+        "financial_model.xlsx",
+      ]);
       await screenshot("journey_o_multi_capability.png");
     }
   );
@@ -361,7 +313,7 @@ export async function runGoldenJourneysSuite(
       await sendMessage(
         "Update the deck with the pricing changes you found and add the source links to the appendix."
       );
-      await page.waitForTimeout(2000);
+      await requireAssistantTokens(page, ["appendix"]);
       await screenshot("journey_p_follow_up_continuity.png");
     }
   );

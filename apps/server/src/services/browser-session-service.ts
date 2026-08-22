@@ -7,6 +7,7 @@ import type {
   BrowserToolOutput,
   InteractiveElement,
 } from "@atlas/core/browser/browser-types";
+import { isPrivateOrReservedIp } from "@atlas/core/tools/web-fetch";
 import {
   type Browser,
   type BrowserContext,
@@ -28,23 +29,199 @@ const MAX_CONTEXTS = 20;
 const ACTION_TIMEOUT_MS = 15_000;
 const NAV_TIMEOUT_MS = 30_000;
 
+export const BROWSER_CHROMIUM_LAUNCH_ARGS = [
+  "--no-sandbox",
+  "--disable-setuid-sandbox",
+  "--disable-dev-shm-usage",
+  "--disable-popup-blocking",
+  "--disable-blink-features=AutomationControlled",
+] as const;
+
+export const BROWSER_USER_AGENT =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36";
+
+export const BROWSER_DEFAULT_LOCALE = "en-US";
+
+export function isHttp2ProtocolError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /ERR_HTTP2|ERR_HTTP2_PROTOCOL_ERROR|HTTP2_PROTOCOL_ERROR/i.test(
+    message
+  );
+}
+
+export function isRetryableBrowserNavigationError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /ERR_HTTP2|ERR_CONNECTION_RESET|ERR_CONNECTION_CLOSED|ERR_HTTP_RESPONSE_CODE_FAILURE|PROTOCOL_ERROR|Timeout \d+ms exceeded|TimeoutError/i.test(
+    message
+  );
+}
+
+export function wrapBrowserNavigationError(url: string, error: unknown): Error {
+  const message = error instanceof Error ? error.message : String(error);
+  return new Error(`Browser navigation failed for ${url}: ${message}`);
+}
+
+export function shouldLaunchHeadlessBrowser(
+  env: NodeJS.ProcessEnv = process.env
+): boolean {
+  const headed = env.ATLAS_BROWSER_HEADED?.trim().toLowerCase();
+  if (headed === "1" || headed === "true") {
+    return false;
+  }
+  return true;
+}
+
+export function resolveBrowserLocale(
+  env: NodeJS.ProcessEnv = process.env
+): string {
+  const configured = env.ATLAS_BROWSER_LOCALE?.trim();
+  return configured || BROWSER_DEFAULT_LOCALE;
+}
+
+export function browserAcceptLanguageForLocale(locale: string): string {
+  const primary = locale.replace(/_/g, "-");
+  const lang = primary.split("-")[0] ?? primary;
+  if (lang.toLowerCase() === "en") {
+    return `${primary},en;q=0.9`;
+  }
+  return `${primary},${lang};q=0.9,en-US;q=0.8,en;q=0.7`;
+}
+
+export function browserLaunchArgs(
+  options: { headed?: boolean; http1?: boolean } = {}
+): string[] {
+  return [
+    ...BROWSER_CHROMIUM_LAUNCH_ARGS,
+    ...(options.http1 ? ["--disable-http2"] : []),
+    ...(options.headed ? ["--window-position=-2400,-2400"] : []),
+  ];
+}
+
+export async function assertBrowserNavigationUrl(
+  targetUrl: string
+): Promise<void> {
+  let parsed: URL;
+  try {
+    parsed = new URL(targetUrl);
+  } catch {
+    throw new Error(`Invalid URL: ${targetUrl}`);
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error(`Unsupported protocol: ${parsed.protocol}`);
+  }
+
+  const hostname = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  const portNum = Number(parsed.port);
+  const isTestPort =
+    Number.isInteger(portNum) && portNum >= 3000 && portNum <= 65_535;
+  const isLoopbackHost =
+    hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+
+  // Local fixture servers used by e2e / Playwright tests.
+  if (isLoopbackHost && isTestPort) {
+    return;
+  }
+
+  if (isIP(hostname)) {
+    if (isPrivateOrReservedIp(hostname)) {
+      throw new Error(
+        `Access to private address ${hostname} is blocked for security.`
+      );
+    }
+    return;
+  }
+
+  if (isLoopbackHost) {
+    throw new Error(
+      `Access to private address ${hostname} is blocked for security.`
+    );
+  }
+
+  let records: { address: string }[];
+  try {
+    records = await dnsLookup(hostname, { all: true });
+  } catch (error) {
+    throw new Error(
+      `Hostname ${hostname} could not be resolved: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+
+  if (records.length === 0) {
+    throw new Error(`Hostname ${hostname} could not be resolved: no records.`);
+  }
+
+  let privateAddress: string | null = null;
+  for (const record of records) {
+    if (!isPrivateOrReservedIp(record.address)) {
+      return;
+    }
+    privateAddress ??= record.address;
+  }
+
+  throw new Error(
+    `Hostname ${hostname} resolves to blocked private address${
+      privateAddress ? ` ${privateAddress}` : ""
+    }.`
+  );
+}
+
 export class BrowserSessionService {
   private browserPromise: Promise<Browser> | null = null;
+  private http1BrowserPromise: Promise<Browser> | null = null;
+  private readonly http1SessionKeys = new Set<string>();
   private readonly sessions = new Map<string, SessionBrowserContext>();
 
-  private async getBrowser(): Promise<Browser> {
+  private async getBrowser(http1 = false): Promise<Browser> {
+    if (http1) {
+      if (!this.http1BrowserPromise) {
+        this.http1BrowserPromise = this.launchBrowser(true).catch((error) => {
+          this.http1BrowserPromise = null;
+          throw error;
+        });
+      }
+      return this.http1BrowserPromise;
+    }
+
     if (!this.browserPromise) {
-      this.browserPromise = chromium.launch({
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-popup-blocking",
-        ],
-        headless: true,
+      this.browserPromise = this.launchBrowser(false).catch((error) => {
+        this.browserPromise = null;
+        throw error;
       });
     }
     return this.browserPromise;
+  }
+
+  private async launchBrowser(http1 = false): Promise<Browser> {
+    const headless = shouldLaunchHeadlessBrowser();
+    const args = browserLaunchArgs({ headed: !headless, http1 });
+
+    const launch = (channel?: "chrome") =>
+      chromium.launch({
+        args,
+        headless,
+        ignoreDefaultArgs: ["--enable-automation"],
+        ...(channel ? { channel } : {}),
+      });
+
+    try {
+      return await launch("chrome");
+    } catch {
+      try {
+        return await launch();
+      } catch (error) {
+        if (headless) {
+          throw error;
+        }
+        return chromium.launch({
+          args: browserLaunchArgs({ http1 }),
+          headless: true,
+          ignoreDefaultArgs: ["--enable-automation"],
+        });
+      }
+    }
   }
 
   private buildSessionKey(
@@ -80,6 +257,10 @@ export class BrowserSessionService {
       existing.lastActiveAt = Date.now();
       return existing;
     }
+    if (existing) {
+      existing.context.close().catch(() => undefined);
+      this.sessions.delete(key);
+    }
 
     if (this.sessions.size >= MAX_CONTEXTS) {
       // Evict oldest
@@ -98,12 +279,25 @@ export class BrowserSessionService {
       }
     }
 
-    const browser = await this.getBrowser();
+    const browser = await this.getBrowser(this.http1SessionKeys.has(key));
+    const locale = resolveBrowserLocale();
     const context = await browser.newContext({
       acceptDownloads: true,
-      userAgent:
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 AtlasBrowser/1.0",
+      extraHTTPHeaders: {
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": browserAcceptLanguageForLocale(locale),
+        "Upgrade-Insecure-Requests": "1",
+      },
+      locale,
+      userAgent: BROWSER_USER_AGENT,
       viewport: { height: 800, width: 1280 },
+    });
+
+    await context.addInitScript(() => {
+      Object.defineProperty(navigator, "webdriver", {
+        get: () => undefined,
+      });
     });
 
     const page = await context.newPage();
@@ -123,67 +317,66 @@ export class BrowserSessionService {
   }
 
   private async assertSafeUrl(targetUrl: string): Promise<void> {
-    let parsed: URL;
+    await assertBrowserNavigationUrl(targetUrl);
+  }
+
+  private async navigateTo(page: Page, url: string): Promise<void> {
     try {
-      parsed = new URL(targetUrl);
-    } catch {
-      throw new Error(`Invalid URL: ${targetUrl}`);
-    }
-
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-      throw new Error(`Unsupported protocol: ${parsed.protocol}`);
-    }
-
-    const hostname = parsed.hostname.toLowerCase();
-
-    // Allow localhost / loopback ONLY if running local test fixture (ports >= 3000)
-    const portNum = Number(parsed.port);
-    const isTestPort =
-      Number.isInteger(portNum) && portNum >= 3000 && portNum <= 65_535;
-    if (
-      (hostname === "localhost" ||
-        hostname === "127.0.0.1" ||
-        hostname === "::1") &&
-      isTestPort
-    ) {
+      await page.goto(url, {
+        timeout: NAV_TIMEOUT_MS,
+        waitUntil: "domcontentloaded",
+      });
       return;
-    }
-
-    // SSRF validation for external addresses
-    if (
-      hostname === "169.254.169.254" ||
-      hostname.startsWith("10.") ||
-      hostname.startsWith("192.168.") ||
-      hostname === "localhost" ||
-      hostname === "127.0.0.1"
-    ) {
-      throw new Error(
-        `Access to private address ${hostname} is blocked for security.`
-      );
-    }
-
-    if (!isIP(hostname)) {
-      try {
-        const records = await dnsLookup(hostname, { all: true });
-        for (const record of records) {
-          if (
-            record.address.startsWith("127.") ||
-            record.address.startsWith("10.") ||
-            record.address.startsWith("192.168.") ||
-            record.address === "::1" ||
-            record.address === "169.254.169.254"
-          ) {
-            throw new Error(
-              `Hostname ${hostname} resolves to blocked private address.`
-            );
-          }
-        }
-      } catch (err) {
-        if ((err as Error).message.includes("blocked private address")) {
-          throw err;
-        }
+    } catch (error) {
+      if (isHttp2ProtocolError(error)) {
+        throw error;
+      }
+      if (!isRetryableBrowserNavigationError(error)) {
+        throw wrapBrowserNavigationError(url, error);
       }
     }
+
+    try {
+      await page.goto(url, {
+        timeout: NAV_TIMEOUT_MS,
+        waitUntil: "commit",
+      });
+      await page
+        .waitForLoadState("domcontentloaded", { timeout: 8000 })
+        .catch(() => undefined);
+    } catch (error) {
+      if (isHttp2ProtocolError(error)) {
+        throw error;
+      }
+      throw wrapBrowserNavigationError(url, error);
+    }
+  }
+
+  private async rebuildSessionWithHttp1(options: {
+    orgId?: string;
+    profileId?: string;
+    sessionId?: string;
+    userId?: string;
+  }): Promise<SessionBrowserContext> {
+    const key = this.buildSessionKey(
+      options.orgId,
+      options.userId,
+      options.profileId,
+      options.sessionId
+    );
+    const existing = this.sessions.get(key);
+    if (existing) {
+      existing.context.close().catch(() => undefined);
+      this.sessions.delete(key);
+    }
+    this.http1SessionKeys.add(key);
+
+    return this.getOrCreateSession(
+      options.orgId,
+      options.userId,
+      options.profileId,
+      options.sessionId
+    );
   }
 
   private async extractPageSnapshot(
@@ -367,9 +560,22 @@ export class BrowserSessionService {
           throw new Error("Action 'open' requires a target url.");
         }
         await this.assertSafeUrl(input.url);
-        await page.goto(input.url, { waitUntil: "domcontentloaded" });
-        await page.waitForTimeout(500);
-        const snapshot = await this.extractPageSnapshot(page, session);
+        let active = session;
+        try {
+          await this.navigateTo(active.page, input.url);
+        } catch (error) {
+          const alreadyHttp1 = this.http1SessionKeys.has(active.sessionKey);
+          if (!(isHttp2ProtocolError(error) && !alreadyHttp1)) {
+            throw error instanceof Error &&
+              error.message.startsWith("Browser navigation failed")
+              ? error
+              : wrapBrowserNavigationError(input.url, error);
+          }
+          active = await this.rebuildSessionWithHttp1(options);
+          await this.navigateTo(active.page, input.url);
+        }
+        await active.page.waitForTimeout(500);
+        const snapshot = await this.extractPageSnapshot(active.page, active);
         return {
           action,
           message: `Navigated to ${snapshot.url}`,
@@ -600,6 +806,7 @@ export class BrowserSessionService {
       case "close": {
         await session.context.close().catch(() => {});
         this.sessions.delete(session.sessionKey);
+        this.http1SessionKeys.delete(session.sessionKey);
         return {
           action,
           message: "Browser session closed.",
@@ -617,10 +824,16 @@ export class BrowserSessionService {
       await sess.context.close().catch(() => {});
     }
     this.sessions.clear();
-    if (this.browserPromise) {
-      const b = await this.browserPromise;
-      await b.close().catch(() => {});
-      this.browserPromise = null;
+    this.http1SessionKeys.clear();
+    const pendingBrowsers = [this.browserPromise, this.http1BrowserPromise];
+    this.browserPromise = null;
+    this.http1BrowserPromise = null;
+    for (const pending of pendingBrowsers) {
+      if (!pending) {
+        continue;
+      }
+      const browser = await pending.catch(() => null);
+      await browser?.close().catch(() => {});
     }
   }
 }

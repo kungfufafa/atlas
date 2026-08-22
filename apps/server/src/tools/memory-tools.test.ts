@@ -53,4 +53,23 @@ describe("memory tools ownership", () => {
       )
     ).rejects.toThrow("Workspace Admin access required");
   });
+
+  test("platform admin can write organization-scope memory", async () => {
+    const { memoryService, tool } = toolByName("memory_write");
+    const result = (await tool.run(
+      { content: "org-wide fact", scope: "organization" },
+      {
+        isPlatformAdmin: true,
+        orgId: "org_a",
+        orgRole: "member",
+        profileId: "profile_bob",
+        userId: "user_bob",
+      }
+    )) as { id?: string };
+
+    expect(result.id).toBeTruthy();
+    const stored = await memoryService.getMemory("org_a", result.id!);
+    expect(stored?.content).toBe("org-wide fact");
+    expect(stored?.scope).toBe("organization");
+  });
 });

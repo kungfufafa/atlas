@@ -1,6 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
-import * as os from "node:os";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { AtlasClient, StreamHandlers } from "@atlas/client";
 import {
@@ -14,6 +13,7 @@ import type {
   ChatMessage,
   UserOrgSummary,
 } from "@atlas/core/contract";
+import { withIsolatedAtlasHome } from "@atlas/core/testing/atlas-home";
 import type { Context } from "grammy";
 import type { TelegramBotInfo } from "./group-message";
 
@@ -21,6 +21,7 @@ export const TEST_BOT_INFO: TelegramBotInfo = { id: 999, username: "mybot" };
 
 export interface MockMessageContext {
   ctx: Context;
+  readonly documentSends: number;
   editOptions: unknown[];
   edits: Array<{ chatId: number; messageId: number; text: string }>;
   replies: string[];
@@ -43,6 +44,7 @@ export function createMessageContext(options: {
   const replyOptions: unknown[] = [];
   const edits: Array<{ chatId: number; messageId: number; text: string }> = [];
   const editOptions: unknown[] = [];
+  let documentSends = 0;
   let nextMessageId = 1;
   const replyFrom =
     options.replyToBot || options.replyToBotId !== undefined
@@ -65,6 +67,10 @@ export function createMessageContext(options: {
 
         edits.push({ chatId, messageId, text });
         editOptions.push(editOptionsArg);
+      },
+      sendDocument: async () => {
+        documentSends += 1;
+        return { message_id: nextMessageId++ };
       },
     },
     chat: options.chatType
@@ -91,7 +97,16 @@ export function createMessageContext(options: {
     replyWithChatAction: async () => {},
   } as unknown as Context;
 
-  return { ctx, editOptions, edits, replies, replyOptions };
+  return {
+    ctx,
+    get documentSends() {
+      return documentSends;
+    },
+    editOptions,
+    edits,
+    replies,
+    replyOptions,
+  };
 }
 
 function isHtmlParseMode(options: unknown): options is { parse_mode: "HTML" } {
@@ -179,6 +194,9 @@ export function createMockClient(
       }>
     >;
     messages?: ChatMessage[];
+    artifactContentBytes?: Uint8Array;
+    failPublishShare?: boolean;
+    failReadArtifact?: boolean;
   } = {}
 ) {
   const calls = {
@@ -368,6 +386,9 @@ export function createMockClient(
     },
     publishProfileArtifactShare: async () => {
       calls.publishProfileArtifactShare += 1;
+      if (options.failPublishShare) {
+        throw new Error("publish failed");
+      }
       return {
         id: "share_test",
         refreshed: false,
@@ -379,9 +400,14 @@ export function createMockClient(
     },
     readProfileArtifactContent: async () => {
       calls.readProfileArtifactContent += 1;
+      if (options.failReadArtifact) {
+        throw new Error("Failed to read the saved file.");
+      }
+      const data =
+        options.artifactContentBytes ?? new TextEncoder().encode("# Report");
       return {
         contentType: "text/markdown",
-        data: new TextEncoder().encode("# Report").buffer,
+        data: data.buffer,
       };
     },
     setOrgId: (orgId: string | null) => {
@@ -456,35 +482,8 @@ export function createTestOrgStore(homeDir: string): ChannelOrgStore {
   );
 }
 
-let tempHomeChain: Promise<void> = Promise.resolve();
-
 export async function withTempHome<T>(
   run: (homeDir: string) => Promise<T>
 ): Promise<T> {
-  let release!: () => void;
-  const gate = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  const previous = tempHomeChain;
-  tempHomeChain = previous.then(() => gate);
-
-  await previous;
-
-  const homeDir = await mkdtemp(path.join(os.tmpdir(), "atlas-telegram-home-"));
-  const configDir = path.join(homeDir, ".atlas");
-  const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
-  process.env.ATLAS_CONFIG_DIR = configDir;
-
-  try {
-    return await run(homeDir);
-  } finally {
-    if (previousConfigDir === undefined) {
-      delete process.env.ATLAS_CONFIG_DIR;
-    } else {
-      process.env.ATLAS_CONFIG_DIR = previousConfigDir;
-    }
-
-    await rm(homeDir, { force: true, recursive: true });
-    release();
-  }
+  return withIsolatedAtlasHome("atlas-telegram-home-", run);
 }

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   extractLatestTurnMessages,
   extractPairedTurnArtifacts,
+  extractTurnDeliverableArtifacts,
 } from "./channel-artifacts";
 import type { ChatMessage } from "./contract";
 
@@ -421,6 +422,269 @@ describe("extractPairedTurnArtifacts", () => {
     expect(
       extractPairedTurnArtifacts(messages).map((artifact) => artifact.path)
     ).toEqual(["a.md", "cat.png"]);
+  });
+});
+
+describe("extractTurnDeliverableArtifacts", () => {
+  test("includes browser screenshot artifacts from the tool payload", () => {
+    const artifacts = extractTurnDeliverableArtifacts([
+      { content: "check the site", role: "user" },
+      assistantWithToolCalls([
+        {
+          arguments: { action: "screenshot" },
+          id: "tool_1",
+          name: "browser",
+        },
+      ]),
+      toolMessage({
+        id: "tool_1",
+        input: { action: "screenshot" },
+        name: "browser",
+        result: {
+          action: "screenshot",
+          artifacts: [
+            {
+              createdAt: "2026-08-21T12:00:00.000Z",
+              filename: "screenshot_1.png",
+              mimeType: "image/png",
+              path: "artifacts/screenshot_1.png",
+              sizeBytes: 2048,
+            },
+          ],
+          status: "success",
+        },
+      }),
+    ]);
+
+    expect(artifacts).toEqual([
+      expect.objectContaining({
+        filename: "screenshot_1.png",
+        mimeType: "image/png",
+        path: "screenshot_1.png",
+        sizeBytes: 2048,
+      }),
+    ]);
+  });
+
+  test("includes unpaired write_file artifacts without a sidecar", () => {
+    const artifacts = extractTurnDeliverableArtifacts([
+      { content: "save", role: "user" },
+      assistantWithToolCalls([
+        {
+          arguments: { content: "draft", path: "artifacts/draft.md" },
+          id: "tool_1",
+          name: "write_file",
+        },
+      ]),
+      toolMessage({
+        id: "tool_1",
+        input: { content: "draft", path: "artifacts/draft.md" },
+        name: "write_file",
+        result: { bytesWritten: 5, path: `${ARTIFACTS_ROOT}/draft.md` },
+      }),
+    ]);
+
+    expect(artifacts).toEqual([
+      expect.objectContaining({
+        filename: "draft.md",
+        mimeType: "text/markdown",
+        path: "draft.md",
+        sizeBytes: 5,
+      }),
+    ]);
+  });
+
+  test("includes spreadsheet create output", () => {
+    const artifacts = extractTurnDeliverableArtifacts([
+      { content: "make a sheet", role: "user" },
+      assistantWithToolCalls([
+        {
+          arguments: { action: "create", path: "artifacts/sales.xlsx" },
+          id: "tool_1",
+          name: "spreadsheet",
+        },
+      ]),
+      toolMessage({
+        id: "tool_1",
+        input: { action: "create", path: "artifacts/sales.xlsx" },
+        name: "spreadsheet",
+        result: { path: "artifacts/sales.xlsx", status: "created" },
+      }),
+    ]);
+
+    expect(artifacts).toEqual([
+      expect.objectContaining({
+        filename: "sales.xlsx",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        path: "sales.xlsx",
+      }),
+    ]);
+  });
+
+  test("includes write_pptx output", () => {
+    const artifacts = extractTurnDeliverableArtifacts([
+      { content: "make a deck", role: "user" },
+      assistantWithToolCalls([
+        {
+          arguments: { path: "artifacts/deck.pptx", title: "Deck" },
+          id: "tool_1",
+          name: "write_pptx",
+        },
+      ]),
+      toolMessage({
+        id: "tool_1",
+        input: { path: "artifacts/deck.pptx", title: "Deck" },
+        name: "write_pptx",
+        result: {
+          bytesWritten: 4096,
+          path: `${ARTIFACTS_ROOT}/deck.pptx`,
+          slideCount: 4,
+        },
+      }),
+    ]);
+
+    expect(artifacts).toEqual([
+      expect.objectContaining({
+        filename: "deck.pptx",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        path: "deck.pptx",
+        sizeBytes: 4096,
+      }),
+    ]);
+  });
+
+  test("skips writes outside artifacts/", () => {
+    expect(
+      extractTurnDeliverableArtifacts([
+        { content: "update soul", role: "user" },
+        assistantWithToolCalls([
+          {
+            arguments: { content: "x", path: "SOUL.md" },
+            id: "tool_1",
+            name: "write_file",
+          },
+        ]),
+        toolMessage({
+          id: "tool_1",
+          input: { content: "x", path: "SOUL.md" },
+          name: "write_file",
+          result: {
+            bytesWritten: 1,
+            path: "/home/.atlas/orgs/org/profiles/default/SOUL.md",
+          },
+        }),
+      ])
+    ).toEqual([]);
+  });
+
+  test("includes spreadsheet export_csv output from targetCsvPath", () => {
+    const artifacts = extractTurnDeliverableArtifacts([
+      { content: "export csv", role: "user" },
+      assistantWithToolCalls([
+        {
+          arguments: {
+            action: "export_csv",
+            path: "artifacts/sales.xlsx",
+            targetCsvPath: "artifacts/sales.csv",
+          },
+          id: "tool_1",
+          name: "spreadsheet",
+        },
+      ]),
+      toolMessage({
+        id: "tool_1",
+        input: {
+          action: "export_csv",
+          path: "artifacts/sales.xlsx",
+          targetCsvPath: "artifacts/sales.csv",
+        },
+        name: "spreadsheet",
+        result: {
+          status: "csv_exported",
+          targetCsvPath: "artifacts/sales.csv",
+        },
+      }),
+    ]);
+
+    expect(artifacts).toEqual([
+      expect.objectContaining({
+        filename: "sales.csv",
+        mimeType: "text/csv",
+        path: "sales.csv",
+      }),
+    ]);
+  });
+
+  test("skips spreadsheet inspect", () => {
+    expect(
+      extractTurnDeliverableArtifacts([
+        { content: "inspect", role: "user" },
+        assistantWithToolCalls([
+          {
+            arguments: { action: "inspect", path: "artifacts/sales.xlsx" },
+            id: "tool_1",
+            name: "spreadsheet",
+          },
+        ]),
+        toolMessage({
+          id: "tool_1",
+          input: { action: "inspect", path: "artifacts/sales.xlsx" },
+          name: "spreadsheet",
+          result: { path: "artifacts/sales.xlsx", sheetCount: 1 },
+        }),
+      ])
+    ).toEqual([]);
+  });
+
+  test("keeps paired sidecar mime type instead of inferring", () => {
+    const contentPath = `${ARTIFACTS_ROOT}/report.md`;
+    const sidecarPath = `${ARTIFACTS_ROOT}/report.md.atlas-meta.json`;
+
+    const artifacts = extractTurnDeliverableArtifacts([
+      { content: "save report", role: "user" },
+      assistantWithToolCalls([
+        {
+          arguments: { content: "# Report", path: "artifacts/report.md" },
+          id: "tool_1",
+          name: "write_file",
+        },
+        {
+          arguments: {
+            content: metaJson,
+            path: "artifacts/report.md.atlas-meta.json",
+          },
+          id: "tool_2",
+          name: "write_file",
+        },
+      ]),
+      toolMessage({
+        id: "tool_1",
+        input: { content: "# Report", path: "artifacts/report.md" },
+        name: "write_file",
+        result: { bytesWritten: 8, path: contentPath },
+      }),
+      toolMessage({
+        id: "tool_2",
+        input: {
+          content: metaJson,
+          path: "artifacts/report.md.atlas-meta.json",
+        },
+        name: "write_file",
+        result: { bytesWritten: metaJson.length, path: sidecarPath },
+      }),
+    ]);
+
+    expect(artifacts).toEqual([
+      {
+        filename: "report.md",
+        mimeType: "text/markdown",
+        path: "report.md",
+        savedAt: "2026-07-13T10:00:00.000Z",
+        sizeBytes: 42,
+      },
+    ]);
   });
 });
 

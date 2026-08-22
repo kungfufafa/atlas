@@ -7,7 +7,25 @@ import {
   getWhatsAppConfigDir,
   getWhatsAppConfigPath,
 } from "../whatsapp-config";
-import { createWhatsAppOutboundAdapter } from "./whatsapp-outbound";
+import {
+  createWhatsAppOutboundAdapter,
+  resolveWhatsAppOutboundListenPort,
+  resolveWhatsAppOutboundPort,
+} from "./whatsapp-outbound";
+
+describe("WhatsApp outbound port resolution", () => {
+  test("listens on an ephemeral port when unset or zero, and keeps 4312 as the client fallback", () => {
+    expect(resolveWhatsAppOutboundListenPort(null)).toBe(0);
+    expect(resolveWhatsAppOutboundListenPort({ outboundPort: "0" })).toBe(0);
+    expect(resolveWhatsAppOutboundListenPort({ outboundPort: "-1" })).toBe(0);
+    expect(resolveWhatsAppOutboundListenPort({ outboundPort: "5551" })).toBe(
+      5551
+    );
+    expect(resolveWhatsAppOutboundPort(null)).toBe(4312);
+    expect(resolveWhatsAppOutboundPort({ outboundPort: "0" })).toBe(4312);
+    expect(resolveWhatsAppOutboundPort({ outboundPort: "5551" })).toBe(5551);
+  });
+});
 
 describe("createWhatsAppOutboundAdapter multi-workspace isolation", () => {
   let tempHome = "";
@@ -61,13 +79,24 @@ describe("createWhatsAppOutboundAdapter multi-workspace isolation", () => {
       expect(calls[0]?.url).toBe("http://127.0.0.1:5551/send");
       expect(calls[0]?.body).toEqual({ text: "hello from A" });
 
+      const resToNumber = await adapter.send({
+        orgId: "workspace-a",
+        text: "ping Apri",
+        to: "6289500000001",
+      });
+      expect(resToNumber.ok).toBe(true);
+      expect(calls[1]?.body).toEqual({
+        text: "ping Apri",
+        to: "6289500000001",
+      });
+
       const resB = await adapter.send({
         orgId: "workspace-b",
         text: "hello from B",
       });
       expect(resB.ok).toBe(true);
-      expect(calls[1]?.url).toBe("http://127.0.0.1:5552/send");
-      expect(calls[1]?.body).toEqual({ text: "hello from B" });
+      expect(calls[2]?.url).toBe("http://127.0.0.1:5552/send");
+      expect(calls[2]?.body).toEqual({ text: "hello from B" });
 
       const resUnconfigured = await adapter.send({
         orgId: "workspace-c",

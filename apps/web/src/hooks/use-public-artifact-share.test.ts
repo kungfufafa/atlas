@@ -41,7 +41,7 @@ describe("loadPublicArtifactShare", () => {
 
   test("still treats missing share metadata as unavailable", async () => {
     globalThis.fetch = (async () =>
-      new Response("Not found", { status: 404 })) as typeof fetch;
+      new Response("Not found", { status: 404 })) as unknown as typeof fetch;
 
     await expect(loadPublicArtifactShare("missing")).rejects.toThrow(
       "This share link is unavailable."

@@ -107,7 +107,7 @@ export function ProfilesDialogs(state: ProfilesPageState) {
           <DialogFooter className="gap-3 border-t-0 bg-transparent p-0 pt-2 pb-2 sm:justify-end">
             <Button
               disabled={busy}
-              onClick={() => setDeleteOpen(false)}
+              onClick={() => handleDeleteOpenChange(false)}
               type="button"
               variant="outline"
             >

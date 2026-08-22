@@ -478,6 +478,43 @@ describe("extractTurnArtifacts", () => {
     ).toEqual([]);
   });
 
+  test("extracts browser screenshot artifacts from the tool payload", () => {
+    expect(
+      extractTurnArtifacts([
+        {
+          content: "",
+          id: "tool-browser",
+          role: "tool",
+          tool: "browser",
+          toolCallId: "b1",
+          toolInput: { action: "screenshot" },
+          toolResult: {
+            action: "screenshot",
+            artifacts: [
+              {
+                createdAt: "2026-08-21T12:00:00.000Z",
+                filename: "screenshot_1.png",
+                mimeType: "image/png",
+                path: "artifacts/screenshot_1.png",
+                sizeBytes: 2048,
+              },
+            ],
+            status: "success",
+          },
+          toolStatus: "done",
+        },
+      ])
+    ).toEqual([
+      {
+        filename: "screenshot_1.png",
+        mimeType: "image/png",
+        path: "screenshot_1.png",
+        savedAt: "2026-08-21T12:00:00.000Z",
+        sizeBytes: 2048,
+      },
+    ]);
+  });
+
   test("extracts write_pptx results under artifacts/", () => {
     expect(
       extractTurnArtifacts([

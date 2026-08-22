@@ -27,6 +27,8 @@ export interface WhatsAppOutboundAdapter {
   send(input: {
     orgId?: string | null;
     text: string;
+    /** Destination phone or JID. Omitting sends to the workspace paired chat. */
+    to?: string;
   }): Promise<ChannelSendResult>;
 }
 
