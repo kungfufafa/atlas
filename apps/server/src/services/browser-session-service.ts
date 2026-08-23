@@ -175,6 +175,24 @@ export class BrowserSessionService {
   private readonly sessions = new Map<string, SessionBrowserContext>();
 
   private async getBrowser(http1 = false): Promise<Browser> {
+    const browser = await this.getOrLaunchBrowser(http1);
+    if (browser.isConnected()) {
+      return browser;
+    }
+
+    const stale = http1 ? this.http1BrowserPromise : this.browserPromise;
+    await browser.close().catch(() => undefined);
+    if (http1) {
+      if (this.http1BrowserPromise === stale) {
+        this.http1BrowserPromise = null;
+      }
+    } else if (this.browserPromise === stale) {
+      this.browserPromise = null;
+    }
+    return this.getOrLaunchBrowser(http1);
+  }
+
+  private async getOrLaunchBrowser(http1: boolean): Promise<Browser> {
     if (http1) {
       if (!this.http1BrowserPromise) {
         this.http1BrowserPromise = this.launchBrowser(true).catch((error) => {
