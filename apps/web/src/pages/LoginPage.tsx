@@ -18,7 +18,7 @@ import { ditherLogoSrc } from "@/lib/theme";
 
 function resolvePostAuthPath(
   health: { providerConfigured?: boolean } | null,
-  from?: string
+  from?: string | null
 ): string {
   if (health?.providerConfigured !== true) {
     return SETUP_PATH;

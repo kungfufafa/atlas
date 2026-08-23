@@ -309,13 +309,22 @@ export function claimInboundDelivery(
   return dedupe.remember(`${input.remoteJid}:${messageId}`);
 }
 
+const WHATSAPP_SOCKET_EVENTS = [
+  "chats.phoneNumberShare",
+  "connection.update",
+  "creds.update",
+  "messages.upsert",
+] as const;
+
 async function disposeWhatsAppSocket(target: WASocket | null): Promise<void> {
   if (!target) {
     return;
   }
 
   try {
-    target.ev.removeAllListeners();
+    for (const event of WHATSAPP_SOCKET_EVENTS) {
+      target.ev.removeAllListeners(event);
+    }
   } catch {
     // Best-effort: Baileys versions differ on listener APIs.
   }

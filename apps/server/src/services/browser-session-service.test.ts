@@ -1,4 +1,11 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import {
+  afterAll,
+  beforeAll,
+  describe,
+  expect,
+  setDefaultTimeout,
+  test,
+} from "bun:test";
 import {
   browserTool,
   registerBrowserHandler,
@@ -20,6 +27,11 @@ import {
 
 let testServer: ReturnType<typeof serve> | null = null;
 let testServerUrl = "";
+
+// Chromium cold-start on GitHub Actions regularly exceeds bun's 5s default,
+// then later tests reuse a closed browser ("Target page, context or browser
+// has been closed"). Extra headroom matches telegram/sqlite CI timeouts.
+setDefaultTimeout(30_000);
 
 beforeAll(() => {
   process.env.ATLAS_BROWSER_HEADED = "0";
