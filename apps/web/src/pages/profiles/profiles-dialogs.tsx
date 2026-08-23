@@ -41,7 +41,6 @@ export function ProfilesDialogs(state: ProfilesPageState) {
     handleCreateMcpServer,
     deleteOpen,
     handleDeleteOpenChange,
-    setDeleteOpen,
     deleteTarget,
     deleteMutation,
     handleDeleteConfirm,
