@@ -57,6 +57,7 @@ const healthyStatus: SystemStatusResponse = {
   whatsappWorker: {
     configured: true,
     connected: true,
+    devicePairingCode: null,
     ok: true,
     paired: true,
     qrCode: null,

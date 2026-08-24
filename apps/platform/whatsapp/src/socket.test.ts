@@ -4,6 +4,7 @@ import {
   createInboundMessageDedupe,
   extractDisconnectStatusCode,
   isSupportedUpsertType,
+  shouldRequestDevicePairingCode,
 } from "./socket";
 
 describe("WhatsApp socket helpers", () => {
@@ -28,6 +29,37 @@ describe("WhatsApp socket helpers", () => {
     expect(dedupe.remember("jid:msg-1")).toBe(true);
     expect(dedupe.remember("jid:msg-1")).toBe(false);
     expect(dedupe.remember("jid:msg-2")).toBe(true);
+  });
+
+  test("requests a device pairing code only for unregistered numbers", () => {
+    expect(
+      shouldRequestDevicePairingCode({
+        alreadyRequested: false,
+        phoneDigits: "628123456789",
+        registered: false,
+      })
+    ).toBe(true);
+    expect(
+      shouldRequestDevicePairingCode({
+        alreadyRequested: true,
+        phoneDigits: "628123456789",
+        registered: false,
+      })
+    ).toBe(false);
+    expect(
+      shouldRequestDevicePairingCode({
+        alreadyRequested: false,
+        phoneDigits: "628123456789",
+        registered: true,
+      })
+    ).toBe(false);
+    expect(
+      shouldRequestDevicePairingCode({
+        alreadyRequested: false,
+        phoneDigits: "62812",
+        registered: false,
+      })
+    ).toBe(false);
   });
 
   test("does not consume a message id until the upsert is deliverable", () => {

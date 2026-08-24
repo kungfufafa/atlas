@@ -9,6 +9,7 @@ import {
 } from "@/components/integration-settings.shared";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { Button } from "@/components/ui/button";
+import { InputGroup, InputGroupInput } from "@/components/ui/input-group";
 import {
   Select,
   SelectContent,
@@ -18,7 +19,11 @@ import {
 } from "@/components/ui/select";
 import { WhatsAppNumbersDialog } from "@/components/WhatsAppNumbersDialog";
 import { WorkerActionBar } from "@/components/WorkerActionBar";
-import { WhatsAppSettingsLinkingSection } from "@/components/whatsapp-settings-linking-section";
+import {
+  shouldShowWhatsAppChatAccessSection,
+  WhatsAppSettingsChatAccessSection,
+  WhatsAppSettingsDeviceLinkSection,
+} from "@/components/whatsapp-settings-linking-section";
 import { cn } from "@/lib/utils";
 
 export function WhatsAppSettingsCardContent({
@@ -40,15 +45,21 @@ export function WhatsAppSettingsCardContent({
   profiles,
   savePending,
   onProfileChange,
+  phoneNumber,
+  onPhoneNumberChange,
   pairingCode,
   copied,
   onCopyPairingCode,
   onRegeneratePairingCode,
+  devicePairingCode,
+  copiedDevicePairingCode,
+  onCopyDevicePairingCode,
   regeneratePending,
   qrCode,
   linkingAfterScan,
   bridgeStarting,
   awaitingQr,
+  awaitingDevicePairingCode,
   showReconnect,
   onReconnect,
   reconnectPending,
@@ -78,13 +89,19 @@ export function WhatsAppSettingsCardContent({
   onAccessModeChange: (mode: ChannelAccessMode) => void;
   onAllowedNumbersChange: (numbers: string[]) => void;
   onBlockedNumbersChange: (numbers: string[]) => void;
+  onCopyDevicePairingCode: () => void;
   onCopyPairingCode: () => void;
+  onPhoneNumberChange: (phoneNumber: string) => void;
   onProfileChange: (profileId: string) => void;
   onReconnect: () => void;
   onRegeneratePairingCode: () => void;
   onSave: () => void;
+  awaitingDevicePairingCode: boolean;
+  copiedDevicePairingCode: boolean;
+  devicePairingCode: string | null;
   paired: boolean;
   pairingCode: string | null;
+  phoneNumber: string;
   profileId: string;
   profiles: ProfileSummary[];
   qrCode: string | null;
@@ -115,7 +132,7 @@ export function WhatsAppSettingsCardContent({
         />
       )}
 
-      {linkedNumber ? (
+      {paired && linkedNumber ? (
         <SettingsRow
           className={paneItemClass}
           description="From your WhatsApp session"
@@ -124,6 +141,26 @@ export function WhatsAppSettingsCardContent({
           <span className="text-foreground text-sm">{linkedNumber}</span>
         </SettingsRow>
       ) : null}
+
+      {paired ? null : (
+        <SettingsRow className={paneItemClass} label="Phone number">
+          <InputGroup className="w-full min-w-[12rem] sm:w-[16rem]">
+            <InputGroupInput
+              autoComplete="tel"
+              disabled={savePending}
+              id="whatsapp-phone-number"
+              onChange={(event) => {
+                onPhoneNumberChange(event.target.value);
+              }}
+              placeholder={
+                linkedNumber ? `Saved (${linkedNumber})` : "e.g. 628123456789"
+              }
+              type="tel"
+              value={phoneNumber}
+            />
+          </InputGroup>
+        </SettingsRow>
+      )}
 
       <SettingsRow
         className={paneItemClass}
@@ -159,6 +196,29 @@ export function WhatsAppSettingsCardContent({
           </SelectContent>
         </Select>
       </SettingsRow>
+
+      {configured ? (
+        <WhatsAppSettingsDeviceLinkSection
+          awaitingDevicePairingCode={awaitingDevicePairingCode}
+          awaitingQr={awaitingQr}
+          bridgeStarting={bridgeStarting}
+          compact={!embedded}
+          copiedDevicePairingCode={copiedDevicePairingCode}
+          devicePairingCode={devicePairingCode}
+          linkingAfterScan={linkingAfterScan}
+          onCopyDevicePairingCode={onCopyDevicePairingCode}
+          onReconnect={onReconnect}
+          paired={paired}
+          qrCode={qrCode}
+          reconnectPending={reconnectPending}
+          regeneratePending={regeneratePending}
+          rowClassName={paneItemClass}
+          running={running}
+          savePending={savePending}
+          showQr={showQr}
+          showReconnect={false}
+        />
+      ) : null}
 
       <SettingsRow
         className={paneItemClass}
@@ -235,26 +295,39 @@ export function WhatsAppSettingsCardContent({
         title="Blocked Phone Numbers"
       />
 
-      {configured ? (
-        <WhatsAppSettingsLinkingSection
-          awaitingQr={awaitingQr}
-          bridgeStarting={bridgeStarting}
+      {configured && shouldShowWhatsAppChatAccessSection(accessMode) ? (
+        <WhatsAppSettingsChatAccessSection
           compact={!embedded}
           copied={copied}
-          linkingAfterScan={linkingAfterScan}
           onCopyPairingCode={onCopyPairingCode}
-          onReconnect={onReconnect}
           onRegeneratePairingCode={onRegeneratePairingCode}
           paired={paired}
           pairingCode={pairingCode}
-          qrCode={qrCode}
+          regeneratePending={regeneratePending}
+          rowClassName={paneItemClass}
+          savePending={savePending}
+        />
+      ) : null}
+
+      {configured ? (
+        <WhatsAppSettingsDeviceLinkSection
+          awaitingDevicePairingCode={false}
+          awaitingQr={false}
+          bridgeStarting={false}
+          compact={!embedded}
+          copiedDevicePairingCode={copiedDevicePairingCode}
+          devicePairingCode={null}
+          linkingAfterScan={false}
+          onCopyDevicePairingCode={onCopyDevicePairingCode}
+          onReconnect={onReconnect}
+          paired={paired}
+          qrCode={null}
           reconnectPending={reconnectPending}
           regeneratePending={regeneratePending}
           rowClassName={paneItemClass}
           running={running}
           savePending={savePending}
-          showPairingSection={accessMode === "pairing"}
-          showQr={showQr}
+          showQr={false}
           showReconnect={showReconnect}
         />
       ) : null}

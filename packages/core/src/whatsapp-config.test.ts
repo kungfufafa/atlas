@@ -12,6 +12,7 @@ import {
   normalizePairingCode,
   normalizePhoneNumberDigits,
   normalizeWhatsAppUserJid,
+  regenerateWhatsAppPairingCode,
   rememberWhatsAppLidPhone,
   resetWhatsAppSessionForReconnect,
   resolveWhatsAppAuthIdentity,
@@ -19,6 +20,7 @@ import {
   resolveWhatsAppOutboundDestination,
   saveWhatsAppConfig,
   syncWhatsAppOwnerPairing,
+  toWhatsAppSettingsPublic,
   verifyAndPairWhatsAppUser,
   whatsAppUserDigits,
 } from "./whatsapp-config";
@@ -201,6 +203,30 @@ describe("saveWhatsAppConfig", () => {
       expect(result.configured).toBe(true);
     });
   });
+
+  test("preserves a pending chat access code when saving other settings", async () => {
+    await withTempHomedir("atlas-core-wa-save-code-", async (tempHome) => {
+      const dir = path.join(tempHome, ".atlas", "whatsapp");
+      await mkdir(dir, { recursive: true });
+      await writeFile(
+        path.join(dir, "config.ini"),
+        [
+          "# Atlas WhatsApp bridge",
+          "profile_id=default",
+          "access_mode=pairing",
+          "phone_number=6281379292556",
+          "paired_jid=6281379292556@s.whatsapp.net",
+          "pairing_code=ABCD1234",
+          "",
+        ].join("\n"),
+        "utf8"
+      );
+
+      const result = await saveWhatsAppConfig({ profileId: "profile_updated" });
+      expect(result.pairingCode).toBe("ABCD1234");
+      expect(result.pairedJid).toBe("6281379292556@s.whatsapp.net");
+    });
+  });
 });
 
 describe("resetWhatsAppSessionForReconnect", () => {
@@ -365,7 +391,7 @@ describe("syncWhatsAppOwnerPairing", () => {
     });
   });
 
-  test("clears stale pairing code when owner pairing sync completes", async () => {
+  test("preserves a pending chat access code when owner pairing sync completes", async () => {
     await withTempHomedir("atlas-core-wa-sync-", async (tempHome) => {
       await saveWhatsAppConfig({ phoneNumber: "+6281379292556" });
 
@@ -391,7 +417,7 @@ describe("syncWhatsAppOwnerPairing", () => {
       const saved = await loadWhatsAppConfigFile();
       expect(saved?.pairedJid).toBe("6281379292556@s.whatsapp.net");
       expect(saved?.pairedLid).toBe("236283431522503@lid");
-      expect(saved?.pairingCode).toBeNull();
+      expect(saved?.pairingCode).toBe("ABCD1234");
     });
   });
 
@@ -422,7 +448,9 @@ describe("syncWhatsAppOwnerPairing", () => {
       expect(saved?.pairedLid).toBe("104784384290844@lid");
     });
   });
+});
 
+describe("WhatsApp access mode settings", () => {
   test("defaults accessMode to pairing for legacy configs without access_mode", async () => {
     await withTempHomedir("atlas-core-wa-legacy-", async (tempHome) => {
       const dir = path.join(tempHome, ".atlas", "whatsapp");
@@ -459,6 +487,72 @@ describe("syncWhatsAppOwnerPairing", () => {
       expect(saved?.accessMode).toBe("open");
       expect(saved?.allowedNumbers).toEqual(["6281234567890", "62811223344"]);
       expect(saved?.blockedNumbers).toEqual(["6289999999"]);
+    });
+  });
+
+  test("clears a chat access code when switching away from pairing mode", async () => {
+    await withTempHomedir(
+      "atlas-core-wa-open-clears-code-",
+      async (tempHome) => {
+        const dir = path.join(tempHome, ".atlas", "whatsapp");
+        await mkdir(dir, { recursive: true });
+        await writeFile(
+          path.join(dir, "config.ini"),
+          [
+            "# Atlas WhatsApp bridge",
+            "profile_id=default",
+            "access_mode=pairing",
+            "phone_number=6281379292556",
+            "pairing_code=ABCD1234",
+            "",
+          ].join("\n"),
+          "utf8"
+        );
+
+        const result = await saveWhatsAppConfig({ accessMode: "open" });
+        expect(result.accessMode).toBe("open");
+        expect(result.pairingCode).toBeNull();
+
+        const saved = await loadWhatsAppConfigFile();
+        expect(saved?.accessMode).toBe("open");
+        expect(saved?.pairingCode).toBeNull();
+      }
+    );
+  });
+
+  test("hides a leftover chat access code in public settings for open mode", async () => {
+    await withTempHomedir("atlas-core-wa-open-hide-code-", async (tempHome) => {
+      const dir = path.join(tempHome, ".atlas", "whatsapp");
+      await mkdir(dir, { recursive: true });
+      await writeFile(
+        path.join(dir, "config.ini"),
+        [
+          "# Atlas WhatsApp bridge",
+          "profile_id=default",
+          "access_mode=open",
+          "phone_number=6281379292556",
+          "pairing_code=ABCD1234",
+          "",
+        ].join("\n"),
+        "utf8"
+      );
+
+      const saved = await loadWhatsAppConfigFile();
+      expect(saved?.pairingCode).toBe("ABCD1234");
+      expect(toWhatsAppSettingsPublic(saved).pairingCode).toBeNull();
+    });
+  });
+
+  test("does not generate a chat access code in open mode", async () => {
+    await withTempHomedir("atlas-core-wa-open-regen-", async () => {
+      await saveWhatsAppConfig({
+        accessMode: "open",
+        phoneNumber: "+6281379292556",
+      });
+
+      await expect(regenerateWhatsAppPairingCode()).rejects.toThrow();
+      const saved = await loadWhatsAppConfigFile();
+      expect(saved?.pairingCode).toBeNull();
     });
   });
 });

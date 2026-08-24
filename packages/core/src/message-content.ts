@@ -7,10 +7,13 @@ import type {
   ProviderName,
 } from "./contract";
 import {
+  extractInboundDocumentText,
   resolveUserContentForProvider,
   toAnthropicDocumentBlock,
   toOpenAIResponsesDocumentBlock,
 } from "./document-content";
+
+export { extractInboundDocumentText };
 
 export const MAX_ATTACHMENTS_PER_MESSAGE = 5;
 export const MAX_IMAGES_PER_MESSAGE = MAX_ATTACHMENTS_PER_MESSAGE;

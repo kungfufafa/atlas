@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { SETTINGS_CARD_LOADING_SKELETON } from "@/components/integration-settings.shared";
 import { WhatsAppSettingsCardContent } from "@/components/whatsapp-settings-card-content";
+import { formatWhatsAppDevicePairingCode } from "@/components/whatsapp-settings-linking-section";
 import { useProfilesQuery } from "@/hooks/use-app-queries";
 import { useSystemStatusQuery } from "@/hooks/use-system-status";
 import {
@@ -37,14 +38,19 @@ export function WhatsAppSettingsCard({
   const reconnectMutation = useReconnectWhatsApp();
 
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deviceCopyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
   const [profileId, setProfileId] = useState("default");
   const [accessMode, setAccessMode] = useState<ChannelAccessMode>("pairing");
   const [allowedNumbers, setAllowedNumbers] = useState<string[]>([]);
   const [blockedNumbers, setBlockedNumbers] = useState<string[]>([]);
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [hint, setHint] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [qrWasVisible, setQrWasVisible] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedDevicePairingCode, setCopiedDevicePairingCode] = useState(false);
 
   const settingsProfileId = settings?.profileId;
   const settingsAccessMode = settings?.accessMode;
@@ -85,9 +91,11 @@ export function WhatsAppSettingsCard({
   const running = worker?.running === true;
   const connected = worker?.connected === true;
   const qrCode = worker?.qrCode ?? null;
+  const devicePairingCode = worker?.devicePairingCode ?? null;
   const paired = Boolean(worker?.paired || settings?.pairedJid);
   const pairingCode = settings?.pairingCode ?? null;
   const linkedNumber = settings?.phoneNumberMasked ?? null;
+  const hasSavedPhoneNumber = Boolean(linkedNumber);
 
   useEffect(() => {
     if (qrCode) {
@@ -123,6 +131,29 @@ export function WhatsAppSettingsCard({
     setCopied(false);
   }, [pairingCode]);
 
+  useEffect(() => {
+    setCopiedDevicePairingCode(false);
+  }, [devicePairingCode]);
+
+  useEffect(() => {
+    if (!(configured && running && !paired)) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.systemStatus,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.whatsapp.settings,
+      });
+    }, 2000);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [configured, running, paired, queryClient]);
+
   // The enable/stop hints go stale the moment the worker state flips; the
   // live subtitle already covers those cases, so drop the hint then.
   useEffect(() => {
@@ -134,11 +165,23 @@ export function WhatsAppSettingsCard({
       if (copyTimeoutRef.current) {
         clearTimeout(copyTimeoutRef.current);
       }
+      if (deviceCopyTimeoutRef.current) {
+        clearTimeout(deviceCopyTimeoutRef.current);
+      }
     },
     []
   );
 
+  const showDevicePairingCode =
+    configured && running && !paired && Boolean(devicePairingCode);
   const showQr = configured && running && !paired && Boolean(qrCode);
+  const awaitingDevicePairingCode =
+    configured &&
+    !paired &&
+    running &&
+    !connected &&
+    hasSavedPhoneNumber &&
+    !devicePairingCode;
   const awaitingQr =
     configured &&
     !paired &&
@@ -146,14 +189,14 @@ export function WhatsAppSettingsCard({
     !connected &&
     !qrCode &&
     !qrWasVisible &&
-    !pairingCode;
-  const bridgeStarting =
-    configured && !paired && running && !connected && Boolean(pairingCode);
+    !showDevicePairingCode &&
+    !awaitingDevicePairingCode;
   const linkingAfterScan =
     configured && !paired && running && !qrCode && (qrWasVisible || connected);
   const showReconnect = configured && !showQr && !awaitingQr;
   const canSave =
     !configured ||
+    phoneNumber.trim().length > 0 ||
     profileId !== settings?.profileId ||
     accessMode !== (settings?.accessMode ?? "pairing") ||
     JSON.stringify(allowedNumbers) !==
@@ -173,16 +216,18 @@ export function WhatsAppSettingsCard({
       : paired && !running
         ? "WhatsApp is linked. Start the bridge to receive messages"
         : running
-          ? showQr
-            ? "Scan the QR code in WhatsApp to link this device"
-            : linkingAfterScan
-              ? "Connecting WhatsApp…"
-              : bridgeStarting
-                ? "Preparing QR code…"
-                : awaitingQr
-                  ? "Preparing QR code…"
-                  : "Scan the QR code in WhatsApp to connect"
-          : "Bridge stopped — start it to get a QR code"
+          ? showDevicePairingCode
+            ? "Enter the Linked Devices code in WhatsApp, or scan the QR code"
+            : showQr
+              ? "Scan the QR code in WhatsApp to link this device"
+              : linkingAfterScan
+                ? "Connecting WhatsApp…"
+                : awaitingDevicePairingCode
+                  ? "Requesting link code…"
+                  : awaitingQr
+                    ? "Preparing QR code…"
+                    : "Scan the QR code in WhatsApp to connect"
+          : "Bridge stopped — start it to get a link code or QR"
     : "Choose a reply profile, then enable WhatsApp";
 
   const statusBadge = configured
@@ -193,14 +238,14 @@ export function WhatsAppSettingsCard({
         : running
           ? linkingAfterScan
             ? "Connecting"
-            : bridgeStarting
-              ? "Starting…"
-              : showQr
-                ? "Awaiting scan"
-                : awaitingQr
-                  ? "Starting…"
-                  : pairingCode
-                    ? "Awaiting link"
+            : showDevicePairingCode
+              ? "Awaiting link"
+              : awaitingDevicePairingCode
+                ? "Starting…"
+                : showQr
+                  ? "Awaiting scan"
+                  : awaitingQr
+                    ? "Starting…"
                     : "Not connected"
           : "Stopped"
     : "Not set up";
@@ -225,6 +270,28 @@ export function WhatsAppSettingsCard({
     }
   }
 
+  async function copyDevicePairingCode() {
+    if (!devicePairingCode) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(
+        formatWhatsAppDevicePairingCode(devicePairingCode)
+      );
+      setCopiedDevicePairingCode(true);
+      if (deviceCopyTimeoutRef.current) {
+        clearTimeout(deviceCopyTimeoutRef.current);
+      }
+      deviceCopyTimeoutRef.current = setTimeout(() => {
+        setCopiedDevicePairingCode(false);
+        deviceCopyTimeoutRef.current = null;
+      }, 2000);
+    } catch {
+      setHint("Copy failed. Select the code and copy it manually.");
+    }
+  }
+
   function handleSave() {
     setFormError(null);
     setHint(null);
@@ -236,13 +303,22 @@ export function WhatsAppSettingsCard({
       profileId: profileId.trim() || "default",
     };
 
+    if (phoneNumber.trim()) {
+      request.phoneNumber = phoneNumber.trim();
+    }
+
     saveMutation.mutate(request, {
       onError: (error) => {
         setFormError(formatError(error));
       },
       onSuccess: (saved) => {
+        setPhoneNumber("");
         if (saved.pairedJid) {
           setHint("Saved.");
+        } else if (phoneNumber.trim()) {
+          setHint(
+            "Saved. Enter the Linked Devices code in WhatsApp when it appears."
+          );
         } else if (saved.pairingCode) {
           setHint(
             "Saved. Send the chat access code in the WhatsApp chat you want to authorize."
@@ -294,6 +370,12 @@ export function WhatsAppSettingsCard({
     setFormError(null);
   }
 
+  function handlePhoneNumberChange(nextPhoneNumber: string) {
+    setPhoneNumber(nextPhoneNumber);
+    setHint(null);
+    setFormError(null);
+  }
+
   function handleAccessModeChange(nextMode: ChannelAccessMode) {
     setAccessMode(nextMode);
     setHint(null);
@@ -325,12 +407,15 @@ export function WhatsAppSettingsCard({
       accessMode={accessMode}
       actionLabel={actionLabel}
       allowedNumbers={allowedNumbers}
+      awaitingDevicePairingCode={awaitingDevicePairingCode}
       awaitingQr={awaitingQr}
       blockedNumbers={blockedNumbers}
-      bridgeStarting={bridgeStarting}
+      bridgeStarting={false}
       canSave={canSave}
       configured={configured}
       copied={copied}
+      copiedDevicePairingCode={copiedDevicePairingCode}
+      devicePairingCode={showDevicePairingCode ? devicePairingCode : null}
       embedded={embedded}
       formError={formError}
       headerSubtitle={headerSubtitle}
@@ -340,13 +425,16 @@ export function WhatsAppSettingsCard({
       onAccessModeChange={handleAccessModeChange}
       onAllowedNumbersChange={handleAllowedNumbersChange}
       onBlockedNumbersChange={handleBlockedNumbersChange}
+      onCopyDevicePairingCode={() => void copyDevicePairingCode()}
       onCopyPairingCode={() => void copyPairingCode()}
+      onPhoneNumberChange={handlePhoneNumberChange}
       onProfileChange={handleProfileChange}
       onReconnect={handleReconnect}
       onRegeneratePairingCode={handleRegeneratePairingCode}
       onSave={handleSave}
       paired={paired}
-      pairingCode={pairingCode}
+      pairingCode={accessMode === "pairing" ? pairingCode : null}
+      phoneNumber={phoneNumber}
       profileId={profileId}
       profiles={profiles}
       qrCode={qrCode}

@@ -1,3 +1,4 @@
+import type { ChannelAccessMode } from "@atlas/core/contract";
 import {
   CheckmarkCircle01Icon,
   Copy01Icon,
@@ -10,7 +11,22 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
-export function WhatsAppSettingsLinkingSection({
+export function formatWhatsAppDevicePairingCode(code: string): string {
+  const compactCode = code.replace(/[\s-]/g, "").toUpperCase();
+  if (compactCode.length === 8) {
+    return `${compactCode.slice(0, 4)}-${compactCode.slice(4)}`;
+  }
+
+  return code.trim().toUpperCase();
+}
+
+export function shouldShowWhatsAppChatAccessSection(
+  accessMode: ChannelAccessMode
+): boolean {
+  return accessMode === "pairing";
+}
+
+export function WhatsAppSettingsChatAccessSection({
   paired,
   pairingCode,
   copied,
@@ -18,16 +34,6 @@ export function WhatsAppSettingsLinkingSection({
   regeneratePending,
   onCopyPairingCode,
   onRegeneratePairingCode,
-  showQr,
-  qrCode,
-  linkingAfterScan,
-  bridgeStarting,
-  awaitingQr,
-  showReconnect,
-  showPairingSection = true,
-  reconnectPending,
-  onReconnect,
-  running,
   rowClassName,
   compact = false,
 }: {
@@ -38,121 +44,199 @@ export function WhatsAppSettingsLinkingSection({
   regeneratePending: boolean;
   onCopyPairingCode: () => void;
   onRegeneratePairingCode: () => void;
-  showQr: boolean;
-  qrCode: string | null;
-  linkingAfterScan: boolean;
-  bridgeStarting: boolean;
-  awaitingQr: boolean;
-  showReconnect: boolean;
-  showPairingSection?: boolean;
-  reconnectPending: boolean;
-  onReconnect: () => void;
-  running: boolean;
   rowClassName?: string;
   compact?: boolean;
 }) {
   return (
     <div className={cn("space-y-4", !paired && "bg-muted/20")}>
-      {showPairingSection ? (
-        <>
-          <SettingsRow
-            className={rowClassName}
-            description={
-              pairingCode
-                ? "Send this code in the WhatsApp chat you want to authorize."
-                : paired
-                  ? "Generate a one-time code to authorize a WhatsApp chat."
-                  : "Scan the QR code to link WhatsApp before authorizing chats."
-            }
-            label="Chat access code"
-          >
-            {pairingCode ? (
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <code className="rounded-md border border-border bg-background px-2.5 py-1 text-sm tracking-widest">
-                  {pairingCode}
-                </code>
-                <Button
-                  onClick={onCopyPairingCode}
-                  size="sm"
-                  type="button"
-                  variant="outline"
-                >
-                  {copied ? (
-                    <CheckmarkCircle01Icon
-                      aria-hidden
-                      className="size-3.5 text-emerald-600 dark:text-emerald-400"
-                    />
-                  ) : (
-                    <Copy01Icon aria-hidden className="size-3.5" />
-                  )}
-                  {copied ? "Copied" : "Copy"}
-                </Button>
-                <Button
-                  disabled={regeneratePending || savePending}
-                  onClick={onRegeneratePairingCode}
-                  size="sm"
-                  type="button"
-                  variant="outline"
-                >
-                  {regeneratePending ? (
-                    <Spinner />
-                  ) : (
-                    <>
-                      <RefreshIcon aria-hidden="true" className="size-3.5" />
-                      Generate new code
-                    </>
-                  )}
-                </Button>
-              </div>
-            ) : paired ? (
-              <Button
-                disabled={!paired || regeneratePending || savePending}
-                onClick={onRegeneratePairingCode}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                {regeneratePending ? (
-                  <Spinner />
-                ) : (
-                  <>
-                    <RefreshIcon aria-hidden="true" className="size-3.5" />
-                    Generate code
-                  </>
-                )}
-              </Button>
-            ) : (
-              <Button
-                disabled={!paired || regeneratePending || savePending}
-                onClick={onRegeneratePairingCode}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                {regeneratePending ? (
-                  <>
-                    <Spinner className="size-3" />
-                    Generating…
-                  </>
-                ) : (
-                  "Link a device first"
-                )}
-              </Button>
-            )}
-          </SettingsRow>
-
-          {pairingCode ? (
-            <ol
-              className={cn(
-                "list-decimal space-y-1 pl-5 text-muted-foreground text-xs",
-                !compact && "px-4 py-3 pl-8"
-              )}
+      <SettingsRow
+        className={rowClassName}
+        description={
+          pairingCode
+            ? "Send this code in the WhatsApp chat you want to authorize."
+            : paired
+              ? "Generate a one-time code to authorize a WhatsApp chat."
+              : "Scan the QR code to link WhatsApp before authorizing chats."
+        }
+        label="Chat access code"
+      >
+        {pairingCode ? (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <code className="rounded-md border border-border bg-background px-2.5 py-1 text-sm tracking-widest">
+              {pairingCode}
+            </code>
+            <Button
+              onClick={onCopyPairingCode}
+              size="sm"
+              type="button"
+              variant="outline"
             >
-              <li>Open a private chat with the connected WhatsApp account</li>
-              <li>Send the code as a message</li>
-            </ol>
-          ) : null}
-        </>
+              {copied ? (
+                <CheckmarkCircle01Icon
+                  aria-hidden
+                  className="size-3.5 text-emerald-600 dark:text-emerald-400"
+                />
+              ) : (
+                <Copy01Icon aria-hidden className="size-3.5" />
+              )}
+              {copied ? "Copied" : "Copy"}
+            </Button>
+            <Button
+              disabled={regeneratePending || savePending}
+              onClick={onRegeneratePairingCode}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              {regeneratePending ? (
+                <Spinner />
+              ) : (
+                <>
+                  <RefreshIcon aria-hidden="true" className="size-3.5" />
+                  Generate new code
+                </>
+              )}
+            </Button>
+          </div>
+        ) : paired ? (
+          <Button
+            disabled={!paired || regeneratePending || savePending}
+            onClick={onRegeneratePairingCode}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            {regeneratePending ? (
+              <Spinner />
+            ) : (
+              <>
+                <RefreshIcon aria-hidden="true" className="size-3.5" />
+                Generate code
+              </>
+            )}
+          </Button>
+        ) : (
+          <Button
+            disabled={!paired || regeneratePending || savePending}
+            onClick={onRegeneratePairingCode}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            {regeneratePending ? (
+              <>
+                <Spinner className="size-3" />
+                Generating…
+              </>
+            ) : (
+              "Link a device first"
+            )}
+          </Button>
+        )}
+      </SettingsRow>
+
+      {pairingCode ? (
+        <ol
+          className={cn(
+            "list-decimal space-y-1 pl-5 text-muted-foreground text-xs",
+            !compact && "px-4 py-3 pl-8"
+          )}
+        >
+          <li>Open a private chat with the connected WhatsApp account</li>
+          <li>Send the code as a message</li>
+        </ol>
+      ) : null}
+    </div>
+  );
+}
+
+export function WhatsAppSettingsDeviceLinkSection({
+  paired,
+  devicePairingCode,
+  copiedDevicePairingCode,
+  onCopyDevicePairingCode,
+  showQr,
+  qrCode,
+  linkingAfterScan,
+  bridgeStarting,
+  awaitingQr,
+  awaitingDevicePairingCode,
+  showReconnect,
+  reconnectPending,
+  onReconnect,
+  running,
+  savePending,
+  regeneratePending,
+  rowClassName,
+  compact = false,
+}: {
+  paired: boolean;
+  devicePairingCode: string | null;
+  copiedDevicePairingCode: boolean;
+  onCopyDevicePairingCode: () => void;
+  showQr: boolean;
+  qrCode: string | null;
+  linkingAfterScan: boolean;
+  bridgeStarting: boolean;
+  awaitingQr: boolean;
+  awaitingDevicePairingCode: boolean;
+  showReconnect: boolean;
+  reconnectPending: boolean;
+  onReconnect: () => void;
+  running: boolean;
+  savePending: boolean;
+  regeneratePending: boolean;
+  rowClassName?: string;
+  compact?: boolean;
+}) {
+  const showDevicePairingCode = !paired && Boolean(devicePairingCode);
+  const showStatus =
+    !(showQr || showDevicePairingCode) &&
+    (linkingAfterScan ||
+      awaitingDevicePairingCode ||
+      bridgeStarting ||
+      awaitingQr);
+
+  if (!(showDevicePairingCode || showQr || showStatus || showReconnect)) {
+    return null;
+  }
+
+  return (
+    <div className={cn("space-y-4", !paired && "bg-muted/20")}>
+      {showDevicePairingCode ? (
+        <div className={cn("space-y-3", !compact && "px-4 py-4")}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="font-medium text-foreground text-sm">
+              Link WhatsApp with a phone number
+            </p>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <code className="rounded-md border border-border bg-background px-2.5 py-1 text-sm tracking-widest">
+                {formatWhatsAppDevicePairingCode(devicePairingCode ?? "")}
+              </code>
+              <Button
+                onClick={onCopyDevicePairingCode}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                {copiedDevicePairingCode ? (
+                  <CheckmarkCircle01Icon
+                    aria-hidden
+                    className="size-3.5 text-emerald-600 dark:text-emerald-400"
+                  />
+                ) : (
+                  <Copy01Icon aria-hidden className="size-3.5" />
+                )}
+                {copiedDevicePairingCode ? "Copied" : "Copy"}
+              </Button>
+            </div>
+          </div>
+          <ol className="list-decimal space-y-1 pl-5 text-muted-foreground text-xs">
+            <li>Open WhatsApp on your phone</li>
+            <li>Go to Settings, then Linked Devices</li>
+            <li>Choose Link with phone number and enter this code</li>
+          </ol>
+        </div>
       ) : null}
 
       {showQr ? (
@@ -185,6 +269,16 @@ export function WhatsAppSettingsLinkingSection({
         >
           <Spinner className="size-4" />
           Connecting WhatsApp…
+        </div>
+      ) : awaitingDevicePairingCode ? (
+        <div
+          className={cn(
+            "flex items-center gap-2 text-muted-foreground text-sm",
+            !compact && "px-4 py-4"
+          )}
+        >
+          <Spinner className="size-4" />
+          Requesting link code…
         </div>
       ) : bridgeStarting ? (
         <div

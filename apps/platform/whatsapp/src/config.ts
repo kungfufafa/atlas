@@ -40,7 +40,7 @@ function formatNotConfiguredMessage(): string {
     "  2. Open Integrations \u2192 WhatsApp",
     "  3. Choose a reply profile and click Enable WhatsApp",
     "  4. Run: bun run dev:whatsapp",
-    "  5. Scan the QR code, or generate a pairing code in WhatsApp",
+    "  5. Scan the QR code, or enter the pairing code in WhatsApp",
     "",
     "Or set env var: WHATSAPP_PHONE_NUMBER",
     `Config file: ${getWhatsAppConfigPath()}`,

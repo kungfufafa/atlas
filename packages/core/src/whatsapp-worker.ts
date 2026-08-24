@@ -19,6 +19,7 @@ export interface WhatsAppWorkerHeartbeat {
 }
 
 const DEFAULT_HEARTBEAT_MAX_AGE_MS = 45_000;
+const DEVICE_PAIRING_CODE_FILENAME = "worker-pairing-code.txt";
 const HEARTBEAT_FILENAME = "worker-heartbeat.json";
 const QR_CODE_FILENAME = "worker-qr.txt";
 
@@ -30,17 +31,32 @@ export function getWhatsAppQrCodePath(orgId?: string | null): string {
   return join(getWhatsAppConfigDir(orgId), QR_CODE_FILENAME);
 }
 
+export function getWhatsAppDevicePairingCodePath(
+  orgId?: string | null
+): string {
+  return join(getWhatsAppConfigDir(orgId), DEVICE_PAIRING_CODE_FILENAME);
+}
+
 export function resolveWhatsAppWorkerStatus(
   settings: WhatsAppSettingsPublic,
   running: boolean,
   qrCode: string | null,
-  connected = false
+  connected = false,
+  devicePairingCode: string | null = null
 ): WhatsAppWorkerStatus {
   const configured = settings.configured;
   const paired = settings.pairedJid !== null;
   const ok = !configured || running;
 
-  return { configured, connected, ok, paired, qrCode, running };
+  return {
+    configured,
+    connected,
+    devicePairingCode: paired ? null : devicePairingCode,
+    ok,
+    paired,
+    qrCode,
+    running,
+  };
 }
 
 export function isWhatsAppProcessAlive(pid: number): boolean {
@@ -139,6 +155,27 @@ export async function readWhatsAppQrCode(): Promise<string | null> {
   return raw?.trim() || null;
 }
 
+export async function writeWhatsAppDevicePairingCode(
+  code: string
+): Promise<void> {
+  await writePrivateTextFile(getWhatsAppDevicePairingCodePath(), code, {
+    ensureDir: getWhatsAppConfigDir(),
+  });
+}
+
+export async function clearWhatsAppDevicePairingCode(): Promise<void> {
+  const path = getWhatsAppDevicePairingCodePath();
+
+  if (await pathExists(path)) {
+    await removeFile(path);
+  }
+}
+
+export async function readWhatsAppDevicePairingCode(): Promise<string | null> {
+  const raw = await readTextOrNull(getWhatsAppDevicePairingCodePath());
+  return raw?.trim() || null;
+}
+
 export async function readWhatsAppWorkerHeartbeat(): Promise<WhatsAppWorkerHeartbeat | null> {
   const raw = await readTextOrNull(getWhatsAppWorkerHeartbeatPath());
 
@@ -172,7 +209,17 @@ export async function getWhatsAppWorkerStatus(
   const running = isWhatsAppHeartbeatAlive(heartbeat);
   const qrRaw = await readTextOrNull(getWhatsAppQrCodePath(orgId));
   const qrCode = qrRaw?.trim() || null;
+  const pairingRaw = await readTextOrNull(
+    getWhatsAppDevicePairingCodePath(orgId)
+  );
+  const devicePairingCode = pairingRaw?.trim() || null;
   const connected = heartbeat?.connected === true;
 
-  return resolveWhatsAppWorkerStatus(settings, running, qrCode, connected);
+  return resolveWhatsAppWorkerStatus(
+    settings,
+    running,
+    qrCode,
+    connected,
+    devicePairingCode
+  );
 }

@@ -523,7 +523,8 @@ export function toWhatsAppSettingsPublic(
     blockedNumbers: file.blockedNumbers || [],
     configured: true,
     pairedJid: file.pairedJid,
-    pairingCode: file.pairingCode,
+    pairingCode:
+      (file.accessMode || "pairing") === "pairing" ? file.pairingCode : null,
     phoneNumberMasked:
       maskPhoneNumber(file.phoneNumber) ??
       maskPhoneNumberFromJid(file.pairedJid),
@@ -588,9 +589,9 @@ function resolveProfileId(
 
 function resolvePairingCode(
   existing: WhatsAppConfigFile | null,
-  pairedJid: string | null
+  accessMode: ChannelAccessMode
 ): string | null {
-  if (pairedJid) {
+  if (accessMode !== "pairing") {
     return null;
   }
 
@@ -620,7 +621,7 @@ function buildSavedWhatsAppConfig(
     outboundPort: existing?.outboundPort ?? null,
     pairedJid,
     pairedLid: existing?.pairedLid ?? null,
-    pairingCode: resolvePairingCode(existing, pairedJid),
+    pairingCode: resolvePairingCode(existing, accessMode),
     phoneNumber,
     profileId: resolveProfileId(input, existing),
   };
@@ -663,6 +664,14 @@ export async function resetWhatsAppSessionForReconnect(
     await removeFile(qrPath);
   }
 
+  const devicePairingCodePath = join(
+    getWhatsAppConfigDir(orgId),
+    "worker-pairing-code.txt"
+  );
+  if (await pathExists(devicePairingCodePath)) {
+    await removeFile(devicePairingCodePath);
+  }
+
   const next: WhatsAppConfigFile = {
     ...existing,
     pairedJid: null,
@@ -681,6 +690,12 @@ export async function regenerateWhatsAppPairingCode(
 
   if (!existing) {
     throw new Error("Enable WhatsApp before generating a chat access code.");
+  }
+
+  if ((existing.accessMode || "pairing") !== "pairing") {
+    throw new Error(
+      "Chat access codes are only used when access mode is Chat access code."
+    );
   }
 
   const next: WhatsAppConfigFile = {
@@ -802,7 +817,7 @@ export async function syncWhatsAppOwnerPairing(options: {
     pairedJid: config.pairedJid ?? options.ownerJid,
     // Preserve an existing chat LID unless forceLidUpdate is true.
     pairedLid,
-    pairingCode: null,
+    pairingCode: config.pairingCode,
     phoneNumber: ownerPhone || config.phoneNumber,
   };
 
@@ -854,7 +869,10 @@ export function resolveWhatsAppConfigFromSources(options: {
     blockedNumbers: file?.blockedNumbers ?? [],
     pairedJid: file?.pairedJid ?? null,
     pairedLid: file?.pairedLid ?? null,
-    pairingCode: file?.pairingCode ?? null,
+    pairingCode:
+      (file?.accessMode ?? "pairing") === "pairing"
+        ? (file?.pairingCode ?? null)
+        : null,
     phoneNumber: envPhone || file?.phoneNumber?.trim() || "",
     profileId:
       (allowEnvCredentials

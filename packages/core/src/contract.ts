@@ -155,6 +155,7 @@ export interface DiscordWorkerStatus {
 export interface WhatsAppWorkerStatus {
   configured: boolean;
   connected: boolean;
+  devicePairingCode: string | null;
   ok: boolean;
   paired: boolean;
   process?: WorkerProcessInfo;

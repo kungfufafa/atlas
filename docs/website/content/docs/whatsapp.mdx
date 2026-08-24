@@ -47,7 +47,8 @@ This keeps replies readable in WhatsApp without depending on web-style Markdown 
 
 1. Open **Integrations → WhatsApp** in the Atlas web app
 2. Choose which profile should reply
-3. Click **Enable WhatsApp**
+3. Optionally enter your WhatsApp number with country code if you want a pairing code instead of a QR scan
+4. Click **Enable WhatsApp**
 
 ### 2. Start the bridge
 
@@ -65,17 +66,43 @@ bun run dev:server
 
 ### 3. Connect your WhatsApp account
 
+You can link with a phone number or a QR code. This step connects Atlas to WhatsApp. It is not the same as **Access mode**.
+
+**Link with phone number**
+
+1. In **Integrations → WhatsApp**, enter your WhatsApp number with country code (for example `628123456789`)
+2. Enable WhatsApp and start the bridge
+3. Copy the Linked Devices code when it appears
+4. Open WhatsApp on your phone
+5. Go to **Settings → Linked Devices**
+6. Choose **Link with phone number** and enter the code
+
+**QR code**
+
 1. Start the WhatsApp bridge
 2. Wait for the QR code to appear in **Integrations → WhatsApp**
 3. Open WhatsApp on your phone
 4. Go to **Settings → Linked Devices**
 5. Tap **Link a Device** and scan the QR code
 
-After you scan the QR code, Atlas shows **Connected** and the linked account. The bridge can now receive messages.
+After you link, Atlas shows **Connected** and the linked account. The bridge can now receive messages.
 
-### 4. Authorize a WhatsApp chat
+The Linked Devices code (and the QR code) only connect Atlas to your WhatsApp account. They do not control who may chat.
 
-Atlas authorizes the connected account. Other WhatsApp chats need a one-time chat access code before Atlas replies.
+### 4. Choose who can chat
+
+**Access mode** is separate from linking the account.
+
+| Mode | Who Atlas replies to |
+|---|---|
+| Open | Anyone who messages the linked number |
+| Allowed list only | Numbers you add |
+| Blocked list filter | Anyone except numbers you block |
+| Chat access code | Only chats that send a one-time code |
+
+When access is **Open**, you do not generate or send a chat access code.
+
+When access is **Chat access code**:
 
 1. In **Integrations → WhatsApp**, generate a **Chat access code**
 2. Copy the code
@@ -106,7 +133,7 @@ Supported inputs include:
 - voice notes (transcribed, then handled like text)
 - supported documents such as `pdf`, `docx`, `xls`, `xlsx`, `csv`, `txt`, and `md`
 
-Small supported files are downloaded and forwarded into the same Atlas chat flow as the web app. A caption on the photo or file becomes the message text. Unsupported media gets a rejection instead of failing silently.
+Photos up to **5 MB** and documents up to **25 MB** are processed. Small documents go into the same Atlas chat flow as the web app. Larger documents are read as text (up to a safe extract size) so a 20 MB PDF can still be summarized without loading the whole file into the model. A caption on the photo or file becomes the message text. Files over 25 MB, or scanned PDFs with no extractable text, get a clear rejection instead of failing silently.
 
 When the agent saves a file (spreadsheet, document, deck, or other artifact), Atlas sends the file in the WhatsApp chat when it is within 5 MB, and posts a **Publish-style share link** after the reply. Ask “send the file” to get the latest saved file again. If the file is larger than 5 MB, use the share link. Replies quote the message you sent.
 
@@ -147,7 +174,7 @@ Check:
 1. the Atlas server is running
 2. the WhatsApp bridge is running with `bun run dev:whatsapp`
 3. **Integrations → WhatsApp** shows **Connected**
-4. Atlas has authorized the chat; if Atlas asks for a code, generate a chat access code and send it from that chat
+4. Atlas has authorized the chat. If access is **Chat access code** and Atlas asks for a code, generate a chat access code and send it from that chat. **Open** does not use a chat access code.
 5. if access is an allowlist, confirm the sender's **phone number** is listed. WhatsApp may deliver the chat as a LID; Atlas still checks the resolved phone, and `/help` from an unmatched chat replies that the chat is not authorized
 
 ### Chat access code does not work
@@ -159,6 +186,15 @@ Check these first:
 3. Send the current code from the chat you want to authorize
 
 Atlas accepts the current code once. Generate another code if the current one was used or replaced.
+
+### Linked Devices code does not appear
+
+Check these first:
+
+1. Enter a WhatsApp number with country code, then save
+2. Confirm the WhatsApp bridge is running
+3. Wait a few seconds for the Linked Devices code to appear
+4. If it stays empty, use **Reconnect with QR**, then try the phone-number link again
 
 ### QR linking is stuck
 

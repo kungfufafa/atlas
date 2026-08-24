@@ -1,4 +1,7 @@
-import { getWhatsAppConfigDir } from "@atlas/core/whatsapp-config";
+import {
+  getWhatsAppConfigDir,
+  normalizePhoneNumberDigits,
+} from "@atlas/core/whatsapp-config";
 import {
   DisconnectReason,
   extractMessageContent,
@@ -19,6 +22,7 @@ import {
 
 export interface WhatsAppSocketDeps {
   onConnected?: (me: { id: string; lid?: string | null }) => void;
+  onDevicePairingCode?: (code: string) => void;
   onDisconnected?: () => void;
   onMessage: (data: {
     fromMe?: boolean;
@@ -29,6 +33,7 @@ export interface WhatsAppSocketDeps {
   }) => Promise<void>;
   onPhoneNumberShare?: (lid: string, phoneJid: string) => void;
   onQr?: (qr: string) => void;
+  phoneNumber?: string;
 }
 
 export interface WhatsAppSocketHandle {
@@ -75,6 +80,7 @@ export async function createWhatsAppSocket(
       });
 
       const current = socket;
+      let pairingRequested = false;
 
       socket.ev.on("connection.update", async (update) => {
         if (socket !== current) {
@@ -85,6 +91,34 @@ export async function createWhatsAppSocket(
 
         if (qr) {
           deps.onQr?.(qr);
+          const phoneDigits = normalizePhoneNumberDigits(
+            deps.phoneNumber ?? ""
+          );
+          if (
+            shouldRequestDevicePairingCode({
+              alreadyRequested: pairingRequested,
+              phoneDigits,
+              registered: Boolean(state.creds.registered),
+            })
+          ) {
+            pairingRequested = true;
+            try {
+              const code = await current.requestPairingCode(phoneDigits);
+              if (socket !== current || stopped) {
+                return;
+              }
+
+              const trimmed = code?.trim();
+              if (trimmed) {
+                deps.onDevicePairingCode?.(trimmed);
+              }
+            } catch (error) {
+              pairingRequested = false;
+              console.error("WhatsApp pairing code request failed.", {
+                error: error instanceof Error ? error.message : String(error),
+              });
+            }
+          }
         }
 
         if (connection === "open") {
@@ -242,6 +276,17 @@ function isVerboseLoggingEnabled(value: string | undefined): boolean {
 
 export function isSupportedUpsertType(type: string): boolean {
   return type === "notify" || type === "append";
+}
+
+export function shouldRequestDevicePairingCode(input: {
+  alreadyRequested: boolean;
+  phoneDigits: string;
+  registered: boolean;
+}): boolean {
+  return (
+    !(input.registered || input.alreadyRequested) &&
+    input.phoneDigits.length >= 8
+  );
 }
 
 export function extractDisconnectStatusCode(

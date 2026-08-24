@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   clearDocumentTextParsers,
+  extractInboundDocumentText,
   getDocumentTextParser,
   providerSupportsNativeDocument,
   registerDocumentTextParser,
@@ -217,5 +218,41 @@ describe("resolveDocumentPartForProvider", () => {
       text: "[File: Pasted text (3 words).txt]\nalpha beta gamma",
       type: "text",
     });
+  });
+});
+
+describe("extractInboundDocumentText", () => {
+  test("returns plain text without sending it through anydoc", async () => {
+    const result = await extractInboundDocumentText({
+      bytes: Buffer.from("hello from notes", "utf8"),
+      filename: "notes.txt",
+      mediaType: "text/plain",
+    });
+
+    expect(result).toEqual({
+      text: "hello from notes",
+      truncated: false,
+    });
+  });
+
+  test("truncates oversized plain text", async () => {
+    const result = await extractInboundDocumentText({
+      bytes: Buffer.from("abcdefghij", "utf8"),
+      filename: "notes.md",
+      mediaType: "text/markdown",
+    });
+
+    const truncated = await extractInboundDocumentText({
+      bytes: Buffer.alloc(300_000, 0x61),
+      filename: "notes.md",
+      mediaType: "text/markdown",
+    });
+
+    expect(result.truncated).toBe(false);
+    expect(truncated.truncated).toBe(true);
+    expect(truncated.text.endsWith("…")).toBe(true);
+    expect(Buffer.byteLength(truncated.text, "utf8")).toBeLessThanOrEqual(
+      256 * 1024
+    );
   });
 });

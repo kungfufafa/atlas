@@ -10,10 +10,13 @@ Setup flow:
 
 1. Start the server with `bun run dev:server`
 2. Open the web dashboard and go to `Integrations -> WhatsApp`
-3. Save your phone number and profile
-4. Copy the pairing code
-5. In WhatsApp, open `Settings -> Linked Devices -> Link with phone number`
-6. Enter the pairing code
+3. Choose a reply profile and enter your WhatsApp number with country code
+4. Click Enable WhatsApp, then start the bridge if it is not already running
+5. Copy the Linked Devices code, or scan the QR code
+6. In WhatsApp, open `Settings -> Linked Devices`
+7. Choose `Link with phone number` and enter the code, or scan the QR code
+
+Access mode controls who may chat after the account is linked. Open does not use a chat access code.
 
 Notes:
 

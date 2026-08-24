@@ -1,9 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { MAX_DOCUMENT_BYTES } from "@atlas/core/message-content";
 import type { WAMessage } from "@whiskeysockets/baileys";
 import {
   buildWhatsAppMediaInput,
+  formatExtractedWhatsAppDocumentMessage,
   OVERSIZED_FILE_REPLY,
+  OVERSIZED_IMAGE_REPLY,
+  resolveWhatsAppDocumentHandling,
+  UNREADABLE_DOCUMENT_REPLY,
   UNSUPPORTED_DOCUMENT_TYPES_REPLY,
   UNSUPPORTED_MEDIA_REPLY,
 } from "./attachments";
@@ -193,7 +196,7 @@ describe("buildWhatsAppMediaInput", () => {
     let downloaded = false;
     const result = await buildWhatsAppMediaInput(
       createDocumentMessage({
-        fileLength: MAX_DOCUMENT_BYTES + 1,
+        fileLength: 26 * 1024 * 1024,
         fileName: "report.pdf",
         mimeType: "application/pdf",
       }),
@@ -208,5 +211,97 @@ describe("buildWhatsAppMediaInput", () => {
       kind: "reject",
       message: OVERSIZED_FILE_REPLY,
     });
+  });
+
+  test("extracts text from documents larger than the inline limit", async () => {
+    const bytes = Buffer.from("extracted-source");
+    const result = await buildWhatsAppMediaInput(
+      createDocumentMessage({
+        caption: "Summarize this",
+        fileName: "report.pdf",
+        mimeType: "application/pdf",
+      }),
+      async () => bytes,
+      {
+        extractDocumentText: async () => ({
+          text: "Quarterly revenue rose.",
+          truncated: false,
+        }),
+        ingestMaxBytes: 100,
+        inlineMaxBytes: 8,
+      }
+    );
+
+    expect(result).toEqual({
+      input: {
+        message: formatExtractedWhatsAppDocumentMessage({
+          caption: "Summarize this",
+          filename: "report.pdf",
+          text: "Quarterly revenue rose.",
+          truncated: false,
+        }),
+      },
+      kind: "input",
+    });
+  });
+
+  test("rejects extracted documents with no readable text", async () => {
+    const result = await buildWhatsAppMediaInput(
+      createDocumentMessage({
+        fileName: "scan.pdf",
+        mimeType: "application/pdf",
+      }),
+      async () => Buffer.from("scanned"),
+      {
+        extractDocumentText: async () => ({ text: "  ", truncated: false }),
+        ingestMaxBytes: 100,
+        inlineMaxBytes: 4,
+      }
+    );
+
+    expect(result).toEqual({
+      kind: "reject",
+      message: UNREADABLE_DOCUMENT_REPLY,
+    });
+  });
+
+  test("rejects oversized photos from the declared file length", async () => {
+    let downloaded = false;
+    const result = await buildWhatsAppMediaInput(
+      {
+        key: {
+          fromMe: false,
+          id: "msg-3",
+          remoteJid: "6281234567890@s.whatsapp.net",
+        },
+        message: {
+          imageMessage: {
+            fileLength: 6 * 1024 * 1024,
+            mimetype: "image/jpeg",
+          },
+        },
+      },
+      async () => {
+        downloaded = true;
+        return Buffer.from("jpeg");
+      }
+    );
+
+    expect(downloaded).toBe(false);
+    expect(result).toEqual({
+      kind: "reject",
+      message: OVERSIZED_IMAGE_REPLY,
+    });
+  });
+});
+
+describe("resolveWhatsAppDocumentHandling", () => {
+  test("keeps small files inline, extracts mid-size files, and rejects huge files", () => {
+    const limits = { ingestMaxBytes: 25, inlineMaxBytes: 5 };
+
+    expect(resolveWhatsAppDocumentHandling(5, limits)).toBe("inline");
+    expect(resolveWhatsAppDocumentHandling(6, limits)).toBe("extract");
+    expect(resolveWhatsAppDocumentHandling(25, limits)).toBe("extract");
+    expect(resolveWhatsAppDocumentHandling(26, limits)).toBe("reject");
   });
 });

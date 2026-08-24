@@ -23,6 +23,56 @@ function decodeDocumentText(data: string): string {
   return Buffer.from(data, "base64").toString("utf8");
 }
 
+const PLAIN_DOCUMENT_MEDIA_TYPES = new Set([
+  "text/csv",
+  "text/markdown",
+  "text/plain",
+]);
+
+function truncateUtf8(
+  value: string,
+  maxBytes: number
+): { text: string; truncated: boolean } {
+  if (Buffer.byteLength(value, "utf8") <= maxBytes) {
+    return { text: value, truncated: false };
+  }
+
+  const ellipsis = "…";
+  const budget = Math.max(0, maxBytes - Buffer.byteLength(ellipsis, "utf8"));
+  let lo = 0;
+  let hi = value.length;
+
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (Buffer.byteLength(value.slice(0, mid), "utf8") <= budget) {
+      lo = mid;
+    } else {
+      hi = mid - 1;
+    }
+  }
+
+  return { text: `${value.slice(0, lo)}${ellipsis}`, truncated: true };
+}
+
+export async function extractInboundDocumentText(input: {
+  bytes: Buffer;
+  filename: string;
+  mediaType: string;
+}): Promise<{ text: string; truncated: boolean }> {
+  const { ANYDOC_MAX_OUTPUT_BYTES, convertDocumentBytes } = await import(
+    "./anydoc-text"
+  );
+
+  if (PLAIN_DOCUMENT_MEDIA_TYPES.has(input.mediaType)) {
+    return truncateUtf8(input.bytes.toString("utf8"), ANYDOC_MAX_OUTPUT_BYTES);
+  }
+
+  return convertDocumentBytes(input.bytes, {
+    filename: input.filename,
+    mediaType: input.mediaType,
+  });
+}
+
 async function parseWithAnydoc(document: DocumentAttachment): Promise<string> {
   const { convertDocumentBytes } = await import("./anydoc-text");
   const { text, truncated } = await convertDocumentBytes(

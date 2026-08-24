@@ -11,10 +11,12 @@ import { loadLocalAuthToken } from "@atlas/core/local-auth";
 import { resolveWebPublicUrl } from "@atlas/core/runtime";
 import { syncWhatsAppOwnerPairing } from "@atlas/core/whatsapp-config";
 import {
+  clearWhatsAppDevicePairingCode,
   clearWhatsAppQrCode,
   clearWhatsAppWorkerHeartbeat,
   isWhatsAppHeartbeatAlive,
   readWhatsAppWorkerHeartbeat,
+  writeWhatsAppDevicePairingCode,
   writeWhatsAppQrCode,
   writeWhatsAppWorkerHeartbeat,
 } from "@atlas/core/whatsapp-worker";
@@ -53,6 +55,7 @@ registerCleanupHandlers(() => {
   }
   void clearWhatsAppWorkerHeartbeat();
   void clearWhatsAppQrCode();
+  void clearWhatsAppDevicePairingCode();
   stopSpawnedServer(spawnedChild);
 });
 
@@ -119,11 +122,18 @@ try {
       persistWorkerHeartbeat();
       console.log("WhatsApp connected.");
       void clearWhatsAppQrCode();
+      void clearWhatsAppDevicePairingCode();
       void syncWhatsAppOwnerPairing({
         orgId: workspaceId,
         ownerJid: me.id,
         ownerLid: me.lid,
       }).then(() => authStore.reload());
+    },
+    onDevicePairingCode: (code) => {
+      console.log(
+        "WhatsApp pairing code ready. Enter it under Linked Devices."
+      );
+      void writeWhatsAppDevicePairingCode(code);
     },
     onDisconnected: () => {
       bridgeConnected = false;
@@ -136,6 +146,7 @@ try {
     onQr: (qr) => {
       void writeWhatsAppQrCode(qr);
     },
+    phoneNumber: config.phoneNumber,
   });
 
   socketHandle = socket;
