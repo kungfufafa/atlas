@@ -41,14 +41,16 @@ import {
   pickPreferredSkillSourcePath,
   removeProfileSkillSupportingFile,
   SKILL_FILE_NAME,
+  type SkillRanker,
   writeProfileSkillSupportingFile,
   writeRawProfileSkillMarkdown,
 } from "@atlas/core";
-import type {
-  DatabaseAdapter,
-  SkillCreatedBy,
-  StoredSkillRecord,
-  StoredSkillUsageRecord,
+import {
+  createFts5SkillRanker,
+  type DatabaseAdapter,
+  type SkillCreatedBy,
+  type StoredSkillRecord,
+  type StoredSkillUsageRecord,
 } from "@atlas/db";
 import {
   type SkillUsageRecordingContext,
@@ -60,13 +62,16 @@ export type { SkillUsageRecordingContext };
 const bundledSkillNames = new Set<string>(BUNDLED_SKILL_NAMES);
 
 export class SkillsService {
+  private readonly skillRanker: SkillRanker;
   private readonly skillUsageService: SkillUsageService;
 
   constructor(
     private readonly db: DatabaseAdapter,
-    skillUsageService?: SkillUsageService
+    skillUsageService?: SkillUsageService,
+    skillRanker?: SkillRanker
   ) {
     this.skillUsageService = skillUsageService ?? new SkillUsageService(db);
+    this.skillRanker = skillRanker ?? createFts5SkillRanker();
   }
 
   async syncDiscoveredSkills(): Promise<SyncSkillsResponse> {
@@ -585,7 +590,27 @@ export class SkillsService {
   ): Promise<string> {
     const assigned = await this.getAssignedDiscoveredSkills(orgId, profileId);
     const assignedRecords = await this.db.listSkillsForProfile(profileId);
-    const matched = matchSkillsForMessage(assigned, userMessage);
+    const usage = await this.skillUsageService.listForProfile(profileId);
+    const nameById = new Map(
+      assignedRecords.map((record) => [record.id, record.name])
+    );
+    const outcomes = usage.flatMap((entry) => {
+      const skillName = nameById.get(entry.skillId);
+      if (!skillName) {
+        return [];
+      }
+      return [
+        {
+          helpful: entry.useCount > 0 ? true : null,
+          skillName,
+          useCount: entry.useCount,
+        },
+      ];
+    });
+    const matched = matchSkillsForMessage(assigned, userMessage, {
+      outcomes,
+      ranker: this.skillRanker,
+    });
     const explicitSkillName = extractExplicitSkillName(userMessage);
 
     if (matched.length > 0) {

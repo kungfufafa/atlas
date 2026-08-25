@@ -9,7 +9,7 @@ import { AutomationWorkerScheduler } from "./scheduler";
 function createMockClient(
   overrides: Partial<{
     listAutomationSchedules: () => Promise<AutomationSchedule[]>;
-    runAutomationInternal: (id: string) => Promise<void>;
+    runAutomationInternal: (id: string, fireId: string) => Promise<void>;
     getTimezone: () => Promise<string>;
   }> = {}
 ): AtlasClient {

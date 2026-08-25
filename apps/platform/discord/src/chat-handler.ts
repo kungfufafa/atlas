@@ -393,7 +393,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
               documents: attachmentInput.documents,
               images: attachmentInput.images,
             }
-          : undefined
+          : undefined,
+        userId
       );
     });
 
@@ -612,7 +613,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         case "clear": {
           stopActiveStream(conversationKey);
           pendingQuestionnaires.delete(conversationKey);
-          const session = await resolveSession(conversationKey);
+          const session = await resolveSession(conversationKey, userId);
           await session.clear();
           await clearSessionArtifactState(conversationKey);
           await messenger.send("History cleared.");
@@ -620,7 +621,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         }
         case "compact": {
           stopActiveStream(conversationKey);
-          const session = await resolveSession(conversationKey);
+          const session = await resolveSession(conversationKey, userId);
           const result = await session.compact({ force: true });
           await messenger.send(
             `Compacted (${result.action}). Messages: ${result.messagesAfter}.`
@@ -761,9 +762,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     attachUserText: string,
     isGuild: boolean,
     isThread: boolean,
-    attachments?: Pick<SendMessageInput, "documents" | "images">
+    attachments?: Pick<SendMessageInput, "documents" | "images">,
+    authorUserId?: string
   ): Promise<void> {
-    const session = await resolveSession(conversationKey);
+    const session = await resolveSession(conversationKey, authorUserId);
     const profileId = sessionStore.get(conversationKey)?.profileId;
 
     // `/attach` remains a non-LLM shortcut. Natural-language sends use the
@@ -1195,7 +1197,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
   }
 
-  async function resolveSession(chatId: string): Promise<RemoteChatSession> {
+  async function resolveSession(
+    chatId: string,
+    channelUserId?: string
+  ): Promise<RemoteChatSession> {
     const existing = sessionStore.get(chatId);
 
     if (existing) {
@@ -1209,17 +1214,21 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       }
     }
 
-    return createAndBindSession(chatId);
+    return createAndBindSession(chatId, undefined, channelUserId);
   }
 
   async function createAndBindSession(
     chatId: string,
-    profileId?: string
+    profileId?: string,
+    channelUserId?: string
   ): Promise<RemoteChatSession> {
     pendingQuestionnaires.delete(chatId);
     const resolvedProfileId =
       profileId ?? (await resolveSessionProfileId(chatId));
     const session = await client.createSession("discord", {
+      externalPrincipal: {
+        channelUserId: channelUserId ?? chatId,
+      },
       profileId: resolvedProfileId,
     });
 

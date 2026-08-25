@@ -44,6 +44,7 @@ describe("resolveTelegramConfigFromSources", () => {
         blockedUserIds: [],
         botToken: "file-token",
         handshakeCode: null,
+        handshakeUserId: null,
         pairedUserIds: [1],
         profileId: "profile_from_file",
       },

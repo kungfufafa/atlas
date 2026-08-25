@@ -9,14 +9,23 @@ import type {
   DatabaseAdapter,
   MemoryScope,
   OrgMemoryProposalStatus,
+  StoredActionApprovalRecord,
   StoredArtifactShareRecord,
   StoredAttachmentRecord,
   StoredAutomationRecord,
   StoredAutomationRunRecord,
   StoredBrowserSessionRecord,
+  StoredChannelOrgMappingRecord,
   StoredComposioToolkitRecord,
   StoredComposioUserConnectionRecord,
   StoredConversationMessageItem,
+  StoredExecutionRunRecord,
+  StoredExecutionStepRecord,
+  StoredLearningCandidateRecord,
+  StoredLearningCommitRecord,
+  StoredLearningEvidenceRecord,
+  StoredLearningJobRecord,
+  StoredLearningOutcomeRecord,
   StoredLlmUsageModelStatsRecord,
   StoredLlmUsageStatsRecord,
   StoredMcpServerRecord,
@@ -26,6 +35,7 @@ import type {
   StoredOrgInviteRecord,
   StoredOrgMemberRecord,
   StoredOrgMemoryProposal,
+  StoredOutboxRecord,
   StoredProfileComposioToolkitRecord,
   StoredProfileRecord,
   StoredSessionMessageRecord,
@@ -33,6 +43,7 @@ import type {
   StoredSessionSummaryRecord,
   StoredSkillProposal,
   StoredSkillRecord,
+  StoredSkillRevisionRecord,
   StoredSkillSuggestion,
   StoredSkillUsageRecord,
   StoredTaskRecord,
@@ -1636,6 +1647,158 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     WHERE org_id = ? AND id = ?
   `);
 
+  const upsertChannelOrgMappingStmt = db.prepare(`
+    INSERT INTO channel_org_mappings (channel, channel_user_id, user_id, org_id, created_at)
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(channel, channel_user_id) DO UPDATE SET
+      user_id = excluded.user_id,
+      org_id = excluded.org_id
+  `);
+  const getChannelOrgMappingStmt = db.prepare(`
+    SELECT * FROM channel_org_mappings
+    WHERE channel = ? AND channel_user_id = ?
+    LIMIT 1
+  `);
+  const listChannelOrgMappingsForOrgStmt = db.prepare(`
+    SELECT * FROM channel_org_mappings WHERE org_id = ?
+  `);
+  const deleteChannelOrgMappingStmt = db.prepare(`
+    DELETE FROM channel_org_mappings WHERE channel = ? AND channel_user_id = ?
+  `);
+  const upsertExecutionRunStmt = db.prepare(`
+    INSERT INTO execution_runs (
+      id, org_id, principal_user_id, session_id, kind, status, lease_owner,
+      lease_expires_at, idempotency_key, current_step_index, checkpoint, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      status = excluded.status,
+      lease_owner = excluded.lease_owner,
+      lease_expires_at = excluded.lease_expires_at,
+      current_step_index = excluded.current_step_index,
+      checkpoint = excluded.checkpoint,
+      updated_at = excluded.updated_at
+  `);
+  const getExecutionRunStmt = db.prepare(
+    "SELECT * FROM execution_runs WHERE id = ? LIMIT 1"
+  );
+  const getExecutionRunByIdempotencyKeyStmt = db.prepare(`
+    SELECT * FROM execution_runs
+    WHERE org_id = ? AND idempotency_key = ?
+    LIMIT 1
+  `);
+  const listExecutionRunsStmt = db.prepare(`
+    SELECT * FROM execution_runs ORDER BY created_at ASC
+  `);
+  const upsertExecutionStepStmt = db.prepare(`
+    INSERT INTO execution_steps (
+      id, run_id, step_index, tool_name, tool_call_id, args_json, args_hash,
+      status, result_json, approval_id, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      status = excluded.status,
+      result_json = excluded.result_json,
+      approval_id = excluded.approval_id,
+      updated_at = excluded.updated_at
+  `);
+  const listExecutionStepsStmt = db.prepare(`
+    SELECT * FROM execution_steps WHERE run_id = ? ORDER BY step_index ASC
+  `);
+  const upsertActionApprovalStmt = db.prepare(`
+    INSERT INTO action_approvals (
+      id, org_id, principal_user_id, session_id, run_id, step_id, tool_name,
+      action_hash, args_json, status, grant_id, decided_by_user_id, decided_at,
+      created_at, expires_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      status = excluded.status,
+      grant_id = excluded.grant_id,
+      decided_by_user_id = excluded.decided_by_user_id,
+      decided_at = excluded.decided_at
+  `);
+  const getActionApprovalStmt = db.prepare(
+    "SELECT * FROM action_approvals WHERE id = ? LIMIT 1"
+  );
+  const listActionApprovalsForSessionStmt = db.prepare(`
+    SELECT * FROM action_approvals WHERE session_id = ?
+  `);
+  const createLearningEvidenceStmt = db.prepare(`
+    INSERT INTO learning_evidence (
+      id, org_id, principal_user_id, session_id, run_id, kind, payload_json, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  const listLearningEvidenceForSessionStmt = db.prepare(`
+    SELECT * FROM learning_evidence WHERE org_id = ? AND session_id = ?
+  `);
+  const upsertLearningCandidateStmt = db.prepare(`
+    INSERT INTO learning_candidates (
+      id, org_id, evidence_ids, kind, content, status, target, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      status = excluded.status,
+      content = excluded.content,
+      updated_at = excluded.updated_at
+  `);
+  const getLearningCandidateStmt = db.prepare(
+    "SELECT * FROM learning_candidates WHERE id = ? LIMIT 1"
+  );
+  const listLearningCandidatesStmt = db.prepare(`
+    SELECT * FROM learning_candidates WHERE org_id = ?
+  `);
+  const createLearningCommitStmt = db.prepare(`
+    INSERT INTO learning_commits (
+      id, org_id, candidate_id, memory_id, skill_id, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?)
+  `);
+  const listLearningCommitsStmt = db.prepare(
+    "SELECT * FROM learning_commits WHERE org_id = ?"
+  );
+  const createLearningOutcomeStmt = db.prepare(`
+    INSERT INTO learning_outcomes (
+      id, org_id, commit_id, session_id, used, helpful, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+  const listLearningOutcomesForCommitStmt = db.prepare(
+    "SELECT * FROM learning_outcomes WHERE commit_id = ?"
+  );
+  const createSkillRevisionStmt = db.prepare(`
+    INSERT INTO skill_revisions (
+      id, skill_id, org_id, version, content, evidence_ids, created_by_user_id, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  const listSkillRevisionsStmt = db.prepare(`
+    SELECT * FROM skill_revisions WHERE skill_id = ? ORDER BY version ASC
+  `);
+  const upsertLearningJobStmt = db.prepare(`
+    INSERT INTO learning_jobs (
+      id, org_id, principal_user_id, session_id, terminal_message_id,
+      evaluator_version, idempotency_key, status, mode, result_json, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      status = excluded.status,
+      result_json = excluded.result_json,
+      updated_at = excluded.updated_at
+  `);
+  const getLearningJobByIdempotencyKeyStmt = db.prepare(`
+    SELECT * FROM learning_jobs WHERE org_id = ? AND idempotency_key = ? LIMIT 1
+  `);
+  const createAuditEventStmt = db.prepare(`
+    INSERT INTO audit_events (
+      id, org_id, principal_user_id, action, resource, payload_json, run_id, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  const upsertOutboxMessageStmt = db.prepare(`
+    INSERT INTO outbound_outbox (
+      id, org_id, principal_user_id, envelope_json, status, attempt, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      status = excluded.status,
+      attempt = excluded.attempt,
+      updated_at = excluded.updated_at
+  `);
+  const listQueuedOutboxStmt = db.prepare(`
+    SELECT * FROM outbound_outbox WHERE org_id = ? AND status = 'queued'
+  `);
+
   return {
     aggregateLlmUsage(options) {
       const columnByGroup: Record<string, string> = {
@@ -1788,6 +1951,19 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       );
     },
 
+    async createAuditEvent(record) {
+      createAuditEventStmt.run(
+        record.id,
+        record.orgId,
+        record.principalUserId,
+        record.action,
+        record.resource,
+        record.payloadJson,
+        record.runId,
+        record.createdAt
+      );
+    },
+
     async createBrowserSession(record) {
       createBrowserSessionStmt.run(
         record.id,
@@ -1799,6 +1975,39 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.revokedAt,
         record.lastUsedAt,
         record.activeOrgId ?? null
+      );
+    },
+    async createLearningCommit(record) {
+      createLearningCommitStmt.run(
+        record.id,
+        record.orgId,
+        record.candidateId,
+        record.memoryId,
+        record.skillId,
+        record.createdAt
+      );
+    },
+    async createLearningEvidence(record) {
+      createLearningEvidenceStmt.run(
+        record.id,
+        record.orgId,
+        record.principalUserId,
+        record.sessionId,
+        record.runId,
+        record.kind,
+        record.payloadJson,
+        record.createdAt
+      );
+    },
+    async createLearningOutcome(record) {
+      createLearningOutcomeStmt.run(
+        record.id,
+        record.orgId,
+        record.commitId,
+        record.sessionId,
+        record.used ? 1 : 0,
+        record.helpful === null ? null : Number(record.helpful),
+        record.createdAt
       );
     },
 
@@ -1868,6 +2077,18 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.createdAt
       );
     },
+    async createSkillRevision(record) {
+      createSkillRevisionStmt.run(
+        record.id,
+        record.skillId,
+        record.orgId,
+        record.version,
+        record.content,
+        record.evidenceIds,
+        record.createdByUserId,
+        record.createdAt
+      );
+    },
 
     async createSkillSuggestion(record) {
       createSkillSuggestionStmt.run(
@@ -1914,6 +2135,10 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
 
     async deleteAutomationRun(automationId, runId) {
       const result = deleteAutomationRunStmt.run(automationId, runId);
+      return result.changes > 0;
+    },
+    async deleteChannelOrgMapping(channel, channelUserId) {
+      const result = deleteChannelOrgMappingStmt.run(channel, channelUserId);
       return result.changes > 0;
     },
 
@@ -1974,6 +2199,12 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     async deleteTool(id) {
       const result = deleteToolStmt.run(id);
       return result.changes > 0;
+    },
+    async getActionApproval(id) {
+      const row = getActionApprovalStmt.get(id) as
+        | Record<string, unknown>
+        | undefined;
+      return row ? toActionApprovalRecord(row) : null;
     },
 
     async getActiveArtifactShareByPath(orgId, profileId, sourcePath) {
@@ -2037,6 +2268,12 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         sessionTokenHash
       ) as BrowserSessionRow | null;
       return row ? toBrowserSessionRecord(row) : null;
+    },
+    async getChannelOrgMapping(channel, channelUserId) {
+      const row = getChannelOrgMappingStmt.get(channel, channelUserId) as
+        | Record<string, unknown>
+        | undefined;
+      return row ? toChannelOrgMappingRecord(row) : null;
     },
 
     async getComposioToolkit(id) {
@@ -2138,6 +2375,32 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     async getDefaultProfileForOrg(orgId) {
       const row = getDefaultProfileForOrgStmt.get(orgId) as ProfileRow | null;
       return row ? toProfileRecord(row) : null;
+    },
+    async getExecutionRun(id) {
+      const row = getExecutionRunStmt.get(id) as
+        | Record<string, unknown>
+        | undefined;
+      return row ? toExecutionRunRecord(row) : null;
+    },
+    async getExecutionRunByIdempotencyKey(orgId, idempotencyKey) {
+      const row = getExecutionRunByIdempotencyKeyStmt.get(
+        orgId,
+        idempotencyKey
+      ) as Record<string, unknown> | undefined;
+      return row ? toExecutionRunRecord(row) : null;
+    },
+    async getLearningCandidate(id) {
+      const row = getLearningCandidateStmt.get(id) as
+        | Record<string, unknown>
+        | undefined;
+      return row ? toLearningCandidateRecord(row) : null;
+    },
+    async getLearningJobByIdempotencyKey(orgId, idempotencyKey) {
+      const row = getLearningJobByIdempotencyKeyStmt.get(
+        orgId,
+        idempotencyKey
+      ) as Record<string, unknown> | undefined;
+      return row ? toLearningJobRecord(row) : null;
     },
 
     async getLlmUsageStats() {
@@ -2543,6 +2806,13 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.error
       );
     },
+    async listActionApprovalsForSession(sessionId) {
+      return (
+        listActionApprovalsForSessionStmt.all(sessionId) as Array<
+          Record<string, unknown>
+        >
+      ).map(toActionApprovalRecord);
+    },
 
     async listAutomationRuns(automationId, limit = 20) {
       return listAutomationRunsStmt
@@ -2561,6 +2831,13 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         .all(orgId)
         .map((row) => toAutomationRecord(row as AutomationRow));
     },
+    async listChannelOrgMappingsForOrg(orgId) {
+      return (
+        listChannelOrgMappingsForOrgStmt.all(orgId) as Array<
+          Record<string, unknown>
+        >
+      ).map(toChannelOrgMappingRecord);
+    },
 
     async listComposioToolkitsForOrg(orgId) {
       return listComposioToolkitsForOrgStmt
@@ -2574,6 +2851,56 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         .map((row) =>
           toComposioUserConnectionRecord(row as ComposioUserConnectionRow)
         );
+    },
+    async listExecutionRuns(filter) {
+      const rows = listExecutionRunsStmt.all() as Array<
+        Record<string, unknown>
+      >;
+      return rows.map(toExecutionRunRecord).filter((run) => {
+        if (filter?.kind && run.kind !== filter.kind) {
+          return false;
+        }
+        if (filter?.orgId && run.orgId !== filter.orgId) {
+          return false;
+        }
+        if (filter?.sessionId && run.sessionId !== filter.sessionId) {
+          return false;
+        }
+        return true;
+      });
+    },
+    async listExecutionSteps(runId) {
+      return (
+        listExecutionStepsStmt.all(runId) as Array<Record<string, unknown>>
+      ).map(toExecutionStepRecord);
+    },
+    async listLearningCandidates(orgId, status) {
+      const rows = listLearningCandidatesStmt.all(orgId) as Array<
+        Record<string, unknown>
+      >;
+      const records = rows.map(toLearningCandidateRecord);
+      return status
+        ? records.filter((item) => item.status === status)
+        : records;
+    },
+    async listLearningCommits(orgId) {
+      return (
+        listLearningCommitsStmt.all(orgId) as Array<Record<string, unknown>>
+      ).map(toLearningCommitRecord);
+    },
+    async listLearningEvidenceForSession(orgId, sessionId) {
+      return (
+        listLearningEvidenceForSessionStmt.all(orgId, sessionId) as Array<
+          Record<string, unknown>
+        >
+      ).map(toLearningEvidenceRecord);
+    },
+    async listLearningOutcomesForCommit(commitId) {
+      return (
+        listLearningOutcomesForCommitStmt.all(commitId) as Array<
+          Record<string, unknown>
+        >
+      ).map(toLearningOutcomeRecord);
     },
 
     async listLlmTurnUsage(orgId) {
@@ -2741,6 +3068,11 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         .all(orgId)
         .map((row) => toProfileRecord(row as ProfileRow));
     },
+    async listQueuedOutbox(orgId) {
+      return (
+        listQueuedOutboxStmt.all(orgId) as Array<Record<string, unknown>>
+      ).map(toOutboxRecord);
+    },
 
     async listSessionSummaries(profileId, channel) {
       return listSessionSummariesStmt
@@ -2781,6 +3113,11 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         return records;
       }
       return records.filter((proposal) => proposal.sessionId === sessionId);
+    },
+    async listSkillRevisions(skillId) {
+      return (
+        listSkillRevisionsStmt.all(skillId) as Array<Record<string, unknown>>
+      ).map(toSkillRevisionRecord);
     },
 
     async listSkillSuggestions(orgId, options = {}) {
@@ -3215,6 +3552,25 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         id
       );
     },
+    async upsertActionApproval(record) {
+      upsertActionApprovalStmt.run(
+        record.id,
+        record.orgId,
+        record.principalUserId,
+        record.sessionId,
+        record.runId,
+        record.stepId,
+        record.toolName,
+        record.actionHash,
+        record.argsJson,
+        record.status,
+        record.grantId,
+        record.decidedByUserId,
+        record.decidedAt,
+        record.createdAt,
+        record.expiresAt
+      );
+    },
 
     async upsertAutomation(record) {
       const existing = await this.getAutomation(record.id);
@@ -3243,6 +3599,15 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         orgId,
         automationId,
         readThroughAt
+      );
+    },
+    async upsertChannelOrgMapping(record) {
+      upsertChannelOrgMappingStmt.run(
+        record.channel,
+        record.channelUserId,
+        record.userId,
+        record.orgId,
+        record.createdAt
       );
     },
 
@@ -3274,6 +3639,68 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.sessionIdEnc,
         record.oauthStateHash,
         record.lastError,
+        record.createdAt,
+        record.updatedAt
+      );
+    },
+    async upsertExecutionRun(record) {
+      upsertExecutionRunStmt.run(
+        record.id,
+        record.orgId,
+        record.principalUserId,
+        record.sessionId,
+        record.kind,
+        record.status,
+        record.leaseOwner,
+        record.leaseExpiresAt,
+        record.idempotencyKey,
+        record.currentStepIndex,
+        record.checkpoint,
+        record.createdAt,
+        record.updatedAt
+      );
+    },
+    async upsertExecutionStep(record) {
+      upsertExecutionStepStmt.run(
+        record.id,
+        record.runId,
+        record.stepIndex,
+        record.toolName,
+        record.toolCallId,
+        record.argsJson,
+        record.argsHash,
+        record.status,
+        record.resultJson,
+        record.approvalId,
+        record.createdAt,
+        record.updatedAt
+      );
+    },
+    async upsertLearningCandidate(record) {
+      upsertLearningCandidateStmt.run(
+        record.id,
+        record.orgId,
+        record.evidenceIds,
+        record.kind,
+        record.content,
+        record.status,
+        record.target,
+        record.createdAt,
+        record.updatedAt
+      );
+    },
+    async upsertLearningJob(record) {
+      upsertLearningJobStmt.run(
+        record.id,
+        record.orgId,
+        record.principalUserId,
+        record.sessionId,
+        record.terminalMessageId,
+        record.evaluatorVersion,
+        record.idempotencyKey,
+        record.status,
+        record.mode,
+        record.resultJson,
         record.createdAt,
         record.updatedAt
       );
@@ -3342,6 +3769,18 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       upsertOrgUsageBudgetStmt.run(
         record.orgId,
         record.monthlyLimitUsd,
+        record.updatedAt
+      );
+    },
+    async upsertOutboxMessage(record) {
+      upsertOutboxMessageStmt.run(
+        record.id,
+        record.orgId,
+        record.principalUserId,
+        record.envelopeJson,
+        record.status,
+        record.attempt,
+        record.createdAt,
         record.updatedAt
       );
     },
@@ -3450,6 +3889,205 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.updatedAt
       );
     },
+  };
+}
+
+function rowString(row: Record<string, unknown>, key: string): string {
+  const value = row[key];
+  return typeof value === "string" ? value : String(value ?? "");
+}
+
+function rowStringOrNull(
+  row: Record<string, unknown>,
+  key: string
+): string | null {
+  const value = row[key];
+  if (value === null || value === undefined) {
+    return null;
+  }
+  return String(value);
+}
+
+function toChannelOrgMappingRecord(
+  row: Record<string, unknown>
+): StoredChannelOrgMappingRecord {
+  return {
+    channel: rowString(
+      row,
+      "channel"
+    ) as StoredChannelOrgMappingRecord["channel"],
+    channelUserId: rowString(row, "channel_user_id"),
+    createdAt: rowString(row, "created_at"),
+    orgId: rowString(row, "org_id"),
+    userId: rowString(row, "user_id"),
+  };
+}
+
+function toExecutionRunRecord(
+  row: Record<string, unknown>
+): StoredExecutionRunRecord {
+  return {
+    checkpoint: rowStringOrNull(row, "checkpoint"),
+    createdAt: rowString(row, "created_at"),
+    currentStepIndex: Number(row.current_step_index ?? 0),
+    id: rowString(row, "id"),
+    idempotencyKey: rowStringOrNull(row, "idempotency_key"),
+    kind: rowString(row, "kind") as StoredExecutionRunRecord["kind"],
+    leaseExpiresAt: rowStringOrNull(row, "lease_expires_at"),
+    leaseOwner: rowStringOrNull(row, "lease_owner"),
+    orgId: rowString(row, "org_id"),
+    principalUserId: rowString(row, "principal_user_id"),
+    sessionId: rowStringOrNull(row, "session_id"),
+    status: rowString(row, "status"),
+    updatedAt: rowString(row, "updated_at"),
+  };
+}
+
+function toExecutionStepRecord(
+  row: Record<string, unknown>
+): StoredExecutionStepRecord {
+  return {
+    approvalId: rowStringOrNull(row, "approval_id"),
+    argsHash: rowString(row, "args_hash"),
+    argsJson: rowString(row, "args_json"),
+    createdAt: rowString(row, "created_at"),
+    id: rowString(row, "id"),
+    resultJson: rowStringOrNull(row, "result_json"),
+    runId: rowString(row, "run_id"),
+    status: rowString(row, "status"),
+    stepIndex: Number(row.step_index ?? 0),
+    toolCallId: rowStringOrNull(row, "tool_call_id"),
+    toolName: rowString(row, "tool_name"),
+    updatedAt: rowString(row, "updated_at"),
+  };
+}
+
+function toActionApprovalRecord(
+  row: Record<string, unknown>
+): StoredActionApprovalRecord {
+  return {
+    actionHash: rowString(row, "action_hash"),
+    argsJson: rowString(row, "args_json"),
+    createdAt: rowString(row, "created_at"),
+    decidedAt: rowStringOrNull(row, "decided_at"),
+    decidedByUserId: rowStringOrNull(row, "decided_by_user_id"),
+    expiresAt: rowString(row, "expires_at"),
+    grantId: rowStringOrNull(row, "grant_id"),
+    id: rowString(row, "id"),
+    orgId: rowString(row, "org_id"),
+    principalUserId: rowString(row, "principal_user_id"),
+    runId: rowString(row, "run_id"),
+    sessionId: rowStringOrNull(row, "session_id"),
+    status: rowString(row, "status"),
+    stepId: rowString(row, "step_id"),
+    toolName: rowString(row, "tool_name"),
+  };
+}
+
+function toLearningEvidenceRecord(
+  row: Record<string, unknown>
+): StoredLearningEvidenceRecord {
+  return {
+    createdAt: rowString(row, "created_at"),
+    id: rowString(row, "id"),
+    kind: rowString(row, "kind"),
+    orgId: rowString(row, "org_id"),
+    payloadJson: rowString(row, "payload_json"),
+    principalUserId: rowString(row, "principal_user_id"),
+    runId: rowStringOrNull(row, "run_id"),
+    sessionId: rowStringOrNull(row, "session_id"),
+  };
+}
+
+function toLearningCandidateRecord(
+  row: Record<string, unknown>
+): StoredLearningCandidateRecord {
+  return {
+    content: rowString(row, "content"),
+    createdAt: rowString(row, "created_at"),
+    evidenceIds: rowString(row, "evidence_ids"),
+    id: rowString(row, "id"),
+    kind: rowString(row, "kind"),
+    orgId: rowString(row, "org_id"),
+    status: rowString(row, "status"),
+    target: rowString(row, "target"),
+    updatedAt: rowString(row, "updated_at"),
+  };
+}
+
+function toLearningCommitRecord(
+  row: Record<string, unknown>
+): StoredLearningCommitRecord {
+  return {
+    candidateId: rowString(row, "candidate_id"),
+    createdAt: rowString(row, "created_at"),
+    id: rowString(row, "id"),
+    memoryId: rowStringOrNull(row, "memory_id"),
+    orgId: rowString(row, "org_id"),
+    skillId: rowStringOrNull(row, "skill_id"),
+  };
+}
+
+function toLearningOutcomeRecord(
+  row: Record<string, unknown>
+): StoredLearningOutcomeRecord {
+  const helpful = row.helpful;
+  return {
+    commitId: rowString(row, "commit_id"),
+    createdAt: rowString(row, "created_at"),
+    helpful:
+      helpful === null || helpful === undefined ? null : Boolean(helpful),
+    id: rowString(row, "id"),
+    orgId: rowString(row, "org_id"),
+    sessionId: rowStringOrNull(row, "session_id"),
+    used: Boolean(row.used),
+  };
+}
+
+function toLearningJobRecord(
+  row: Record<string, unknown>
+): StoredLearningJobRecord {
+  return {
+    createdAt: rowString(row, "created_at"),
+    evaluatorVersion: rowString(row, "evaluator_version"),
+    id: rowString(row, "id"),
+    idempotencyKey: rowString(row, "idempotency_key"),
+    mode: rowString(row, "mode"),
+    orgId: rowString(row, "org_id"),
+    principalUserId: rowString(row, "principal_user_id"),
+    resultJson: rowStringOrNull(row, "result_json"),
+    sessionId: rowString(row, "session_id"),
+    status: rowString(row, "status"),
+    terminalMessageId: rowString(row, "terminal_message_id"),
+    updatedAt: rowString(row, "updated_at"),
+  };
+}
+
+function toOutboxRecord(row: Record<string, unknown>): StoredOutboxRecord {
+  return {
+    attempt: Number(row.attempt ?? 0),
+    createdAt: rowString(row, "created_at"),
+    envelopeJson: rowString(row, "envelope_json"),
+    id: rowString(row, "id"),
+    orgId: rowString(row, "org_id"),
+    principalUserId: rowString(row, "principal_user_id"),
+    status: rowString(row, "status"),
+    updatedAt: rowString(row, "updated_at"),
+  };
+}
+
+function toSkillRevisionRecord(
+  row: Record<string, unknown>
+): StoredSkillRevisionRecord {
+  return {
+    content: rowString(row, "content"),
+    createdAt: rowString(row, "created_at"),
+    createdByUserId: rowStringOrNull(row, "created_by_user_id"),
+    evidenceIds: rowStringOrNull(row, "evidence_ids"),
+    id: rowString(row, "id"),
+    orgId: rowString(row, "org_id"),
+    skillId: rowString(row, "skill_id"),
+    version: Number(row.version ?? 0),
   };
 }
 

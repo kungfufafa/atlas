@@ -1,6 +1,6 @@
 import type { AgentChatSession } from "@atlas/agent";
 import type { ChatMessage } from "@atlas/core";
-import { createId } from "@atlas/core";
+import { applyRedactionBoundary, createId } from "@atlas/core";
 import type { DatabaseAdapter } from "@atlas/db";
 
 export function wrapPersistedSession(
@@ -83,7 +83,7 @@ export async function replaceSessionHistory(
   const messages = history.map((payload, index) => ({
     createdAt: now,
     id: createId("msg"),
-    payload,
+    payload: applyRedactionBoundary(payload, "transcript"),
     seq: index,
     sessionId,
   }));
@@ -131,7 +131,7 @@ async function persistHistoryDelta(
   const newMessages = history.slice(previousLength).map((payload, index) => ({
     createdAt: now,
     id: createId("msg"),
-    payload,
+    payload: applyRedactionBoundary(payload, "transcript"),
     seq: nextSeq + index,
     sessionId,
   }));

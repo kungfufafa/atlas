@@ -2,7 +2,11 @@ import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import * as os from "node:os";
 import path from "node:path";
-import { saveTelegramConfig } from "@atlas/core";
+import {
+  getTelegramConfigDir,
+  getTelegramConfigPath,
+  writePrivateTextFile,
+} from "@atlas/core";
 import { createMinimalHonoApp } from "../test-app-helpers";
 
 describe("notification webhook routes", () => {
@@ -22,7 +26,11 @@ describe("notification webhook routes", () => {
   async function createApp() {
     tempHome = await mkdtemp(path.join(os.tmpdir(), "atlas-notify-webhook-"));
     homedirSpy = spyOn(os, "homedir").mockReturnValue(tempHome);
-    await saveTelegramConfig({ botToken: "1234567890:TEST" }, "org_1");
+    await writePrivateTextFile(
+      getTelegramConfigPath("org_1"),
+      "bot_token=1234567890:TEST\nprofile_id=default\npaired_user_ids=1001\n",
+      { ensureDir: getTelegramConfigDir("org_1") }
+    );
 
     return createMinimalHonoApp({
       agent: {},

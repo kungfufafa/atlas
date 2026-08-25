@@ -1498,9 +1498,10 @@ export function registerModelRoutes(
   app.post("/v1/settings/telegram/handshake", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
+    const auth = getRequestAuth(c);
     try {
       return json<TelegramSettingsResponse>(
-        await agent.regenerateTelegramHandshake(orgId)
+        await agent.regenerateTelegramHandshake(orgId, auth.user.id)
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

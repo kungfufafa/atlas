@@ -87,42 +87,36 @@ async function resolveStoredTool(
   builtinMap: Map<string, ToolDefinition>,
   serverTools: Map<string, ToolDefinition>
 ): Promise<ToolDefinition | null> {
-  if (record.handlerType === "builtin") {
-    return builtinMap.get(record.name) ?? null;
-  }
-
-  if (record.handlerType === "bash") {
-    return serverTools.get(record.name) ?? null;
-  }
-
-  if (record.handlerType === "sub_agent") {
-    return serverTools.get(record.name) ?? null;
-  }
-
-  if (record.handlerType === "generate_image") {
-    return serverTools.get(record.name) ?? null;
-  }
-
-  if (
-    record.handlerType === "python_execute" ||
-    record.name === "python_execute"
-  ) {
-    return serverTools.get(record.name) ?? pythonExecuteTool;
-  }
-
-  if (record.handlerType === "memory" || record.name.startsWith("memory_")) {
-    return serverTools.get(record.name) ?? null;
-  }
-
-  if (record.handlerType === "tool_search" || record.name === "tool_search") {
-    return serverTools.get(record.name) ?? null;
-  }
-
   if (record.handlerType === "javascript") {
     return loadJavascriptTool(record);
   }
 
-  return null;
+  const serverTool = serverTools.get(record.name);
+  if (
+    record.handlerType === "memory" ||
+    record.handlerType === "conversation" ||
+    record.handlerType === "bash" ||
+    record.handlerType === "sub_agent" ||
+    record.handlerType === "generate_image" ||
+    record.handlerType === "python_execute" ||
+    record.handlerType === "tool_search" ||
+    record.name.startsWith("memory_") ||
+    record.name === "search_chats" ||
+    record.name === "get_conversation" ||
+    record.name === "python_execute" ||
+    record.name === "tool_search"
+  ) {
+    if (record.name === "python_execute") {
+      return serverTool ?? pythonExecuteTool;
+    }
+    return serverTool ?? null;
+  }
+
+  if (record.handlerType === "builtin") {
+    return builtinMap.get(record.name) ?? serverTool ?? null;
+  }
+
+  return serverTool ?? builtinMap.get(record.name) ?? null;
 }
 
 function buildServerTools(
@@ -145,11 +139,24 @@ function buildServerTools(
     }
   }
 
-  const toolSearch = createToolSearchTool(async (_context) => [
-    ...builtinTools,
-    pythonExecuteTool,
-    bashTool,
-  ]);
+  const catalogTools = (): ToolDefinition[] => {
+    const catalog = [
+      ...builtinTools,
+      pythonExecuteTool,
+      bash,
+      ...memoryToolsForCatalog(map),
+      ...conversationToolsForCatalog(map),
+    ];
+    if (registeredSubAgentTool) {
+      catalog.push(registeredSubAgentTool);
+    }
+    if (registeredGenerateImageTool) {
+      catalog.push(registeredGenerateImageTool);
+    }
+    return catalog.filter((tool) => tool.name !== "tool_search");
+  };
+
+  const toolSearch = createToolSearchTool(async () => catalogTools());
   map.set(toolSearch.name, toolSearch);
 
   if (registeredSubAgentTool) {
@@ -161,6 +168,28 @@ function buildServerTools(
   }
 
   return map;
+}
+
+function memoryToolsForCatalog(
+  map: Map<string, ToolDefinition>
+): ToolDefinition[] {
+  return [...map.values()].filter((tool) => tool.name.startsWith("memory_"));
+}
+
+function conversationToolsForCatalog(
+  map: Map<string, ToolDefinition>
+): ToolDefinition[] {
+  return [...map.values()].filter(
+    (tool) => tool.name === "search_chats" || tool.name === "get_conversation"
+  );
+}
+
+export function withToolSearchCatalog(
+  tools: ToolDefinition[]
+): ToolDefinition[] {
+  const catalog = tools.filter((tool) => tool.name !== "tool_search");
+  const search = createToolSearchTool(async () => catalog);
+  return tools.map((tool) => (tool.name === "tool_search" ? search : tool));
 }
 
 function createCodingAgentAwareBashTool(

@@ -16,7 +16,7 @@ export interface EmailOutboundAdapter {
 export interface TelegramOutboundAdapter {
   send(input: {
     text: string;
-    orgId?: string | null;
+    orgId: string;
     chatIds?: number[];
     topicId?: number;
     parseMode?: "HTML";
@@ -25,7 +25,7 @@ export interface TelegramOutboundAdapter {
 
 export interface WhatsAppOutboundAdapter {
   send(input: {
-    orgId?: string | null;
+    orgId: string;
     text: string;
     /** Destination phone or JID. Omitting sends to the workspace paired chat. */
     to?: string;
@@ -33,5 +33,10 @@ export interface WhatsAppOutboundAdapter {
 }
 
 export interface DiscordOutboundAdapter {
-  send(input: { text: string; channelId?: string }): Promise<ChannelSendResult>;
+  send(input: {
+    orgId: string;
+    text: string;
+    channelId?: string;
+    userId?: string;
+  }): Promise<ChannelSendResult>;
 }

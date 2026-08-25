@@ -93,7 +93,8 @@ export class AutomationService {
     orgId: string,
     input: CreateAutomationRequest,
     profileIdOverride?: string,
-    access?: ProfileAccess
+    access?: ProfileAccess,
+    createdByUserId?: string
   ): Promise<StoredAutomation> {
     const userTimezone = await this.getUserTimezone();
     const trigger = resolveScheduleTimezone(input.trigger, userTimezone);
@@ -117,6 +118,7 @@ export class AutomationService {
     });
 
     const now = new Date().toISOString();
+    const ownerId = createdByUserId?.trim();
     const automation: StoredAutomation = {
       description: input.description.trim() || input.prompt.trim(),
       enabled: input.enabled ?? true,
@@ -129,6 +131,7 @@ export class AutomationService {
       trigger,
       version: 1,
       ...(delivery ? { delivery } : {}),
+      ...(ownerId ? { createdByUserId: ownerId } : {}),
       createdAt: now,
       updatedAt: now,
     };

@@ -535,10 +535,17 @@ export class AtlasClient {
 
   async createSession(
     channel: AgentChannel,
-    options: { profileId?: string } = {}
+    options: {
+      profileId?: string;
+      externalPrincipal?: { channelUserId: string };
+    } = {}
   ): Promise<RemoteChatSession> {
     const response = await this.request<CreateSessionResponse>("/v1/sessions", {
-      body: JSON.stringify({ channel, profileId: options.profileId }),
+      body: JSON.stringify({
+        channel,
+        externalPrincipal: options.externalPrincipal,
+        profileId: options.profileId,
+      }),
       method: "POST",
     });
 
@@ -1465,10 +1472,14 @@ export class AtlasClient {
     );
   }
 
-  async runAutomationInternal(automationId: string): Promise<void> {
+  async runAutomationInternal(
+    automationId: string,
+    fireId: string
+  ): Promise<void> {
     await this.request(
       `/v1/internal/automations/${encodeURIComponent(automationId)}/run`,
       withStreamFetchIdle({
+        body: JSON.stringify({ fireId }),
         method: "POST",
       })
     );
@@ -1698,6 +1709,36 @@ export class AtlasClient {
       body: JSON.stringify(request),
       method: "PUT",
     });
+  }
+
+  async bindChannelPrincipal(input: {
+    channel: "telegram" | "whatsapp" | "discord";
+    channelUserId: string;
+    pairingAssertion?: string;
+    userId?: string;
+  }): Promise<{ userId: string; orgId: string }> {
+    return this.request("/v1/channel-principals", {
+      body: JSON.stringify({
+        channel: input.channel,
+        channelUserId: input.channelUserId,
+        pairingAssertion: input.pairingAssertion,
+      }),
+      method: "POST",
+    });
+  }
+
+  async decideApproval(
+    sessionId: string,
+    approvalId: string,
+    decision: "approved" | "denied"
+  ): Promise<{ resumed: boolean }> {
+    return this.request(
+      `/v1/sessions/${encodeURIComponent(sessionId)}/approvals/${encodeURIComponent(approvalId)}`,
+      {
+        body: JSON.stringify({ decision }),
+        method: "POST",
+      }
+    );
   }
 
   async regenerateTelegramHandshake(): Promise<TelegramSettingsResponse> {

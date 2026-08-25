@@ -1,5 +1,10 @@
-import type { ToolContext, ToolDefinition } from "@atlas/core";
+import {
+  principalFromToolContext,
+  type ToolContext,
+  type ToolDefinition,
+} from "@atlas/core";
 import type { AgentService } from "../services/agent-service";
+import { SubagentService } from "../services/subagent-service";
 import {
   DEFAULT_SUB_AGENT_TIMEOUT_MS,
   failSubAgentResult,
@@ -18,6 +23,11 @@ export interface SubAgentToolInput {
 export type SubAgentToolOutput = SubAgentRunResult;
 
 export function createSubAgentTool(agentService: AgentService): ToolDefinition {
+  const orchestrator =
+    "subagents" in agentService && agentService.subagents
+      ? agentService.subagents
+      : new SubagentService(agentService, agentService.executionPlane);
+
   return {
     description:
       "Delegate focused work to a same-profile sub-agent (research, review, planning, debugging). Provide a clear task and optional context. Returns status, summary, and output for you to synthesize for the user. The parent may launch multiple sub-agents in parallel for independent tasks. Sub-agents cannot nest sub-agents. For repo coding work, use bash with coding-agent instead.",
@@ -44,7 +54,7 @@ export function createSubAgentTool(agentService: AgentService): ToolDefinition {
       type: "object",
     },
     async run(input, context) {
-      return runSubAgentTool(input, context, agentService);
+      return runSubAgentTool(input, context, orchestrator);
     },
   };
 }
@@ -52,7 +62,7 @@ export function createSubAgentTool(agentService: AgentService): ToolDefinition {
 export async function runSubAgentTool(
   input: unknown,
   context: ToolContext,
-  agentService: AgentService
+  orchestrator: SubagentService | AgentService
 ): Promise<SubAgentToolOutput> {
   const depth = context.agentDepth ?? 0;
 
@@ -73,22 +83,38 @@ export async function runSubAgentTool(
     return failSubAgentResult("task is required.");
   }
 
+  try {
+    principalFromToolContext(context);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return failSubAgentResult(message);
+  }
+
   const scopedContext = readString(input, "context")?.trim();
   const timeoutMs = readTimeoutMs(readOptionalNumber(input, "timeoutMs"));
+  const service =
+    orchestrator instanceof SubagentService
+      ? orchestrator
+      : new SubagentService(orchestrator, orchestrator.executionPlane);
 
   try {
-    return await agentService.runSubAgentPrompt({
+    const principal = principalFromToolContext(context);
+    const handle = await service.start({
       agentDepth: depth + 1,
       clientOrigin: context.clientOrigin,
       context: scopedContext,
       onActivity: context.emitSubAgentActivity,
       orgId,
+      parentRunId: context.runId ?? null,
+      principal,
       profileId,
       sessionId: context.sessionId,
+      signal: context.signal,
       task,
       timeoutMs,
-      userId: context.userId,
     });
+    const { result } = await service.wait(handle.id, principal);
+    return result;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return failSubAgentResult(message);

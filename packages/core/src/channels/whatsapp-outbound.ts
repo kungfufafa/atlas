@@ -1,4 +1,8 @@
 import { loadWhatsAppConfigFile } from "../whatsapp-config";
+import {
+  assertOutboundEnvelope,
+  revalidateOutboundAllowlist,
+} from "./outbound-envelope";
 import type { ChannelSendResult, WhatsAppOutboundAdapter } from "./types";
 
 const DEFAULT_OUTBOUND_PORT = 4312;
@@ -41,18 +45,32 @@ export function createWhatsAppOutboundAdapter(
   return {
     async send(input): Promise<ChannelSendResult> {
       try {
-        const config = await loadWhatsAppConfigFile(input.orgId);
+        const orgId = input.orgId?.trim();
+        if (!orgId) {
+          return { error: "Outbound envelope orgId is required.", ok: false };
+        }
+
+        const config = await loadWhatsAppConfigFile(orgId);
 
         if (!config?.pairedJid) {
           return { error: "WhatsApp is not paired.", ok: false };
         }
 
+        const to = input.to?.trim() || config.pairedJid;
+        const envelope = assertOutboundEnvelope({
+          orgId,
+          replyTarget: { channel: "whatsapp", whatsapp: { to } },
+          text: input.text,
+        });
+        revalidateOutboundAllowlist(envelope, {
+          pairedJid: config.pairedJid,
+        });
+
         const port = resolveWhatsAppOutboundPort(config);
-        const payload: { text: string; to?: string } = { text: input.text };
-        const to = input.to?.trim();
-        if (to) {
-          payload.to = to;
-        }
+        const payload: { text: string; to?: string } = {
+          text: envelope.text,
+          to,
+        };
 
         const response = await fetchImpl(`http://127.0.0.1:${port}/send`, {
           body: JSON.stringify(payload),

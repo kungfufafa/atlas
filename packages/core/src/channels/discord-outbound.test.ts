@@ -22,8 +22,8 @@ describe("createDiscordOutboundAdapter", () => {
   ): Promise<void> {
     const configDir = await mkdtemp(join(tmpdir(), "atlas-discord-outbound-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
-    await mkdir(getDiscordConfigDir(), { recursive: true });
-    await writeFile(getDiscordConfigPath(), ini, "utf8");
+    await mkdir(getDiscordConfigDir("workspace-test"), { recursive: true });
+    await writeFile(getDiscordConfigPath("workspace-test"), ini, "utf8");
 
     try {
       await run();
@@ -53,6 +53,7 @@ describe("createDiscordOutboundAdapter", () => {
       await expect(
         adapter.send({
           channelId: "123456789012345678",
+          orgId: "workspace-test",
           text: "hello",
         })
       ).resolves.toEqual({ ok: true });
@@ -95,7 +96,9 @@ describe("createDiscordOutboundAdapter", () => {
           },
         });
 
-        await expect(adapter.send({ text: "hello" })).resolves.toEqual({
+        await expect(
+          adapter.send({ orgId: "workspace-test", text: "hello" })
+        ).resolves.toEqual({
           ok: true,
         });
 
@@ -125,6 +128,7 @@ describe("createDiscordOutboundAdapter", () => {
       await expect(
         adapter.send({
           channelId: "123456789012345678",
+          orgId: "workspace-test",
           text: "a".repeat(2500),
         })
       ).resolves.toEqual({ ok: true });
@@ -144,7 +148,9 @@ describe("createDiscordOutboundAdapter", () => {
         },
       });
 
-      await expect(adapter.send({ text: "hello" })).resolves.toEqual({
+      await expect(
+        adapter.send({ orgId: "workspace-test", text: "hello" })
+      ).resolves.toEqual({
         error: "Discord bot token is not configured.",
         ok: false,
       });
@@ -162,7 +168,9 @@ describe("createDiscordOutboundAdapter", () => {
         },
       });
 
-      await expect(adapter.send({ text: "hello" })).resolves.toEqual({
+      await expect(
+        adapter.send({ orgId: "workspace-test", text: "hello" })
+      ).resolves.toEqual({
         error: "No Discord user is paired.",
         ok: false,
       });
@@ -187,7 +195,10 @@ describe("createDiscordOutboundAdapter", () => {
           },
         });
 
-        const result = await adapter.send({ text: "hello" });
+        const result = await adapter.send({
+          orgId: "workspace-test",
+          text: "hello",
+        });
         expect(result.ok).toBe(false);
         expect(result.error).toContain("403");
         expect(urls.filter((url) => url.includes("/messages"))).toHaveLength(1);
@@ -206,8 +217,10 @@ describe("createDiscordOutboundAdapter", () => {
           fetchImpl: async () => new Response("{}", { status: 200 }),
         });
 
-        await expect(adapter.send({ text: "   " })).resolves.toEqual({
-          error: "Message text is empty.",
+        await expect(
+          adapter.send({ orgId: "workspace-test", text: "   " })
+        ).resolves.toEqual({
+          error: "Outbound envelope text is required.",
           ok: false,
         });
       }

@@ -5,13 +5,23 @@ import type {
   DatabaseAdapter,
   LlmUsageAggregateRow,
   LlmUsageStatsDelta,
+  StoredActionApprovalRecord,
   StoredArtifactShareRecord,
   StoredAttachmentRecord,
+  StoredAuditEventRecord,
   StoredAutomationRecord,
   StoredAutomationRunRecord,
   StoredBrowserSessionRecord,
+  StoredChannelOrgMappingRecord,
   StoredComposioToolkitRecord,
   StoredComposioUserConnectionRecord,
+  StoredExecutionRunRecord,
+  StoredExecutionStepRecord,
+  StoredLearningCandidateRecord,
+  StoredLearningCommitRecord,
+  StoredLearningEvidenceRecord,
+  StoredLearningJobRecord,
+  StoredLearningOutcomeRecord,
   StoredLlmTurnUsageRecord,
   StoredLlmUsageDailyRecord,
   StoredLlmUsageModelStatsRecord,
@@ -25,6 +35,7 @@ import type {
   StoredOrgMemberRecord,
   StoredOrgMemoryProposal,
   StoredOrgUsageBudgetRecord,
+  StoredOutboxRecord,
   StoredProfileComposioToolkitRecord,
   StoredProfileRecord,
   StoredSessionMessageRecord,
@@ -32,6 +43,7 @@ import type {
   StoredSessionSummaryRecord,
   StoredSkillProposal,
   StoredSkillRecord,
+  StoredSkillRevisionRecord,
   StoredSkillSuggestion,
   StoredSkillUsageRecord,
   StoredTaskRecord,
@@ -120,6 +132,20 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
   >();
   const memories = new Map<string, StoredMemoryRecord>();
   const memoryKey = (orgId: string, id: string) => `${orgId}:${id}`;
+  const channelOrgMappings = new Map<string, StoredChannelOrgMappingRecord>();
+  const executionRuns = new Map<string, StoredExecutionRunRecord>();
+  const executionSteps = new Map<string, StoredExecutionStepRecord[]>();
+  const actionApprovals = new Map<string, StoredActionApprovalRecord>();
+  const learningEvidence = new Map<string, StoredLearningEvidenceRecord>();
+  const learningCandidates = new Map<string, StoredLearningCandidateRecord>();
+  const learningCommits = new Map<string, StoredLearningCommitRecord>();
+  const learningOutcomes = new Map<string, StoredLearningOutcomeRecord[]>();
+  const skillRevisions = new Map<string, StoredSkillRevisionRecord[]>();
+  const learningJobs = new Map<string, StoredLearningJobRecord>();
+  const auditEvents = new Map<string, StoredAuditEventRecord>();
+  const outboundOutbox = new Map<string, StoredOutboxRecord>();
+  const mappingKey = (channel: string, channelUserId: string) =>
+    `${channel}:${channelUserId}`;
   const llmUsageDaily = new Map<string, StoredLlmUsageDailyRecord>();
   const orgUsageBudgets = new Map<string, StoredOrgUsageBudgetRecord>();
 
@@ -289,9 +315,24 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         artifactSharesByTokenHash.set(record.tokenHash, record);
       }
     },
+    async createAuditEvent(record) {
+      auditEvents.set(record.id, { ...record });
+    },
 
     async createBrowserSession(record) {
       browserSessionsByHash.set(record.sessionTokenHash, record);
+    },
+
+    async createLearningCommit(record) {
+      learningCommits.set(record.id, { ...record });
+    },
+    async createLearningEvidence(record) {
+      learningEvidence.set(record.id, { ...record });
+    },
+    async createLearningOutcome(record) {
+      const existing = learningOutcomes.get(record.commitId) ?? [];
+      existing.push({ ...record });
+      learningOutcomes.set(record.commitId, existing);
     },
 
     async createMemory(record) {
@@ -309,6 +350,11 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
     async createSkillProposal(record) {
       skillProposals.set(record.id, record);
+    },
+    async createSkillRevision(record) {
+      const existing = skillRevisions.get(record.skillId) ?? [];
+      existing.push({ ...record });
+      skillRevisions.set(record.skillId, existing);
     },
 
     async createSkillSuggestion(record) {
@@ -334,6 +380,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       const filtered = existing.filter((run) => run.id !== runId);
       automationRuns.set(automationId, filtered);
       return filtered.length !== existing.length;
+    },
+    async deleteChannelOrgMapping(channel, channelUserId) {
+      return channelOrgMappings.delete(mappingKey(channel, channelUserId));
     },
 
     async deleteComposioToolkit(id) {
@@ -430,6 +479,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
       return true;
     },
+    async getActionApproval(id) {
+      return actionApprovals.get(id) ?? null;
+    },
 
     async getActiveArtifactShareByPath(orgId, profileId, sourcePath) {
       for (const share of artifactShares.values()) {
@@ -496,6 +548,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     async getBrowserSessionBySessionTokenHash(sessionTokenHash) {
       return browserSessionsByHash.get(sessionTokenHash) ?? null;
     },
+    async getChannelOrgMapping(channel, channelUserId) {
+      return channelOrgMappings.get(mappingKey(channel, channelUserId)) ?? null;
+    },
 
     async getComposioToolkit(id) {
       return composioToolkits.get(id) ?? null;
@@ -530,6 +585,26 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       return (
         Array.from(profiles.values()).find(
           (profile) => profile.orgId === orgId && profile.isDefault
+        ) ?? null
+      );
+    },
+    async getExecutionRun(id) {
+      return executionRuns.get(id) ?? null;
+    },
+    async getExecutionRunByIdempotencyKey(orgId, idempotencyKey) {
+      return (
+        [...executionRuns.values()].find(
+          (run) => run.orgId === orgId && run.idempotencyKey === idempotencyKey
+        ) ?? null
+      );
+    },
+    async getLearningCandidate(id) {
+      return learningCandidates.get(id) ?? null;
+    },
+    async getLearningJobByIdempotencyKey(orgId, idempotencyKey) {
+      return (
+        [...learningJobs.values()].find(
+          (job) => job.orgId === orgId && job.idempotencyKey === idempotencyKey
         ) ?? null
       );
     },
@@ -947,6 +1022,11 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       const existing = taskRuns.get(record.taskId) ?? [];
       taskRuns.set(record.taskId, [...existing, record]);
     },
+    async listActionApprovalsForSession(sessionId) {
+      return [...actionApprovals.values()].filter(
+        (item) => item.sessionId === sessionId
+      );
+    },
 
     async listAutomationRuns(automationId, limit = 20) {
       return [...(automationRuns.get(automationId) ?? [])]
@@ -963,6 +1043,11 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         (automation) => automation.orgId === orgId
       );
     },
+    async listChannelOrgMappingsForOrg(orgId) {
+      return [...channelOrgMappings.values()].filter(
+        (item) => item.orgId === orgId
+      );
+    },
 
     async listComposioToolkitsForOrg(orgId) {
       return Array.from(composioToolkits.values()).filter(
@@ -974,6 +1059,43 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       return Array.from(composioUserConnections.values()).filter(
         (record) => record.orgId === orgId && record.userId === userId
       );
+    },
+    async listExecutionRuns(filter) {
+      return [...executionRuns.values()].filter((run) => {
+        if (filter?.kind && run.kind !== filter.kind) {
+          return false;
+        }
+        if (filter?.orgId && run.orgId !== filter.orgId) {
+          return false;
+        }
+        if (filter?.sessionId && run.sessionId !== filter.sessionId) {
+          return false;
+        }
+        return true;
+      });
+    },
+    async listExecutionSteps(runId) {
+      return [...(executionSteps.get(runId) ?? [])].sort(
+        (left, right) => left.stepIndex - right.stepIndex
+      );
+    },
+    async listLearningCandidates(orgId, status) {
+      return [...learningCandidates.values()].filter(
+        (item) => item.orgId === orgId && (!status || item.status === status)
+      );
+    },
+    async listLearningCommits(orgId) {
+      return [...learningCommits.values()].filter(
+        (item) => item.orgId === orgId
+      );
+    },
+    async listLearningEvidenceForSession(orgId, sessionId) {
+      return [...learningEvidence.values()].filter(
+        (item) => item.orgId === orgId && item.sessionId === sessionId
+      );
+    },
+    async listLearningOutcomesForCommit(commitId) {
+      return [...(learningOutcomes.get(commitId) ?? [])];
     },
 
     async listLlmTurnUsage(orgId) {
@@ -1126,6 +1248,11 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
           return left.name.localeCompare(right.name);
         });
     },
+    async listQueuedOutbox(orgId) {
+      return [...outboundOutbox.values()].filter(
+        (item) => item.orgId === orgId && item.status === "queued"
+      );
+    },
 
     async listSessionSummaries(profileId, channel) {
       return Array.from(sessions.values())
@@ -1162,6 +1289,11 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         return true;
       });
       return proposals.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    },
+    async listSkillRevisions(skillId) {
+      return [...(skillRevisions.get(skillId) ?? [])].sort(
+        (left, right) => left.version - right.version
+      );
     },
 
     async listSkillSuggestions(orgId, options = {}) {
@@ -1596,6 +1728,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       usersById.set(id, updated);
       usersByEmail.set(updated.email, updated);
     },
+    async upsertActionApproval(record) {
+      actionApprovals.set(record.id, { ...record });
+    },
 
     async upsertAutomation(record) {
       automations.set(record.id, record);
@@ -1615,6 +1750,11 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         userId,
       });
     },
+    async upsertChannelOrgMapping(record) {
+      channelOrgMappings.set(mappingKey(record.channel, record.channelUserId), {
+        ...record,
+      });
+    },
 
     async upsertComposioToolkit(record) {
       composioToolkits.set(record.id, record);
@@ -1622,6 +1762,58 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
     async upsertComposioUserConnection(record) {
       composioUserConnections.set(record.id, record);
+    },
+    async upsertExecutionRun(record) {
+      if (record.idempotencyKey) {
+        const conflict = [...executionRuns.values()].find(
+          (existing) =>
+            existing.id !== record.id &&
+            existing.orgId === record.orgId &&
+            existing.idempotencyKey === record.idempotencyKey
+        );
+        if (conflict) {
+          throw new Error(
+            "UNIQUE constraint failed: execution_runs_org_idempotency"
+          );
+        }
+      }
+      const activeAutomationStatuses = new Set([
+        "queued",
+        "running",
+        "awaiting_approval",
+      ]);
+      if (
+        record.kind === "automation" &&
+        record.sessionId &&
+        activeAutomationStatuses.has(record.status)
+      ) {
+        const conflict = [...executionRuns.values()].find(
+          (existing) =>
+            existing.id !== record.id &&
+            existing.orgId === record.orgId &&
+            existing.sessionId === record.sessionId &&
+            existing.kind === "automation" &&
+            activeAutomationStatuses.has(existing.status)
+        );
+        if (conflict) {
+          throw new Error(
+            "UNIQUE constraint failed: execution_runs_active_automation"
+          );
+        }
+      }
+      executionRuns.set(record.id, { ...record });
+    },
+    async upsertExecutionStep(record) {
+      const existing = executionSteps.get(record.runId) ?? [];
+      const next = existing.filter((step) => step.id !== record.id);
+      next.push({ ...record });
+      executionSteps.set(record.runId, next);
+    },
+    async upsertLearningCandidate(record) {
+      learningCandidates.set(record.id, { ...record });
+    },
+    async upsertLearningJob(record) {
+      learningJobs.set(record.id, { ...record });
     },
 
     async upsertMcpServer(record) {
@@ -1657,6 +1849,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     upsertOrgUsageBudget(record) {
       orgUsageBudgets.set(record.orgId, { ...record });
       return Promise.resolve();
+    },
+    async upsertOutboxMessage(record) {
+      outboundOutbox.set(record.id, { ...record });
     },
 
     async upsertProfile(record) {

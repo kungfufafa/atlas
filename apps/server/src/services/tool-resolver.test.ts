@@ -1,10 +1,19 @@
 import { describe, expect, test } from "bun:test";
 import type { ToolDefinition } from "@atlas/core";
 import { emailTool } from "@atlas/core/tools/email";
-import type { StoredToolRecord } from "@atlas/db";
+import {
+  BUILTIN_TOOL_IDS,
+  PROTECTED_TOOL_IDS,
+} from "@atlas/core/tools/protected";
+import {
+  createInMemoryDatabaseAdapter,
+  type StoredToolRecord,
+  seedDatabase,
+} from "@atlas/db";
 import {
   omitUnavailableBuiltinTools,
   resolveProfileStoredTools,
+  resolveToolsFromStorage,
 } from "./tool-resolver";
 
 const webSearchTool: ToolDefinition = {
@@ -74,5 +83,57 @@ describe("tool-resolver", () => {
     expect(names).toContain("list_directory");
     expect(names).toContain("python_execute");
     expect(names).toContain("tool_search");
+  });
+
+  test("resolves memory_search and search_chats even when seeded as builtin", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    const records: StoredToolRecord[] = [
+      {
+        createdAt: now,
+        description: "Search memories",
+        handlerConfig: {},
+        handlerType: "builtin",
+        id: BUILTIN_TOOL_IDS.memory_search,
+        name: "memory_search",
+        updatedAt: now,
+      },
+      {
+        createdAt: now,
+        description: "Search chats",
+        handlerConfig: {},
+        handlerType: "builtin",
+        id: BUILTIN_TOOL_IDS.search_chats,
+        name: "search_chats",
+        updatedAt: now,
+      },
+    ];
+
+    const resolved = await resolveToolsFromStorage(records, db);
+    expect(resolved.map((tool) => tool.name).sort()).toEqual([
+      "memory_search",
+      "search_chats",
+    ]);
+  });
+
+  test("resolves every protected tool after seed", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    await seedDatabase(db);
+    const stored = await db.listTools();
+    const protectedRecords = stored.filter((record) =>
+      PROTECTED_TOOL_IDS.has(record.id)
+    );
+    const resolved = await resolveToolsFromStorage(protectedRecords, db);
+    const resolvedNames = new Set(resolved.map((tool) => tool.name));
+
+    const expectedNames = [
+      ...Object.keys(BUILTIN_TOOL_IDS),
+      "python_execute",
+      "tool_search",
+    ];
+
+    for (const name of expectedNames) {
+      expect(resolvedNames.has(name)).toBe(true);
+    }
   });
 });

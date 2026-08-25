@@ -1,15 +1,16 @@
-import type {
-  BranchSessionRequest,
-  BranchSessionResponse,
-  CompactionResponse,
-  CompactSessionRequest,
-  CreateSessionRequest,
-  CreateSessionResponse,
-  ListSessionsResponse,
-  SendMessageRequest,
-  SendMessageResponse,
-  SessionMessagesResponse,
-  SessionStatusResponse,
+import {
+  type BranchSessionRequest,
+  type BranchSessionResponse,
+  type CompactionResponse,
+  type CompactSessionRequest,
+  type CreateSessionRequest,
+  type CreateSessionResponse,
+  type ListSessionsResponse,
+  PrincipalRequiredError,
+  type SendMessageRequest,
+  type SendMessageResponse,
+  type SessionMessagesResponse,
+  type SessionStatusResponse,
 } from "@atlas/core";
 import { createRoute, z } from "@hono/zod-openapi";
 import { resolveRequestClientOrigin } from "../../services/composio-callback-url";
@@ -53,6 +54,9 @@ export function registerSessionRoutes(
   const createSessionRequestSchema = z
     .object({
       channel: agentChannelSchema,
+      externalPrincipal: z
+        .object({ channelUserId: z.string().min(1) })
+        .optional(),
       profileId: z.string().optional(),
     })
     .openapi("CreateSessionRequest");
@@ -350,18 +354,87 @@ export function registerSessionRoutes(
     const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<CreateSessionRequest>(c.req.raw);
     const channel = parseChannel(body.channel);
-    const sessionId = await agent.createSession(
-      orgId,
-      channel,
-      body.profileId,
-      auth.user.id,
-      {
-        excludeSuperAgent: auth.mode === "local-token" && channel !== "cli",
-        isPlatformAdmin: auth.isPlatformAdmin,
-        orgRole: auth.orgRole,
-      }
-    );
-    return json<CreateSessionResponse>({ sessionId }, 201);
+    try {
+      const sessionId = await agent.createSession(
+        orgId,
+        channel,
+        body.profileId,
+        auth.user.id,
+        {
+          excludeSuperAgent: auth.mode === "local-token" && channel !== "cli",
+          externalPrincipal: body.externalPrincipal,
+          isPlatformAdmin: auth.isPlatformAdmin,
+          orgRole: auth.orgRole,
+        }
+      );
+      return json<CreateSessionResponse>({ sessionId }, 201);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const status =
+        error instanceof Error && error.name === "PrincipalRequiredError"
+          ? 403
+          : 400;
+      return errorResponse(message, status);
+    }
+  });
+
+  app.post("/v1/channel-principals", async (c) => {
+    requireNotViewerFromContext(c);
+    const auth = getRequestAuth(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    const body = await readJson<{
+      channel: "telegram" | "whatsapp" | "discord";
+      channelUserId: string;
+      pairingAssertion?: string;
+      userId?: string;
+    }>(c.req.raw);
+    try {
+      const principal = await agent.identityService.bindExternalPrincipal({
+        actor: {
+          mode: auth.mode,
+          userId: auth.user.id,
+        },
+        channel: body.channel,
+        channelUserId: body.channelUserId,
+        orgId,
+        pairingAssertion: body.pairingAssertion,
+      });
+      return json({ orgId: principal.orgId, userId: principal.userId }, 201);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const status = error instanceof PrincipalRequiredError ? 403 : 400;
+      return errorResponse(message, status);
+    }
+  });
+
+  app.post("/v1/sessions/:sessionId/approvals/:approvalId", async (c) => {
+    requireNotViewerFromContext(c);
+    const auth = getRequestAuth(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    const sessionId = c.req.param("sessionId");
+    const approvalId = c.req.param("approvalId");
+    const body = await readJson<{ decision: "approved" | "denied" }>(c.req.raw);
+    try {
+      const result = await agent.executionPlane.decide({
+        approvalId,
+        decision: body.decision,
+        principal: {
+          isPlatformAdmin: auth.isPlatformAdmin === true,
+          orgId,
+          orgRole: auth.orgRole ?? "member",
+          userId: auth.user.id,
+        },
+      });
+      void sessionId;
+      return json({
+        grantId: result.grantId,
+        resumed: body.decision === "approved",
+        status: result.record.status,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return errorResponse(message, 400);
+    }
   });
 
   app.get("/v1/sessions", async (c) => {

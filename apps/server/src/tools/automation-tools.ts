@@ -1,6 +1,8 @@
 import {
   emptyObjectSchema,
+  isServiceAccountUserId,
   normalizeAutomationDelivery,
+  principalFromToolContext,
   type ToolContext,
   type ToolDefinition,
 } from "@atlas/core";
@@ -70,6 +72,7 @@ export function createAutomationTools(
           );
         }
 
+        const createdByUserId = context.userId?.trim();
         const automation = await automationService.create(
           orgId,
           {
@@ -79,7 +82,11 @@ export function createAutomationTools(
             trigger,
             ...(delivery ? { delivery } : {}),
           },
-          profileId
+          profileId,
+          undefined,
+          createdByUserId && !isServiceAccountUserId(createdByUserId)
+            ? createdByUserId
+            : undefined
         );
 
         return {
@@ -175,7 +182,9 @@ export function createAutomationTools(
           throw new Error("Automation not found.");
         }
 
-        const result = await automationRunner.run(automationId);
+        const result = await automationRunner.run(automationId, {
+          principal: principalFromToolContext(context),
+        });
 
         if (result.skipped) {
           throw new Error(result.error ?? "Automation run skipped.");

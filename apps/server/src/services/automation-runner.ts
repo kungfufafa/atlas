@@ -1,28 +1,38 @@
 import {
+  type CanonicalPrincipal,
+  DEFAULT_LEASE_HEARTBEAT_MS,
+  ExecutionLeaseError,
   formatAutomationRunError,
   isWorkerSchedulable,
+  nanoid,
+  PrincipalRequiredError,
+  runAsPrincipal,
   type StoredAutomation,
 } from "@atlas/core";
 import type { AgentService } from "./agent-service";
 import type { AutomationDeliveryService } from "./automation-delivery-service";
 import type { AutomationService } from "./automation-service";
+import type { ExecutionPlaneService } from "./execution-plane-service";
+import type { IdentityService } from "./identity-service";
+
+export interface AutomationRunOptions {
+  fireId?: string;
+  principal?: CanonicalPrincipal;
+}
 
 export class AutomationRunner {
-  private readonly running = new Set<string>();
-
   constructor(
     private readonly automationService: AutomationService,
     private readonly agentService: AgentService,
-    private readonly deliveryService?: AutomationDeliveryService
+    private readonly deliveryService?: AutomationDeliveryService,
+    private readonly executionPlane?: ExecutionPlaneService,
+    private readonly identityService?: IdentityService
   ) {}
 
   async run(
-    automationId: string
+    automationId: string,
+    options: AutomationRunOptions = {}
   ): Promise<{ output?: string; error?: string; skipped?: boolean }> {
-    if (this.running.has(automationId)) {
-      return { error: "Automation is already running.", skipped: true };
-    }
-
     const automation = await this.automationService.get(automationId);
 
     if (!automation) {
@@ -38,24 +48,65 @@ export class AutomationRunner {
       throw new Error("Automation organization is missing.");
     }
 
+    if (!this.executionPlane) {
+      return {
+        error: "Execution plane is required to claim an automation run.",
+        skipped: true,
+      };
+    }
+
+    let principal: CanonicalPrincipal;
+    try {
+      principal = await this.resolvePrincipal(automation, options.principal);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { error: message, skipped: true };
+    }
+
+    const claimed = await this.executionPlane.startAutomationRun({
+      automationId,
+      fireId: options.fireId?.trim() || nanoid(),
+      principal,
+    });
+
+    if (claimed.skipped || !claimed.run) {
+      return {
+        error: claimed.error ?? "Automation is already running.",
+        skipped: true,
+      };
+    }
+
     if (automation.trigger.type === "runAt") {
       await this.automationService.update(automationId, orgId, {
         enabled: false,
       });
     }
 
-    this.running.add(automationId);
     const run = await this.automationService.createRun(automationId);
+    const leaseOwner = claimed.run.leaseOwner ?? "";
+    const heartbeat = setInterval(() => {
+      void this.executionPlane
+        ?.heartbeat(claimed.run!.id, leaseOwner)
+        .catch(() => {});
+    }, DEFAULT_LEASE_HEARTBEAT_MS);
 
     try {
-      const output = await this.agentService.runAutomationPrompt(
-        orgId,
-        automation.profileId,
-        automation.prompt,
-        automationId,
-        run.id
+      const output = await runAsPrincipal(principal, (actor) =>
+        this.agentService.runAutomationPrompt(
+          orgId,
+          automation.profileId,
+          automation.prompt,
+          automationId,
+          run.id,
+          actor
+        )
       );
 
+      await this.executionPlane.complete(
+        claimed.run.id,
+        "completed",
+        leaseOwner
+      );
       const completedRun = await this.automationService.completeRun(
         run.id,
         automationId,
@@ -64,7 +115,22 @@ export class AutomationRunner {
       await this.tryDeliver(automation, completedRun);
       return { output };
     } catch (error) {
+      if (error instanceof ExecutionLeaseError) {
+        return { error: error.message, skipped: true };
+      }
       const message = formatAutomationRunError(error);
+      try {
+        await this.executionPlane.complete(
+          claimed.run.id,
+          "failed",
+          leaseOwner
+        );
+      } catch (completeError) {
+        if (completeError instanceof ExecutionLeaseError) {
+          return { error: completeError.message, skipped: true };
+        }
+        throw completeError;
+      }
       const completedRun = await this.automationService.completeRun(
         run.id,
         automationId,
@@ -75,8 +141,54 @@ export class AutomationRunner {
       await this.tryDeliver(automation, completedRun);
       return { error: message };
     } finally {
-      this.running.delete(automationId);
+      clearInterval(heartbeat);
     }
+  }
+
+  private async resolvePrincipal(
+    automation: StoredAutomation,
+    explicit?: CanonicalPrincipal
+  ): Promise<CanonicalPrincipal> {
+    if (explicit) {
+      const orgId = automation.orgId?.trim();
+      if (orgId && explicit.orgId !== orgId) {
+        throw new PrincipalRequiredError(
+          "Automation principal must belong to the automation workspace."
+        );
+      }
+      if (this.identityService) {
+        return this.rejectViewer(
+          await this.identityService.resolveForUser(
+            explicit.orgId,
+            explicit.userId
+          )
+        );
+      }
+      return this.rejectViewer(explicit);
+    }
+
+    const ownerId = automation.createdByUserId?.trim();
+    const orgId = automation.orgId?.trim();
+    if (!(ownerId && orgId)) {
+      throw new PrincipalRequiredError(
+        "Canonical principal is required to run an automation."
+      );
+    }
+    if (!this.identityService) {
+      throw new PrincipalRequiredError(
+        "Canonical principal is required to run an automation."
+      );
+    }
+    return this.rejectViewer(
+      await this.identityService.resolveForUser(orgId, ownerId)
+    );
+  }
+
+  private rejectViewer(principal: CanonicalPrincipal): CanonicalPrincipal {
+    if (principal.orgRole === "viewer") {
+      throw new PrincipalRequiredError("Viewers cannot run automations.");
+    }
+    return principal;
   }
 
   private async tryDeliver(
@@ -94,16 +206,41 @@ export class AutomationRunner {
     }
   }
 
-  isRunning(automationId: string): boolean {
-    return this.running.has(automationId);
+  async isRunning(automationId: string): Promise<boolean> {
+    if (!this.executionPlane) {
+      return false;
+    }
+    const active = await this.executionPlane.listActiveRuns({
+      kind: "automation",
+      sessionId: automationId,
+    });
+    return active.length > 0;
   }
 
-  getActiveRunCount(): number {
-    return this.running.size;
+  async getActiveRunCount(): Promise<number> {
+    if (!this.executionPlane) {
+      return 0;
+    }
+    const active = await this.executionPlane.listActiveRuns({
+      kind: "automation",
+    });
+    return active.length;
   }
 
-  getActiveAutomationIds(): string[] {
-    return [...this.running];
+  async getActiveAutomationIds(): Promise<string[]> {
+    if (!this.executionPlane) {
+      return [];
+    }
+    const active = await this.executionPlane.listActiveRuns({
+      kind: "automation",
+    });
+    return [
+      ...new Set(
+        active
+          .map((run) => run.sessionId)
+          .filter((sessionId): sessionId is string => Boolean(sessionId))
+      ),
+    ];
   }
 }
 

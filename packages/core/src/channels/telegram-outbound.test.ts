@@ -6,7 +6,6 @@ import { writePrivateTextFile } from "../fs";
 import {
   getTelegramConfigDir,
   getTelegramConfigPath,
-  saveTelegramConfig,
 } from "../telegram-config";
 import { createTelegramOutboundAdapter } from "./telegram-outbound";
 
@@ -27,7 +26,11 @@ describe("createTelegramOutboundAdapter", () => {
   async function useTempHome(run: () => Promise<void>): Promise<void> {
     tempHome = await mkdtemp(path.join(os.tmpdir(), "atlas-tg-outbound-"));
     homedirSpy = spyOn(os, "homedir").mockReturnValue(tempHome);
-    await saveTelegramConfig({ botToken: "1234567890:TEST" });
+    await writePrivateTextFile(
+      getTelegramConfigPath("workspace-test"),
+      "bot_token=1234567890:TEST\nprofile_id=default\npaired_user_ids=1001\n",
+      { ensureDir: getTelegramConfigDir("workspace-test") }
+    );
     await run();
   }
 
@@ -45,7 +48,11 @@ describe("createTelegramOutboundAdapter", () => {
       });
 
       await expect(
-        adapter.send({ chatIds: [1001], text: "hello" })
+        adapter.send({
+          chatIds: [1001],
+          orgId: "workspace-test",
+          text: "hello",
+        })
       ).resolves.toEqual({
         ok: true,
       });
@@ -64,7 +71,12 @@ describe("createTelegramOutboundAdapter", () => {
       });
 
       await expect(
-        adapter.send({ chatIds: [1001], text: "hello", topicId: 22 })
+        adapter.send({
+          chatIds: [1001],
+          orgId: "workspace-test",
+          text: "hello",
+          topicId: 22,
+        })
       ).resolves.toEqual({ ok: true });
       expect(calls[0]).toEqual({
         chat_id: 1001,
@@ -87,6 +99,7 @@ describe("createTelegramOutboundAdapter", () => {
       await expect(
         adapter.send({
           chatIds: [1001],
+          orgId: "workspace-test",
           parseMode: "HTML",
           text: "✅ **New payment**\n\nCustomer: [Ahmad](https://example.com)",
         })

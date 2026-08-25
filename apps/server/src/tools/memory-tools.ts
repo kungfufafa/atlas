@@ -1,4 +1,5 @@
 import type { ToolContext, ToolDefinition } from "@atlas/core";
+import { applyRedactionBoundary, principalFromToolContext } from "@atlas/core";
 import { jsonSchemaFromZod } from "@atlas/core/tools/schema";
 import type { MemoryScope } from "@atlas/db";
 import { z } from "zod";
@@ -66,21 +67,38 @@ function canWriteOrganizationMemory(context: ToolContext): boolean {
   return context.orgRole === "admin" || context.isPlatformAdmin === true;
 }
 
+function requireOrgId(context: ToolContext): string {
+  const orgId = context.orgId?.trim();
+  if (!orgId) {
+    throw new Error("orgId is required.");
+  }
+  return orgId;
+}
+
 function resolveOwnerId(
   scope: MemoryScope,
   context: ToolContext,
   projectId?: string
 ): string {
+  const principal = principalFromToolContext(context);
   if (scope === "user") {
-    return context.userId || "user_default";
+    return principal.userId;
   }
   if (scope === "agent") {
-    return context.profileId || "profile_default";
+    const profileId = context.profileId?.trim();
+    if (!profileId) {
+      throw new Error("profileId is required for agent-scoped memory.");
+    }
+    return profileId;
   }
   if (scope === "project") {
-    return projectId || context.sessionId || "project_default";
+    const owner = projectId?.trim() || context.sessionId?.trim();
+    if (!owner) {
+      throw new Error("projectId or sessionId is required for project memory.");
+    }
+    return owner;
   }
-  return context.orgId || "org_default";
+  return principal.orgId;
 }
 
 async function assertCanMutateMemory(
@@ -120,7 +138,8 @@ export function createMemoryTools(
     parameters: jsonSchemaFromZod(memorySearchInputSchema),
     async run(input, context) {
       const parsed = memorySearchInputSchema.parse(input);
-      const orgId = context.orgId || "org_default";
+      const orgId = requireOrgId(context);
+      principalFromToolContext(context);
       const results = parsed.scope
         ? await memoryService.searchMemories(orgId, parsed.query, {
             limit: parsed.limit,
@@ -156,7 +175,8 @@ export function createMemoryTools(
     parameters: jsonSchemaFromZod(memoryWriteInputSchema),
     async run(input, context) {
       const parsed = memoryWriteInputSchema.parse(input);
-      const orgId = context.orgId || "org_default";
+      const orgId = requireOrgId(context);
+      parsed.content = applyRedactionBoundary(parsed.content, "memory");
       if (
         parsed.scope === "organization" &&
         !canWriteOrganizationMemory(context)
@@ -192,7 +212,10 @@ export function createMemoryTools(
     parameters: jsonSchemaFromZod(memoryUpdateInputSchema),
     async run(input, context) {
       const parsed = memoryUpdateInputSchema.parse(input);
-      const orgId = context.orgId || "org_default";
+      const orgId = requireOrgId(context);
+      if (parsed.content) {
+        parsed.content = applyRedactionBoundary(parsed.content, "memory");
+      }
       await assertCanMutateMemory(memoryService, orgId, parsed.id, context);
 
       const updated = await memoryService.updateMemory(orgId, parsed.id, {
@@ -220,7 +243,7 @@ export function createMemoryTools(
     parameters: jsonSchemaFromZod(memoryDeleteInputSchema),
     async run(input, context) {
       const parsed = memoryDeleteInputSchema.parse(input);
-      const orgId = context.orgId || "org_default";
+      const orgId = requireOrgId(context);
       await assertCanMutateMemory(memoryService, orgId, parsed.id, context);
       const deleted = await memoryService.deleteMemory(orgId, parsed.id);
       return {
@@ -239,7 +262,7 @@ export function createMemoryTools(
     parameters: jsonSchemaFromZod(memoryListInputSchema),
     async run(input, context) {
       const parsed = memoryListInputSchema.parse(input);
-      const orgId = context.orgId || "org_default";
+      const orgId = requireOrgId(context);
       const memories = parsed.scope
         ? await memoryService.listMemories(orgId, {
             limit: parsed.limit,

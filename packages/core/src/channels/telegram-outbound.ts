@@ -1,5 +1,9 @@
 import { loadTelegramConfigFile } from "../telegram-config";
 import { splitTelegramChunks } from "./message-format";
+import {
+  assertOutboundEnvelope,
+  revalidateOutboundAllowlist,
+} from "./outbound-envelope";
 import { renderTelegramRichText } from "./telegram-rich-text";
 import type { ChannelSendResult, TelegramOutboundAdapter } from "./types";
 
@@ -15,7 +19,12 @@ export function createTelegramOutboundAdapter(
   return {
     async send(input): Promise<ChannelSendResult> {
       try {
-        const config = await loadTelegramConfigFile(input.orgId);
+        const orgId = input.orgId?.trim();
+        if (!orgId) {
+          return { error: "Outbound envelope orgId is required.", ok: false };
+        }
+
+        const config = await loadTelegramConfigFile(orgId);
         const token = config?.botToken.trim();
 
         if (!token) {
@@ -31,7 +40,33 @@ export function createTelegramOutboundAdapter(
           return { error: "No Telegram chat is paired.", ok: false };
         }
 
-        const chunks = splitTelegramChunks(input.text);
+        for (const chatId of chatIds) {
+          const envelope = assertOutboundEnvelope({
+            orgId,
+            replyTarget: {
+              channel: "telegram",
+              telegram: { chatId, topicId: input.topicId },
+            },
+            text: input.text,
+          });
+          revalidateOutboundAllowlist(envelope, {
+            accessMode: config?.accessMode,
+            allowedUserIds: config?.allowedUserIds,
+            blockedUserIds: config?.blockedUserIds,
+            pairedUserIds: config?.pairedUserIds,
+          });
+        }
+
+        const chunks = splitTelegramChunks(
+          assertOutboundEnvelope({
+            orgId,
+            replyTarget: {
+              channel: "telegram",
+              telegram: { chatId: chatIds[0]! },
+            },
+            text: input.text,
+          }).text
+        );
 
         if (chunks.length === 0) {
           return { error: "Message text is empty.", ok: false };

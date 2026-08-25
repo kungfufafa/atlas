@@ -49,11 +49,22 @@ describe("AgentService long-lived channel runtime", () => {
 
     const db = createInMemoryDatabaseAdapter();
     await db.upsertProfile(createDefaultProfile());
+    const now = new Date().toISOString();
+    await db.createUser({
+      createdAt: now,
+      email: "ada@example.com",
+      id: "user_1",
+      name: "Ada",
+      passwordHash: "x",
+      updatedAt: now,
+    });
     const service = new AgentService(null, null, db);
     const sessionId = await service.createSession(
       ORG_ID,
       "whatsapp",
-      "profile_default"
+      "profile_default",
+      "user_1",
+      { orgRole: "member" }
     );
     const beforeUpload = await service.resolveSession(ORG_ID, sessionId);
 

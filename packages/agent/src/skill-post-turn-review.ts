@@ -15,6 +15,7 @@ export type SkillPostTurnReviewOutcome =
   | { action: "patch"; name: string; oldString: string; newString: string };
 
 export interface SkillCatalogEntry {
+  body?: string;
   description: string;
   name: string;
 }
@@ -54,7 +55,11 @@ export function buildSkillPostTurnReviewPrompt(input: {
     lines.push("(none)");
   } else {
     for (const skill of input.catalog) {
+      const body = skill.body?.trim();
       lines.push(`- ${skill.name}: ${truncate(skill.description, 200)}`);
+      if (body) {
+        lines.push(`  body: ${truncate(body, 400)}`);
+      }
     }
   }
 

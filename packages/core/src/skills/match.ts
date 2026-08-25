@@ -1,3 +1,4 @@
+import { rankSkillsForMessage } from "../learning/rank";
 import type { DiscoveredSkill, SkillMatchOptions } from "./types";
 
 const EXPLICIT_SKILL_PATTERN =
@@ -15,27 +16,41 @@ export function matchSkillsForMessage(
   }
 
   const explicitName = extractExplicitSkillName(message);
+  const invocable = skills.filter((skill) => {
+    if (explicitName) {
+      return skill.name === explicitName;
+    }
+    return !(options.explicitOnly || skill.disableModelInvocation);
+  });
   const matched: DiscoveredSkill[] = [];
 
-  for (const skill of skills) {
-    if (explicitName) {
-      if (skill.name === explicitName) {
-        matched.push(skill);
-      }
-
-      continue;
-    }
-
-    if (options.explicitOnly || skill.disableModelInvocation) {
-      continue;
-    }
-
-    if (messageMatchesSkill(message, skill)) {
+  for (const skill of invocable) {
+    if (explicitName || messageMatchesSkill(message, skill)) {
       matched.push(skill);
     }
   }
 
-  return matched;
+  const ranker = options.ranker ?? { rank: rankSkillsForMessage };
+  const retrieved = ranker.retrieve?.(invocable, message) ?? [];
+
+  const byName = new Map<string, DiscoveredSkill>();
+  for (const skill of matched) {
+    byName.set(skill.name, skill);
+  }
+  for (const skill of retrieved) {
+    byName.set(skill.name, skill);
+  }
+  const candidates = [...byName.values()];
+
+  if (candidates.length <= 1) {
+    return candidates;
+  }
+
+  const ranked = ranker.rank(candidates, message, options.outcomes ?? []);
+  if (ranked.length === 0) {
+    return candidates;
+  }
+  return ranked.map((entry) => entry.skill);
 }
 
 export function extractExplicitSkillName(message: string): string | null {

@@ -103,7 +103,9 @@ registerBrowserHandler((input, context) =>
   browserSessionService.executeBrowserAction(input, {
     orgId: context.orgId,
     profileId: context.profileId,
+    runId: context.runId,
     sessionId: context.sessionId,
+    userId: context.userId,
   })
 );
 registerSubAgentTool(createSubAgentTool(agent));
@@ -148,7 +150,9 @@ const automationDeliveryService = new AutomationDeliveryService(
 const automationRunner = new AutomationRunner(
   automationService,
   agent,
-  automationDeliveryService
+  automationDeliveryService,
+  agent.executionPlane,
+  agent.identityService
 );
 
 agent.setAutomationTools(

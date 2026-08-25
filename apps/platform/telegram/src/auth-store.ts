@@ -30,7 +30,15 @@ export class TelegramAuthStore {
   async tryPair(
     handshakeInput: string,
     userId: number
-  ): Promise<{ ok: boolean; message: string }> {
+  ): Promise<
+    | {
+        ok: true;
+        message: string;
+        handshakeUserId: string | null;
+        pairingAssertion: string | null;
+      }
+    | { ok: false; message: string }
+  > {
     const result = await verifyAndPairTelegramUser(
       handshakeInput,
       userId,

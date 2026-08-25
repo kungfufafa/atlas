@@ -1,13 +1,15 @@
-import type {
-  AutomationResponse,
-  CreateAutomationRequest,
-  DraftAutomationRequest,
-  DraftAutomationResponse,
-  ListAutomationRunsResponse,
-  ListAutomationsResponse,
-  MarkAutomationRunsReadResponse,
-  RunAutomationResponse,
-  UpdateAutomationRequest,
+import {
+  type AutomationResponse,
+  type CreateAutomationRequest,
+  type DraftAutomationRequest,
+  type DraftAutomationResponse,
+  isServiceAccountUserId,
+  type ListAutomationRunsResponse,
+  type ListAutomationsResponse,
+  type MarkAutomationRunsReadResponse,
+  nanoid,
+  type RunAutomationResponse,
+  type UpdateAutomationRequest,
 } from "@atlas/core";
 import { createRoute, z } from "@hono/zod-openapi";
 import type { ServerOptions } from "../context";
@@ -353,7 +355,8 @@ export function registerAutomationRoutes(
       {
         isPlatformAdmin: auth.isPlatformAdmin,
         orgRole: auth.orgRole,
-      }
+      },
+      isServiceAccountUserId(auth.user.id) ? undefined : auth.user.id
     );
     return json<AutomationResponse>({ automation }, 201);
   });
@@ -415,7 +418,19 @@ export function registerAutomationRoutes(
       return errorResponse("Automation not found", 404);
     }
 
-    const result = await agent.runAutomation(automationId);
+    const result = await agent.runAutomation(automationId, {
+      fireId: nanoid(),
+      ...(isServiceAccountUserId(auth.user.id)
+        ? {}
+        : {
+            principal: {
+              isPlatformAdmin: auth.isPlatformAdmin === true,
+              orgId,
+              orgRole: auth.orgRole ?? "member",
+              userId: auth.user.id,
+            },
+          }),
+    });
 
     if (result.skipped) {
       return errorResponse(result.error ?? "Automation run skipped.", 409);

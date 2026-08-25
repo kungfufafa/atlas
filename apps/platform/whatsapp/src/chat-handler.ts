@@ -644,6 +644,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   ): Promise<RemoteChatSession> {
     const resolvedProfileId = profileId ?? (await resolveProfileId());
     const session = await client.createSession("whatsapp", {
+      externalPrincipal: { channelUserId: jid },
       profileId: resolvedProfileId,
     });
 

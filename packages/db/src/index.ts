@@ -14,6 +14,7 @@ export type { ResolveDatabasePathOptions } from "./database-url";
 export * from "./local-client";
 export * from "./org-profiles";
 export * from "./seed";
+export * from "./skill-rank-fts5";
 export * from "./types";
 
 export interface Database {

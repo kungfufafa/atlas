@@ -3,6 +3,8 @@ import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { AutomationDeliveryService } from "./automation-delivery-service";
 import { AutomationRunner } from "./automation-runner";
 import { AutomationService } from "./automation-service";
+import { ExecutionPlaneService } from "./execution-plane-service";
+import { IdentityService } from "./identity-service";
 import {
   createMcpAwareEmailOutboundAdapter,
   hasAutomationEmailDeliveryPath,
@@ -10,6 +12,13 @@ import {
 
 const ORG_ID = "org_test";
 const PROFILE_ID = "profile_default";
+const USER_ID = "user_test";
+const PRINCIPAL = {
+  isPlatformAdmin: false,
+  orgId: ORG_ID,
+  orgRole: "member" as const,
+  userId: USER_ID,
+};
 
 async function createTestDb() {
   const db = createInMemoryDatabaseAdapter();
@@ -35,7 +44,37 @@ async function createTestDb() {
     updatedAt: now,
   });
 
+  await db.createUser({
+    createdAt: now,
+    email: "ada@example.com",
+    id: USER_ID,
+    name: "Ada",
+    passwordHash: "x",
+    updatedAt: now,
+  });
+  await db.upsertOrgMember({
+    createdAt: now,
+    orgId: ORG_ID,
+    role: "member",
+    userId: USER_ID,
+  });
+
   return db;
+}
+
+function createRunner(
+  db: ReturnType<typeof createInMemoryDatabaseAdapter>,
+  service: AutomationService,
+  agentService: unknown,
+  deliveryService?: AutomationDeliveryService
+) {
+  return new AutomationRunner(
+    service,
+    agentService as never,
+    deliveryService,
+    new ExecutionPlaneService(db),
+    new IdentityService(db)
+  );
 }
 
 async function assignComposeioGmailSender(
@@ -340,8 +379,8 @@ describe("AutomationRunner", () => {
       runAutomationPrompt: async () => "Hello from automation",
     };
 
-    const runner = new AutomationRunner(service, agentService as never);
-    const result = await runner.run(automation.id);
+    const runner = createRunner(db, service, agentService);
+    const result = await runner.run(automation.id, { principal: PRINCIPAL });
 
     expect(result.output).toBe("Hello from automation");
 
@@ -391,8 +430,8 @@ describe("AutomationRunner", () => {
       },
     };
 
-    const runner = new AutomationRunner(service, agentService as never);
-    await runner.run(automation.id);
+    const runner = createRunner(db, service, agentService);
+    await runner.run(automation.id, { principal: PRINCIPAL });
 
     const runs = await service.listRuns(automation.id);
     expect(received).toEqual({
@@ -427,8 +466,8 @@ describe("AutomationRunner", () => {
       },
     };
 
-    const runner = new AutomationRunner(service, agentService as never);
-    const result = await runner.run(automation.id);
+    const runner = createRunner(db, service, agentService);
+    const result = await runner.run(automation.id, { principal: PRINCIPAL });
 
     expect(result.error).toBe("Provider offline");
 
@@ -459,8 +498,8 @@ describe("AutomationRunner", () => {
       runAutomationPrompt: async () => "Reminder sent",
     };
 
-    const runner = new AutomationRunner(service, agentService as never);
-    const result = await runner.run(automation.id);
+    const runner = createRunner(db, service, agentService);
+    const result = await runner.run(automation.id, { principal: PRINCIPAL });
 
     expect(result.output).toBe("Reminder sent");
 
@@ -505,12 +544,8 @@ describe("AutomationRunner", () => {
       },
     });
 
-    const runner = new AutomationRunner(
-      service,
-      agentService as never,
-      deliveryService
-    );
-    await runner.run("automation_delivery_test");
+    const runner = createRunner(db, service, agentService, deliveryService);
+    await runner.run("automation_delivery_test", { principal: PRINCIPAL });
 
     const runs = await service.listRuns("automation_delivery_test");
     expect(runs[0]?.deliveryStatus).toBe("sent");
@@ -552,12 +587,15 @@ describe("AutomationRunner", () => {
       },
     });
 
-    const runner = new AutomationRunner(
+    const runner = createRunner(
+      db,
       service,
-      { runAutomationPrompt: async () => "News summary" } as never,
+      { runAutomationPrompt: async () => "News summary" },
       deliveryService
     );
-    await runner.run("automation_discord_delivery_test");
+    await runner.run("automation_discord_delivery_test", {
+      principal: PRINCIPAL,
+    });
 
     expect(sent).toHaveLength(1);
     expect(sent[0]?.text).toContain("News summary");
@@ -602,12 +640,13 @@ describe("AutomationRunner", () => {
       },
     });
 
-    const runner = new AutomationRunner(
+    const runner = createRunner(
+      db,
       service,
-      { runAutomationPrompt: async () => "News summary" } as never,
+      { runAutomationPrompt: async () => "News summary" },
       deliveryService
     );
-    await runner.run("automation_discord_skip_test");
+    await runner.run("automation_discord_skip_test", { principal: PRINCIPAL });
 
     expect(called).toBe(false);
     const runs = await service.listRuns("automation_discord_skip_test");
@@ -649,12 +688,13 @@ describe("AutomationRunner", () => {
       },
     });
 
-    const runner = new AutomationRunner(
+    const runner = createRunner(
+      db,
       service,
-      { runAutomationPrompt: async () => "News summary" } as never,
+      { runAutomationPrompt: async () => "News summary" },
       deliveryService
     );
-    await runner.run("automation_discord_fail_test");
+    await runner.run("automation_discord_fail_test", { principal: PRINCIPAL });
 
     const runs = await service.listRuns("automation_discord_fail_test");
     expect(runs[0]?.deliveryStatus).toBe("failed");
@@ -715,12 +755,10 @@ describe("AutomationRunner", () => {
       runAutomationPrompt: async () => "News summary",
     };
 
-    const runner = new AutomationRunner(
-      service,
-      agentService as never,
-      deliveryService
-    );
-    await runner.run("automation_email_delivery_test");
+    const runner = createRunner(db, service, agentService, deliveryService);
+    await runner.run("automation_email_delivery_test", {
+      principal: PRINCIPAL,
+    });
 
     expect(sent).toHaveLength(1);
     expect(sent[0]).toMatchObject({
@@ -779,5 +817,169 @@ describe("AutomationRunner", () => {
         title: "Daily digest",
       },
     ]);
+  });
+
+  test("claims via lease and skips a second concurrent fire", async () => {
+    const db = await createTestDb();
+    const service = new AutomationService(db, {
+      getUserTimezone: async () => "UTC",
+    });
+    const automation = await service.create(
+      ORG_ID,
+      {
+        description: "Lease claim",
+        name: "Lease task",
+        prompt: "Say hello",
+        trigger: { type: "manual" },
+      },
+      PROFILE_ID,
+      undefined,
+      USER_ID
+    );
+
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let promptStarted = false;
+    const agentService = {
+      runAutomationPrompt: async (
+        _orgId: string,
+        _profileId: string,
+        _prompt: string,
+        _automationId?: string,
+        _automationRunId?: string,
+        principal?: { userId: string }
+      ) => {
+        expect(principal?.userId).toBe(USER_ID);
+        promptStarted = true;
+        await gate;
+        return "first";
+      },
+    };
+    const plane = new ExecutionPlaneService(db);
+    const identity = new IdentityService(db);
+    const runnerA = new AutomationRunner(
+      service,
+      agentService as never,
+      undefined,
+      plane,
+      identity
+    );
+    const runnerB = new AutomationRunner(
+      service,
+      agentService as never,
+      undefined,
+      plane,
+      identity
+    );
+
+    const first = runnerA.run(automation.id, {
+      fireId: "tick-1",
+      principal: PRINCIPAL,
+    });
+    const startedAt = Date.now();
+    while (!promptStarted && Date.now() - startedAt < 1000) {
+      await new Promise((resolve) => setTimeout(resolve, 5));
+    }
+    expect(promptStarted).toBe(true);
+    const second = await runnerB.run(automation.id, {
+      fireId: "tick-2",
+      principal: PRINCIPAL,
+    });
+    expect(second.skipped).toBe(true);
+    expect(second.error).toMatch(/already running/);
+    release();
+    const firstResult = await first;
+    expect(firstResult.output).toBe("first");
+  });
+
+  test("fail closed without a principal or stored owner", async () => {
+    const db = await createTestDb();
+    const service = new AutomationService(db, {
+      getUserTimezone: async () => "UTC",
+    });
+    const automation = await service.create(
+      ORG_ID,
+      {
+        description: "No owner",
+        name: "Orphan",
+        prompt: "Say hello",
+        trigger: { type: "manual" },
+      },
+      PROFILE_ID
+    );
+    const runner = createRunner(db, service, {
+      runAutomationPrompt: async () => "should not run",
+    });
+    const result = await runner.run(automation.id);
+    expect(result.skipped).toBe(true);
+    expect(result.error).toMatch(/principal/i);
+    expect(await service.listRuns(automation.id)).toHaveLength(0);
+  });
+
+  test("demoted viewers cannot run scheduled automations", async () => {
+    const db = await createTestDb();
+    await db.upsertOrgMember({
+      createdAt: new Date().toISOString(),
+      orgId: ORG_ID,
+      role: "viewer",
+      userId: USER_ID,
+    });
+    const service = new AutomationService(db, {
+      getUserTimezone: async () => "UTC",
+    });
+    const automation = await service.create(
+      ORG_ID,
+      {
+        description: "Viewer",
+        name: "Blocked",
+        prompt: "Say hello",
+        trigger: { type: "manual" },
+      },
+      PROFILE_ID,
+      undefined,
+      USER_ID
+    );
+    const runner = createRunner(db, service, {
+      runAutomationPrompt: async () => "should not run",
+    });
+    const result = await runner.run(automation.id, { fireId: "tick-1" });
+    expect(result.skipped).toBe(true);
+    expect(result.error).toMatch(/viewer/i);
+    expect(await service.listRuns(automation.id)).toHaveLength(0);
+  });
+
+  test("replays the same fire idempotency key without a second automation run", async () => {
+    const db = await createTestDb();
+    const service = new AutomationService(db, {
+      getUserTimezone: async () => "UTC",
+    });
+    const automation = await service.create(
+      ORG_ID,
+      {
+        description: "Idempotent",
+        name: "Once",
+        prompt: "Say hello",
+        trigger: { type: "manual" },
+      },
+      PROFILE_ID,
+      undefined,
+      USER_ID
+    );
+    const runner = createRunner(db, service, {
+      runAutomationPrompt: async () => "hello",
+    });
+    const first = await runner.run(automation.id, {
+      fireId: "cron-1",
+      principal: PRINCIPAL,
+    });
+    const second = await runner.run(automation.id, {
+      fireId: "cron-1",
+      principal: PRINCIPAL,
+    });
+    expect(first.output).toBe("hello");
+    expect(second.skipped).toBe(true);
+    expect(await service.listRuns(automation.id)).toHaveLength(1);
   });
 });

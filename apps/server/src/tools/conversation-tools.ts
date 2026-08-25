@@ -1,4 +1,5 @@
 import type { ToolContext, ToolDefinition } from "@atlas/core";
+import { principalFromToolContext } from "@atlas/core";
 import { jsonSchemaFromZod } from "@atlas/core/tools/schema";
 import type { DatabaseAdapter } from "@atlas/db";
 import { z } from "zod";
@@ -51,7 +52,8 @@ export function createConversationTools(db: DatabaseAdapter): ToolDefinition[] {
     parameters: jsonSchemaFromZod(searchChatsInputSchema),
     async run(input, context: ToolContext) {
       const parsed = searchChatsInputSchema.parse(input);
-      const orgId = context.orgId || "org_default";
+      const principal = principalFromToolContext(context);
+      const orgId = principal.orgId;
 
       // If user is not platform admin, enforce user/tenant isolation
       const results = await db.searchConversationMessages(orgId, parsed.query, {
@@ -59,7 +61,7 @@ export function createConversationTools(db: DatabaseAdapter): ToolDefinition[] {
         before: parsed.before,
         limit: parsed.limit,
         profileId: parsed.profileId,
-        userId: context.userId,
+        userId: principal.userId,
       });
 
       return {
@@ -86,7 +88,8 @@ export function createConversationTools(db: DatabaseAdapter): ToolDefinition[] {
     parameters: jsonSchemaFromZod(getConversationInputSchema),
     async run(input, context: ToolContext) {
       const parsed = getConversationInputSchema.parse(input);
-      const orgId = context.orgId || "org_default";
+      const principal = principalFromToolContext(context);
+      const orgId = principal.orgId;
 
       const conversation = await db.getConversationHistory(
         orgId,
@@ -94,7 +97,7 @@ export function createConversationTools(db: DatabaseAdapter): ToolDefinition[] {
         {
           limit: parsed.limit,
           offset: parsed.offset,
-          userId: context.userId,
+          userId: principal.userId,
         }
       );
 

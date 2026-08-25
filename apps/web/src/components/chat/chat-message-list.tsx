@@ -57,6 +57,7 @@ import {
   collectTurnWebSources,
   mergeTurnSources,
 } from "@/lib/chat-stream-web-search";
+import { client } from "@/lib/client";
 import { formatElapsedSeconds, useElapsedSeconds } from "@/lib/elapsed-time";
 import { isPastedTextDocument } from "@/lib/pasted-text";
 import { cn } from "@/lib/utils";
@@ -138,6 +139,7 @@ function ChatMessageListSession({
   emptyMessage,
   className,
   contentClassName,
+  sessionId,
 }: ChatMessageListProps) {
   const turns = useMemo(() => groupMessagesIntoTurns(messages), [messages]);
   const virtuosoRef = useRef<VirtuosoHandle>(null);
@@ -264,6 +266,7 @@ function ChatMessageListSession({
             onRetryMessage={onRetryMessage}
             onSuggestedQuestion={onSuggestedQuestion}
             profileId={profileId}
+            sessionId={sessionId}
             showAwaiting={
               turnIndex === turns.length - 1 && awaitingLabel === "Working…"
             }
@@ -285,6 +288,7 @@ function ChatMessageListSession({
       onRetryMessage,
       onSuggestedQuestion,
       profileId,
+      sessionId,
       showThinking,
       streamActive,
       turnStartedAt,
@@ -342,6 +346,7 @@ function ChatMessageListSession({
 function AssistantTurn({
   messages,
   profileId,
+  sessionId,
   showThinking,
   modelLabel,
   branchingMessageId,
@@ -357,6 +362,7 @@ function AssistantTurn({
 }: {
   messages: IndexedMessage[];
   profileId?: string | null;
+  sessionId?: string | null;
   showThinking: boolean;
   modelLabel?: string | null;
   branchingMessageId?: string | null;
@@ -396,7 +402,23 @@ function AssistantTurn({
 
   return (
     <div className="group mr-auto ml-0 flex w-full max-w-full flex-col items-start justify-start gap-3">
-      {approval ? <ActionApprovalDialog approval={approval} /> : null}
+      {approval ? (
+        <ActionApprovalDialog
+          approval={approval}
+          onCancel={(item) => {
+            if (!sessionId) {
+              return;
+            }
+            void client.decideApproval(sessionId, item.id, "denied");
+          }}
+          onConfirm={(item) => {
+            if (!sessionId) {
+              return;
+            }
+            void client.decideApproval(sessionId, item.id, "approved");
+          }}
+        />
+      ) : null}
       {memorySaved ? (
         <div className="fade-in inline-flex animate-in items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-600 text-xs dark:text-emerald-400">
           <span>✓</span>

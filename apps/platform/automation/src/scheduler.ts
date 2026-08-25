@@ -22,7 +22,7 @@ export class AutomationWorkerScheduler {
     this.scheduler = new AutomationScheduler({
       getDefaultTimezone: () => this.fetchDefaultTimezone(),
       listScheduledAutomations: () => this.fetchSchedules(),
-      runAutomation: (id) => this.runAutomation(id),
+      runAutomation: (id, fireId) => this.runAutomation(id, fireId),
     });
   }
 
@@ -62,10 +62,11 @@ export class AutomationWorkerScheduler {
   }
 
   private async runAutomation(
-    automationId: string
+    automationId: string,
+    fireId: string
   ): Promise<{ ok: boolean; skipped?: boolean; error?: string }> {
     try {
-      await this.client.runAutomationInternal(automationId);
+      await this.client.runAutomationInternal(automationId, fireId);
       return { ok: true };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

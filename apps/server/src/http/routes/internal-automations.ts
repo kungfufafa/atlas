@@ -1,6 +1,6 @@
 import { type AutomationSchedule, isWorkerSchedulable } from "@atlas/core";
 import type { ServerOptions } from "../context";
-import { errorResponse, json } from "../shared";
+import { errorResponse, json, readJson } from "../shared";
 import type { HonoApp } from "../types";
 
 export function registerInternalAutomationRoutes(
@@ -60,7 +60,15 @@ export function registerInternalAutomationRoutes(
       return errorResponse("Automation not found", 404);
     }
 
-    const result = await agent.runAutomation(automationId);
+    const body = await readJson<{ fireId?: string }>(c.req.raw).catch(() => ({
+      fireId: undefined as string | undefined,
+    }));
+    const fireId = body.fireId?.trim();
+    if (!fireId) {
+      return errorResponse("Scheduled automation runs require a fireId.", 400);
+    }
+
+    const result = await agent.runAutomation(automationId, { fireId });
 
     console.log(
       `[automation-worker] run automation=${automationId} org=${automation.orgId} profile=${automation.profileId} skipped=${result.skipped ?? false}`

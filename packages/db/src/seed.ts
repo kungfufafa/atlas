@@ -12,6 +12,7 @@ import {
   BUILTIN_TOOL_IDS,
   PYTHON_EXECUTE_TOOL_ID,
   SUB_AGENT_TOOL_ID,
+  serverHandlerTypeForToolName,
   TOOL_SEARCH_TOOL_ID,
 } from "@atlas/core/tools/protected";
 import { ensureLocalClientAccess } from "./local-client";
@@ -43,6 +44,8 @@ const SUPPORTED_TOOL_HANDLER_TYPES = new Set([
   "generate_image",
   "python_execute",
   "tool_search",
+  "memory",
+  "conversation",
 ]);
 
 export async function seedDatabase(db: DatabaseAdapter): Promise<void> {
@@ -158,7 +161,7 @@ export async function ensureBuiltinToolDefinitions(
         builtinTool?.description ??
         `Built-in tool for ${toolName.replace(/_/g, " ")}.`,
       handlerConfig: { name: toolName },
-      handlerType: "builtin",
+      handlerType: serverHandlerTypeForToolName(toolName) ?? "builtin",
       id: toolId,
       name: toolName,
       updatedAt: now,

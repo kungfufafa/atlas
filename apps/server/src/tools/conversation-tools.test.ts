@@ -95,7 +95,7 @@ describe("Conversation Retrieval Tools", () => {
     // 2. Search chats for 'November 15'
     const searchRes = await searchChatsTool.run(
       { query: "November 15" },
-      { orgId, userId: "user-1" }
+      { orgId, orgRole: "member", userId: "user-1" }
     );
 
     expect(searchRes.count).toBeGreaterThan(0);
@@ -105,7 +105,7 @@ describe("Conversation Retrieval Tools", () => {
     // 3. Get conversation transcript
     const convRes = await getConversationTool.run(
       { sessionId },
-      { orgId, userId: "user-1" }
+      { orgId, orgRole: "member", userId: "user-1" }
     );
 
     expect(convRes.sessionId).toBe(sessionId);
@@ -117,7 +117,7 @@ describe("Conversation Retrieval Tools", () => {
   test("enforces tenant isolation preventing Org B from searching Org A chats", async () => {
     const searchOrgB = await searchChatsTool.run(
       { query: "Titan" },
-      { orgId: "org-beta", userId: "user-2" }
+      { orgId: "org-beta", orgRole: "member", userId: "user-2" }
     );
 
     expect(searchOrgB.count).toBe(0);
@@ -125,7 +125,7 @@ describe("Conversation Retrieval Tools", () => {
     await expect(
       getConversationTool.run(
         { sessionId: "session_titan_123" },
-        { orgId: "org-beta", userId: "user-2" }
+        { orgId: "org-beta", orgRole: "member", userId: "user-2" }
       )
     ).rejects.toThrow(/not found or access is denied/);
   });

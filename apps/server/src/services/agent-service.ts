@@ -17,6 +17,7 @@ import type {
   AssignSkillRequest,
   AssignToolRequest,
   BranchSessionResponse,
+  CanonicalPrincipal,
   ChatContextUsage,
   ChatMessage,
   CloneProfileRequest,
@@ -111,6 +112,7 @@ import {
   buildUserContextStatus,
   composeKnowledgeBaseCatalog,
   composeSoulSystemPrompt,
+  composeTurnMemoryContext,
   createSmtpSender,
   DEFAULT_THINKING_EFFORT,
   DEFAULT_THINKING_ENABLED,
@@ -128,6 +130,7 @@ import {
   initSoulDirectory,
   isEmailConfigComplete,
   isProviderConfigured,
+  isServiceAccountUserId,
   isWritableSoulFileKey,
   listArtifacts,
   loadComposioSettingsPublic,
@@ -149,6 +152,7 @@ import {
   normalizeUserContextContent,
   type OrgRole,
   ollamaRequiresApiKey,
+  PrincipalRequiredError,
   persistInlineAttachmentsInContent,
   previewService,
   readArtifactFile,
@@ -162,6 +166,7 @@ import {
   replaceImagePartsWithDescriptions,
   resolveOllamaHostMode,
   resolveSoulStackForProfile,
+  runAsPrincipal,
   saveComposioConfig,
   saveDiscordConfig,
   saveEmailConfig,
@@ -256,6 +261,8 @@ import {
   buildComposioConnectTools,
   buildComposioToolDefinitions,
 } from "./composio-tool-bridge";
+import { ExecutionPlaneService } from "./execution-plane-service";
+import { IdentityService } from "./identity-service";
 import {
   generateImage,
   IMAGE_MODEL_REQUIRED_MESSAGE,
@@ -274,6 +281,7 @@ import {
   resolveJavascriptModulePath,
 } from "./javascript-tool-loader";
 import { composeKnowledgeBaseTurnGrounding } from "./knowledge-base-grounding";
+import { LearningPlaneService } from "./learning-plane-service";
 import type { LlmUsageTracker } from "./llm-usage-tracker";
 import type { McpClientManager } from "./mcp-client-manager";
 import type { McpService } from "./mcp-service";
@@ -304,12 +312,14 @@ import { SkillPostTurnReviewService } from "./skill-post-turn-review-service";
 import type { SkillProposalService } from "./skill-proposal-service";
 import type { SkillSuggestionService } from "./skill-suggestion-service";
 import type { SkillsService } from "./skills-service";
+import { SubagentService } from "./subagent-service";
 import { SuperAgentSessionState } from "./super-agent-session-state";
 import type { TaskRunner } from "./task-runner";
 import { toolActivationService } from "./tool-activation-service";
 import {
   resolveProfileStoredTools,
   resolveToolsFromStorage,
+  withToolSearchCatalog,
 } from "./tool-resolver";
 
 interface StoredSession {
@@ -322,6 +332,7 @@ export type { SubAgentRunInput, SubAgentRunResult };
 
 export interface SessionAccessOptions {
   excludeSuperAgent?: boolean;
+  externalPrincipal?: { channelUserId: string };
   isPlatformAdmin?: boolean;
   orgRole?: OrgRole | null;
 }
@@ -350,6 +361,10 @@ export class AgentService {
   private skillSuggestionService: SkillSuggestionService | null = null;
   private orgMemoryService: OrgMemoryService | null = null;
   private readonly memoryService: MemoryService;
+  readonly identityService: IdentityService;
+  readonly executionPlane: ExecutionPlaneService;
+  readonly learningPlane: LearningPlaneService;
+  readonly subagents: SubagentService;
   private readonly sessions = new Map<string, StoredSession>();
   private readonly sessionTitleService: SessionTitleService;
   private skillPostTurnReviewService: SkillPostTurnReviewService;
@@ -368,6 +383,10 @@ export class AgentService {
     this.userConfig = userConfig;
     this.db = db;
     this.memoryService = new MemoryService(db);
+    this.identityService = new IdentityService(db);
+    this.executionPlane = new ExecutionPlaneService(db);
+    this.learningPlane = new LearningPlaneService(db);
+    this.subagents = new SubagentService(this, this.executionPlane, db);
     this.profileService = new ProfileService(db);
     this.sessionTitleService = new SessionTitleService(db, (orgId) =>
       this.getOrgUserConfig(orgId)
@@ -1384,10 +1403,20 @@ export class AgentService {
   }
 
   async regenerateTelegramHandshake(
-    orgId: string
+    orgId: string,
+    handshakeUserId: string
   ): Promise<TelegramSettingsResponse> {
     await this.ensureLegacyChannelMigrated("telegram", orgId);
-    return regenerateTelegramHandshake(orgId);
+    const pairingAssertion = await this.identityService.issuePairingAssertion({
+      channel: "telegram",
+      orgId,
+      userId: handshakeUserId,
+    });
+    return regenerateTelegramHandshake(
+      orgId,
+      handshakeUserId,
+      pairingAssertion
+    );
   }
 
   async getDiscordSettings(orgId: string): Promise<DiscordSettingsResponse> {
@@ -1614,8 +1643,10 @@ export class AgentService {
     profileId: string,
     prompt: string,
     automationId?: string,
-    automationRunId?: string
+    automationRunId?: string,
+    principal?: CanonicalPrincipal
   ): Promise<string> {
+    const actor = runAsPrincipal(principal, (value) => value);
     const userConfig = await this.getOrgUserConfig(orgId);
     if (!isProviderConfigured(userConfig)) {
       throw new Error("Provider is not configured.");
@@ -1627,6 +1658,7 @@ export class AgentService {
       {
         includeAutomationTools: false,
         includeTodoTools: false,
+        userId: actor.userId,
       },
       userConfig
     );
@@ -1635,16 +1667,16 @@ export class AgentService {
       orgId,
       profileId,
       profile.systemPrompt,
-      "member",
+      actor.orgRole,
       undefined,
-      undefined
+      actor.userId
     );
     const resolvedSystemPrompt = appendRuntimeProfileRules(
       profile.isSuper,
       systemPrompt
     );
     const userTimezone = userConfig?.timezone ?? DEFAULT_TIMEZONE;
-    const userContext = await this.loadUserContextForUser(orgId, undefined);
+    const userContext = await this.loadUserContextForUser(orgId, actor.userId);
     const harness = this.createHarnessForProfile(profile, userConfig);
 
     const session = harness.createChatSession({
@@ -1657,14 +1689,21 @@ export class AgentService {
         automationRunId,
         forbidProfileSkillMarkdownWrites:
           await this.shouldForbidProfileSkillMarkdownWrites(profile.id),
+        isPlatformAdmin: actor.isPlatformAdmin,
         orgId,
-        orgRole: "member",
+        orgRole: actor.orgRole,
         profileId,
         recordToolOutputSavings: this.savingsRecorderFor(orgId),
         recordTurnUsage: this.turnUsageRecorderFor(
           orgId,
-          this.buildUsageAttribution({ orgId, profileId, userConfig })
+          this.buildUsageAttribution({
+            orgId,
+            profileId,
+            userConfig,
+            userId: actor.userId,
+          })
         ),
+        userId: actor.userId,
       }),
       tools,
       userContext,
@@ -1676,6 +1715,10 @@ export class AgentService {
 
   async runSubAgentPrompt(input: SubAgentRunInput): Promise<SubAgentRunResult> {
     const startedAt = Date.now();
+
+    if (!input.userId?.trim()) {
+      return failSubAgentResult("Canonical principal is required.");
+    }
 
     const userConfig = await this.getOrgUserConfig(input.orgId);
     if (!isProviderConfigured(userConfig)) {
@@ -1690,6 +1733,17 @@ export class AgentService {
 
     const timeoutMs = clampSubAgentTimeout(input.timeoutMs);
     const profile = await this.requireProfile(input.orgId, input.profileId);
+    if (
+      profile.isSuper &&
+      !canAccessSuperAgentProfile({
+        isPlatformAdmin: input.isPlatformAdmin,
+        orgRole: input.orgRole,
+      })
+    ) {
+      return failSubAgentResult(
+        "Super Agent is only available to Workspace Admins and Superadmins."
+      );
+    }
     const tools = await this.resolveProfileTools(
       profile,
       {
@@ -1739,7 +1793,7 @@ export class AgentService {
         forbidProfileSkillMarkdownWrites:
           await this.shouldForbidProfileSkillMarkdownWrites(input.profileId),
         orgId: input.orgId,
-        orgRole: "member",
+        orgRole: input.orgRole ?? "member",
         profileId: input.profileId,
         recordToolOutputSavings: this.savingsRecorderFor(input.orgId),
         recordTurnUsage: this.turnUsageRecorderFor(
@@ -1768,62 +1822,81 @@ export class AgentService {
 
     emitActivity("Starting…");
 
-    const sendPromise = session
-      .sendStream(prompt, {
-        onChunk: () => {
-          if (sawWriting) {
-            return;
-          }
+    const abort = new AbortController();
+    const onParentAbort = () => abort.abort();
+    input.signal?.addEventListener("abort", onParentAbort, { once: true });
+    const timeoutTimer = setTimeout(() => abort.abort(), timeoutMs);
 
-          sawWriting = true;
-          emitActivity("Writing answer…");
+    try {
+      const reply = await session.sendStream(
+        prompt,
+        {
+          onChunk: () => {
+            if (sawWriting) {
+              return;
+            }
+
+            sawWriting = true;
+            emitActivity("Writing answer…");
+          },
+          onThinking: () => {
+            if (sawPlanning) {
+              return;
+            }
+
+            sawPlanning = true;
+            emitActivity("Planning…");
+          },
+          onToolStart: (event) => {
+            emitActivity(formatToolActivityLabel(event.tool, event.input));
+          },
         },
-        onThinking: () => {
-          if (sawPlanning) {
-            return;
-          }
+        { signal: abort.signal }
+      );
+      const durationMs = Date.now() - startedAt;
 
-          sawPlanning = true;
-          emitActivity("Planning…");
-        },
-        onToolStart: (event) => {
-          emitActivity(formatToolActivityLabel(event.tool, event.input));
-        },
-      })
-      .then((reply) => ({
-        kind: "success" as const,
-        reply: reply.trim(),
-      }));
+      if (abort.signal.aborted) {
+        if (input.signal?.aborted) {
+          return failSubAgentResult("Sub-agent cancelled.");
+        }
+        console.info(
+          `[sub_agent] timeout org=${input.orgId} profile=${input.profileId} durationMs=${durationMs}`
+        );
+        return buildSubAgentResult("timeout", "", "Sub-agent timed out.");
+      }
 
-    const timeoutPromise = new Promise<{ kind: "timeout" }>((resolve) => {
-      setTimeout(() => resolve({ kind: "timeout" }), timeoutMs);
-    });
+      if (!reply.trim()) {
+        console.info(
+          `[sub_agent] fail org=${input.orgId} profile=${input.profileId} durationMs=${durationMs} reason=empty_reply`
+        );
+        return buildSubAgentResult(
+          "fail",
+          "",
+          "Sub-agent returned no final reply."
+        );
+      }
 
-    const outcome = await Promise.race([sendPromise, timeoutPromise]);
-    const durationMs = Date.now() - startedAt;
-
-    if (outcome.kind === "timeout") {
       console.info(
-        `[sub_agent] timeout org=${input.orgId} profile=${input.profileId} durationMs=${durationMs}`
+        `[sub_agent] success org=${input.orgId} profile=${input.profileId} durationMs=${durationMs}`
       );
-      return buildSubAgentResult("timeout", "", "Sub-agent timed out.");
+      return buildSubAgentResult("success", reply.trim());
+    } catch (error) {
+      const durationMs = Date.now() - startedAt;
+      if (abort.signal.aborted) {
+        if (input.signal?.aborted) {
+          return failSubAgentResult("Sub-agent cancelled.");
+        }
+        console.info(
+          `[sub_agent] timeout org=${input.orgId} profile=${input.profileId} durationMs=${durationMs}`
+        );
+        return buildSubAgentResult("timeout", "", "Sub-agent timed out.");
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      return failSubAgentResult(message);
+    } finally {
+      clearTimeout(timeoutTimer);
+      input.signal?.removeEventListener("abort", onParentAbort);
     }
-
-    if (!outcome.reply) {
-      console.info(
-        `[sub_agent] fail org=${input.orgId} profile=${input.profileId} durationMs=${durationMs} reason=empty_reply`
-      );
-      return buildSubAgentResult(
-        "fail",
-        "",
-        "Sub-agent returned no final reply."
-      );
-    }
-
-    console.info(
-      `[sub_agent] success org=${input.orgId} profile=${input.profileId} durationMs=${durationMs}`
-    );
-    return buildSubAgentResult("success", outcome.reply);
   }
 
   async runTaskPrompt(
@@ -1960,12 +2033,15 @@ export class AgentService {
     await replaceSessionHistory(this.db, sessionId, history);
   }
 
-  async runAutomation(automationId: string) {
+  async runAutomation(
+    automationId: string,
+    options?: { fireId?: string; principal?: CanonicalPrincipal }
+  ) {
     if (!this.automationRunner) {
       throw new Error("Automation runner is not configured.");
     }
 
-    return this.automationRunner.run(automationId);
+    return this.automationRunner.run(automationId, options);
   }
 
   async runTask(taskId: string) {
@@ -2008,6 +2084,32 @@ export class AgentService {
     }
 
     const sessionId = nanoid();
+    let principalUserId = userId ?? null;
+    if (
+      channel === "telegram" ||
+      channel === "whatsapp" ||
+      channel === "discord"
+    ) {
+      const principal = await this.identityService.resolveForChannelSession({
+        authUserId: userId ?? "",
+        channel,
+        channelUserId: access?.externalPrincipal?.channelUserId,
+        isPlatformAdmin: access?.isPlatformAdmin === true,
+        orgId,
+        orgRole: access?.orgRole ?? "member",
+      });
+      principalUserId = principal.userId;
+    } else if (
+      principalUserId &&
+      isServiceAccountUserId(principalUserId) &&
+      channel !== "cli" &&
+      channel !== "automation" &&
+      channel !== "task"
+    ) {
+      throw new PrincipalRequiredError(
+        "Service-account identity cannot create this session."
+      );
+    }
 
     await this.db.upsertSession({
       agentQuestionnaire: null,
@@ -2018,7 +2120,7 @@ export class AgentService {
       orgId,
       profileId: resolvedProfileId,
       title: null,
-      userId: userId ?? null,
+      userId: principalUserId,
     });
 
     const session = await this.buildChatSession(
@@ -2026,7 +2128,7 @@ export class AgentService {
       orgId,
       resolvedProfileId,
       sessionId,
-      userId ?? null,
+      principalUserId,
       access?.orgRole,
       access?.isPlatformAdmin
     );
@@ -4142,7 +4244,7 @@ export class AgentService {
       resolved = resolved.filter((tool) => tool.name !== SUB_AGENT_TOOL_NAME);
     }
 
-    return resolved;
+    return withToolSearchCatalog(resolved);
   }
 
   private async shouldForbidProfileSkillMarkdownWrites(
@@ -4288,6 +4390,33 @@ export class AgentService {
         rehydrateAttachmentMessages(messages, loadAttachment),
       resolvePromptContext: async (context) => {
         const parts: string[] = [];
+
+        if (userId && context?.userMessage?.trim()) {
+          try {
+            const memories = await this.memoryService.searchVisibleMemories(
+              orgId,
+              context.userMessage,
+              {
+                limit: 8,
+                profileId,
+                userId,
+              }
+            );
+            const memoryContext = composeTurnMemoryContext(
+              memories.map((item) => ({
+                content: item.content,
+                importance: item.importance,
+                subject: item.subject,
+                updatedAt: item.updatedAt,
+              }))
+            );
+            if (memoryContext.trim()) {
+              parts.push(memoryContext.trim());
+            }
+          } catch {
+            // Memory retrieval must never fail the turn.
+          }
+        }
 
         if (knowledgeBaseSearchAvailable && context?.userMessage?.trim()) {
           const knowledgeBaseGrounding =

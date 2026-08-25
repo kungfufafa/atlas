@@ -77,18 +77,28 @@ describe("createWhatsAppOutboundAdapter multi-workspace isolation", () => {
       });
       expect(resA.ok).toBe(true);
       expect(calls[0]?.url).toBe("http://127.0.0.1:5551/send");
-      expect(calls[0]?.body).toEqual({ text: "hello from A" });
+      expect(calls[0]?.body).toEqual({
+        text: "hello from A",
+        to: "111@s.whatsapp.net",
+      });
 
       const resToNumber = await adapter.send({
         orgId: "workspace-a",
         text: "ping Apri",
-        to: "6289500000001",
+        to: "111@s.whatsapp.net",
       });
       expect(resToNumber.ok).toBe(true);
       expect(calls[1]?.body).toEqual({
         text: "ping Apri",
+        to: "111@s.whatsapp.net",
+      });
+
+      const resForeign = await adapter.send({
+        orgId: "workspace-a",
+        text: "ping stranger",
         to: "6289500000001",
       });
+      expect(resForeign.ok).toBe(false);
 
       const resB = await adapter.send({
         orgId: "workspace-b",
@@ -96,7 +106,10 @@ describe("createWhatsAppOutboundAdapter multi-workspace isolation", () => {
       });
       expect(resB.ok).toBe(true);
       expect(calls[2]?.url).toBe("http://127.0.0.1:5552/send");
-      expect(calls[2]?.body).toEqual({ text: "hello from B" });
+      expect(calls[2]?.body).toEqual({
+        text: "hello from B",
+        to: "222@s.whatsapp.net",
+      });
 
       const resUnconfigured = await adapter.send({
         orgId: "workspace-c",

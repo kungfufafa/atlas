@@ -373,6 +373,19 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     const result = await authStore.tryPair(text, userId);
     await telegram.send(result.message);
+    if (result.ok && result.pairingAssertion) {
+      const orgId =
+        getOrgSelection(orgStore, String(userId))?.orgId ??
+        fixedWorkspaceId ??
+        undefined;
+      if (orgId) {
+        await client.bindChannelPrincipal({
+          channel: "telegram",
+          channelUserId: String(userId),
+          pairingAssertion: result.pairingAssertion,
+        });
+      }
+    }
     // Pairing messages stay out of agent session history — only Telegram + config.ini.
   }
 
@@ -929,6 +942,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const resolvedProfileId =
       profileId ?? (await resolveSessionProfileId(chatId));
     const session = await client.createSession("telegram", {
+      externalPrincipal: { channelUserId: chatId },
       profileId: resolvedProfileId,
     });
 

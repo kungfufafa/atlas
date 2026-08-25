@@ -25,16 +25,43 @@ describe("composio-callback-url", () => {
   });
 
   test("resolveComposioOAuthCallbackBaseUrl ignores off-origin callbackOrigin", () => {
-    const request = new Request(
-      "http://localhost:4310/v1/composio/toolkits/gmail/connect"
-    );
+    const previousPublic = process.env.ATLAS_WEB_PUBLIC_URL;
+    const previousAlias = process.env.ATLAS_PUBLIC_URL;
+    const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
+    const configDir = join(tmpdir(), `atlas-composio-cb-${Date.now()}`);
+    mkdirSync(configDir, { recursive: true });
+    process.env.ATLAS_CONFIG_DIR = configDir;
+    delete process.env.ATLAS_WEB_PUBLIC_URL;
+    delete process.env.ATLAS_PUBLIC_URL;
+    try {
+      const request = new Request(
+        "http://localhost:4310/v1/composio/toolkits/gmail/connect"
+      );
 
-    const resolved = resolveComposioOAuthCallbackBaseUrl({
-      clientOrigin: "https://evil.example",
-      request,
-    });
-    expect(resolved).not.toBe("https://evil.example");
-    expect(resolved.startsWith("http://localhost")).toBe(true);
+      const resolved = resolveComposioOAuthCallbackBaseUrl({
+        clientOrigin: "https://evil.example",
+        request,
+      });
+      expect(resolved).not.toBe("https://evil.example");
+      expect(resolved.startsWith("http://localhost")).toBe(true);
+    } finally {
+      rmSync(configDir, { force: true, recursive: true });
+      if (previousConfigDir === undefined) {
+        delete process.env.ATLAS_CONFIG_DIR;
+      } else {
+        process.env.ATLAS_CONFIG_DIR = previousConfigDir;
+      }
+      if (previousPublic === undefined) {
+        delete process.env.ATLAS_WEB_PUBLIC_URL;
+      } else {
+        process.env.ATLAS_WEB_PUBLIC_URL = previousPublic;
+      }
+      if (previousAlias === undefined) {
+        delete process.env.ATLAS_PUBLIC_URL;
+      } else {
+        process.env.ATLAS_PUBLIC_URL = previousAlias;
+      }
+    }
   });
 
   test("resolveRequestClientOrigin ignores non-http origins", () => {

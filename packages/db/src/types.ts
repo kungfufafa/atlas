@@ -6,7 +6,7 @@ import type {
 } from "@atlas/core";
 
 export type { OrgRole } from "@atlas/core";
-export type ChannelType = "telegram" | "whatsapp";
+export type ChannelType = "telegram" | "whatsapp" | "discord";
 
 export type AutomationRunStatus = "running" | "completed" | "failed";
 
@@ -597,6 +597,147 @@ export interface StoredChannelOrgMappingRecord {
   userId: string;
 }
 
+export type ExecutionRunKind = "chat" | "automation" | "task" | "subagent";
+
+export interface StoredExecutionRunRecord {
+  checkpoint: string | null;
+  createdAt: string;
+  currentStepIndex: number;
+  id: string;
+  idempotencyKey: string | null;
+  kind: ExecutionRunKind;
+  leaseExpiresAt: string | null;
+  leaseOwner: string | null;
+  orgId: string;
+  principalUserId: string;
+  sessionId: string | null;
+  status: string;
+  updatedAt: string;
+}
+
+export interface StoredExecutionStepRecord {
+  approvalId: string | null;
+  argsHash: string;
+  argsJson: string;
+  createdAt: string;
+  id: string;
+  resultJson: string | null;
+  runId: string;
+  status: string;
+  stepIndex: number;
+  toolCallId: string | null;
+  toolName: string;
+  updatedAt: string;
+}
+
+export interface StoredActionApprovalRecord {
+  actionHash: string;
+  argsJson: string;
+  createdAt: string;
+  decidedAt: string | null;
+  decidedByUserId: string | null;
+  expiresAt: string;
+  grantId: string | null;
+  id: string;
+  orgId: string;
+  principalUserId: string;
+  runId: string;
+  sessionId: string | null;
+  status: string;
+  stepId: string;
+  toolName: string;
+}
+
+export interface StoredLearningEvidenceRecord {
+  createdAt: string;
+  id: string;
+  kind: string;
+  orgId: string;
+  payloadJson: string;
+  principalUserId: string;
+  runId: string | null;
+  sessionId: string | null;
+}
+
+export interface StoredLearningCandidateRecord {
+  content: string;
+  createdAt: string;
+  evidenceIds: string;
+  id: string;
+  kind: string;
+  orgId: string;
+  status: string;
+  target: string;
+  updatedAt: string;
+}
+
+export interface StoredLearningCommitRecord {
+  candidateId: string;
+  createdAt: string;
+  id: string;
+  memoryId: string | null;
+  orgId: string;
+  skillId: string | null;
+}
+
+export interface StoredLearningOutcomeRecord {
+  commitId: string;
+  createdAt: string;
+  helpful: boolean | null;
+  id: string;
+  orgId: string;
+  sessionId: string | null;
+  used: boolean;
+}
+
+export interface StoredLearningJobRecord {
+  createdAt: string;
+  evaluatorVersion: string;
+  id: string;
+  idempotencyKey: string;
+  mode: string;
+  orgId: string;
+  principalUserId: string;
+  resultJson: string | null;
+  sessionId: string;
+  status: string;
+  terminalMessageId: string;
+  updatedAt: string;
+}
+
+export interface StoredAuditEventRecord {
+  action: string;
+  createdAt: string;
+  id: string;
+  orgId: string;
+  payloadJson: string;
+  principalUserId: string;
+  resource: string;
+  runId: string | null;
+}
+
+export interface StoredOutboxRecord {
+  attempt: number;
+  createdAt: string;
+  envelopeJson: string;
+  id: string;
+  orgId: string;
+  principalUserId: string;
+  status: string;
+  updatedAt: string;
+}
+
+export interface StoredSkillRevisionRecord {
+  content: string;
+  createdAt: string;
+  createdByUserId: string | null;
+  evidenceIds: string | null;
+  id: string;
+  orgId: string;
+  skillId: string;
+  version: number;
+}
+
 export interface StoredBrowserSessionRecord {
   activeOrgId?: string | null;
   createdAt: string;
@@ -639,8 +780,12 @@ export interface DatabaseAdapter {
   countUsers(): Promise<number>;
 
   createArtifactShare(record: StoredArtifactShareRecord): Promise<void>;
+  createAuditEvent(record: StoredAuditEventRecord): Promise<void>;
 
   createBrowserSession(record: StoredBrowserSessionRecord): Promise<void>;
+  createLearningCommit(record: StoredLearningCommitRecord): Promise<void>;
+  createLearningEvidence(record: StoredLearningEvidenceRecord): Promise<void>;
+  createLearningOutcome(record: StoredLearningOutcomeRecord): Promise<void>;
 
   // Scoped Memory Methods
   createMemory(record: StoredMemoryRecord): Promise<void>;
@@ -650,12 +795,17 @@ export interface DatabaseAdapter {
   createOrgMemoryProposal(record: StoredOrgMemoryProposal): Promise<void>;
 
   createSkillProposal(record: StoredSkillProposal): Promise<void>;
+  createSkillRevision(record: StoredSkillRevisionRecord): Promise<void>;
 
   createSkillSuggestion(record: StoredSkillSuggestion): Promise<void>;
   createUser(record: StoredUserRecord): Promise<void>;
   deleteAttachment(id: string): Promise<boolean>;
   deleteAutomation(id: string): Promise<boolean>;
   deleteAutomationRun(automationId: string, runId: string): Promise<boolean>;
+  deleteChannelOrgMapping(
+    channel: ChannelType,
+    channelUserId: string
+  ): Promise<boolean>;
   deleteComposioToolkit(id: string): Promise<boolean>;
   deleteComposioUserConnection(id: string): Promise<boolean>;
   deleteMcpServer(id: string): Promise<boolean>;
@@ -668,6 +818,7 @@ export interface DatabaseAdapter {
   deleteSkill(id: string): Promise<boolean>;
   deleteTask(id: string): Promise<boolean>;
   deleteTool(id: string): Promise<boolean>;
+  getActionApproval(id: string): Promise<StoredActionApprovalRecord | null>;
   getActiveArtifactShareByPath(
     orgId: string,
     profileId: string,
@@ -696,6 +847,10 @@ export interface DatabaseAdapter {
   getBrowserSessionBySessionTokenHash(
     sessionTokenHash: string
   ): Promise<StoredBrowserSessionRecord | null>;
+  getChannelOrgMapping(
+    channel: ChannelType,
+    channelUserId: string
+  ): Promise<StoredChannelOrgMappingRecord | null>;
   getComposioToolkit(id: string): Promise<StoredComposioToolkitRecord | null>;
   getComposioToolkitBySlug(
     orgId: string,
@@ -708,7 +863,6 @@ export interface DatabaseAdapter {
   getComposioUserConnectionById(
     id: string
   ): Promise<StoredComposioUserConnectionRecord | null>;
-
   getConversationHistory(
     orgId: string,
     sessionId: string,
@@ -726,6 +880,19 @@ export interface DatabaseAdapter {
     totalMessages: number;
   } | null>;
   getDefaultProfileForOrg(orgId: string): Promise<StoredProfileRecord | null>;
+
+  getExecutionRun(id: string): Promise<StoredExecutionRunRecord | null>;
+  getExecutionRunByIdempotencyKey(
+    orgId: string,
+    idempotencyKey: string
+  ): Promise<StoredExecutionRunRecord | null>;
+  getLearningCandidate(
+    id: string
+  ): Promise<StoredLearningCandidateRecord | null>;
+  getLearningJobByIdempotencyKey(
+    orgId: string,
+    idempotencyKey: string
+  ): Promise<StoredLearningJobRecord | null>;
 
   getLlmUsageStats(): Promise<StoredLlmUsageStatsRecord | null>;
   getMcpServer(id: string): Promise<StoredMcpServerRecord | null>;
@@ -859,6 +1026,9 @@ export interface DatabaseAdapter {
   insertAttachment(record: StoredAttachmentRecord): Promise<void>;
   insertAutomationRun(record: StoredAutomationRunRecord): Promise<void>;
   insertTaskRun(record: StoredTaskRunRecord): Promise<void>;
+  listActionApprovalsForSession(
+    sessionId: string
+  ): Promise<StoredActionApprovalRecord[]>;
 
   listAutomationRuns(
     automationId: string,
@@ -867,6 +1037,9 @@ export interface DatabaseAdapter {
 
   listAutomations(): Promise<StoredAutomationRecord[]>;
   listAutomationsForOrg(orgId: string): Promise<StoredAutomationRecord[]>;
+  listChannelOrgMappingsForOrg(
+    orgId: string
+  ): Promise<StoredChannelOrgMappingRecord[]>;
 
   listComposioToolkitsForOrg(
     orgId: string
@@ -876,6 +1049,24 @@ export interface DatabaseAdapter {
     orgId: string,
     userId: string
   ): Promise<StoredComposioUserConnectionRecord[]>;
+  listExecutionRuns(filter?: {
+    kind?: ExecutionRunKind;
+    orgId?: string;
+    sessionId?: string;
+  }): Promise<StoredExecutionRunRecord[]>;
+  listExecutionSteps(runId: string): Promise<StoredExecutionStepRecord[]>;
+  listLearningCandidates(
+    orgId: string,
+    status?: string
+  ): Promise<StoredLearningCandidateRecord[]>;
+  listLearningCommits(orgId: string): Promise<StoredLearningCommitRecord[]>;
+  listLearningEvidenceForSession(
+    orgId: string,
+    sessionId: string
+  ): Promise<StoredLearningEvidenceRecord[]>;
+  listLearningOutcomesForCommit(
+    commitId: string
+  ): Promise<StoredLearningOutcomeRecord[]>;
   listLlmTurnUsage(orgId: string): Promise<StoredLlmTurnUsageRecord[]>;
   listLlmUsageStatsByModel(): Promise<StoredLlmUsageModelStatsRecord[]>;
   listMcpServerProfileCounts(): Promise<Record<string, number>>;
@@ -913,6 +1104,7 @@ export interface DatabaseAdapter {
   listProfiles(): Promise<StoredProfileRecord[]>;
   listProfilesForMcpServer(serverId: string): Promise<StoredProfileRecord[]>;
   listProfilesForOrg(orgId: string): Promise<StoredProfileRecord[]>;
+  listQueuedOutbox(orgId: string): Promise<StoredOutboxRecord[]>;
   listSessionSummaries(
     profileId: string,
     channel: string
@@ -927,6 +1119,7 @@ export interface DatabaseAdapter {
       sessionId?: string;
     }
   ): Promise<StoredSkillProposal[]>;
+  listSkillRevisions(skillId: string): Promise<StoredSkillRevisionRecord[]>;
   listSkillSuggestions(
     orgId: string,
     options?: {
@@ -1075,6 +1268,7 @@ export interface DatabaseAdapter {
     profile: { name: string | null; phone: string | null; email?: string },
     updatedAt: string
   ): Promise<void>;
+  upsertActionApproval(record: StoredActionApprovalRecord): Promise<void>;
   upsertAutomation(record: StoredAutomationRecord): Promise<void>;
   upsertAutomationRunReadThrough(
     userId: string,
@@ -1082,10 +1276,15 @@ export interface DatabaseAdapter {
     automationId: string,
     readThroughAt: string
   ): Promise<void>;
+  upsertChannelOrgMapping(record: StoredChannelOrgMappingRecord): Promise<void>;
   upsertComposioToolkit(record: StoredComposioToolkitRecord): Promise<void>;
   upsertComposioUserConnection(
     record: StoredComposioUserConnectionRecord
   ): Promise<void>;
+  upsertExecutionRun(record: StoredExecutionRunRecord): Promise<void>;
+  upsertExecutionStep(record: StoredExecutionStepRecord): Promise<void>;
+  upsertLearningCandidate(record: StoredLearningCandidateRecord): Promise<void>;
+  upsertLearningJob(record: StoredLearningJobRecord): Promise<void>;
   upsertMcpServer(record: StoredMcpServerRecord): Promise<void>;
   upsertNotificationDestination(
     record: StoredNotificationDestinationRecord
@@ -1095,6 +1294,7 @@ export interface DatabaseAdapter {
   upsertOrganization(record: StoredOrganizationRecord): Promise<void>;
   upsertOrgMember(record: StoredOrgMemberRecord): Promise<void>;
   upsertOrgUsageBudget(record: StoredOrgUsageBudgetRecord): Promise<void>;
+  upsertOutboxMessage(record: StoredOutboxRecord): Promise<void>;
   upsertProfile(record: StoredProfileRecord): Promise<void>;
   upsertSession(record: StoredSessionRecord): Promise<void>;
   upsertSkill(record: StoredSkillRecord): Promise<void>;

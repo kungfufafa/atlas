@@ -391,7 +391,7 @@ export async function executeProtectedTool<Input = unknown, Output = unknown>(
 
     // 2. Server Approval Enforcement Boundary
     if (risk.requiresApproval) {
-      const grantId = (context as any).approvalGrantId as string | undefined;
+      const grantId = context.approvalGrantId;
       const actionHash = computeActionHash({
         args:
           typeof input === "object" && input !== null
@@ -400,11 +400,21 @@ export async function executeProtectedTool<Input = unknown, Output = unknown>(
         tool: tool.name,
       });
 
+      const orgId = context.orgId?.trim();
+      const userId = context.userId?.trim();
+      if (!(orgId && userId)) {
+        const err = new Error(
+          "APPROVAL_DENIED: Canonical principal is required for approval-gated tools."
+        );
+        (err as { code?: string }).code = "PERMISSION_DENIED";
+        throw err;
+      }
+
       if (!grantId) {
         const err = new Error(
           `APPROVAL_REQUIRED: Action "${tool.name}" requires user approval before execution. (${risk.consequence.title})`
         );
-        (err as any).code = "PERMISSION_DENIED";
+        (err as { code?: string }).code = "PERMISSION_DENIED";
         throw err;
       }
 
@@ -412,8 +422,8 @@ export async function executeProtectedTool<Input = unknown, Output = unknown>(
         grantId,
         {
           actionHash,
-          orgId: (context as any).orgId || "org_default",
-          userId: (context as any).userId || "user_default",
+          orgId,
+          userId,
         }
       );
 
@@ -421,7 +431,7 @@ export async function executeProtectedTool<Input = unknown, Output = unknown>(
         const err = new Error(
           `APPROVAL_DENIED: ${grantVerification.error || "Invalid or unverified approval grant."}`
         );
-        (err as any).code = "PERMISSION_DENIED";
+        (err as { code?: string }).code = "PERMISSION_DENIED";
         throw err;
       }
     }

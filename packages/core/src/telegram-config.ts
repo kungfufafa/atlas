@@ -11,7 +11,11 @@ export interface TelegramConfigFile {
   allowedUserIds: number[];
   blockedUserIds: number[];
   botToken: string;
+  /** Single-use server assertion consumed when binding the channel identity. */
+  handshakeAssertion?: string | null;
   handshakeCode: string | null;
+  /** Atlas user who generated the active handshake; used to bind ExternalPrincipal. */
+  handshakeUserId: string | null;
   pairedUserIds: number[];
   profileId: string;
 }
@@ -136,6 +140,8 @@ export async function loadTelegramConfigFile(
   const botToken = values.bot_token?.trim() ?? "";
   const profileId = values.profile_id?.trim() || DEFAULT_TELEGRAM_PROFILE_ID;
   const handshakeCode = values.handshake_code?.trim() || null;
+  const handshakeAssertion = values.handshake_assertion?.trim() || null;
+  const handshakeUserId = values.handshake_user_id?.trim() || null;
   const pairedRaw = values.paired_user_ids?.trim() ?? "";
   const allowlistRaw = values.allowed_user_ids?.trim() ?? "";
   const denylistRaw = values.blocked_user_ids?.trim() ?? "";
@@ -157,7 +163,9 @@ export async function loadTelegramConfigFile(
     allowedUserIds: allowlistRaw ? parseAllowedUserIds(allowlistRaw) : [],
     blockedUserIds: denylistRaw ? parseAllowedUserIds(denylistRaw) : [],
     botToken,
+    handshakeAssertion: handshakeCode ? handshakeAssertion : null,
     handshakeCode,
+    handshakeUserId: handshakeCode ? handshakeUserId : null,
     pairedUserIds: pairedRaw ? parseAllowedUserIds(pairedRaw) : [],
     profileId,
   };
@@ -207,6 +215,12 @@ async function writeTelegramConfigFile(
     `profile_id=${config.profileId}`,
     `access_mode=${config.accessMode}`,
     ...(config.handshakeCode ? [`handshake_code=${config.handshakeCode}`] : []),
+    ...(config.handshakeCode && config.handshakeUserId
+      ? [`handshake_user_id=${config.handshakeUserId}`]
+      : []),
+    ...(config.handshakeCode && config.handshakeAssertion
+      ? [`handshake_assertion=${config.handshakeAssertion}`]
+      : []),
     ...(config.pairedUserIds.length > 0
       ? [`paired_user_ids=${config.pairedUserIds.join(",")}`]
       : []),
@@ -301,7 +315,9 @@ function buildSavedTelegramConfig(
     allowedUserIds,
     blockedUserIds,
     botToken,
+    handshakeAssertion: existing?.handshakeAssertion ?? null,
     handshakeCode: resolveHandshakeCode(existing, allowedUserIds),
+    handshakeUserId: existing?.handshakeUserId ?? null,
     pairedUserIds: existing?.pairedUserIds ?? [],
     profileId: resolveTelegramProfileId(input, existing),
   };
@@ -318,7 +334,9 @@ export async function saveTelegramConfig(
 }
 
 export async function regenerateTelegramHandshake(
-  orgId?: string | null
+  orgId?: string | null,
+  handshakeUserId?: string | null,
+  pairingAssertion?: string | null
 ): Promise<TelegramSettingsPublic> {
   const existing = await loadTelegramConfigFile(orgId);
 
@@ -326,9 +344,18 @@ export async function regenerateTelegramHandshake(
     throw new Error("Save a bot token before generating a pairing code.");
   }
 
+  const issuer = handshakeUserId?.trim() || null;
+  if (!issuer) {
+    throw new Error(
+      "Canonical principal is required to generate a pairing code."
+    );
+  }
+
   const next: TelegramConfigFile = {
     ...existing,
+    handshakeAssertion: pairingAssertion?.trim() || null,
     handshakeCode: generateHandshakeCode(),
+    handshakeUserId: issuer,
   };
 
   await writeTelegramConfigFile(next, orgId);
@@ -358,7 +385,15 @@ export async function verifyAndPairTelegramUser(
   handshakeInput: string,
   userId: number,
   orgId?: string | null
-): Promise<{ ok: true; message: string } | { ok: false; message: string }> {
+): Promise<
+  | {
+      ok: true;
+      message: string;
+      handshakeUserId: string | null;
+      pairingAssertion: string | null;
+    }
+  | { ok: false; message: string }
+> {
   return runSerializedTelegramPair(orgId, async () => {
     const config = await loadTelegramConfigFile(orgId);
 
@@ -370,7 +405,12 @@ export async function verifyAndPairTelegramUser(
     }
 
     if (isTelegramUserAuthorized(userId, config)) {
-      return { message: "This chat is already linked.", ok: true };
+      return {
+        handshakeUserId: config.handshakeUserId,
+        message: "This chat is already linked.",
+        ok: true,
+        pairingAssertion: config.handshakeAssertion ?? null,
+      };
     }
 
     const expected = config.handshakeCode;
@@ -395,19 +435,25 @@ export async function verifyAndPairTelegramUser(
     }
 
     const pairedUserIds = [...new Set([...config.pairedUserIds, userId])];
+    const handshakeUserId = config.handshakeUserId;
+    const pairingAssertion = config.handshakeAssertion ?? null;
 
     await writeTelegramConfigFile(
       {
         ...config,
+        handshakeAssertion: null,
         handshakeCode: null,
+        handshakeUserId: null,
         pairedUserIds,
       },
       orgId
     );
 
     return {
+      handshakeUserId,
       message: "Linked successfully. You can chat with Atlas now.",
       ok: true,
+      pairingAssertion,
     };
   });
 }
@@ -445,7 +491,9 @@ export function resolveTelegramConfigFromSources(options: {
       ? parseAllowedUserIds(envDenylist)
       : (file?.blockedUserIds ?? []),
     botToken,
+    handshakeAssertion: file?.handshakeAssertion ?? null,
     handshakeCode: file?.handshakeCode ?? null,
+    handshakeUserId: file?.handshakeUserId ?? null,
     pairedUserIds: file?.pairedUserIds ?? [],
     profileId:
       (allowEnvCredentials

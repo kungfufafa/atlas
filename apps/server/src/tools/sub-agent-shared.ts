@@ -8,10 +8,13 @@ export interface SubAgentRunInput {
   agentDepth: number;
   clientOrigin?: string;
   context?: string;
+  isPlatformAdmin?: boolean;
   onActivity?: (label: string) => void;
   orgId: string;
+  orgRole?: "admin" | "member" | "viewer";
   profileId: string;
   sessionId?: string;
+  signal?: AbortSignal;
   task: string;
   timeoutMs?: number;
   userId?: string;

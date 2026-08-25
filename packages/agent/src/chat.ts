@@ -63,11 +63,13 @@ import type {
   SourceItem,
 } from "@atlas/core";
 import {
+  AwaitingApprovalError,
   classifyFailure,
   evaluateActionRisk,
   inferArtifactType,
   mapToolCallToActivity,
   metrics,
+  nanoid,
   resolveExecutionPolicy,
   summarizeActionConsequence,
   updateActivityCompletion,
@@ -480,9 +482,12 @@ async function sendMessage(
       : input.clientOrigin?.trim()
         ? { clientOrigin: input.clientOrigin.trim() }
         : options.toolContext;
-  const effectiveToolContext = options.signal
-    ? { ...baseToolContext, signal: options.signal }
-    : baseToolContext;
+  const effectiveToolContext = {
+    ...(options.signal
+      ? { ...baseToolContext, signal: options.signal }
+      : baseToolContext),
+    runId: baseToolContext?.runId ?? nanoid(),
+  };
 
   metrics.executionActive.inc();
   metrics.executionTotal.inc({ policy: resolvedPolicy });
@@ -535,6 +540,9 @@ async function sendMessage(
 
     return reply;
   } catch (error) {
+    if (error instanceof AwaitingApprovalError) {
+      return "Waiting for approval to continue.";
+    }
     const durationMs = Date.now() - executionStartMs;
     metrics.executionDurationMs.observe(durationMs, {
       policy: resolvedPolicy,
@@ -700,6 +708,17 @@ async function runConversation(
     metrics.agentTurnsPerExecution.observe(totalTurns);
     metrics.toolCallsPerExecution.observe(totalToolCalls);
   }
+}
+
+function isApprovalRequiredResult(result: unknown): boolean {
+  if (typeof result !== "object" || result === null) {
+    return false;
+  }
+  const record = result as { error?: unknown };
+  return (
+    typeof record.error === "string" &&
+    record.error.includes("APPROVAL_REQUIRED")
+  );
 }
 
 function isSearchToolName(name: string): boolean {
@@ -959,6 +978,17 @@ async function executeToolCalls(
     });
 
     const result = await executeToolCall(tools, call, contextForCall(call));
+
+    if (isApprovalRequiredResult(result)) {
+      const approvalId = `app_${call.id}`;
+      throw new AwaitingApprovalError(approvalId, {
+        args: call.arguments,
+        runId: toolContext.runId ?? "",
+        stepIndex: 0,
+        toolCallId: call.id,
+        toolName: call.name,
+      });
+    }
 
     handlers?.onToolEnd?.({
       result,

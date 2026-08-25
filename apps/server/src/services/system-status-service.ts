@@ -56,7 +56,7 @@ export class SystemStatusService {
     const automationCounts = orgId
       ? await this.getWorkspaceAutomationCounts(orgId)
       : {
-          activeRuns: this.automationRunner.getActiveRunCount(),
+          activeRuns: await this.automationRunner.getActiveRunCount(),
           scheduledJobs: automationRunning
             ? automationHeartbeat.scheduledJobs
             : 0,
@@ -248,7 +248,7 @@ export class SystemStatusService {
     ).length;
     const runningIds =
       typeof this.automationRunner.getActiveAutomationIds === "function"
-        ? this.automationRunner.getActiveAutomationIds()
+        ? await this.automationRunner.getActiveAutomationIds()
         : [];
     const automationIds = new Set(automations.map((record) => record.id));
     const activeRuns = runningIds.filter((id) => automationIds.has(id)).length;

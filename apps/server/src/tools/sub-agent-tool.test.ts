@@ -5,7 +5,13 @@ import { createSubAgentTool, runSubAgentTool } from "./sub-agent-tool";
 
 const ORG_ID = "org_test";
 const PROFILE_ID = "profile_default";
-const TOOL_CONTEXT = { agentDepth: 0, orgId: ORG_ID, profileId: PROFILE_ID };
+const TOOL_CONTEXT = {
+  agentDepth: 0,
+  orgId: ORG_ID,
+  orgRole: "member" as const,
+  profileId: PROFILE_ID,
+  userId: "user_1",
+};
 
 function createMockAgentService(
   handler: (input: unknown) => Promise<SubAgentRunResult>
@@ -61,6 +67,23 @@ describe("sub_agent tool", () => {
 
     expect(result.status).toBe("fail");
     expect(result.error).toContain("task is required");
+  });
+
+  test("fail closed without a principal", async () => {
+    const agent = createMockAgentService(async () => ({
+      output: "nope",
+      status: "success",
+      summary: "nope",
+    }));
+
+    const result = await runSubAgentTool(
+      { task: "Research" },
+      { agentDepth: 0, orgId: ORG_ID, profileId: PROFILE_ID },
+      agent
+    );
+
+    expect(result.status).toBe("fail");
+    expect(result.error).toMatch(/principal|userId/i);
   });
 
   test("clamps timeoutMs before calling runner", async () => {

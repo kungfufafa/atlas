@@ -527,3 +527,191 @@ CREATE TABLE IF NOT EXISTS memories (
 CREATE INDEX IF NOT EXISTS memories_org_scope_owner
   ON memories (org_id, scope, owner_id);
 
+CREATE TABLE IF NOT EXISTS execution_runs (
+  id TEXT PRIMARY KEY NOT NULL,
+  org_id TEXT NOT NULL,
+  principal_user_id TEXT NOT NULL,
+  session_id TEXT,
+  kind TEXT NOT NULL,
+  status TEXT NOT NULL,
+  lease_owner TEXT,
+  lease_expires_at TEXT,
+  idempotency_key TEXT,
+  current_step_index INTEGER NOT NULL DEFAULT 0,
+  checkpoint TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE,
+  FOREIGN KEY (principal_user_id) REFERENCES users (id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS execution_runs_org_idempotency
+  ON execution_runs (org_id, idempotency_key)
+  WHERE idempotency_key IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS execution_runs_active_automation
+  ON execution_runs (org_id, session_id)
+  WHERE kind = 'automation'
+    AND session_id IS NOT NULL
+    AND status IN ('queued', 'running', 'awaiting_approval');
+
+CREATE INDEX IF NOT EXISTS execution_runs_session ON execution_runs (session_id);
+CREATE INDEX IF NOT EXISTS execution_runs_lease ON execution_runs (status, lease_expires_at);
+
+CREATE TABLE IF NOT EXISTS execution_steps (
+  id TEXT PRIMARY KEY NOT NULL,
+  run_id TEXT NOT NULL,
+  step_index INTEGER NOT NULL,
+  tool_name TEXT NOT NULL,
+  tool_call_id TEXT,
+  args_json TEXT NOT NULL,
+  args_hash TEXT NOT NULL,
+  status TEXT NOT NULL,
+  result_json TEXT,
+  approval_id TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (run_id) REFERENCES execution_runs (id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS execution_steps_run_index
+  ON execution_steps (run_id, step_index);
+
+CREATE TABLE IF NOT EXISTS action_approvals (
+  id TEXT PRIMARY KEY NOT NULL,
+  org_id TEXT NOT NULL,
+  principal_user_id TEXT NOT NULL,
+  session_id TEXT,
+  run_id TEXT NOT NULL,
+  step_id TEXT NOT NULL,
+  tool_name TEXT NOT NULL,
+  action_hash TEXT NOT NULL,
+  args_json TEXT NOT NULL,
+  status TEXT NOT NULL,
+  grant_id TEXT,
+  decided_by_user_id TEXT,
+  decided_at TEXT,
+  created_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS action_approvals_session_status
+  ON action_approvals (session_id, status);
+
+CREATE TABLE IF NOT EXISTS learning_evidence (
+  id TEXT PRIMARY KEY NOT NULL,
+  org_id TEXT NOT NULL,
+  principal_user_id TEXT NOT NULL,
+  session_id TEXT,
+  run_id TEXT,
+  kind TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS learning_evidence_org_session
+  ON learning_evidence (org_id, session_id);
+
+CREATE TABLE IF NOT EXISTS learning_candidates (
+  id TEXT PRIMARY KEY NOT NULL,
+  org_id TEXT NOT NULL,
+  evidence_ids TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  content TEXT NOT NULL,
+  status TEXT NOT NULL,
+  target TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS learning_candidates_org_status
+  ON learning_candidates (org_id, status);
+
+CREATE TABLE IF NOT EXISTS learning_commits (
+  id TEXT PRIMARY KEY NOT NULL,
+  org_id TEXT NOT NULL,
+  candidate_id TEXT NOT NULL,
+  memory_id TEXT,
+  skill_id TEXT,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (candidate_id) REFERENCES learning_candidates (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS learning_outcomes (
+  id TEXT PRIMARY KEY NOT NULL,
+  org_id TEXT NOT NULL,
+  commit_id TEXT NOT NULL,
+  session_id TEXT,
+  used INTEGER NOT NULL,
+  helpful INTEGER,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (commit_id) REFERENCES learning_commits (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS skill_revisions (
+  id TEXT PRIMARY KEY NOT NULL,
+  skill_id TEXT NOT NULL,
+  org_id TEXT NOT NULL,
+  version INTEGER NOT NULL,
+  content TEXT NOT NULL,
+  evidence_ids TEXT,
+  created_by_user_id TEXT,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (skill_id) REFERENCES skills (id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS skill_revisions_skill_version
+  ON skill_revisions (skill_id, version);
+
+CREATE TABLE IF NOT EXISTS learning_jobs (
+  id TEXT PRIMARY KEY NOT NULL,
+  org_id TEXT NOT NULL,
+  principal_user_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  terminal_message_id TEXT NOT NULL,
+  evaluator_version TEXT NOT NULL,
+  idempotency_key TEXT NOT NULL,
+  status TEXT NOT NULL,
+  mode TEXT NOT NULL,
+  result_json TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS learning_jobs_org_idempotency
+  ON learning_jobs (org_id, idempotency_key);
+
+CREATE TABLE IF NOT EXISTS audit_events (
+  id TEXT PRIMARY KEY NOT NULL,
+  org_id TEXT NOT NULL,
+  principal_user_id TEXT NOT NULL,
+  action TEXT NOT NULL,
+  resource TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  run_id TEXT,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS audit_events_org_created
+  ON audit_events (org_id, created_at);
+
+CREATE TABLE IF NOT EXISTS outbound_outbox (
+  id TEXT PRIMARY KEY NOT NULL,
+  org_id TEXT NOT NULL,
+  principal_user_id TEXT NOT NULL,
+  envelope_json TEXT NOT NULL,
+  status TEXT NOT NULL,
+  attempt INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS outbound_outbox_org_status
+  ON outbound_outbox (org_id, status);
+

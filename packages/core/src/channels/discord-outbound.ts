@@ -1,5 +1,9 @@
 import { DISCORD_API_BASE_URL, loadDiscordConfigFile } from "../discord-config";
 import { splitTelegramChunks } from "./message-format";
+import {
+  assertOutboundEnvelope,
+  revalidateOutboundAllowlist,
+} from "./outbound-envelope";
 import type { ChannelSendResult, DiscordOutboundAdapter } from "./types";
 
 const DISCORD_MESSAGE_MAX_LENGTH = 2000;
@@ -27,15 +31,46 @@ export function createDiscordOutboundAdapter(
   return {
     async send(input): Promise<ChannelSendResult> {
       try {
-        const config = await loadDiscordConfigFile();
+        const orgId = input.orgId?.trim();
+        if (!orgId) {
+          return { error: "Outbound envelope orgId is required.", ok: false };
+        }
+
+        const config = await loadDiscordConfigFile(orgId);
         const token = config?.botToken.trim();
 
         if (!token) {
           return { error: "Discord bot token is not configured.", ok: false };
         }
 
+        const channelId = input.channelId?.trim();
+        const userId = input.userId?.trim();
+        const pairedUserIds = config?.pairedUserIds ?? [];
+
+        if (!(channelId || userId || pairedUserIds.length > 0)) {
+          return { error: "No Discord user is paired.", ok: false };
+        }
+
+        const envelope = assertOutboundEnvelope({
+          orgId,
+          replyTarget: {
+            channel: "discord",
+            discord: {
+              channelId: channelId || undefined,
+              userId: userId || (channelId ? undefined : pairedUserIds[0]),
+            },
+          },
+          text: input.text,
+        });
+        revalidateOutboundAllowlist(envelope, {
+          accessMode: config?.accessMode,
+          allowedUserIds: config?.allowedUserIds,
+          blockedUserIds: config?.blockedUserIds,
+          pairedUserIds,
+        });
+
         const chunks = splitTelegramChunks(
-          input.text,
+          envelope.text,
           DISCORD_MESSAGE_MAX_LENGTH
         );
 
@@ -43,13 +78,11 @@ export function createDiscordOutboundAdapter(
           return { error: "Message text is empty.", ok: false };
         }
 
-        const channelId = input.channelId?.trim();
-
         if (channelId) {
           return sendChunksToChannel(fetchImpl, token, channelId, chunks);
         }
 
-        const userIds = config?.pairedUserIds ?? [];
+        const userIds = userId ? [userId] : pairedUserIds;
 
         if (userIds.length === 0) {
           return { error: "No Discord user is paired.", ok: false };

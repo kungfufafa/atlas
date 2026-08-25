@@ -72,6 +72,11 @@ export class AutomationDeliveryService {
       status: run.status,
     });
 
+    const orgId = automation.orgId?.trim();
+    if (!orgId) {
+      throw new Error("Outbound envelope orgId is required.");
+    }
+
     let result: { ok: boolean; error?: string };
 
     if (delivery.channel === "email") {
@@ -82,7 +87,7 @@ export class AutomationDeliveryService {
         );
       }
       result = await this.email.send({
-        orgId: automation.orgId,
+        orgId,
         profileId: automation.profileId,
         subject: formatted.subject,
         text: formatted.text,
@@ -91,17 +96,18 @@ export class AutomationDeliveryService {
     } else if (delivery.channel === "telegram") {
       result = await this.telegram.send({
         chatIds: delivery.chatId ? [delivery.chatId] : undefined,
-        orgId: automation.orgId,
+        orgId,
         text: formatted.text,
       });
     } else if (delivery.channel === "discord") {
       result = await this.discord.send({
         channelId: delivery.channelId,
+        orgId,
         text: formatted.text,
       });
     } else {
       result = await this.whatsapp.send({
-        orgId: automation.orgId,
+        orgId,
         text: formatted.text,
       });
     }

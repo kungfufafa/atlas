@@ -14,6 +14,15 @@ function toolByName(name: string) {
   return { memoryService, tool };
 }
 
+describe("memory tools fail closed", () => {
+  test("memory_search without principal throws", async () => {
+    const { tool } = toolByName("memory_search");
+    await expect(
+      tool.run({ query: "allergy" }, { orgId: "org_a" })
+    ).rejects.toThrow("Canonical principal");
+  });
+});
+
 describe("memory tools ownership", () => {
   test("member cannot update another user's memory", async () => {
     const { memoryService, tool } = toolByName("memory_update");

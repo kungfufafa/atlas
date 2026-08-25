@@ -43,6 +43,8 @@ export interface AutomationDefinition {
 
 export interface StoredAutomation extends AutomationDefinition {
   createdAt: string;
+  /** Canonical user that owns scheduled/cron fires. Fail closed when missing. */
+  createdByUserId?: string | null;
   enabled: boolean;
   lastRunAt?: string | null;
   nextRunAt?: string | null;
@@ -743,8 +745,13 @@ export interface ListChannelOrgMappingsResponse {
   mappings: ChannelOrgMappingSummary[];
 }
 
+export interface ExternalPrincipalInput {
+  channelUserId: string;
+}
+
 export interface CreateSessionRequest {
   channel: AgentChannel;
+  externalPrincipal?: ExternalPrincipalInput;
   profileId?: string;
 }
 
@@ -970,10 +977,21 @@ export interface ApprovalRequest {
   createdAt: string;
   details?: Record<string, unknown>;
   id: string;
-  status: "pending" | "approved" | "rejected";
+  runId?: string;
+  status: "pending" | "approved" | "rejected" | "denied" | "expired";
+  stepIndex?: number;
   title: string;
   tool: string;
   toolCallId: string;
+}
+
+export interface DecideApprovalRequest {
+  decision: "approved" | "denied";
+}
+
+export interface DecideApprovalResponse {
+  approval: ApprovalRequest;
+  resumed: boolean;
 }
 
 export interface SendMessageInput {
@@ -990,6 +1008,7 @@ export interface SendMessageInput {
 export interface SendMessageRequest {
   clientOrigin?: string;
   documents?: DocumentAttachment[];
+  externalPrincipal?: ExternalPrincipalInput;
   images?: ImageAttachment[];
   message: string;
   policy?: ExecutionPolicy;
@@ -2206,6 +2225,8 @@ export interface ProviderClient {
 export interface ToolContext {
   /** Nesting depth for sub-agent execution (0 = parent, 1 = child). */
   agentDepth?: number;
+  /** Single-use approval grant consumed at the execution boundary. */
+  approvalGrantId?: string;
   automationId?: string;
   automationRunId?: string;
   /** Session channel when known (used for interactive-only tool gates). */
@@ -2250,6 +2271,11 @@ export interface ToolContext {
     optimized: boolean;
     outputTokens: number;
   }) => void;
+  /**
+   * Durable execution-run id. Browser contexts, learning evidence, and
+   * approval resume bind to this — not to a process-local session key.
+   */
+  runId?: string;
   sessionId?: string;
   /** Aborts when the caller cancels the turn. Long-running tools should stop their work on it. */
   signal?: AbortSignal;

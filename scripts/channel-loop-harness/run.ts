@@ -137,6 +137,31 @@ export async function runChannelLoopHarness(): Promise<ChannelLoopHarnessResult>
     }
 
     await writeChannelConfigs();
+    const channelUserIds: Array<{
+      channel: "telegram" | "whatsapp" | "discord";
+      channelUserId: string;
+    }> = [
+      { channel: "telegram", channelUserId: "4242" },
+      { channel: "telegram", channelUserId: "4243" },
+      { channel: "discord", channelUserId: "424242424242424242" },
+      { channel: "discord", channelUserId: "424242424242424243" },
+      { channel: "whatsapp", channelUserId: "6281111111111@s.whatsapp.net" },
+      { channel: "whatsapp", channelUserId: "6282000000001@s.whatsapp.net" },
+      { channel: "whatsapp", channelUserId: "6282000000002@s.whatsapp.net" },
+      { channel: "whatsapp", channelUserId: "6282000000003@s.whatsapp.net" },
+      { channel: "whatsapp", channelUserId: "6282000000004@s.whatsapp.net" },
+      { channel: "whatsapp", channelUserId: "6282000000009@s.whatsapp.net" },
+      { channel: "whatsapp", channelUserId: "236283431522503@lid" },
+    ];
+    const mappedAt = new Date().toISOString();
+    for (const principal of channelUserIds) {
+      await dbAdapter.upsertChannelOrgMapping({
+        ...principal,
+        createdAt: mappedAt,
+        orgId: tenant.orgId,
+        userId: tenant.adminId,
+      });
+    }
     resetWhatsAppLocks();
     resetTelegramLocks();
     resetDiscordLocks();

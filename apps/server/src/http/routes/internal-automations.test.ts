@@ -132,6 +132,7 @@ describe("internal automation routes", () => {
       new Request(
         `http://localhost:4310/v1/internal/automations/${encodeURIComponent(automation.id)}/run`,
         {
+          body: JSON.stringify({ fireId: "tick-1" }),
           headers: { Authorization: `Bearer ${token}` },
           method: "POST",
         }
@@ -139,6 +140,34 @@ describe("internal automation routes", () => {
     );
 
     expect(response.status).toBe(204);
+  });
+
+  test("requires fireId on the internal run endpoint", async () => {
+    const options = createServerOptions();
+    await seedOrgAndProfile(options.databaseAdapter);
+    await seedLocalClientUser(options.databaseAdapter);
+    const automation = await options.automationService.create(
+      ORG_ID,
+      {
+        description: "Ping",
+        name: "Hourly",
+        prompt: "Ping",
+        trigger: { cron: "0 * * * *", timezone: "UTC", type: "schedule" },
+      },
+      PROFILE_ID
+    );
+    const app = createHonoApp(options);
+    const token = await loadLocalAuthToken();
+    const response = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/internal/automations/${encodeURIComponent(automation.id)}/run`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          method: "POST",
+        }
+      )
+    );
+    expect(response.status).toBe(400);
   });
 
   test("returns 404 for unknown automation run", async () => {
@@ -153,6 +182,7 @@ describe("internal automation routes", () => {
       new Request(
         "http://localhost:4310/v1/internal/automations/unknown-automation/run",
         {
+          body: JSON.stringify({ fireId: "tick-1" }),
           headers: { Authorization: `Bearer ${token}` },
           method: "POST",
         }
@@ -193,6 +223,7 @@ describe("internal automation routes", () => {
       new Request(
         `http://localhost:4310/v1/internal/automations/${encodeURIComponent(automation.id)}/run`,
         {
+          body: JSON.stringify({ fireId: "tick-1" }),
           headers: { Authorization: `Bearer ${token}` },
           method: "POST",
         }

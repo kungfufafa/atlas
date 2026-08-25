@@ -48,3 +48,55 @@ export const PROTECTED_TOOL_IDS = new Set<string>([
 export function isProtectedToolId(toolId: string): boolean {
   return PROTECTED_TOOL_IDS.has(toolId);
 }
+
+export const MEMORY_TOOL_NAMES = [
+  "memory_delete",
+  "memory_list",
+  "memory_search",
+  "memory_update",
+  "memory_write",
+] as const;
+
+export const CONVERSATION_TOOL_NAMES = [
+  "get_conversation",
+  "search_chats",
+] as const;
+
+export type ServerToolHandlerType =
+  | "memory"
+  | "conversation"
+  | "bash"
+  | "sub_agent"
+  | "generate_image"
+  | "python_execute"
+  | "tool_search";
+
+const MEMORY_TOOL_NAME_SET = new Set<string>(MEMORY_TOOL_NAMES);
+const CONVERSATION_TOOL_NAME_SET = new Set<string>(CONVERSATION_TOOL_NAMES);
+
+export function serverHandlerTypeForToolName(
+  name: string
+): ServerToolHandlerType | null {
+  if (MEMORY_TOOL_NAME_SET.has(name) || name.startsWith("memory_")) {
+    return "memory";
+  }
+  if (CONVERSATION_TOOL_NAME_SET.has(name)) {
+    return "conversation";
+  }
+  if (name === "bash") {
+    return "bash";
+  }
+  if (name === "sub_agent") {
+    return "sub_agent";
+  }
+  if (name === "generate_image") {
+    return "generate_image";
+  }
+  if (name === "python_execute") {
+    return "python_execute";
+  }
+  if (name === "tool_search") {
+    return "tool_search";
+  }
+  return null;
+}

@@ -246,9 +246,10 @@ export class BrowserSessionService {
     orgId?: string,
     userId?: string,
     profileId?: string,
-    sessionId?: string
+    sessionId?: string,
+    runId?: string
   ): string {
-    return `${orgId || "org"}:${userId || "user"}:${profileId || "prof"}:${sessionId || "sess"}`;
+    return `${orgId || "org"}:${userId || "user"}:${profileId || "prof"}:${sessionId || "sess"}:${runId || "run"}`;
   }
 
   private cleanIdleSessions(): void {
@@ -265,11 +266,18 @@ export class BrowserSessionService {
     orgId?: string,
     userId?: string,
     profileId?: string,
-    sessionId?: string
+    sessionId?: string,
+    runId?: string
   ): Promise<SessionBrowserContext> {
     this.cleanIdleSessions();
 
-    const key = this.buildSessionKey(orgId, userId, profileId, sessionId);
+    const key = this.buildSessionKey(
+      orgId,
+      userId,
+      profileId,
+      sessionId,
+      runId
+    );
     const existing = this.sessions.get(key);
     if (existing && !existing.page.isClosed()) {
       existing.lastActiveAt = Date.now();
@@ -373,6 +381,7 @@ export class BrowserSessionService {
   private async rebuildSessionWithHttp1(options: {
     orgId?: string;
     profileId?: string;
+    runId?: string;
     sessionId?: string;
     userId?: string;
   }): Promise<SessionBrowserContext> {
@@ -380,7 +389,8 @@ export class BrowserSessionService {
       options.orgId,
       options.userId,
       options.profileId,
-      options.sessionId
+      options.sessionId,
+      options.runId
     );
     const existing = this.sessions.get(key);
     if (existing) {
@@ -393,7 +403,8 @@ export class BrowserSessionService {
       options.orgId,
       options.userId,
       options.profileId,
-      options.sessionId
+      options.sessionId,
+      options.runId
     );
   }
 
@@ -555,6 +566,7 @@ export class BrowserSessionService {
     options: {
       orgId?: string;
       profileId?: string;
+      runId?: string;
       sessionId?: string;
       userId?: string;
     } = {}
@@ -564,7 +576,8 @@ export class BrowserSessionService {
       options.orgId,
       options.userId,
       options.profileId,
-      options.sessionId
+      options.sessionId,
+      options.runId
     );
     const { page } = session;
     session.lastActiveAt = Date.now();

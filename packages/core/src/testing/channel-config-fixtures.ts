@@ -193,7 +193,7 @@ export function describeSharedChannelConfigTests<TId extends string | number>(
 
           const result = await tc.verifyAndPair("aa bb cc dd", tc.sampleId);
 
-          expect(result).toEqual({
+          expect(result).toMatchObject({
             message: "Linked successfully. You can chat with Atlas now.",
             ok: true,
           });
@@ -244,7 +244,7 @@ export function describeSharedChannelConfigTests<TId extends string | number>(
 
           const result = await tc.verifyAndPair("anything", tc.sampleId);
 
-          expect(result).toEqual({
+          expect(result).toMatchObject({
             message: "This chat is already linked.",
             ok: true,
           });
@@ -306,7 +306,7 @@ export function describeSharedChannelConfigTests<TId extends string | number>(
           },
         });
 
-        expect(resolved).toEqual({
+        expect(resolved).toMatchObject({
           accessMode: "pairing",
           allowedUserIds: tc.env.allowlistParsed,
           blockedUserIds: [],

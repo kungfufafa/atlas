@@ -38,11 +38,12 @@ export class DatabaseAutomationStore implements AutomationStore {
 
 function fromRecord(record: StoredAutomationRecord): StoredAutomation {
   const definition = record.definition as
-    | Partial<AutomationDefinition>
+    | (Partial<AutomationDefinition> & { createdByUserId?: string | null })
     | undefined;
 
   return {
     createdAt: record.createdAt,
+    createdByUserId: definition?.createdByUserId ?? null,
     delivery: definition?.delivery,
     description: definition?.description ?? "",
     enabled: record.enabled,
@@ -70,6 +71,9 @@ function toRecord(definition: StoredAutomation): StoredAutomationRecord {
       trigger: definition.trigger,
       version: definition.version,
       ...(definition.delivery ? { delivery: definition.delivery } : {}),
+      ...(definition.createdByUserId
+        ? { createdByUserId: definition.createdByUserId }
+        : {}),
     },
     enabled: definition.enabled,
     id: definition.id,

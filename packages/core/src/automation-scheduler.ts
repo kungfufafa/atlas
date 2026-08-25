@@ -1,5 +1,6 @@
 import { Cron } from "croner";
 import type { AutomationSchedule } from "./contract";
+import { scheduledOccurrenceId } from "./execution/run-state";
 import { DEFAULT_TIMEZONE } from "./user-config";
 
 // ponytail: setTimeout max delay is ~24.8 days; longer runAt jobs rely on worker poll reload.
@@ -9,7 +10,8 @@ export interface AutomationSchedulerDelegate {
   getDefaultTimezone(): Promise<string>;
   listScheduledAutomations(): Promise<AutomationSchedule[]>;
   runAutomation(
-    automationId: string
+    automationId: string,
+    fireId: string
   ): Promise<{ ok: boolean; skipped?: boolean; error?: string }>;
 }
 
@@ -82,8 +84,10 @@ export class AutomationScheduler {
           timezone,
         },
         () => {
+          const occurrence = job.currentRun() ?? new Date();
+          const fireId = scheduledOccurrenceId(automation.id, occurrence);
           void this.delegate
-            .runAutomation(automation.id)
+            .runAutomation(automation.id, fireId)
             .catch((error: unknown) => {
               const message =
                 error instanceof Error ? error.message : String(error);
@@ -109,8 +113,12 @@ export class AutomationScheduler {
 
     const timer = setTimeout(() => {
       this.timers.delete(automation.id);
+      const fireId = scheduledOccurrenceId(
+        automation.id,
+        automation.runAt ?? new Date()
+      );
       void this.delegate
-        .runAutomation(automation.id)
+        .runAutomation(automation.id, fireId)
         .catch((error: unknown) => {
           const message =
             error instanceof Error ? error.message : String(error);

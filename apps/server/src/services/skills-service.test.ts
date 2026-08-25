@@ -185,6 +185,24 @@ describe("SkillsService", () => {
     expect(unrelated).toBe("");
   });
 
+  test("FTS retrieval activates skills the lexical matcher misses", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const service = new SkillsService(db);
+    const created = await service.createSkill(ORG_ID, {
+      body: "Track cloud spend.",
+      description: "aws billing gpu",
+      name: "finops",
+      profileId: PROFILE_ID,
+    });
+    await db.assignSkillToProfile(PROFILE_ID, created.skill.id);
+    const matched = await service.formatMatchedSkillsForPrompt(
+      ORG_ID,
+      PROFILE_ID,
+      "gpu spend on aws"
+    );
+    expect(matched).toContain("Active Skill: finops");
+  });
+
   test("creates profile skills and syncs them to the database", async () => {
     const db = createInMemoryDatabaseAdapter();
     const service = new SkillsService(db);

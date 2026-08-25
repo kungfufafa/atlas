@@ -6,6 +6,8 @@ import { getDiscordConfigDir, getDiscordConfigPath } from "@atlas/core";
 import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { AutomationRunner } from "../services/automation-runner";
 import { AutomationService } from "../services/automation-service";
+import { ExecutionPlaneService } from "../services/execution-plane-service";
+import { IdentityService } from "../services/identity-service";
 import {
   createAutomationRunHistoryTools,
   createAutomationTools,
@@ -13,7 +15,13 @@ import {
 
 const ORG_ID = "org_test";
 const PROFILE_ID = "profile_default";
-const TOOL_CONTEXT = { orgId: ORG_ID, profileId: PROFILE_ID };
+const USER_ID = "user_test";
+const TOOL_CONTEXT = {
+  orgId: ORG_ID,
+  orgRole: "member" as const,
+  profileId: PROFILE_ID,
+  userId: USER_ID,
+};
 
 async function createTestDb() {
   const db = createInMemoryDatabaseAdapter();
@@ -39,7 +47,36 @@ async function createTestDb() {
     updatedAt: now,
   });
 
+  await db.createUser({
+    createdAt: now,
+    email: "ada@example.com",
+    id: USER_ID,
+    name: "Ada",
+    passwordHash: "x",
+    updatedAt: now,
+  });
+  await db.upsertOrgMember({
+    createdAt: now,
+    orgId: ORG_ID,
+    role: "member",
+    userId: USER_ID,
+  });
+
   return db;
+}
+
+function createRunner(
+  db: ReturnType<typeof createInMemoryDatabaseAdapter>,
+  service: AutomationService,
+  agentService: unknown
+) {
+  return new AutomationRunner(
+    service,
+    agentService as never,
+    undefined,
+    new ExecutionPlaneService(db),
+    new IdentityService(db)
+  );
 }
 
 function getRunAutomationTool(
@@ -87,7 +124,7 @@ describe("run_automation tool", () => {
       PROFILE_ID
     );
 
-    const runner = new AutomationRunner(service, {
+    const runner = createRunner(db, service, {
       runAutomationPrompt: async () => "Hello from automation",
     } as never);
     const tool = getRunAutomationTool(service, runner);
@@ -111,7 +148,7 @@ describe("run_automation tool", () => {
     const service = new AutomationService(db, {
       getUserTimezone: async () => "UTC",
     });
-    const runner = new AutomationRunner(service, {
+    const runner = createRunner(db, service, {
       runAutomationPrompt: async () => "unused",
     } as never);
     const tool = getRunAutomationTool(service, runner);
@@ -139,7 +176,7 @@ describe("run_automation tool", () => {
       PROFILE_ID
     );
 
-    const runner = new AutomationRunner(service, {
+    const runner = createRunner(db, service, {
       runAutomationPrompt: async () => "unused",
     } as never);
     const tool = getRunAutomationTool(service, runner);
@@ -172,7 +209,7 @@ describe("run_automation tool", () => {
       markFirstRunStarted = resolve;
     });
 
-    const runner = new AutomationRunner(service, {
+    const runner = createRunner(db, service, {
       runAutomationPrompt: async () => {
         markFirstRunStarted?.();
         await new Promise<void>((resolve) => {
@@ -214,7 +251,7 @@ describe("run_automation tool", () => {
       PROFILE_ID
     );
 
-    const runner = new AutomationRunner(service, {
+    const runner = createRunner(db, service, {
       runAutomationPrompt: async () => {
         throw new Error("Provider offline");
       },
@@ -353,7 +390,7 @@ describe("create_automation tool", () => {
     const service = new AutomationService(db, {
       getUserTimezone: async () => "UTC",
     });
-    const runner = new AutomationRunner(service, {
+    const runner = createRunner(db, service, {
       runAutomationPrompt: async () => "unused",
     } as never);
     const tool = createAutomationTools(service, runner).find(

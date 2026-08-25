@@ -58,7 +58,7 @@ test("automation run requests disable Bun fetch idle timeout", async () => {
     },
   });
 
-  await client.runAutomationInternal("auto_1");
+  await client.runAutomationInternal("auto_1", "tick-1");
 
   expect(String(fetchCalls[0]!.input)).toBe(
     "http://localhost:4310/v1/internal/automations/auto_1/run"
@@ -66,6 +66,7 @@ test("automation run requests disable Bun fetch idle timeout", async () => {
   expect(
     (fetchCalls[0]!.init as RequestInit & { idleTimeout?: number }).idleTimeout
   ).toBe(0);
+  expect(fetchCalls[0]!.init?.body).toBe(JSON.stringify({ fireId: "tick-1" }));
 });
 
 test("clients send org context on authenticated requests", async () => {

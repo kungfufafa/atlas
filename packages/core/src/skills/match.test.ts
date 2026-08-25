@@ -53,4 +53,29 @@ describe("matchSkillsForMessage", () => {
     );
     expect(matched).toEqual([]);
   });
+
+  test("unions ranker retrieve hits with lexical matches", () => {
+    const other: DiscoveredSkill = {
+      ...weatherSkill,
+      description: "unrelated billing notes",
+      name: "other",
+    };
+    const matched = matchSkillsForMessage(
+      [other, weatherSkill],
+      "please look at this note",
+      {
+        ranker: {
+          rank: (skills) =>
+            skills.map((skill) => ({
+              confidence: 1,
+              score: skill.name === "weather" ? 2 : 0.1,
+              skill,
+            })),
+          retrieve: (skills) =>
+            skills.filter((skill) => skill.name === "weather"),
+        },
+      }
+    );
+    expect(matched.map((skill) => skill.name)[0]).toBe("weather");
+  });
 });

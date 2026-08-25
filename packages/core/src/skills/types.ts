@@ -27,4 +27,25 @@ export interface DiscoveredSkill {
 
 export interface SkillMatchOptions {
   explicitOnly?: boolean;
+  outcomes?: Array<{
+    helpful?: boolean | null;
+    skillName: string;
+    useCount?: number;
+  }>;
+  /** Optional ranker (JS BM25 by default; FTS5 adapters are compatible). */
+  ranker?: {
+    rank<T extends { description: string; name: string }>(
+      skills: T[],
+      userMessage: string,
+      outcomes?: Array<{
+        helpful?: boolean | null;
+        skillName: string;
+        useCount?: number;
+      }>
+    ): Array<{ confidence: number; score: number; skill: T }>;
+    retrieve?<T extends { description: string; name: string }>(
+      skills: T[],
+      userMessage: string
+    ): T[];
+  };
 }
