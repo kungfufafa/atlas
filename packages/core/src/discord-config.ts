@@ -18,7 +18,9 @@ export interface DiscordConfigFile {
   allowedUserIds: string[];
   blockedUserIds: string[];
   botToken: string;
+  handshakeAssertion?: string | null;
   handshakeCode: string | null;
+  handshakeUserId?: string | null;
   pairedUserIds: string[];
   profileId: string;
 }
@@ -219,6 +221,8 @@ async function loadDiscordConfigFile(
   const botToken = values.bot_token?.trim() ?? "";
   const profileId = values.profile_id?.trim() || DEFAULT_DISCORD_PROFILE_ID;
   const handshakeCode = values.handshake_code?.trim() || null;
+  const handshakeAssertion = values.handshake_assertion?.trim() || null;
+  const handshakeUserId = values.handshake_user_id?.trim() || null;
   const pairedRaw = values.paired_user_ids?.trim() ?? "";
   const allowlistRaw = values.allowed_user_ids?.trim() ?? "";
   const denylistRaw = values.blocked_user_ids?.trim() ?? "";
@@ -240,7 +244,9 @@ async function loadDiscordConfigFile(
     allowedUserIds: allowlistRaw ? parseAllowedUserIds(allowlistRaw) : [],
     blockedUserIds: denylistRaw ? parseAllowedUserIds(denylistRaw) : [],
     botToken,
+    handshakeAssertion,
     handshakeCode,
+    handshakeUserId,
     pairedUserIds: pairedRaw ? parseAllowedUserIds(pairedRaw) : [],
     profileId,
   };
@@ -296,6 +302,12 @@ async function writeDiscordConfigFile(
     `profile_id=${config.profileId}`,
     `access_mode=${config.accessMode}`,
     ...(config.handshakeCode ? [`handshake_code=${config.handshakeCode}`] : []),
+    ...(config.handshakeUserId
+      ? [`handshake_user_id=${config.handshakeUserId}`]
+      : []),
+    ...(config.handshakeAssertion
+      ? [`handshake_assertion=${config.handshakeAssertion}`]
+      : []),
     ...(config.pairedUserIds.length > 0
       ? [`paired_user_ids=${config.pairedUserIds.join(",")}`]
       : []),
@@ -388,7 +400,9 @@ function buildSavedDiscordConfig(
     allowedUserIds,
     blockedUserIds,
     botToken,
+    handshakeAssertion: existing?.handshakeAssertion ?? null,
     handshakeCode: resolveHandshakeCode(existing, allowedUserIds),
+    handshakeUserId: existing?.handshakeUserId ?? null,
     pairedUserIds: existing?.pairedUserIds ?? [],
     profileId: resolveDiscordProfileId(input, existing),
   };
@@ -441,7 +455,9 @@ export async function saveDiscordConfig(
 }
 
 export async function regenerateDiscordHandshake(
-  orgId?: string | null
+  orgId?: string | null,
+  handshakeUserId?: string | null,
+  pairingAssertion?: string | null
 ): Promise<DiscordSettingsPublic> {
   const existing = await loadDiscordConfigFile(orgId);
 
@@ -449,9 +465,18 @@ export async function regenerateDiscordHandshake(
     throw new Error("Save a bot token before generating a pairing code.");
   }
 
+  const issuer = handshakeUserId?.trim() || null;
+  if (!issuer) {
+    throw new Error(
+      "Canonical principal is required to generate a pairing code."
+    );
+  }
+
   const next: DiscordConfigFile = {
     ...existing,
+    handshakeAssertion: pairingAssertion?.trim() || null,
     handshakeCode: generateHandshakeCode(),
+    handshakeUserId: issuer,
   };
 
   await writeDiscordConfigFile(next, orgId);
@@ -482,7 +507,10 @@ export async function verifyAndPairDiscordUser(
   handshakeInput: string,
   userId: string,
   orgId?: string | null
-): Promise<{ ok: true; message: string } | { ok: false; message: string }> {
+): Promise<
+  | { ok: true; message: string; pairingAssertion: string | null }
+  | { ok: false; message: string }
+> {
   return runSerializedDiscordPair(orgId, async () => {
     const config = await loadDiscordConfigFile(orgId);
 
@@ -494,7 +522,11 @@ export async function verifyAndPairDiscordUser(
     }
 
     if (isDiscordUserAuthorized(userId, config)) {
-      return { message: "This chat is already linked.", ok: true };
+      return {
+        message: "This chat is already linked.",
+        ok: true,
+        pairingAssertion: config.handshakeAssertion ?? null,
+      };
     }
 
     const expected = config.handshakeCode;
@@ -519,10 +551,12 @@ export async function verifyAndPairDiscordUser(
     }
 
     const pairedUserIds = [...new Set([...config.pairedUserIds, userId])];
+    const pairingAssertion = config.handshakeAssertion ?? null;
 
     await writeDiscordConfigFile(
       {
         ...config,
+        handshakeAssertion: pairingAssertion,
         handshakeCode: null,
         pairedUserIds,
       },
@@ -532,8 +566,26 @@ export async function verifyAndPairDiscordUser(
     return {
       message: "Linked successfully. You can chat with Atlas now.",
       ok: true,
+      pairingAssertion,
     };
   });
+}
+
+export async function clearDiscordPairingAssertion(
+  orgId?: string | null
+): Promise<void> {
+  const config = await loadDiscordConfigFile(orgId);
+  if (!config?.handshakeAssertion) {
+    return;
+  }
+  await writeDiscordConfigFile(
+    {
+      ...config,
+      handshakeAssertion: null,
+      handshakeUserId: config.handshakeCode ? config.handshakeUserId : null,
+    },
+    orgId
+  );
 }
 
 export function resolveDiscordConfigFromSources(options: {
@@ -569,7 +621,9 @@ export function resolveDiscordConfigFromSources(options: {
       ? parseAllowedUserIds(envDenylist)
       : (file?.blockedUserIds ?? []),
     botToken,
+    handshakeAssertion: file?.handshakeAssertion ?? null,
     handshakeCode: file?.handshakeCode ?? null,
+    handshakeUserId: file?.handshakeUserId ?? null,
     pairedUserIds: file?.pairedUserIds ?? [],
     profileId:
       (allowEnvCredentials

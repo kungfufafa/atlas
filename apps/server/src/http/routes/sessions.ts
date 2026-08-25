@@ -1,4 +1,5 @@
 import {
+  AtlasApiError,
   type BranchSessionRequest,
   type BranchSessionResponse,
   type CompactionResponse,
@@ -567,8 +568,21 @@ export function registerSessionRoutes(
   app.post("/v1/sessions/:sessionId/messages", async (c) => {
     requireNotViewerFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
+    const auth = getRequestAuth(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
-    const session = await agent.resolveSession(orgId, sessionId);
+    let session: Awaited<ReturnType<typeof agent.resolveSession>>;
+    try {
+      session = await agent.resolveSession(orgId, sessionId, {
+        isPlatformAdmin: auth.isPlatformAdmin,
+        orgRole: auth.orgRole,
+        userId: auth.user.id,
+      });
+    } catch (error) {
+      if (error instanceof AtlasApiError) {
+        return errorResponse(error.message, error.status);
+      }
+      throw error;
+    }
 
     if (!session) {
       return errorResponse("Session not found", 404);

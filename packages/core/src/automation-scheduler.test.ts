@@ -145,4 +145,24 @@ describe("AutomationScheduler", () => {
     expect(scheduler.getStatus()).toEqual({ running: true, scheduledJobs: 1 });
     scheduler.stop();
   });
+
+  test("catches up a missed runAt with the same fire id", async () => {
+    const at = new Date(Date.now() - 1000).toISOString();
+    const runs: Array<{ fireId: string; id: string }> = [];
+    const delegate = createDelegate({
+      listScheduledAutomations: async () => [
+        schedule({ cron: undefined, id: "a1", runAt: at }),
+      ],
+      runAutomation: async (id, fireId) => {
+        runs.push({ fireId, id });
+        return { ok: true };
+      },
+    });
+    const scheduler = new AutomationScheduler(delegate);
+    await scheduler.start();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    scheduler.stop();
+    expect(runs).toHaveLength(1);
+    expect(runs[0]?.fireId).toContain("a1:");
+  });
 });

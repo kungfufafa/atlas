@@ -23,7 +23,10 @@ import {
   resolveProfileInput,
   resolveProfileInScopes,
 } from "@atlas/core/profiles";
-import { normalizeHandshakeInput } from "@atlas/core/telegram-config";
+import {
+  clearTelegramPairingAssertion,
+  normalizeHandshakeInput,
+} from "@atlas/core/telegram-config";
 import type { Context } from "grammy";
 import {
   clearActiveStream,
@@ -193,6 +196,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     await withChatLock(conversationKey, async () => {
       await authStore.reload();
       const isAuthorized = authStore.isAuthorized(userId);
+      if (isAuthorized) {
+        await bindPendingChannelPrincipal(String(userId));
+      }
 
       if (!isAuthorized) {
         const fileConfig = authStore.getConfig();
@@ -373,20 +379,44 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     const result = await authStore.tryPair(text, userId);
     await telegram.send(result.message);
-    if (result.ok && result.pairingAssertion) {
-      const orgId =
-        getOrgSelection(orgStore, String(userId))?.orgId ??
-        fixedWorkspaceId ??
-        undefined;
-      if (orgId) {
-        await client.bindChannelPrincipal({
-          channel: "telegram",
-          channelUserId: String(userId),
-          pairingAssertion: result.pairingAssertion,
-        });
-      }
+    if (result.ok) {
+      await bindPendingChannelPrincipal(
+        String(userId),
+        result.pairingAssertion
+      );
     }
     // Pairing messages stay out of agent session history — only Telegram + config.ini.
+  }
+
+  async function bindPendingChannelPrincipal(
+    channelUserId: string,
+    pairingAssertion?: string | null
+  ): Promise<void> {
+    const assertion =
+      pairingAssertion?.trim() ||
+      authStore.getConfig()?.handshakeAssertion?.trim() ||
+      "";
+    if (!assertion) {
+      return;
+    }
+    const orgId =
+      getOrgSelection(orgStore, channelUserId)?.orgId ??
+      fixedWorkspaceId ??
+      undefined;
+    if (!orgId) {
+      return;
+    }
+    try {
+      await client.bindChannelPrincipal({
+        channel: "telegram",
+        channelUserId,
+        pairingAssertion: assertion,
+      });
+      await clearTelegramPairingAssertion(orgId);
+      await authStore.reload();
+    } catch (error) {
+      console.error("Failed to bind Telegram channel principal:", error);
+    }
   }
 
   async function handleCommand(
@@ -412,7 +442,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         return;
 
       case "/clear": {
-        const session = await resolveSession(conversationKey);
+        const session = await resolveSession(
+          conversationKey,
+          String(ctx.from?.id ?? "")
+        );
         await session.clear();
         await clearSessionArtifactState(conversationKey);
         await telegram.send("History cleared.");
@@ -420,7 +453,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       }
 
       case "/compact": {
-        const session = await resolveSession(conversationKey);
+        const session = await resolveSession(
+          conversationKey,
+          String(ctx.from?.id ?? "")
+        );
         const result = await session.compact({ force: true });
         await telegram.send(
           `Compacted (${result.action}). Messages: ${result.messagesAfter}.`
@@ -429,7 +465,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       }
 
       case "/new": {
-        await createAndBindSession(conversationKey);
+        await createAndBindSession(
+          conversationKey,
+          undefined,
+          String(ctx.from?.id ?? "")
+        );
         await telegram.send("Started a new conversation.");
         return;
       }
@@ -439,7 +479,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         return;
 
       case "/attach": {
-        await resolveSession(conversationKey);
+        await resolveSession(conversationKey, String(ctx.from?.id ?? ""));
         const profileId = sessionStore.get(conversationKey)?.profileId;
         if (!profileId) {
           await telegram.send(formatMissingAttachArtifactMessage());
@@ -468,7 +508,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           conversationKey,
           channelOrgKey,
           isTopic,
-          telegram
+          telegram,
+          String(ctx.from?.id ?? "")
         );
         return;
 
@@ -535,7 +576,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     telegram: TelegramRichMessenger,
     attachUserText: string
   ): Promise<void> {
-    const session = await resolveSession(conversationKey);
+    const session = await resolveSession(
+      conversationKey,
+      String(ctx.from?.id ?? "")
+    );
     const profileId = sessionStore.get(conversationKey)?.profileId;
 
     if (profileId) {
@@ -739,7 +783,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     conversationKey: string,
     channelOrgKey: string,
     isTopic: boolean,
-    telegram: TelegramRichMessenger
+    telegram: TelegramRichMessenger,
+    channelUserId: string
   ): Promise<void> {
     const workspaceLocked = Boolean(fixedWorkspaceId);
     const { orgs } = workspaceLocked
@@ -849,7 +894,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
-    await createAndBindSession(conversationKey, picked.id);
+    await createAndBindSession(conversationKey, picked.id, channelUserId);
     const orgNote =
       workspaceLocked || scope.orgId === currentOrgId
         ? ""
@@ -918,7 +963,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
   }
 
-  async function resolveSession(chatId: string): Promise<RemoteChatSession> {
+  async function resolveSession(
+    chatId: string,
+    channelUserId: string
+  ): Promise<RemoteChatSession> {
     const existing = sessionStore.get(chatId);
 
     if (existing) {
@@ -932,17 +980,19 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       }
     }
 
-    return createAndBindSession(chatId);
+    return createAndBindSession(chatId, undefined, channelUserId);
   }
 
   async function createAndBindSession(
     chatId: string,
-    profileId?: string
+    profileId?: string,
+    channelUserId?: string
   ): Promise<RemoteChatSession> {
     const resolvedProfileId =
       profileId ?? (await resolveSessionProfileId(chatId));
+    const principalUserId = channelUserId?.trim() || chatId;
     const session = await client.createSession("telegram", {
-      externalPrincipal: { channelUserId: chatId },
+      externalPrincipal: { channelUserId: principalUserId },
       profileId: resolvedProfileId,
     });
 

@@ -37,7 +37,7 @@ export function isWorkerSchedulable(automation: {
   }
 
   if (automation.trigger.type === "runAt") {
-    return Date.parse(automation.trigger.at) > Date.now();
+    return Number.isFinite(Date.parse(automation.trigger.at));
   }
 
   return false;

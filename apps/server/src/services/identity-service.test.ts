@@ -149,6 +149,38 @@ describe("IdentityService", () => {
     ).rejects.toThrow(/already used|invalid/i);
   });
 
+  test("restores a pairing assertion when mapping write fails", async () => {
+    const db = await seed();
+    const identity = new IdentityService(db);
+    const assertion = await identity.issuePairingAssertion({
+      channel: "telegram",
+      orgId: "org_1",
+      userId: "user_1",
+    });
+    const original = db.upsertChannelOrgMapping.bind(db);
+    db.upsertChannelOrgMapping = async () => {
+      throw new Error("network down");
+    };
+    await expect(
+      identity.bindExternalPrincipal({
+        actor: { mode: "local-token", userId: LOCAL_CLIENT_USER_ID },
+        channel: "telegram",
+        channelUserId: "42",
+        orgId: "org_1",
+        pairingAssertion: assertion,
+      })
+    ).rejects.toThrow(/network down/);
+    db.upsertChannelOrgMapping = original;
+    const principal = await identity.bindExternalPrincipal({
+      actor: { mode: "local-token", userId: LOCAL_CLIENT_USER_ID },
+      channel: "telegram",
+      channelUserId: "42",
+      orgId: "org_1",
+      pairingAssertion: assertion,
+    });
+    expect(principal.userId).toBe("user_1");
+  });
+
   test("channel sessions require external principal", async () => {
     const db = await seed();
     const identity = new IdentityService(db);

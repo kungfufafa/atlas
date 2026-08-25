@@ -17,7 +17,10 @@ import type {
   AgentQuestionnaire,
   SendMessageInput,
 } from "@atlas/core/contract";
-import { addDiscordAllowedUserId } from "@atlas/core/discord-config";
+import {
+  addDiscordAllowedUserId,
+  clearDiscordPairingAssertion,
+} from "@atlas/core/discord-config";
 import {
   filterProfilesForChatAccess,
   formatProfileSelectionPrompt,
@@ -200,6 +203,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     await authStore.reload();
     const isAuthorized = authStore.isAuthorized(userId);
+    if (isAuthorized) {
+      await bindPendingChannelPrincipal(userId);
+    }
 
     if (isAuthorized && isThread && groupDecision?.reason === "claim-thread") {
       await trackOwnedThread(channelId);
@@ -305,7 +311,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           conversationKey,
           channelOrgKey,
           isThread,
-          messenger
+          messenger,
+          userId
         );
       });
       return;
@@ -631,7 +638,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         case "new": {
           stopActiveStream(conversationKey);
           pendingQuestionnaires.delete(conversationKey);
-          await createAndBindSession(conversationKey);
+          await createAndBindSession(conversationKey, undefined, userId);
           await messenger.send("Started a new conversation.");
           return;
         }
@@ -686,6 +693,40 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     const result = await authStore.tryPair(text, userId);
     await messenger.send(result.message);
+    if (result.ok) {
+      await bindPendingChannelPrincipal(userId, result.pairingAssertion);
+    }
+  }
+
+  async function bindPendingChannelPrincipal(
+    channelUserId: string,
+    pairingAssertion?: string | null
+  ): Promise<void> {
+    const assertion =
+      pairingAssertion?.trim() ||
+      authStore.getConfig()?.handshakeAssertion?.trim() ||
+      "";
+    if (!assertion) {
+      return;
+    }
+    const orgId =
+      getOrgSelection(orgStore, channelUserId)?.orgId ??
+      fixedWorkspaceId ??
+      undefined;
+    if (!orgId) {
+      return;
+    }
+    try {
+      await client.bindChannelPrincipal({
+        channel: "discord",
+        channelUserId,
+        pairingAssertion: assertion,
+      });
+      await clearDiscordPairingAssertion(orgId);
+      await authStore.reload();
+    } catch (error) {
+      console.error("Failed to bind Discord channel principal:", error);
+    }
   }
 
   async function handlePairingSlash(
@@ -708,7 +749,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     conversationKey: string,
     channelOrgKey: string,
     isThread: boolean,
-    messenger: DiscordMessenger
+    messenger: DiscordMessenger,
+    userId: string
   ): Promise<void> {
     if (command === "/org") {
       await handleOrgCommand(text, channelOrgKey, conversationKey, messenger);
@@ -721,7 +763,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         conversationKey,
         channelOrgKey,
         isThread,
-        messenger
+        messenger,
+        userId
       );
     }
   }
@@ -1031,7 +1074,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     conversationKey: string,
     channelOrgKey: string,
     isThread: boolean,
-    messenger: DiscordMessenger
+    messenger: DiscordMessenger,
+    userId: string
   ): Promise<void> {
     const workspaceLocked = Boolean(fixedWorkspaceId);
     const { orgs } = workspaceLocked
@@ -1128,7 +1172,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
-    await createAndBindSession(conversationKey, picked.id);
+    await createAndBindSession(conversationKey, picked.id, userId);
     const orgNote =
       workspaceLocked || scope.orgId === currentOrgId
         ? ""

@@ -105,7 +105,8 @@ describe("createChatHandler group chats", () => {
 
       const authStore = new TelegramAuthStore();
       await authStore.reload();
-      const { client, calls } = createMockClient();
+      const { client, calls, getLastCreateSessionExternalPrincipal } =
+        createMockClient();
       const sessionStore = new SessionStore(
         path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
@@ -131,6 +132,9 @@ describe("createChatHandler group chats", () => {
       await handleMessage(ctx);
 
       expect(calls.createSession).toBe(1);
+      expect(getLastCreateSessionExternalPrincipal()).toEqual({
+        channelUserId: "42",
+      });
       expect(calls.sendStream).toBe(1);
       expect(replies.at(-1)).toBe("Agent reply");
       expect(replyOptions.at(-1)).toEqual({ parse_mode: "HTML" });
@@ -934,6 +938,7 @@ describe("createChatHandler security", () => {
       expect(authStore.isAuthorized(1001)).toBe(true);
       expect(authStore.getConfig()?.handshakeCode).toBeNull();
       expect(authStore.getConfig()?.pairedUserIds).toEqual([1001]);
+      expect(calls.bindChannelPrincipal).toBe(0);
       expect(calls.sendStream).toBe(0);
 
       const chatAttempt = createMessageContext({
@@ -945,6 +950,44 @@ describe("createChatHandler security", () => {
       expect(calls.createSession).toBe(1);
       expect(calls.sendStream).toBe(1);
       expect(chatAttempt.replies.at(-1)).toBe("Agent reply");
+    });
+  });
+
+  test("binds the canonical user after pairing with an assertion", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        botToken: "1234567890:TEST",
+        handshakeAssertion: "assert_1",
+        handshakeCode: "ABCD1234",
+      });
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        fixedWorkspaceId: "org_test",
+        orgStore,
+        sessionStore,
+      });
+
+      const pairAttempt = createMessageContext({
+        text: "ab cd 12 34",
+        userId: 1001,
+      });
+      await handleMessage(pairAttempt.ctx);
+
+      expect(pairAttempt.replies).toEqual([
+        "Linked successfully. You can chat with Atlas now.",
+      ]);
+      expect(calls.bindChannelPrincipal).toBe(1);
     });
   });
 

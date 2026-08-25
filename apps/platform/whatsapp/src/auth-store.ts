@@ -62,7 +62,11 @@ export class WhatsAppAuthStore {
   async tryPair(
     pairingCodeInput: string,
     jid: string
-  ): Promise<{ ok: boolean; message: string }> {
+  ): Promise<{
+    ok: boolean;
+    message: string;
+    pairingAssertion?: string | null;
+  }> {
     const result = await verifyAndPairWhatsAppUser(
       pairingCodeInput,
       jid,

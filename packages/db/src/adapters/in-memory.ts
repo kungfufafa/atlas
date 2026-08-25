@@ -66,6 +66,47 @@ function toolNameKey(orgId: string | null | undefined, name: string): string {
   return `${orgId ?? ""}\0${name}`;
 }
 
+const IN_MEMORY_ACTIVE_EXECUTION_STATUSES = new Set([
+  "queued",
+  "running",
+  "awaiting_approval",
+]);
+
+function executionRunInsertConflict(
+  executionRuns: Map<string, StoredExecutionRunRecord>,
+  record: StoredExecutionRunRecord
+): string | null {
+  if (record.idempotencyKey) {
+    const conflict = [...executionRuns.values()].find(
+      (existing) =>
+        existing.id !== record.id &&
+        existing.orgId === record.orgId &&
+        existing.idempotencyKey === record.idempotencyKey
+    );
+    if (conflict) {
+      return "UNIQUE constraint failed: execution_runs_org_idempotency";
+    }
+  }
+  if (
+    record.kind === "automation" &&
+    record.sessionId &&
+    IN_MEMORY_ACTIVE_EXECUTION_STATUSES.has(record.status)
+  ) {
+    const conflict = [...executionRuns.values()].find(
+      (existing) =>
+        existing.id !== record.id &&
+        existing.orgId === record.orgId &&
+        existing.sessionId === record.sessionId &&
+        existing.kind === "automation" &&
+        IN_MEMORY_ACTIVE_EXECUTION_STATUSES.has(existing.status)
+    );
+    if (conflict) {
+      return "UNIQUE constraint failed: execution_runs_active_automation";
+    }
+  }
+  return null;
+}
+
 export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
   const automations = new Map<string, StoredAutomationRecord>();
   const automationRuns = new Map<string, StoredAutomationRunRecord[]>();
@@ -232,6 +273,41 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       assigned.add(toolId);
       profileTools.set(profileId, assigned);
     },
+    async casExecutionRun(input) {
+      const existing = executionRuns.get(input.id);
+      if (!existing) {
+        return false;
+      }
+      if (!IN_MEMORY_ACTIVE_EXECUTION_STATUSES.has(existing.status)) {
+        return false;
+      }
+      if (
+        input.expectedLeaseOwner !== undefined &&
+        existing.leaseOwner !== input.expectedLeaseOwner
+      ) {
+        return false;
+      }
+      const nowMs = Date.parse(input.nowIso ?? new Date().toISOString());
+      const expiresAtMs = existing.leaseExpiresAt
+        ? Date.parse(existing.leaseExpiresAt)
+        : Number.NaN;
+      if (
+        input.requireUnexpiredLease &&
+        !(Number.isFinite(expiresAtMs) && expiresAtMs > nowMs)
+      ) {
+        return false;
+      }
+      if (input.requireExpiredLease) {
+        const expired =
+          !(existing.leaseOwner && Number.isFinite(expiresAtMs)) ||
+          expiresAtMs <= nowMs;
+        if (!expired) {
+          return false;
+        }
+      }
+      executionRuns.set(input.id, { ...input.next, id: existing.id });
+      return true;
+    },
 
     async countHumanUsers() {
       return [...usersById.values()].filter(
@@ -391,6 +467,20 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
     async deleteComposioUserConnection(id) {
       return composioUserConnections.delete(id);
+    },
+    async deleteExecutionRunIfOwner(id, leaseOwner) {
+      const existing = executionRuns.get(id);
+      if (!existing) {
+        return false;
+      }
+      if (existing.leaseOwner !== leaseOwner) {
+        return false;
+      }
+      if (!IN_MEMORY_ACTIVE_EXECUTION_STATUSES.has(existing.status)) {
+        return false;
+      }
+      executionRuns.delete(id);
+      return true;
     },
 
     async deleteMcpServer(id) {
@@ -1016,6 +1106,16 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     async insertAutomationRun(record) {
       const existing = automationRuns.get(record.automationId) ?? [];
       automationRuns.set(record.automationId, [...existing, record]);
+    },
+    async insertExecutionRunIfAbsent(record) {
+      if (executionRuns.has(record.id)) {
+        return false;
+      }
+      if (executionRunInsertConflict(executionRuns, record)) {
+        return false;
+      }
+      executionRuns.set(record.id, { ...record });
+      return true;
     },
 
     async insertTaskRun(record) {
@@ -1764,42 +1864,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       composioUserConnections.set(record.id, record);
     },
     async upsertExecutionRun(record) {
-      if (record.idempotencyKey) {
-        const conflict = [...executionRuns.values()].find(
-          (existing) =>
-            existing.id !== record.id &&
-            existing.orgId === record.orgId &&
-            existing.idempotencyKey === record.idempotencyKey
-        );
-        if (conflict) {
-          throw new Error(
-            "UNIQUE constraint failed: execution_runs_org_idempotency"
-          );
-        }
-      }
-      const activeAutomationStatuses = new Set([
-        "queued",
-        "running",
-        "awaiting_approval",
-      ]);
-      if (
-        record.kind === "automation" &&
-        record.sessionId &&
-        activeAutomationStatuses.has(record.status)
-      ) {
-        const conflict = [...executionRuns.values()].find(
-          (existing) =>
-            existing.id !== record.id &&
-            existing.orgId === record.orgId &&
-            existing.sessionId === record.sessionId &&
-            existing.kind === "automation" &&
-            activeAutomationStatuses.has(existing.status)
-        );
-        if (conflict) {
-          throw new Error(
-            "UNIQUE constraint failed: execution_runs_active_automation"
-          );
-        }
+      const conflict = executionRunInsertConflict(executionRuns, record);
+      if (conflict) {
+        throw new Error(conflict);
       }
       executionRuns.set(record.id, { ...record });
     },

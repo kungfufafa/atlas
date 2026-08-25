@@ -15,6 +15,45 @@ export interface RankedSkill<T extends RankableSkill> {
   skill: T;
 }
 
+export const SKILL_QUERY_STOP_WORDS = new Set([
+  "a",
+  "an",
+  "the",
+  "and",
+  "or",
+  "for",
+  "to",
+  "when",
+  "use",
+  "with",
+  "user",
+  "asks",
+  "about",
+  "working",
+  "files",
+  "file",
+  "this",
+  "that",
+  "from",
+  "into",
+  "are",
+  "is",
+  "in",
+  "on",
+  "of",
+  "by",
+  "as",
+  "at",
+  "it",
+  "be",
+  "do",
+  "does",
+  "help",
+  "helps",
+  "using",
+  "used",
+]);
+
 /** Pluggable ranker. JS BM25 is the default; FTS5 adapters implement this. */
 export interface SkillRanker {
   rank<T extends RankableSkill>(
@@ -33,7 +72,7 @@ function tokenize(text: string): string[] {
   return text
     .toLowerCase()
     .split(/[^a-z0-9-]+/)
-    .filter((token) => token.length >= 3);
+    .filter((token) => token.length >= 3 && !SKILL_QUERY_STOP_WORDS.has(token));
 }
 
 function bm25Score(query: string, document: string): number {
@@ -70,7 +109,7 @@ export function applySkillOutcomeBoost(
     return score + 1.5 + Math.min(signal.useCount ?? 0, 10) * 0.1;
   }
   if (signal?.helpful === false) {
-    return score - 1;
+    return 0;
   }
   return score;
 }

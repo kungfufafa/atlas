@@ -35,7 +35,11 @@ export class DiscordAuthStore {
   async tryPair(
     handshakeInput: string,
     userId: string
-  ): Promise<{ ok: boolean; message: string }> {
+  ): Promise<{
+    ok: boolean;
+    message: string;
+    pairingAssertion?: string | null;
+  }> {
     const result = await verifyAndPairDiscordUser(
       handshakeInput,
       userId,

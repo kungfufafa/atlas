@@ -335,7 +335,9 @@ describe("resolveWhatsAppConfigFromSources", () => {
       blockedNumbers: [],
       pairedJid: null,
       pairedLid: null,
+      pairingAssertion: null,
       pairingCode: null,
+      pairingUserId: null,
       phoneNumber: "+1234567890",
       profileId: "profile_from_file",
     });

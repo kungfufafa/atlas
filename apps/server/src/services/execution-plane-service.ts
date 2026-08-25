@@ -59,51 +59,8 @@ export class ExecutionPlaneService {
       input.automationId,
       fireId
     );
-    const existing = await this.db.getExecutionRunByIdempotencyKey(
-      input.principal.orgId,
-      idempotencyKey
-    );
-    if (existing) {
-      const durable = toDurableRun(existing);
-      assertIdempotentReplay(durable, input.principal);
-      if (isActiveExecutionStatus(durable.status)) {
-        const nowMs = Date.now();
-        const leaseLive =
-          Boolean(durable.leaseOwner) &&
-          Boolean(durable.leaseExpiresAt) &&
-          new Date(durable.leaseExpiresAt ?? 0).getTime() > nowMs;
-        if (leaseLive) {
-          return {
-            error: "Automation is already running.",
-            replay: true,
-            run: durable,
-            skipped: true,
-          };
-        }
-        try {
-          const leased = acquireLease(durable, makeLeaseOwner(), nowMs);
-          await this.persist(leased);
-          return { replay: true, run: leased, skipped: false };
-        } catch (error) {
-          if (error instanceof ExecutionLeaseError) {
-            return {
-              error: "Automation is already running.",
-              replay: true,
-              run: durable,
-              skipped: true,
-            };
-          }
-          throw error;
-        }
-      }
-      return {
-        error: "Automation fire already completed.",
-        replay: true,
-        run: durable,
-        skipped: true,
-      };
-    }
-
+    const nowMs = Date.now();
+    const nowIso = new Date(nowMs).toISOString();
     const active = (
       await this.db.listExecutionRuns({
         kind: "automation",
@@ -111,15 +68,13 @@ export class ExecutionPlaneService {
         sessionId: input.automationId,
       })
     ).filter((run) => isActiveExecutionStatus(run.status));
-    const nowMs = Date.now();
 
     for (const stored of active) {
+      if (stored.idempotencyKey === idempotencyKey) {
+        continue;
+      }
       const durable = toDurableRun(stored);
-      const leaseLive =
-        Boolean(durable.leaseOwner) &&
-        Boolean(durable.leaseExpiresAt) &&
-        new Date(durable.leaseExpiresAt ?? 0).getTime() > nowMs;
-      if (leaseLive) {
+      if (isLiveLease(durable, nowMs)) {
         return {
           error: "Automation is already running.",
           replay: false,
@@ -127,23 +82,86 @@ export class ExecutionPlaneService {
           skipped: true,
         };
       }
-      await this.complete(durable.id, "failed");
+      const failed = completeRun(durable, "failed", nowIso);
+      await this.db.casExecutionRun({
+        id: durable.id,
+        next: toStoredRun(failed),
+        nowIso,
+        requireExpiredLease: true,
+      });
+    }
+
+    const queued = createQueuedRun({
+      id: nanoid(),
+      idempotencyKey,
+      kind: "automation",
+      orgId: input.principal.orgId,
+      principal: input.principal,
+      sessionId: input.automationId,
+    });
+    const leased = acquireLease(queued, makeLeaseOwner(), nowMs);
+    const inserted = await this.db.insertExecutionRunIfAbsent(
+      toStoredRun(leased)
+    );
+    if (inserted) {
+      return { replay: false, run: leased, skipped: false };
+    }
+
+    const existing = await this.db.getExecutionRunByIdempotencyKey(
+      input.principal.orgId,
+      idempotencyKey
+    );
+    if (!existing) {
+      return {
+        error: "Automation is already running.",
+        replay: false,
+        run: null,
+        skipped: true,
+      };
+    }
+
+    const durable = toDurableRun(existing);
+    assertIdempotentReplay(durable, input.principal);
+    if (!isActiveExecutionStatus(durable.status)) {
+      return {
+        error: "Automation fire already completed.",
+        replay: true,
+        run: durable,
+        skipped: true,
+      };
+    }
+    if (isLiveLease(durable, nowMs)) {
+      return {
+        error: "Automation is already running.",
+        replay: true,
+        run: durable,
+        skipped: true,
+      };
     }
 
     try {
-      const run = await this.startRun({
-        idempotencyKey,
-        kind: "automation",
-        principal: input.principal,
-        sessionId: input.automationId,
+      const reclaimed = acquireLease(durable, makeLeaseOwner(), nowMs);
+      const claimed = await this.db.casExecutionRun({
+        id: reclaimed.id,
+        next: toStoredRun(reclaimed),
+        nowIso: reclaimed.updatedAt,
+        requireExpiredLease: true,
       });
-      return { replay: false, run, skipped: false };
-    } catch (error) {
-      if (isUniqueConstraintError(error)) {
+      if (!claimed) {
         return {
           error: "Automation is already running.",
-          replay: false,
-          run: null,
+          replay: true,
+          run: durable,
+          skipped: true,
+        };
+      }
+      return { replay: true, run: reclaimed, skipped: false };
+    } catch (error) {
+      if (error instanceof ExecutionLeaseError) {
+        return {
+          error: "Automation is already running.",
+          replay: true,
+          run: durable,
           skipped: true,
         };
       }
@@ -188,16 +206,6 @@ export class ExecutionPlaneService {
     principal: CanonicalPrincipal;
     sessionId?: string | null;
   }) {
-    if (input.idempotencyKey) {
-      const existing = await this.db.getExecutionRunByIdempotencyKey(
-        input.principal.orgId,
-        input.idempotencyKey
-      );
-      if (existing) {
-        return toDurableRun(existing);
-      }
-    }
-
     const run = createQueuedRun({
       id: nanoid(),
       idempotencyKey: input.idempotencyKey ?? null,
@@ -207,8 +215,22 @@ export class ExecutionPlaneService {
       sessionId: input.sessionId,
     });
     const leased = acquireLease(run, makeLeaseOwner());
-    await this.persist(leased);
-    return leased;
+    const inserted = await this.db.insertExecutionRunIfAbsent(
+      toStoredRun(leased)
+    );
+    if (inserted) {
+      return leased;
+    }
+    if (input.idempotencyKey) {
+      const existing = await this.db.getExecutionRunByIdempotencyKey(
+        input.principal.orgId,
+        input.idempotencyKey
+      );
+      if (existing) {
+        return toDurableRun(existing);
+      }
+    }
+    throw new Error("UNIQUE constraint failed: execution_runs");
   }
 
   async heartbeat(runId: string, leaseOwner: string): Promise<void> {
@@ -217,7 +239,16 @@ export class ExecutionPlaneService {
       return;
     }
     const beat = heartbeatLease(toDurableRun(stored), leaseOwner);
-    await this.persist(beat);
+    const updated = await this.db.casExecutionRun({
+      expectedLeaseOwner: leaseOwner,
+      id: runId,
+      next: toStoredRun(beat),
+      nowIso: beat.updatedAt,
+      requireUnexpiredLease: true,
+    });
+    if (!updated) {
+      throw new ExecutionLeaseError("Stale worker cannot heartbeat this run.");
+    }
   }
 
   async saveCheckpoint(
@@ -235,22 +266,8 @@ export class ExecutionPlaneService {
     });
   }
 
-  private async persist(run: DurableExecutionRun): Promise<void> {
-    await this.db.upsertExecutionRun({
-      checkpoint: run.checkpoint ? JSON.stringify(run.checkpoint) : null,
-      createdAt: run.createdAt,
-      currentStepIndex: run.currentStepIndex,
-      id: run.id,
-      idempotencyKey: run.idempotencyKey,
-      kind: run.kind,
-      leaseExpiresAt: run.leaseExpiresAt,
-      leaseOwner: run.leaseOwner,
-      orgId: run.orgId,
-      principalUserId: run.principalUserId,
-      sessionId: run.sessionId,
-      status: run.status,
-      updatedAt: run.updatedAt,
-    });
+  async releaseClaim(runId: string, leaseOwner: string): Promise<void> {
+    await this.db.deleteExecutionRunIfOwner(runId, leaseOwner);
   }
 
   async pauseForApproval(input: {
@@ -424,28 +441,58 @@ export class ExecutionPlaneService {
     if (!run) {
       return;
     }
+    if (!isActiveExecutionStatus(run.status)) {
+      if (leaseOwner) {
+        throw new ExecutionLeaseError(
+          "Stale worker cannot complete a stolen run."
+        );
+      }
+      return;
+    }
     const completed = completeRun(
-      {
-        ...run,
-        checkpoint: run.checkpoint
-          ? (JSON.parse(run.checkpoint) as ExecutionCheckpoint)
-          : null,
-        kind: run.kind as DurableExecutionRun["kind"],
-        status: run.status as "running",
-      },
+      toDurableRun(run),
       status,
       new Date().toISOString(),
       leaseOwner
     );
-    await this.db.upsertExecutionRun({
-      ...run,
-      checkpoint: run.checkpoint,
-      leaseExpiresAt: null,
-      leaseOwner: null,
-      status: completed.status,
-      updatedAt: completed.updatedAt,
+    const updated = await this.db.casExecutionRun({
+      ...(leaseOwner ? { expectedLeaseOwner: leaseOwner } : {}),
+      id: runId,
+      next: toStoredRun(completed),
+      nowIso: completed.updatedAt,
     });
+    if (!updated) {
+      throw new ExecutionLeaseError(
+        "Stale worker cannot complete a stolen run."
+      );
+    }
   }
+}
+
+function toStoredRun(run: DurableExecutionRun): StoredExecutionRunRecord {
+  return {
+    checkpoint: run.checkpoint ? JSON.stringify(run.checkpoint) : null,
+    createdAt: run.createdAt,
+    currentStepIndex: run.currentStepIndex,
+    id: run.id,
+    idempotencyKey: run.idempotencyKey,
+    kind: run.kind,
+    leaseExpiresAt: run.leaseExpiresAt,
+    leaseOwner: run.leaseOwner,
+    orgId: run.orgId,
+    principalUserId: run.principalUserId,
+    sessionId: run.sessionId,
+    status: run.status,
+    updatedAt: run.updatedAt,
+  };
+}
+
+function isLiveLease(run: DurableExecutionRun, nowMs: number): boolean {
+  return (
+    Boolean(run.leaseOwner) &&
+    Boolean(run.leaseExpiresAt) &&
+    new Date(run.leaseExpiresAt ?? 0).getTime() > nowMs
+  );
 }
 
 function toDurableRun(stored: StoredExecutionRunRecord): DurableExecutionRun {
@@ -466,11 +513,6 @@ function toDurableRun(stored: StoredExecutionRunRecord): DurableExecutionRun {
     status: stored.status as DurableExecutionRun["status"],
     updatedAt: stored.updatedAt,
   };
-}
-
-function isUniqueConstraintError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
-  return /unique constraint/i.test(message);
 }
 
 function makeLeaseOwner(): string {

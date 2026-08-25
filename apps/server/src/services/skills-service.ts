@@ -41,6 +41,7 @@ import {
   pickPreferredSkillSourcePath,
   removeProfileSkillSupportingFile,
   SKILL_FILE_NAME,
+  type SkillOutcomeSignal,
   type SkillRanker,
   writeProfileSkillSupportingFile,
   writeRawProfileSkillMarkdown,
@@ -591,22 +592,11 @@ export class SkillsService {
     const assigned = await this.getAssignedDiscoveredSkills(orgId, profileId);
     const assignedRecords = await this.db.listSkillsForProfile(profileId);
     const usage = await this.skillUsageService.listForProfile(profileId);
-    const nameById = new Map(
-      assignedRecords.map((record) => [record.id, record.name])
+    const outcomes = await this.loadSkillOutcomeSignals(
+      orgId,
+      assignedRecords,
+      usage
     );
-    const outcomes = usage.flatMap((entry) => {
-      const skillName = nameById.get(entry.skillId);
-      if (!skillName) {
-        return [];
-      }
-      return [
-        {
-          helpful: entry.useCount > 0 ? true : null,
-          skillName,
-          useCount: entry.useCount,
-        },
-      ];
-    });
     const matched = matchSkillsForMessage(assigned, userMessage, {
       outcomes,
       ranker: this.skillRanker,
@@ -661,6 +651,50 @@ export class SkillsService {
 
   getSkillUsageService(): SkillUsageService {
     return this.skillUsageService;
+  }
+
+  private async loadSkillOutcomeSignals(
+    orgId: string,
+    assignedRecords: Array<{ id: string; name: string }>,
+    usage: Array<{ skillId: string; useCount: number }>
+  ): Promise<SkillOutcomeSignal[]> {
+    const nameById = new Map(
+      assignedRecords.map((record) => [record.id, record.name])
+    );
+    const useCountByName = new Map<string, number>();
+    for (const entry of usage) {
+      const skillName = nameById.get(entry.skillId);
+      if (skillName) {
+        useCountByName.set(skillName, entry.useCount);
+      }
+    }
+    const helpfulByName = new Map<string, boolean | null>();
+    const commits = await this.db.listLearningCommits(orgId);
+    for (const commit of commits) {
+      if (!commit.skillId) {
+        continue;
+      }
+      const skillName = nameById.get(commit.skillId);
+      if (!skillName) {
+        continue;
+      }
+      const rows = await this.db.listLearningOutcomesForCommit(commit.id);
+      for (const row of rows) {
+        if (row.helpful === false) {
+          helpfulByName.set(skillName, false);
+          break;
+        }
+        if (row.helpful === true && helpfulByName.get(skillName) !== false) {
+          helpfulByName.set(skillName, true);
+        }
+      }
+    }
+    const names = new Set([...useCountByName.keys(), ...helpfulByName.keys()]);
+    return [...names].map((skillName) => ({
+      helpful: helpfulByName.get(skillName) ?? null,
+      skillName,
+      useCount: useCountByName.get(skillName) ?? 0,
+    }));
   }
 
   private async getAssignedDiscoveredSkills(

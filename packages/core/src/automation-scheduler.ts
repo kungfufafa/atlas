@@ -107,11 +107,11 @@ export class AutomationScheduler {
     }
 
     const delay = at - Date.now();
-    if (delay <= 0 || delay > MAX_TIMEOUT_MS) {
+    if (delay > MAX_TIMEOUT_MS) {
       return;
     }
 
-    const timer = setTimeout(() => {
+    const fire = () => {
       this.timers.delete(automation.id);
       const fireId = scheduledOccurrenceId(
         automation.id,
@@ -124,8 +124,14 @@ export class AutomationScheduler {
             error instanceof Error ? error.message : String(error);
           console.error(`Automation ${automation.id} run failed:`, message);
         });
-    }, delay);
+    };
 
+    if (delay <= 0) {
+      fire();
+      return;
+    }
+
+    const timer = setTimeout(fire, delay);
     this.timers.set(automation.id, timer);
   }
 

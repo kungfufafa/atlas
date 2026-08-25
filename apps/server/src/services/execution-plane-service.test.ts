@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createInMemoryDatabaseAdapter } from "@atlas/db";
+import { createInMemoryDatabaseAdapter, createSqliteDatabase } from "@atlas/db";
 import { ExecutionPlaneService } from "./execution-plane-service";
 
 describe("ExecutionPlaneService", () => {
@@ -189,5 +189,194 @@ describe("ExecutionPlaneService", () => {
     await expect(
       plane.complete(first.run!.id, "completed", stolenOwner)
     ).rejects.toThrow(/stolen/);
+  });
+
+  test("concurrent same-fire claims elect a single winner", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await db.upsertOrganization({
+      createdAt: now,
+      id: "org_1",
+      name: "Org",
+      slug: "org",
+      updatedAt: now,
+    });
+    await db.createUser({
+      createdAt: now,
+      email: "ada@example.com",
+      id: "user_1",
+      name: "Ada",
+      passwordHash: "x",
+      updatedAt: now,
+    });
+    const plane = new ExecutionPlaneService(db);
+    const principal = {
+      isPlatformAdmin: false,
+      orgId: "org_1",
+      orgRole: "member" as const,
+      userId: "user_1",
+    };
+    const [left, right] = await Promise.all([
+      plane.startAutomationRun({
+        automationId: "auto_1",
+        fireId: "tick-1",
+        principal,
+      }),
+      plane.startAutomationRun({
+        automationId: "auto_1",
+        fireId: "tick-1",
+        principal,
+      }),
+    ]);
+    const claims = [left, right];
+    const winners = claims.filter((claim) => !claim.skipped);
+    const losers = claims.filter((claim) => claim.skipped);
+    expect(winners).toHaveLength(1);
+    expect(losers).toHaveLength(1);
+    expect(losers[0]?.replay).toBe(true);
+    expect(winners[0]?.run?.id).toBe(losers[0]?.run?.id);
+    expect(winners[0]?.run?.leaseOwner).toBeTruthy();
+  });
+
+  test("delayed heartbeat cannot revive a completed run", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await db.upsertOrganization({
+      createdAt: now,
+      id: "org_1",
+      name: "Org",
+      slug: "org",
+      updatedAt: now,
+    });
+    await db.createUser({
+      createdAt: now,
+      email: "ada@example.com",
+      id: "user_1",
+      name: "Ada",
+      passwordHash: "x",
+      updatedAt: now,
+    });
+    const plane = new ExecutionPlaneService(db);
+    const principal = {
+      isPlatformAdmin: false,
+      orgId: "org_1",
+      orgRole: "member" as const,
+      userId: "user_1",
+    };
+    const claimed = await plane.startAutomationRun({
+      automationId: "auto_1",
+      fireId: "tick-1",
+      principal,
+    });
+    const owner = claimed.run?.leaseOwner ?? "";
+    await plane.complete(claimed.run!.id, "completed", owner);
+    await expect(plane.heartbeat(claimed.run!.id, owner)).rejects.toThrow(
+      /heartbeat|stolen|completed/i
+    );
+    const stored = await db.getExecutionRun(claimed.run!.id);
+    expect(stored?.status).toBe("completed");
+    expect(stored?.leaseOwner).toBeNull();
+  });
+
+  test("stale owner cannot complete after the new owner finished", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await db.upsertOrganization({
+      createdAt: now,
+      id: "org_1",
+      name: "Org",
+      slug: "org",
+      updatedAt: now,
+    });
+    await db.createUser({
+      createdAt: now,
+      email: "ada@example.com",
+      id: "user_1",
+      name: "Ada",
+      passwordHash: "x",
+      updatedAt: now,
+    });
+    const plane = new ExecutionPlaneService(db);
+    const principal = {
+      isPlatformAdmin: false,
+      orgId: "org_1",
+      orgRole: "member" as const,
+      userId: "user_1",
+    };
+    const first = await plane.startAutomationRun({
+      automationId: "auto_1",
+      fireId: "tick-1",
+      principal,
+    });
+    const stolenOwner = first.run?.leaseOwner ?? "";
+    await db.upsertExecutionRun({
+      ...((await db.getExecutionRun(first.run!.id)) as never),
+      leaseExpiresAt: new Date(Date.now() - 1000).toISOString(),
+    });
+    const recovered = await plane.startAutomationRun({
+      automationId: "auto_1",
+      fireId: "tick-1",
+      principal,
+    });
+    expect(recovered.skipped).toBe(false);
+    await plane.complete(
+      recovered.run!.id,
+      "completed",
+      recovered.run?.leaseOwner ?? ""
+    );
+    await expect(
+      plane.complete(first.run!.id, "failed", stolenOwner)
+    ).rejects.toThrow(/stolen/);
+    const stored = await db.getExecutionRun(first.run!.id);
+    expect(stored?.status).toBe("completed");
+  });
+
+  test("sqlite concurrent same-fire claims elect a single winner", async () => {
+    const database = await createSqliteDatabase(":memory:");
+    try {
+      const db = database.adapter;
+      const now = new Date().toISOString();
+      await db.upsertOrganization({
+        createdAt: now,
+        id: "org_1",
+        name: "Org",
+        slug: "org",
+        updatedAt: now,
+      });
+      await db.createUser({
+        createdAt: now,
+        email: "ada@example.com",
+        id: "user_1",
+        name: "Ada",
+        passwordHash: "x",
+        updatedAt: now,
+      });
+      const plane = new ExecutionPlaneService(db);
+      const principal = {
+        isPlatformAdmin: false,
+        orgId: "org_1",
+        orgRole: "member" as const,
+        userId: "user_1",
+      };
+      const [left, right] = await Promise.all([
+        plane.startAutomationRun({
+          automationId: "auto_1",
+          fireId: "tick-1",
+          principal,
+        }),
+        plane.startAutomationRun({
+          automationId: "auto_1",
+          fireId: "tick-1",
+          principal,
+        }),
+      ]);
+      const winners = [left, right].filter((claim) => !claim.skipped);
+      const losers = [left, right].filter((claim) => claim.skipped);
+      expect(winners).toHaveLength(1);
+      expect(losers).toHaveLength(1);
+      expect(winners[0]?.run?.id).toBe(losers[0]?.run?.id);
+    } finally {
+      database.close();
+    }
   });
 });

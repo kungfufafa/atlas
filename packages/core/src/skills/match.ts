@@ -1,4 +1,4 @@
-import { rankSkillsForMessage } from "../learning/rank";
+import { rankSkillsForMessage, SKILL_QUERY_STOP_WORDS } from "../learning/rank";
 import type { DiscoveredSkill, SkillMatchOptions } from "./types";
 
 const EXPLICIT_SKILL_PATTERN =
@@ -42,15 +42,16 @@ export function matchSkillsForMessage(
   }
   const candidates = [...byName.values()];
 
-  if (candidates.length <= 1) {
+  if (explicitName) {
     return candidates;
   }
 
-  const ranked = ranker.rank(candidates, message, options.outcomes ?? []);
-  if (ranked.length === 0) {
-    return candidates;
+  if (candidates.length === 0) {
+    return [];
   }
-  return ranked.map((entry) => entry.skill);
+
+  const ranked = ranker.rank(candidates, message, options.outcomes ?? []);
+  return ranked.filter((entry) => entry.score > 0).map((entry) => entry.skill);
 }
 
 export function extractExplicitSkillName(message: string): string | null {
@@ -71,50 +72,11 @@ function messageMatchesSkill(message: string, skill: DiscoveredSkill): boolean {
 }
 
 function extractKeywords(description: string): string[] {
-  const stopWords = new Set([
-    "a",
-    "an",
-    "the",
-    "and",
-    "or",
-    "for",
-    "to",
-    "when",
-    "use",
-    "with",
-    "user",
-    "asks",
-    "about",
-    "working",
-    "files",
-    "file",
-    "this",
-    "that",
-    "from",
-    "into",
-    "are",
-    "is",
-    "in",
-    "on",
-    "of",
-    "by",
-    "as",
-    "at",
-    "it",
-    "be",
-    "do",
-    "does",
-    "help",
-    "helps",
-    "using",
-    "used",
-  ]);
-
   return description
     .toLowerCase()
     .split(/[^a-z0-9-]+/)
     .map((word) => word.trim())
-    .filter((word) => word.length >= 4 && !stopWords.has(word));
+    .filter((word) => word.length >= 4 && !SKILL_QUERY_STOP_WORDS.has(word));
 }
 
 function containsWord(haystack: string, word: string): boolean {

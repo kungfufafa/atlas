@@ -37,6 +37,7 @@ export type ChannelIniConfig = {
   botToken: string;
   profileId?: string;
   handshakeCode?: string | null;
+  handshakeAssertion?: string | null;
   pairedUserIds?: Array<string | number>;
   allowedUserIds?: Array<string | number>;
 };
@@ -58,6 +59,10 @@ export async function writeChannelIniConfig(
 
   if (config.handshakeCode) {
     lines.push(`handshake_code=${config.handshakeCode}`);
+  }
+
+  if (config.handshakeAssertion) {
+    lines.push(`handshake_assertion=${config.handshakeAssertion}`);
   }
 
   if (config.pairedUserIds?.length) {

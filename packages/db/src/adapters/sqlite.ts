@@ -1678,6 +1678,32 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       checkpoint = excluded.checkpoint,
       updated_at = excluded.updated_at
   `);
+  const insertExecutionRunIfAbsentStmt = db.prepare(`
+    INSERT INTO execution_runs (
+      id, org_id, principal_user_id, session_id, kind, status, lease_owner,
+      lease_expires_at, idempotency_key, current_step_index, checkpoint, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  const casExecutionRunStmt = db.prepare(`
+    UPDATE execution_runs SET
+      status = ?,
+      lease_owner = ?,
+      lease_expires_at = ?,
+      current_step_index = ?,
+      checkpoint = ?,
+      updated_at = ?
+    WHERE id = ?
+      AND status IN ('queued', 'running', 'awaiting_approval')
+      AND (? = 0 OR lease_owner = ?)
+      AND (? = 0 OR (lease_expires_at IS NOT NULL AND lease_expires_at > ?))
+      AND (? = 0 OR lease_owner IS NULL OR lease_expires_at IS NULL OR lease_expires_at <= ?)
+  `);
+  const deleteExecutionRunIfOwnerStmt = db.prepare(`
+    DELETE FROM execution_runs
+    WHERE id = ?
+      AND lease_owner = ?
+      AND status IN ('queued', 'running', 'awaiting_approval')
+  `);
   const getExecutionRunStmt = db.prepare(
     "SELECT * FROM execution_runs WHERE id = ? LIMIT 1"
   );
@@ -1890,6 +1916,28 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
 
     async assignToolToProfile(profileId, toolId) {
       assignToolStmt.run(profileId, toolId);
+    },
+    async casExecutionRun(input) {
+      const nowIso = input.nowIso ?? new Date().toISOString();
+      const constrainOwner = input.expectedLeaseOwner ? 1 : 0;
+      const requireUnexpired = input.requireUnexpiredLease ? 1 : 0;
+      const requireExpired = input.requireExpiredLease ? 1 : 0;
+      const result = casExecutionRunStmt.run(
+        input.next.status,
+        input.next.leaseOwner,
+        input.next.leaseExpiresAt,
+        input.next.currentStepIndex,
+        input.next.checkpoint,
+        input.next.updatedAt,
+        input.id,
+        constrainOwner,
+        input.expectedLeaseOwner ?? "",
+        requireUnexpired,
+        nowIso,
+        requireExpired,
+        nowIso
+      );
+      return result.changes === 1;
     },
 
     async countHumanUsers() {
@@ -2150,6 +2198,10 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     async deleteComposioUserConnection(id) {
       const result = deleteComposioUserConnectionStmt.run(id);
       return result.changes > 0;
+    },
+    async deleteExecutionRunIfOwner(id, leaseOwner) {
+      const result = deleteExecutionRunIfOwnerStmt.run(id, leaseOwner);
+      return result.changes === 1;
     },
 
     async deleteMcpServer(id) {
@@ -2793,6 +2845,31 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.deliveryStatus ?? null,
         record.deliveryError ?? null
       );
+    },
+    async insertExecutionRunIfAbsent(record) {
+      try {
+        insertExecutionRunIfAbsentStmt.run(
+          record.id,
+          record.orgId,
+          record.principalUserId,
+          record.sessionId,
+          record.kind,
+          record.status,
+          record.leaseOwner,
+          record.leaseExpiresAt,
+          record.idempotencyKey,
+          record.currentStepIndex,
+          record.checkpoint,
+          record.createdAt,
+          record.updatedAt
+        );
+        return true;
+      } catch (error) {
+        if (isSqliteUniqueConstraintError(error)) {
+          return false;
+        }
+        throw error;
+      }
     },
 
     async insertTaskRun(record) {
@@ -4795,4 +4872,9 @@ function toMemoryRecord(row: MemoryRow): StoredMemoryRecord {
 
 function parseJson(value: string): unknown {
   return JSON.parse(value) as unknown;
+}
+
+function isSqliteUniqueConstraintError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /unique constraint failed/i.test(message);
 }

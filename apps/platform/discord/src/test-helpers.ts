@@ -131,6 +131,10 @@ export function createMockClient(
   const currentOrgId = () => orgIdScope.getStore()?.orgId ?? activeOrgId;
 
   const client = {
+    bindChannelPrincipal: async () => ({
+      orgId: currentOrgId() ?? "org_test",
+      userId: "user_test",
+    }),
     createChatSession: () => session,
     createSession: async (_channel: string, input?: { profileId?: string }) => {
       calls.createSession += 1;

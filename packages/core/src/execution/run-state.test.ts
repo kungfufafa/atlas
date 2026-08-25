@@ -133,6 +133,20 @@ describe("durable execution runs", () => {
         "worker-b:claim-2"
       ).status
     ).toBe("completed");
+    const finished = completeRun(
+      stolen,
+      "completed",
+      new Date().toISOString(),
+      "worker-b:claim-2"
+    );
+    expect(() =>
+      completeRun(
+        finished,
+        "failed",
+        new Date().toISOString(),
+        "worker-a:claim-1"
+      )
+    ).toThrow(/stolen/);
   });
 
   test("scheduled occurrence id is deterministic for the same tick", () => {

@@ -79,64 +79,74 @@ export class IdentityService {
     });
 
     let userId: string;
-    if (input.actor?.mode === "local-token") {
-      userId = this.consumePairingAssertion({
-        assertionId: input.pairingAssertion,
+    let restoreAssertion: (() => void) | undefined;
+    try {
+      if (input.actor?.mode === "local-token") {
+        const taken = this.takePairingAssertion({
+          assertionId: input.pairingAssertion,
+          channel: principal.channel,
+          orgId: principal.orgId,
+        });
+        userId = taken.userId;
+        restoreAssertion = taken.restore;
+      } else if (input.actor) {
+        userId = input.actor.userId.trim();
+      } else if (input.pairingAssertion?.trim()) {
+        const taken = this.takePairingAssertion({
+          assertionId: input.pairingAssertion,
+          channel: principal.channel,
+          orgId: principal.orgId,
+        });
+        userId = taken.userId;
+        restoreAssertion = taken.restore;
+      } else {
+        userId = (input.userId ?? "").trim();
+      }
+
+      if (!userId) {
+        throw new PrincipalRequiredError(
+          "Canonical principal is required to bind a channel identity."
+        );
+      }
+      if (isServiceAccountUserId(userId)) {
+        throw new PrincipalRequiredError(
+          "Cannot bind a channel identity to the local-client service account."
+        );
+      }
+
+      const member = await this.db.getOrgMember(principal.orgId, userId);
+      if (!member) {
+        throw new PrincipalRequiredError(
+          "Mapped user is not a member of the active workspace."
+        );
+      }
+
+      const user = await this.db.getUserById(userId);
+      await this.db.upsertChannelOrgMapping({
         channel: principal.channel,
+        channelUserId: principal.channelUserId,
+        createdAt: new Date().toISOString(),
         orgId: principal.orgId,
+        userId,
       });
-    } else if (input.actor) {
-      userId = input.actor.userId.trim();
-    } else if (input.pairingAssertion?.trim()) {
-      userId = this.consumePairingAssertion({
-        assertionId: input.pairingAssertion,
-        channel: principal.channel,
+
+      return assertCanonicalPrincipal({
+        isPlatformAdmin: user?.isPlatformAdmin === true,
         orgId: principal.orgId,
+        orgRole: member.role,
+        userId,
       });
-    } else {
-      userId = (input.userId ?? "").trim();
+    } catch (error) {
+      restoreAssertion?.();
+      throw error;
     }
-
-    if (!userId) {
-      throw new PrincipalRequiredError(
-        "Canonical principal is required to bind a channel identity."
-      );
-    }
-    if (isServiceAccountUserId(userId)) {
-      throw new PrincipalRequiredError(
-        "Cannot bind a channel identity to the local-client service account."
-      );
-    }
-
-    const member = await this.db.getOrgMember(principal.orgId, userId);
-    if (!member) {
-      throw new PrincipalRequiredError(
-        "Mapped user is not a member of the active workspace."
-      );
-    }
-
-    const user = await this.db.getUserById(userId);
-    await this.db.upsertChannelOrgMapping({
-      channel: principal.channel,
-      channelUserId: principal.channelUserId,
-      createdAt: new Date().toISOString(),
-      orgId: principal.orgId,
-      userId,
-    });
-
-    return assertCanonicalPrincipal({
-      isPlatformAdmin: user?.isPlatformAdmin === true,
-      orgId: principal.orgId,
-      orgRole: member.role,
-      userId,
-    });
   }
 
-  private consumePairingAssertion(input: {
+  private takePairingAssertion(input: {
     assertionId: string | undefined;
     channel: ChannelType;
     orgId: string;
-  }): string {
+  }): { restore: () => void; userId: string } {
     const assertionId = input.assertionId?.trim();
     if (!assertionId) {
       throw new PrincipalRequiredError(
@@ -144,7 +154,6 @@ export class IdentityService {
       );
     }
     const assertion = this.pairingAssertions.get(assertionId);
-    this.pairingAssertions.delete(assertionId);
     if (!assertion) {
       throw new PrincipalRequiredError(
         "Pairing assertion is invalid or already used."
@@ -158,7 +167,13 @@ export class IdentityService {
         "Pairing assertion does not match this channel binding."
       );
     }
-    return assertion.userId;
+    this.pairingAssertions.delete(assertionId);
+    return {
+      restore: () => {
+        this.pairingAssertions.set(assertionId, assertion);
+      },
+      userId: assertion.userId,
+    };
   }
 
   async resolve(principal: ExternalPrincipal): Promise<CanonicalPrincipal> {

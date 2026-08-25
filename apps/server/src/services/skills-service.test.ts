@@ -72,6 +72,62 @@ describe("SkillsService", () => {
     expect(matched).not.toContain("Call the `weather` tool");
   });
 
+  test("does not treat match count as a helpful outcome", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const service = new SkillsService(db);
+    await service.syncDiscoveredSkills();
+    const weather = (await service.listSkills()).skills.find(
+      (skill) => skill.name === "weather"
+    );
+    expect(weather).toBeDefined();
+    await db.assignSkillToProfile(PROFILE_ID, weather!.id);
+    await service.formatMatchedSkillsForPrompt(
+      ORG_ID,
+      PROFILE_ID,
+      "What's the weather in Jakarta?"
+    );
+    const later = await service.formatMatchedSkillsForPrompt(
+      ORG_ID,
+      PROFILE_ID,
+      "help this user write code"
+    );
+    expect(later).not.toContain("Active Skill: weather");
+  });
+
+  test("keeps a negative learning outcome from activating weather", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const service = new SkillsService(db);
+    await service.syncDiscoveredSkills();
+    const weather = (await service.listSkills()).skills.find(
+      (skill) => skill.name === "weather"
+    );
+    expect(weather).toBeDefined();
+    await db.assignSkillToProfile(PROFILE_ID, weather!.id);
+    await db.createLearningCommit({
+      candidateId: "cand_1",
+      createdAt: new Date().toISOString(),
+      id: "commit_1",
+      memoryId: null,
+      orgId: ORG_ID,
+      skillId: weather!.id,
+    });
+    await db.createLearningOutcome({
+      commitId: "commit_1",
+      createdAt: new Date().toISOString(),
+      helpful: false,
+      id: "outcome_1",
+      orgId: ORG_ID,
+      sessionId: "sess_1",
+      used: true,
+    });
+    const matched = await service.formatMatchedSkillsForPrompt(
+      ORG_ID,
+      PROFILE_ID,
+      "help this user write code"
+    );
+    expect(matched).not.toContain("Active Skill: weather");
+  });
+
   test("includes full skill body for explicit skill activation", async () => {
     const db = createInMemoryDatabaseAdapter();
     const service = new SkillsService(db);

@@ -110,4 +110,24 @@ describe("verifyAndPairTelegramUser concurrency", () => {
       expect([111, 222]).toContain(saved?.pairedUserIds[0]);
     });
   });
+
+  test("keeps the pairing assertion until bind succeeds", async () => {
+    await withTempHomedir("atlas-tg-pair-assert-", async (homeDir) => {
+      await writeChannelIniConfig(homeDir, "telegram", {
+        botToken: "1234567890:TEST",
+        handshakeAssertion: "assert_keep",
+        handshakeCode: "AABBCCDD",
+      });
+
+      const result = await verifyAndPairTelegramUser("AABBCCDD", 111);
+      expect(result).toMatchObject({
+        ok: true,
+        pairingAssertion: "assert_keep",
+      });
+      const saved = await loadTelegramConfigFile();
+      expect(saved?.handshakeCode).toBeNull();
+      expect(saved?.handshakeAssertion).toBe("assert_keep");
+      expect(saved?.pairedUserIds).toEqual([111]);
+    });
+  });
 });

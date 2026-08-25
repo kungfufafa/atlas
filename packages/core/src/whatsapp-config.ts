@@ -20,7 +20,9 @@ export interface WhatsAppConfigFile {
   outboundPort?: string | null;
   pairedJid: string | null;
   pairedLid: string | null;
+  pairingAssertion?: string | null;
   pairingCode: string | null;
+  pairingUserId?: string | null;
   phoneNumber: string;
   profileId: string;
 }
@@ -469,6 +471,8 @@ export async function loadWhatsAppConfigFile(
   const phoneNumber = values.phone_number?.trim() ?? "";
   const profileId = values.profile_id?.trim() || DEFAULT_WHATSAPP_PROFILE_ID;
   const pairingCode = values.pairing_code?.trim() || null;
+  const pairingAssertion = values.pairing_assertion?.trim() || null;
+  const pairingUserId = values.pairing_user_id?.trim() || null;
   const pairedJid = values.paired_jid?.trim() || null;
   const pairedLid = values.paired_lid?.trim() || null;
   const outboundPort = values.outbound_port?.trim() || null;
@@ -495,7 +499,9 @@ export async function loadWhatsAppConfigFile(
     outboundPort,
     pairedJid,
     pairedLid,
+    pairingAssertion,
     pairingCode,
+    pairingUserId,
     phoneNumber,
     profileId,
   };
@@ -556,6 +562,12 @@ async function writeWhatsAppConfigFile(
       ? [`phone_number=${config.phoneNumber}`]
       : []),
     ...(config.pairingCode ? [`pairing_code=${config.pairingCode}`] : []),
+    ...(config.pairingUserId
+      ? [`pairing_user_id=${config.pairingUserId}`]
+      : []),
+    ...(config.pairingAssertion
+      ? [`pairing_assertion=${config.pairingAssertion}`]
+      : []),
     ...(config.pairedJid ? [`paired_jid=${config.pairedJid}`] : []),
     ...(config.pairedLid ? [`paired_lid=${config.pairedLid}`] : []),
     ...(config.outboundPort ? [`outbound_port=${config.outboundPort}`] : []),
@@ -621,7 +633,9 @@ function buildSavedWhatsAppConfig(
     outboundPort: existing?.outboundPort ?? null,
     pairedJid,
     pairedLid: existing?.pairedLid ?? null,
+    pairingAssertion: existing?.pairingAssertion ?? null,
     pairingCode: resolvePairingCode(existing, accessMode),
+    pairingUserId: existing?.pairingUserId ?? null,
     phoneNumber,
     profileId: resolveProfileId(input, existing),
   };
@@ -684,7 +698,9 @@ export async function resetWhatsAppSessionForReconnect(
 }
 
 export async function regenerateWhatsAppPairingCode(
-  orgId?: string | null
+  orgId?: string | null,
+  pairingUserId?: string | null,
+  pairingAssertion?: string | null
 ): Promise<WhatsAppSettingsPublic> {
   const existing = await loadWhatsAppConfigFile(orgId);
 
@@ -698,9 +714,18 @@ export async function regenerateWhatsAppPairingCode(
     );
   }
 
+  const issuer = pairingUserId?.trim() || null;
+  if (!issuer) {
+    throw new Error(
+      "Canonical principal is required to generate a pairing code."
+    );
+  }
+
   const next: WhatsAppConfigFile = {
     ...existing,
+    pairingAssertion: pairingAssertion?.trim() || null,
     pairingCode: generatePairingCode(),
+    pairingUserId: issuer,
   };
 
   await writeWhatsAppConfigFile(next, orgId);
@@ -730,7 +755,10 @@ export async function verifyAndPairWhatsAppUser(
   pairingCodeInput: string,
   jid: string,
   orgId?: string | null
-): Promise<{ ok: true; message: string } | { ok: false; message: string }> {
+): Promise<
+  | { ok: true; message: string; pairingAssertion: string | null }
+  | { ok: false; message: string }
+> {
   return runSerializedWhatsAppPair(orgId, async () => {
     const config = await loadWhatsAppConfigFile(orgId);
 
@@ -742,7 +770,11 @@ export async function verifyAndPairWhatsAppUser(
     }
 
     if (isWhatsAppUserAuthorized(jid, config)) {
-      return { message: "This chat is already authorized.", ok: true };
+      return {
+        message: "This chat is already authorized.",
+        ok: true,
+        pairingAssertion: config.pairingAssertion ?? null,
+      };
     }
 
     const expected = config.pairingCode;
@@ -774,11 +806,14 @@ export async function verifyAndPairWhatsAppUser(
       config.pairedLid && isSameWhatsAppUserJid(jid, config.pairedLid)
     );
 
+    const pairingAssertion = config.pairingAssertion ?? null;
+
     await writeWhatsAppConfigFile(
       {
         ...config,
         pairedJid: isLid ? (sameAsPairedJid ? config.pairedJid : null) : jid,
         pairedLid: isLid ? jid : sameAsPairedLid ? config.pairedLid : null,
+        pairingAssertion,
         pairingCode: null,
         phoneNumber: phoneFromJid || config.phoneNumber,
       },
@@ -788,8 +823,26 @@ export async function verifyAndPairWhatsAppUser(
     return {
       message: "Chat authorized. Send a message to start chatting with Atlas.",
       ok: true,
+      pairingAssertion,
     };
   });
+}
+
+export async function clearWhatsAppPairingAssertion(
+  orgId?: string | null
+): Promise<void> {
+  const config = await loadWhatsAppConfigFile(orgId);
+  if (!config?.pairingAssertion) {
+    return;
+  }
+  await writeWhatsAppConfigFile(
+    {
+      ...config,
+      pairingAssertion: null,
+      pairingUserId: config.pairingCode ? config.pairingUserId : null,
+    },
+    orgId
+  );
 }
 
 /** After QR link, pair the owner and store their LID for inbound routing. */
@@ -869,10 +922,12 @@ export function resolveWhatsAppConfigFromSources(options: {
     blockedNumbers: file?.blockedNumbers ?? [],
     pairedJid: file?.pairedJid ?? null,
     pairedLid: file?.pairedLid ?? null,
+    pairingAssertion: file?.pairingAssertion ?? null,
     pairingCode:
       (file?.accessMode ?? "pairing") === "pairing"
         ? (file?.pairingCode ?? null)
         : null,
+    pairingUserId: file?.pairingUserId ?? null,
     phoneNumber: envPhone || file?.phoneNumber?.trim() || "",
     profileId:
       (allowEnvCredentials

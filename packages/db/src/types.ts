@@ -615,6 +615,15 @@ export interface StoredExecutionRunRecord {
   updatedAt: string;
 }
 
+export interface CasExecutionRunInput {
+  expectedLeaseOwner?: string;
+  id: string;
+  next: StoredExecutionRunRecord;
+  nowIso?: string;
+  requireExpiredLease?: boolean;
+  requireUnexpiredLease?: boolean;
+}
+
 export interface StoredExecutionStepRecord {
   approvalId: string | null;
   argsHash: string;
@@ -762,6 +771,7 @@ export interface DatabaseAdapter {
   assignMcpServerToProfile(profileId: string, serverId: string): Promise<void>;
   assignSkillToProfile(profileId: string, skillId: string): Promise<void>;
   assignToolToProfile(profileId: string, toolId: string): Promise<void>;
+  casExecutionRun(input: CasExecutionRunInput): Promise<boolean>;
   /** Users excluding the auto-created CLI bearer-auth identity. */
   countHumanUsers(): Promise<number>;
   countOrgMemoryProposals(
@@ -808,6 +818,7 @@ export interface DatabaseAdapter {
   ): Promise<boolean>;
   deleteComposioToolkit(id: string): Promise<boolean>;
   deleteComposioUserConnection(id: string): Promise<boolean>;
+  deleteExecutionRunIfOwner(id: string, leaseOwner: string): Promise<boolean>;
   deleteMcpServer(id: string): Promise<boolean>;
   deleteMemory(orgId: string, id: string): Promise<boolean>;
   deleteMessagesForSession(sessionId: string): Promise<void>;
@@ -1025,6 +1036,9 @@ export interface DatabaseAdapter {
 
   insertAttachment(record: StoredAttachmentRecord): Promise<void>;
   insertAutomationRun(record: StoredAutomationRunRecord): Promise<void>;
+  insertExecutionRunIfAbsent(
+    record: StoredExecutionRunRecord
+  ): Promise<boolean>;
   insertTaskRun(record: StoredTaskRunRecord): Promise<void>;
   listActionApprovalsForSession(
     sessionId: string

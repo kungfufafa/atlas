@@ -220,13 +220,15 @@ export function completeRun(
   now = new Date().toISOString(),
   leaseOwner?: string | null
 ): DurableExecutionRun {
-  if (
-    leaseOwner !== undefined &&
-    leaseOwner !== null &&
-    run.leaseOwner &&
-    run.leaseOwner !== leaseOwner
-  ) {
-    throw new ExecutionLeaseError("Stale worker cannot complete a stolen run.");
+  if (leaseOwner !== undefined && leaseOwner !== null) {
+    if (run.leaseOwner !== leaseOwner) {
+      throw new ExecutionLeaseError(
+        "Stale worker cannot complete a stolen run."
+      );
+    }
+    if (!isActiveExecutionStatus(run.status)) {
+      throw new ExecutionLeaseError(`Cannot complete a ${run.status} run.`);
+    }
   }
   return {
     ...run,

@@ -211,6 +211,7 @@ export function createMockClient(
   } = {}
 ) {
   const calls = {
+    bindChannelPrincipal: 0,
     compact: 0,
     createSession: 0,
     listProfiles: 0,
@@ -224,6 +225,7 @@ export function createMockClient(
   const orgIds: string[] = [];
   const createSessionOrgIds: Array<string | null> = [];
   let lastCreateSessionProfileId: string | undefined;
+  let lastCreateSessionExternalPrincipal: { channelUserId: string } | undefined;
   let lastStreamInput: unknown;
   const orgIdScope = new AsyncLocalStorage<{ orgId: string | null }>();
 
@@ -358,14 +360,24 @@ export function createMockClient(
   const currentOrgId = () => orgIdScope.getStore()?.orgId ?? activeOrgId;
 
   const client = {
-    bindChannelPrincipal: async () => ({
-      orgId: currentOrgId() ?? "org_test",
-      userId: "user_test",
-    }),
+    bindChannelPrincipal: async () => {
+      calls.bindChannelPrincipal += 1;
+      return {
+        orgId: currentOrgId() ?? "org_test",
+        userId: "user_test",
+      };
+    },
     createChatSession: () => session,
-    createSession: async (_channel: string, input?: { profileId?: string }) => {
+    createSession: async (
+      _channel: string,
+      input?: {
+        profileId?: string;
+        externalPrincipal?: { channelUserId: string };
+      }
+    ) => {
       calls.createSession += 1;
       lastCreateSessionProfileId = input?.profileId;
+      lastCreateSessionExternalPrincipal = input?.externalPrincipal;
       createSessionOrgIds.push(currentOrgId());
       return session;
     },
@@ -451,6 +463,8 @@ export function createMockClient(
     calls,
     client,
     getCreateSessionOrgIds: () => createSessionOrgIds,
+    getLastCreateSessionExternalPrincipal: () =>
+      lastCreateSessionExternalPrincipal,
     getLastCreateSessionProfileId: () => lastCreateSessionProfileId,
     getLastStreamInput: () => lastStreamInput,
     getStreamControl: () => streamControl,
@@ -465,6 +479,7 @@ export async function writeTelegramConfigIni(
     botToken: string;
     profileId?: string;
     handshakeCode?: string | null;
+    handshakeAssertion?: string | null;
     pairedUserIds?: number[];
     allowedUserIds?: number[];
   }
@@ -480,6 +495,10 @@ export async function writeTelegramConfigIni(
 
   if (config.handshakeCode) {
     lines.push(`handshake_code=${config.handshakeCode}`);
+  }
+
+  if (config.handshakeAssertion) {
+    lines.push(`handshake_assertion=${config.handshakeAssertion}`);
   }
 
   if (config.pairedUserIds?.length) {

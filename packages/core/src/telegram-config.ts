@@ -163,9 +163,9 @@ export async function loadTelegramConfigFile(
     allowedUserIds: allowlistRaw ? parseAllowedUserIds(allowlistRaw) : [],
     blockedUserIds: denylistRaw ? parseAllowedUserIds(denylistRaw) : [],
     botToken,
-    handshakeAssertion: handshakeCode ? handshakeAssertion : null,
+    handshakeAssertion,
     handshakeCode,
-    handshakeUserId: handshakeCode ? handshakeUserId : null,
+    handshakeUserId,
     pairedUserIds: pairedRaw ? parseAllowedUserIds(pairedRaw) : [],
     profileId,
   };
@@ -215,10 +215,10 @@ async function writeTelegramConfigFile(
     `profile_id=${config.profileId}`,
     `access_mode=${config.accessMode}`,
     ...(config.handshakeCode ? [`handshake_code=${config.handshakeCode}`] : []),
-    ...(config.handshakeCode && config.handshakeUserId
+    ...(config.handshakeUserId
       ? [`handshake_user_id=${config.handshakeUserId}`]
       : []),
-    ...(config.handshakeCode && config.handshakeAssertion
+    ...(config.handshakeAssertion
       ? [`handshake_assertion=${config.handshakeAssertion}`]
       : []),
     ...(config.pairedUserIds.length > 0
@@ -441,9 +441,9 @@ export async function verifyAndPairTelegramUser(
     await writeTelegramConfigFile(
       {
         ...config,
-        handshakeAssertion: null,
+        handshakeAssertion: pairingAssertion,
         handshakeCode: null,
-        handshakeUserId: null,
+        handshakeUserId,
         pairedUserIds,
       },
       orgId
@@ -456,6 +456,23 @@ export async function verifyAndPairTelegramUser(
       pairingAssertion,
     };
   });
+}
+
+export async function clearTelegramPairingAssertion(
+  orgId?: string | null
+): Promise<void> {
+  const config = await loadTelegramConfigFile(orgId);
+  if (!config?.handshakeAssertion) {
+    return;
+  }
+  await writeTelegramConfigFile(
+    {
+      ...config,
+      handshakeAssertion: null,
+      handshakeUserId: config.handshakeCode ? config.handshakeUserId : null,
+    },
+    orgId
+  );
 }
 
 export function resolveTelegramConfigFromSources(options: {

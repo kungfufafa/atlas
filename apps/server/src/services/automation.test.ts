@@ -508,6 +508,45 @@ describe("AutomationRunner", () => {
     expect(updated?.nextRunAt).toBeNull();
   });
 
+  test("keeps a one-shot enabled when history write fails", async () => {
+    const db = await createTestDb();
+    const service = new AutomationService(db, {
+      getUserTimezone: async () => "UTC",
+    });
+    const at = new Date(Date.now() + 60_000).toISOString();
+    const automation = await service.create(
+      ORG_ID,
+      {
+        description: "One-time",
+        name: "Reminder",
+        prompt: "Send reminder",
+        trigger: { at, type: "runAt" },
+      },
+      PROFILE_ID,
+      undefined,
+      USER_ID
+    );
+    service.createRun = async () => {
+      throw new Error("history write failed");
+    };
+    const runner = createRunner(db, service, {
+      runAutomationPrompt: async () => "should not run",
+    });
+    const result = await runner.run(automation.id, {
+      fireId: "tick-1",
+      principal: PRINCIPAL,
+    });
+    expect(result.error).toMatch(/history write failed/);
+    const updated = await service.get(automation.id, ORG_ID);
+    expect(updated?.enabled).toBe(true);
+    expect(await service.listRuns(automation.id)).toHaveLength(0);
+    const retry = await runner.run(automation.id, {
+      fireId: "tick-1",
+      principal: PRINCIPAL,
+    });
+    expect(retry.error).toMatch(/history write failed/);
+  });
+
   test("records delivery status after successful runs", async () => {
     const db = await createTestDb();
     const service = new AutomationService(db, {

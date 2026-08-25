@@ -278,6 +278,89 @@ describe("AgentService branching", () => {
       sessionTurnRegistry.endTurn(sessionId, { reply: "ok", type: "done" });
     }
   });
+
+  test("rejects Super Agent session turns after the caller is demoted", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await db.upsertOrganization({
+      createdAt: now,
+      id: ORG_ID,
+      name: "Test Org",
+      slug: "test-org",
+      updatedAt: now,
+    });
+    await db.createUser({
+      createdAt: now,
+      email: "admin@example.com",
+      id: "user_admin",
+      name: "Admin",
+      passwordHash: "x",
+      updatedAt: now,
+    });
+    await db.createUser({
+      createdAt: now,
+      email: "member@example.com",
+      id: "user_member",
+      name: "Member",
+      passwordHash: "x",
+      updatedAt: now,
+    });
+    await db.upsertOrgMember({
+      createdAt: now,
+      orgId: ORG_ID,
+      role: "admin",
+      userId: "user_admin",
+    });
+    await db.upsertOrgMember({
+      createdAt: now,
+      orgId: ORG_ID,
+      role: "member",
+      userId: "user_member",
+    });
+    await db.upsertProfile({
+      createdAt: now,
+      id: "profile_super",
+      isDefault: false,
+      isSuper: true,
+      model: null,
+      name: "Super Agent",
+      orgId: ORG_ID,
+      systemPrompt: "You are Super Agent.",
+      updatedAt: now,
+    });
+    await db.upsertProfile(createDefaultProfile());
+    const service = new AgentService(null, null, db);
+    const sessionId = await service.createSession(
+      ORG_ID,
+      "web",
+      "profile_super",
+      "user_admin",
+      { isPlatformAdmin: false, orgRole: "admin" }
+    );
+
+    await expect(
+      service.resolveSession(ORG_ID, sessionId, {
+        userId: "user_member",
+      })
+    ).rejects.toMatchObject({ status: 403 });
+
+    const cached = await service.resolveSession(ORG_ID, sessionId, {
+      userId: "user_admin",
+    });
+    expect(cached).not.toBeNull();
+
+    await db.upsertOrgMember({
+      createdAt: now,
+      orgId: ORG_ID,
+      role: "member",
+      userId: "user_admin",
+    });
+    await expect(
+      service.resolveSession(ORG_ID, sessionId, {
+        userId: "user_admin",
+      })
+    ).rejects.toMatchObject({ status: 403 });
+  });
 });
 
 describe("AgentService workspace provider isolation", () => {

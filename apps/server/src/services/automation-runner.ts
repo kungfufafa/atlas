@@ -76,14 +76,21 @@ export class AutomationRunner {
       };
     }
 
+    const leaseOwner = claimed.run.leaseOwner ?? "";
+    let run: Awaited<ReturnType<AutomationService["createRun"]>>;
+    try {
+      run = await this.automationService.createRun(automationId);
+    } catch (error) {
+      await this.executionPlane.releaseClaim(claimed.run.id, leaseOwner);
+      const message = error instanceof Error ? error.message : String(error);
+      return { error: message };
+    }
+
     if (automation.trigger.type === "runAt") {
       await this.automationService.update(automationId, orgId, {
         enabled: false,
       });
     }
-
-    const run = await this.automationService.createRun(automationId);
-    const leaseOwner = claimed.run.leaseOwner ?? "";
     const heartbeat = setInterval(() => {
       void this.executionPlane
         ?.heartbeat(claimed.run!.id, leaseOwner)

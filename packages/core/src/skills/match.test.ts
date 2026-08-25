@@ -78,4 +78,19 @@ describe("matchSkillsForMessage", () => {
     );
     expect(matched.map((skill) => skill.name)[0]).toBe("weather");
   });
+
+  test("does not activate an unrelated skill from a single retrieved candidate", () => {
+    const matched = matchSkillsForMessage(
+      [weatherSkill],
+      "help this user write code",
+      {
+        outcomes: [{ helpful: false, skillName: "weather" }],
+        ranker: {
+          rank: () => [],
+          retrieve: (skills) => skills,
+        },
+      }
+    );
+    expect(matched).toEqual([]);
+  });
 });

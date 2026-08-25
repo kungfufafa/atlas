@@ -124,10 +124,19 @@ describe("isWorkerSchedulable", () => {
     ).toBe(true);
   });
 
-  test("excludes past runAt automations", () => {
+  test("includes past enabled runAt automations for catch-up", () => {
     expect(
       isWorkerSchedulable({
         enabled: true,
+        trigger: { at: "2020-01-01T00:00:00.000Z", type: "runAt" },
+      })
+    ).toBe(true);
+  });
+
+  test("excludes disabled past runAt automations", () => {
+    expect(
+      isWorkerSchedulable({
+        enabled: false,
         trigger: { at: "2020-01-01T00:00:00.000Z", type: "runAt" },
       })
     ).toBe(false);

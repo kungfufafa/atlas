@@ -217,8 +217,13 @@ export function createMockClient(
   const orgs = options.orgs ?? createDefaultTestOrgs();
   let activeOrgId: string | null = orgs[0]?.id ?? null;
   const orgIdScope = new AsyncLocalStorage<{ orgId: string | null }>();
+  const currentOrgId = () => orgIdScope.getStore()?.orgId ?? activeOrgId;
 
   const client = {
+    bindChannelPrincipal: async () => ({
+      orgId: currentOrgId() ?? "org_test",
+      userId: "user_test",
+    }),
     createChatSession: () => session,
     createSession: async (
       _channel: unknown,

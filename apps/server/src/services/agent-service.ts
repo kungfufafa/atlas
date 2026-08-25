@@ -324,6 +324,8 @@ import {
 
 interface StoredSession {
   channel: AgentChannel;
+  isPlatformAdmin: boolean;
+  orgRole: OrgRole | null;
   profileId: string;
   session: AgentChatSession;
 }
@@ -335,6 +337,12 @@ export interface SessionAccessOptions {
   externalPrincipal?: { channelUserId: string };
   isPlatformAdmin?: boolean;
   orgRole?: OrgRole | null;
+}
+
+export interface SessionActor {
+  isPlatformAdmin?: boolean;
+  orgRole?: OrgRole | null;
+  userId: string;
 }
 
 export class AgentService {
@@ -1491,10 +1499,16 @@ export class AgentService {
   }
 
   async regenerateDiscordHandshake(
-    orgId: string
+    orgId: string,
+    handshakeUserId: string
   ): Promise<DiscordSettingsResponse> {
     await this.ensureLegacyChannelMigrated("discord", orgId);
-    return regenerateDiscordHandshake(orgId);
+    const pairingAssertion = await this.identityService.issuePairingAssertion({
+      channel: "discord",
+      orgId,
+      userId: handshakeUserId,
+    });
+    return regenerateDiscordHandshake(orgId, handshakeUserId, pairingAssertion);
   }
 
   async getComposioSettings(): Promise<ComposioSettingsResponse> {
@@ -1632,10 +1646,20 @@ export class AgentService {
   }
 
   async regenerateWhatsAppPairingCode(
-    orgId: string
+    orgId: string,
+    pairingUserId: string
   ): Promise<WhatsAppSettingsResponse> {
     await this.ensureLegacyChannelMigrated("whatsapp", orgId);
-    return regenerateWhatsAppPairingCode(orgId);
+    const pairingAssertion = await this.identityService.issuePairingAssertion({
+      channel: "whatsapp",
+      orgId,
+      userId: pairingUserId,
+    });
+    return regenerateWhatsAppPairingCode(
+      orgId,
+      pairingUserId,
+      pairingAssertion
+    );
   }
 
   async runAutomationPrompt(
@@ -2135,6 +2159,8 @@ export class AgentService {
 
     this.sessions.set(sessionId, {
       channel,
+      isPlatformAdmin: access?.isPlatformAdmin === true,
+      orgRole: access?.orgRole ?? null,
       profileId: resolvedProfileId,
       session,
     });
@@ -2297,6 +2323,8 @@ export class AgentService {
     );
     this.sessions.set(nextSessionId, {
       channel,
+      isPlatformAdmin: branchIsPlatformAdmin,
+      orgRole: branchOrgRole,
       profileId: record.profileId,
       session,
     });
@@ -2357,7 +2385,8 @@ export class AgentService {
 
   async resolveSession(
     orgId: string,
-    sessionId: string
+    sessionId: string,
+    actor?: SessionActor
   ): Promise<AgentChatSession | null> {
     const record = await this.getSessionRecordForOrg(orgId, sessionId);
 
@@ -2365,9 +2394,31 @@ export class AgentService {
       return null;
     }
 
+    const actorUserId = actor?.userId?.trim() || record.userId || null;
+    const orgRole = await this.resolveOrgRole(orgId, actorUserId);
+    const isPlatformAdmin = await this.resolveIsPlatformAdmin(actorUserId);
+    const profile = await this.db.getProfileForOrg(record.profileId, orgId);
+    if (
+      profile?.isSuper &&
+      !canAccessSuperAgentProfile({
+        isPlatformAdmin,
+        orgRole,
+      })
+    ) {
+      throw new AtlasApiError(
+        "Super Agent is only available to Workspace Admins and Superadmins.",
+        403
+      );
+    }
+
     const stored = this.sessions.get(sessionId);
 
-    if (stored) {
+    if (
+      stored &&
+      stored.profileId === record.profileId &&
+      stored.orgRole === orgRole &&
+      stored.isPlatformAdmin === isPlatformAdmin
+    ) {
       return stored.session;
     }
 
@@ -2377,22 +2428,20 @@ export class AgentService {
       return null;
     }
 
-    const resumeOrgRole = await this.resolveOrgRole(orgId, record.userId);
-    const resumeIsPlatformAdmin = await this.resolveIsPlatformAdmin(
-      record.userId
-    );
     const session = await this.buildChatSession(
       channel,
       orgId,
       record.profileId,
       sessionId,
-      record.userId ?? null,
-      resumeOrgRole,
-      resumeIsPlatformAdmin
+      actorUserId,
+      orgRole,
+      isPlatformAdmin
     );
 
     this.sessions.set(sessionId, {
       channel,
+      isPlatformAdmin,
+      orgRole,
       profileId: record.profileId,
       session,
     });

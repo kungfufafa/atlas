@@ -1540,9 +1540,10 @@ export function registerModelRoutes(
   app.post("/v1/settings/discord/handshake", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
+    const auth = getRequestAuth(c);
     try {
       return json<DiscordSettingsResponse>(
-        await agent.regenerateDiscordHandshake(orgId)
+        await agent.regenerateDiscordHandshake(orgId, auth.user.id)
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -1605,9 +1606,10 @@ export function registerModelRoutes(
   app.post("/v1/settings/whatsapp/pairing-code", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
+    const auth = getRequestAuth(c);
     try {
       return json<WhatsAppSettingsResponse>(
-        await agent.regenerateWhatsAppPairingCode(orgId)
+        await agent.regenerateWhatsAppPairingCode(orgId, auth.user.id)
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

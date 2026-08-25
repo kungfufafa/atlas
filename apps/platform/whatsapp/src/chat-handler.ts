@@ -14,6 +14,7 @@ import { ChannelRateLimiter } from "@atlas/core/channel-rate-limiter";
 import type { SendMessageInput } from "@atlas/core/contract";
 import { pickProfileForOrg } from "@atlas/core/profiles";
 import {
+  clearWhatsAppPairingAssertion,
   normalizePairingCode,
   normalizeWhatsAppUserJid,
   syncWhatsAppOwnerPairing,
@@ -149,6 +150,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         authorized = authStore.isAuthorized(jid, { senderPn });
       }
 
+      if (authorized) {
+        await bindPendingChannelPrincipal(chatKey(jid));
+      }
+
       if (!authorized) {
         if (
           fileConfig?.accessMode === "allowlist" ||
@@ -271,6 +276,37 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     const result = await authStore.tryPair(text, chatKey(jid));
     await sendText(jid, result.message);
+    if (result.ok) {
+      await bindPendingChannelPrincipal(chatKey(jid), result.pairingAssertion);
+    }
+  }
+
+  async function bindPendingChannelPrincipal(
+    channelUserId: string,
+    pairingAssertion?: string | null
+  ): Promise<void> {
+    const assertion =
+      pairingAssertion?.trim() ||
+      authStore.getConfig()?.pairingAssertion?.trim() ||
+      "";
+    if (!assertion) {
+      return;
+    }
+    const orgId = fixedWorkspaceId ?? orgStore.get(channelUserId)?.orgId;
+    if (!orgId) {
+      return;
+    }
+    try {
+      await client.bindChannelPrincipal({
+        channel: "whatsapp",
+        channelUserId,
+        pairingAssertion: assertion,
+      });
+      await clearWhatsAppPairingAssertion(orgId);
+      await authStore.reload();
+    } catch (error) {
+      console.error("Failed to bind WhatsApp channel principal:", error);
+    }
   }
 
   async function handleCommand(

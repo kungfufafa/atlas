@@ -27,4 +27,12 @@ describe("FTS5 skill ranker", () => {
     expect(hits?.map((skill) => skill.name)).toContain("finops");
     expect(hits?.map((skill) => skill.name)).not.toContain("weather");
   });
+
+  test("does not retrieve weather for a generic coding prompt", () => {
+    const hits = createFts5SkillRanker().retrieve?.(
+      SKILLS,
+      "help this user write code"
+    );
+    expect(hits?.map((skill) => skill.name) ?? []).not.toContain("weather");
+  });
 });
