@@ -1,4 +1,8 @@
+import { readdir, stat } from "node:fs/promises";
+import path from "node:path";
+import { inferArtifactMimeType } from "../artifact-mime";
 import type { ToolContext, ToolDefinition } from "../contract";
+import { nanoid } from "../ids";
 import type {
   StandardToolErrorCode,
   ToolArtifact,
@@ -10,6 +14,127 @@ import type {
 export const DEFAULT_MAX_OUTPUT_CHARS = 32_000;
 export const DEFAULT_MAX_RETRIES = 2;
 export const DEFAULT_INITIAL_BACKOFF_MS = 250;
+
+const ARTIFACTS_DIRECTORY = "artifacts";
+const INTERNAL_ARTIFACT_PREFIXES = ["coding-agent-runs/"];
+
+interface ArtifactFileSnapshot {
+  mtimeMs: number;
+  sizeBytes: number;
+}
+
+function isArtifactMetadataPath(relativePath: string): boolean {
+  return (
+    relativePath.endsWith(".atlas-meta.json") ||
+    relativePath.endsWith(".meta.json") ||
+    relativePath.includes(".atlas-meta")
+  );
+}
+
+function isDeliverableArtifactPath(relativePath: string): boolean {
+  return !(
+    isArtifactMetadataPath(relativePath) ||
+    INTERNAL_ARTIFACT_PREFIXES.some((prefix) => relativePath.startsWith(prefix))
+  );
+}
+
+async function scanArtifactFiles(
+  workspaceRoot: string | undefined
+): Promise<Map<string, ArtifactFileSnapshot>> {
+  const files = new Map<string, ArtifactFileSnapshot>();
+  if (!workspaceRoot) {
+    return files;
+  }
+
+  const artifactsRoot = path.join(workspaceRoot, ARTIFACTS_DIRECTORY);
+
+  const walk = async (directory: string): Promise<void> => {
+    let entries;
+    try {
+      entries = await readdir(directory, { withFileTypes: true });
+    } catch {
+      return;
+    }
+
+    for (const entry of entries) {
+      const absolutePath = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        await walk(absolutePath);
+        continue;
+      }
+      if (!entry.isFile()) {
+        continue;
+      }
+
+      const relativePath = path
+        .relative(artifactsRoot, absolutePath)
+        .split(path.sep)
+        .join("/");
+      if (!isDeliverableArtifactPath(relativePath)) {
+        continue;
+      }
+
+      try {
+        const fileStat = await stat(absolutePath);
+        files.set(relativePath, {
+          mtimeMs: fileStat.mtimeMs,
+          sizeBytes: fileStat.size,
+        });
+      } catch {
+        // The file may have been transient or removed while the tool was running.
+      }
+    }
+  };
+
+  await walk(artifactsRoot);
+  return files;
+}
+
+function changedArtifactFiles(
+  before: Map<string, ArtifactFileSnapshot>,
+  after: Map<string, ArtifactFileSnapshot>,
+  context: ToolContext
+): ToolArtifact[] {
+  const artifacts: ToolArtifact[] = [];
+
+  for (const [relativePath, file] of after) {
+    const previous = before.get(relativePath);
+    if (
+      previous &&
+      previous.mtimeMs === file.mtimeMs &&
+      previous.sizeBytes === file.sizeBytes
+    ) {
+      continue;
+    }
+
+    artifacts.push({
+      createdAt: new Date().toISOString(),
+      filename: path.basename(relativePath),
+      id: nanoid(12),
+      mimeType: inferArtifactMimeType(relativePath),
+      path: `${ARTIFACTS_DIRECTORY}/${relativePath}`,
+      sessionId: context.sessionId,
+      sizeBytes: file.sizeBytes,
+    });
+  }
+
+  return artifacts;
+}
+
+function mergeToolArtifacts(
+  declared: ToolArtifact[],
+  detected: ToolArtifact[]
+): ToolArtifact[] {
+  const artifactsByPath = new Map<string, ToolArtifact>();
+
+  for (const artifact of [...declared, ...detected]) {
+    if (!artifactsByPath.has(artifact.path)) {
+      artifactsByPath.set(artifact.path, artifact);
+    }
+  }
+
+  return [...artifactsByPath.values()];
+}
 
 export interface RetryPolicy {
   backoffFactor?: number;
@@ -307,6 +432,11 @@ export async function executeProtectedTool<Input = unknown, Output = unknown>(
         ? (options.retryPolicy ?? DEFAULT_RETRY_POLICY)
         : { maxRetries: 0 };
 
+    const shouldDetectArtifacts = tool.parallelSafe !== true;
+    const artifactsBefore = shouldDetectArtifacts
+      ? await scanArtifactFiles(context.workspaceRoot)
+      : new Map<string, ArtifactFileSnapshot>();
+
     const { result, retries } = await executeWithRetry(
       async () => await tool.run(input, context),
       effectiveRetryPolicy,
@@ -318,7 +448,7 @@ export async function executeProtectedTool<Input = unknown, Output = unknown>(
     metadata.retries = retries;
 
     let finalData = result;
-    const artifacts: ToolArtifact[] = [];
+    const declaredArtifacts: ToolArtifact[] = [];
 
     // Extract artifacts if tool returned standard artifact references
     if (typeof result === "object" && result !== null) {
@@ -330,11 +460,21 @@ export async function executeProtectedTool<Input = unknown, Output = unknown>(
             item !== null &&
             typeof item.path === "string"
           ) {
-            artifacts.push(item as ToolArtifact);
+            declaredArtifacts.push(item as ToolArtifact);
           }
         }
       }
     }
+
+    const artifactsAfter = shouldDetectArtifacts
+      ? await scanArtifactFiles(context.workspaceRoot)
+      : artifactsBefore;
+    const detectedArtifacts = changedArtifactFiles(
+      artifactsBefore,
+      artifactsAfter,
+      context
+    );
+    const artifacts = mergeToolArtifacts(declaredArtifacts, detectedArtifacts);
 
     // Check output size and apply safe truncation if exceeded
     const stringified =

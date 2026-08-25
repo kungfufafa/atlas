@@ -1,5 +1,6 @@
 import type { AtlasClient, RemoteChatSession } from "@atlas/client";
 import {
+  type ChannelArtifactRef,
   type DeliverableChannelArtifact,
   extractTurnDeliverableArtifacts,
   formatArtifactShareFooter,
@@ -173,9 +174,13 @@ export async function deliverDiscordTurnArtifactShares(input: {
   sessionStore: SessionStore;
   messenger: DiscordMessenger;
   skipPaths?: Iterable<string>;
+  streamedArtifacts?: ChannelArtifactRef[];
 }): Promise<void> {
   const messages = await input.session.getMessages();
-  const paired = extractTurnDeliverableArtifacts(messages);
+  const paired = extractTurnDeliverableArtifacts(
+    messages,
+    input.streamedArtifacts
+  );
   if (paired.length === 0) {
     return;
   }

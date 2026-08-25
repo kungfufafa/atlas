@@ -1,5 +1,6 @@
 import type { AtlasClient, RemoteChatSession } from "@atlas/client";
 import {
+  type ChannelArtifactRef,
   extractTurnDeliverableArtifacts,
   formatArtifactShareFooter,
   formatMissingAttachArtifactMessage,
@@ -13,8 +14,8 @@ import type { Context } from "grammy";
 import type { TelegramRichMessenger } from "./rich-message";
 import {
   formatTelegramArtifactTooLargeMessage,
-  sendTelegramArtifactDocument,
-  TELEGRAM_ARTIFACT_DOCUMENT_MAX_BYTES,
+  sendTelegramArtifact,
+  TELEGRAM_ARTIFACT_MAX_BYTES,
 } from "./send-artifact-document";
 import type { SessionStore } from "./session-store";
 
@@ -47,9 +48,10 @@ export async function maybeSendRequestedTelegramArtifactAttachment(input: {
       input.profileId,
       artifact.path
     );
-    const result = await sendTelegramArtifactDocument(input.ctx, {
+    const result = await sendTelegramArtifact(input.ctx, {
       bytes: new Uint8Array(data),
       filename: artifact.filename,
+      mimeType: artifact.mimeType,
     });
 
     if (!result.ok && result.error) {
@@ -70,9 +72,13 @@ export async function deliverTelegramTurnArtifactShares(input: {
   profileId: string;
   sessionStore: SessionStore;
   messenger: TelegramRichMessenger;
+  streamedArtifacts?: ChannelArtifactRef[];
 }): Promise<void> {
   const messages = await input.session.getMessages();
-  const paired = extractTurnDeliverableArtifacts(messages);
+  const paired = extractTurnDeliverableArtifacts(
+    messages,
+    input.streamedArtifacts
+  );
   if (paired.length === 0) {
     return;
   }
@@ -112,7 +118,7 @@ export async function deliverTelegramTurnArtifactShares(input: {
   await input.sessionStore.save();
 
   for (const artifact of delivered) {
-    if (artifact.sizeBytes > TELEGRAM_ARTIFACT_DOCUMENT_MAX_BYTES) {
+    if (artifact.sizeBytes > TELEGRAM_ARTIFACT_MAX_BYTES) {
       await input.messenger.sendPlain(
         formatTelegramArtifactTooLargeMessage(artifact.sizeBytes)
       );
@@ -124,9 +130,10 @@ export async function deliverTelegramTurnArtifactShares(input: {
         input.profileId,
         artifact.path
       );
-      const result = await sendTelegramArtifactDocument(input.ctx, {
+      const result = await sendTelegramArtifact(input.ctx, {
         bytes: new Uint8Array(data),
         filename: artifact.filename,
+        mimeType: artifact.mimeType,
       });
 
       if (!result.ok && result.error) {

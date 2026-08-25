@@ -73,12 +73,18 @@ export async function executeToolCall(
       // is enabled, recognises the tool, and produces something strictly shorter.
       const distilled = await distillToolResult(call.name, rawData, context);
 
-      if (
-        execution.artifacts &&
-        execution.artifacts.length > 0 &&
-        typeof distilled === "object" &&
-        distilled !== null
-      ) {
+      if (execution.artifacts && execution.artifacts.length > 0) {
+        if (
+          typeof distilled !== "object" ||
+          distilled === null ||
+          Array.isArray(distilled)
+        ) {
+          return {
+            artifacts: execution.artifacts,
+            result: distilled,
+          };
+        }
+
         return {
           ...(distilled as Record<string, unknown>),
           artifacts: execution.artifacts,

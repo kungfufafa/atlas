@@ -122,6 +122,12 @@ WhatsApp currently works as a **private chat** channel.
 
 If you change the reply profile, new messages use that profile. Starting a new conversation with `/new` gives you a fresh session.
 
+### Knowledge base answers
+
+WhatsApp uses the selected profile's knowledge base in the same way as web chat, Telegram, and Discord. Before answering a factual question, Atlas retrieves likely excerpts from ready uploaded documents. If those excerpts are not enough, the agent searches the knowledge base again with a more focused query instead of falling back to a guess.
+
+Knowledge base, tool, skill, MCP, prompt, and soul changes take effect on the next message while the existing channel conversation and history stay intact.
+
 ## Supported message types
 
 WhatsApp can send more than plain text into Atlas.
@@ -207,6 +213,13 @@ If QR linking does not finish:
 ### The wrong bot is answering
 
 Open **Integrations → WhatsApp** and check the **Reply as** profile. That is the profile the bridge uses for new messages.
+
+### WhatsApp does not use the expected knowledge base
+
+1. Check **Integrations → WhatsApp → Reply as** and confirm it is the same profile you tested in web chat
+2. Open that profile's **Knowledge** tab and confirm the document is ready
+3. Confirm `knowledge_base_search` is assigned to the profile
+4. Send the question again; you do not need to use `/new`
 
 ## Next steps
 

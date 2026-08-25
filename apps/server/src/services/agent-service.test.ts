@@ -30,6 +30,50 @@ function createDefaultProfile(): StoredProfileRecord {
   };
 }
 
+describe("AgentService long-lived channel runtime", () => {
+  let tempConfigDir = "";
+  const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
+
+  afterEach(async () => {
+    process.env.ATLAS_CONFIG_DIR = previousConfigDir;
+
+    if (tempConfigDir) {
+      await rm(tempConfigDir, { force: true, recursive: true });
+      tempConfigDir = "";
+    }
+  });
+
+  test("rebuilds a WhatsApp session after its knowledge base changes", async () => {
+    tempConfigDir = await mkdtemp(path.join(tmpdir(), "atlas-channel-kb-"));
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
+
+    const db = createInMemoryDatabaseAdapter();
+    await db.upsertProfile(createDefaultProfile());
+    const service = new AgentService(null, null, db);
+    const sessionId = await service.createSession(
+      ORG_ID,
+      "whatsapp",
+      "profile_default"
+    );
+    const beforeUpload = await service.resolveSession(ORG_ID, sessionId);
+
+    await service.uploadKnowledgeBaseDocument(ORG_ID, "profile_default", {
+      data: Buffer.from("WhatsApp must see this fact", "utf8").toString(
+        "base64"
+      ),
+      filename: "channel-facts.txt",
+      mediaType: "text/plain",
+    });
+
+    const afterUpload = await service.resolveSession(ORG_ID, sessionId);
+
+    expect(beforeUpload).not.toBeNull();
+    expect(afterUpload).not.toBeNull();
+    expect(afterUpload).not.toBe(beforeUpload);
+    expect((await db.getSession(sessionId))?.channel).toBe("whatsapp");
+  });
+});
+
 describe("AgentService branching", () => {
   test("branches a new session from the selected message index", async () => {
     const db = createInMemoryDatabaseAdapter();

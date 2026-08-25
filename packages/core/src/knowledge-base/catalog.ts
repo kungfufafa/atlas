@@ -20,7 +20,7 @@ export async function composeKnowledgeBaseCatalog(
   if (readyDocuments.length > 0) {
     sections.push(
       "# Uploaded documents",
-      "Use knowledge_base_search to look up facts from uploaded documents on demand.",
+      "Treat these as the primary source for organization-specific facts. Use knowledge_base_search before answering questions they could cover; do not substitute general model memory.",
       ...readyDocuments.map(
         (document) => `- ${document.filename} (${document.mediaType})`
       )

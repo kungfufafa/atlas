@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { AtlasClient, StreamHandlers } from "@atlas/client";
+import type { Artifact } from "@atlas/core/artifact-types";
 import {
   assertBridgeClientMethods,
   parseListProfilesResponse,
@@ -22,6 +23,7 @@ export interface MockStreamControl {
 }
 
 type StreamStep =
+  | { type: "artifact"; artifact: Artifact }
   | { type: "chunk"; delta: string }
   | { type: "thinking"; delta?: string }
   | { type: "tool_start" }
@@ -151,6 +153,9 @@ export function createMockClient(
           }
 
           switch (step.type) {
+            case "artifact":
+              streamHandlers.onArtifactCreated?.(step.artifact);
+              break;
             case "chunk":
               streamHandlers.onChunk(step.delta);
               break;

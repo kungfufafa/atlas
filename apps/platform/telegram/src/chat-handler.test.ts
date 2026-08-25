@@ -2640,6 +2640,60 @@ describe("createChatHandler artifact delivery", () => {
     });
   });
 
+  test("sends an artifact emitted by the live agent stream", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        botToken: "1234567890:TEST",
+        pairedUserIds: [4242],
+      });
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        artifactContentBytes: new TextEncoder().encode("%PDF-1.4"),
+        messages: [],
+        steps: [
+          {
+            artifact: {
+              createdAt: "2026-08-25T10:00:00.000Z",
+              filename: "live-report.pdf",
+              id: "artifact_live",
+              mimeType: "application/pdf",
+              path: "artifacts/live-report.pdf",
+              size: 8,
+              type: "pdf",
+            },
+            type: "artifact",
+          },
+          { reply: "Report ready", type: "resolve" },
+        ],
+        streaming: true,
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        orgStore,
+        sessionStore,
+      });
+      const mock = createMessageContext({
+        text: "make a report",
+        userId: 4242,
+      });
+
+      await handleMessage(mock.ctx);
+
+      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(mock.documentSends).toBe(1);
+    });
+  });
+
   test("does not publish when the turn wrote nothing under artifacts/", async () => {
     await withTempHome(async (homeDir) => {
       await writeTelegramConfigIni(homeDir, {

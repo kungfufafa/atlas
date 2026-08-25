@@ -1,5 +1,9 @@
 import type { AtlasClient, RemoteChatSession } from "@atlas/client";
-import { isAttachOnlyCommand } from "@atlas/core";
+import {
+  type ChannelArtifactRef,
+  channelArtifactRefFromArtifact,
+  isAttachOnlyCommand,
+} from "@atlas/core";
 import { hasActiveAgentQuestionnaire } from "@atlas/core/agent-questionnaire";
 import {
   type ChannelOrgStore,
@@ -799,11 +803,18 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     let postedQuestionnaire = false;
     const pendingArtifactUploads: Promise<unknown>[] = [];
     const uploadedArtifactPaths = new Set<string>();
+    const streamedArtifacts = new Map<string, ChannelArtifactRef>();
 
     try {
       reply = await session.sendStream(
         streamInput,
         {
+          onArtifactCreated: (artifact) => {
+            const ref = channelArtifactRefFromArtifact(artifact);
+            if (ref) {
+              streamedArtifacts.set(ref.path, ref);
+            }
+          },
           onChunk: (delta) => {
             reply += delta;
           },
@@ -908,6 +919,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         session,
         sessionStore,
         skipPaths: uploadedArtifactPaths,
+        streamedArtifacts: [...streamedArtifacts.values()],
       });
     }
   }

@@ -1,5 +1,9 @@
 import type { AtlasClient, RemoteChatSession } from "@atlas/client";
-import { formatMissingAttachArtifactMessage } from "@atlas/core";
+import {
+  type ChannelArtifactRef,
+  channelArtifactRefFromArtifact,
+  formatMissingAttachArtifactMessage,
+} from "@atlas/core";
 import {
   type ChannelOrgStore,
   findOrgBySelectionInput,
@@ -537,6 +541,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const todoStatus = new TelegramTodoStatusMessage(telegram);
     const signal = registerActiveStream(conversationKey);
     let reply = "";
+    const streamedArtifacts = new Map<string, ChannelArtifactRef>();
 
     typingLoop.start();
 
@@ -544,6 +549,12 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       reply = await session.sendStream(
         input,
         {
+          onArtifactCreated: (artifact) => {
+            const ref = channelArtifactRefFromArtifact(artifact);
+            if (ref) {
+              streamedArtifacts.set(ref.path, ref);
+            }
+          },
           onChunk: (delta) => {
             reply += delta;
           },
@@ -608,6 +619,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         profileId,
         session,
         sessionStore,
+        streamedArtifacts: [...streamedArtifacts.values()],
       });
     }
   }

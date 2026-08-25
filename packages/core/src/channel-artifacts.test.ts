@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  channelArtifactRefFromArtifact,
   extractLatestTurnMessages,
   extractPairedTurnArtifacts,
   extractTurnDeliverableArtifacts,
@@ -426,6 +427,102 @@ describe("extractPairedTurnArtifacts", () => {
 });
 
 describe("extractTurnDeliverableArtifacts", () => {
+  test("uses streamed artifacts when persisted tool history is unavailable", () => {
+    const streamed = channelArtifactRefFromArtifact({
+      createdAt: "2026-08-25T10:00:00.000Z",
+      filename: "analysis.pdf",
+      id: "artifact_1",
+      mimeType: "application/pdf",
+      path: "artifacts/analysis.pdf",
+      size: 4096,
+      type: "pdf",
+    });
+
+    expect(streamed).not.toBeNull();
+    expect(
+      extractTurnDeliverableArtifacts(
+        [
+          { content: "create a report", role: "user" },
+          { content: "Done", role: "assistant" },
+        ],
+        streamed ? [streamed] : []
+      )
+    ).toEqual([
+      {
+        filename: "analysis.pdf",
+        mimeType: "application/pdf",
+        path: "analysis.pdf",
+        savedAt: "2026-08-25T10:00:00.000Z",
+        sizeBytes: 4096,
+      },
+    ]);
+  });
+
+  test("keeps persisted artifact metadata when the stream reports the same path", () => {
+    const contentPath = `${ARTIFACTS_ROOT}/report.bin`;
+    const sidecarPath = `${contentPath}.atlas-meta.json`;
+    const persistedMeta = JSON.stringify({
+      mimeType: "application/pdf",
+      savedAt: "2026-08-25T09:00:00.000Z",
+      sizeBytes: 42,
+    });
+
+    const artifacts = extractTurnDeliverableArtifacts(
+      [
+        { content: "save", role: "user" },
+        assistantWithToolCalls([
+          {
+            arguments: { content: "pdf", path: "artifacts/report.bin" },
+            id: "tool_1",
+            name: "write_file",
+          },
+          {
+            arguments: {
+              content: persistedMeta,
+              path: "artifacts/report.bin.atlas-meta.json",
+            },
+            id: "tool_2",
+            name: "write_file",
+          },
+        ]),
+        toolMessage({
+          id: "tool_1",
+          input: { content: "pdf", path: "artifacts/report.bin" },
+          name: "write_file",
+          result: { bytesWritten: 3, path: contentPath },
+        }),
+        toolMessage({
+          id: "tool_2",
+          input: {
+            content: persistedMeta,
+            path: "artifacts/report.bin.atlas-meta.json",
+          },
+          name: "write_file",
+          result: { bytesWritten: persistedMeta.length, path: sidecarPath },
+        }),
+      ],
+      [
+        {
+          filename: "report.bin",
+          mimeType: "application/octet-stream",
+          path: "report.bin",
+          savedAt: "2026-08-25T10:00:00.000Z",
+          sizeBytes: 3,
+        },
+      ]
+    );
+
+    expect(artifacts).toEqual([
+      {
+        filename: "report.bin",
+        mimeType: "application/pdf",
+        path: "report.bin",
+        savedAt: "2026-08-25T09:00:00.000Z",
+        sizeBytes: 42,
+      },
+    ]);
+  });
+
   test("includes browser screenshot artifacts from the tool payload", () => {
     const artifacts = extractTurnDeliverableArtifacts([
       { content: "check the site", role: "user" },

@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { AtlasClient, StreamHandlers } from "@atlas/client";
+import type { Artifact } from "@atlas/core/artifact-types";
 import {
   assertBridgeClientMethods,
   parseListProfilesResponse,
@@ -24,6 +25,7 @@ export interface MockMessageContext {
   readonly documentSends: number;
   editOptions: unknown[];
   edits: Array<{ chatId: number; messageId: number; text: string }>;
+  readonly photoSends: number;
   replies: string[];
   replyOptions: unknown[];
 }
@@ -45,6 +47,7 @@ export function createMessageContext(options: {
   const edits: Array<{ chatId: number; messageId: number; text: string }> = [];
   const editOptions: unknown[] = [];
   let documentSends = 0;
+  let photoSends = 0;
   let nextMessageId = 1;
   const replyFrom =
     options.replyToBot || options.replyToBotId !== undefined
@@ -70,6 +73,10 @@ export function createMessageContext(options: {
       },
       sendDocument: async () => {
         documentSends += 1;
+        return { message_id: nextMessageId++ };
+      },
+      sendPhoto: async () => {
+        photoSends += 1;
         return { message_id: nextMessageId++ };
       },
     },
@@ -104,6 +111,9 @@ export function createMessageContext(options: {
     },
     editOptions,
     edits,
+    get photoSends() {
+      return photoSends;
+    },
     replies,
     replyOptions,
   };
@@ -125,6 +135,7 @@ export interface MockStreamControl {
 }
 
 type StreamStep =
+  | { type: "artifact"; artifact: Artifact }
   | { type: "todos"; todos: AgentTodo[] }
   | { type: "chunk"; delta: string }
   | { type: "thinking"; delta?: string }
@@ -276,6 +287,9 @@ export function createMockClient(
           }
 
           switch (step.type) {
+            case "artifact":
+              streamHandlers.onArtifactCreated?.(step.artifact);
+              break;
             case "todos":
               streamHandlers.onTodosUpdated?.(step.todos);
               break;

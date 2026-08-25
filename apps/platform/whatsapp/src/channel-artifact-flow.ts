@@ -1,5 +1,6 @@
 import type { AtlasClient, RemoteChatSession } from "@atlas/client";
 import {
+  type ChannelArtifactRef,
   extractTurnDeliverableArtifacts,
   formatArtifactShareFooter,
   getMostRecentDeliverableArtifact,
@@ -67,9 +68,13 @@ export async function deliverWhatsAppTurnArtifactShares(input: {
   session: RemoteChatSession;
   sessionStore: SessionStore;
   sendText: (jid: string, text: string) => Promise<void>;
+  streamedArtifacts?: ChannelArtifactRef[];
 }): Promise<void> {
   const messages = await input.session.getMessages();
-  const paired = extractTurnDeliverableArtifacts(messages);
+  const paired = extractTurnDeliverableArtifacts(
+    messages,
+    input.streamedArtifacts
+  );
   if (paired.length === 0) {
     return;
   }

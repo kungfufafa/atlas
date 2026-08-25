@@ -65,6 +65,7 @@ import type {
 import {
   classifyFailure,
   evaluateActionRisk,
+  inferArtifactType,
   mapToolCallToActivity,
   metrics,
   resolveExecutionPolicy,
@@ -746,6 +747,71 @@ function emitSourcesFromToolResult(
   });
 }
 
+function emitArtifactsFromToolResult(
+  toolCallId: string,
+  result: unknown,
+  emittedPaths: Set<string>,
+  handlers?: StreamHandlers
+): void {
+  if (
+    !handlers?.onArtifactCreated ||
+    result == null ||
+    typeof result !== "object"
+  ) {
+    return;
+  }
+
+  const candidates = (result as Record<string, unknown>).artifacts;
+  if (!Array.isArray(candidates)) {
+    return;
+  }
+
+  for (const [index, candidate] of candidates.entries()) {
+    if (typeof candidate !== "object" || candidate === null) {
+      continue;
+    }
+
+    const record = candidate as Record<string, unknown>;
+    const path = typeof record.path === "string" ? record.path.trim() : "";
+    const filename =
+      typeof record.filename === "string" ? record.filename.trim() : "";
+    const mimeType =
+      typeof record.mimeType === "string" ? record.mimeType.trim() : "";
+    const size = record.sizeBytes;
+
+    if (
+      !(path && filename && mimeType) ||
+      typeof size !== "number" ||
+      !Number.isInteger(size) ||
+      size < 0 ||
+      emittedPaths.has(path)
+    ) {
+      continue;
+    }
+
+    emittedPaths.add(path);
+    const createdAt =
+      typeof record.createdAt === "string" && record.createdAt.trim()
+        ? record.createdAt
+        : new Date().toISOString();
+
+    handlers.onArtifactCreated({
+      createdAt,
+      filename,
+      id:
+        typeof record.id === "string" && record.id.trim()
+          ? record.id
+          : `${toolCallId}:${index}`,
+      mimeType,
+      path,
+      sessionId:
+        typeof record.sessionId === "string" ? record.sessionId : undefined,
+      size,
+      type: inferArtifactType(filename, mimeType),
+    });
+  }
+}
+
 async function executeToolCalls(
   tools: ToolDefinition[],
   toolCalls: ToolCall[],
@@ -753,6 +819,7 @@ async function executeToolCalls(
   handlers?: StreamHandlers,
   toolContext: ToolContext = {}
 ): Promise<void> {
+  const emittedArtifactPaths = new Set<string>();
   const contextForCall = (call: ToolCall): ToolContext => {
     if (!handlers?.onSubAgentActivity || call.name !== "sub_agent") {
       return toolContext;
@@ -821,6 +888,13 @@ async function executeToolCalls(
             tool: call.name,
             toolCallId: call.id,
           });
+
+          emitArtifactsFromToolResult(
+            call.id,
+            result,
+            emittedArtifactPaths,
+            handlers
+          );
 
           handlers?.onActivityComplete?.(
             updateActivityCompletion(activity, true)
@@ -891,6 +965,13 @@ async function executeToolCalls(
       tool: call.name,
       toolCallId: call.id,
     });
+
+    emitArtifactsFromToolResult(
+      call.id,
+      result,
+      emittedArtifactPaths,
+      handlers
+    );
 
     handlers?.onActivityComplete?.(updateActivityCompletion(activity, true));
 

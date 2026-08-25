@@ -1,4 +1,5 @@
 import { inferArtifactMimeType } from "./artifact-mime";
+import type { Artifact } from "./artifact-types";
 import type { ChatMessage } from "./contract";
 
 const ARTIFACT_META_SUFFIX = ".atlas-meta.json";
@@ -355,6 +356,24 @@ function artifactRefFromEmbeddedCandidate(
   };
 }
 
+export function channelArtifactRefFromArtifact(
+  artifact: Artifact
+): ChannelArtifactRef | null {
+  const relativePath = toArtifactsRelativePath(artifact.path);
+  if (!relativePath || isArtifactMetaRelativePath(relativePath)) {
+    return null;
+  }
+
+  return {
+    filename:
+      artifact.filename || (relativePath.split("/").pop() ?? relativePath),
+    mimeType: artifact.mimeType || inferArtifactMimeType(relativePath),
+    path: relativePath,
+    savedAt: artifact.createdAt,
+    sizeBytes: artifact.size,
+  };
+}
+
 function artifactRefFromGenerateImage(
   message: Extract<ChatMessage, { role: "tool" }>
 ): ChannelArtifactRef | null {
@@ -521,7 +540,8 @@ const SPREADSHEET_NON_DELIVERABLE_ACTIONS = new Set(["inspect", "read_range"]);
  * pptx, write_file without sidecar).
  */
 export function extractTurnDeliverableArtifacts(
-  messages: ChatMessage[]
+  messages: ChatMessage[],
+  streamedArtifacts: ChannelArtifactRef[] = []
 ): ChannelArtifactRef[] {
   const paired = extractPairedTurnArtifacts(messages);
   const artifactsByPath = new Map(
@@ -543,6 +563,12 @@ export function extractTurnDeliverableArtifacts(
       if (!artifactsByPath.has(embedded.path)) {
         artifactsByPath.set(embedded.path, embedded);
       }
+    }
+  }
+
+  for (const artifact of streamedArtifacts) {
+    if (!artifactsByPath.has(artifact.path)) {
+      artifactsByPath.set(artifact.path, artifact);
     }
   }
 

@@ -273,6 +273,7 @@ import {
   loadJavascriptTool,
   resolveJavascriptModulePath,
 } from "./javascript-tool-loader";
+import { composeKnowledgeBaseTurnGrounding } from "./knowledge-base-grounding";
 import type { LlmUsageTracker } from "./llm-usage-tracker";
 import type { McpClientManager } from "./mcp-client-manager";
 import type { McpService } from "./mcp-service";
@@ -3189,19 +3190,14 @@ export class AgentService {
       request
     );
 
-    if (request.model !== undefined) {
-      for (const [sessionId, record] of this.sessions.entries()) {
-        if (record.profileId === profileId) {
-          this.sessions.delete(sessionId);
-        }
-      }
-    }
+    this.invalidateProfileSessions(profileId);
 
     return response;
   }
 
   async deleteProfile(orgId: string, profileId: string): Promise<void> {
-    return this.profileService.deleteProfile(orgId, profileId);
+    await this.profileService.deleteProfile(orgId, profileId);
+    this.invalidateProfileSessions(profileId);
   }
 
   async listTools(orgId: string): Promise<ListToolsResponse> {
@@ -3225,7 +3221,8 @@ export class AgentService {
   }
 
   async deleteTool(orgId: string, toolId: string): Promise<void> {
-    return this.profileService.deleteTool(orgId, toolId);
+    await this.profileService.deleteTool(orgId, toolId);
+    this.sessions.clear();
   }
 
   async runToolPlayground(
@@ -3350,7 +3347,13 @@ export class AgentService {
     profileId: string,
     request: AssignToolRequest
   ): Promise<ProfileResponse> {
-    return this.profileService.assignTool(orgId, profileId, request);
+    const response = await this.profileService.assignTool(
+      orgId,
+      profileId,
+      request
+    );
+    this.invalidateProfileSessions(profileId);
+    return response;
   }
 
   async unassignTool(
@@ -3358,7 +3361,13 @@ export class AgentService {
     profileId: string,
     toolId: string
   ): Promise<ProfileResponse> {
-    return this.profileService.unassignTool(orgId, profileId, toolId);
+    const response = await this.profileService.unassignTool(
+      orgId,
+      profileId,
+      toolId
+    );
+    this.invalidateProfileSessions(profileId);
+    return response;
   }
 
   async assignMcpServer(
@@ -3366,7 +3375,13 @@ export class AgentService {
     profileId: string,
     request: { serverId: string }
   ): Promise<ProfileResponse> {
-    return this.profileService.assignMcpServer(orgId, profileId, request);
+    const response = await this.profileService.assignMcpServer(
+      orgId,
+      profileId,
+      request
+    );
+    this.invalidateProfileSessions(profileId);
+    return response;
   }
 
   async unassignMcpServer(
@@ -3374,7 +3389,13 @@ export class AgentService {
     profileId: string,
     serverId: string
   ): Promise<ProfileResponse> {
-    return this.profileService.unassignMcpServer(orgId, profileId, serverId);
+    const response = await this.profileService.unassignMcpServer(
+      orgId,
+      profileId,
+      serverId
+    );
+    this.invalidateProfileSessions(profileId);
+    return response;
   }
 
   async listSkills(): Promise<ListSkillsResponse> {
@@ -3389,14 +3410,24 @@ export class AgentService {
     orgId: string,
     request: CreateSkillRequest
   ): Promise<SkillResponse> {
-    return this.requireSkillsService().createSkill(orgId, request);
+    const response = await this.requireSkillsService().createSkill(
+      orgId,
+      request
+    );
+    this.sessions.clear();
+    return response;
   }
 
   async installSkillFromGitHub(
     orgId: string,
     request: InstallSkillRequest
   ): Promise<SkillResponse> {
-    return this.requireSkillsService().installSkillFromGitHub(orgId, request);
+    const response = await this.requireSkillsService().installSkillFromGitHub(
+      orgId,
+      request
+    );
+    this.sessions.clear();
+    return response;
   }
 
   async patchSkill(
@@ -3405,20 +3436,25 @@ export class AgentService {
     request: PatchSkillRequest,
     options?: { profileId?: string }
   ): Promise<SkillResponse> {
-    return this.requireSkillsService().patchSkill(
+    const response = await this.requireSkillsService().patchSkill(
       orgId,
       skillId,
       request,
       options
     );
+    this.sessions.clear();
+    return response;
   }
 
   async deleteSkill(skillId: string): Promise<void> {
-    return this.requireSkillsService().deleteSkill(skillId);
+    await this.requireSkillsService().deleteSkill(skillId);
+    this.sessions.clear();
   }
 
   async syncSkills(): Promise<SyncSkillsResponse> {
-    return this.requireSkillsService().syncDiscoveredSkills();
+    const response = await this.requireSkillsService().syncDiscoveredSkills();
+    this.sessions.clear();
+    return response;
   }
 
   async assignSkill(
@@ -3426,7 +3462,13 @@ export class AgentService {
     profileId: string,
     request: AssignSkillRequest
   ): Promise<ProfileResponse> {
-    return this.profileService.assignSkill(orgId, profileId, request);
+    const response = await this.profileService.assignSkill(
+      orgId,
+      profileId,
+      request
+    );
+    this.invalidateProfileSessions(profileId);
+    return response;
   }
 
   async unassignSkill(
@@ -3434,7 +3476,13 @@ export class AgentService {
     profileId: string,
     skillId: string
   ): Promise<ProfileResponse> {
-    return this.profileService.unassignSkill(orgId, profileId, skillId);
+    const response = await this.profileService.unassignSkill(
+      orgId,
+      profileId,
+      skillId
+    );
+    this.invalidateProfileSessions(profileId);
+    return response;
   }
 
   async uploadProfileAvatar(
@@ -3478,11 +3526,13 @@ export class AgentService {
     profileId: string,
     document: DocumentAttachment
   ): Promise<UploadKnowledgeBaseResponse> {
-    return this.profileService.uploadKnowledgeBaseDocument(
+    const response = await this.profileService.uploadKnowledgeBaseDocument(
       orgId,
       profileId,
       document
     );
+    this.invalidateProfileSessions(profileId);
+    return response;
   }
 
   async deleteKnowledgeBaseDocument(
@@ -3490,11 +3540,13 @@ export class AgentService {
     profileId: string,
     documentId: string
   ): Promise<DeleteKnowledgeBaseResponse> {
-    return this.profileService.deleteKnowledgeBaseDocument(
+    const response = await this.profileService.deleteKnowledgeBaseDocument(
       orgId,
       profileId,
       documentId
     );
+    this.invalidateProfileSessions(profileId);
+    return response;
   }
 
   async readKnowledgeBaseDocument(
@@ -3545,6 +3597,7 @@ export class AgentService {
   ): Promise<InitSoulResponse> {
     await this.requireProfile(orgId, profileId);
     const result = await initSoulDirectory(getProfileSoulDir(orgId, profileId));
+    this.invalidateProfileSessions(profileId);
     return { ...result, profileId };
   }
 
@@ -3574,6 +3627,7 @@ export class AgentService {
       key,
       request.content
     );
+    this.invalidateProfileSessions(profileId);
   }
 
   async listProfileArtifacts(
@@ -4104,6 +4158,14 @@ export class AgentService {
     );
   }
 
+  private invalidateProfileSessions(profileId: string): void {
+    for (const [sessionId, record] of this.sessions.entries()) {
+      if (record.profileId === profileId) {
+        this.sessions.delete(sessionId);
+      }
+    }
+  }
+
   private async buildChatSession(
     channel: AgentChannel,
     orgId: string,
@@ -4128,6 +4190,9 @@ export class AgentService {
     if (channel === "discord") {
       tools = [...tools, ...createSendDiscordArtifactTools()];
     }
+    const knowledgeBaseSearchAvailable = tools.some(
+      (tool) => tool.name === "knowledge_base_search"
+    );
     const skillUsageContext =
       channel === "web" || channel === "cli"
         ? { seenCatalogSkillIds: new Set<string>(), sessionId }
@@ -4223,6 +4288,20 @@ export class AgentService {
         rehydrateAttachmentMessages(messages, loadAttachment),
       resolvePromptContext: async (context) => {
         const parts: string[] = [];
+
+        if (knowledgeBaseSearchAvailable && context?.userMessage?.trim()) {
+          const knowledgeBaseGrounding =
+            await composeKnowledgeBaseTurnGrounding({
+              orgId,
+              profileId,
+              userMessage: context.userMessage,
+            });
+
+          if (knowledgeBaseGrounding.trim()) {
+            parts.push(knowledgeBaseGrounding.trim());
+          }
+        }
+
         const todoContext =
           await this.agentTodoState.formatForPrompt(sessionId);
 

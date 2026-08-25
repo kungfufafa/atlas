@@ -216,6 +216,8 @@ Search text in files under the profile workspace.
 
 Search uploaded knowledge base documents for relevant facts. The Knowledge tab can also show inherited URL sources, such as the Atlas documentation index at `llms.txt`; use `web_fetch` on that index and on specific `.md` pages — not `knowledge_base_search`.
 
+When this tool is assigned and ready documents exist, Atlas retrieves likely excerpts before each factual answer across web chat, CLI, Telegram, WhatsApp, and Discord. The agent uses `knowledge_base_search` again when it needs a narrower or alternative query.
+
 | Parameter | Type | Required | Notes |
 |-----------|------|----------|-------|
 | `query` | string | Yes | Keyword or regex pattern |

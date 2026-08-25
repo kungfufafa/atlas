@@ -203,6 +203,46 @@ describe("createChatHandler artifact delivery", () => {
     });
   });
 
+  test("sends an artifact emitted by the live agent stream", async () => {
+    await withTempHome(async (homeDir) => {
+      const { handleMessage, calls, sessionStore } = await createPairedHandler(
+        homeDir,
+        {
+          artifactContentBytes: new TextEncoder().encode("%PDF-1.4"),
+          messages: [],
+          onSendStream: async (_input, handlers) => {
+            handlers?.onArtifactCreated?.({
+              createdAt: "2026-08-25T10:00:00.000Z",
+              filename: "live-report.pdf",
+              id: "artifact_live",
+              mimeType: "application/pdf",
+              path: "artifacts/live-report.pdf",
+              size: 8,
+              type: "pdf",
+            });
+            return "Report ready";
+          },
+        }
+      );
+      sessionStore.set("dm_channel_1", {
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+      const dm = createDmMessage({
+        content: "make a report",
+        userId: "424242424242424242",
+      });
+
+      await handleMessage(dm.message);
+
+      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(dm.fileSendCalls).toBe(1);
+    });
+  });
+
   test("still uploads the file when share publishing fails", async () => {
     await withTempHome(async (homeDir) => {
       const { handleMessage, calls, sessionStore } = await createPairedHandler(

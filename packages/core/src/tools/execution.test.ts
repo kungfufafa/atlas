@@ -1,4 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import type { ToolDefinition } from "../contract";
 import {
   executeProtectedTool,
@@ -136,5 +139,49 @@ describe("executeProtectedTool", () => {
     const res = await executeProtectedTool(sampleTool, { input: "fail" }, {});
     expect(res.success).toBe(false);
     expect(res.error?.code).toBe("INVALID_ARGUMENT");
+  });
+
+  test("captures files created under artifacts by any tool", async () => {
+    const workspaceRoot = await mkdtemp(
+      path.join(tmpdir(), "atlas-tool-artifact-")
+    );
+
+    try {
+      const fileTool: ToolDefinition<Record<string, never>, string> = {
+        description: "Create a deliverable without declaring metadata",
+        name: "custom_file_maker",
+        async run() {
+          const artifactsDir = path.join(workspaceRoot, "artifacts");
+          await mkdir(artifactsDir, { recursive: true });
+          await writeFile(path.join(artifactsDir, "report.pdf"), "%PDF-1.4");
+          await writeFile(
+            path.join(artifactsDir, "report.pdf.atlas-meta.json"),
+            "{}"
+          );
+          return "created";
+        },
+      };
+
+      const result = await executeProtectedTool(
+        fileTool,
+        {},
+        {
+          sessionId: "session_test",
+          workspaceRoot,
+        }
+      );
+
+      expect(result.artifacts).toEqual([
+        expect.objectContaining({
+          filename: "report.pdf",
+          mimeType: "application/pdf",
+          path: "artifacts/report.pdf",
+          sessionId: "session_test",
+          sizeBytes: 8,
+        }),
+      ]);
+    } finally {
+      await rm(workspaceRoot, { force: true, recursive: true });
+    }
   });
 });

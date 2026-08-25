@@ -1810,6 +1810,60 @@ describe("createChatHandler artifact delivery", () => {
     });
   });
 
+  test("sends an artifact emitted by the live agent stream", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        artifactContentBytes: new TextEncoder().encode("%PDF-1.4"),
+        messages: [],
+        steps: [
+          {
+            artifact: {
+              createdAt: "2026-08-25T10:00:00.000Z",
+              filename: "live-report.pdf",
+              id: "artifact_live",
+              mimeType: "application/pdf",
+              path: "artifacts/live-report.pdf",
+              size: 8,
+              type: "pdf",
+            },
+            type: "artifact",
+          },
+          { reply: "Report ready", type: "resolve" },
+        ],
+        streaming: true,
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({ jid: PAIRED_JID, text: "make a report" });
+
+      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.readProfileArtifactContent).toBe(1);
+      expect(
+        sent.some((message) => message.fileName === "live-report.pdf")
+      ).toBe(true);
+    });
+  });
+
   test("sends the latest artifact when the user asks for the file", async () => {
     await withTempHome(async (homeDir) => {
       await writeWhatsAppConfigIni(homeDir, {
