@@ -421,3 +421,11 @@ test("buildChatSystemPrompt omits Discord ack-before-tools guidance on Telegram"
 
   expect(prompt).not.toContain("send a brief status line first");
 });
+
+test("buildChatSystemPrompt tells WhatsApp not to repeat file links in chat", () => {
+  const prompt = buildChatSystemPrompt([], { channel: "whatsapp" });
+
+  expect(prompt).toContain("the channel attaches it in WhatsApp");
+  expect(prompt).toContain("Do not put download links");
+  expect(prompt).not.toContain("the channel attaches it in Telegram");
+});

@@ -113,12 +113,15 @@ export async function deliverWhatsAppTurnArtifactShares(input: {
   });
   await input.sessionStore.save();
 
+  const unattached: typeof delivered = [];
+
   for (const artifact of delivered) {
     if (artifact.sizeBytes > WHATSAPP_ARTIFACT_MEDIA_MAX_BYTES) {
       await input.sendText(
         input.jid,
         formatWhatsAppArtifactTooLargeMessage(artifact.sizeBytes)
       );
+      unattached.push(artifact);
       continue;
     }
 
@@ -133,10 +136,16 @@ export async function deliverWhatsAppTurnArtifactShares(input: {
         mimeType: artifact.mimeType,
       });
 
-      if (!result.ok && result.error) {
+      if (result.ok) {
+        continue;
+      }
+
+      unattached.push(artifact);
+      if (result.error) {
         await input.sendText(input.jid, result.error);
       }
     } catch (error) {
+      unattached.push(artifact);
       await input.sendText(
         input.jid,
         error instanceof Error
@@ -146,7 +155,7 @@ export async function deliverWhatsAppTurnArtifactShares(input: {
     }
   }
 
-  const footer = formatArtifactShareFooter(delivered, {
+  const footer = formatArtifactShareFooter(unattached, {
     webPublicUrlConfigured,
   });
 

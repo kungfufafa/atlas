@@ -141,7 +141,7 @@ Supported inputs include:
 
 Photos up to **5 MB** and documents up to **25 MB** are processed. Small documents go into the same Atlas chat flow as the web app. Larger documents are read as text (up to a safe extract size) so a 20 MB PDF can still be summarized without loading the whole file into the model. A caption on the photo or file becomes the message text. Files over 25 MB, or scanned PDFs with no extractable text, get a clear rejection instead of failing silently.
 
-When the agent saves a file (spreadsheet, document, deck, or other artifact), Atlas sends the file in the WhatsApp chat when it is within 5 MB, and posts a **Publish-style share link** after the reply. Ask “send the file” to get the latest saved file again. If the file is larger than 5 MB, use the share link. Replies quote the message you sent.
+When the agent saves a file (spreadsheet, document, deck, or other artifact), Atlas sends the file in the WhatsApp chat when it is within 5 MB. The chat reply is a short summary — Atlas does not repeat the filename or a download link in text, because WhatsApp already shows the attachment. Ask “send the file” to get the latest saved file again. If the file is larger than 5 MB, Atlas sends a share link instead. Replies quote the message you sent.
 
 ## Send to a number from this workspace
 

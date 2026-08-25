@@ -1627,7 +1627,7 @@ describe("createChatHandler artifact delivery", () => {
     { content: "Saved the report.", role: "assistant" },
   ];
 
-  test("posts a publish share link after a paired save-artifact turn", async () => {
+  test("attaches the file without a share-link chat bubble", async () => {
     await withTempHome(async (homeDir) => {
       await writeWhatsAppConfigIni(homeDir, {
         pairedJid: PAIRED_JID,
@@ -1666,6 +1666,100 @@ describe("createChatHandler artifact delivery", () => {
       expect(calls.publishProfileArtifactShare).toBe(1);
       expect(calls.readProfileArtifactContent).toBe(1);
       expect(sent.some((message) => message.document)).toBe(true);
+      expect(
+        sent.some((message) =>
+          message.text?.includes("https://app.example/s/tok_test")
+        )
+      ).toBe(false);
+    });
+  });
+
+  test("posts a share link when the file is too large to attach", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const oversizedMeta = JSON.stringify({
+        mimeType: "application/pdf",
+        savedAt: "2026-07-13T10:00:00.000Z",
+        sizeBytes: 6 * 1024 * 1024,
+      });
+      const oversizedMessages: ChatMessage[] = [
+        { content: "save report", role: "user" },
+        {
+          content: "",
+          role: "assistant",
+          toolCalls: [
+            {
+              arguments: { content: "pdf", path: "artifacts/report.pdf" },
+              id: "tool_1",
+              name: "write_file",
+            },
+            {
+              arguments: {
+                content: oversizedMeta,
+                path: "artifacts/report.pdf.atlas-meta.json",
+              },
+              id: "tool_2",
+              name: "write_file",
+            },
+          ],
+        },
+        {
+          content: JSON.stringify({
+            bytesWritten: 8,
+            path: "/home/.atlas/orgs/org/profiles/default/artifacts/report.pdf",
+          }),
+          name: "write_file",
+          role: "tool",
+          toolCallId: "tool_1",
+        },
+        {
+          content: JSON.stringify({
+            bytesWritten: oversizedMeta.length,
+            path: "/home/.atlas/orgs/org/profiles/default/artifacts/report.pdf.atlas-meta.json",
+          }),
+          name: "write_file",
+          role: "tool",
+          toolCallId: "tool_2",
+        },
+        { content: "Saved the report.", role: "assistant" },
+      ];
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        messages: oversizedMessages,
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      await sessionStore.load();
+      sessionStore.set(PAIRED_JID, {
+        profileId: "default",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({ jid: PAIRED_JID, text: "thanks" });
+
+      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.readProfileArtifactContent).toBe(0);
+      expect(sent.some((message) => message.document)).toBe(false);
       expect(
         sent.some((message) =>
           message.text?.includes("https://app.example/s/tok_test")
@@ -1861,6 +1955,74 @@ describe("createChatHandler artifact delivery", () => {
       expect(
         sent.some((message) => message.fileName === "live-report.pdf")
       ).toBe(true);
+      expect(
+        sent.some((message) =>
+          message.text?.includes("https://app.example/s/tok_test")
+        )
+      ).toBe(false);
+    });
+  });
+
+  test("strips download links from the chat reply when a file is attached", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client } = createMockClient({
+        artifactContentBytes: new TextEncoder().encode("xlsx-bytes"),
+        messages: [],
+        steps: [
+          {
+            artifact: {
+              createdAt: "2026-08-25T10:00:00.000Z",
+              filename: "sales.xlsx",
+              id: "artifact_xlsx",
+              mimeType:
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              path: "artifacts/sales.xlsx",
+              size: 10,
+              type: "spreadsheet",
+            },
+            type: "artifact",
+          },
+          {
+            reply: "Sudah.\n\n[Download Excel](sandbox:/artifacts/sales.xlsx)",
+            type: "resolve",
+          },
+        ],
+        streaming: true,
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({ jid: PAIRED_JID, text: "kirim excelnya" });
+
+      expect(sent.some((message) => message.fileName === "sales.xlsx")).toBe(
+        true
+      );
+      expect(sent.some((message) => message.text?.includes("sandbox:"))).toBe(
+        false
+      );
+      expect(
+        sent.some((message) => message.text?.includes("Download Excel"))
+      ).toBe(false);
+      expect(sent.some((message) => message.text === "Sudah.")).toBe(true);
     });
   });
 

@@ -29,6 +29,26 @@ describe("stripMarkdownForWhatsApp", () => {
   });
 });
 
+describe("prepareWhatsAppReply", () => {
+  test("strips markdown and trims", () => {
+    expect(prepareWhatsAppReply("  **bold**  ")).toBe("*bold*");
+  });
+
+  test("drops sandbox download links and share-url filename lines", () => {
+    expect(
+      prepareWhatsAppReply(
+        "Sudah.\n\n[Download Excel](sandbox:/artifacts/sales.xlsx)\n\nsales.xlsx: https://app.example/s/nkshareabc"
+      )
+    ).toBe("Sudah.");
+  });
+
+  test("keeps ordinary https links", () => {
+    expect(prepareWhatsAppReply("See https://example.com/docs")).toBe(
+      "See https://example.com/docs"
+    );
+  });
+});
+
 describe("splitWhatsAppMessage", () => {
   test("returns single chunk for short text", () => {
     expect(splitWhatsAppMessage("Hello")).toEqual(["Hello"]);
@@ -60,11 +80,5 @@ describe("splitWhatsAppMessage", () => {
 
     expect(chunks.length).toBeGreaterThan(1);
     expect(chunks.every((chunk) => chunk.length <= 65_536)).toBe(true);
-  });
-});
-
-describe("prepareWhatsAppReply", () => {
-  test("strips markdown and trims", () => {
-    expect(prepareWhatsAppReply("  **bold**  ")).toBe("*bold*");
   });
 });

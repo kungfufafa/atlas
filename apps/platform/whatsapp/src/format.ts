@@ -8,6 +8,34 @@ export function formatError(error: unknown): string {
   return formatClientError(error);
 }
 
+const ARTIFACT_SHARE_PATH = /\/s\/[A-Za-z0-9_-]+/;
+const ARTIFACT_SHARE_URL = /https?:\/\/[^\s)]+\/s\/[A-Za-z0-9_-]+/gi;
+const ARTIFACT_FILENAME_SHARE_LINE =
+  /^(?:\s*)\S+\.(?:csv|docx|gif|html|jpe?g|md|pdf|png|pptx|txt|webp|xls|xlsx|zip):\s*(?:https?:\/\/\S+|\/s\/\S+)\s*$/gim;
+
+function isDisposableWhatsAppLink(url: string): boolean {
+  const trimmed = url.trim();
+  return (
+    /^sandbox:/i.test(trimmed) ||
+    /\/artifacts\//i.test(trimmed) ||
+    ARTIFACT_SHARE_PATH.test(trimmed)
+  );
+}
+
+export function stripWhatsAppArtifactChrome(text: string): string {
+  let result = text.replace(/\[[^\]]*\]\(([^)]+)\)/g, (full, url: string) =>
+    isDisposableWhatsAppLink(url) ? "" : full
+  );
+  result = result.replace(/\bsandbox:\/\S+/gi, "");
+  result = result.replace(ARTIFACT_FILENAME_SHARE_LINE, "");
+  result = result.replace(ARTIFACT_SHARE_URL, "");
+  result = result.replace(/(^|\s)\/s\/[A-Za-z0-9_-]+/g, "$1");
+  return result
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 export function stripMarkdownForWhatsApp(text: string): string {
   let result = text.trim();
 
@@ -23,7 +51,7 @@ export function stripMarkdownForWhatsApp(text: string): string {
 }
 
 export function prepareWhatsAppReply(text: string): string {
-  return stripMarkdownForWhatsApp(text);
+  return stripMarkdownForWhatsApp(stripWhatsAppArtifactChrome(text));
 }
 
 export function splitWhatsAppMessage(text: string): string[] {

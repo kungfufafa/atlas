@@ -32,6 +32,7 @@ const MESSAGING_CHANNEL_PROMPT = {
     format: [
       "WhatsApp only supports simple *bold* and _italic_ formatting.",
       "Do not use markdown headings, bullet lists, numbered lists, tables, or ``` code fences.",
+      "When you save a file, the channel attaches it in WhatsApp. Do not put download links, sandbox: URLs, share URLs, or the filename in the chat reply — a short summary of what is in the file is enough.",
     ],
     label: "WhatsApp",
     supportsGroupAudience: false,
