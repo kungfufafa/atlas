@@ -7,6 +7,7 @@ import {
   composioUserId,
   createId,
   isComposioConfiguredAsync,
+  isServiceAccountUserId,
   type ListComposioToolkitsResponse,
   type ListProfileComposioToolkitsResponse,
   loadComposioConfigFile,
@@ -17,7 +18,6 @@ import {
   resolveComposioApiKey,
   type UpdateProfileComposioToolkitsRequest,
 } from "@atlas/core";
-import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
 import type {
   DatabaseAdapter,
   StoredComposioToolkitRecord,
@@ -31,14 +31,37 @@ import {
   type ComposioSessionMcpEndpoint,
   createComposioApiClient,
 } from "./composio-api-client";
+import { validateComposioOAuthRedirectUrl } from "./composio-callback-url";
 import { encryptComposioSecret } from "./composio-secret";
 
 export interface ComposioOAuthStatePayload {
   connectionId: string;
+  issuedAt: number;
   nonce: string;
   orgId: string;
   toolkitId: string;
   userId: string;
+}
+
+type DecodedComposioOAuthStatePayload = Omit<
+  ComposioOAuthStatePayload,
+  "issuedAt"
+> & { issuedAt?: unknown };
+
+const COMPOSIO_OAUTH_STATE_TTL_MS = 15 * 60 * 1000;
+const COMPOSIO_OAUTH_STATE_CLOCK_SKEW_MS = 60 * 1000;
+
+function oauthStateBindingValue(nonce: string, issuedAt: number): string {
+  return `${issuedAt}.${nonce}`;
+}
+
+function isOAuthStateIssuedAtValid(issuedAt: number, now: number): boolean {
+  return (
+    Number.isSafeInteger(issuedAt) &&
+    issuedAt > 0 &&
+    issuedAt >= now - COMPOSIO_OAUTH_STATE_TTL_MS &&
+    issuedAt <= now + COMPOSIO_OAUTH_STATE_CLOCK_SKEW_MS
+  );
 }
 
 function toOrgToolkitSummary(
@@ -101,29 +124,24 @@ export class ComposioService {
     this.reachabilityInflight = null;
   }
 
-  /**
-   * Channel bridges (Telegram / WhatsApp / Discord / CLI) authenticate as the
-   * local client user. Composio OAuth is per human member, so map the local
-   * client onto the earliest human Workspace Admin — same convention as the legacy
-   * org-shared connection migration.
-   */
   async resolveComposioActingUserId(
     orgId: string,
     userId: string
   ): Promise<string> {
-    if (userId !== LOCAL_CLIENT_USER_ID) {
-      return userId;
+    if (isServiceAccountUserId(userId)) {
+      throw new AtlasApiError(
+        "Composio requires a linked human workspace identity.",
+        403
+      );
     }
-
-    const members = await this.databaseAdapter.listOrgMembers(orgId);
-    const humanAdmins = members
-      .filter(
-        (member) =>
-          member.role === "admin" && member.userId !== LOCAL_CLIENT_USER_ID
-      )
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-
-    return humanAdmins[0]?.userId ?? userId;
+    const member = await this.databaseAdapter.getOrgMember(orgId, userId);
+    if (!member) {
+      throw new AtlasApiError(
+        "Composio requires a linked human workspace identity.",
+        403
+      );
+    }
+    return userId;
   }
 
   private async resolveApiKey(): Promise<string> {
@@ -399,9 +417,11 @@ export class ComposioService {
       );
     const connectionId = existingConnection?.id ?? createId("cuc");
     const oauthNonce = nanoid(32);
+    const issuedAt = Date.now();
     const state = Buffer.from(
       JSON.stringify({
         connectionId,
+        issuedAt,
         nonce: oauthNonce,
         orgId,
         toolkitId: orgToolkit.id,
@@ -414,6 +434,7 @@ export class ComposioService {
       toolkitSlug,
       callbackUrl
     );
+    const redirectUrl = validateComposioOAuthRedirectUrl(link.redirectUrl);
 
     const connection: StoredComposioUserConnectionRecord = {
       connectedAccountId:
@@ -423,7 +444,9 @@ export class ComposioService {
       createdAt: existingConnection?.createdAt ?? now,
       id: connectionId,
       lastError: null,
-      oauthStateHash: this.authService.hashToken(oauthNonce),
+      oauthStateHash: this.authService.hashToken(
+        oauthStateBindingValue(oauthNonce, issuedAt)
+      ),
       orgId,
       sessionIdEnc: null,
       status: "oauth_in_progress",
@@ -433,22 +456,21 @@ export class ComposioService {
     };
 
     await this.databaseAdapter.upsertComposioUserConnection(connection);
+    await this.requireActiveOAuthOrganization(orgId, connection);
 
-    return { redirectUrl: link.redirectUrl };
+    return { redirectUrl };
   }
 
   async completeOAuth(
     state: string,
     options: { connectedAccountId?: string | null } = {}
   ): Promise<{ orgId: string; toolkitSlug: string }> {
-    const apiClient = await this.requireAvailable();
-
-    let payload: ComposioOAuthStatePayload;
+    let payload: DecodedComposioOAuthStatePayload;
 
     try {
       payload = JSON.parse(
         Buffer.from(state, "base64url").toString("utf8")
-      ) as ComposioOAuthStatePayload;
+      ) as DecodedComposioOAuthStatePayload;
     } catch {
       throw new AtlasApiError("Invalid OAuth state.", 400);
     }
@@ -484,49 +506,153 @@ export class ComposioService {
       throw new AtlasApiError("Invalid OAuth state.", 400);
     }
 
+    if (!connection.oauthStateHash) {
+      throw new AtlasApiError("Invalid OAuth state.", 400);
+    }
+
+    const expectedStateHash = connection.oauthStateHash;
+
+    const issuedAt = payload.issuedAt;
+    if (typeof issuedAt !== "number") {
+      // Pre-issuedAt states are intentionally fail-closed. If the legacy nonce
+      // is authentic, consume it so the user must start a fresh OAuth flow.
+      if (this.authService.hashToken(payload.nonce) === expectedStateHash) {
+        await this.invalidateOAuthConnection(
+          connection,
+          "OAuth state format expired. Start the connection again.",
+          expectedStateHash
+        );
+      }
+      throw new AtlasApiError("Invalid OAuth state.", 400);
+    }
+
     if (
-      !connection.oauthStateHash ||
-      this.authService.hashToken(payload.nonce) !== connection.oauthStateHash
+      this.authService.hashToken(
+        oauthStateBindingValue(payload.nonce, issuedAt)
+      ) !== expectedStateHash
     ) {
       throw new AtlasApiError("Invalid OAuth state.", 400);
     }
 
-    const connectedAccountId = await this.resolveVerifiedConnectedAccountId(
-      apiClient,
-      payload.userId,
-      connection.connectedAccountId,
-      options.connectedAccountId
-    );
+    if (!isOAuthStateIssuedAtValid(issuedAt, Date.now())) {
+      await this.invalidateOAuthConnection(
+        connection,
+        "OAuth state expired. Start the connection again.",
+        expectedStateHash
+      );
+      throw new AtlasApiError("Invalid OAuth state.", 400);
+    }
 
-    await this.databaseAdapter.upsertComposioUserConnection({
+    await this.requireActiveOAuthOrganization(
+      payload.orgId,
+      connection,
+      expectedStateHash
+    );
+    const apiClient = await this.requireAvailable();
+    const claimHash = this.authService.hashToken(`oauth-claim.${nanoid(32)}`);
+    const claimedConnection: StoredComposioUserConnectionRecord = {
       ...connection,
-      connectedAccountId,
       lastError: null,
-      status: "connected",
+      oauthStateHash: claimHash,
       updatedAt: new Date().toISOString(),
-    });
+    };
+    const claimed =
+      await this.databaseAdapter.compareAndSwapComposioUserConnection(
+        claimedConnection,
+        expectedStateHash
+      );
+    if (!claimed) {
+      throw new AtlasApiError("Invalid OAuth state.", 400);
+    }
 
     try {
+      await this.requireActiveOAuthOrganization(
+        payload.orgId,
+        claimedConnection,
+        claimHash
+      );
+      const connectedAccountId = await this.resolveVerifiedConnectedAccountId(
+        apiClient,
+        payload.userId,
+        claimedConnection.connectedAccountId,
+        options.connectedAccountId
+      );
+      await this.requireActiveOAuthOrganization(
+        payload.orgId,
+        claimedConnection,
+        claimHash
+      );
+
+      const connectedConnection: StoredComposioUserConnectionRecord = {
+        ...claimedConnection,
+        connectedAccountId,
+        status: "connected",
+        updatedAt: new Date().toISOString(),
+      };
+      const markedConnected =
+        await this.databaseAdapter.compareAndSwapComposioUserConnection(
+          connectedConnection,
+          claimHash
+        );
+      if (!markedConnected) {
+        throw new AtlasApiError("Invalid OAuth state.", 400);
+      }
+      await this.requireActiveOAuthOrganization(
+        payload.orgId,
+        connectedConnection,
+        claimHash
+      );
+
       await this.syncUserToolkit(
         payload.orgId,
         payload.userId,
-        orgToolkit.toolkitSlug
+        orgToolkit.toolkitSlug,
+        { expectedOAuthStateHash: claimHash }
       );
-    } catch {
-      await this.databaseAdapter.upsertComposioUserConnection(connection);
-      throw new AtlasApiError("Could not complete Composio connection.", 400);
-    }
 
-    const synced = await this.databaseAdapter.getComposioUserConnectionById(
-      connection.id
-    );
-    if (synced) {
-      await this.databaseAdapter.upsertComposioUserConnection({
+      const synced = await this.databaseAdapter.getComposioUserConnectionById(
+        connection.id
+      );
+      if (!synced || synced.oauthStateHash !== claimHash) {
+        throw new AtlasApiError("Invalid OAuth state.", 400);
+      }
+      await this.requireActiveOAuthOrganization(
+        payload.orgId,
+        synced,
+        claimHash
+      );
+      const finalizedConnection: StoredComposioUserConnectionRecord = {
         ...synced,
         oauthStateHash: null,
         status: "connected",
         updatedAt: new Date().toISOString(),
-      });
+      };
+      const finalized =
+        await this.databaseAdapter.compareAndSwapComposioUserConnection(
+          finalizedConnection,
+          claimHash
+        );
+      if (!finalized) {
+        throw new AtlasApiError("Invalid OAuth state.", 400);
+      }
+      await this.requireActiveOAuthOrganization(
+        payload.orgId,
+        finalizedConnection,
+        null
+      );
+    } catch (error) {
+      await this.invalidateOAuthConnection(
+        claimedConnection,
+        "Could not complete Composio connection. Start the connection again.",
+        claimHash
+      );
+      if (
+        error instanceof AtlasApiError &&
+        error.message === "Invalid OAuth state."
+      ) {
+        throw error;
+      }
+      throw new AtlasApiError("Could not complete Composio connection.", 400);
     }
 
     this.invalidateProfileSessionCachesForUser(payload.userId);
@@ -567,7 +693,8 @@ export class ComposioService {
   async syncUserToolkit(
     orgId: string,
     userId: string,
-    toolkitSlug: string
+    toolkitSlug: string,
+    options: { expectedOAuthStateHash?: string } = {}
   ): Promise<ComposioToolkitSummary> {
     const actingUserId = await this.resolveComposioActingUserId(orgId, userId);
     const apiClient = await this.requireAvailable();
@@ -579,6 +706,12 @@ export class ComposioService {
 
     if (!connection || connection.status !== "connected") {
       throw new AtlasApiError("Connect the toolkit before syncing tools.", 400);
+    }
+    if (
+      options.expectedOAuthStateHash !== undefined &&
+      connection.oauthStateHash !== options.expectedOAuthStateHash
+    ) {
+      throw new AtlasApiError("Invalid OAuth state.", 400);
     }
 
     try {
@@ -606,22 +739,60 @@ export class ComposioService {
       };
 
       await this.databaseAdapter.upsertComposioToolkit(updatedOrgToolkit);
-      await this.databaseAdapter.upsertComposioUserConnection(
-        updatedConnection
+      if (options.expectedOAuthStateHash === undefined) {
+        await this.databaseAdapter.upsertComposioUserConnection(
+          updatedConnection
+        );
+      } else {
+        const updated =
+          await this.databaseAdapter.compareAndSwapComposioUserConnection(
+            updatedConnection,
+            options.expectedOAuthStateHash
+          );
+        if (!updated) {
+          throw new AtlasApiError("Invalid OAuth state.", 400);
+        }
+      }
+      await this.requireActiveOAuthOrganization(
+        orgId,
+        updatedConnection,
+        options.expectedOAuthStateHash ?? updatedConnection.oauthStateHash
       );
       this.invalidateProfileSessionCachesForUser(actingUserId);
       return toOrgToolkitSummary(updatedOrgToolkit);
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const failureMessage = "Could not sync Composio toolkit.";
+      if (options.expectedOAuthStateHash !== undefined) {
+        await this.invalidateOAuthConnection(
+          connection,
+          failureMessage,
+          options.expectedOAuthStateHash
+        );
+        throw error;
+      }
+      const currentConnection =
+        (await this.databaseAdapter.getComposioUserConnectionById(
+          connection.id
+        )) ?? connection;
+      await this.requireActiveOAuthOrganization(
+        orgId,
+        currentConnection,
+        currentConnection.oauthStateHash
+      );
       const updatedConnection: StoredComposioUserConnectionRecord = {
-        ...connection,
-        lastError: message,
+        ...currentConnection,
+        lastError: failureMessage,
         updatedAt: new Date().toISOString(),
       };
       await this.databaseAdapter.upsertComposioUserConnection(
         updatedConnection
       );
-      throw error;
+      await this.requireActiveOAuthOrganization(
+        orgId,
+        updatedConnection,
+        updatedConnection.oauthStateHash
+      );
+      throw new AtlasApiError(failureMessage, 400);
     }
   }
 
@@ -965,6 +1136,48 @@ export class ComposioService {
     }
 
     return apiClient;
+  }
+
+  private async requireActiveOAuthOrganization(
+    orgId: string,
+    connection: StoredComposioUserConnectionRecord,
+    expectedOAuthStateHash: string | null = connection.oauthStateHash
+  ): Promise<void> {
+    const organization = await this.databaseAdapter.getOrganizationById(orgId);
+    if (organization && !organization.archivedAt) {
+      return;
+    }
+
+    await this.invalidateOAuthConnection(
+      connection,
+      "Workspace archived before OAuth completed.",
+      expectedOAuthStateHash
+    );
+
+    throw new AtlasApiError("Invalid OAuth state.", 400);
+  }
+
+  private async invalidateOAuthConnection(
+    connection: StoredComposioUserConnectionRecord,
+    lastError: string,
+    expectedOAuthStateHash: string | null = connection.oauthStateHash
+  ): Promise<boolean> {
+    try {
+      return await this.databaseAdapter.compareAndSwapComposioUserConnection(
+        {
+          ...connection,
+          lastError,
+          oauthStateHash: null,
+          sessionIdEnc: null,
+          status: "error",
+          updatedAt: new Date().toISOString(),
+        },
+        expectedOAuthStateHash
+      );
+    } catch {
+      // The validation failure remains authoritative even if cleanup fails.
+      return false;
+    }
   }
 
   private async getOwnedToolkit(

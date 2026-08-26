@@ -85,6 +85,24 @@ breakdowns stay inside the selected workspace — they do not include other
 workspaces' tokens or spend. Channel bots and MCP servers on this page are the
 ones configured for this workspace only.
 
+## Archive a workspace
+
+A Superadmin can retire a workspace without deleting its data:
+
+1. Switch to the workspace.
+2. Open **System → Organization**.
+3. Choose **Archive organization**, review the warning, and confirm.
+
+The workspace immediately disappears from members' workspace switchers and
+stops accepting chat, automation, invite, channel, and notification-webhook
+activity. Its profiles, memberships, and files remain stored for audit or a
+future recovery workflow; the current Atlas dashboard cannot restore an
+archived workspace.
+
+Atlas will not archive the final active workspace. A Superadmin must also keep
+at least one active workspace membership, so concurrent archive requests cannot
+strand that account outside every workspace.
+
 ## Next steps
 
 - [Org memory](/org-memory) — shared facts for every profile in a workspace

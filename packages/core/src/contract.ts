@@ -1,4 +1,5 @@
 import type { LoadAttachmentBytes } from "./attachments/content";
+import type { RetryPolicy } from "./tools/execution-contract";
 
 export type AutomationTrigger =
   | { type: "manual" }
@@ -367,6 +368,75 @@ export interface SetupRestoreDataImportResponse
   requiresRestart: boolean;
 }
 
+/** A portable snapshot of one non-super profile; user-authored content may be sensitive. */
+export interface ProfilePackSkippedItem {
+  path: string;
+  reason: string;
+}
+
+export interface ProfilePackCustomTool {
+  description: string;
+  handlerConfig: { modulePath: string; parameters?: JsonSchema };
+  handlerType: "javascript";
+  name: string;
+}
+
+export interface ProfilePackComposioToolkitAssignment {
+  allowedActions: string[] | null;
+  toolkitSlug: string;
+}
+
+export interface ProfilePackMeta {
+  bundledSkillNames: string[];
+  /** Present in current packs so action restrictions can be restored safely. */
+  composioToolkitAssignments?: ProfilePackComposioToolkitAssignment[];
+  /** Kept for compatibility with legacy packs, which are imported without assignments. */
+  composioToolkitSlugs: string[];
+  customTools?: ProfilePackCustomTool[];
+  mcpServerNames: string[];
+  model: string | null;
+  name: string;
+  profileSkillNames: string[];
+  skillsPostTurnReview: boolean | null;
+  skillsWriteApproval: boolean | null;
+  systemPrompt: string;
+  thinkingEffort: ThinkingEffort | null;
+  thinkingEnabled: boolean | null;
+  toolNames: string[];
+}
+
+export interface ProfilePackManifest {
+  apiVersion: number | string;
+  createdAt: string;
+  kind: "atlas-profile-export" | "nakama-profile-export";
+  meta: ProfilePackMeta;
+  skipped: ProfilePackSkippedItem[];
+  sourceProfileId: string;
+  topLevelPaths: string[];
+  version: number;
+}
+
+export interface ProfilePackPreviewResponse {
+  archiveFileCount: number;
+  archiveTotalBytes: number;
+  manifest: ProfilePackManifest;
+  plannedName: string;
+  skippedAssignments: ProfilePackSkippedItem[];
+  topLevelPaths: string[];
+}
+
+export interface ProfilePackImportRequest {
+  confirm: boolean;
+  data: string;
+  name?: string;
+}
+
+export interface ProfilePackImportResponse {
+  manifest: ProfilePackManifest;
+  profileId: string;
+  skippedAssignments: ProfilePackSkippedItem[];
+}
+
 export interface AuthCredentialsRequest {
   email: string;
   password: string;
@@ -416,9 +486,12 @@ export type OrgRole = "admin" | "member" | "viewer";
 export type ChannelType = "telegram" | "whatsapp" | "discord";
 
 export interface OrganizationSummary {
+  archivedAt?: string | null;
   createdAt: string;
   id: string;
   name: string;
+  skillsCuratorConsolidation?: boolean;
+  skillsCuratorLastRunAt?: string | null;
   skillsPostTurnReview?: boolean;
   skillsWriteApproval?: boolean;
   slug: string;
@@ -437,6 +510,7 @@ export interface CreateOrganizationRequest {
 
 export interface UpdateOrganizationRequest {
   name?: string;
+  skillsCuratorConsolidation?: boolean;
   skillsPostTurnReview?: boolean;
   skillsWriteApproval?: boolean;
 }
@@ -623,10 +697,23 @@ export type SkillProposalAction =
   | "delete"
   | "edit"
   | "write_file"
-  | "remove_file";
+  | "remove_file"
+  | "consolidate";
+
+export interface SkillConsolidationRef {
+  id: string;
+  name: string;
+  sha256: string;
+}
+
+export interface SkillConsolidationPayload {
+  losers: SkillConsolidationRef[];
+  winner: SkillConsolidationRef;
+}
 
 export interface SkillProposal {
   action: SkillProposalAction;
+  consolidation?: SkillConsolidationPayload | null;
   content: string | null;
   createdAt: string;
   id: string;
@@ -651,6 +738,41 @@ export interface ListSkillProposalsResponse {
 
 export interface SkillProposalResponse {
   proposal: SkillProposal;
+}
+
+export type SkillCuratorRunStatus = "completed" | "disabled" | "in_flight";
+
+export interface SkillCuratorRunResult {
+  considered: number;
+  finishedAt: string;
+  orgId: string;
+  profileIds: string[];
+  skippedAutomationOrTask: number;
+  skippedGeneration: number;
+  skippedInvalid: number;
+  staged: number;
+  startedAt: string;
+  status: SkillCuratorRunStatus;
+  trigger: "manual" | "scheduled";
+}
+
+export interface SkillCuratorStatusResponse {
+  enabled: boolean;
+  lastRunAt: string | null;
+  latest: SkillCuratorRunResult | null;
+}
+
+export interface SkillCuratorScheduleOrg {
+  id: string;
+  lastRunAt: string | null;
+}
+
+export interface ListSkillCuratorScheduleOrgsResponse {
+  orgs: SkillCuratorScheduleOrg[];
+}
+
+export interface SkillCuratorDueRunResponse {
+  result: SkillCuratorRunResult | null;
 }
 
 export type SkillSuggestionStatus = "pending" | "applied";
@@ -752,11 +874,16 @@ export interface ExternalPrincipalInput {
 export interface CreateSessionRequest {
   channel: AgentChannel;
   externalPrincipal?: ExternalPrincipalInput;
+  model?: string;
   profileId?: string;
 }
 
 export interface CreateSessionResponse {
   sessionId: string;
+}
+
+export interface UpdateSessionRequest {
+  model: string | null;
 }
 
 export interface BranchSessionRequest {
@@ -831,10 +958,12 @@ export interface ChatContextUsage {
 }
 
 export interface SessionMessagesResponse {
+  canUpdateModel: boolean;
   channel: AgentChannel;
   contextUsage?: ChatContextUsage | null;
   messageMeta: SessionMessageMeta[];
   messages: ChatMessage[];
+  model: string | null;
   questionnaire: AgentQuestionnaire | null;
   todos: AgentTodo[];
 }
@@ -1448,6 +1577,20 @@ export type CodingAgentProviderPassthroughSummary = {
   message?: string | null;
 };
 
+export interface CodingHarnessLoginCommand {
+  command: string;
+  name: string;
+}
+
+export interface CodingHarnessSettingsResponse {
+  loginCommands: CodingHarnessLoginCommand[];
+  providerPassthroughEnabled: boolean;
+}
+
+export interface UpdateCodingHarnessSettingsRequest {
+  providerPassthroughEnabled: boolean;
+}
+
 export interface AgentBrowserStatusResponse {
   installCommand: string;
   installed: boolean;
@@ -1570,6 +1713,7 @@ export interface ProviderInstanceSummary {
   label: string;
   modelCount: number;
   type: ProviderName;
+  wireApi?: WireApi | null;
 }
 
 export interface ListProvidersResponse {
@@ -1584,6 +1728,7 @@ export interface TestProviderRequest {
   hostMode?: OllamaHostMode;
   model?: string;
   type: ProviderName;
+  wireApi?: WireApi;
 }
 
 export interface TestProviderResponse {
@@ -1600,6 +1745,7 @@ export interface CreateProviderRequest {
   model?: string;
   skipValidation?: boolean;
   type: ProviderName;
+  wireApi?: WireApi;
 }
 
 export interface CreateProviderResponse {
@@ -1615,6 +1761,7 @@ export interface UpdateProviderRequest {
   hostMode?: OllamaHostMode;
   label?: string;
   skipValidation?: boolean;
+  wireApi?: WireApi;
 }
 
 export interface UpdateProviderResponse {
@@ -1642,7 +1789,16 @@ export interface DiscoverModelsRequest {
   baseUrl?: string;
   hostMode?: OllamaHostMode;
   /** When set, discovery uses the matching remote fetch path (Ollama includes `/api/tags` fallback). */
-  provider?: "ollama" | "openai_compatible" | "fireworks" | "opencode_go";
+  provider?:
+    | "ollama"
+    | "openai_compatible"
+    | "fireworks"
+    | "opencode_go"
+    | "minimax"
+    | "minimax_cn"
+    | "xai"
+    | "zhipu"
+    | "zhipu_cn";
   providerId?: string;
 }
 
@@ -1654,6 +1810,7 @@ export interface ConfigureProviderRequest {
   hostMode?: OllamaHostMode;
   model?: string;
   provider: ProviderName;
+  wireApi?: WireApi;
 }
 
 export interface ConfigureProviderResponse {
@@ -1671,6 +1828,8 @@ export interface ProfileSummary {
   mcpServerCount: number;
   model: string | null;
   name: string;
+  /** null = inherit org default; true/false = force curator consolidation on/off */
+  skillsCuratorConsolidation?: boolean | null;
   /** null = inherit org default; true/false = force post-turn review on/off for this profile */
   skillsPostTurnReview?: boolean | null;
   /** null = inherit org default; true/false = force gate on/off for this profile */
@@ -1879,8 +2038,15 @@ export interface CreateProfileRequest {
 export interface UpdateProfileRequest {
   model?: string | null;
   name?: string;
+  skillsCuratorConsolidation?: boolean | null;
   skillsPostTurnReview?: boolean | null;
   skillsWriteApproval?: boolean | null;
+  soulFiles?: {
+    "SOUL.md"?: string;
+    "STYLE.md"?: string;
+    "INSTRUCTIONS.md"?: string;
+    "MEMORY.md"?: string;
+  };
   systemPrompt?: string;
 }
 
@@ -1965,7 +2131,30 @@ export interface ArtifactFile {
   updatedAt: string;
 }
 
+export type ArtifactCategory =
+  | "document"
+  | "html"
+  | "image"
+  | "markdown"
+  | "other"
+  | "text"
+  | "video";
+
+export interface ArtifactFolderTypeStats {
+  fileCount: number;
+  latestUpdatedAt: string;
+}
+
+export interface ArtifactFolderMetadata {
+  fileCount: number;
+  latestUpdatedAt: string;
+  name: string;
+  prefix: string;
+  typeStats: Partial<Record<ArtifactCategory, ArtifactFolderTypeStats>>;
+}
+
 export interface ListArtifactsOptions {
+  folder?: string;
   limit?: number;
   offset?: number;
 }
@@ -1973,6 +2162,7 @@ export interface ListArtifactsOptions {
 export interface ListArtifactsResponse {
   artifacts: ArtifactFile[];
   directory: string;
+  folders?: ArtifactFolderMetadata[];
   limit?: number;
   offset?: number;
   profileId: string;
@@ -1983,6 +2173,30 @@ export interface DeleteArtifactResponse {
   deleted: boolean;
   filename: string;
   profileId: string;
+}
+
+export type EditableArtifactKind = "markdown" | "delimited";
+
+export interface EditableArtifactResponse {
+  columnCount?: number;
+  content?: string;
+  delimiter?: "," | ";" | "\t";
+  editable: boolean;
+  expectedHash: string;
+  filename: string;
+  kind: EditableArtifactKind;
+  path: string;
+  reason?: string;
+  rowCount?: number;
+  rows?: string[][];
+  sizeBytes: number;
+  truncated: boolean;
+}
+
+export interface UpdateEditableArtifactRequest {
+  content?: string;
+  expectedHash: string;
+  rows?: string[][];
 }
 
 export interface PublishArtifactShareRequest {
@@ -2089,9 +2303,18 @@ export type ProviderName =
   | "fireworks"
   | "ollama"
   | "openai_compatible"
-  | "opencode_go";
+  | "opencode_go"
+  | "cloudflare"
+  | "minimax"
+  | "minimax_cn"
+  | "xai"
+  | "zhipu"
+  | "zhipu_cn";
 
 export type OllamaHostMode = "local" | "cloud";
+
+/** OpenAI-compatible endpoints may expose either wire protocol. */
+export type WireApi = "chat" | "responses";
 
 export type GenerateTextFormat = "json" | "text";
 
@@ -2113,7 +2336,7 @@ export interface JsonSchema {
   items?: JsonSchema;
   properties?: Record<string, JsonSchema>;
   required?: string[];
-  type?: string;
+  type?: string | string[];
 }
 
 export interface LlmToolDefinition {
@@ -2128,9 +2351,28 @@ export interface ToolCall {
   name: string;
 }
 
+export type ProviderContentProtocol =
+  | "anthropic-messages"
+  | "gemini-content"
+  | "openai-responses";
+
+/** Identifies the wire format of opaque assistant content kept for exact replay. */
+export interface ProviderContentProvenance {
+  /** Exact model that produced the opaque payload. */
+  modelId?: string;
+  protocol: ProviderContentProtocol;
+  provider: ProviderName;
+  /** Stable configured provider identity; prevents replay across instances of the same type. */
+  providerInstanceId?: string;
+  /** Random connection revision rotated when provider connection semantics change. */
+  providerReplayRevision?: string;
+}
+
 export type ChatMessage =
   | { role: "user"; content: string | MessageContentPart[] }
   | {
+      /** Pending or resolved action approval rendered by chat UI; never replayed to providers. */
+      approval?: ApprovalRequest;
       role: "assistant";
       content: string;
       /**
@@ -2144,6 +2386,11 @@ export type ChatMessage =
       toolCalls?: ToolCall[];
       /** Provider-specific assistant payload for multi-turn replay (Anthropic blocks, OpenAI response items). */
       providerContent?: unknown[];
+      /**
+       * Source of `providerContent`. Opaque content is replayed only when both
+       * the provider and wire protocol match the active turn.
+       */
+      providerContentProvenance?: ProviderContentProvenance;
     }
   | { role: "tool"; toolCallId: string; name: string; content: string };
 
@@ -2229,6 +2476,8 @@ export interface ToolContext {
   approvalGrantId?: string;
   automationId?: string;
   automationRunId?: string;
+  /** Revalidates tenant liveness at the final boundary before a tool runs. */
+  beforeToolCall?: () => Promise<void>;
   /** Session channel when known (used for interactive-only tool gates). */
   channel?: AgentChannel;
   /** Browser origin for OAuth callbacks during this tool run. */
@@ -2240,6 +2489,8 @@ export interface ToolContext {
    * refuse paths matching skills/<name>/SKILL.md under the profile workspace.
    */
   forbidProfileSkillMarkdownWrites?: boolean;
+  /** Dynamic per-turn gate: when true, skill_manage may only stage proposals. */
+  forceSkillWriteProposal?: () => boolean;
   /** Platform admin bypass for org-memory writes when orgRole is not admin. */
   isPlatformAdmin?: boolean;
   /** Loads a provider-neutral document/image reference scoped to this execution. */
@@ -2295,6 +2546,8 @@ export interface ToolDefinition<Input = unknown, Output = unknown> {
   /** When true, this tool may run concurrently with other parallelSafe tools in the same turn. */
   parallelSafe?: boolean;
   parameters?: JsonSchema;
+  /** Optional execution-boundary retry policy for this tool. */
+  retryPolicy?: RetryPolicy;
   run(input: Input, context: ToolContext): Promise<Output>;
 }
 

@@ -3,6 +3,7 @@ import type { CanonicalPrincipal } from "../identity/principal";
 import { PrincipalRequiredError } from "../identity/principal";
 import { LOCAL_CLIENT_USER_ID } from "../local-auth";
 import { nextSkillRevision } from "../skills/registry";
+import { SYNTHETIC_SECRET_FIXTURES } from "../testing/synthetic-secret-fixtures";
 import {
   captureEvidence,
   closeLearningLoop,
@@ -60,11 +61,13 @@ describe("closed learning loop", () => {
     const item = captureEvidence({
       id: "ev_1",
       kind: "turn",
-      payload: { text: "api_key=sk-abcdefghijklmnopqrstuvwxyz" },
+      payload: {
+        text: `api_key=${SYNTHETIC_SECRET_FIXTURES.openAiApiKey}`,
+      },
       principal,
     });
     expect(JSON.stringify(item.payload)).not.toContain(
-      "sk-abcdefghijklmnopqrstuvwxyz"
+      SYNTHETIC_SECRET_FIXTURES.openAiApiKey
     );
   });
 
@@ -372,13 +375,15 @@ describe("closed learning loop", () => {
 
   test("21 skill revision redacts secrets", () => {
     const revision = nextSkillRevision({
-      content: "token sk-abcdefghijklmnopqrstuvwxyz",
+      content: `token ${SYNTHETIC_SECRET_FIXTURES.openAiApiKey}`,
       id: "rev_1",
       orgId: "org_1",
       previousVersion: 2,
       skillId: "skill_1",
     });
-    expect(revision.content).not.toContain("sk-abcdefghijklmnopqrstuvwxyz");
+    expect(revision.content).not.toContain(
+      SYNTHETIC_SECRET_FIXTURES.openAiApiKey
+    );
     expect(revision.version).toBe(3);
   });
 

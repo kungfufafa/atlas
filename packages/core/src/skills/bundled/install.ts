@@ -9,6 +9,7 @@ const FORCE_REFRESH_BUNDLED_SKILL_NAMES = new Set<string>([
   "manage-skills",
   "coding-agent",
   "coding-backend-cursor",
+  "agent-browser",
   "save-artifact",
 ]);
 

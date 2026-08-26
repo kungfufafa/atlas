@@ -1,0 +1,47 @@
+{
+  "name": "cloudflare-llama-3-3-70b-chat",
+  "recordedAt": "2026-08-19T14:45:41.289Z",
+  "request": {
+    "body": {
+      "messages": [
+        {
+          "content": "You are a terse assistant.",
+          "role": "system"
+        },
+        {
+          "content": "Say hello in one short sentence.",
+          "role": "user"
+        }
+      ],
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "method": "POST",
+    "url": "https://api.cloudflare.com/client/v4/accounts/replay-account/ai/v1/chat/completions"
+  },
+  "response": {
+    "body": {
+      "id": "id-replay-chat",
+      "object": "chat.completion",
+      "created": 1787150740,
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "choices": [
+        {
+          "finish_reason": "stop",
+          "index": 0,
+          "logprobs": null,
+          "message": {
+            "content": "Hello.",
+            "role": "assistant"
+          }
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 48,
+        "completion_tokens": 3,
+        "total_tokens": 51
+      }
+    },
+    "status": 200
+  },
+  "version": 1
+}

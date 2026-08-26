@@ -15,6 +15,19 @@ export function isSupersededChatTurn(
   return activeGeneration !== turnGeneration;
 }
 
+export function canSelectSessionModel(options: {
+  canUpdateExistingSession: boolean;
+  hasSession: boolean;
+  readOnlySession: boolean;
+  workspaceReadOnly: boolean;
+}): boolean {
+  if (options.readOnlySession || options.workspaceReadOnly) {
+    return false;
+  }
+
+  return options.hasSession ? options.canUpdateExistingSession : true;
+}
+
 export function resolveProfileIdForWorkspaceProfiles(input: {
   currentProfileId: string;
   liveChatProfileId?: string | null;

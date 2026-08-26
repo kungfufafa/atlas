@@ -1,6 +1,7 @@
 import type { CustomModelEntry } from "@atlas/core/contract";
 import { Add01Icon, Delete02Icon } from "hugeicons-react";
 import { useEffect, useRef, useState } from "react";
+import { modelListRowVisionEnabled } from "@/components/model-list-editor.shared";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupInput } from "@/components/ui/input-group";
 import { Switch } from "@/components/ui/switch";
@@ -17,6 +18,8 @@ interface ModelListEditorProps {
   onChange: (models: ModelListRow[]) => void;
   showPricing?: boolean;
   showThinking?: boolean;
+  showVision?: boolean;
+  visionDefaultOn?: boolean;
 }
 
 function emptyRow(): ModelListRow {
@@ -82,6 +85,8 @@ export function ModelListEditor({
   allowEmpty = false,
   showPricing = true,
   showThinking = false,
+  showVision = false,
+  visionDefaultOn = false,
   onBrowse,
   browseLabel = "Browse models.dev",
   onChange,
@@ -177,6 +182,23 @@ export function ModelListEditor({
                           />
                         </InputGroup>
                       ) : null}
+                    </div>
+                  ) : null}
+                  {showVision ? (
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <Switch
+                        aria-label={`Vision for ${row.id.trim() || "model"}`}
+                        checked={modelListRowVisionEnabled(
+                          row,
+                          visionDefaultOn
+                        )}
+                        disabled={disabled}
+                        onCheckedChange={(checked) =>
+                          updateRow(index, { supportsVision: checked })
+                        }
+                        size="sm"
+                      />
+                      <span className="text-muted-foreground">Vision</span>
                     </div>
                   ) : null}
                 </td>

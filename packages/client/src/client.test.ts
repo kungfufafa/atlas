@@ -58,15 +58,41 @@ test("automation run requests disable Bun fetch idle timeout", async () => {
     },
   });
 
-  await client.runAutomationInternal("auto_1", "tick-1");
+  await client.runAutomationInternal("auto_1", "tick-1", "org_1");
 
   expect(String(fetchCalls[0]!.input)).toBe(
-    "http://localhost:4310/v1/internal/automations/auto_1/run"
+    "http://localhost:4310/v1/internal/automations/auto_1/run?orgId=org_1"
   );
   expect(
     (fetchCalls[0]!.init as RequestInit & { idleTimeout?: number }).idleTimeout
   ).toBe(0);
   expect(fetchCalls[0]!.init?.body).toBe(JSON.stringify({ fireId: "tick-1" }));
+});
+
+test("automation worker curator requests use internal org-scoped routes", async () => {
+  const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
+    [];
+  const client = createClient({
+    authToken: "local-auth-token",
+    baseUrl: "http://localhost:4310",
+    fetch: async (input, init) => {
+      fetchCalls.push({ init, input });
+      return String(input).endsWith("/v1/internal/curator/orgs")
+        ? Response.json({ orgs: [] })
+        : Response.json({ result: null });
+    },
+  });
+
+  await client.listSkillCuratorOrgs();
+  await client.runSkillCuratorDueInternal("org one");
+
+  expect(String(fetchCalls[0]?.input)).toBe(
+    "http://localhost:4310/v1/internal/curator/orgs"
+  );
+  expect(String(fetchCalls[1]?.input)).toBe(
+    "http://localhost:4310/v1/internal/curator/orgs/org%20one/run-due"
+  );
+  expect(fetchCalls[1]?.init?.method).toBe("POST");
 });
 
 test("clients send org context on authenticated requests", async () => {
@@ -87,6 +113,59 @@ test("clients send org context on authenticated requests", async () => {
   const headers = new Headers(fetchCalls[0]!.init?.headers);
   expect(headers.get("Authorization")).toBe("Bearer local-auth-token");
   expect(headers.get("X-Org-Id")).toBe("org_test");
+});
+
+test("coding harness mode requests stay scoped to the active organization", async () => {
+  const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
+    [];
+  const client = createClient({
+    authToken: "local-auth-token",
+    baseUrl: "http://localhost:4310",
+    fetch: async (input, init) => {
+      fetchCalls.push({ init, input });
+      return Response.json({
+        loginCommands: [],
+        providerPassthroughEnabled: false,
+      });
+    },
+    orgId: "org_native",
+  });
+
+  await client.setCodingHarnessSettings(false);
+
+  expect(String(fetchCalls[0]?.input)).toBe(
+    "http://localhost:4310/v1/settings/coding-harnesses"
+  );
+  expect(fetchCalls[0]?.init?.method).toBe("PUT");
+  expect(fetchCalls[0]?.init?.body).toBe(
+    JSON.stringify({ providerPassthroughEnabled: false })
+  );
+  expect(new Headers(fetchCalls[0]?.init?.headers).get("X-Org-Id")).toBe(
+    "org_native"
+  );
+});
+
+test("coding harness requests remain pinned across an active-org switch", async () => {
+  const orgHeaders: string[] = [];
+  const client = createClient({
+    authToken: "local-auth-token",
+    baseUrl: "http://localhost:4310",
+    fetch: async (_input, init) => {
+      orgHeaders.push(new Headers(init?.headers).get("X-Org-Id") ?? "none");
+      return Response.json({
+        loginCommands: [],
+        providerPassthroughEnabled: true,
+      });
+    },
+    orgId: "org_a",
+  });
+
+  const first = client.getCodingHarnessSettings("org_a");
+  client.setOrgId("org_b");
+  const second = client.setCodingHarnessSettings(false, "org_b");
+  await Promise.all([first, second]);
+
+  expect(orgHeaders).toEqual(["org_a", "org_b"]);
 });
 
 test("isolateOrgId keeps concurrent setOrgId from racing X-Org-Id", async () => {
@@ -202,6 +281,66 @@ test("data export downloads zip bytes with filename metadata", async () => {
   expect(Array.from(new Uint8Array(result.data))).toEqual([1, 2, 3]);
 });
 
+test("profile pack helpers preserve ZIP bytes and encode import requests", async () => {
+  const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
+    [];
+  const client = createClient({
+    authToken: "local-auth-token",
+    baseUrl: "http://localhost:4310",
+    fetch: async (input, init) => {
+      fetchCalls.push({ init, input });
+      const url = String(input);
+      if (url.includes("/pack/export")) {
+        return new Response(new Uint8Array([9, 8, 7]), {
+          headers: {
+            "Content-Disposition":
+              'attachment; filename="atlas-profile-export-bot.zip"',
+            "Content-Type": "application/zip",
+          },
+        });
+      }
+      if (url.endsWith("/pack/import/preview")) {
+        return Response.json({
+          archiveFileCount: 1,
+          archiveTotalBytes: 3,
+          manifest: { kind: "atlas-profile-export" },
+          plannedName: "Bot",
+          skippedAssignments: [],
+          topLevelPaths: ["SOUL.md"],
+        });
+      }
+      return Response.json({
+        manifest: { kind: "atlas-profile-export" },
+        profileId: "bot-copy",
+        skippedAssignments: [],
+      });
+    },
+    orgId: "org_test",
+  });
+
+  const exported = await client.exportProfilePack("bot/profile");
+  expect(String(fetchCalls[0]!.input)).toBe(
+    "http://localhost:4310/v1/profiles/bot%2Fprofile/pack/export"
+  );
+  expect(exported.filename).toBe("atlas-profile-export-bot.zip");
+  expect(Array.from(new Uint8Array(exported.data))).toEqual([9, 8, 7]);
+
+  await client.previewProfilePackImport(new Uint8Array([1, 2, 3]));
+  await client.importProfilePack(new Uint8Array([4, 5, 6]), {
+    confirm: true,
+    name: "Bot Copy",
+  });
+
+  expect(JSON.parse(fetchCalls[1]!.init?.body as string)).toEqual({
+    data: Buffer.from([1, 2, 3]).toString("base64"),
+  });
+  expect(JSON.parse(fetchCalls[2]!.init?.body as string)).toEqual({
+    confirm: true,
+    data: Buffer.from([4, 5, 6]).toString("base64"),
+    name: "Bot Copy",
+  });
+});
+
 test("readProfileArtifactContent fetches artifact bytes with inline query", async () => {
   const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
     [];
@@ -236,6 +375,79 @@ test("readProfileArtifactContent fetches artifact bytes with inline query", asyn
   expect(headers.get("X-Org-Id")).toBe("org_test");
   expect(result.contentType).toBe("text/markdown");
   expect(new TextDecoder().decode(result.data)).toBe("# Report");
+});
+
+test("listProfileArtifacts scopes complete folder metadata separately from pagination", async () => {
+  const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
+    [];
+  const client = createClient({
+    authToken: "local-auth-token",
+    baseUrl: "http://localhost:4310",
+    fetch: async (input, init) => {
+      fetchCalls.push({ init, input });
+      return Response.json({
+        artifacts: [],
+        directory: "/tmp/artifacts",
+        folders: [],
+        profileId: "profile_1",
+        total: 0,
+      });
+    },
+    orgId: "org_test",
+  });
+
+  await client.listProfileArtifacts("profile_1", {
+    folder: "reports/weekly",
+    limit: 30,
+    offset: 60,
+  });
+
+  expect(fetchCalls[0]?.input.toString()).toBe(
+    "http://localhost:4310/v1/profiles/profile_1/artifacts?folder=reports%2Fweekly&limit=30&offset=60"
+  );
+});
+
+test("editable artifact helpers send a scoped hash-guarded update", async () => {
+  const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
+    [];
+  const editable = {
+    content: "# Report\n",
+    editable: true,
+    expectedHash: "a".repeat(64),
+    filename: "report.md",
+    kind: "markdown" as const,
+    path: "weekly/report.md",
+    sizeBytes: 9,
+    truncated: false,
+  };
+  const client = createClient({
+    authToken: "local-auth-token",
+    baseUrl: "http://localhost:4310",
+    fetch: async (input, init) => {
+      fetchCalls.push({ init, input });
+      return Response.json(editable);
+    },
+    orgId: "org_test",
+  });
+
+  await client.getEditableProfileArtifact("profile_1", "weekly/report.md");
+  await client.updateEditableProfileArtifact("profile_1", "weekly/report.md", {
+    content: "# Updated\n",
+    expectedHash: editable.expectedHash,
+  });
+
+  const expectedUrl =
+    "http://localhost:4310/v1/profiles/profile_1/artifacts/editable?path=weekly%2Freport.md";
+  expect(fetchCalls[0]?.input.toString()).toBe(expectedUrl);
+  expect(fetchCalls[1]?.input.toString()).toBe(expectedUrl);
+  expect(fetchCalls[1]?.init?.method).toBe("PUT");
+  expect(JSON.parse(fetchCalls[1]?.init?.body as string)).toEqual({
+    content: "# Updated\n",
+    expectedHash: editable.expectedHash,
+  });
+  const headers = new Headers(fetchCalls[1]?.init?.headers);
+  expect(headers.get("Authorization")).toBe("Bearer local-auth-token");
+  expect(headers.get("X-Org-Id")).toBe("org_test");
 });
 
 test("getProfileArtifactPreview and inspectProfileArtifact query preview endpoints", async () => {

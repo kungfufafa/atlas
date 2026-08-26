@@ -504,4 +504,51 @@ describe("seed preinstalled MCP servers", () => {
       orgId: "org_second",
     });
   });
+
+  test("does not provision or update catalog servers for archived workspaces", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await db.upsertOrganization({
+      createdAt: now,
+      id: "org_archived",
+      name: "Archived",
+      slug: "archived",
+      updatedAt: now,
+    });
+    await ensurePreinstalledMcpServers(db);
+
+    const firecrawlId = preinstalledMcpServerIdForOrg(
+      PREINSTALLED_MCP_SERVER_IDS.firecrawl,
+      "org_archived"
+    );
+    const firecrawl = await db.getMcpServer(firecrawlId);
+    expect(firecrawl).not.toBeNull();
+
+    const frozenAt = "2026-08-20T00:00:00.000Z";
+    await db.upsertMcpServer({ ...firecrawl!, updatedAt: frozenAt });
+    await db.upsertOrganization({
+      archivedAt: "2026-08-21T00:00:00.000Z",
+      createdAt: now,
+      id: "org_archived",
+      name: "Archived",
+      slug: "archived",
+      updatedAt: now,
+    });
+
+    await ensurePreinstalledMcpServers(db);
+    await ensurePreinstalledMcpServers(db, "org_archived");
+
+    expect((await db.getMcpServer(firecrawlId))?.updatedAt).toBe(frozenAt);
+    expect(
+      await db.getMcpServer(PREINSTALLED_MCP_SERVER_IDS.firecrawl)
+    ).toBeNull();
+  });
+
+  test("does not provision catalog servers for an explicit missing workspace", async () => {
+    const db = createInMemoryDatabaseAdapter();
+
+    await ensurePreinstalledMcpServers(db, "org_missing");
+
+    expect(await db.listMcpServers()).toEqual([]);
+  });
 });

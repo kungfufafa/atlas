@@ -22,6 +22,8 @@ export function migrateDatabase(db: Database): void {
   migrateSkillSuggestionsTable(db);
   migrateSkillsWriteApprovalColumns(db);
   migrateSkillsPostTurnReviewColumns(db);
+  migrateSkillsCuratorConsolidationColumns(db);
+  migrateOrganizationArchivedAt(db);
   migrateSkillUsageTables(db);
   migrateTenantOrgScope(db);
   migrateSkillOrgIds(db);
@@ -88,6 +90,12 @@ function migrateProfilesTable(db: Database): void {
   if (!columnNames.has("is_default")) {
     db.exec(`
       ALTER TABLE profiles ADD COLUMN is_default INTEGER DEFAULT 0 NOT NULL;
+    `);
+  }
+
+  if (!columnNames.has("is_importing")) {
+    db.exec(`
+      ALTER TABLE profiles ADD COLUMN is_importing INTEGER DEFAULT 0 NOT NULL;
     `);
   }
 }
@@ -500,6 +508,7 @@ function migrateSkillProposalsTable(db: Database): void {
       patch_old_string TEXT,
       patch_new_string TEXT,
       relative_path TEXT,
+      consolidation_json TEXT,
       status TEXT NOT NULL,
       reviewer_user_id TEXT,
       reviewed_at TEXT,
@@ -513,8 +522,12 @@ function migrateSkillProposalsTable(db: Database): void {
   const columns = db
     .prepare("PRAGMA table_info(skill_proposals)")
     .all() as Array<{ name: string }>;
-  if (!new Set(columns.map((column) => column.name)).has("relative_path")) {
+  const columnNames = new Set(columns.map((column) => column.name));
+  if (!columnNames.has("relative_path")) {
     db.exec("ALTER TABLE skill_proposals ADD COLUMN relative_path TEXT;");
+  }
+  if (!columnNames.has("consolidation_json")) {
+    db.exec("ALTER TABLE skill_proposals ADD COLUMN consolidation_json TEXT;");
   }
 }
 
@@ -593,6 +606,46 @@ function migrateSkillsPostTurnReviewColumns(db: Database): void {
     )
   ) {
     db.exec("ALTER TABLE profiles ADD COLUMN skills_post_turn_review INTEGER;");
+  }
+}
+
+function migrateSkillsCuratorConsolidationColumns(db: Database): void {
+  const orgColumns = db
+    .prepare("PRAGMA table_info(organizations)")
+    .all() as Array<{ name: string }>;
+  const orgColumnNames = new Set(orgColumns.map((column) => column.name));
+  if (!orgColumnNames.has("skills_curator_consolidation")) {
+    db.exec(
+      "ALTER TABLE organizations ADD COLUMN skills_curator_consolidation INTEGER NOT NULL DEFAULT 0;"
+    );
+  }
+  if (!orgColumnNames.has("skills_curator_last_run_at")) {
+    db.exec(
+      "ALTER TABLE organizations ADD COLUMN skills_curator_last_run_at TEXT;"
+    );
+  }
+
+  const profileColumns = db
+    .prepare("PRAGMA table_info(profiles)")
+    .all() as Array<{ name: string }>;
+  if (
+    !profileColumns.some(
+      (column) => column.name === "skills_curator_consolidation"
+    )
+  ) {
+    db.exec(
+      "ALTER TABLE profiles ADD COLUMN skills_curator_consolidation INTEGER;"
+    );
+  }
+}
+
+function migrateOrganizationArchivedAt(db: Database): void {
+  const columns = db
+    .prepare("PRAGMA table_info(organizations)")
+    .all() as Array<{ name: string }>;
+
+  if (!columns.some((column) => column.name === "archived_at")) {
+    db.exec("ALTER TABLE organizations ADD COLUMN archived_at TEXT;");
   }
 }
 
@@ -1153,6 +1206,12 @@ function migrateSessionsTable(db: Database): void {
     `);
   }
 
+  if (!columnNames.has("model_override")) {
+    db.exec(`
+      ALTER TABLE sessions ADD COLUMN model_override TEXT;
+    `);
+  }
+
   if (!columnNames.has("agent_todos")) {
     db.exec(`
       ALTER TABLE sessions ADD COLUMN agent_todos TEXT DEFAULT '[]' NOT NULL;
@@ -1255,6 +1314,12 @@ function migrateWorkspaceSettingsTable(db: Database): void {
   if (!columnNames.has("token_optimizer_enabled")) {
     db.exec(`
       ALTER TABLE workspace_settings ADD COLUMN token_optimizer_enabled INTEGER;
+    `);
+  }
+
+  if (!columnNames.has("coding_agent_provider_passthrough")) {
+    db.exec(`
+      ALTER TABLE workspace_settings ADD COLUMN coding_agent_provider_passthrough INTEGER NOT NULL DEFAULT 1;
     `);
   }
 

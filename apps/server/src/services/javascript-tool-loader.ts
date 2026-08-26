@@ -1,6 +1,13 @@
+import { randomUUID } from "node:crypto";
+import { copyFile, rm } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import type { JsonSchema, ToolContext, ToolDefinition } from "@atlas/core";
+import type {
+  JsonSchema,
+  RetryPolicy,
+  ToolContext,
+  ToolDefinition,
+} from "@atlas/core";
 import {
   getCustomToolsDir,
   pathExists,
@@ -9,6 +16,21 @@ import {
 import type { StoredToolRecord } from "@atlas/db";
 
 const moduleCache = new Map<string, JavascriptToolModule>();
+const moduleRevisions = new Map<string, number>();
+
+const JAVASCRIPT_TOOL_RETRY_POLICY: RetryPolicy = {
+  backoffFactor: 2,
+  initialDelayMs: 500,
+  jitter: false,
+  maxRetries: 2,
+  retryableCodes: [
+    "INTERNAL_ERROR",
+    "NETWORK_ERROR",
+    "PROVIDER_ERROR",
+    "RESOURCE_LIMIT",
+    "TIMEOUT",
+  ],
+};
 
 export interface JavascriptToolHandlerConfig {
   modulePath: string;
@@ -18,6 +40,7 @@ export interface JavascriptToolHandlerConfig {
 interface JavascriptToolModule {
   parallelSafe?: boolean;
   parameters?: JsonSchema;
+  retrySafe?: boolean;
   run: (input: unknown, context: ToolContext) => Promise<unknown>;
 }
 
@@ -61,6 +84,9 @@ export async function loadJavascriptTool(
       name: record.name,
       parameters,
       ...(module.parallelSafe ? { parallelSafe: true } : {}),
+      retryPolicy: module.retrySafe
+        ? JAVASCRIPT_TOOL_RETRY_POLICY
+        : { maxRetries: 0 },
       async run(input, context) {
         return module.run(input, context);
       },
@@ -82,6 +108,7 @@ export async function validateJavascriptToolModule(
     throw new Error(`Tool module not found: ${modulePath}`);
   }
 
+  invalidateJavascriptModuleCache(resolvedPath);
   await importJavascriptModule(resolvedPath);
 }
 
@@ -131,15 +158,36 @@ async function importJavascriptModule(
     return cached;
   }
 
-  const imported = await import(pathToFileURL(modulePath).href);
+  const revision = moduleRevisions.get(modulePath) ?? 0;
+  const importPath =
+    revision === 0 ? modulePath : await createReloadableModuleCopy(modulePath);
+  let imported: unknown;
+  try {
+    imported = await import(pathToFileURL(importPath).href);
+  } finally {
+    if (importPath !== modulePath) {
+      await rm(importPath, { force: true });
+    }
+  }
   const module = normalizeJavascriptModule(imported);
 
   moduleCache.set(modulePath, module);
   return module;
 }
 
+async function createReloadableModuleCopy(modulePath: string): Promise<string> {
+  const parsed = path.parse(modulePath);
+  const reloadPath = path.join(
+    parsed.dir,
+    `.${parsed.name}.atlas-reload-${randomUUID()}${parsed.ext || ".js"}`
+  );
+  await copyFile(modulePath, reloadPath);
+  return reloadPath;
+}
+
 export function invalidateJavascriptModuleCache(modulePath: string): void {
   moduleCache.delete(modulePath);
+  moduleRevisions.set(modulePath, (moduleRevisions.get(modulePath) ?? 0) + 1);
 }
 
 function normalizeJavascriptModule(imported: unknown): JavascriptToolModule {
@@ -166,10 +214,12 @@ function normalizeJavascriptModule(imported: unknown): JavascriptToolModule {
       : undefined;
   const parallelSafe =
     source.parallelSafe === true || record.parallelSafe === true;
+  const retrySafe = source.retrySafe === true || record.retrySafe === true;
 
   return {
     parameters,
     ...(parallelSafe ? { parallelSafe: true } : {}),
+    ...(retrySafe ? { retrySafe: true } : {}),
     run: (input, context) => Promise.resolve(run(input, context)),
   };
 }

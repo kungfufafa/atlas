@@ -123,7 +123,7 @@ export interface AgentChatSession {
   getContextUsage(): ChatContextUsage | null;
   getHistory(): readonly ChatMessage[];
   getHistoryRevision(): number;
-  send(input: SendMessageArg): Promise<string>;
+  send(input: SendMessageArg, options?: SendStreamOptions): Promise<string>;
   sendStream(
     input: SendMessageArg,
     handlers: StreamHandlers,
@@ -319,7 +319,7 @@ export function createAgentChatSession(
     getHistoryRevision() {
       return historyRevision;
     },
-    async send(input) {
+    async send(input, sendOptions) {
       return sendMessage(
         dependencies,
         tools,
@@ -334,6 +334,7 @@ export function createAgentChatSession(
           rehydrateMessagesForProvider: options.rehydrateMessagesForProvider,
           resolvePromptContext: options.resolvePromptContext,
           runCompaction,
+          signal: sendOptions?.signal,
           toolContext,
           userTimezone: options.userTimezone,
         }
@@ -397,6 +398,7 @@ async function sendMessage(
     userTimezone?: string;
   }
 ): Promise<string> {
+  options.signal?.throwIfAborted();
   let userContent = normalizeUserContent(
     input.message,
     input.images,
@@ -427,6 +429,7 @@ async function sendMessage(
     messagesIncludeUserDocuments(history);
 
   if (!dependencies.provider) {
+    options.signal?.throwIfAborted();
     const hasAttachments = multimodalTurn;
     const reply = hasAttachments
       ? "Attachments require a configured provider. Set OPENAI_API_KEY, ANTHROPIC_API_KEY, OPENROUTER_API_KEY, or GEMINI_API_KEY in Settings."
@@ -625,6 +628,10 @@ async function runConversation(
         userTimezone
       );
 
+      // Providers are expected to honor the signal, but a late successful
+      // response from one that does not must not record usage or mutate history.
+      signal?.throwIfAborted();
+
       const usedTokens =
         result.usage?.inputTokens ??
         estimateHistoryTokens(
@@ -652,12 +659,6 @@ async function runConversation(
       } catch {
         // never let accounting break a turn
       }
-
-      // Backstop for providers that ignore the signal. The in-flight request is
-      // aborted through GenerateChatInput.signal; this only catches the case where
-      // it returned anyway, so a cancelled turn leaves no half-written assistant
-      // message and never starts another tool batch.
-      signal?.throwIfAborted();
 
       history.push(result.assistantMessage);
 
@@ -959,16 +960,21 @@ async function executeToolCalls(
 
     const risk = evaluateActionRisk(call.name, call.arguments);
     if (risk.requiresApproval) {
-      handlers?.onApprovalRequested?.({
+      const approval: ApprovalRequest = {
         consequenceSummary: summarizeActionConsequence(risk.consequence),
         createdAt: new Date().toISOString(),
-        details: call.arguments,
+        details: structuredClone(call.arguments),
         id: `app_${call.id}`,
         status: "pending",
         title: risk.consequence.title,
         tool: call.name,
         toolCallId: call.id,
-      });
+      };
+      const assistantMessage = history.at(-1);
+      if (assistantMessage?.role === "assistant") {
+        assistantMessage.approval = approval;
+      }
+      handlers?.onApprovalRequested?.(approval);
     }
 
     handlers?.onToolStart?.({
@@ -1143,11 +1149,20 @@ async function generateReply(
   userTimezone?: string
 ) {
   const dateLine = currentTurnClockLine(userTimezone);
-  const replaySafeHistory = history.map((message) =>
-    message.role === "assistant" && message.relatedQuestions
-      ? { ...message, relatedQuestions: undefined }
-      : message
-  );
+  const replaySafeHistory = history.map((message) => {
+    if (
+      message.role !== "assistant" ||
+      !(message.approval || message.relatedQuestions)
+    ) {
+      return message;
+    }
+
+    return {
+      ...message,
+      approval: undefined,
+      relatedQuestions: undefined,
+    };
+  });
   const messages =
     rehydrateMessagesForProvider === undefined
       ? replaySafeHistory

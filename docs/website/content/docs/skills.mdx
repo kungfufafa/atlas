@@ -134,7 +134,9 @@ Selecting a skill inserts an explicit invocation like:
 
 The composer highlights the selected skill, but the message still sends as plain text so it works with the normal skill matcher.
 
-Atlas also ships bundled skills for system workflows. The `create-profile` bundled skill is assigned only to Super Agent, so profile-authoring instructions load when Super Agent is asked to create a profile without adding those instructions to ordinary profile prompts. That skill runs a confirm-first factory: draft soul files in chat, wait for explicit confirmation, then create.
+When the profile has **manage-skills**, the picker also shows `/learn`. Use it to turn notes, a URL, an attachment, or the workflow you just completed into a reusable skill. See [Learn from sources](/self-improving-skills#learn-from-sources).
+
+Atlas also ships bundled skills for system workflows. The `create-profile` bundled skill is assigned only to Super Agent, so profile-authoring instructions load when Super Agent is asked to create or update a profile without adding those instructions to ordinary profile prompts. Both flows are confirm-first: Super Agent shows the exact draft, waits for explicit confirmation in a later message, then creates or updates the profile.
 
 For more detail, see [Agent prompts](/agent-prompt).
 
@@ -166,7 +168,7 @@ Profiles receive bundled skills for common workflows:
 
 New custom profiles receive the same work toolkit and default bundled skills as Default Agent when those builtins are available. Super Agent also receives `bash` for one-off host commands and coding-agent workflows. Opt-in skills such as `agent-browser` are never auto-assigned.
 
-When `manage-skills` is assigned, interactive chat gets a `skill_manage` tool (`create` / `patch` / `edit` / `delete` / `write_file` / `remove_file`). Creates auto-assign to the profile. Automations and messaging channels do not receive `skill_manage`. For crystallization, optional write approval, admin review UI, and the Phase 3–4 roadmap, see [Self-improving skills](/self-improving-skills).
+When `manage-skills` is assigned, interactive chat gets a `skill_manage` tool (`create` / `patch` / `edit` / `delete` / `write_file` / `remove_file`). Creates auto-assign to the profile. Automations and messaging channels do not receive `skill_manage`. For crystallization, optional write approval, admin review, and opt-in weekly proposal-only consolidation, see [Self-improving skills](/self-improving-skills).
 
 ### Write approval (optional)
 
@@ -190,7 +192,7 @@ The `coding-agent` bundled skill teaches when to invoke a coding agent, how to i
 
 ### Agent browser
 
-The `agent-browser` bundled skill teaches agents to drive interactive browsers through `bash` for login walls, forms, and client-rendered pages. Setup, usage, session policy, and troubleshooting are in [Agent browser](/agent-browser).
+The `agent-browser` bundled skill teaches agents to drive interactive browsers through `bash` for login walls, forms, and client-rendered pages. Setup, session policy, optional CloakBrowser, and troubleshooting are in [Agent browser](/agent-browser).
 
 ## Sync behavior
 

@@ -2,10 +2,12 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, join } from "node:path";
+import { AtlasApiError } from "./api-error";
 import {
   isValidBaseUrl,
   normalizeBaseUrl,
   parseCustomModelsJson,
+  parseWireApi,
   serializeCustomModels,
   validateDisplayName,
 } from "./compatible-provider-config";
@@ -46,7 +48,9 @@ export interface ProviderInstance {
   hostMode?: import("./contract").OllamaHostMode;
   id: string;
   label: string;
+  replayRevision?: string;
   type: UserProviderName;
+  wireApi?: import("./contract").WireApi;
 }
 
 export interface UserConfig {
@@ -71,14 +75,20 @@ const PROVIDER_SECTION_PREFIX = "provider.";
 const PROVIDER_TYPE_LABELS: Record<UserProviderName, string> = {
   anthropic: "Anthropic",
   cerebras: "Cerebras",
+  cloudflare: "Cloudflare Workers AI",
   deepseek: "DeepSeek",
   fireworks: "Fireworks",
   gemini: "Gemini",
+  minimax: "MiniMax",
+  minimax_cn: "MiniMax (CN)",
   ollama: "Ollama",
   openai: "OpenAI",
   openai_compatible: "Custom",
   opencode_go: "OpenCode Go",
   openrouter: "OpenRouter",
+  xai: "xAI Grok",
+  zhipu: "GLM (Z.ai)",
+  zhipu_cn: "GLM (CN)",
 };
 
 export function createProviderInstanceId(): string {
@@ -406,18 +416,26 @@ export function buildThinkingProviderOptions(
   };
 }
 
-export async function saveUserTimezone(timezone: string): Promise<void> {
-  const trimmed = timezone.trim();
+export async function saveUserTimezone(
+  // Undefined, not just empty: request bodies reach this unvalidated, so an
+  // absent field has to name itself here rather than throw a TypeError.
+  timezone: string | undefined
+): Promise<string> {
+  const trimmed = timezone?.trim() ?? "";
 
-  if (!(trimmed && isValidTimezone(trimmed))) {
-    throw new Error(`Invalid timezone: ${timezone}`);
+  if (!trimmed) {
+    throw new AtlasApiError("Timezone is required.", 400);
+  }
+
+  if (!isValidTimezone(trimmed)) {
+    throw new AtlasApiError(`Invalid timezone: ${trimmed}`, 400);
   }
 
   const existing = await loadUserConfig();
 
   if (existing) {
     await saveUserConfig({ ...existing, timezone: trimmed });
-    return;
+    return trimmed;
   }
 
   const raw = await readTextOrNull(getUserConfigPath());
@@ -430,6 +448,8 @@ export async function saveUserTimezone(timezone: string): Promise<void> {
   await writePrivateTextFile(getUserConfigPath(), lines.join("\n"), {
     ensureDir: getUserConfigDir(),
   });
+
+  return trimmed;
 }
 
 function readWebPublicUrl(values: Record<string, string>): string | undefined {
@@ -623,14 +643,23 @@ function loadProvidersFromSections(
       type === "cerebras" ||
       type === "fireworks" ||
       type === "ollama" ||
-      type === "opencode_go"
+      type === "opencode_go" ||
+      type === "cloudflare" ||
+      type === "minimax" ||
+      type === "minimax_cn" ||
+      type === "xai" ||
+      type === "zhipu" ||
+      type === "zhipu_cn"
         ? parseCustomModelsJson(values.models_json)
         : undefined;
     const hostMode =
       type === "ollama"
         ? (parseOllamaHostMode(values.host_mode) ?? undefined)
         : undefined;
+    const wireApi =
+      type === "openai_compatible" ? parseWireApi(values.wire_api) : undefined;
     const createdAt = values.created_at?.trim() || new Date(0).toISOString();
+    const replayRevision = values.replay_revision?.trim() || undefined;
 
     providers.push({
       apiKey,
@@ -639,6 +668,8 @@ function loadProvidersFromSections(
       type,
       ...(baseUrl ? { baseUrl } : {}),
       ...(hostMode ? { hostMode } : {}),
+      ...(wireApi ? { wireApi } : {}),
+      ...(replayRevision ? { replayRevision } : {}),
       ...(customModels ? { customModels } : {}),
       createdAt,
     });
@@ -663,8 +694,16 @@ function buildProviderSectionValues(
     values.base_url = normalizeBaseUrl(provider.baseUrl);
   }
 
+  if (provider.replayRevision?.trim()) {
+    values.replay_revision = provider.replayRevision.trim();
+  }
+
   if (provider.type === "ollama" && provider.hostMode) {
     values.host_mode = provider.hostMode;
+  }
+
+  if (provider.type === "openai_compatible" && provider.wireApi) {
+    values.wire_api = provider.wireApi;
   }
 
   if (provider.customModels?.length) {

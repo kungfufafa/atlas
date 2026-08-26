@@ -31,14 +31,43 @@ Atlas supports these built-in provider types:
 | Gemini | Google Gemini models |
 | DeepSeek | DeepSeek models |
 | Cerebras | Cerebras models |
+| Cloudflare Workers AI | Cloudflare-hosted models; requires an account ID and API token |
 | Fireworks | Fireworks AI models |
 | Ollama | Local or Ollama Cloud; multiple instances allowed |
 | OpenCode Go | Live catalog from the official OpenCode Go endpoint |
+| MiniMax / MiniMax (CN) | Global and mainland China MiniMax endpoints |
+| xAI Grok | Grok models from xAI |
+| GLM (Z.ai) / GLM (CN) | Global Z.ai and mainland China GLM endpoints |
 | Custom (OpenAI-compatible) | Any OpenAI-compatible API; multiple instances allowed |
 
 Most built-in types allow one configured instance each. **Ollama** and **Custom (OpenAI-compatible)** can be added multiple times (for example local Ollama plus a remote compatible endpoint).
 
-For a custom endpoint, pick a preset such as LM Studio, vLLM, LiteLLM, llama.cpp, Groq, Together, or TokenRouter — or enter your own name and base URL — then browse models from that endpoint. API keys are optional for local servers that do not require auth. TokenRouter and similar gateways only expose the models your key can use, so Atlas tests the connection against a discovered model instead of a generic OpenAI id.
+For a custom endpoint, pick a preset such as LM Studio, vLLM, LiteLLM, llama.cpp, Groq, Together, or TokenRouter — or enter your own name and base URL — then browse models from that endpoint. API keys are optional for local servers that do not require auth. Choose **Chat completions** or **Responses** in the **API** field to match the endpoint you are connecting. If the provider only documents a `/responses` route, choose **Responses**.
+
+When you change a saved provider's base URL, enter the API key for the new endpoint in the same edit dialog. Atlas never forwards a saved credential to a different URL.
+
+TokenRouter and similar gateways only expose the models your key can use, so Atlas tests the connection against a discovered model instead of a generic OpenAI id.
+
+## Connect Cloudflare Workers AI
+
+1. In the Cloudflare dashboard, copy your **Account ID**
+2. Create an API token that can run Workers AI
+3. In **Settings → LLM providers**, choose **Cloudflare Workers AI**
+4. Paste the API token and Account ID, then select a model
+5. Use **Test connection** before saving
+
+You can also paste a complete Workers AI API URL in the Account ID field when your deployment uses a custom endpoint.
+
+## Choose a regional provider
+
+MiniMax and GLM offer separate global and mainland China endpoints. Choose the entry that matches the region where your account and API key were created:
+
+| Account region | MiniMax choice | GLM choice |
+|---|---|---|
+| Global | **MiniMax** | **GLM (Z.ai)** |
+| Mainland China | **MiniMax (CN)** | **GLM (CN)** |
+
+After entering the API key, browse the live model list and add the models your account can access. **xAI Grok** uses the same browse-and-add flow without a regional choice.
 
 ## Provider-specific features
 
@@ -53,6 +82,12 @@ Some capabilities depend on the active provider:
 Each profile selects its own model from the configured providers. Two profiles in the same org can use different providers or models.
 
 Workspace Admins manage provider credentials for their active workspace. Members use models assigned to profiles in that workspace; credentials never cross workspace boundaries.
+
+## Choose a model for one chat
+
+In a web chat, use the model picker beside the message box to override the profile model for that conversation. The choice survives reloads and carries into a branched chat, but does not change the profile or any other conversation. Choose **Profile default** to remove the override.
+
+Atlas only offers models approved in the workspace provider settings. If an admin later removes the selected model, the conversation safely falls back to the profile model. Only the conversation owner or a Workspace Admin can change an existing conversation's model.
 
 ## Next steps
 

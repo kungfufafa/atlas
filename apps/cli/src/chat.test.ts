@@ -1,15 +1,47 @@
 import { describe, expect, test } from "bun:test";
+import type { AtlasClient } from "@atlas/client";
 import type {
   HealthResponse,
   ModelsResponse,
   ProfileSummary,
 } from "@atlas/core";
 import {
+  assertLearnCommandAvailable,
   formatErrorLines,
   formatStatusLines,
   isEscInterruptKey,
   needsTrailingStreamNewline,
 } from "./chat";
+
+describe("/learn availability", () => {
+  test("allows profiles with the managed skill capability", async () => {
+    await expect(
+      assertLearnCommandAvailable(
+        {
+          getProfile: async () =>
+            ({
+              profile: { skills: [{ name: "manage-skills" }] },
+            }) as Awaited<ReturnType<AtlasClient["getProfile"]>>,
+        },
+        "profile_with_skills"
+      )
+    ).resolves.toBeUndefined();
+  });
+
+  test("returns an explicit error instead of sending an inert command", async () => {
+    await expect(
+      assertLearnCommandAvailable(
+        {
+          getProfile: async () =>
+            ({ profile: { skills: [] } }) as Awaited<
+              ReturnType<AtlasClient["getProfile"]>
+            >,
+        },
+        "profile_without_skills"
+      )
+    ).rejects.toThrow("/learn is unavailable for this profile");
+  });
+});
 
 describe("needsTrailingStreamNewline", () => {
   test("adds a newline when no chunk was rendered", () => {

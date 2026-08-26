@@ -518,6 +518,15 @@ describe("organization schema migration", () => {
     try {
       migrateDatabase(db);
 
+      const organizationColumns = new Set(
+        (
+          db.prepare("PRAGMA table_info(organizations)").all() as Array<{
+            name: string;
+          }>
+        ).map((column) => column.name)
+      );
+      expect(organizationColumns.has("skills_curator_last_run_at")).toBe(true);
+
       db.exec(`
         INSERT INTO users (
           id, email, password_hash, is_platform_admin, created_at, updated_at
@@ -655,6 +664,66 @@ describe("organization schema migration", () => {
       expect(columns.map((column) => column.name)).toContain(
         "is_platform_admin"
       );
+    } finally {
+      db.close();
+    }
+  });
+
+  test("adds archived_at to a legacy organizations table", () => {
+    const db = new Database(":memory:");
+
+    try {
+      db.exec(`
+        CREATE TABLE organizations (
+          id TEXT PRIMARY KEY NOT NULL,
+          name TEXT NOT NULL,
+          slug TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+        INSERT INTO organizations (id, name, slug, created_at, updated_at)
+        VALUES ('org_legacy', 'Legacy', 'legacy', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z');
+      `);
+
+      migrateDatabase(db);
+
+      const columns = db
+        .prepare("PRAGMA table_info(organizations)")
+        .all() as Array<{ name: string }>;
+      expect(columns.map((column) => column.name)).toContain("archived_at");
+      const organization = db
+        .prepare("SELECT archived_at FROM organizations WHERE id = ?")
+        .get("org_legacy") as { archived_at: string | null };
+      expect(organization.archived_at).toBeNull();
+    } finally {
+      db.close();
+    }
+  });
+
+  test("defaults legacy workspace settings to coding provider passthrough", () => {
+    const db = new Database(":memory:");
+    try {
+      db.exec(`
+        CREATE TABLE workspace_settings (
+          id TEXT PRIMARY KEY NOT NULL,
+          vision_model TEXT,
+          transcription_model TEXT,
+          image_model TEXT,
+          org_id TEXT,
+          coding_agent_harnesses TEXT NOT NULL DEFAULT '[]',
+          selected_coding_agent_harness TEXT,
+          updated_at TEXT NOT NULL
+        );
+        INSERT INTO workspace_settings (id, updated_at)
+        VALUES ('default', '2026-01-01T00:00:00.000Z');
+      `);
+      migrateDatabase(db);
+      const row = db
+        .prepare(
+          "SELECT coding_agent_provider_passthrough FROM workspace_settings WHERE id = 'default'"
+        )
+        .get() as { coding_agent_provider_passthrough: number };
+      expect(row.coding_agent_provider_passthrough).toBe(1);
     } finally {
       db.close();
     }

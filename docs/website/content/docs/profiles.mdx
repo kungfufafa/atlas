@@ -45,6 +45,8 @@ Superadmins and Workspace Admins create profiles inside the **active workspace**
 
 Super Agent can also create profiles from chat using a confirm-first factory. For profile-creation requests, it drafts soul files and a tool plan in chat, waits for your explicit OK, then calls `create_profile`. New profiles keep `MEMORY.md` empty and receive the Default Agent work toolkit automatically; `bash`, image generation, and host-tool authoring still need an explicit ask. On the Profiles page, use **Ask Super Agent** (empty state or create dialog) when a Super Agent profile exists.
 
+Workspace Admins can also ask Super Agent to update an existing profile. It reads the current profile, shows the exact proposed changes, and waits for confirmation in a later message before applying them. It can update the name, model, stored prompt, skill-governance overrides, and the four soul files. Fields you do not approve remain unchanged, including skill write approval. Profile id, workspace ownership, default/Super Agent status, assignments, and credentials cannot be changed through this tool.
+
 Super Agent can hand coding tasks to a dedicated coding agent via the `coding-agent` skill and `bash`. See [Coding agent](/coding-agent).
 
 ## What a profile contains
@@ -122,6 +124,8 @@ Artifacts are files your agent creates and saves for you (reports, documents, ge
 ```text
 ~/.atlas/orgs/{orgId}/profiles/{profileId}/artifacts/
 ```
+
+Workspace Admins can correct Markdown, CSV, and TSV artifacts directly from **Files → Artifacts**. Saves are conflict-checked, so a newer agent or teammate update is not silently overwritten. Existing public share links remain snapshots; publish the artifact again to share an edited version. See [Artifact saves](/builtin-tools#artifact-saves).
 
 If you want richer personality and clearer long-term behavior, use soul files. If you only need a quick setup, the stored `systemPrompt` may be enough.
 
@@ -214,9 +218,37 @@ Two things are deliberately not carried over:
 - `MEMORY.md` starts empty, so the clone does not inherit the source's continuity
 - Super Agent cannot be cloned, the same rule that stops it being deleted
 
+## Move one profile between workspaces
+
+Workspace Admins—and Superadmins after switching into a workspace—can move a
+standard profile with a profile-pack ZIP.
+
+To export, select the profile on **Profiles** and choose **Export ZIP**. To
+import, switch to the destination workspace, choose **Import profile**, select
+the ZIP, review the preview, and name the new profile. Atlas always creates a
+new standard profile; an imported profile cannot become Super Agent or the
+workspace default.
+
+The pack carries the profile instructions, soul files, active memory, avatar,
+knowledge-base documents, and profile skills. When a Superadmin exports it, the
+pack may also include source for assigned custom JavaScript tools; exports made
+by Workspace Admins never include host-level tool source. It does not carry
+generated artifacts, archived memory, provider credentials, MCP configuration
+or secrets, or Composio connections.
+Tool, skill, MCP, and Composio assignments reconnect only when a matching
+resource is already available in the destination workspace; the preview lists
+anything Atlas will skip. A profile model is restored only when that model is
+available there, otherwise the workspace default is used.
+
+Profile-pack ZIPs can still contain sensitive text written by users in soul,
+memory, knowledge-base, or skill files. Handle them as workspace data even
+though Atlas-managed provider and connection credentials are excluded.
+
+Profile packs are designed for moving one agent, not for disaster recovery.
+For a whole-install backup, see [Backup and restore](/backup-restore).
+
 ## Next steps
 
 - [Builtin tools](/builtin-tools) — what each profile can do
 - [MCP servers](/mcp) — extend a profile with external tools
 - [Multi-tenancy](/multi-tenancy) — who can manage profiles and members
-

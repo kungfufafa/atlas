@@ -2,8 +2,10 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { executeToolCall } from "@atlas/agent";
 import type { StoredToolRecord } from "@atlas/db";
 import {
+  invalidateJavascriptModuleCache,
   loadJavascriptTool,
   resolveJavascriptModulePath,
 } from "./javascript-tool-loader";
@@ -105,6 +107,133 @@ export async function run(input) {
     const tool = await loadJavascriptTool(record);
 
     expect(tool?.parallelSafe).toBe(true);
+  });
+
+  test("retries transient JavaScript failures at the protected tool boundary", async () => {
+    const { configDir: dir, toolsDir } = await setupToolsDir();
+    configDir = dir;
+
+    await writeFile(
+      path.join(toolsDir, "flaky.js"),
+      `export const retrySafe = true;
+let attempts = 0;
+export async function run() {
+  attempts += 1;
+  if (attempts < 3) throw new Error("transient custom failure");
+  return { attempts, ok: true };
+}
+`,
+      "utf8"
+    );
+
+    const tool = await loadJavascriptTool({
+      createdAt: new Date().toISOString(),
+      description: "Flaky custom tool",
+      handlerConfig: { modulePath: "flaky.js" },
+      handlerType: "javascript",
+      id: "tool_flaky",
+      name: "flaky_custom_tool",
+      updatedAt: new Date().toISOString(),
+    });
+
+    expect(tool?.retryPolicy).toEqual({
+      backoffFactor: 2,
+      initialDelayMs: 500,
+      jitter: false,
+      maxRetries: 2,
+      retryableCodes: [
+        "INTERNAL_ERROR",
+        "NETWORK_ERROR",
+        "PROVIDER_ERROR",
+        "RESOURCE_LIMIT",
+        "TIMEOUT",
+      ],
+    });
+
+    // Keep the integration test fast while retaining the production policy
+    // assertion above. Execution still flows through tool-loop -> protected tool.
+    tool!.retryPolicy = { ...tool!.retryPolicy, initialDelayMs: 1 };
+    const result = await executeToolCall(
+      [tool!],
+      { arguments: {}, id: "call_flaky", name: tool!.name },
+      {}
+    );
+
+    expect(result).toEqual({ attempts: 3, ok: true });
+  });
+
+  test("does not retry an unmarked custom tool that may have side effects", async () => {
+    const { configDir: dir, toolsDir } = await setupToolsDir();
+    configDir = dir;
+
+    await writeFile(
+      path.join(toolsDir, "side-effect.js"),
+      `let attempts = 0;
+export async function run() {
+  attempts += 1;
+  throw new Error(\`side effect attempt \${attempts}\`);
+}
+`,
+      "utf8"
+    );
+
+    const tool = await loadJavascriptTool({
+      createdAt: new Date().toISOString(),
+      description: "Potentially mutating custom tool",
+      handlerConfig: { modulePath: "side-effect.js" },
+      handlerType: "javascript",
+      id: "tool_side_effect",
+      name: "custom_operation",
+      updatedAt: new Date().toISOString(),
+    });
+
+    expect(tool?.retryPolicy).toEqual({ maxRetries: 0 });
+    const result = await executeToolCall(
+      [tool!],
+      { arguments: {}, id: "call_side_effect", name: tool!.name },
+      {}
+    );
+
+    expect(result).toEqual({
+      error: "side effect attempt 1",
+      errorCode: "INTERNAL_ERROR",
+    });
+  });
+
+  test("revokes retry opt-in immediately after a module reload", async () => {
+    const { configDir: dir, toolsDir } = await setupToolsDir();
+    configDir = dir;
+    const modulePath = path.join(toolsDir, "reloadable.js");
+    const record: StoredToolRecord = {
+      createdAt: new Date().toISOString(),
+      description: "Reloadable custom tool",
+      handlerConfig: { modulePath: "reloadable.js" },
+      handlerType: "javascript",
+      id: "tool_reloadable",
+      name: "reloadable_custom_tool",
+      updatedAt: new Date().toISOString(),
+    };
+
+    await writeFile(
+      modulePath,
+      `export const retrySafe = true;
+export async function run() { return "first"; }
+`,
+      "utf8"
+    );
+    expect((await loadJavascriptTool(record))?.retryPolicy?.maxRetries).toBe(2);
+
+    await writeFile(
+      modulePath,
+      `export async function run() { return "second"; }
+`,
+      "utf8"
+    );
+    invalidateJavascriptModuleCache(modulePath);
+
+    const reloaded = await loadJavascriptTool(record);
+    expect(reloaded?.retryPolicy).toEqual({ maxRetries: 0 });
+    expect(await reloaded?.run({}, {})).toBe("second");
   });
 
   test("rejects module paths outside the tools directory", async () => {

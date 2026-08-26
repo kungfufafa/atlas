@@ -5,6 +5,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./agent-questionnaire": "./src/agent-questionnaire.ts",
+    "./artifact-category": "./src/artifact-category.ts",
+    "./artifact-editing-limits": "./src/artifact-editing-limits.ts",
     "./artifact-mime": "./src/artifact-mime.ts",
     "./agent-todo": "./src/agent-todo.ts",
     "./api-error": "./src/api-error.ts",
@@ -12,6 +14,7 @@
     "./channel-org": "./src/channel-org.ts",
     "./contract": "./src/contract.ts",
     "./chat-stream-timeout": "./src/chat-stream-timeout.ts",
+    "./cloudflare-provider-config": "./src/cloudflare-provider-config.ts",
     "./config": "./src/config.ts",
     "./fetch-idle": "./src/fetch-idle.ts",
     "./fs": "./src/fs.ts",
@@ -29,11 +32,15 @@
     "./provider-resolution": "./src/provider-resolution.ts",
     "./runtime": "./src/runtime.ts",
     "./ensure-server": "./src/ensure-server.ts",
+    "./discovery-providers": "./src/discovery-providers.ts",
     "./local-auth": "./src/local-auth.ts",
     "./automation-scheduler": "./src/automation-scheduler.ts",
     "./automation-worker": "./src/automation-worker.ts",
     "./telegram-config": "./src/telegram-config.ts",
     "./email-config": "./src/email-config.ts",
+    "./error-tracking": "./src/error-tracking.ts",
+    "./error-tracking-config": "./src/error-tracking-config.ts",
+    "./error-tracking-sentry": "./src/error-tracking-sentry.ts",
     "./telegram-worker": "./src/telegram-worker.ts",
     "./discord-config": "./src/discord-config.ts",
     "./discord-attachment": "./src/discord-attachment.ts",
@@ -51,7 +58,8 @@
     "./sanitize-svg": "./src/artifact-preview/sanitize-svg.ts",
     "./setup-validation": "./src/setup-validation.ts",
     "./artifact-lineage": "./src/artifact-lineage.ts",
-    "./testing/atlas-home": "./src/testing/atlas-home.ts"
+    "./testing/atlas-home": "./src/testing/atlas-home.ts",
+    "./testing/synthetic-secret-fixtures": "./src/testing/synthetic-secret-fixtures.ts"
   },
   "scripts": {
     "build": "bun build ./src/index.ts --outdir dist --target bun",

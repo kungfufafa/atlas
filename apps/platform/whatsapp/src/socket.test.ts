@@ -5,9 +5,18 @@ import {
   extractDisconnectStatusCode,
   isSupportedUpsertType,
   shouldRequestDevicePairingCode,
+  summarizeMissingTextPayload,
+  whatsAppReconnectDelayMs,
 } from "./socket";
 
 describe("WhatsApp socket helpers", () => {
+  test("backs off 408 reconnects exponentially up to 30s", () => {
+    expect(whatsAppReconnectDelayMs(0)).toBe(1000);
+    expect(whatsAppReconnectDelayMs(1)).toBe(2000);
+    expect(whatsAppReconnectDelayMs(5)).toBe(30_000);
+    expect(whatsAppReconnectDelayMs(8)).toBe(30_000);
+  });
+
   test("reads disconnect status from Boom output even without an error message", () => {
     expect(
       extractDisconnectStatusCode({
@@ -74,5 +83,29 @@ describe("WhatsApp socket helpers", () => {
     expect(claimInboundDelivery(dedupe, stub)).toBe(false);
     expect(claimInboundDelivery(dedupe, real)).toBe(true);
     expect(claimInboundDelivery(dedupe, real)).toBe(false);
+  });
+
+  test("diagnostic summaries omit message content and WhatsApp identities", () => {
+    const summary = summarizeMissingTextPayload({
+      key: {
+        fromMe: false,
+        id: "private-message-id",
+        participant: "628123456789@s.whatsapp.net",
+        remoteJid: "628999999999@s.whatsapp.net",
+      },
+      message: {
+        documentMessage: {
+          caption: "confidential report",
+          fileName: "payroll-secret.pdf",
+        },
+      },
+      messageStubType: 1,
+    });
+
+    expect(summary).not.toContain("private-message-id");
+    expect(summary).not.toContain("628123456789");
+    expect(summary).not.toContain("628999999999");
+    expect(summary).not.toContain("confidential report");
+    expect(summary).not.toContain("payroll-secret.pdf");
   });
 });

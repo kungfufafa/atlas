@@ -431,6 +431,34 @@ Profile body.
     expect(await db.listSkillsForProfile(profile.id)).toHaveLength(0);
   });
 
+  test("forces /learn writes through proposals even when the org gate is off", async () => {
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-manage-learn-"));
+    process.env.ATLAS_CONFIG_DIR = configDir;
+    const db = createInMemoryDatabaseAdapter();
+    const profile = await seedOrgProfile(db, {
+      orgSkillsWriteApproval: false,
+    });
+    const service = new SkillsService(db);
+    const proposalService = new SkillProposalService(db, service);
+    const tool = skillManageTool(service, proposalService);
+
+    const result = await tool.run(
+      { action: "create", content: researchSkillMarkdown },
+      memberContext({
+        forceSkillWriteProposal: () => true,
+        profileId: profile.id,
+      })
+    );
+
+    expect(result).toMatchObject({
+      action: "create",
+      name: "research-paper",
+      outcome: "created",
+      staged: true,
+    });
+    expect(await db.listSkillsForProfile(profile.id)).toHaveLength(0);
+  });
+
   test("write_file refuses skills/*/SKILL.md when forbidProfileSkillMarkdownWrites is set", async () => {
     await setup();
     const workspaceRoot = join(

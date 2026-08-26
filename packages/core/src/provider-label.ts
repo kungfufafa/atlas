@@ -6,13 +6,19 @@ const BUILTIN_LABELS: Record<
 > = {
   anthropic: "Anthropic",
   cerebras: "Cerebras",
+  cloudflare: "Cloudflare Workers AI",
   deepseek: "DeepSeek",
   fireworks: "Fireworks",
   gemini: "Gemini",
+  minimax: "MiniMax",
+  minimax_cn: "MiniMax (CN)",
   ollama: "Ollama",
   openai: "OpenAI",
   opencode_go: "OpenCode Go",
   openrouter: "OpenRouter",
+  xai: "xAI Grok",
+  zhipu: "GLM (Z.ai)",
+  zhipu_cn: "GLM (CN)",
 };
 
 export function formatConfiguredProviderLabel(

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import type { ListArtifactsOptions } from "@atlas/core";
 import type { AuthService as AuthServiceType } from "../../services/auth-service";
 import { setupTestConfigDir } from "../../test-config-dir";
 import { createMinimalHonoApp } from "../test-app-helpers";
@@ -11,6 +12,7 @@ import {
 setupTestConfigDir("atlas-profiles-artifacts-auth-test-");
 
 function createApp() {
+  const listCalls: ListArtifactsOptions[] = [];
   const readCalls: Array<{ render?: "markdown" }> = [];
   const agent = {
     deleteProfileArtifact: async () => ({
@@ -18,12 +20,20 @@ function createApp() {
       filename: "report.md",
       profileId: "profile_1",
     }),
-    listProfileArtifacts: async () => ({
-      artifacts: [],
-      directory: "/tmp/artifacts",
-      profileId: "profile_1",
-      total: 0,
-    }),
+    listProfileArtifacts: async (
+      _orgId: string,
+      _profileId: string,
+      options: ListArtifactsOptions
+    ) => {
+      listCalls.push(options);
+      return {
+        artifacts: [],
+        directory: "/tmp/artifacts",
+        folders: [],
+        profileId: "profile_1",
+        total: 0,
+      };
+    },
     readProfileArtifact: async (
       _orgId: string,
       _profileId: string,
@@ -40,6 +50,7 @@ function createApp() {
 
   return {
     ...createMinimalHonoApp({ agent }),
+    listCalls,
     readCalls,
   };
 }
@@ -233,15 +244,21 @@ describe("profile artifact content auth", () => {
   });
 
   test("platform admin can still list artifacts", async () => {
-    const { app, databaseAdapter } = createApp();
+    const { app, databaseAdapter, listCalls } = createApp();
     const adminSession = await setupFreshInstallSession(app, databaseAdapter);
 
     const response = await app.fetch(
-      new Request("http://localhost:4310/v1/profiles/profile_1/artifacts", {
-        headers: adminSession.headers({}, adminSession.orgId),
-      })
+      new Request(
+        "http://localhost:4310/v1/profiles/profile_1/artifacts?folder=reports%2Fweekly&limit=30&offset=0",
+        {
+          headers: adminSession.headers({}, adminSession.orgId),
+        }
+      )
     );
 
     expect(response.status).toBe(200);
+    expect(listCalls).toEqual([
+      { folder: "reports/weekly", limit: 30, offset: 0 },
+    ]);
   });
 });

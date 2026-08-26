@@ -40,6 +40,9 @@ export async function ensureLocalClientAccess(
   }
 
   for (const org of await db.listOrganizations()) {
+    if (org.archivedAt) {
+      continue;
+    }
     const member = await db.getOrgMember(org.id, user.id);
     if (member) {
       continue;

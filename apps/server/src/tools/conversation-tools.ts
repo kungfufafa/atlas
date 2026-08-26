@@ -1,5 +1,6 @@
 import type { ToolContext, ToolDefinition } from "@atlas/core";
 import { principalFromToolContext } from "@atlas/core";
+import { canAccessSuperAgentProfile } from "@atlas/core/profiles";
 import { jsonSchemaFromZod } from "@atlas/core/tools/schema";
 import type { DatabaseAdapter } from "@atlas/db";
 import { z } from "zod";
@@ -46,7 +47,7 @@ export const getConversationInputSchema = z.object({
 export function createConversationTools(db: DatabaseAdapter): ToolDefinition[] {
   const searchChatsTool: ToolDefinition = {
     description:
-      "Search previous chat sessions and conversations for topics, decisions, past research, or user discussions across your organization.",
+      "Search your previous chat sessions and conversations for topics, decisions, past research, or discussions.",
     name: "search_chats",
     parallelSafe: true,
     parameters: jsonSchemaFromZod(searchChatsInputSchema),
@@ -54,11 +55,12 @@ export function createConversationTools(db: DatabaseAdapter): ToolDefinition[] {
       const parsed = searchChatsInputSchema.parse(input);
       const principal = principalFromToolContext(context);
       const orgId = principal.orgId;
+      const excludeSuperAgent = !canAccessSuperAgentProfile(principal);
 
-      // If user is not platform admin, enforce user/tenant isolation
       const results = await db.searchConversationMessages(orgId, parsed.query, {
         after: parsed.after,
         before: parsed.before,
+        excludeSuperAgent,
         limit: parsed.limit,
         profileId: parsed.profileId,
         userId: principal.userId,
@@ -90,11 +92,13 @@ export function createConversationTools(db: DatabaseAdapter): ToolDefinition[] {
       const parsed = getConversationInputSchema.parse(input);
       const principal = principalFromToolContext(context);
       const orgId = principal.orgId;
+      const excludeSuperAgent = !canAccessSuperAgentProfile(principal);
 
       const conversation = await db.getConversationHistory(
         orgId,
         parsed.sessionId,
         {
+          excludeSuperAgent,
           limit: parsed.limit,
           offset: parsed.offset,
           userId: principal.userId,

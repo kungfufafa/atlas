@@ -1,5 +1,19 @@
 import { describe, expect, test } from "bun:test";
 import { createInMemoryDatabaseAdapter } from "./adapters/in-memory";
+import { createSqliteDatabase } from "./adapters/sqlite";
+import type { DatabaseAdapter } from "./types";
+
+async function withDatabaseVariants(
+  run: (db: DatabaseAdapter) => Promise<void>
+): Promise<void> {
+  await run(createInMemoryDatabaseAdapter());
+  const database = await createSqliteDatabase(":memory:");
+  try {
+    await run(database.adapter);
+  } finally {
+    database.close();
+  }
+}
 
 describe("composio user connections", () => {
   test("upsert and fetch user connection by toolkit", async () => {
@@ -129,5 +143,72 @@ describe("composio user connections", () => {
     const orgA = await db.listComposioUserConnectionsForUser("org_a", "usr_a");
     expect(orgA).toHaveLength(1);
     expect(orgA[0]?.id).toBe("cuc_a");
+  });
+
+  test("OAuth state compare-and-swap lets only one callback claim a generation", async () => {
+    await withDatabaseVariants(async (db) => {
+      const now = new Date().toISOString();
+      await db.upsertOrganization({
+        createdAt: now,
+        id: "org_cas",
+        name: "CAS",
+        slug: "cas",
+        updatedAt: now,
+      });
+      await db.createUser({
+        createdAt: now,
+        email: "cas@example.com",
+        id: "usr_cas",
+        passwordHash: "hash",
+        updatedAt: now,
+      });
+      await db.upsertComposioToolkit({
+        cachedTools: [],
+        createdAt: now,
+        displayName: "Gmail",
+        id: "ctk_cas",
+        lastError: null,
+        orgId: "org_cas",
+        status: "enabled",
+        toolkitSlug: "gmail",
+        updatedAt: now,
+      });
+      const pending = {
+        connectedAccountId: null,
+        createdAt: now,
+        id: "cuc_cas",
+        lastError: null,
+        oauthStateHash: "state-generation",
+        orgId: "org_cas",
+        sessionIdEnc: null,
+        status: "oauth_in_progress" as const,
+        toolkitId: "ctk_cas",
+        updatedAt: now,
+        userId: "usr_cas",
+      };
+      await db.upsertComposioUserConnection(pending);
+
+      expect(
+        await db.compareAndSwapComposioUserConnection(
+          { ...pending, oauthStateHash: "wrong-claim" },
+          "wrong-generation"
+        )
+      ).toBe(false);
+
+      const results = await Promise.all([
+        db.compareAndSwapComposioUserConnection(
+          { ...pending, oauthStateHash: "claim-a" },
+          "state-generation"
+        ),
+        db.compareAndSwapComposioUserConnection(
+          { ...pending, oauthStateHash: "claim-b" },
+          "state-generation"
+        ),
+      ]);
+      expect(results.filter(Boolean)).toHaveLength(1);
+      expect(
+        (await db.getComposioUserConnectionById("cuc_cas"))?.oauthStateHash
+      ).toBe(results[0] ? "claim-a" : "claim-b");
+    });
   });
 });

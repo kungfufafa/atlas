@@ -70,7 +70,7 @@ SESSION_VAL=$(awk '$6=="atlas_session"{print $7}' "$COOKIE_JAR")
 curl -sf -b "$COOKIE_JAR" -X POST "${BASE_URL}/v1/providers" \
   -H 'Content-Type: application/json' \
   -H "X-CSRF-Token: ${CSRF_VAL}" \
-  -d '{"type":"openai","apiKey":"sk-docs-demo-placeholder-key","model":"gpt-4o-mini"}' >/dev/null
+  -d '{"type":"openai","apiKey":"atlas-docs-demo-key","model":"gpt-4o-mini"}' >/dev/null
 
 $AB --session "$SESSION" close --all 2>/dev/null || true
 $AB --session "$SESSION" cookies set atlas_session "$SESSION_VAL" \

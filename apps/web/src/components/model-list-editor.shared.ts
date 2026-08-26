@@ -2,6 +2,15 @@ import { resolveCompatibleModelCapabilities } from "@atlas/core/compatible-model
 import type { CustomModelEntry } from "@atlas/core/contract";
 import type { ModelListRow } from "@/components/ModelListEditor";
 
+export function modelListRowVisionEnabled(
+  row: Pick<ModelListRow, "supportsVision">,
+  visionDefaultOn: boolean
+): boolean {
+  return visionDefaultOn
+    ? row.supportsVision !== false
+    : row.supportsVision === true;
+}
+
 export function applyInferredCompatibleCapabilities(
   models: ModelListRow[],
   context: { baseUrl?: string; providerLabel?: string } = {}

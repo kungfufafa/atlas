@@ -42,6 +42,15 @@ export interface ToolExecutionResult<T = unknown> {
   success: boolean;
 }
 
+export interface RetryPolicy {
+  backoffFactor?: number;
+  initialDelayMs?: number;
+  jitter?: boolean;
+  maxDelayMs?: number;
+  maxRetries?: number;
+  retryableCodes?: StandardToolErrorCode[];
+}
+
 export type ToolExecutionStatus =
   | "queued"
   | "running"

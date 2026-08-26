@@ -12,6 +12,7 @@ import {
   validateSetupPhone,
   validateSetupWorkspaceName,
   validateSetupWorkspaceSlug,
+  withProfileSoulMutationLock,
 } from "@atlas/core";
 import type {
   AcceptOrgInviteRequest,
@@ -28,6 +29,7 @@ import type {
   OrgMemberSummary,
   OrgRole,
   PreviewOrgInviteResponse,
+  SkillCuratorScheduleOrg,
   UpdateOrganizationRequest,
   UpdateOrgMemberRequest,
   UserOrgSummary,
@@ -35,6 +37,7 @@ import type {
 import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
 import type {
   DatabaseAdapter,
+  StoredComposioUserConnectionRecord,
   StoredOrganizationRecord,
   StoredOrgInviteRecord,
   StoredUserRecord,
@@ -49,7 +52,13 @@ import {
 } from "@atlas/db";
 import type { AuthService } from "./auth-service";
 
+const LAST_MEMBERSHIP_MESSAGE =
+  "Cannot archive your last remaining organization.";
+const LAST_ORGANIZATION_MESSAGE =
+  "Cannot archive the last remaining organization.";
+
 export class OrgService {
+  private readonly archiveActorLocks = new Map<string, Promise<unknown>>();
   private readonly membershipLocks = new Map<string, Promise<unknown>>();
 
   constructor(
@@ -73,19 +82,151 @@ export class OrgService {
     return next;
   }
 
+  private runSerializedArchive<T>(
+    actorUserId: string,
+    fn: () => Promise<T>
+  ): Promise<T> {
+    const previous =
+      this.archiveActorLocks.get(actorUserId) ?? Promise.resolve();
+    const next = previous.then(fn, fn);
+    const tail = next.then(
+      () => undefined,
+      () => undefined
+    );
+    this.archiveActorLocks.set(actorUserId, tail);
+    void tail.then(() => {
+      if (this.archiveActorLocks.get(actorUserId) === tail) {
+        this.archiveActorLocks.delete(actorUserId);
+      }
+    });
+    return next;
+  }
+
   async listOrganizations(): Promise<OrganizationSummary[]> {
     const organizations = await this.databaseAdapter.listOrganizations();
     return organizations.map(toOrganizationSummary);
+  }
+
+  async listSkillCuratorOrgs(): Promise<SkillCuratorScheduleOrg[]> {
+    const organizations = await this.databaseAdapter.listOrganizations();
+    return organizations
+      .filter(
+        (organization) =>
+          !organization.archivedAt &&
+          organization.skillsCuratorConsolidation === true
+      )
+      .map((organization) => ({
+        id: organization.id,
+        lastRunAt: organization.skillsCuratorLastRunAt ?? null,
+      }));
+  }
+
+  async getOrganization(orgId: string): Promise<OrganizationSummary | null> {
+    const organization = await this.databaseAdapter.getOrganizationById(orgId);
+    return organization ? toOrganizationSummary(organization) : null;
+  }
+
+  private async requireActiveOrganization(
+    orgId: string
+  ): Promise<StoredOrganizationRecord> {
+    const organization = await this.databaseAdapter.getOrganizationById(orgId);
+
+    if (!organization || organization.archivedAt) {
+      throw new AtlasApiError("Not found", 404);
+    }
+
+    return organization;
+  }
+
+  async archiveOrganization(
+    orgId: string,
+    actorUserId?: string,
+    onArchived?: () => void
+  ): Promise<OrganizationSummary> {
+    if (actorUserId) {
+      return this.runSerializedArchive(actorUserId, () =>
+        this.performArchiveOrganization(orgId, actorUserId, onArchived)
+      );
+    }
+    return this.performArchiveOrganization(orgId, undefined, onArchived);
+  }
+
+  private async performArchiveOrganization(
+    orgId: string,
+    actorUserId?: string,
+    onArchived?: () => void
+  ): Promise<OrganizationSummary> {
+    const organization = await this.requireActiveOrganization(orgId);
+
+    if (actorUserId) {
+      const memberships =
+        await this.databaseAdapter.listUserOrganizations(actorUserId);
+      const isLastMembership =
+        memberships.length === 1 &&
+        memberships[0]?.organization.id === organization.id;
+
+      if (isLastMembership) {
+        throw new AtlasApiError(LAST_MEMBERSHIP_MESSAGE, 409);
+      }
+    }
+
+    const archivedAt = new Date().toISOString();
+    const archived = await this.databaseAdapter.tryMarkOrganizationArchived(
+      orgId,
+      archivedAt
+    );
+
+    if (!archived) {
+      const current = await this.databaseAdapter.getOrganizationById(orgId);
+
+      if (!current || current.archivedAt) {
+        throw new AtlasApiError("Not found", 404);
+      }
+
+      throw new AtlasApiError(LAST_ORGANIZATION_MESSAGE, 409);
+    }
+
+    onArchived?.();
+    await this.invalidateComposioConnections(orgId, archivedAt);
+
+    return toOrganizationSummary({
+      ...organization,
+      archivedAt,
+      updatedAt: archivedAt,
+    });
+  }
+
+  private async invalidateComposioConnections(
+    orgId: string,
+    archivedAt: string
+  ): Promise<void> {
+    let connections: StoredComposioUserConnectionRecord[];
+    try {
+      connections =
+        await this.databaseAdapter.listComposioUserConnectionsForOrg(orgId);
+    } catch {
+      return;
+    }
+
+    await Promise.allSettled(
+      connections.map((connection) =>
+        this.databaseAdapter.upsertComposioUserConnection({
+          ...connection,
+          lastError: "Workspace archived; Composio connection disabled.",
+          oauthStateHash: null,
+          sessionIdEnc: null,
+          status: "error",
+          updatedAt: archivedAt,
+        })
+      )
+    );
   }
 
   async updateOrganization(
     orgId: string,
     request: UpdateOrganizationRequest
   ): Promise<OrganizationSummary> {
-    const org = await this.databaseAdapter.getOrganizationById(orgId);
-    if (!org) {
-      throw new AtlasApiError("Not found", 404);
-    }
+    const org = await this.requireActiveOrganization(orgId);
 
     const name = request.name === undefined ? org.name : request.name.trim();
     if (request.name !== undefined && !name) {
@@ -96,6 +237,10 @@ export class OrgService {
     const updated: StoredOrganizationRecord = {
       ...org,
       name,
+      skillsCuratorConsolidation:
+        request.skillsCuratorConsolidation === undefined
+          ? (org.skillsCuratorConsolidation ?? false)
+          : request.skillsCuratorConsolidation,
       skillsPostTurnReview:
         request.skillsPostTurnReview === undefined
           ? (org.skillsPostTurnReview ?? false)
@@ -172,6 +317,12 @@ export class OrgService {
     const memberships =
       await this.databaseAdapter.listUserOrganizations(userId);
     if (memberships.length === 0) {
+      if (sessionId) {
+        await this.databaseAdapter.updateBrowserSessionActiveOrgId(
+          sessionId,
+          null
+        );
+      }
       return null;
     }
 
@@ -311,10 +462,7 @@ export class OrgService {
     phone: string;
     role: OrgRole;
   }): Promise<AddOrgMemberResponse> {
-    const org = await this.databaseAdapter.getOrganizationById(input.orgId);
-    if (!org) {
-      throw new AtlasApiError("Not found", 404);
-    }
+    await this.requireActiveOrganization(input.orgId);
 
     const name = input.name.trim();
     const email = normalizeSetupEmail(input.email);
@@ -552,10 +700,7 @@ export class OrgService {
     role: OrgRole;
     invitedByUserId: string;
   }): Promise<OrgInviteCreatedResponse> {
-    const org = await this.databaseAdapter.getOrganizationById(input.orgId);
-    if (!org) {
-      throw new AtlasApiError("Not found", 404);
-    }
+    await this.requireActiveOrganization(input.orgId);
 
     const email = normalizeSetupEmail(input.email);
     if (!SETUP_EMAIL_PATTERN.test(email)) {
@@ -631,10 +776,7 @@ export class OrgService {
 
     assertInviteUsable(invite);
 
-    const org = await this.databaseAdapter.getOrganizationById(invite.orgId);
-    if (!org) {
-      throw new AtlasApiError("Not found", 404);
-    }
+    const org = await this.requireActiveOrganization(invite.orgId);
 
     return {
       email: invite.email,
@@ -662,6 +804,8 @@ export class OrgService {
     }
 
     assertInviteUsable(invite);
+
+    await this.requireActiveOrganization(invite.orgId);
 
     const password = request.password?.trim();
     if (!password) {
@@ -844,6 +988,10 @@ export class OrgService {
       return this.insertOrganization(input);
     }
 
+    if (existing.archivedAt) {
+      throw new AtlasApiError("Organization slug already exists.", 409);
+    }
+
     if ((await this.databaseAdapter.countHumanUsers()) > 0) {
       throw new AtlasApiError("Organization slug already exists.", 409);
     }
@@ -858,13 +1006,17 @@ export class OrgService {
       this.databaseAdapter,
       orgId
     );
-    await initSoulDirectory(getProfileSoulDir(orgId, defaultProfile.id));
+    await withProfileSoulMutationLock(orgId, defaultProfile.id, async () => {
+      await initSoulDirectory(getProfileSoulDir(orgId, defaultProfile.id));
+    });
 
     const superAgentProfile = await seedOrgSuperAgentProfile(
       this.databaseAdapter,
       orgId
     );
-    await initSoulDirectory(getProfileSoulDir(orgId, superAgentProfile.id));
+    await withProfileSoulMutationLock(orgId, superAgentProfile.id, async () => {
+      await initSoulDirectory(getProfileSoulDir(orgId, superAgentProfile.id));
+    });
     await ensurePreinstalledMcpServers(this.databaseAdapter, orgId);
   }
 }
@@ -918,9 +1070,12 @@ function toOrganizationSummary(
   record: StoredOrganizationRecord
 ): OrganizationSummary {
   return {
+    archivedAt: record.archivedAt ?? null,
     createdAt: record.createdAt,
     id: record.id,
     name: record.name,
+    skillsCuratorConsolidation: record.skillsCuratorConsolidation ?? false,
+    skillsCuratorLastRunAt: record.skillsCuratorLastRunAt ?? null,
     skillsPostTurnReview: record.skillsPostTurnReview ?? false,
     skillsWriteApproval: record.skillsWriteApproval ?? false,
     slug: record.slug,

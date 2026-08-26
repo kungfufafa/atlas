@@ -1,5 +1,7 @@
+import { createHmac, randomBytes } from "node:crypto";
 import {
   apiKeyEnvVarForProvider,
+  defaultDiscoveryBaseUrl,
   getActiveProviderInstance,
   isOllamaCloudInstance,
   type ProviderClient,
@@ -11,6 +13,7 @@ import {
 import { resolveDefaultModelForInstance } from "../services/provider-instance-helpers";
 import { createAnthropicProvider } from "./anthropic";
 import { createCerebrasProvider } from "./cerebras";
+import { createCloudflareProvider } from "./cloudflare";
 import {
   compatibleModelReasoningEffortValues,
   compatibleModelSupportsThinking,
@@ -24,9 +27,18 @@ import { createOpenCodeGoProvider } from "./opencode-go";
 import { createOpenRouterProvider } from "./openrouter";
 
 const DEFAULT_DEEPSEEK_BASE_URL = "https://api.deepseek.com";
+const PROCESS_PROVIDER_REPLAY_REVISION = crypto.randomUUID();
+const PROCESS_PROVIDER_REPLAY_SECRET = randomBytes(32);
+
+function replayRevisionForUntrackedCredential(apiKey: string): string {
+  return createHmac("sha256", PROCESS_PROVIDER_REPLAY_SECRET)
+    .update(apiKey)
+    .digest("base64url");
+}
 
 export interface CreateProviderOptions {
   apiKey: string;
+  cloudflareAccountId?: string;
   instance?: ProviderInstance | null;
   model?: string;
   provider: ProviderName;
@@ -38,6 +50,23 @@ export function createProvider(options: CreateProviderOptions): ProviderClient {
     ? options.model
     : resolveDefaultModelForInstance(options.instance);
   const baseUrlOverride = options.instance?.baseUrl?.trim() || undefined;
+  const discoveryBaseUrl =
+    defaultDiscoveryBaseUrl(options.provider) ?? undefined;
+  const cloudflareAccountId =
+    options.cloudflareAccountId ??
+    readEnvValue(process.env, "CLOUDFLARE_ACCOUNT_ID") ??
+    "";
+  const usesUntrackedCredential = Boolean(
+    options.instance && !options.instance.apiKey.trim() && options.apiKey.trim()
+  );
+  const configuredReplayRevision =
+    options.instance?.replayRevision ??
+    (options.instance
+      ? `legacy:${options.instance.id}:${options.instance.createdAt}`
+      : PROCESS_PROVIDER_REPLAY_REVISION);
+  const providerReplayRevision = usesUntrackedCredential
+    ? `${configuredReplayRevision}:${PROCESS_PROVIDER_REPLAY_REVISION}:${replayRevisionForUntrackedCredential(options.apiKey)}`
+    : configuredReplayRevision;
 
   switch (options.provider) {
     case "anthropic":
@@ -45,6 +74,8 @@ export function createProvider(options: CreateProviderOptions): ProviderClient {
         apiKey: options.apiKey,
         baseUrl: baseUrlOverride,
         model,
+        providerInstanceId: options.instance?.id,
+        providerReplayRevision,
       });
     case "cerebras":
       return createCerebrasProvider({
@@ -57,7 +88,23 @@ export function createProvider(options: CreateProviderOptions): ProviderClient {
         apiKey: options.apiKey,
         baseUrl: baseUrlOverride ?? DEFAULT_DEEPSEEK_BASE_URL,
         model,
+        providerInstanceId: options.instance?.id,
         providerName: "deepseek",
+        providerReplayRevision,
+      });
+    case "minimax":
+    case "minimax_cn":
+    case "xai":
+    case "zhipu":
+    case "zhipu_cn":
+      return createOpenAIProvider({
+        apiKey: options.apiKey,
+        baseUrl: baseUrlOverride ?? discoveryBaseUrl,
+        customModels: options.instance?.customModels,
+        model,
+        providerInstanceId: options.instance?.id,
+        providerName: options.provider,
+        providerReplayRevision,
       });
     case "fireworks":
       return createFireworksProvider({
@@ -65,11 +112,21 @@ export function createProvider(options: CreateProviderOptions): ProviderClient {
         customModels: options.instance?.customModels,
         model,
       });
+    case "cloudflare":
+      return createCloudflareProvider({
+        accountId: cloudflareAccountId,
+        apiKey: options.apiKey,
+        instance: options.instance,
+        model,
+        providerReplayRevision,
+      });
     case "gemini":
       return createGeminiProvider({
         apiKey: options.apiKey,
         baseUrl: baseUrlOverride,
         model,
+        providerInstanceId: options.instance?.id,
+        providerReplayRevision,
       });
     case "openai":
       return createOpenAIProvider({
@@ -77,6 +134,8 @@ export function createProvider(options: CreateProviderOptions): ProviderClient {
         baseUrl: baseUrlOverride,
         customModels: options.instance?.customModels,
         model,
+        providerInstanceId: options.instance?.id,
+        providerReplayRevision,
       });
     case "openrouter":
       return createOpenRouterProvider({
@@ -88,12 +147,15 @@ export function createProvider(options: CreateProviderOptions): ProviderClient {
       return createOpenCodeGoProvider({
         apiKey: options.apiKey,
         model,
+        providerInstanceId: options.instance?.id,
+        providerReplayRevision,
       });
     case "ollama":
       return createOllamaProvider({
         apiKey: options.apiKey,
         instance: options.instance,
         model,
+        providerReplayRevision,
       });
     case "openai_compatible": {
       const displayName = options.instance?.label?.trim();
@@ -109,6 +171,8 @@ export function createProvider(options: CreateProviderOptions): ProviderClient {
         baseUrl: baseUrlOverride,
         displayName,
         model,
+        providerInstanceId: options.instance?.id,
+        providerReplayRevision,
         reasoningEffortValues: compatibleModelReasoningEffortValues(
           model,
           options.instance?.customModels,
@@ -121,6 +185,7 @@ export function createProvider(options: CreateProviderOptions): ProviderClient {
           model,
           options.instance?.customModels
         ),
+        wireApi: options.instance?.wireApi,
       });
     }
   }
@@ -167,6 +232,7 @@ export function createProviderForInstance(
 
   return createProvider({
     apiKey: apiKey ?? "",
+    cloudflareAccountId: readEnvValue(env, "CLOUDFLARE_ACCOUNT_ID"),
     instance,
     model,
     provider: instance.type,

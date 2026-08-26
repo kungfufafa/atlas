@@ -70,6 +70,27 @@ describe("buildCodingAgentCommandTemplate", () => {
     expect(template.command).toContain("-p");
   });
 
+  test("uses host-native pi defaults without Atlas provider flags", async () => {
+    const template = await buildCodingAgentCommandTemplate(
+      {
+        args: [],
+        command: "pi",
+        kind: "pi",
+        name: "pi.dev",
+      },
+      "Fix bugs",
+      "/workspace",
+      {
+        profileModel: "claude-sonnet-4-6",
+        providerPassthroughEnabled: false,
+        userConfig: anthropicUserConfig,
+      }
+    );
+    expect(template.command).toBe("pi -p 'Fix bugs'");
+    expect(template.spawnEnv).toEqual({});
+    expect(template.providerPassthroughEnabled).toBe(false);
+  });
+
   test("builds OpenCode run command with workspace dir", async () => {
     const template = await buildCodingAgentCommandTemplate(
       {
@@ -199,5 +220,31 @@ describe("formatCodingAgentCommandContext", () => {
     expect(context).not.toContain("When Atlas provider passthrough is active");
     expect(context).toContain("--yolo");
     expect(context).toContain("--output-format text");
+  });
+
+  test("explains host-native login without exposing provider credentials", async () => {
+    const context = formatCodingAgentCommandContext(
+      await buildCodingAgentCommandTemplate(
+        {
+          args: [],
+          command: "claude",
+          kind: "claude_code",
+          name: "Claude Code",
+        },
+        "Ship feature",
+        "/tmp/workspace",
+        {
+          profileModel: "claude-sonnet-4-6",
+          providerPassthroughEnabled: false,
+          userConfig: anthropicUserConfig,
+        }
+      )
+    );
+    expect(context).toContain("host-native login");
+    expect(context).toContain(
+      "does not inject organization provider credentials"
+    );
+    expect(context).not.toContain("sk-ant-test");
+    expect(context).not.toContain("When Atlas provider passthrough is active");
   });
 });

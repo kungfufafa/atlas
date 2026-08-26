@@ -15,12 +15,18 @@ export type OpenRouterBrowseSelectHandler = (row: OpenRouterModelRow) => void;
 
 interface OpenRouterModelsBrowseListProps {
   className?: string;
+  disabled?: boolean;
+  multiSelect?: boolean;
+  onAddMany?: (rows: OpenRouterModelRow[]) => void;
   onSelect: OpenRouterBrowseSelectHandler;
 }
 
 export function OpenRouterModelsBrowseList({
   onSelect,
   className,
+  multiSelect,
+  onAddMany,
+  disabled = false,
 }: OpenRouterModelsBrowseListProps) {
   const { data: rows = [], isLoading, error } = useOpenRouterModels();
   const [costFilter, setCostFilter] = useState<"all" | "free">("all");
@@ -37,7 +43,10 @@ export function OpenRouterModelsBrowseList({
   return (
     <CatalogModelsBrowseList<OpenRouterModelRow>
       className={className}
+      disabled={disabled}
       isDeprecated={(row) => row.deprecated}
+      multiSelect={multiSelect}
+      onAddMany={onAddMany}
       onSelect={onSelect}
       query={{ error, isLoading }}
       rows={catalogRows}
@@ -60,6 +69,7 @@ export function OpenRouterModelsBrowseList({
       })}
       toolbarTrailing={
         <Select
+          disabled={disabled}
           onValueChange={(value) => setCostFilter(value as "all" | "free")}
           value={costFilter}
         >

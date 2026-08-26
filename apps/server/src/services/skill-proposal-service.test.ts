@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { AtlasApiError } from "@atlas/core";
+import { AtlasApiError, getProfileSkillsDir } from "@atlas/core";
+import { SYNTHETIC_SECRET_FIXTURES } from "@atlas/core/testing/synthetic-secret-fixtures";
 import {
   createInMemoryDatabaseAdapter,
   type DatabaseAdapter,
@@ -325,9 +326,6 @@ describe("SkillProposalService", () => {
   });
 
   test("stage and approve write_file creates supporting file", async () => {
-    const { readFile } = await import("node:fs/promises");
-    const { getProfileSkillsDir } = await import("@atlas/core");
-
     const db = createInMemoryDatabaseAdapter();
     const profile = await seedOrg(db);
     const skills = new SkillsService(db);
@@ -364,5 +362,35 @@ describe("SkillProposalService", () => {
       "utf8"
     );
     expect(onDisk).toContain("- staging");
+  });
+
+  test("redacts API keys, bearer tokens, and private keys before proposal persistence", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const profile = await seedOrg(db);
+    const service = new SkillProposalService(db, new SkillsService(db));
+    const apiKey = SYNTHETIC_SECRET_FIXTURES.openAiApiKey;
+    const bearer = SYNTHETIC_SECRET_FIXTURES.bearerToken;
+    const privateKey = SYNTHETIC_SECRET_FIXTURES.rsaPrivateKey;
+    const staged = await service.stageProposal({
+      action: "create",
+      content: `${sampleSkillMarkdown}\napi_key=${apiKey}\n${bearer}\n${privateKey}\n`,
+      orgId: ORG_ID,
+      profileId: profile.id,
+    });
+    const proposal = await db.getSkillProposal(ORG_ID, staged.proposalId!);
+
+    expect(proposal?.content).toContain("[REDACTED]");
+    expect(proposal?.content).not.toContain(apiKey);
+    expect(proposal?.content).not.toContain(bearer);
+    expect(proposal?.content).not.toContain("BEGIN RSA PRIVATE KEY");
+
+    await service.approveProposal(ORG_ID, staged.proposalId!, "admin_user");
+    const onDisk = await readFile(
+      join(getProfileSkillsDir(ORG_ID, profile.id), "deploy-notes", "SKILL.md"),
+      "utf8"
+    );
+    expect(onDisk).not.toContain(apiKey);
+    expect(onDisk).not.toContain(bearer);
+    expect(onDisk).not.toContain("BEGIN RSA PRIVATE KEY");
   });
 });

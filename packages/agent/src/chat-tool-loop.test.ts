@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type {
+  ApprovalRequest,
   ChatCompletionResult,
   ChatMessage,
   GenerateChatInput,
@@ -463,6 +464,74 @@ describe("agent chat tool loop", () => {
       "Unexpected provider call 2"
     );
     expect(session.getHistory()).toEqual([]);
+  });
+
+  test("persists approval metadata without executing the guarded tool", async () => {
+    let executed = false;
+    const deleteTool: ToolDefinition = {
+      description: "Delete a file",
+      name: "delete_file",
+      run() {
+        executed = true;
+        return Promise.resolve({ deleted: true });
+      },
+    };
+    const toolCall = {
+      arguments: {
+        options: { force: true },
+        path: "artifacts/archive.zip",
+      },
+      id: "call_delete",
+      name: "delete_file",
+    };
+    const provider = createMockProvider([
+      {
+        assistantMessage: {
+          content: "",
+          role: "assistant",
+          toolCalls: [toolCall],
+        },
+        content: "",
+        toolCalls: [toolCall],
+      },
+    ]);
+    const approvals: ApprovalRequest[] = [];
+    const harness = createAgentHarness({ provider, tools: [deleteTool] });
+    const session = harness.createChatSession({
+      toolContext: { orgId: "org_1", userId: "user_1" },
+      tools: [deleteTool],
+    });
+
+    const reply = await session.sendStream("Delete the archive", {
+      onApprovalRequested: (approval) => approvals.push(approval),
+      onChunk: () => undefined,
+    });
+
+    expect(reply).toBe("Waiting for approval to continue.");
+    expect(executed).toBe(false);
+    expect(approvals).toHaveLength(1);
+    const assistantMessage = session.getHistory()[1];
+    expect(assistantMessage).toMatchObject({
+      approval: {
+        details: {
+          options: { force: true },
+          path: "artifacts/archive.zip",
+        },
+        status: "pending",
+        tool: "delete_file",
+        toolCallId: "call_delete",
+      },
+      role: "assistant",
+    });
+    if (assistantMessage?.role !== "assistant") {
+      throw new Error("Expected the guarded assistant tool-call message.");
+    }
+    expect(assistantMessage.approval?.details).not.toBe(
+      assistantMessage.toolCalls?.[0]?.arguments
+    );
+    expect(
+      assistantMessage.approval?.details.options as { force?: boolean }
+    ).not.toBe(assistantMessage.toolCalls?.[0]?.arguments.options);
   });
 
   test("appends resolvePromptContext to the system prompt each turn", async () => {

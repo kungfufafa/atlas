@@ -1,9 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import {
+  formatHelpText,
   prepareWhatsAppReply,
   splitWhatsAppMessage,
   stripMarkdownForWhatsApp,
 } from "./format";
+
+test("WhatsApp help includes the attachment shortcut", () => {
+  expect(formatHelpText()).toContain("/attach");
+});
 
 describe("stripMarkdownForWhatsApp", () => {
   test("converts double-bold to WhatsApp bold", () => {

@@ -122,7 +122,7 @@ Path: `~/.atlas/orgs/{orgId}/profiles/{profileId}/` (`getProfileSoulDir`). Load:
 | `sub_agent` | Opt-in same-profile delegate (not repo coding) |
 | `coding-agent` | Codex / Claude Code / OpenCode / pi / Cursor Agent (`agent`) via `bash` |
 | `agent-browser` | Opt-in browser CLI; needs host install — `docs/website/agent-browser.md` |
-| `create-profile` | Super Agent only, confirm-first — `apps/server/src/tools/super-agent-tools.ts` |
+| `create-profile` | Super Agent only, confirm-first — `apps/server/src/tools/super-agent-tools.ts` (`create_profile`, tenant-safe `update_profile`) |
 | `skill_manage` | Interactive web/cli with `manage-skills` — create/patch/edit/delete profile skills + supporting-file write/remove + auto-assign (`apps/server/src/tools/skill-manage-tool.ts`). When org/profile **write approval** is enabled, mutations stage as proposals for org-admin review instead of writing immediately. When present, file tools refuse any path under `skills/*/` (`forbidProfileSkillMarkdownWrites`). Not injected for automations or Telegram/WhatsApp/Discord. Opt-in **post-turn skill review** (`skills_post_turn_review`) may suggest or stage create/patch after complex turns without writing into model history. |
 | Composio | Org toolkits + per-user OAuth — `docs/website/composio.md` |
 

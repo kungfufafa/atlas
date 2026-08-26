@@ -20,6 +20,7 @@ import type {
 import { toAnthropicUserContent, WEB_SEARCH_TOOL_NAME } from "@atlas/core";
 import {
   buildTokenUsage,
+  hasMatchingProviderContent,
   notifyToolInputDelta,
   parseJsonRecord,
   readRecord,
@@ -51,7 +52,10 @@ export function buildAnthropicTools(
 
 export async function toAnthropicMessages(
   messages: ChatMessage[],
-  provider: ProviderName = "anthropic"
+  provider: ProviderName = "anthropic",
+  providerInstanceId?: string,
+  modelId?: string,
+  providerReplayRevision?: string
 ): Promise<MessageParam[]> {
   const result: MessageParam[] = [];
 
@@ -68,7 +72,16 @@ export async function toAnthropicMessages(
     }
 
     if (message.role === "assistant") {
-      if (message.providerContent?.length) {
+      if (
+        hasMatchingProviderContent(
+          message,
+          provider,
+          "anthropic-messages",
+          providerInstanceId,
+          modelId,
+          providerReplayRevision
+        )
+      ) {
         result.push({
           content: message.providerContent as ContentBlockParam[],
           role: "assistant",
@@ -120,7 +133,11 @@ export async function toAnthropicMessages(
 }
 
 export function parseAnthropicContent(
-  content: ContentBlock[] | undefined
+  content: ContentBlock[] | undefined,
+  provider: ProviderName = "anthropic",
+  providerInstanceId?: string,
+  modelId?: string,
+  providerReplayRevision?: string
 ): ChatCompletionResult {
   const textParts: string[] = [];
   const thinkingParts: string[] = [];
@@ -156,7 +173,18 @@ export function parseAnthropicContent(
       role: "assistant",
       ...(thinkingText ? { thinking: thinkingText } : {}),
       ...(toolCalls.length > 0 ? { toolCalls } : {}),
-      ...(providerContent ? { providerContent } : {}),
+      ...(providerContent
+        ? {
+            providerContent,
+            providerContentProvenance: {
+              ...(modelId ? { modelId } : {}),
+              ...(providerReplayRevision ? { providerReplayRevision } : {}),
+              ...(providerInstanceId ? { providerInstanceId } : {}),
+              protocol: "anthropic-messages",
+              provider,
+            },
+          }
+        : {}),
     },
     content: contentText,
     toolCalls,
@@ -169,6 +197,8 @@ export interface ContinueAnthropicUntilDoneOptions {
   messages: ChatMessage[];
   model: string;
   provider?: ProviderName;
+  providerInstanceId?: string;
+  providerReplayRevision?: string;
   signal?: AbortSignal;
   stream: boolean;
   system: string;
@@ -182,7 +212,10 @@ export async function continueAnthropicUntilDone(
 ): Promise<ChatCompletionResult> {
   let apiMessages = await toAnthropicMessages(
     options.messages,
-    options.provider
+    options.provider,
+    options.providerInstanceId,
+    options.model,
+    options.providerReplayRevision
   );
   const combinedContent: ContentBlock[] = [];
   let totalInputTokens = 0;
@@ -209,7 +242,14 @@ export async function continueAnthropicUntilDone(
         { signal: options.signal }
       );
 
-      const streamed = await readAnthropicStream(stream, options.handlers);
+      const streamed = await readAnthropicStream(
+        stream,
+        options.handlers,
+        options.provider,
+        options.providerInstanceId,
+        options.model,
+        options.providerReplayRevision
+      );
       totalInputTokens += streamed.usage?.inputTokens ?? 0;
       totalOutputTokens += streamed.usage?.outputTokens ?? 0;
       combinedContent.push(...streamed.contentBlocks);
@@ -217,7 +257,13 @@ export async function continueAnthropicUntilDone(
       if (streamed.stopReason !== "pause_turn") {
         return finalizeAnthropicResult({
           content: streamed.content,
-          parsed: parseAnthropicContent(combinedContent),
+          parsed: parseAnthropicContent(
+            combinedContent,
+            options.provider,
+            options.providerInstanceId,
+            options.model,
+            options.providerReplayRevision
+          ),
           toolCalls: streamed.toolCalls,
           usage: buildTokenUsage({
             inputTokens: totalInputTokens,
@@ -249,7 +295,13 @@ export async function continueAnthropicUntilDone(
 
     if (payload.stop_reason !== "pause_turn") {
       return finalizeAnthropicResult({
-        parsed: parseAnthropicContent(combinedContent),
+        parsed: parseAnthropicContent(
+          combinedContent,
+          options.provider,
+          options.providerInstanceId,
+          options.model,
+          options.providerReplayRevision
+        ),
         usage: buildTokenUsage({
           inputTokens: totalInputTokens,
           outputTokens: totalOutputTokens,
@@ -261,7 +313,13 @@ export async function continueAnthropicUntilDone(
   }
 
   return finalizeAnthropicResult({
-    parsed: parseAnthropicContent(combinedContent),
+    parsed: parseAnthropicContent(
+      combinedContent,
+      options.provider,
+      options.providerInstanceId,
+      options.model,
+      options.providerReplayRevision
+    ),
     usage: buildTokenUsage({
       inputTokens: totalInputTokens,
       outputTokens: totalOutputTokens,
@@ -276,7 +334,11 @@ interface StreamedAnthropicResult extends ChatCompletionResult {
 
 async function readAnthropicStream(
   stream: AsyncIterable<RawMessageStreamEvent>,
-  handlers?: StreamChatHandlers
+  handlers?: StreamChatHandlers,
+  provider: ProviderName = "anthropic",
+  providerInstanceId?: string,
+  modelId?: string,
+  providerReplayRevision?: string
 ): Promise<StreamedAnthropicResult> {
   let content = "";
   let stopReason: string | undefined;
@@ -395,6 +457,17 @@ async function readAnthropicStream(
       const index = event.index;
       const block = providerContent[index];
 
+      const streamedInput = pending.get(index)?.inputJson;
+      if (
+        streamedInput &&
+        (block?.type === "tool_use" || block?.type === "server_tool_use")
+      ) {
+        providerContent[index] = {
+          ...block,
+          input: parseJsonRecord(streamedInput),
+        };
+      }
+
       if (block?.type === "web_search_tool_result") {
         handlers?.onToolEnd?.({
           result: block.content ?? block,
@@ -407,7 +480,13 @@ async function readAnthropicStream(
 
   const toolCalls = finalizeAnthropicToolCalls(pending);
   const normalizedContent = providerContent.filter(Boolean);
-  const parsed = parseAnthropicContent(normalizedContent);
+  const parsed = parseAnthropicContent(
+    normalizedContent,
+    provider,
+    providerInstanceId,
+    modelId,
+    providerReplayRevision
+  );
 
   return {
     ...finalizeAnthropicResult({

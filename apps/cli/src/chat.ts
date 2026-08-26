@@ -44,6 +44,18 @@ import { ThinkingIndicator } from "./thinking-indicator";
 
 const HELP_TEXT = `${formatSlashCommands()}\n\n@/path/to/image.png [message]   attach an image from file\n/paste                            attach image from clipboard (recommended)\nCtrl+V / Cmd+V (empty paste)      attach image when terminal supports it\nPageUp/PageDown                   scroll conversation history\nHome/End                          jump to oldest/newest visible history`;
 
+export async function assertLearnCommandAvailable(
+  client: Pick<AtlasClient, "getProfile">,
+  profileId: string
+): Promise<void> {
+  const { profile } = await client.getProfile(profileId);
+  if (!profile.skills.some((skill) => skill.name === "manage-skills")) {
+    throw new Error(
+      "/learn is unavailable for this profile. Ask a Workspace Admin to assign the Manage Skills capability."
+    );
+  }
+}
+
 interface RunChatOptions {
   channel: AgentChannel;
   client: AtlasClient;
@@ -445,6 +457,16 @@ async function runStickyChat(
 
     if (line.startsWith("/create")) {
       return handleCreateCommand(line);
+    }
+
+    if (line === "/learn" || line.startsWith("/learn ")) {
+      try {
+        await assertLearnCommandAvailable(options.client, currentProfileId);
+      } catch (error) {
+        writeError(error);
+        return "handled";
+      }
+      return "unhandled";
     }
 
     if (line === "/soul" || line.startsWith("/soul ")) {
@@ -1009,6 +1031,15 @@ async function runBlockingChat(context: ChatContext): Promise<void> {
         }
 
         continue;
+      }
+
+      if (line === "/learn" || line.startsWith("/learn ")) {
+        try {
+          await assertLearnCommandAvailable(options.client, currentProfileId);
+        } catch (error) {
+          printError(error);
+          continue;
+        }
       }
 
       processing = true;

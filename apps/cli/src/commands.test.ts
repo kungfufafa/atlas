@@ -142,3 +142,14 @@ describe("status command", () => {
     });
   });
 });
+
+describe("learn command", () => {
+  test("is included in help and suggestions", () => {
+    expect(formatSlashCommands()).toContain("/learn");
+    expect(resolveSuggestions({ input: "/lea" })).toContainEqual({
+      description: "distill a reusable skill from sources",
+      insertValue: "/learn ",
+      label: "/learn",
+    });
+  });
+});

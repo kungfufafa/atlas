@@ -11,6 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathExists } from "../fs";
+import { SYNTHETIC_SECRET_FIXTURES } from "../testing/synthetic-secret-fixtures";
 import {
   assertPathWithinProfileSkillsDir,
   assertSupportingFileAllowed,
@@ -148,6 +149,26 @@ include-body-on-match: true
     expect(onDisk).toContain("1. Search.");
   });
 
+  test("redacts sensitive values before writing SKILL.md", async () => {
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-secret-"));
+    process.env.ATLAS_CONFIG_DIR = configDir;
+    const apiKey = SYNTHETIC_SECRET_FIXTURES.openAiApiKey;
+    const bearer = SYNTHETIC_SECRET_FIXTURES.bearerToken;
+    const privateKey = SYNTHETIC_SECRET_FIXTURES.privateKey;
+
+    const result = await writeRawProfileSkillMarkdown({
+      content: `---\nname: safe-skill\ndescription: Keep secrets out.\n---\n\napi_key=${apiKey}\n${bearer}\n${privateKey}\n`,
+      orgId: ORG_ID,
+      profileId: PROFILE_ID,
+    });
+    const onDisk = await readFile(join(result.directory, "SKILL.md"), "utf8");
+
+    expect(onDisk).toContain("[REDACTED]");
+    expect(onDisk).not.toContain(apiKey);
+    expect(onDisk).not.toContain(bearer);
+    expect(onDisk).not.toContain("BEGIN PRIVATE KEY");
+  });
+
   test("adopts existing valid skill directory when allowExisting", async () => {
     configDir = await mkdtemp(join(tmpdir(), "atlas-skill-adopt-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
@@ -279,6 +300,28 @@ Use staging first.
     const onDisk = await readFile(join(result.directory, "SKILL.md"), "utf8");
     expect(onDisk).toContain("Then promote to prod.");
     expect(onDisk).toContain("include-body-on-match: true");
+  });
+
+  test("redacts a bearer token introduced by a patch", async () => {
+    configDir = await mkdtemp(join(tmpdir(), "atlas-skill-patch-secret-"));
+    process.env.ATLAS_CONFIG_DIR = configDir;
+    await writeRawProfileSkillMarkdown({
+      content:
+        "---\nname: deploy\ndescription: Deploy safely.\n---\n\nUse staging first.\n",
+      orgId: ORG_ID,
+      profileId: PROFILE_ID,
+    });
+    const token = SYNTHETIC_SECRET_FIXTURES.bearerToken;
+    const result = await patchSkillFile({
+      name: "deploy",
+      newString: `Use staging first. ${token}`,
+      oldString: "Use staging first.",
+      orgId: ORG_ID,
+      profileId: PROFILE_ID,
+    });
+    const onDisk = await readFile(join(result.directory, "SKILL.md"), "utf8");
+    expect(onDisk).toContain("Bearer [REDACTED]");
+    expect(onDisk).not.toContain(token);
   });
 
   test("errors when old_string is missing or duplicated", async () => {
@@ -480,6 +523,18 @@ Use staging first.
     });
     expect(written.relativePath).toBe("docs/checklist.md");
     expect(await readFile(written.absolutePath, "utf8")).toContain("- staging");
+
+    const bearer = SYNTHETIC_SECRET_FIXTURES.bearerToken;
+    await writeProfileSkillSupportingFile({
+      content: bearer,
+      name: "deploy",
+      orgId: ORG_ID,
+      profileId: PROFILE_ID,
+      relativePath: "docs/checklist.md",
+    });
+    const redacted = await readFile(written.absolutePath, "utf8");
+    expect(redacted).toContain("Bearer [REDACTED]");
+    expect(redacted).not.toContain(bearer);
 
     await removeProfileSkillSupportingFile({
       name: "deploy",

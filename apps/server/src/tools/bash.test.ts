@@ -123,6 +123,58 @@ describe("bash tool", () => {
     expect(result.stdout).toBe("http://127.0.0.1:4310");
   });
 
+  test("scrubs provider credentials from host-native coding-agent processes", async () => {
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-bash-"));
+    const previousOpenAiKey = process.env.OPENAI_API_KEY;
+    const previousAnthropicUrl = process.env.ANTHROPIC_BASE_URL;
+    const previousOpenRouterKey = process.env.OPENROUTER_API_KEY;
+    const previousCodexHome = process.env.CODEX_HOME;
+    process.env.OPENAI_API_KEY = "sk-host-operator";
+    process.env.ANTHROPIC_BASE_URL = "https://operator.example.com";
+    process.env.OPENROUTER_API_KEY = "sk-or-host-operator";
+    process.env.CODEX_HOME = "/tmp/host-native-codex";
+
+    try {
+      const result = await runBash(
+        {
+          codingAgent: true,
+          codingAgentNativeLogin: true,
+          command:
+            'printf \'%s|%s|%s|%s|%s\' "$OPENAI_API_KEY" "$ANTHROPIC_BASE_URL" "$OPENROUTER_API_KEY" "$SAFE" "$CODEX_HOME"',
+          env: { OPENAI_API_KEY: "sk-caller", SAFE: "preserved" },
+        },
+        { orgId: "org_test", profileId: "profile_test" },
+        { workspaceRoot }
+      );
+
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toStartWith("|||preserved|/tmp/host-native-codex");
+      expect(result.stdout).not.toContain("sk-host-operator");
+      expect(result.stdout).not.toContain("sk-or-host-operator");
+    } finally {
+      if (previousOpenAiKey === undefined) {
+        delete process.env.OPENAI_API_KEY;
+      } else {
+        process.env.OPENAI_API_KEY = previousOpenAiKey;
+      }
+      if (previousAnthropicUrl === undefined) {
+        delete process.env.ANTHROPIC_BASE_URL;
+      } else {
+        process.env.ANTHROPIC_BASE_URL = previousAnthropicUrl;
+      }
+      if (previousOpenRouterKey === undefined) {
+        delete process.env.OPENROUTER_API_KEY;
+      } else {
+        process.env.OPENROUTER_API_KEY = previousOpenRouterKey;
+      }
+      if (previousCodexHome === undefined) {
+        delete process.env.CODEX_HOME;
+      } else {
+        process.env.CODEX_HOME = previousCodexHome;
+      }
+    }
+  });
+
   test("summarizes Cursor stream-json for coding-agent runs and saves a full log", async () => {
     workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-bash-"));
     const agentPath = path.join(workspaceRoot, "agent");

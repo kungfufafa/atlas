@@ -31,6 +31,8 @@ export interface GeminiProviderOptions {
   apiKey: string;
   baseUrl?: string;
   model?: string;
+  providerInstanceId?: string;
+  providerReplayRevision?: string;
 }
 
 function createGeminiClient(apiKey: string, baseUrl?: string): GoogleGenAI {
@@ -64,7 +66,10 @@ async function withGeminiError<T>(run: () => Promise<T>): Promise<T> {
 }
 
 function parseGenerateContentResponse(
-  response: GenerateContentResponse
+  response: GenerateContentResponse,
+  providerInstanceId?: string,
+  modelId?: string,
+  providerReplayRevision?: string
 ): ChatCompletionResult {
   const parts = response.candidates?.[0]?.content?.parts;
   const { content, thinking } = extractTextAndThinkingFromParts(parts);
@@ -77,6 +82,13 @@ function parseGenerateContentResponse(
   return buildChatCompletionResult({
     content,
     providerContent: parts?.length ? parts : undefined,
+    providerContentProvenance: {
+      ...(modelId ? { modelId } : {}),
+      ...(providerReplayRevision ? { providerReplayRevision } : {}),
+      ...(providerInstanceId ? { providerInstanceId } : {}),
+      protocol: "gemini-content",
+      provider: "gemini",
+    },
     thinking,
     toolCalls,
     usage: extractGeminiTokenUsage(response.usageMetadata),
@@ -172,7 +184,10 @@ function accumulateStreamParts(
 
 async function readGeminiStream(
   stream: AsyncGenerator<GenerateContentResponse>,
-  handlers: StreamChatHandlers
+  handlers: StreamChatHandlers,
+  providerInstanceId?: string,
+  modelId?: string,
+  providerReplayRevision?: string
 ): Promise<ChatCompletionResult> {
   const state = { content: "", thinking: "" };
   const pending = new Map<string, PendingFunctionCall>();
@@ -202,6 +217,13 @@ async function readGeminiStream(
   return buildChatCompletionResult({
     content: state.content,
     providerContent: rawParts.length > 0 ? rawParts : undefined,
+    providerContentProvenance: {
+      ...(modelId ? { modelId } : {}),
+      ...(providerReplayRevision ? { providerReplayRevision } : {}),
+      ...(providerInstanceId ? { providerInstanceId } : {}),
+      protocol: "gemini-content",
+      provider: "gemini",
+    },
     thinking,
     toolCalls,
     usage,
@@ -222,11 +244,21 @@ export function createGeminiProvider(
             ...buildGeminiChatConfig(input, input.system, model),
             abortSignal: input.signal,
           },
-          contents: await toGeminiContents(input.messages),
+          contents: await toGeminiContents(
+            input.messages,
+            options.providerInstanceId,
+            model,
+            options.providerReplayRevision
+          ),
           model,
         });
 
-        return parseGenerateContentResponse(response);
+        return parseGenerateContentResponse(
+          response,
+          options.providerInstanceId,
+          model,
+          options.providerReplayRevision
+        );
       });
     },
     generateText(input: GenerateTextInput) {
@@ -267,11 +299,22 @@ export function createGeminiProvider(
             ...buildGeminiChatConfig(input, input.system, model),
             abortSignal: input.signal,
           },
-          contents: await toGeminiContents(input.messages),
+          contents: await toGeminiContents(
+            input.messages,
+            options.providerInstanceId,
+            model,
+            options.providerReplayRevision
+          ),
           model,
         });
 
-        return readGeminiStream(stream, handlers);
+        return readGeminiStream(
+          stream,
+          handlers,
+          options.providerInstanceId,
+          model,
+          options.providerReplayRevision
+        );
       });
     },
   };

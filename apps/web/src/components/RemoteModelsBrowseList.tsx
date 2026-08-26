@@ -1,5 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
+import { useRef } from "react";
 import { CatalogModelsBrowseList } from "@/components/CatalogModelsBrowseList";
+import {
+  advanceCredentialRevision,
+  type RemoteModelBrowseProvider,
+  resolveRemoteModelBrowseReadiness,
+} from "@/components/remote-models-browse.shared";
 import { client } from "@/lib/client";
 import { queryKeys } from "@/lib/query-keys";
 
@@ -20,9 +26,13 @@ interface RemoteModelsBrowseListProps {
   baseUrl?: string;
   browseLabel?: string;
   className?: string;
+  credentialRevision?: number;
+  disabled?: boolean;
   hostMode?: "local" | "cloud";
+  multiSelect?: boolean;
+  onAddMany?: (rows: RemoteModelRow[]) => void;
   onSelect: RemoteBrowseSelectHandler;
-  provider?: "ollama" | "openai_compatible";
+  provider?: RemoteModelBrowseProvider;
   providerId?: string;
   selectedIds?: ReadonlySet<string>;
 }
@@ -37,13 +47,34 @@ export function RemoteModelsBrowseList({
   hostMode,
   browseLabel = "endpoint",
   selectedIds,
+  multiSelect,
+  onAddMany,
+  credentialRevision: credentialRevisionOverride,
+  disabled = false,
 }: RemoteModelsBrowseListProps) {
+  const credentialStateRef = useRef({ credential: apiKey, revision: 0 });
+  const localCredentialRevision = advanceCredentialRevision({
+    currentCredential: credentialStateRef.current.credential,
+    nextCredential: apiKey,
+    revision: credentialStateRef.current.revision,
+  });
+  credentialStateRef.current = {
+    credential: apiKey,
+    revision: localCredentialRevision,
+  };
+  const credentialRevision =
+    credentialRevisionOverride ?? localCredentialRevision;
   const trimmedBaseUrl = baseUrl?.trim() ?? "";
-  const canFetch = Boolean(providerId?.trim() || trimmedBaseUrl);
+  const { canFetch, idleMessage } = resolveRemoteModelBrowseReadiness({
+    apiKey,
+    baseUrl: trimmedBaseUrl,
+    provider,
+    providerId,
+  });
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     enabled: canFetch,
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       // When providerId is set, still forward baseUrl so Edit provider can probe a
       // typed (unsaved) URL while the server resolves stored credentials via id.
       const response = await client.discoverModels(
@@ -60,7 +91,8 @@ export function RemoteModelsBrowseList({
               baseUrl: trimmedBaseUrl,
               ...(provider ? { provider } : {}),
               ...(hostMode ? { hostMode } : {}),
-            }
+            },
+        { signal }
       );
 
       return (response.customModels ?? response.models ?? []).map((entry) => ({
@@ -78,8 +110,8 @@ export function RemoteModelsBrowseList({
       }));
     },
     queryKey: queryKeys.remoteModelDiscovery({
-      apiKey: apiKey.trim() ? "set" : "",
       baseUrl: trimmedBaseUrl,
+      credentialRevision,
       hostMode,
       provider,
       providerId,
@@ -90,8 +122,11 @@ export function RemoteModelsBrowseList({
   return (
     <CatalogModelsBrowseList<RemoteModelRow>
       className={className}
+      disabled={disabled}
       emptyMessage={`No models found on this ${browseLabel}.`}
-      idleMessage="Enter a base URL before browsing models."
+      idleMessage={idleMessage}
+      multiSelect={multiSelect}
+      onAddMany={onAddMany}
       onSelect={onSelect}
       query={{
         canFetch,

@@ -13,6 +13,10 @@ export interface MockChatRequest {
     name?: string;
     role: string;
     tool_call_id?: string;
+    tool_calls?: Array<{
+      function?: { name?: string };
+      id: string;
+    }>;
   }>;
   model?: string;
   stream?: boolean;
@@ -129,7 +133,7 @@ export class MockLLMServerHarness {
     }
   }
 
-  private resolveResponse(req: MockChatRequest): MockResponseResult {
+  resolveResponse(req: MockChatRequest): MockResponseResult {
     // 1. Check custom registered scenarios first
     for (const scenario of this.customScenarios) {
       if (scenario.matcher(req)) {
@@ -166,6 +170,14 @@ export class MockLLMServerHarness {
     if (isPostTool && toolMsg) {
       const toolContent =
         typeof toolMsg.content === "string" ? toolMsg.content : "";
+      const toolName =
+        toolMsg.name ??
+        messages
+          .slice()
+          .reverse()
+          .flatMap((message) => message.tool_calls ?? [])
+          .find((toolCall) => toolCall.id === toolMsg.tool_call_id)?.function
+          ?.name;
 
       if (toolContent.includes("31250")) {
         return { content: "The result of (12500 * 17.5) / 7 is 31250." };
@@ -175,14 +187,25 @@ export class MockLLMServerHarness {
           content: "RESULT: 65536\nThe calculation via Python produced 65536.",
         };
       }
+      if (toolName === "search_chats") {
+        if (toolContent.includes("Apollo") || textPrompt.includes("Apollo")) {
+          return {
+            content:
+              "Based on our past discussions in previous chats, the Apollo launch is scheduled for October 12.",
+          };
+        }
+        return {
+          content:
+            "Based on our past discussions in previous chats, the launch date for project Titan is November 15.",
+        };
+      }
       if (
         toolContent.includes("bun.sh") ||
         toolContent.includes("bun add") ||
         toolContent.includes("web_search") ||
         toolContent.includes("install package") ||
         toolContent.includes("Bun") ||
-        toolContent.includes("results") ||
-        toolMsg.name === "web_search" ||
+        toolName === "web_search" ||
         textPrompt.toLowerCase().includes("bun")
       ) {
         return {
@@ -191,7 +214,7 @@ export class MockLLMServerHarness {
         };
       }
       if (
-        toolMsg.name === "deep_research" ||
+        toolName === "deep_research" ||
         toolContent.includes("deep_research") ||
         toolContent.includes("markdownReport") ||
         toolContent.includes("evidenceCount") ||
@@ -213,22 +236,6 @@ export class MockLLMServerHarness {
         return {
           content:
             "According to the weather MCP server, the weather forecast for Tokyo is Sunny with 24°C and a mild breeze.",
-        };
-      }
-      if (
-        toolContent.includes("search_chats") ||
-        toolContent.includes("Apollo") ||
-        toolContent.includes("Titan")
-      ) {
-        if (toolContent.includes("Apollo") || textPrompt.includes("Apollo")) {
-          return {
-            content:
-              "Based on our past discussions in previous chats, the Apollo launch is scheduled for October 12.",
-          };
-        }
-        return {
-          content:
-            "Based on our past discussions in previous chats, the launch date for project Titan is November 15.",
         };
       }
       if (
@@ -463,19 +470,14 @@ export class MockLLMServerHarness {
       };
     }
 
-    if (
-      prompt.includes("place the order") ||
-      prompt.includes("order for atlas pro")
-    ) {
+    if (prompt.includes("delete the archived atlas export permanently")) {
       return {
         toolCalls: [
           {
             args: {
-              action: "submit_order",
-              amount: "$129.00",
-              item: "Atlas Pro",
+              path: "artifacts/archived-atlas-export.zip",
             },
-            name: "browser",
+            name: "delete_file",
           },
         ],
       };

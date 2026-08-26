@@ -54,6 +54,12 @@ describe("bundled create-profile skill", () => {
         "Create a support agent profile for billing"
       ).map((skill) => skill.name)
     ).toEqual(["create-profile"]);
+    expect(
+      matchSkillsForMessage(
+        [discovered],
+        "Update the support profile model and soul instructions"
+      ).map((skill) => skill.name)
+    ).toEqual(["create-profile"]);
   });
 
   test("body requires draft-and-confirm before create_profile", async () => {
@@ -74,6 +80,9 @@ describe("bundled create-profile skill", () => {
     expect(body).toMatch(/isSuper|is super|super profile/i);
     expect(body).toMatch(/revise|edit/);
     expect(body).toMatch(/open|dashboard|profiles/);
+    expect(body).toContain("update_profile");
+    expect(body).toMatch(/changed field, target, workspace, or actor/i);
+    expect(body).toMatch(/write approval|write-approval/i);
   });
 });
 

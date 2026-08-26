@@ -68,12 +68,14 @@ export function computeAutomationNextRunAt(
 }
 
 export function validateAutomationInput(input: {
-  name: string;
-  prompt: string;
+  // Undefined, not just empty: request bodies reach this unvalidated, so an
+  // absent field has to name itself here rather than throw a TypeError.
+  name: string | undefined;
+  prompt: string | undefined;
   trigger: AutomationTrigger;
 }): void {
-  const name = input.name.trim();
-  const prompt = input.prompt.trim();
+  const name = input.name?.trim() ?? "";
+  const prompt = input.prompt?.trim() ?? "";
 
   if (!name) {
     throw new Error("Automation name is required.");

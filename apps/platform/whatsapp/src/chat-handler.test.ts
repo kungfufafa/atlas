@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import type { ChatMessage } from "@atlas/core/contract";
+import type { ChatMessage, ProfileSummary } from "@atlas/core/contract";
 import { MAX_DOCUMENT_BYTES } from "@atlas/core/message-content";
 import { resetActiveStreamsForTests } from "./active-stream";
 import { formatSavedWhatsAppDocumentMessage } from "./attachments";
@@ -18,8 +18,39 @@ import {
 } from "./test-helpers";
 
 const PAIRED_JID = "1234567890@s.whatsapp.net";
+const GROUP_JID = "120363042000000000@g.us";
+const OTHER_GROUP_JID = "120363043000000000@g.us";
+const BOT_ME = {
+  id: "628100000000:12@s.whatsapp.net",
+  lid: "236283431522503:0@lid",
+};
 
-function createMockSocket() {
+function groupInbound(options: {
+  jid?: string;
+  mentionedJids?: string[];
+  quotedParticipant?: string | null;
+  quotedText?: string | null;
+  senderJid?: string;
+  senderJids?: string[];
+  senderPn?: string | null;
+  text: string;
+}) {
+  const senderJid = options.senderJid ?? PAIRED_JID;
+  return {
+    isGroup: true,
+    jid: options.jid ?? GROUP_JID,
+    me: BOT_ME,
+    mentionedJids: options.mentionedJids ?? [],
+    quotedParticipant: options.quotedParticipant ?? null,
+    quotedText: options.quotedText ?? null,
+    senderJid,
+    senderJids: options.senderJids ?? [senderJid],
+    senderPn: options.senderPn ?? null,
+    text: options.text,
+  };
+}
+
+function createMockSocket(options?: { failDocumentSend?: boolean }) {
   const sent: Array<{
     document?: unknown;
     fileName?: string;
@@ -45,15 +76,19 @@ function createMockSocket() {
         mimetype?: string;
         text?: string;
       },
-      options?: { quoted?: unknown }
+      sendOptions?: { quoted?: unknown }
     ) => {
+      if (content.document && options?.failDocumentSend) {
+        throw new Error("WhatsApp document send failed");
+      }
+
       sent.push({
         document: content.document,
         fileName: content.fileName,
         image: content.image,
         jid,
         mimetype: content.mimetype,
-        quoted: options?.quoted,
+        quoted: sendOptions?.quoted,
         text: content.text,
       });
     },
@@ -67,6 +102,132 @@ beforeEach(() => {
   resetActiveStreamsForTests();
   resetChatLocksForTests();
 });
+
+interface GroupHarness {
+  clientMock: ReturnType<typeof createMockClient>;
+  handleMessage: ReturnType<typeof createChatHandler>;
+  orgStore: ReturnType<typeof createTestOrgStore>;
+  sent: ReturnType<typeof createMockSocket>["sent"];
+  sessionStore: SessionStore;
+}
+
+type DirectArtifact = ReturnType<
+  SessionStore["getDeliverableArtifacts"]
+>[number];
+
+interface DirectArtifactHarness {
+  clientMock: ReturnType<typeof createMockClient>;
+  getDownloadCalls: () => number;
+  handleMessage: ReturnType<typeof createChatHandler>;
+  sent: ReturnType<typeof createMockSocket>["sent"];
+  sessionStore: SessionStore;
+}
+
+async function withDirectArtifactHarness(
+  options: {
+    artifacts?: DirectArtifact[];
+    client?: NonNullable<Parameters<typeof createMockClient>[0]>;
+    failDocumentSend?: boolean;
+  },
+  run: (harness: DirectArtifactHarness) => Promise<void>
+): Promise<void> {
+  await withTempHome(async (homeDir) => {
+    await writeWhatsAppConfigIni(homeDir, {
+      pairedJid: PAIRED_JID,
+      phoneNumber: "1234567890",
+    });
+    const authStore = new WhatsAppAuthStore();
+    await authStore.reload();
+    const clientMock = createMockClient(options.client);
+    const sessionStore = new SessionStore(
+      path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+    );
+    await sessionStore.load();
+    sessionStore.set(PAIRED_JID, {
+      deliverableArtifacts: options.artifacts ?? [],
+      profileId: "default",
+      sessionId: "session_test",
+      updatedAt: new Date().toISOString(),
+    });
+    await sessionStore.save();
+    const orgStore = createTestOrgStore(homeDir);
+    await orgStore.load();
+    const { socket, sent } = createMockSocket({
+      failDocumentSend: options.failDocumentSend,
+    });
+    let downloadCalls = 0;
+    const handleMessage = createChatHandler({
+      authStore,
+      client: clientMock.client,
+      config: { phoneNumber: "1234567890", profileId: "default" },
+      downloadMedia: async () => {
+        downloadCalls += 1;
+        return Buffer.from("incoming");
+      },
+      getSocket: () => socket as any,
+      orgStore,
+      sessionStore,
+    });
+
+    await run({
+      clientMock,
+      getDownloadCalls: () => downloadCalls,
+      handleMessage,
+      sent,
+      sessionStore,
+    });
+  });
+}
+
+async function withGroupHarness(
+  options: {
+    accessMode?: string;
+    allowedNumbers?: string[];
+    failCreateSession?: Error;
+    orgs?: ReturnType<typeof createMultiTestOrgs>;
+    pairingCode?: string | null;
+    pairedJid?: string | null;
+    profiles?: ProfileSummary[];
+    streaming?: boolean;
+  },
+  run: (harness: GroupHarness) => Promise<void>
+): Promise<void> {
+  await withTempHome(async (homeDir) => {
+    await writeWhatsAppConfigIni(homeDir, {
+      accessMode: options.accessMode,
+      allowedNumbers: options.allowedNumbers,
+      pairedJid:
+        options.pairedJid === undefined ? PAIRED_JID : options.pairedJid,
+      pairingCode: options.pairingCode,
+      phoneNumber: "1234567890",
+    });
+    const authStore = new WhatsAppAuthStore();
+    await authStore.reload();
+    const clientMock = createMockClient({
+      failCreateSession: options.failCreateSession,
+      orgs: options.orgs,
+      profiles: options.profiles,
+      streaming: options.streaming,
+    });
+    const sessionStore = new SessionStore(
+      path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+    );
+    await sessionStore.load();
+    const orgStore = createTestOrgStore(homeDir);
+    await orgStore.load();
+    const { socket, sent } = createMockSocket();
+    const handleMessage = createChatHandler({
+      authStore,
+      client: clientMock.client,
+      config: { phoneNumber: "1234567890", profileId: "default" },
+      getSocket: () => socket as any,
+      orgStore,
+      sessionStore,
+    });
+
+    await run({ clientMock, handleMessage, orgStore, sent, sessionStore });
+  });
+}
 
 describe("createChatHandler", () => {
   test("blocks unauthorized JID from chatting", async () => {
@@ -125,6 +286,46 @@ describe("createChatHandler", () => {
       await handleMessage({ jid: "9999999999@s.whatsapp.net", text: "hello" });
 
       expect(sent.length).toBeGreaterThanOrEqual(1);
+      expect(calls.createSession).toBe(0);
+      expect(calls.sendStream).toBe(0);
+    });
+  });
+
+  test("stays silent for unauthorized private chats when no access code exists", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      await sessionStore.load();
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({
+        jid: "628199999999@s.whatsapp.net",
+        text: "/start",
+      });
+      await handleMessage({
+        jid: "628199999999@s.whatsapp.net",
+        text: "hello",
+      });
+
+      expect(sent).toEqual([]);
       expect(calls.createSession).toBe(0);
       expect(calls.sendStream).toBe(0);
     });
@@ -1695,6 +1896,357 @@ describe("bridge API integration", () => {
   });
 });
 
+describe("createChatHandler group chats", () => {
+  test("ignores unaddressed group messages", async () => {
+    await withGroupHarness({}, async ({ clientMock, handleMessage, sent }) => {
+      await handleMessage(groupInbound({ text: "hello everyone" }));
+
+      expect(sent).toEqual([]);
+      expect(clientMock.calls.createSession).toBe(0);
+      expect(clientMock.calls.sendStream).toBe(0);
+    });
+  });
+
+  test("handles a normalized bot mention and preserves other mentions", async () => {
+    await withGroupHarness(
+      {
+        accessMode: "allowlist",
+        allowedNumbers: ["628122222222"],
+      },
+      async ({ clientMock, handleMessage, sent }) => {
+        await handleMessage(
+          groupInbound({
+            mentionedJids: [
+              "628133333333@s.whatsapp.net",
+              "628100000000@s.whatsapp.net",
+            ],
+            senderJid: "104784384290844@lid",
+            senderJids: ["628122222222@s.whatsapp.net", "104784384290844@lid"],
+            senderPn: "628122222222@s.whatsapp.net",
+            text: "@Alice @Atlas please compare these",
+          })
+        );
+
+        expect(clientMock.calls.sendStream).toBe(1);
+        expect(clientMock.getLastStreamInput()).toEqual({
+          message:
+            "[WhatsApp group — your reply is visible to everyone in this group.]\n@Alice please compare these",
+        });
+        expect(clientMock.calls.externalPrincipalIds).toEqual([
+          "104784384290844@lid",
+        ]);
+        expect(sent.at(-1)?.jid).toBe(GROUP_JID);
+      }
+    );
+  });
+
+  test("includes same-group quoted text when replying to the bot", async () => {
+    await withGroupHarness({}, async ({ clientMock, handleMessage }) => {
+      await handleMessage(
+        groupInbound({
+          quotedParticipant: BOT_ME.lid,
+          quotedText: "Update Daily Well PHSS\nSFT-01 Unload flow",
+          text: "use this for the next report",
+        })
+      );
+
+      expect(clientMock.calls.sendStream).toBe(1);
+      expect(clientMock.getLastStreamInput()).toEqual({
+        message:
+          "[WhatsApp group — your reply is visible to everyone in this group.]\n[Quoted message]\nUpdate Daily Well PHSS\nSFT-01 Unload flow\n\nuse this for the next report",
+      });
+    });
+  });
+
+  test("handles supported group commands and ignores unknown commands", async () => {
+    await withGroupHarness({}, async ({ clientMock, handleMessage, sent }) => {
+      await handleMessage(groupInbound({ text: "/new" }));
+      expect(clientMock.calls.createSession).toBe(1);
+      expect(sent.at(-1)?.text).toBe("Started a new conversation.");
+
+      const sentCount = sent.length;
+      await handleMessage(groupInbound({ text: "/unknown" }));
+      expect(clientMock.calls.createSession).toBe(1);
+      expect(sent).toHaveLength(sentCount);
+    });
+  });
+
+  test("handles /attach from the current group without crossing group state", async () => {
+    await withGroupHarness(
+      {},
+      async ({ clientMock, handleMessage, sent, sessionStore }) => {
+        sessionStore.set(GROUP_JID, {
+          deliverableArtifacts: [
+            {
+              filename: "group-report.md",
+              mimeType: "text/markdown",
+              path: "artifacts/group-report.md",
+              savedAt: "2026-08-27T10:00:00.000Z",
+              sharePath: null,
+              shareUrl: null,
+              sizeBytes: 12,
+            },
+          ],
+          profileId: "default",
+          sessionId: "session_group",
+          updatedAt: new Date().toISOString(),
+        });
+        await sessionStore.save();
+
+        await handleMessage(groupInbound({ text: "/attach" }));
+
+        expect(clientMock.calls.sendStream).toBe(0);
+        expect(clientMock.calls.publishProfileArtifactShare).toBe(0);
+        expect(
+          sent.some((message) => message.fileName === "group-report.md")
+        ).toBe(true);
+
+        await handleMessage(
+          groupInbound({ jid: OTHER_GROUP_JID, text: "/attach" })
+        );
+
+        expect(clientMock.calls.readProfileArtifactContent).toBe(1);
+        expect(sent.at(-1)?.jid).toBe(OTHER_GROUP_JID);
+        expect(sent.at(-1)?.text).toContain("No saved artifact");
+      }
+    );
+  });
+
+  test("lets an authorized group sender stop an in-flight reply", async () => {
+    await withGroupHarness(
+      { streaming: true },
+      async ({ clientMock, handleMessage, sent }) => {
+        const running = handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            text: "@Atlas work on this",
+          })
+        );
+        const stream = await waitForStreamControl(clientMock.getStreamControl);
+
+        await handleMessage(groupInbound({ text: "/stop" }));
+        await running;
+
+        expect(stream.signal?.aborted).toBe(true);
+        expect(sent.some((message) => message.text === "Stopped.")).toBe(true);
+      }
+    );
+  });
+
+  test("does not let an unauthorized group sender stop another reply", async () => {
+    await withGroupHarness(
+      {
+        accessMode: "allowlist",
+        allowedNumbers: ["628122222222"],
+        streaming: true,
+      },
+      async ({ clientMock, handleMessage }) => {
+        const running = handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            text: "@Atlas work on this",
+          })
+        );
+        const stream = await waitForStreamControl(clientMock.getStreamControl);
+
+        await handleMessage(
+          groupInbound({
+            senderJid: "628199999999@s.whatsapp.net",
+            text: "/stop",
+          })
+        );
+        expect(stream.signal?.aborted).toBe(false);
+
+        stream.complete();
+        await running;
+      }
+    );
+  });
+
+  test("never accepts chat access codes in a group", async () => {
+    await withGroupHarness(
+      { pairedJid: null, pairingCode: "ABCD1234" },
+      async ({ clientMock, handleMessage, sent }) => {
+        await handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            senderJid: "628199999999@s.whatsapp.net",
+            text: "@Atlas ABCD1234",
+          })
+        );
+
+        expect(clientMock.calls.createSession).toBe(0);
+        expect(clientMock.calls.sendStream).toBe(0);
+        expect(sent.at(-1)?.text).toContain("private chat");
+      }
+    );
+  });
+
+  test("stays silent for unauthorized groups when no access code exists", async () => {
+    await withGroupHarness(
+      { pairedJid: null, pairingCode: null },
+      async ({ clientMock, handleMessage, sent }) => {
+        await handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            senderJid: "628199999999@s.whatsapp.net",
+            text: "@Atlas hello",
+          })
+        );
+        await handleMessage(
+          groupInbound({
+            senderJid: "628199999999@s.whatsapp.net",
+            text: "/help",
+          })
+        );
+
+        expect(sent).toEqual([]);
+        expect(clientMock.calls.createSession).toBe(0);
+        expect(clientMock.calls.sendStream).toBe(0);
+      }
+    );
+  });
+
+  test("fails closed when the selected org has no available profile", async () => {
+    await withGroupHarness(
+      { profiles: [] },
+      async ({ clientMock, handleMessage, sent }) => {
+        await handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            text: "@Atlas hello",
+          })
+        );
+
+        expect(clientMock.calls.createSession).toBe(0);
+        expect(clientMock.calls.sendStream).toBe(0);
+        expect(sent).toHaveLength(1);
+        expect(sent[0]?.jid).toBe(GROUP_JID);
+        expect(sent[0]?.text).toContain("workspace profile settings");
+      }
+    );
+  });
+
+  test("fails closed when the group sender cannot resolve to a principal", async () => {
+    await withGroupHarness(
+      {
+        failCreateSession: new Error(
+          "No canonical user mapping for this WhatsApp sender."
+        ),
+      },
+      async ({ clientMock, handleMessage, sent }) => {
+        await handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            text: "@Atlas hello",
+          })
+        );
+
+        expect(clientMock.calls.createSession).toBe(1);
+        expect(clientMock.calls.sendStream).toBe(0);
+        expect(sent).toHaveLength(1);
+        expect(sent[0]?.jid).toBe(GROUP_JID);
+        expect(sent[0]?.text).not.toContain("canonical user mapping");
+      }
+    );
+  });
+
+  test("keeps different groups and direct chats in separate sessions", async () => {
+    await withGroupHarness(
+      {},
+      async ({ clientMock, handleMessage, sessionStore }) => {
+        await handleMessage({ jid: PAIRED_JID, text: "hello privately" });
+        expect(clientMock.getLastStreamInput()).toEqual({
+          message: "hello privately",
+        });
+
+        await handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            text: "@Atlas hello group one",
+          })
+        );
+        await handleMessage(
+          groupInbound({
+            jid: OTHER_GROUP_JID,
+            mentionedJids: [BOT_ME.lid],
+            text: "@Atlas hello group two",
+          })
+        );
+
+        expect(clientMock.calls.createSession).toBe(3);
+        expect(sessionStore.get(PAIRED_JID)).toBeDefined();
+        expect(sessionStore.get(GROUP_JID)).toBeDefined();
+        expect(sessionStore.get(OTHER_GROUP_JID)).toBeDefined();
+      }
+    );
+  });
+
+  test("isolates group org selection and session creation across orgs", async () => {
+    await withGroupHarness(
+      { orgs: createMultiTestOrgs() },
+      async ({ clientMock, handleMessage, orgStore }) => {
+        await handleMessage(groupInbound({ text: "/org 1" }));
+        await handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            text: "@Atlas first workspace",
+          })
+        );
+
+        await handleMessage(
+          groupInbound({ jid: OTHER_GROUP_JID, text: "/org 2" })
+        );
+        await handleMessage(
+          groupInbound({
+            jid: OTHER_GROUP_JID,
+            mentionedJids: [BOT_ME.id],
+            text: "@Atlas second workspace",
+          })
+        );
+
+        expect(orgStore.get(`g:${GROUP_JID}`)?.orgId).toBe("org_a");
+        expect(orgStore.get(`g:${OTHER_GROUP_JID}`)?.orgId).toBe("org_b");
+        expect(orgStore.get(PAIRED_JID)).toBeUndefined();
+        expect(clientMock.calls.createSessionOrgIds).toEqual([
+          "org_a",
+          "org_b",
+        ]);
+      }
+    );
+  });
+
+  test("drops the prior group session before switching that group to another org", async () => {
+    await withGroupHarness(
+      { orgs: createMultiTestOrgs() },
+      async ({ clientMock, handleMessage, orgStore }) => {
+        await handleMessage(groupInbound({ text: "/org 1" }));
+        await handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            text: "@Atlas first workspace",
+          })
+        );
+
+        await handleMessage(groupInbound({ text: "/org 2" }));
+        await handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            text: "@Atlas second workspace",
+          })
+        );
+
+        expect(orgStore.get(`g:${GROUP_JID}`)?.orgId).toBe("org_b");
+        expect(clientMock.calls.createSession).toBe(2);
+        expect(clientMock.calls.createSessionOrgIds).toEqual([
+          "org_a",
+          "org_b",
+        ]);
+      }
+    );
+  });
+});
+
 describe("createChatHandler artifact delivery", () => {
   const metaJson = JSON.stringify({
     mimeType: "text/markdown",
@@ -1744,6 +2296,16 @@ describe("createChatHandler artifact delivery", () => {
     { content: "Saved the report.", role: "assistant" },
   ];
 
+  const savedReportArtifact: DirectArtifact = {
+    filename: "report.md",
+    mimeType: "text/markdown",
+    path: "artifacts/report.md",
+    savedAt: "2026-07-13T10:00:00.000Z",
+    sharePath: null,
+    shareUrl: null,
+    sizeBytes: 8,
+  };
+
   test("attaches the file without a share-link chat bubble", async () => {
     await withTempHome(async (homeDir) => {
       await writeWhatsAppConfigIni(homeDir, {
@@ -1780,7 +2342,7 @@ describe("createChatHandler artifact delivery", () => {
 
       await handleMessage({ jid: PAIRED_JID, text: "thanks" });
 
-      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.publishProfileArtifactShare).toBe(0);
       expect(calls.readProfileArtifactContent).toBe(1);
       expect(sent.some((message) => message.document)).toBe(true);
       expect(
@@ -1885,7 +2447,7 @@ describe("createChatHandler artifact delivery", () => {
     });
   });
 
-  test("posts a share link and file after an unpaired write_file artifact", async () => {
+  test("sends an unpaired write_file artifact without minting a share", async () => {
     await withTempHome(async (homeDir) => {
       await writeWhatsAppConfigIni(homeDir, {
         pairedJid: PAIRED_JID,
@@ -1944,7 +2506,7 @@ describe("createChatHandler artifact delivery", () => {
 
       await handleMessage({ jid: PAIRED_JID, text: "thanks" });
 
-      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.publishProfileArtifactShare).toBe(0);
       expect(calls.readProfileArtifactContent).toBe(1);
       expect(sent.some((message) => message.document)).toBe(true);
     });
@@ -2013,7 +2575,7 @@ describe("createChatHandler artifact delivery", () => {
 
       await handleMessage({ jid: PAIRED_JID, text: "thanks" });
 
-      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.publishProfileArtifactShare).toBe(0);
       expect(calls.readProfileArtifactContent).toBe(1);
       expect(sent.some((message) => message.fileName === "sales.xlsx")).toBe(
         true
@@ -2067,7 +2629,7 @@ describe("createChatHandler artifact delivery", () => {
 
       await handleMessage({ jid: PAIRED_JID, text: "make a report" });
 
-      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.publishProfileArtifactShare).toBe(0);
       expect(calls.readProfileArtifactContent).toBe(1);
       expect(
         sent.some((message) => message.fileName === "live-report.pdf")
@@ -2191,14 +2753,190 @@ describe("createChatHandler artifact delivery", () => {
       await handleMessage({ jid: PAIRED_JID, text: "send me the file" });
 
       expect(calls.readProfileArtifactContent).toBe(1);
+      expect(calls.publishProfileArtifactShare).toBe(0);
+      expect(calls.sendStream).toBe(0);
       expect(sent.some((message) => message.document)).toBe(true);
       expect(sent.some((message) => message.fileName === "report.md")).toBe(
         true
       );
+      expect(
+        sent.some((message) =>
+          message.text?.includes("https://app.example/s/tok_test")
+        )
+      ).toBe(false);
     });
   });
 
-  test("still sends the file when share publishing fails", async () => {
+  test("handles /attach without an agent turn or public share", async () => {
+    await withDirectArtifactHarness(
+      { artifacts: [savedReportArtifact] },
+      async ({ clientMock, handleMessage, sent }) => {
+        await handleMessage({ jid: PAIRED_JID, text: "/attach" });
+
+        expect(clientMock.calls.sendStream).toBe(0);
+        expect(clientMock.calls.readProfileArtifactContent).toBe(1);
+        expect(clientMock.calls.publishProfileArtifactShare).toBe(0);
+        expect(sent.some((message) => message.fileName === "report.md")).toBe(
+          true
+        );
+        expect(
+          sent.some((message) => message.text?.includes("/s/tok_test"))
+        ).toBe(false);
+      }
+    );
+  });
+
+  test("fails closed when /attach has no conversation artifact", async () => {
+    await withDirectArtifactHarness(
+      {},
+      async ({ clientMock, handleMessage, sent }) => {
+        await handleMessage({ jid: PAIRED_JID, text: "/attach" });
+
+        expect(clientMock.calls.sendStream).toBe(0);
+        expect(clientMock.calls.readProfileArtifactContent).toBe(0);
+        expect(clientMock.calls.publishProfileArtifactShare).toBe(0);
+        expect(sent.at(-1)?.text).toContain("No saved artifact");
+      }
+    );
+  });
+
+  test("does not attach files cleared from the conversation", async () => {
+    await withDirectArtifactHarness(
+      { artifacts: [savedReportArtifact] },
+      async ({ clientMock, handleMessage, sent, sessionStore }) => {
+        await handleMessage({ jid: PAIRED_JID, text: "/clear" });
+        await handleMessage({ jid: PAIRED_JID, text: "/attach" });
+
+        expect(sessionStore.getDeliverableArtifacts(PAIRED_JID)).toEqual([]);
+        expect(clientMock.calls.readProfileArtifactContent).toBe(0);
+        expect(clientMock.calls.sendStream).toBe(0);
+        expect(sent.at(-1)?.text).toContain("No saved artifact");
+      }
+    );
+  });
+
+  test("keeps edit-then-send prompts in the agent turn", async () => {
+    const editedMessages: ChatMessage[] = [
+      { content: "edit the report and send the file", role: "user" },
+      {
+        content: "",
+        role: "assistant",
+        toolCalls: [
+          {
+            arguments: {
+              content: "updated",
+              path: "artifacts/updated-report.md",
+            },
+            id: "tool_edit",
+            name: "write_file",
+          },
+        ],
+      },
+      {
+        content: JSON.stringify({
+          bytesWritten: 7,
+          path: "/home/.atlas/orgs/org/profiles/default/artifacts/updated-report.md",
+        }),
+        name: "write_file",
+        role: "tool",
+        toolCallId: "tool_edit",
+      },
+    ];
+
+    await withDirectArtifactHarness(
+      {
+        artifacts: [savedReportArtifact],
+        client: {
+          artifactContentBytes: new TextEncoder().encode("updated"),
+          messages: editedMessages,
+        },
+      },
+      async ({ clientMock, handleMessage, sent }) => {
+        await handleMessage({
+          jid: PAIRED_JID,
+          text: "edit the report and send the file",
+        });
+
+        expect(clientMock.calls.sendStream).toBe(1);
+        expect(clientMock.calls.readProfileArtifactContent).toBe(1);
+        expect(clientMock.calls.publishProfileArtifactShare).toBe(0);
+        expect(
+          sent.some((message) => message.fileName === "updated-report.md")
+        ).toBe(true);
+        expect(sent.some((message) => message.fileName === "report.md")).toBe(
+          false
+        );
+      }
+    );
+  });
+
+  test("disambiguates /attach when an inbound file is present", async () => {
+    await withDirectArtifactHarness(
+      { artifacts: [savedReportArtifact] },
+      async ({ clientMock, getDownloadCalls, handleMessage, sent }) => {
+        await handleMessage({
+          inbound: {
+            key: { fromMe: false, id: "attach-doc", remoteJid: PAIRED_JID },
+            message: {
+              documentMessage: {
+                caption: "/attach",
+                fileName: "incoming.pdf",
+                mimetype: "application/pdf",
+              },
+            },
+          },
+          jid: PAIRED_JID,
+          text: "/attach",
+        });
+
+        expect(clientMock.calls.sendStream).toBe(0);
+        expect(clientMock.calls.readProfileArtifactContent).toBe(0);
+        expect(getDownloadCalls()).toBe(0);
+        expect(sent.at(-1)?.text).toContain("Send /attach by itself");
+      }
+    );
+  });
+
+  test("mints a share only for an explicit share-link request", async () => {
+    await withDirectArtifactHarness(
+      { artifacts: [savedReportArtifact] },
+      async ({ clientMock, handleMessage, sent }) => {
+        await handleMessage({
+          jid: PAIRED_JID,
+          text: "send me a public link",
+        });
+
+        expect(clientMock.calls.sendStream).toBe(0);
+        expect(clientMock.calls.readProfileArtifactContent).toBe(1);
+        expect(clientMock.calls.publishProfileArtifactShare).toBe(1);
+        expect(
+          sent.some((message) =>
+            message.text?.includes("https://app.example/s/tok_test")
+          )
+        ).toBe(true);
+      }
+    );
+  });
+
+  test("falls back to a share when native attachment sending fails", async () => {
+    await withDirectArtifactHarness(
+      { artifacts: [savedReportArtifact], failDocumentSend: true },
+      async ({ clientMock, handleMessage, sent }) => {
+        await handleMessage({ jid: PAIRED_JID, text: "/attach" });
+
+        expect(clientMock.calls.sendStream).toBe(0);
+        expect(clientMock.calls.readProfileArtifactContent).toBe(1);
+        expect(clientMock.calls.publishProfileArtifactShare).toBe(1);
+        expect(
+          sent.some((message) =>
+            message.text?.includes("https://app.example/s/tok_test")
+          )
+        ).toBe(true);
+      }
+    );
+  });
+
+  test("does not attempt share publishing when native send succeeds", async () => {
     await withTempHome(async (homeDir) => {
       await writeWhatsAppConfigIni(homeDir, {
         pairedJid: PAIRED_JID,
@@ -2235,7 +2973,7 @@ describe("createChatHandler artifact delivery", () => {
 
       await handleMessage({ jid: PAIRED_JID, text: "thanks" });
 
-      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.publishProfileArtifactShare).toBe(0);
       expect(calls.readProfileArtifactContent).toBe(1);
       expect(sent.some((message) => message.fileName === "report.md")).toBe(
         true
@@ -2248,7 +2986,7 @@ describe("createChatHandler artifact delivery", () => {
     });
   });
 
-  test("keeps the agent turn going when attach download fails", async () => {
+  test("falls back to a share without running the agent when attach download fails", async () => {
     await withTempHome(async (homeDir) => {
       await writeWhatsAppConfigIni(homeDir, {
         pairedJid: PAIRED_JID,
@@ -2296,10 +3034,16 @@ describe("createChatHandler artifact delivery", () => {
       await handleMessage({ jid: PAIRED_JID, text: "send me the file" });
 
       expect(calls.readProfileArtifactContent).toBe(1);
-      expect(calls.sendStream).toBe(1);
+      expect(calls.publishProfileArtifactShare).toBe(1);
+      expect(calls.sendStream).toBe(0);
       expect(
         sent.some((message) =>
           message.text?.includes("Failed to read the saved file.")
+        )
+      ).toBe(true);
+      expect(
+        sent.some((message) =>
+          message.text?.includes("https://app.example/s/tok_test")
         )
       ).toBe(true);
     });

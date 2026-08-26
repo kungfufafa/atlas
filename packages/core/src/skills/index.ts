@@ -5,6 +5,8 @@ export {
 export * from "./bundled/install";
 export * from "./bundled-names";
 export * from "./compose";
+export * from "./curator-consolidation";
+export * from "./curator-schedule";
 export * from "./dedupe";
 export * from "./discover";
 export * from "./github-skill-fetch";

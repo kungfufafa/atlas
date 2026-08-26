@@ -626,6 +626,21 @@ describe("composio-tool-bridge", () => {
       redirectUrl: "https://oauth.example.com/authorize",
       toolkitSlug: "gmail",
     });
+
+    (
+      composioService as unknown as {
+        connectToolkit: () => Promise<{ redirectUrl: string }>;
+      }
+    ).connectToolkit = async () => ({ redirectUrl: "javascript:alert(1)" });
+    const unsafeResult = await tools[0]?.run(
+      { toolkit_slug: "gmail" },
+      { clientOrigin: "https://atlas.example.com" }
+    );
+    expect(unsafeResult).toMatchObject({
+      code: "COMPOSIO_TRANSIENT",
+      error: expect.stringContaining("unsafe OAuth URL"),
+      toolkitSlug: "gmail",
+    });
   });
 
   test("connect tool rejects loopback callback URLs", async () => {

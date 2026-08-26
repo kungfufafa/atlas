@@ -5,12 +5,14 @@ import {
   type AutomationSchedulerStatus,
 } from "@atlas/core/automation-scheduler";
 import type { AutomationSchedule } from "@atlas/core/contract";
+import { tickSkillCurator } from "./curator-tick";
 
 export interface AutomationWorkerSchedulerDelegate
   extends AutomationSchedulerDelegate {}
 
 export class AutomationWorkerScheduler {
   private readonly scheduler: AutomationScheduler;
+  private polling = false;
   private pollTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(
@@ -22,12 +24,14 @@ export class AutomationWorkerScheduler {
     this.scheduler = new AutomationScheduler({
       getDefaultTimezone: () => this.fetchDefaultTimezone(),
       listScheduledAutomations: () => this.fetchSchedules(),
-      runAutomation: (id, fireId) => this.runAutomation(id, fireId),
+      runAutomation: (id, fireId, orgId) =>
+        this.runAutomation(id, fireId, orgId),
     });
   }
 
   async start(): Promise<void> {
     await this.scheduler.start();
+    await this.tickCurator();
     this.notifyStatus();
   }
 
@@ -40,14 +44,27 @@ export class AutomationWorkerScheduler {
   beginPolling(intervalMs: number): void {
     this.stopPolling();
 
-    this.pollTimer = setInterval(async () => {
+    this.pollTimer = setInterval(() => {
+      void this.pollOnce();
+    }, intervalMs);
+  }
+
+  async pollOnce(): Promise<void> {
+    if (this.polling) {
+      return;
+    }
+    this.polling = true;
+    try {
       try {
         await this.scheduler.reload();
-        this.notifyStatus();
       } catch (error) {
         console.error("Failed to reload automation schedules:", error);
       }
-    }, intervalMs);
+      await this.tickCurator();
+      this.notifyStatus();
+    } finally {
+      this.polling = false;
+    }
   }
 
   private stopPolling(): void {
@@ -61,12 +78,21 @@ export class AutomationWorkerScheduler {
     return this.client.listAutomationSchedules();
   }
 
+  private async tickCurator(): Promise<void> {
+    try {
+      await tickSkillCurator(this.client);
+    } catch (error) {
+      console.error("Failed to tick skill curator:", error);
+    }
+  }
+
   private async runAutomation(
     automationId: string,
-    fireId: string
+    fireId: string,
+    orgId: string
   ): Promise<{ ok: boolean; skipped?: boolean; error?: string }> {
     try {
-      await this.client.runAutomationInternal(automationId, fireId);
+      await this.client.runAutomationInternal(automationId, fireId, orgId);
       return { ok: true };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

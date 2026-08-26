@@ -223,6 +223,8 @@ export async function ensureProviderConfiguredViaCli(
       hostMode: instance.hostMode,
       model,
       provider: instance.type,
+      wireApi:
+        instance.type === "openai_compatible" ? instance.wireApi : undefined,
     });
 
     console.log(

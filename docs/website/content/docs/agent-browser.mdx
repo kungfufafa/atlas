@@ -37,6 +37,7 @@ Use agent-browser when the site has no usable API. The agent must act like a per
 | **`bash` tool** | Runs `agent-browser` commands in the profile workspace |
 | **Profile Config → Skills** | Assign the skill. **Install** the CLI and Chrome on the server. **Add bash** when needed |
 | **Host CLI + Chrome** | Install through the dashboard **Install** button or manually on the Atlas server |
+| **CloakBrowser (optional)** | Host env `AGENT_BROWSER_EXECUTABLE_PATH` / `AGENT_BROWSER_ARGS`; not included in the Atlas image |
 
 ```text
 User message (interactive task or login wall)
@@ -79,7 +80,32 @@ agent-browser install --with-deps
 
 Then open the profile **Config** tab. Assign the skill. Use **Add bash** if needed.
 
-### 3. Try it in chat
+### 3. Optional: CloakBrowser for antibot sites
+
+Stock Chrome from `agent-browser install` is enough for most portals. If a login-walled site blocks it, [CloakBrowser](https://github.com/CloakHQ/CloakBrowser) can provide a patched Chromium on the Atlas host. Atlas does not ship Cloak or enable it by default.
+
+1. Install Cloak on the same machine that runs `bash`:
+
+```bash
+pip install cloakbrowser
+python -m cloakbrowser install
+python -m cloakbrowser info
+```
+
+The Node setup also works: `npx cloakbrowser install`, then `npx cloakbrowser info`.
+
+2. Set the Atlas process environment using the binary path from `info` and the arguments from Cloak's documented agent-browser integration:
+
+```bash
+export AGENT_BROWSER_EXECUTABLE_PATH="/path/from/cloakbrowser/info"
+export AGENT_BROWSER_ARGS="<copy from Cloak's agent-browser example>"
+```
+
+3. Restart Atlas. Leave both variables unset to use stock Chrome.
+
+For Docker, bind-mount the Cloak binary and pass the same variables. See [Docker](/docker#optional-cloakbrowser-with-agent-browser).
+
+### 4. Try it in chat
 
 Ask the profile for a task that needs a real browser. Example:
 
@@ -121,6 +147,8 @@ Across runs, sessions are **fresh** by default. The product does not keep sticky
 | Skill assigned but nothing runs | The profile also needs **`bash`**. Use **Add bash** in the skill picker if the UI shows the prompt |
 | Clicks miss or fail after navigation | The agent must take a **fresh snapshot** before it uses refs again |
 | Daemon seems stuck | Ask the agent to run `agent-browser close` or `agent-browser close --all`. Or run `agent-browser doctor` |
+| Site still blocks the browser | Configure optional CloakBrowser as described above; do not invent Chromium flags |
+| Cloak is configured but stock Chrome launches | Confirm the variables are set on the Atlas process, then restart Atlas |
 
 ## Next steps
 

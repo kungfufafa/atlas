@@ -4,12 +4,14 @@ import { inferArtifactMimeType } from "../artifact-mime";
 import type { ToolContext, ToolDefinition } from "../contract";
 import { nanoid } from "../ids";
 import type {
+  RetryPolicy,
   StandardToolErrorCode,
   ToolArtifact,
   ToolExecutionError,
   ToolExecutionMetadata,
   ToolExecutionResult,
 } from "./execution-contract";
+import { DEFAULT_TOOL_CAPABILITIES } from "./permissions";
 
 export const DEFAULT_MAX_OUTPUT_CHARS = 32_000;
 export const DEFAULT_MAX_RETRIES = 2;
@@ -136,14 +138,7 @@ function mergeToolArtifacts(
   return [...artifactsByPath.values()];
 }
 
-export interface RetryPolicy {
-  backoffFactor?: number;
-  initialDelayMs?: number;
-  jitter?: boolean;
-  maxDelayMs?: number;
-  maxRetries?: number;
-  retryableCodes?: StandardToolErrorCode[];
-}
+export type { RetryPolicy } from "./execution-contract";
 
 export const DEFAULT_RETRY_POLICY: RetryPolicy = {
   backoffFactor: 2,
@@ -158,30 +153,80 @@ export function isRetryableErrorCode(code: StandardToolErrorCode): boolean {
   return code === "NETWORK_ERROR" || code === "PROVIDER_ERROR";
 }
 
+const STANDARD_TOOL_ERROR_CODES = new Set<StandardToolErrorCode>([
+  "INVALID_ARGUMENT",
+  "PERMISSION_DENIED",
+  "NOT_FOUND",
+  "TIMEOUT",
+  "CANCELLED",
+  "RESOURCE_LIMIT",
+  "PROVIDER_ERROR",
+  "NETWORK_ERROR",
+  "SANDBOX_ERROR",
+  "INTERNAL_ERROR",
+]);
+
+function isStandardToolErrorCode(
+  value: unknown
+): value is StandardToolErrorCode {
+  return (
+    typeof value === "string" &&
+    STANDARD_TOOL_ERROR_CODES.has(value as StandardToolErrorCode)
+  );
+}
+
+function readErrorProperty(error: object, key: string): unknown {
+  try {
+    return Reflect.get(error, key);
+  } catch {
+    // Hostile proxies must degrade to an absent field.
+  }
+}
+
+function stringifyUnknownError(error: unknown): string {
+  try {
+    return String(error);
+  } catch {
+    return "Unknown tool execution error.";
+  }
+}
+
 export function standardizeToolError(
   error: unknown,
   fallbackCode: StandardToolErrorCode = "INTERNAL_ERROR"
 ): ToolExecutionError {
+  let errorMessage: unknown;
+  let errorName: unknown;
+
   if (typeof error === "object" && error !== null) {
-    const record = error as Record<string, unknown>;
-    if (typeof record.code === "string" && typeof record.message === "string") {
-      const code = record.code as StandardToolErrorCode;
+    const code = readErrorProperty(error, "code");
+    errorMessage = readErrorProperty(error, "message");
+    errorName = readErrorProperty(error, "name");
+
+    if (isStandardToolErrorCode(code) && typeof errorMessage === "string") {
+      const retryable = readErrorProperty(error, "retryable");
       return {
         code,
-        details: record.details,
-        message: record.message,
+        details: readErrorProperty(error, "details"),
+        message: errorMessage,
         retryable:
-          typeof record.retryable === "boolean"
-            ? record.retryable
+          typeof retryable === "boolean"
+            ? retryable
             : isRetryableErrorCode(code),
       };
     }
   }
 
-  const rawMessage = error instanceof Error ? error.message : String(error);
-  const errorName = error instanceof Error ? error.name : "";
+  const rawMessage =
+    typeof errorMessage === "string"
+      ? errorMessage
+      : stringifyUnknownError(error);
+  const normalizedErrorName = typeof errorName === "string" ? errorName : "";
 
-  if (errorName === "AbortError" || /aborted|cancelled/i.test(rawMessage)) {
+  if (
+    normalizedErrorName === "AbortError" ||
+    /aborted|cancelled/i.test(rawMessage)
+  ) {
     return {
       code: "CANCELLED",
       message: "The tool execution was cancelled.",
@@ -190,7 +235,7 @@ export function standardizeToolError(
   }
 
   if (
-    errorName === "TimeoutError" ||
+    normalizedErrorName === "TimeoutError" ||
     /timed?\s*out|deadline exceeded/i.test(rawMessage)
   ) {
     return {
@@ -290,6 +335,15 @@ export function formatUserSafeErrorMessage(error: ToolExecutionError): string {
   }
 }
 
+function executionAbortReason(
+  signal: AbortSignal,
+  fallbackMessage: string
+): Error {
+  return signal.reason instanceof Error
+    ? signal.reason
+    : new Error(fallbackMessage);
+}
+
 export async function executeWithRetry<T>(
   action: (attempt: number) => Promise<T>,
   policy: RetryPolicy = DEFAULT_RETRY_POLICY,
@@ -308,7 +362,10 @@ export async function executeWithRetry<T>(
 
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
     if (signal?.aborted) {
-      throw new Error("Execution was aborted before attempt.");
+      throw executionAbortReason(
+        signal,
+        "Execution was aborted before attempt."
+      );
     }
 
     try {
@@ -316,6 +373,13 @@ export async function executeWithRetry<T>(
       return { result, retries: attempt };
     } catch (err) {
       lastError = err;
+
+      if (signal?.aborted) {
+        throw executionAbortReason(
+          signal,
+          "Execution was aborted before retry backoff."
+        );
+      }
 
       if (attempt >= maxRetries) {
         break;
@@ -336,19 +400,31 @@ export async function executeWithRetry<T>(
       }
 
       await new Promise<void>((resolve, reject) => {
-        const timer = setTimeout(() => {
-          if (signal?.removeEventListener) {
-            signal.removeEventListener("abort", onAbort);
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const onAbort = () => {
+          if (timer) {
+            clearTimeout(timer);
           }
-          resolve();
-        }, delay);
-
-        function onAbort() {
-          clearTimeout(timer);
-          reject(new Error("Execution aborted during retry backoff."));
-        }
+          reject(
+            signal
+              ? executionAbortReason(
+                  signal,
+                  "Execution aborted during retry backoff."
+                )
+              : new Error("Execution aborted during retry backoff.")
+          );
+        };
 
         signal?.addEventListener("abort", onAbort, { once: true });
+        if (signal?.aborted) {
+          onAbort();
+          return;
+        }
+
+        timer = setTimeout(() => {
+          signal?.removeEventListener("abort", onAbort);
+          resolve();
+        }, delay);
       });
     }
   }
@@ -436,11 +512,31 @@ export async function executeProtectedTool<Input = unknown, Output = unknown>(
       }
     }
 
-    // 3. Execution with Retry (strictly disable automatic retry on mutating/destructive/purchase actions)
-    const effectiveRetryPolicy: RetryPolicy =
-      risk.riskLevel === "LOW" && !risk.consequence.irreversible
-        ? (options.retryPolicy ?? DEFAULT_RETRY_POLICY)
-        : { maxRetries: 0 };
+    // 3. Execution with Retry. Production tools retry only when their loader
+    // explicitly attaches a policy (currently opt-in custom JavaScript tools).
+    // Known writes and risk-engine mutations remain single-attempt even if a
+    // policy is attached accidentally.
+    const requestedRetryPolicy = options.retryPolicy ?? tool.retryPolicy;
+    const knownCapability = DEFAULT_TOOL_CAPABILITIES[tool.name];
+    const isKnownMutation =
+      knownCapability !== undefined && knownCapability.risk !== "read";
+    const canRetry =
+      requestedRetryPolicy !== undefined &&
+      !isKnownMutation &&
+      risk.riskLevel === "LOW" &&
+      !risk.consequence.irreversible;
+    const effectiveRetryPolicy: RetryPolicy = canRetry
+      ? {
+          ...requestedRetryPolicy,
+          maxRetries: Math.max(
+            0,
+            Math.min(
+              requestedRetryPolicy.maxRetries ?? DEFAULT_MAX_RETRIES,
+              DEFAULT_MAX_RETRIES
+            )
+          ),
+        }
+      : { maxRetries: 0 };
 
     const shouldDetectArtifacts = tool.parallelSafe !== true;
     const artifactsBefore = shouldDetectArtifacts

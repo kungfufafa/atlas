@@ -1,11 +1,19 @@
+import { resolveCloudflareAccountInput } from "@atlas/core/cloudflare-provider-config";
 import type {
   CreateProviderResponse,
   OllamaHostMode,
   ProviderModelOption,
+  WireApi,
 } from "@atlas/core/contract";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  defaultDiscoveryBaseUrl,
+  isDiscoveryModelProvider,
+} from "@atlas/core/discovery-providers";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ModelListRow } from "@/components/ModelListEditor";
 import { normalizeModelListRows } from "@/components/model-list-editor.shared";
+import { isCurrentProviderOperation } from "@/components/provider-setup-form.shared";
 import { useAppContext } from "@/context/use-app-context";
 import { useAuth } from "@/context/use-auth";
 import { useModelsQuery, useProvidersQuery } from "@/hooks/use-app-queries";
@@ -18,6 +26,7 @@ import {
   defaultOllamaSetupBaseUrl,
   filterModelsByProvider,
   firstAvailableProviderOption,
+  formatProviderLabel,
   getModelDisplayName,
   hasOpenCodeZenProvider,
   isProviderTypeAlreadyConfigured,
@@ -45,6 +54,7 @@ export function useProviderSetupForm(
   options: UseProviderSetupFormOptions = {}
 ) {
   const { createProvider } = useAppContext();
+  const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
   const { data: catalogResponse, error: catalogQueryError } = useModelsQuery({
     enabled: isAuthenticated,
@@ -86,6 +96,7 @@ export function useProviderSetupForm(
   const [ollamaHostMode, setOllamaHostMode] = useState<OllamaHostMode>("local");
   const [displayName, setDisplayName] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
+  const [wireApi, setWireApi] = useState<WireApi>("chat");
   const [customModels, setCustomModels] = useState<ModelListRow[]>([]);
   const [extraModels, setExtraModels] = useState<ProviderModelOption[]>([]);
   const [displayNameError, setDisplayNameError] = useState<string | null>(null);
@@ -96,6 +107,41 @@ export function useProviderSetupForm(
   const [testingConnection, setTestingConnection] = useState(false);
   const [testSuccess, setTestSuccess] = useState<string | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
+  const [remoteCredentialRevision, setRemoteCredentialRevision] = useState(0);
+  const providerGenerationRef = useRef(0);
+
+  const invalidateConnectionTest = useCallback(
+    (clearDiscoveryCache = false) => {
+      providerGenerationRef.current += 1;
+      setTestSuccess(null);
+      setTestError(null);
+      setTestingConnection(false);
+
+      if (clearDiscoveryCache) {
+        void queryClient.cancelQueries({
+          queryKey: ["remoteModelDiscovery"],
+        });
+        queryClient.removeQueries({ queryKey: ["remoteModelDiscovery"] });
+        setRemoteCredentialRevision((current) => current + 1);
+      }
+    },
+    [queryClient]
+  );
+
+  const resetProviderSensitiveState = useCallback(() => {
+    invalidateConnectionTest(true);
+    setApiKey("");
+    setShowApiKey(false);
+    setApiKeyTouched(false);
+    setApiKeyError(null);
+    setFormError(null);
+    setTestSuccess(null);
+    setTestError(null);
+    setTestingConnection(false);
+    setDisplayNameError(null);
+    setBaseUrlError(null);
+    setModelsError(null);
+  }, [invalidateConnectionTest]);
 
   useEffect(() => {
     if (catalogQueryError) {
@@ -104,25 +150,25 @@ export function useProviderSetupForm(
   }, [catalogQueryError]);
 
   useEffect(() => {
-    setSelectedProvider((current) => {
-      if (!isProviderTypeAlreadyConfigured(current, configuredTypes)) {
-        return current;
-      }
+    if (!isProviderTypeAlreadyConfigured(selectedProvider, configuredTypes)) {
+      return;
+    }
 
-      return firstAvailableProviderOption(configuredTypes, current);
-    });
-  }, [configuredTypes]);
+    resetProviderSensitiveState();
+    setSelectedProvider(
+      firstAvailableProviderOption(configuredTypes, selectedProvider)
+    );
+  }, [configuredTypes, resetProviderSensitiveState, selectedProvider]);
 
   const filteredModels = useMemo(() => {
     if (
-      selectedProvider === "openai_compatible" ||
+      isDiscoveryModelProvider(selectedProvider) ||
       selectedProvider === "ollama"
     ) {
-      return modelsFromCustomRows(customModels).map((model) =>
-        selectedProvider === "ollama"
-          ? { ...model, provider: "ollama" as const }
-          : model
-      );
+      return modelsFromCustomRows(customModels).map((model) => ({
+        ...model,
+        provider: selectedProvider,
+      }));
     }
 
     if (selectedProvider === "openrouter") {
@@ -177,6 +223,7 @@ export function useProviderSetupForm(
 
   const handleApiKeyChange = useCallback(
     (value: string) => {
+      invalidateConnectionTest(true);
       setApiKey(value);
 
       if (formError) {
@@ -206,6 +253,9 @@ export function useProviderSetupForm(
       formError,
       selectedProvider,
       ollamaApiKeyOptions,
+      invalidateConnectionTest,
+      testError,
+      testSuccess,
     ]
   );
 
@@ -215,9 +265,9 @@ export function useProviderSetupForm(
         return;
       }
 
+      resetProviderSensitiveState();
       setSelectedProvider(provider);
-      setTestSuccess(null);
-      setTestError(null);
+      setWireApi("chat");
 
       if (provider === "openrouter" && openRouterModels.length === 0) {
         setOpenRouterModels([{ id: "", name: "" }]);
@@ -236,6 +286,15 @@ export function useProviderSetupForm(
         setCustomModels([{ id: "", name: "" }]);
       }
 
+      if (
+        provider !== "openai_compatible" &&
+        isDiscoveryModelProvider(provider)
+      ) {
+        setBaseUrl(defaultDiscoveryBaseUrl(provider) ?? "");
+        setDisplayName(formatProviderLabel(provider));
+        setCustomModels([]);
+      }
+
       if (provider !== "openrouter") {
         setOpenRouterModels([]);
         setOpenRouterModelsError(null);
@@ -246,8 +305,14 @@ export function useProviderSetupForm(
         setShortlistModelsError(null);
       }
 
-      if (provider !== "openai_compatible" && provider !== "ollama") {
+      if (
+        provider !== "openai_compatible" &&
+        provider !== "ollama" &&
+        !isDiscoveryModelProvider(provider)
+      ) {
         setBaseUrl("");
+        setDisplayName("");
+        setCustomModels([]);
         setDisplayNameError(null);
         setBaseUrlError(null);
         setModelsError(null);
@@ -255,10 +320,16 @@ export function useProviderSetupForm(
 
       if (provider === "openai_compatible") {
         setBaseUrl("");
+        setDisplayName("");
         setCustomModels([]);
       }
     },
-    [configuredTypes, openRouterModels.length, shortlistModels.length]
+    [
+      configuredTypes,
+      openRouterModels.length,
+      resetProviderSensitiveState,
+      shortlistModels.length,
+    ]
   );
 
   const selectOpenRouterModel = useCallback(
@@ -292,11 +363,34 @@ export function useProviderSetupForm(
       } else if (provider === "openai_compatible") {
         setDisplayName(row.providerName);
         setBaseUrl(row.apiUrl.replace(/\/$/, ""));
-        setCustomModels([{ id: modelId, name: row.modelName }]);
+        setCustomModels([
+          {
+            id: modelId,
+            name: row.modelName,
+            ...(row.reasoning ? { supportsThinking: true } : {}),
+            ...(row.vision ? { supportsVision: true } : {}),
+          },
+        ]);
         setSelectedModel(modelId);
         if (row.isZen && row.isFree && !row.deprecated) {
           setApiKey("public");
         }
+      } else if (isDiscoveryModelProvider(provider)) {
+        setDisplayName(formatProviderLabel(provider));
+        setBaseUrl(
+          row.apiUrl.replace(/\/$/, "") ||
+            defaultDiscoveryBaseUrl(provider) ||
+            ""
+        );
+        setCustomModels([
+          {
+            id: modelId,
+            name: row.modelName,
+            ...(row.reasoning ? { supportsThinking: true } : {}),
+            ...(row.vision ? { supportsVision: true } : {}),
+          },
+        ]);
+        setSelectedModel(modelId);
       } else if (provider === "opencode_go") {
         setExtraModels((current) => {
           if (
@@ -350,13 +444,18 @@ export function useProviderSetupForm(
 
   const { onSuccess } = options;
 
-  const handleShortlistModelsChange = useCallback((rows: ModelListRow[]) => {
-    setShortlistModels(rows);
-    setShortlistModelsError(null);
-  }, []);
+  const handleShortlistModelsChange = useCallback(
+    (rows: ModelListRow[]) => {
+      invalidateConnectionTest();
+      setShortlistModels(rows);
+      setShortlistModelsError(null);
+    },
+    [invalidateConnectionTest]
+  );
 
   const handleOllamaHostModeChange = useCallback(
     (hostMode: OllamaHostMode) => {
+      invalidateConnectionTest(true);
       setOllamaHostMode(hostMode);
       if (apiKeyTouched) {
         setApiKeyError(
@@ -368,16 +467,65 @@ export function useProviderSetupForm(
         setApiKeyError(null);
       }
     },
-    [apiKey, apiKeyTouched]
+    [apiKey, apiKeyTouched, invalidateConnectionTest]
   );
 
-  const handleOpenRouterModelsChange = useCallback((rows: ModelListRow[]) => {
-    setOpenRouterModels(rows);
-    setOpenRouterModelsError(null);
-  }, []);
+  const handleOpenRouterModelsChange = useCallback(
+    (rows: ModelListRow[]) => {
+      invalidateConnectionTest();
+      setOpenRouterModels(rows);
+      setOpenRouterModelsError(null);
+    },
+    [invalidateConnectionTest]
+  );
+
+  const handleBaseUrlChange = useCallback(
+    (value: string) => {
+      invalidateConnectionTest(true);
+      setBaseUrl(value);
+    },
+    [invalidateConnectionTest]
+  );
+
+  const handleCustomModelsChange = useCallback(
+    (rows: ModelListRow[]) => {
+      invalidateConnectionTest();
+      setCustomModels(rows);
+    },
+    [invalidateConnectionTest]
+  );
+
+  const handleDisplayNameChange = useCallback(
+    (value: string) => {
+      invalidateConnectionTest();
+      setDisplayName(value);
+    },
+    [invalidateConnectionTest]
+  );
+
+  const handleSelectedModelChange = useCallback(
+    (value: string) => {
+      invalidateConnectionTest();
+      setSelectedModel(value);
+    },
+    [invalidateConnectionTest]
+  );
+
+  const handleWireApiChange = useCallback(
+    (value: WireApi) => {
+      invalidateConnectionTest();
+      setWireApi(value);
+    },
+    [invalidateConnectionTest]
+  );
 
   const handleTestConnection = useCallback(async () => {
     const trimmedKey = apiKey.trim();
+    const isDiscoveryProvider = isDiscoveryModelProvider(selectedProvider);
+    const resolvedCloudflareBaseUrl =
+      selectedProvider === "cloudflare"
+        ? resolveCloudflareAccountInput(baseUrl)
+        : null;
     const nextApiKeyError = validateApiKeyForProvider(
       trimmedKey,
       selectedProvider,
@@ -397,11 +545,13 @@ export function useProviderSetupForm(
         ? validateDisplayNameInput(displayName)
         : null;
     const nextBaseUrlError =
-      selectedProvider === "openai_compatible" || selectedProvider === "ollama"
+      isDiscoveryProvider || selectedProvider === "ollama"
         ? validateBaseUrlInput(baseUrl)
-        : null;
+        : selectedProvider === "cloudflare" && !resolvedCloudflareBaseUrl
+          ? "Enter a Cloudflare account ID or Workers AI URL."
+          : null;
     const nextModelsError =
-      selectedProvider === "openai_compatible" || selectedProvider === "ollama"
+      isDiscoveryProvider || selectedProvider === "ollama"
         ? validateCustomModelsInput(customModels)
         : null;
 
@@ -429,21 +579,21 @@ export function useProviderSetupForm(
         ? resolveOpenRouterSetupModel(openRouterModels, selectedModel)
         : isShortlistCapabilityProvider(selectedProvider)
           ? resolveOpenRouterSetupModel(shortlistModels, selectedModel)
-          : selectedProvider === "ollama"
+          : isDiscoveryProvider || selectedProvider === "ollama"
             ? resolveOpenRouterSetupModel(customModels, selectedModel)
             : selectedModel;
 
     setTestingConnection(true);
     setTestSuccess(null);
     setTestError(null);
+    const providerGeneration = providerGenerationRef.current;
 
     try {
       const res = await client.testProvider({
         apiKey: trimmedKey,
-        baseUrl,
+        baseUrl: resolvedCloudflareBaseUrl ?? baseUrl,
         customModels:
-          selectedProvider === "openai_compatible" ||
-          selectedProvider === "ollama"
+          isDiscoveryProvider || selectedProvider === "ollama"
             ? normalizeModelListRows(customModels)
             : selectedProvider === "openrouter"
               ? normalizeModelListRows(openRouterModels)
@@ -453,12 +603,34 @@ export function useProviderSetupForm(
         hostMode: selectedProvider === "ollama" ? ollamaHostMode : undefined,
         model: modelToSave || undefined,
         type: selectedProvider,
+        wireApi: selectedProvider === "openai_compatible" ? wireApi : undefined,
       });
-      setTestSuccess(res.message);
+      if (
+        isCurrentProviderOperation(
+          providerGeneration,
+          providerGenerationRef.current
+        )
+      ) {
+        setTestSuccess(res.message);
+      }
     } catch (err) {
-      setTestError(formatError(err));
+      if (
+        isCurrentProviderOperation(
+          providerGeneration,
+          providerGenerationRef.current
+        )
+      ) {
+        setTestError(formatError(err));
+      }
     } finally {
-      setTestingConnection(false);
+      if (
+        isCurrentProviderOperation(
+          providerGeneration,
+          providerGenerationRef.current
+        )
+      ) {
+        setTestingConnection(false);
+      }
     }
   }, [
     apiKey,
@@ -471,6 +643,7 @@ export function useProviderSetupForm(
     customModels,
     selectedModel,
     ollamaHostMode,
+    wireApi,
   ]);
 
   const handleSubmit = useCallback(
@@ -478,6 +651,11 @@ export function useProviderSetupForm(
       event.preventDefault();
 
       const trimmedKey = apiKey.trim();
+      const isDiscoveryProvider = isDiscoveryModelProvider(selectedProvider);
+      const resolvedCloudflareBaseUrl =
+        selectedProvider === "cloudflare"
+          ? resolveCloudflareAccountInput(baseUrl)
+          : null;
       const nextApiKeyError = validateApiKeyForProvider(
         trimmedKey,
         selectedProvider,
@@ -497,13 +675,13 @@ export function useProviderSetupForm(
           ? validateDisplayNameInput(displayName)
           : null;
       const nextBaseUrlError =
-        selectedProvider === "openai_compatible" ||
-        selectedProvider === "ollama"
+        isDiscoveryProvider || selectedProvider === "ollama"
           ? validateBaseUrlInput(baseUrl)
-          : null;
+          : selectedProvider === "cloudflare" && !resolvedCloudflareBaseUrl
+            ? "Enter a Cloudflare account ID or Workers AI URL."
+            : null;
       const nextModelsError =
-        selectedProvider === "openai_compatible" ||
-        selectedProvider === "ollama"
+        isDiscoveryProvider || selectedProvider === "ollama"
           ? validateCustomModelsInput(customModels)
           : null;
 
@@ -538,7 +716,9 @@ export function useProviderSetupForm(
           .getElementById(
             selectedProvider === "ollama"
               ? "ollama-base-url"
-              : "provider-base-url"
+              : selectedProvider === "cloudflare"
+                ? "cloudflare-account-id"
+                : "provider-base-url"
           )
           ?.focus();
         return;
@@ -558,7 +738,7 @@ export function useProviderSetupForm(
           ? resolveOpenRouterSetupModel(openRouterModels, selectedModel)
           : isShortlistCapabilityProvider(selectedProvider)
             ? resolveOpenRouterSetupModel(shortlistModels, selectedModel)
-            : selectedProvider === "ollama"
+            : isDiscoveryProvider || selectedProvider === "ollama"
               ? resolveOpenRouterSetupModel(customModels, selectedModel)
               : selectedModel;
 
@@ -571,21 +751,24 @@ export function useProviderSetupForm(
         const result = await createProvider(
           buildCreateProviderRequest({
             apiKey: trimmedKey,
-            baseUrl,
+            baseUrl: resolvedCloudflareBaseUrl ?? baseUrl,
             customModels:
-              selectedProvider === "openai_compatible" ||
-              selectedProvider === "ollama"
+              isDiscoveryProvider || selectedProvider === "ollama"
                 ? normalizeModelListRows(customModels)
                 : selectedProvider === "openrouter"
                   ? normalizeModelListRows(openRouterModels)
                   : isShortlistCapabilityProvider(selectedProvider)
                     ? normalizeModelListRows(shortlistModels)
                     : undefined,
-            displayName,
+            displayName:
+              selectedProvider === "openai_compatible"
+                ? displayName
+                : undefined,
             hostMode:
               selectedProvider === "ollama" ? ollamaHostMode : undefined,
             model: modelToSave || undefined,
             provider: selectedProvider,
+            wireApi,
           })
         );
         setApiKey("");
@@ -617,6 +800,7 @@ export function useProviderSetupForm(
       createProvider,
       onSuccess,
       filteredModels,
+      wireApi,
     ]
   );
 
@@ -649,18 +833,21 @@ export function useProviderSetupForm(
     openCodeZenConfigured,
     openRouterModels,
     openRouterModelsError,
+    remoteCredentialRevision,
     selectedModel,
     selectedProvider,
-    setBaseUrl,
-    setCustomModels,
-    setDisplayName,
-    setSelectedModel,
+    setBaseUrl: handleBaseUrlChange,
+    setCustomModels: handleCustomModelsChange,
+    setDisplayName: handleDisplayNameChange,
+    setSelectedModel: handleSelectedModelChange,
     setShowApiKey,
+    setWireApi: handleWireApiChange,
     shortlistModels,
     shortlistModelsError,
     showApiKey,
     testError,
     testingConnection,
     testSuccess,
+    wireApi,
   };
 }

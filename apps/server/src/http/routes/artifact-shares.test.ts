@@ -191,6 +191,57 @@ describe("artifact share routes", () => {
     void authService;
   });
 
+  test("public download and preview reject a share after its org is archived", async () => {
+    const { app, databaseAdapter } = createApp();
+    const session = await setupFreshInstallSession(app, databaseAdapter);
+    const orgId = session.orgId!;
+    const profileId = "profile_share_archived_org";
+
+    await seedProfileArtifact({
+      content: "# Archived workspace report",
+      databaseAdapter,
+      filename: "report.md",
+      name: "Archived Share",
+      orgId,
+      profileId,
+    });
+
+    const publishResponse = await app.fetch(
+      publishArtifactShareRequest({
+        body: { path: "report.md" },
+        orgId,
+        profileId,
+        session,
+      })
+    );
+    expect(publishResponse.status).toBe(201);
+    const published = (await publishResponse.json()) as {
+      id: string;
+      token: string;
+    };
+
+    const organization = await databaseAdapter.getOrganizationById(orgId);
+    expect(organization).not.toBeNull();
+    await databaseAdapter.upsertOrganization({
+      ...organization!,
+      archivedAt: new Date().toISOString(),
+    });
+
+    for (const suffix of ["", "/preview"]) {
+      const response = await app.fetch(
+        new Request(
+          `http://localhost:4310/v1/public/artifact-shares/${encodeURIComponent(published.token)}${suffix}`
+        )
+      );
+      expect(response.status).toBe(404);
+      await expect(response.json()).resolves.toEqual({ error: "Not found" });
+    }
+
+    expect(
+      await databaseAdapter.getArtifactShareById(orgId, profileId, published.id)
+    ).not.toBeNull();
+  });
+
   test("public video share resolves octet-stream to video/mp4 for inline playback", async () => {
     const { app, databaseAdapter } = createApp();
     const session = await setupFreshInstallSession(app, databaseAdapter);

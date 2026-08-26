@@ -2,14 +2,21 @@ import { describe, expect, test } from "bun:test";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { loadComposioConfigFile, saveComposioConfig } from "@atlas/core";
+import {
+  loadComposioConfigFile,
+  loadLocalAuthToken,
+  saveComposioConfig,
+} from "@atlas/core";
 import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { AgentService } from "../../services/agent-service";
 import { AuthService } from "../../services/auth-service";
 import type { ComposioApiClient } from "../../services/composio-api-client";
 import { ComposioService } from "../../services/composio-service";
 import { createMinimalHonoApp } from "../test-app-helpers";
-import { createPlatformAdminUser } from "../test-org-helpers";
+import {
+  createPlatformAdminUser,
+  seedLocalClientUser,
+} from "../test-org-helpers";
 import { loginUserSession, seedOrgAdmin } from "../test-session-helpers";
 
 const TEST_API_KEY = "ck_test";
@@ -46,6 +53,17 @@ function createMockClient(): ComposioApiClient {
   };
 }
 
+function injectMockComposioClient(
+  service: ComposioService,
+  client: ComposioApiClient
+): void {
+  (
+    service as unknown as {
+      apiClientCache: { key: string; client: ComposioApiClient } | null;
+    }
+  ).apiClientCache = { client, key: TEST_API_KEY };
+}
+
 async function createApp() {
   const configDir = await mkdtemp(join(tmpdir(), "atlas-composio-route-"));
   process.env.ATLAS_CONFIG_DIR = configDir;
@@ -55,14 +73,7 @@ async function createApp() {
   const authService = new AuthService();
   const composioService = new ComposioService(databaseAdapter, authService);
   composioService.reloadConfiguration();
-  (
-    composioService as unknown as {
-      apiClientCache: { key: string; client: ComposioApiClient } | null;
-    }
-  ).apiClientCache = {
-    client: createMockClient(),
-    key: TEST_API_KEY,
-  };
+  injectMockComposioClient(composioService, createMockClient());
 
   return createMinimalHonoApp({
     agent: new AgentService(null, null, databaseAdapter),
@@ -172,6 +183,79 @@ describe("composio routes", () => {
     expect(connections[0]?.status).toBe("oauth_in_progress");
   });
 
+  test("connect route does not return an unsafe OAuth redirect", async () => {
+    const { app, composioService, databaseAdapter } = await createApp();
+    const { email, password, orgId } = await seedOrgAdmin(databaseAdapter, {
+      profileId: "profile_test",
+    });
+    const session = await loginUserSession(app, email, password, orgId);
+    await composioService!.enableToolkit(orgId, { toolkitSlug: "gmail" });
+    injectMockComposioClient(composioService!, {
+      ...createMockClient(),
+      async linkToolkitAccount() {
+        return { redirectUrl: "javascript:alert(1)" };
+      },
+    });
+
+    const response = await app.fetch(
+      new Request("http://localhost:4310/v1/composio/toolkits/gmail/connect", {
+        body: JSON.stringify({ callbackOrigin: "http://localhost:4310" }),
+        headers: session.headers({
+          "Content-Type": "application/json",
+          "X-CSRF-Token": session.csrfToken,
+        }),
+        method: "POST",
+      })
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      error: expect.stringContaining("OAuth URL"),
+    });
+    expect(
+      await databaseAdapter.listComposioUserConnectionsForUser(
+        orgId,
+        "user_admin"
+      )
+    ).toEqual([]);
+  });
+
+  test("local-token caller cannot borrow the workspace admin OAuth identity", async () => {
+    const { app, composioService, databaseAdapter } = await createApp();
+    const { orgId } = await seedOrgAdmin(databaseAdapter, {
+      profileId: "profile_test",
+    });
+    await seedLocalClientUser(databaseAdapter);
+    await databaseAdapter.upsertOrgMember({
+      createdAt: new Date().toISOString(),
+      orgId,
+      role: "admin",
+      userId: "user_local_client",
+    });
+    await composioService!.enableToolkit(orgId, { toolkitSlug: "gmail" });
+    const token = await loadLocalAuthToken();
+
+    const response = await app.fetch(
+      new Request("http://localhost:4310/v1/composio/toolkits/gmail/connect", {
+        body: JSON.stringify({ callbackOrigin: "http://localhost:4310" }),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "X-Org-Id": orgId,
+        },
+        method: "POST",
+      })
+    );
+
+    expect(response.status).toBe(403);
+    expect(
+      await databaseAdapter.listComposioUserConnectionsForUser(
+        orgId,
+        "user_admin"
+      )
+    ).toEqual([]);
+  });
+
   test("org member can list toolkits but cannot enable them", async () => {
     const { app, databaseAdapter } = await createApp();
     const { orgId } = await seedOrgAdmin(databaseAdapter, {
@@ -239,6 +323,74 @@ describe("composio routes", () => {
     await expect(response.json()).resolves.toMatchObject({
       error: "Invalid OAuth state.",
     });
+  });
+
+  test("oauth callback rejects archived org state and consumes its nonce", async () => {
+    const { app, authService, databaseAdapter } = await createApp();
+    const { orgId } = await seedOrgAdmin(databaseAdapter, {
+      profileId: "profile_archived_oauth",
+    });
+    const now = new Date().toISOString();
+    const nonce = "archived-org-callback-nonce";
+    const issuedAt = Date.now();
+
+    await databaseAdapter.upsertComposioToolkit({
+      cachedTools: [],
+      createdAt: now,
+      displayName: "Gmail",
+      id: "toolkit_archived_oauth",
+      lastError: null,
+      orgId,
+      status: "enabled",
+      toolkitSlug: "gmail",
+      updatedAt: now,
+    });
+    await databaseAdapter.upsertComposioUserConnection({
+      connectedAccountId: "ca_existing",
+      createdAt: now,
+      id: "connection_archived_oauth",
+      lastError: null,
+      oauthStateHash: authService.hashToken(`${issuedAt}.${nonce}`),
+      orgId,
+      sessionIdEnc: null,
+      status: "oauth_in_progress",
+      toolkitId: "toolkit_archived_oauth",
+      updatedAt: now,
+      userId: "user_admin",
+    });
+    const organization = await databaseAdapter.getOrganizationById(orgId);
+    expect(organization).not.toBeNull();
+    await databaseAdapter.upsertOrganization({
+      ...organization!,
+      archivedAt: now,
+    });
+
+    const state = Buffer.from(
+      JSON.stringify({
+        connectionId: "connection_archived_oauth",
+        issuedAt,
+        nonce,
+        orgId,
+        toolkitId: "toolkit_archived_oauth",
+        userId: "user_admin",
+      })
+    ).toString("base64url");
+    const response = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/composio/oauth/callback?state=${encodeURIComponent(state)}`,
+        { headers: { Accept: "application/json" } }
+      )
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "Invalid OAuth state.",
+    });
+    expect(
+      await databaseAdapter.getComposioUserConnectionById(
+        "connection_archived_oauth"
+      )
+    ).toMatchObject({ oauthStateHash: null, status: "error" });
   });
 
   test("oauth callback HEAD is not a public mutation", async () => {

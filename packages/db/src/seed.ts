@@ -231,6 +231,10 @@ export async function ensurePreinstalledMcpServers(
   orgId?: string
 ): Promise<void> {
   if (orgId) {
+    const organization = await db.getOrganizationById(orgId);
+    if (!organization || organization.archivedAt) {
+      return;
+    }
     await ensurePreinstalledMcpServersForOrg(db, orgId);
     return;
   }
@@ -243,6 +247,9 @@ export async function ensurePreinstalledMcpServers(
   }
 
   for (const org of orgs) {
+    if (org.archivedAt) {
+      continue;
+    }
     await ensurePreinstalledMcpServersForOrg(db, org.id);
   }
 }

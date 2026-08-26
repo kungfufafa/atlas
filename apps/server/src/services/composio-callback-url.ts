@@ -7,6 +7,37 @@ import {
   type WebPublicUrlSettingsResponse,
 } from "@atlas/core";
 
+const COMPOSIO_OAUTH_LOOPBACK_HOSTS = new Set([
+  "127.0.0.1",
+  "::1",
+  "[::1]",
+  "localhost",
+]);
+
+/** Validate a Composio-hosted authorization link before it leaves the server. */
+export function validateComposioOAuthRedirectUrl(value: string): string {
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error("Composio returned an invalid OAuth URL.");
+  }
+
+  const isSecure = parsed.protocol === "https:";
+  const isLoopbackDevelopment =
+    parsed.protocol === "http:" &&
+    COMPOSIO_OAUTH_LOOPBACK_HOSTS.has(parsed.hostname);
+  if (
+    !(isSecure || isLoopbackDevelopment) ||
+    parsed.username.length > 0 ||
+    parsed.password.length > 0
+  ) {
+    throw new Error("Composio returned an unsafe OAuth URL.");
+  }
+
+  return parsed.toString();
+}
+
 function normalizePublicHttpOrigin(
   value: string | null | undefined
 ): string | undefined {

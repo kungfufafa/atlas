@@ -16,6 +16,10 @@ import {
   type AuthContextValue,
 } from "@/context/auth-context-shared";
 import { client } from "@/lib/client";
+import {
+  archiveOrganizationWithRecovery,
+  canArchiveOrganization,
+} from "@/lib/org-archive";
 import { queryClient } from "@/lib/query-client";
 
 function refreshAuthenticatedQueries(): void {
@@ -109,6 +113,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await queryClient.resetQueries();
   }, []);
 
+  const archiveOrg = useCallback(
+    async (orgId: string) => {
+      if (!canArchiveOrganization(user?.isPlatformAdmin === true)) {
+        throw new Error("Only platform admins can archive organizations.");
+      }
+
+      await archiveOrganizationWithRecovery({
+        archivedOrgId: orgId,
+        archiveOrganization: () => client.archivePlatformOrganization(orgId),
+        currentOrgs: orgs,
+        currentUser: user,
+        listUserOrgs: () => client.listUserOrgs(),
+        setActiveOrg: (nextOrgId) => client.setActiveOrg(nextOrgId),
+        setClientOrgId: (nextOrgId) => client.setOrgId(nextOrgId),
+        updateOrgs: setOrgs,
+        updateUser: setUser,
+      });
+
+      refreshAuthenticatedQueries();
+    },
+    [orgs, user]
+  );
+
   const createOrg = useCallback(
     async (input: { name: string; slug: string }) => {
       if (!user?.isPlatformAdmin) {
@@ -154,6 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(
     () => ({
       activeOrg,
+      archiveOrg,
       createOrg,
       isAuthenticated: user !== null,
       isLoading,
@@ -170,6 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       orgs,
       activeOrg,
+      archiveOrg,
       isLoading,
       setup,
       login,

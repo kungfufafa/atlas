@@ -1,11 +1,17 @@
 import {
+  ARTIFACT_EDIT_MAX_COLUMNS,
+  ARTIFACT_EDIT_MAX_ROWS,
+} from "@atlas/core/artifact-editing-limits";
+import {
   Cancel01Icon,
   Copy01Icon,
   Download01Icon,
+  FloppyDiskIcon,
   Maximize01Icon,
   Minimize01Icon,
+  PencilEdit01Icon,
 } from "hugeicons-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   type ArtifactPreviewMode,
   ArtifactPreviewModeToggle,
@@ -18,19 +24,31 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useAuth } from "@/context/use-auth";
 import {
   artifactPreviewCanCopy,
   artifactPreviewUsesFetchedSource,
   artifactSupportsPreviewCodeToggle,
 } from "@/lib/artifact-canvas";
 import {
+  addEditableColumn,
+  addEditableRow,
+  isEditableArtifactFilename,
+  knownArtifactEditLimitReason,
+  updateEditableCell,
+} from "@/lib/artifact-editing";
+import {
   isMermaidArtifactFilename,
   markdownForMermaidSource,
   mermaidPreviewError,
 } from "@/lib/artifact-mermaid-preview";
 import { client } from "@/lib/client";
+import { queryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { useArtifactWorkspace } from "./ArtifactWorkspaceContext";
+import { useArtifactEditor } from "./use-artifact-editor";
 import { CodeViewer } from "./viewers/CodeViewer";
 import { DocumentViewer } from "./viewers/DocumentViewer";
 import { GenericViewer } from "./viewers/GenericViewer";
@@ -54,11 +72,32 @@ export function ArtifactWorkspace() {
     setRevision,
     setSheet,
   } = useArtifactWorkspace();
+  const { activeOrg, user } = useAuth();
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [previewMode, setPreviewMode] =
     useState<ArtifactPreviewMode>("preview");
   const [copied, setCopied] = useState(false);
+
+  const artifactPath = activeArtifact?.path ?? "";
+  const artifactProfileId = activeArtifact?.profileId ?? "";
+  const handleArtifactSaved = useCallback(async () => {
+    if (!activeArtifact) {
+      return;
+    }
+    await Promise.all([
+      refreshPreview(),
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.artifacts.profile(activeArtifact.profileId),
+      }),
+    ]);
+    toast("Artifact saved.");
+  }, [activeArtifact, refreshPreview]);
+  const editor = useArtifactEditor({
+    artifactPath,
+    onSaved: handleArtifactSaved,
+    profileId: artifactProfileId,
+  });
 
   useEffect(() => {
     setPreviewMode("preview");
@@ -68,12 +107,20 @@ export function ArtifactWorkspace() {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape" && isOpen) {
-        closeArtifact();
+        if (editor.saving) {
+          e.preventDefault();
+          return;
+        }
+        if (editor.draft) {
+          editor.cancel();
+        } else {
+          closeArtifact();
+        }
       }
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, closeArtifact]);
+  }, [closeArtifact, editor.cancel, editor.draft, editor.saving, isOpen]);
 
   if (!(isOpen && activeArtifact)) {
     return null;
@@ -89,6 +136,18 @@ export function ArtifactWorkspace() {
     artifact.filename,
     artifact.mimeType ?? ""
   );
+  const isWorkspaceAdmin =
+    activeOrg?.role === "admin" || user?.isPlatformAdmin === true;
+  const supportsEditing = isEditableArtifactFilename(artifact.filename);
+  const isLatestRevision =
+    !activeArtifact.revision || revision === activeArtifact.revision;
+  const knownEditLimitReason = knownArtifactEditLimitReason(
+    activeArtifact.sizeBytes
+  );
+  const canOfferEditing =
+    isWorkspaceAdmin && supportsEditing && isLatestRevision;
+  const editDisabledReason =
+    knownEditLimitReason ?? editor.unavailableReason ?? null;
 
   async function handleCopy() {
     if (!activePreview) {
@@ -167,6 +226,34 @@ export function ArtifactWorkspace() {
         return (
           <SpreadsheetViewer
             downloadUrl={downloadUrl}
+            editor={
+              editor.draft?.source.kind === "delimited"
+                ? {
+                    canAddColumn:
+                      Math.max(
+                        0,
+                        ...editor.draft.rows.map((row) => row.length)
+                      ) < ARTIFACT_EDIT_MAX_COLUMNS,
+                    canAddRow:
+                      editor.draft.rows.length < ARTIFACT_EDIT_MAX_ROWS,
+                    disabled: editor.saving,
+                    onAddColumn: () =>
+                      editor.setRows(addEditableColumn(editor.draft!.rows)),
+                    onAddRow: () =>
+                      editor.setRows(addEditableRow(editor.draft!.rows)),
+                    onChangeCell: (rowIndex, columnIndex, value) =>
+                      editor.setRows(
+                        updateEditableCell(
+                          editor.draft!.rows,
+                          rowIndex,
+                          columnIndex,
+                          value
+                        )
+                      ),
+                    rows: editor.draft.rows,
+                  }
+                : undefined
+            }
             onSelectSheet={(sheetName, sheetIndex) =>
               setSheet(sheetName, sheetIndex)
             }
@@ -186,7 +273,19 @@ export function ArtifactWorkspace() {
         );
       case "markdown":
         return (
-          <MarkdownViewer downloadUrl={downloadUrl} preview={activePreview} />
+          <MarkdownViewer
+            downloadUrl={downloadUrl}
+            editor={
+              editor.draft?.source.kind === "markdown"
+                ? {
+                    content: editor.draft.content,
+                    disabled: editor.saving,
+                    onChange: editor.setContent,
+                  }
+                : undefined
+            }
+            preview={activePreview}
+          />
         );
       case "code":
       case "text": {
@@ -290,8 +389,12 @@ export function ArtifactWorkspace() {
                       "rounded px-1.5 py-0.5 font-medium text-2xs",
                       revision === rev
                         ? "bg-background text-foreground shadow-xs"
-                        : "text-muted-foreground hover:text-foreground"
+                        : "text-muted-foreground hover:text-foreground",
+                      "disabled:cursor-not-allowed disabled:opacity-50"
                     )}
+                    disabled={
+                      Boolean(editor.draft) || editor.loading || editor.saving
+                    }
                     key={rev}
                     onClick={() => setRevision(rev)}
                     type="button"
@@ -303,7 +406,7 @@ export function ArtifactWorkspace() {
             ) : null}
           </div>
 
-          {showModeToggle ? (
+          {showModeToggle && !editor.draft ? (
             <ArtifactPreviewModeToggle
               mode={previewMode}
               onChange={setPreviewMode}
@@ -311,7 +414,60 @@ export function ArtifactWorkspace() {
           ) : null}
 
           <div className="flex shrink-0 items-center">
-            {canCopy ? (
+            {canOfferEditing && editor.draft ? (
+              <>
+                <Button
+                  disabled={editor.saving}
+                  onClick={() => void editor.save()}
+                  size="sm"
+                  type="button"
+                >
+                  {editor.saving ? (
+                    <Spinner className="size-3.5" />
+                  ) : (
+                    <FloppyDiskIcon className="size-3.5" />
+                  )}
+                  Save
+                </Button>
+                <Button
+                  disabled={editor.saving}
+                  onClick={editor.cancel}
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                >
+                  Cancel
+                </Button>
+              </>
+            ) : canOfferEditing ? (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      aria-label="Edit artifact"
+                      disabled={
+                        editor.loading || Boolean(editDisabledReason) || loading
+                      }
+                      onClick={() => void editor.start()}
+                      size="icon-sm"
+                      type="button"
+                      variant="ghost"
+                    >
+                      {editor.loading ? (
+                        <Spinner className="size-4" />
+                      ) : (
+                        <PencilEdit01Icon className="size-4" />
+                      )}
+                    </Button>
+                  }
+                />
+                <TooltipContent side="bottom" sideOffset={6}>
+                  {editDisabledReason ?? "Edit artifact"}
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
+
+            {canCopy && !editor.draft ? (
               <Tooltip>
                 <TooltipTrigger
                   render={
@@ -369,6 +525,7 @@ export function ArtifactWorkspace() {
 
             <Button
               aria-label="Close"
+              disabled={editor.saving}
               onClick={closeArtifact}
               size="icon-sm"
               type="button"
@@ -380,6 +537,14 @@ export function ArtifactWorkspace() {
         </header>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {editor.error || editor.unavailableReason ? (
+            <div
+              className="border-destructive/30 border-b bg-destructive/5 px-4 py-2 text-destructive text-sm"
+              role="alert"
+            >
+              {editor.error ?? editor.unavailableReason}
+            </div>
+          ) : null}
           {renderViewer()}
         </div>
       </div>

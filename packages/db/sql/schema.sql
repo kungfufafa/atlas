@@ -8,10 +8,12 @@ CREATE TABLE IF NOT EXISTS profiles (
   thinking_enabled INTEGER,
   thinking_effort TEXT,
   is_super INTEGER DEFAULT 0 NOT NULL,
+  is_importing INTEGER DEFAULT 0 NOT NULL,
   org_id TEXT,
   is_default INTEGER DEFAULT 0 NOT NULL,
   skills_write_approval INTEGER,
   skills_post_turn_review INTEGER,
+  skills_curator_consolidation INTEGER,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE
@@ -48,6 +50,7 @@ CREATE TABLE IF NOT EXISTS sessions (
   user_id TEXT,
   created_at TEXT NOT NULL,
   title TEXT,
+  model_override TEXT,
   agent_todos TEXT DEFAULT '[]' NOT NULL,
   agent_questionnaire TEXT,
   FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE,
@@ -273,6 +276,9 @@ CREATE TABLE IF NOT EXISTS organizations (
   slug TEXT NOT NULL,
   skills_write_approval INTEGER NOT NULL DEFAULT 0,
   skills_post_turn_review INTEGER NOT NULL DEFAULT 0,
+  skills_curator_consolidation INTEGER NOT NULL DEFAULT 0,
+  skills_curator_last_run_at TEXT,
+  archived_at TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -336,6 +342,7 @@ CREATE TABLE IF NOT EXISTS skill_proposals (
   patch_old_string TEXT,
   patch_new_string TEXT,
   relative_path TEXT,
+  consolidation_json TEXT,
   status TEXT NOT NULL,
   reviewer_user_id TEXT,
   reviewed_at TEXT,
@@ -423,6 +430,7 @@ CREATE TABLE IF NOT EXISTS workspace_settings (
   image_model TEXT,
   coding_agent_harnesses TEXT NOT NULL DEFAULT '[]',
   selected_coding_agent_harness TEXT,
+  coding_agent_provider_passthrough INTEGER NOT NULL DEFAULT 1,
   token_optimizer_enabled INTEGER,
   updated_at TEXT NOT NULL,
   FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE
@@ -714,4 +722,3 @@ CREATE TABLE IF NOT EXISTS outbound_outbox (
 
 CREATE INDEX IF NOT EXISTS outbound_outbox_org_status
   ON outbound_outbox (org_id, status);
-

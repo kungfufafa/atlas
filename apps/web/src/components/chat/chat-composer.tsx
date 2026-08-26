@@ -58,8 +58,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  filterSkillsForSlashQuery,
+  type ComposerSlashSuggestion,
+  filterComposerSlashSuggestions,
   findActiveSkillSlashRange,
+  isLeadingComposerSlashRange,
+  replaceSlashRangeWithReservedCommand,
   replaceSlashRangeWithSkillInvocation,
   type SkillSlashRange,
 } from "@/lib/chat-composer-skills";
@@ -113,11 +116,12 @@ interface ChatComposerFullProps extends ChatComposerBaseProps {
   contextUsage?: ChatContextUsage | null;
   currentModelSelection: string | null;
   modelSelectionDisabled?: boolean;
-  onModelChange: (selection: string) => void;
+  onModelChange: (selection: string | null) => void;
   onNavigateSetup?: () => void;
   onThinkingEffortChange?: (effort: ThinkingEffort) => void;
   primarySupportsVision?: boolean;
   profileModelId?: string | null;
+  profileModelSelection?: string | null;
   providerConfigured?: boolean;
   providerModelGroups: Array<{
     providerId: string;
@@ -141,6 +145,7 @@ export type ChatComposerProps =
 const EMPTY_TODOS: AgentTodo[] = [];
 const EMPTY_QUEUED_MESSAGES: QueuedComposerMessage[] = [];
 const EMPTY_SKILLS: SkillSummary[] = [];
+const PROFILE_DEFAULT_MODEL_VALUE = "__profile_default__";
 
 export function ChatComposer(props: ChatComposerProps) {
   const {
@@ -364,13 +369,16 @@ function ChatComposerTextarea({
   const suggestions = useMemo(
     () =>
       slashRange
-        ? filterSkillsForSlashQuery(availableSkills, slashRange.query)
+        ? filterComposerSlashSuggestions(availableSkills, slashRange.query, {
+            includeReservedCommands: isLeadingComposerSlashRange(
+              controller.textInput.value,
+              slashRange
+            ),
+          })
         : [],
     [availableSkills, slashRange]
   );
-  const pickerOpen = Boolean(
-    slashRange && availableSkills.length > 0 && !disabled
-  );
+  const pickerOpen = Boolean(slashRange && suggestions.length > 0 && !disabled);
   const safeActiveIndex =
     suggestions.length === 0
       ? 0
@@ -381,8 +389,8 @@ function ChatComposerTextarea({
     setActiveIndex(0);
   }, []);
 
-  const selectSkill = useCallback(
-    (skill: SkillSummary) => {
+  const selectSuggestion = useCallback(
+    (suggestion: ComposerSlashSuggestion) => {
       const textarea = textareaRef.current;
       const value = controller.textInput.value;
       const cursorIndex = textarea?.selectionStart ?? value.length;
@@ -393,11 +401,18 @@ function ChatComposerTextarea({
         return;
       }
 
-      const next = replaceSlashRangeWithSkillInvocation(
-        value,
-        activeRange,
-        skill
-      );
+      const next =
+        suggestion.kind === "command"
+          ? replaceSlashRangeWithReservedCommand(
+              value,
+              activeRange,
+              suggestion.command
+            )
+          : replaceSlashRangeWithSkillInvocation(
+              value,
+              activeRange,
+              suggestion.skill
+            );
       controller.textInput.setInput(next.value);
       setSlashRange(null);
       setActiveIndex(0);
@@ -423,8 +438,8 @@ function ChatComposerTextarea({
       {pickerOpen ? (
         <ChatSkillPicker
           activeIndex={safeActiveIndex}
-          onSelect={selectSkill}
-          skills={suggestions}
+          onSelect={selectSuggestion}
+          suggestions={suggestions}
         />
       ) : null}
       <PromptInputTextarea
@@ -469,9 +484,9 @@ function ChatComposerTextarea({
 
           if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
-            const skill = suggestions[safeActiveIndex];
-            if (skill) {
-              selectSkill(skill);
+            const suggestion = suggestions[safeActiveIndex];
+            if (suggestion) {
+              selectSuggestion(suggestion);
             }
           }
         }}
@@ -512,14 +527,19 @@ function ChatComposerFullFooter({
           <div className="min-w-[4.5rem] shrink overflow-hidden">
             <PromptInputSelect
               disabled={
+                busy ||
+                disabled ||
                 props.modelSelectionDisabled === true ||
                 !props.providerModelGroups.some(
                   (group) => group.models.length > 0
                 )
               }
-              onValueChange={(value) =>
-                void props.onModelChange(value == null ? "" : String(value))
-              }
+              onValueChange={(value) => {
+                const selection = value == null ? "" : String(value);
+                void props.onModelChange(
+                  selection === PROFILE_DEFAULT_MODEL_VALUE ? null : selection
+                );
+              }}
               value={props.currentModelSelection ?? ""}
             >
               <PromptInputSelectTrigger
@@ -545,6 +565,17 @@ function ChatComposerFullFooter({
                 alignItemWithTrigger={false}
                 className="w-max max-w-[min(24rem,92vw)] text-xs"
               >
+                {props.profileModelSelection ? (
+                  <PromptInputSelectItem
+                    label="Profile default"
+                    value={PROFILE_DEFAULT_MODEL_VALUE}
+                  >
+                    {`Profile default · ${
+                      props.renderModelLabel(props.profileModelSelection) ??
+                      "Model"
+                    }`}
+                  </PromptInputSelectItem>
+                ) : null}
                 {props.profileModelId &&
                 !props.providerModelGroups.some((group) =>
                   group.models.some(

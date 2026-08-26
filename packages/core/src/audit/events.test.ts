@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { PrincipalRequiredError } from "../identity/principal";
+import { SYNTHETIC_SECRET_FIXTURES } from "../testing/synthetic-secret-fixtures";
 import { auditEventDigest, createAuditEvent } from "./events";
 
 const principal = {
@@ -14,12 +15,14 @@ describe("audit trail", () => {
     const event = createAuditEvent({
       action: "memory.write",
       id: "aud_1",
-      payload: { text: "api_key=sk-abcdefghijklmnopqrstuvwxyz" },
+      payload: {
+        text: `api_key=${SYNTHETIC_SECRET_FIXTURES.openAiApiKey}`,
+      },
       principal,
       resource: "memory:mem_1",
     });
     expect(JSON.stringify(event.payload)).not.toContain(
-      "sk-abcdefghijklmnopqrstuvwxyz"
+      SYNTHETIC_SECRET_FIXTURES.openAiApiKey
     );
     expect(auditEventDigest(event).length).toBe(64);
   });

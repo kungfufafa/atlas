@@ -7,6 +7,8 @@ import {
   ensureServerRunning,
   stopSpawnedServer,
 } from "@atlas/core/ensure-server";
+import { installErrorHandlers } from "@atlas/core/error-tracking";
+import { installErrorTrackingSink } from "@atlas/core/error-tracking-sentry";
 import { loadLocalAuthToken } from "@atlas/core/local-auth";
 import { resolveWebPublicUrl } from "@atlas/core/runtime";
 import { syncWhatsAppOwnerPairing } from "@atlas/core/whatsapp-config";
@@ -26,6 +28,9 @@ import { loadConfig } from "./config";
 import { startWhatsAppOutboundServer } from "./outbound-server";
 import { SessionStore } from "./session-store";
 import { createWhatsAppSocket } from "./socket";
+
+installErrorHandlers("worker:whatsapp");
+await installErrorTrackingSink();
 
 let spawnedChild: Bun.Subprocess | null = null;
 let socketHandle: {
@@ -207,13 +212,5 @@ function registerCleanupHandlers(cleanup: () => void): void {
 function registerProcessLifecycleLogging(): void {
   process.on("exit", (code) => {
     console.log(`WhatsApp worker exiting with code ${code}.`);
-  });
-
-  process.on("uncaughtException", (error) => {
-    console.error("WhatsApp worker uncaught exception.", error);
-  });
-
-  process.on("unhandledRejection", (reason) => {
-    console.error("WhatsApp worker unhandled rejection.", reason);
   });
 }

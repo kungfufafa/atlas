@@ -1,6 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { redactStringValue } from "./secret-redaction";
 
 export interface SecretScanFinding {
   column?: number;
@@ -16,28 +15,32 @@ const HIGH_CONFIDENCE_SECRET_PATTERNS: Array<{
 }> = [
   {
     name: "Private Key Block",
-    pattern: /-----BEGIN [A-Z0-9_ -]+ PRIVATE KEY-----/i,
+    pattern: /-----BEGIN (?:[A-Z0-9_ -]+ )?PRIVATE KEY-----/i,
   },
   {
-    name: "OpenAI-style API Key",
-    pattern: /\bsk-[a-zA-Z0-9]{20,}\b/,
+    name: "sk-prefixed API Key",
+    pattern: /\bsk-[a-zA-Z0-9_-]{20,}\b/,
   },
   {
     name: "TokenRouter API Key",
     pattern: /\btokenrouter-[a-zA-Z0-9]{12,}\b/,
   },
   {
-    name: "GitHub Personal Access Token",
-    pattern: /\bghp_[a-zA-Z0-9]{30,}\b/,
+    name: "GitHub Access Token",
+    pattern: /\b(?:gh[pousr]_[a-zA-Z0-9]{30,}|github_pat_[a-zA-Z0-9_]{50,})\b/,
   },
   {
-    name: "Slack Bot Token",
-    pattern: /\bxoxb-[0-9]{10,}-[0-9]{10,}-[a-zA-Z0-9]{20,}\b/,
+    name: "Slack Access Token",
+    pattern: /\bxox[baprs]-[a-zA-Z0-9-]{20,}\b/,
+  },
+  {
+    name: "AWS Access Key ID",
+    pattern: /\b(?:AKIA|ASIA)[A-Z0-9]{16}\b/,
   },
   {
     name: "Database Credentials in URI",
     pattern:
-      /(?:postgres|postgresql|mysql|mongodb(?:\+srv)?):\/\/[a-zA-Z0-9_]+:[a-zA-Z0-9_!#$%&*+-]+@/,
+      /(?:postgres|postgresql|mysql|mongodb(?:\+srv)?|redis|amqp):\/\/[^:\s/@]+:(?!\[REDACTED\]@)[^@\s/]+@/i,
   },
   {
     name: "Bearer Token with High Entropy",
@@ -63,11 +66,7 @@ const DEFAULT_IGNORE_PATTERNS = [
   /\.pptx$/,
   /\.sqlite$/,
   /\.lock$/,
-  /cassettes\//,
   /\.local-poc\//,
-  /secret-scanner\.ts$/,
-  /secret-redaction\.ts$/,
-  /secret-redaction\.test\.ts$/,
 ];
 
 export class SecretScanner {
@@ -87,33 +86,12 @@ export class SecretScanner {
       for (const { name, pattern } of HIGH_CONFIDENCE_SECRET_PATTERNS) {
         const match = pattern.exec(line);
         if (match) {
-          // Check if this line is in a test fixture or explicitly marked safe
-          const lower = line.toLowerCase();
-          if (
-            lower.includes("[redacted]") ||
-            lower.includes("••••••••") ||
-            lower.includes("sk-test") ||
-            lower.includes("tokenrouter-key") ||
-            lower.includes("sk-ant-test") ||
-            lower.includes("sk-openai-test") ||
-            lower.includes("sk-1234567890") ||
-            lower.includes("dummy") ||
-            lower.includes("mock") ||
-            lower.includes("fake") ||
-            lower.includes("example.com")
-          ) {
-            continue;
-          }
-
-          const start = Math.max(0, match.index - 20);
-          const end = Math.min(line.length, match.index + match[0].length + 20);
-          const snippet = line.slice(start, end);
-
           findings.push({
+            column: match.index + 1,
             file: sourceName,
             lineNumber: lineIdx + 1,
             patternName: name,
-            redactedSnippet: redactStringValue(snippet),
+            redactedSnippet: "[REDACTED]",
           });
         }
       }

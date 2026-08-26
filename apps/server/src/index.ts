@@ -3,16 +3,27 @@ import { fileURLToPath } from "node:url";
 import type { Server } from "bun";
 import { ensureProcessPath } from "./lib/ensure-process-path";
 
+// Static ESM dependencies are evaluated before this statement; crashes after
+// module initialization are covered by the process-level handlers.
+installErrorHandlers("server");
+await installErrorTrackingSink();
+void flushPendingErrorReports();
 ensureProcessPath();
 
-import { mergeOrgMemoryWithApprovedBullet } from "@atlas/agent";
+import {
+  generateSkillCuratorConsolidationMarkdown,
+  mergeOrgMemoryWithApprovedBullet,
+} from "@atlas/agent";
 import {
   ATLAS_API_VERSION,
   clearRuntimeServerUrl,
   DEFAULT_SERVER_HOST,
   DEFAULT_SERVER_PORT,
   ensureBundledSkillFiles,
+  flushPendingErrorReports,
   getUserConfigDir,
+  installErrorHandlers,
+  installErrorTrackingSink,
   loadConfig,
   officeConverter,
   registerBrowserHandler,
@@ -27,6 +38,7 @@ import {
 } from "@atlas/db";
 import { createHonoApp } from "./http/app";
 import { disableBunIdleTimeoutForSse } from "./http/sse-idle-timeout";
+import { createProviderForInstance } from "./providers/create";
 import { runFirstBootSeed } from "./seed";
 import { AgentService } from "./services/agent-service";
 import { AuthService } from "./services/auth-service";
@@ -44,6 +56,8 @@ import {
 import { McpService } from "./services/mcp-service";
 import { OrgMemoryService } from "./services/org-memory-service";
 import { OrgService } from "./services/org-service";
+import { resolveProfileProviderSelection } from "./services/provider-instance-helpers";
+import { SkillCuratorService } from "./services/skill-curator-service";
 import { SkillProposalService } from "./services/skill-proposal-service";
 import { SkillSuggestionService } from "./services/skill-suggestion-service";
 import { SkillsService } from "./services/skills-service";
@@ -187,6 +201,40 @@ const skillProposalService = new SkillProposalService(
   skillsService
 );
 agent.setSkillProposalService(skillProposalService);
+const skillCuratorService = new SkillCuratorService(
+  database.adapter,
+  skillProposalService,
+  async (input) => {
+    const profile = await database.adapter.getProfile(input.profileId);
+    if (!profile?.orgId) {
+      return null;
+    }
+    const profileConfig = await agent.getUserConfigForOrg(profile.orgId);
+    if (!profileConfig) {
+      return null;
+    }
+    const selection = resolveProfileProviderSelection({
+      defaultProviderId: profileConfig.defaultProviderId,
+      profileModel: profile.model,
+      providers: profileConfig.providers,
+    });
+    if (!selection) {
+      return null;
+    }
+    const selectedProvider = createProviderForInstance(
+      selection.instance,
+      selection.model
+    );
+    if (!selectedProvider) {
+      return null;
+    }
+    return generateSkillCuratorConsolidationMarkdown({
+      losers: input.losers,
+      provider: selectedProvider,
+      winner: input.winner,
+    });
+  }
+);
 const skillSuggestionService = new SkillSuggestionService(
   database.adapter,
   skillsService,
@@ -227,6 +275,7 @@ const app = createHonoApp({
   },
   orgMemoryService,
   orgService,
+  skillCuratorService,
   skillProposalService,
   skillSuggestionService,
   systemStatus,

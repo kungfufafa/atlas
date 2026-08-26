@@ -2,11 +2,17 @@ import type {
   ProviderInstanceSummary,
   ProviderModelOption,
   UpdateProviderRequest,
+  WireApi,
 } from "@atlas/core/contract";
+import {
+  defaultDiscoveryBaseUrl,
+  isDiscoveryModelProvider,
+} from "@atlas/core/discovery-providers";
 import { useMemo, useState } from "react";
 import { isCatalogShortlistProvider } from "@/components/catalog-provider-model-fields.shared";
 import type { ModelListRow } from "@/components/ModelListEditor";
 import { normalizeModelListRows } from "@/components/model-list-editor.shared";
+import type { RemoteModelBrowseProvider } from "@/components/remote-models-browse.shared";
 import {
   seedManageModelRows,
   seedShortlistManageModelRows,
@@ -50,12 +56,19 @@ export function useProviderInstanceCard({
   const [showApiKey, setShowApiKey] = useState(false);
   const [editLabel, setEditLabel] = useState("");
   const [editBaseUrl, setEditBaseUrl] = useState("");
+  const [editWireApi, setEditWireApi] = useState<WireApi>("chat");
   const [manageModels, setManageModels] = useState<ModelListRow[]>([]);
 
   const providerType = instance.type as SelectedProvider;
   const isCompatible = providerType === "openai_compatible";
   const isOllama = providerType === "ollama";
-  const isCompatibleLike = isCompatible || isOllama;
+  const isDiscovery = isDiscoveryModelProvider(providerType);
+  const isCompatibleLike = isDiscovery || isOllama;
+  const remoteProvider: RemoteModelBrowseProvider = isOllama
+    ? "ollama"
+    : isDiscoveryModelProvider(providerType)
+      ? providerType
+      : "openai_compatible";
   const isOpenRouter = providerType === "openrouter";
   const isShortlistBrowse = isShortlistBrowseProvider(providerType);
   const isCatalogShortlist = isCatalogShortlistProvider(providerType);
@@ -99,13 +112,18 @@ export function useProviderInstanceCard({
 
   const openEdit = () => {
     setDialogError(null);
+    setApiKey("");
+    setShowApiKey(false);
     setEditLabel(instance.label);
     setEditBaseUrl(
       instance.baseUrl ??
         (isOllama
           ? defaultOllamaSetupBaseUrl(instance.hostMode ?? "local")
-          : "")
+          : isDiscovery
+            ? (defaultDiscoveryBaseUrl(providerType) ?? "")
+            : "")
     );
+    setEditWireApi(instance.wireApi ?? "chat");
     setManageModels(seedManageModelRows(instance.customModels, instanceModels));
     setEditOpen(true);
   };
@@ -164,14 +182,27 @@ export function useProviderInstanceCard({
     const displayNameError = validateDisplayNameInput(editLabel);
     const baseUrlError = validateBaseUrlInput(editBaseUrl);
     const modelsError = validateCustomModelsInput(manageModels);
+    const normalizedEditBaseUrl = editBaseUrl.trim().replace(/\/+$/, "");
+    const normalizedStoredBaseUrl = (instance.baseUrl ?? "")
+      .trim()
+      .replace(/\/+$/, "");
+    const credentialError =
+      normalizedEditBaseUrl !== normalizedStoredBaseUrl &&
+      instance.hasApiKey &&
+      !apiKey.trim()
+        ? "Re-enter the API key when changing a provider base URL."
+        : null;
 
-    if (displayNameError || baseUrlError || modelsError) {
-      setDialogError(displayNameError ?? baseUrlError ?? modelsError);
+    if (displayNameError || baseUrlError || modelsError || credentialError) {
+      setDialogError(
+        displayNameError ?? baseUrlError ?? modelsError ?? credentialError
+      );
       return;
     }
 
     await runUpdate(
       {
+        ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}),
         baseUrl: editBaseUrl,
         label: editLabel,
         ...(isOllama
@@ -182,8 +213,13 @@ export function useProviderInstanceCard({
             }
           : {}),
         customModels: normalizeModelListRows(manageModels),
+        ...(isCompatible ? { wireApi: editWireApi } : {}),
       },
-      () => setEditOpen(false)
+      () => {
+        setEditOpen(false);
+        setApiKey("");
+        setShowApiKey(false);
+      }
     );
   };
 
@@ -227,11 +263,13 @@ export function useProviderInstanceCard({
     editLabel,
     editManageModels,
     editOpen,
+    editWireApi,
     handleDelete,
     handleManageModelsChange,
     handleReplaceKey,
     isCatalogShortlist,
     isCompatibleLike,
+    isDiscovery,
     isOllama,
     isOpenRouter,
     isShortlistBrowse,
@@ -240,6 +278,7 @@ export function useProviderInstanceCard({
     openEdit,
     openManage,
     providerType,
+    remoteProvider,
     replaceKeyOpen,
     saveCompatible,
     saveManageModels,
@@ -247,6 +286,7 @@ export function useProviderInstanceCard({
     setEditBaseUrl,
     setEditLabel,
     setEditOpen,
+    setEditWireApi,
     setManageModels,
     setManageOpen,
     setReplaceKeyOpen,

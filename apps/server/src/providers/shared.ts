@@ -1,6 +1,9 @@
 import type {
   ChatCompletionResult,
   ChatMessage,
+  ProviderContentProtocol,
+  ProviderContentProvenance,
+  ProviderName,
   StreamChatHandlers,
   ThinkingEffort,
   ToolCall,
@@ -109,6 +112,7 @@ export function buildChatCompletionResult(options: {
   toolCalls: ToolCall[];
   thinking?: string | null | undefined;
   providerContent?: unknown[];
+  providerContentProvenance?: ProviderContentProvenance;
   usage?: ChatCompletionResult["usage"];
 }): ChatCompletionResult {
   const content = options.content?.trim() ?? "";
@@ -119,7 +123,14 @@ export function buildChatCompletionResult(options: {
     ...(thinking ? { thinking } : {}),
     ...(options.toolCalls.length > 0 ? { toolCalls: options.toolCalls } : {}),
     ...(options.providerContent?.length
-      ? { providerContent: options.providerContent }
+      ? {
+          providerContent: options.providerContent,
+          ...(options.providerContentProvenance
+            ? {
+                providerContentProvenance: options.providerContentProvenance,
+              }
+            : {}),
+        }
       : {}),
   };
 
@@ -129,6 +140,108 @@ export function buildChatCompletionResult(options: {
     toolCalls: options.toolCalls,
     ...(options.usage ? { usage: options.usage } : {}),
   };
+}
+
+export function hasMatchingProviderContent(
+  message: Extract<ChatMessage, { role: "assistant" }>,
+  provider: ProviderName,
+  protocol: ProviderContentProtocol,
+  providerInstanceId?: string,
+  modelId?: string,
+  providerReplayRevision?: string
+): boolean {
+  const provenance = message.providerContentProvenance;
+
+  if (!message.providerContent?.length) {
+    return false;
+  }
+
+  if (!provenance) {
+    // Once the active endpoint is identifiable, legacy opaque payloads have no
+    // trustworthy source binding. Rebuild them from normalized text/tool calls
+    // instead of replaying model- or instance-bound signatures across configs.
+    if (providerInstanceId || modelId || providerReplayRevision) {
+      return false;
+    }
+    return isConservativeLegacyProviderContent(
+      message.providerContent,
+      protocol,
+      provider
+    );
+  }
+
+  if (provenance.provider !== provider || provenance.protocol !== protocol) {
+    return false;
+  }
+
+  if (
+    (provenance.providerInstanceId || providerInstanceId) &&
+    provenance.providerInstanceId !== providerInstanceId
+  ) {
+    return false;
+  }
+
+  if ((provenance.modelId || modelId) && provenance.modelId !== modelId) {
+    return false;
+  }
+
+  if (provenance.providerReplayRevision || providerReplayRevision) {
+    return provenance.providerReplayRevision === providerReplayRevision;
+  }
+
+  return true;
+}
+
+const LEGACY_ANTHROPIC_BLOCK_TYPES = new Set([
+  "code_execution_tool_result",
+  "redacted_thinking",
+  "server_tool_use",
+  "text",
+  "thinking",
+  "tool_search_tool_result",
+  "tool_search_tool_use",
+  "tool_use",
+  "web_fetch_tool_result",
+  "web_search_tool_result",
+]);
+
+function isConservativeLegacyProviderContent(
+  content: unknown[],
+  protocol: ProviderContentProtocol,
+  provider: ProviderName
+): boolean {
+  if (protocol === "openai-responses") {
+    // Legacy Responses items can carry endpoint-bound IDs. Without an instance
+    // source they must be reconstructed from normalized content/tool calls.
+    return false;
+  }
+
+  if (protocol === "anthropic-messages") {
+    if (provider !== "anthropic") {
+      return false;
+    }
+
+    return content.every((item) => {
+      const type = readRecord(item).type;
+      return typeof type === "string" && LEGACY_ANTHROPIC_BLOCK_TYPES.has(type);
+    });
+  }
+
+  if (provider !== "gemini") {
+    return false;
+  }
+
+  return content.every((item) => {
+    const part = readRecord(item);
+    return (
+      !("type" in part) &&
+      ("functionCall" in part ||
+        "inlineData" in part ||
+        "text" in part ||
+        "thought" in part ||
+        "thoughtSignature" in part)
+    );
+  });
 }
 
 /**
@@ -185,9 +298,14 @@ export interface SseEvent {
   event: string;
 }
 
+export interface ReadSseEventsOptions {
+  includeDoneSentinel?: boolean;
+}
+
 export async function readSseEvents(
   body: ReadableStream<Uint8Array>,
-  onEvent: (event: SseEvent) => void | Promise<void>
+  onEvent: (event: SseEvent) => void | Promise<void>,
+  options?: ReadSseEventsOptions
 ): Promise<void> {
   const reader = body.getReader();
   const decoder = new TextDecoder();
@@ -213,7 +331,7 @@ export async function readSseEvents(
 
       const eventBlock = buffer.slice(0, boundary.index);
       buffer = buffer.slice(boundary.index + boundary.length);
-      await emitSseEvent(eventBlock, onEvent);
+      await emitSseEvent(eventBlock, onEvent, options);
     }
 
     if (done) {
@@ -222,13 +340,14 @@ export async function readSseEvents(
   }
 
   if (buffer.trim()) {
-    await emitSseEvent(buffer, onEvent);
+    await emitSseEvent(buffer, onEvent, options);
   }
 }
 
 async function emitSseEvent(
   eventBlock: string,
-  onEvent: (event: SseEvent) => void | Promise<void>
+  onEvent: (event: SseEvent) => void | Promise<void>,
+  options?: ReadSseEventsOptions
 ): Promise<void> {
   let event = "message";
   const dataLines: string[] = [];
@@ -251,7 +370,10 @@ async function emitSseEvent(
   const data = dataLines.join("\n");
   const normalized = data.trim();
 
-  if (!normalized || normalized === "[DONE]") {
+  if (
+    !normalized ||
+    (normalized === "[DONE]" && !options?.includeDoneSentinel)
+  ) {
     return;
   }
 

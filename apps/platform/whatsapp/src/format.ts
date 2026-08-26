@@ -197,6 +197,7 @@ export function formatHelpText(options?: {
 /clear \u2014 clear chat history
 /compact \u2014 compact conversation history
 /new \u2014 start a new conversation
+/attach \u2014 send the latest saved file
 ${orgLine}/status \u2014 server and model status
 
 Send text, a photo, a voice note, or a document. Saved files come back in the chat.`;

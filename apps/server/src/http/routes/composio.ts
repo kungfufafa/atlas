@@ -8,7 +8,10 @@ import type {
   UpdateProfileComposioToolkitsRequest,
 } from "@atlas/core";
 import { AtlasApiError } from "@atlas/core";
-import { resolveComposioOAuthCallbackBaseUrl } from "../../services/composio-callback-url";
+import {
+  resolveComposioOAuthCallbackBaseUrl,
+  validateComposioOAuthRedirectUrl,
+} from "../../services/composio-callback-url";
 import type { ServerOptions } from "../context";
 import {
   requireNotViewerFromContext,
@@ -155,17 +158,19 @@ export function registerComposioRoutes(
       const body = await readJson<ComposioConnectRequest>(c.req.raw).catch(
         () => ({}) as ComposioConnectRequest
       );
-      return json<ComposioConnectResponse>(
-        await service.connectToolkit(
-          auth.activeOrgId!,
-          auth.user.id,
-          c.req.param("toolkitSlug"),
-          resolveComposioOAuthCallbackBaseUrl({
-            clientOrigin: body.callbackOrigin,
-            request: c.req.raw,
-          })
-        )
+      const result = await service.connectToolkit(
+        auth.activeOrgId!,
+        auth.user.id,
+        c.req.param("toolkitSlug"),
+        resolveComposioOAuthCallbackBaseUrl({
+          clientOrigin: body.callbackOrigin,
+          request: c.req.raw,
+        })
       );
+      return json<ComposioConnectResponse>({
+        ...result,
+        redirectUrl: validateComposioOAuthRedirectUrl(result.redirectUrl),
+      });
     } catch (error) {
       if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);

@@ -29,9 +29,10 @@ Complex task succeeds  →  Agent saves a skill (or review suggests one)  →  S
 ```
 
 1. **During chat** — after a hard problem, recovery, or correction, the agent may offer to save the approach as a skill (for example, a deploy checklist or support triage flow).
-2. **After complex turns (optional)** — when **post-turn skill review** is on, Atlas may review the finished turn in the background and either show an **Apply** suggestion in chat or stage a proposal for a Workspace Admin.
-3. **On later turns** — when someone asks for something similar, Atlas can load that skill and follow the saved steps.
-4. **Optional gate** — if write approval is on, skill changes wait in a proposal queue until a Workspace Admin approves or rejects them.
+2. **On demand with `/learn`** — turn notes, a URL, an attachment, or the workflow you just completed into a skill now.
+3. **After complex turns (optional)** — when **post-turn skill review** is on, Atlas may review the finished turn in the background and either show an **Apply** suggestion in chat or stage a proposal for a Workspace Admin.
+4. **On later turns** — when someone asks for something similar, Atlas can load that skill and follow the saved steps.
+5. **Optional gate** — if write approval is on, skill changes wait in a proposal queue until a Workspace Admin approves or rejects them.
 
 Skills hold **procedures** (how to do something). Profile memory holds **facts** about the user (preferences, context). Keep preferences in memory; keep repeatable workflows in skills.
 
@@ -47,6 +48,23 @@ Skills hold **procedures** (how to do something). Profile memory holds **facts**
 Org **viewers** can read chat but cannot run agents, so they cannot trigger skill updates or Apply suggestions.
 
 Default and Super Agent profiles include the skill-authoring capability after sync. Other profiles need the **manage-skills** skill assigned — see [Skills](/skills).
+
+## Learn from sources
+
+In web or CLI chat, type `/learn` followed by the source or workflow:
+
+```text
+/learn filing an expense: open the portal, attach the receipt, and submit
+/learn https://docs.example.com/api/quickstart
+/learn the REST client in my project docs, focus on auth and pagination
+/learn how I just deployed the staging server
+```
+
+Bare `/learn` after a conversation distills the workflow you just completed. As the first message in a session, it asks for a source unless a file or image is attached.
+
+Atlas gathers the source with tools assigned to the profile, then creates or updates a matching skill through `skill_manage`. Large sources become a focused `SKILL.md` with supporting `references/` files instead of one oversized instruction file. Source content is treated as untrusted data and cannot authorize tool calls or override your request.
+
+`/learn` is available only in web and CLI chat when the active profile has **manage-skills** assigned. It is not expanded in Telegram, WhatsApp, Discord, automations, tasks, or sub-agents. Because URLs, files, and attachments are untrusted sources, `/learn` always stages a proposal for Workspace Admin review; it never changes a live skill directly, even when the normal write-approval gate is off.
 
 ## Write approval (optional)
 
@@ -101,6 +119,16 @@ Unlike some other agents that auto-write skills in the background when approval 
 
 Suggestions appear as a chat UI card (not as a message in the conversation history the model will see next turn). Ignore a suggestion by leaving it; there is no separate reject queue for suggestions.
 
+## Consolidate overlapping skills (optional)
+
+As a profile learns, two skills can begin covering the same workflow. Workspace Admins can turn on **Skill consolidation** under **System → Workspace**, optionally override it for one profile, and choose **Consolidate now**.
+
+Atlas looks only at enabled profile-owned skills written by an agent or human. It skips bundled and global skills, pending proposals, recently changed or heavily used skills, and profiles referenced by active automations or unfinished tasks. Candidate counts and source sizes are bounded before a model sees them.
+
+Every result is a proposal, even when normal skill write approval is off. Open **Proposals** to preview the rewritten winner and the exact loser skills. Approval rechecks their identities and content versions, updates the winner, then archives and unassigns the losers as one guarded operation. Rejecting leaves every live skill unchanged.
+
+After opt-in, the automation worker checks eligible workspaces on its existing five-minute poll and runs consolidation at most once every seven days. The durable schedule survives worker or server restarts, and one workspace failure does not delay other automations. **Consolidate now** remains available when you want an immediate review. Scheduled runs still only create proposals; they never change, unassign, or archive a live skill until a Workspace Admin approves.
+
 ## Who can do what
 
 | Role | Chat and trigger skill updates | Apply post-turn suggestions | Approve or reject proposals | Change gate / review settings |
@@ -138,7 +166,7 @@ Click a skill to open its detail dialog for the full breakdown:
 
 These numbers update during **web** and **CLI** chat. They do not change from Telegram, WhatsApp, Discord, or automations — those channels do not run the skill-authoring flow today.
 
-Automated cleanup (archiving unused skills, curator reports) is planned for a later release and will apply only to **agent- or human-authored** skills — not bundled system skills. For now, use the usage hints to decide what to unassign, edit, or keep.
+Skill consolidation is opt-in and proposal-only. It never archives an unused skill merely because it is old; it proposes merging only when eligible skills overlap. See [Consolidate overlapping skills](#consolidate-overlapping-skills-optional).
 
 ## Related
 

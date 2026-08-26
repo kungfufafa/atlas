@@ -7,9 +7,14 @@ import {
   ensureServerRunning,
   stopSpawnedServer,
 } from "@atlas/core/ensure-server";
+import { installErrorHandlers } from "@atlas/core/error-tracking";
+import { installErrorTrackingSink } from "@atlas/core/error-tracking-sentry";
 import { loadLocalAuthToken } from "@atlas/core/local-auth";
 import { loadConfig } from "./config";
 import { AutomationWorkerScheduler } from "./scheduler";
+
+installErrorHandlers("worker:automation");
+await installErrorTrackingSink();
 
 let spawnedChild: Bun.Subprocess | null = null;
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;

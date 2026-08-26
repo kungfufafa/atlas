@@ -12,6 +12,7 @@ import {
   type SendMessageResponse,
   type SessionMessagesResponse,
   type SessionStatusResponse,
+  type UpdateSessionRequest,
 } from "@atlas/core";
 import { createRoute, z } from "@hono/zod-openapi";
 import { resolveRequestClientOrigin } from "../../services/composio-callback-url";
@@ -58,6 +59,7 @@ export function registerSessionRoutes(
       externalPrincipal: z
         .object({ channelUserId: z.string().min(1) })
         .optional(),
+      model: z.string().trim().min(1).optional(),
       profileId: z.string().optional(),
     })
     .openapi("CreateSessionRequest");
@@ -131,9 +133,11 @@ export function registerSessionRoutes(
     .openapi("AgentQuestionnaire");
   const sessionMessagesResponseSchema = z
     .object({
+      canUpdateModel: z.boolean(),
       channel: agentChannelSchema,
       messageMeta: z.array(sessionMessageMetaSchema),
       messages: z.array(z.object({}).passthrough()),
+      model: z.string().nullable(),
       questionnaire: agentQuestionnaireSchema.nullable(),
       todos: z.array(agentTodoSchema),
     })
@@ -144,6 +148,9 @@ export function registerSessionRoutes(
   const branchSessionResponseSchema = z
     .object({ sessionId: z.string() })
     .openapi("BranchSessionResponse");
+  const updateSessionRequestSchema = z
+    .object({ model: z.string().trim().min(1).nullable() })
+    .openapi("UpdateSessionRequest");
   const sendMessageRequestSchema = z
     .object({
       clientOrigin: z.string().optional(),
@@ -215,6 +222,43 @@ export function registerSessionRoutes(
         },
       },
       summary: "List chat sessions",
+      tags: ["Chat"],
+    })
+  );
+  app.openAPIRegistry.registerPath(
+    createRoute({
+      method: "patch",
+      operationId: "updateSession",
+      path: "/v1/sessions/{sessionId}",
+      request: {
+        body: {
+          content: {
+            "application/json": { schema: updateSessionRequestSchema },
+          },
+          required: true,
+        },
+        params: sessionIdParamSchema,
+      },
+      responses: {
+        204: { description: "Session updated" },
+        400: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Invalid model",
+        },
+        403: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Forbidden",
+        },
+        404: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Session not found",
+        },
+        409: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Response in progress",
+        },
+      },
+      summary: "Update a chat session",
       tags: ["Chat"],
     })
   );
@@ -353,7 +397,13 @@ export function registerSessionRoutes(
     requireNotViewerFromContext(c);
     const auth = getRequestAuth(c);
     const orgId = requireActiveOrgIdFromContext(c);
-    const body = await readJson<CreateSessionRequest>(c.req.raw);
+    const parsedBody = createSessionRequestSchema.safeParse(
+      await readJson<unknown>(c.req.raw)
+    );
+    if (!parsedBody.success) {
+      return errorResponse("Invalid session request.", 400);
+    }
+    const body: CreateSessionRequest = parsedBody.data;
     const channel = parseChannel(body.channel);
     try {
       const sessionId = await agent.createSession(
@@ -365,6 +415,7 @@ export function registerSessionRoutes(
           excludeSuperAgent: auth.mode === "local-token" && channel !== "cli",
           externalPrincipal: body.externalPrincipal,
           isPlatformAdmin: auth.isPlatformAdmin,
+          model: body.model,
           orgRole: auth.orgRole,
         }
       );
@@ -452,6 +503,42 @@ export function registerSessionRoutes(
     );
   });
 
+  app.patch("/v1/sessions/:sessionId", async (c) => {
+    requireNotViewerFromContext(c);
+    const auth = getRequestAuth(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    const sessionId = decodeURIComponent(c.req.param("sessionId"));
+    const parsedBody = updateSessionRequestSchema.safeParse(
+      await readJson<unknown>(c.req.raw)
+    );
+    if (!parsedBody.success) {
+      return errorResponse("Invalid session model.", 400);
+    }
+    const body: UpdateSessionRequest = parsedBody.data;
+
+    try {
+      const updated = await agent.updateSessionModel(
+        orgId,
+        sessionId,
+        body.model,
+        {
+          isPlatformAdmin: auth.isPlatformAdmin,
+          orgRole: auth.orgRole,
+          userId: auth.user.id,
+        }
+      );
+      if (!updated) {
+        return errorResponse("Session not found", 404);
+      }
+      return new Response(null, { status: 204 });
+    } catch (error) {
+      if (error instanceof AtlasApiError) {
+        return errorResponse(error.message, error.status);
+      }
+      throw error;
+    }
+  });
+
   app.delete("/v1/sessions/:sessionId", async (c) => {
     requireNotViewerFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
@@ -487,9 +574,14 @@ export function registerSessionRoutes(
   });
 
   app.get("/v1/sessions/:sessionId/messages", async (c) => {
+    const auth = getRequestAuth(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
-    const result = await agent.getSessionMessages(orgId, sessionId);
+    const result = await agent.getSessionMessages(orgId, sessionId, {
+      isPlatformAdmin: auth.isPlatformAdmin,
+      orgRole: auth.orgRole,
+      userId: auth.user.id,
+    });
 
     if (!result) {
       return errorResponse("Session not found", 404);
@@ -499,10 +591,12 @@ export function registerSessionRoutes(
     const questionnaire =
       (await agent.getSessionQuestionnaire(orgId, sessionId)) ?? null;
     return json<SessionMessagesResponse>({
+      canUpdateModel: result.canUpdateModel,
       channel: result.channel,
       contextUsage: result.contextUsage,
       messageMeta: result.messageMeta,
       messages: result.messages,
+      model: result.model,
       questionnaire,
       todos,
     });
@@ -545,13 +639,19 @@ export function registerSessionRoutes(
   app.post("/v1/sessions/:sessionId/branch", async (c) => {
     requireNotViewerFromContext(c);
     try {
+      const auth = getRequestAuth(c);
       const orgId = requireActiveOrgIdFromContext(c);
       const sessionId = decodeURIComponent(c.req.param("sessionId"));
       const body = await readJson<BranchSessionRequest>(c.req.raw);
       const result = await agent.branchSession(
         orgId,
         sessionId,
-        body.messageIndex
+        body.messageIndex,
+        {
+          isPlatformAdmin: auth.isPlatformAdmin,
+          orgRole: auth.orgRole,
+          userId: auth.user.id,
+        }
       );
 
       if (!result) {
@@ -560,6 +660,9 @@ export function registerSessionRoutes(
 
       return json<BranchSessionResponse>(result, 201);
     } catch (error) {
+      if (error instanceof AtlasApiError) {
+        return errorResponse(error.message, error.status);
+      }
       const message = error instanceof Error ? error.message : String(error);
       return errorResponse(message, 400);
     }
@@ -570,25 +673,37 @@ export function registerSessionRoutes(
     const orgId = requireActiveOrgIdFromContext(c);
     const auth = getRequestAuth(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
+    const turnStarted = await agent.beginSessionTurn(orgId, sessionId);
+    if (turnStarted === null) {
+      return errorResponse("Session not found", 404);
+    }
+    if (!turnStarted) {
+      return errorResponse(
+        "A response is already in progress for this session.",
+        409
+      );
+    }
+
     let session: Awaited<ReturnType<typeof agent.resolveSession>>;
+    let body: SendMessageRequest;
     try {
       session = await agent.resolveSession(orgId, sessionId, {
         isPlatformAdmin: auth.isPlatformAdmin,
         orgRole: auth.orgRole,
         userId: auth.user.id,
       });
+      if (!session) {
+        sessionTurnRegistry.cancelTurn(sessionId);
+        return errorResponse("Session not found", 404);
+      }
+      body = await readJson<SendMessageRequest>(c.req.raw);
     } catch (error) {
+      sessionTurnRegistry.cancelTurn(sessionId);
       if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
       throw error;
     }
-
-    if (!session) {
-      return errorResponse("Session not found", 404);
-    }
-
-    const body = await readJson<SendMessageRequest>(c.req.raw);
     const clientOrigin = resolveRequestClientOrigin(
       c.req.raw,
       body.clientOrigin
@@ -606,15 +721,6 @@ export function registerSessionRoutes(
       c.req.query("stream") === "true" ||
       c.req.header("Accept")?.includes("text/event-stream");
 
-    const turn = sessionTurnRegistry.beginTurn(sessionId);
-
-    if (!turn.started) {
-      return errorResponse(
-        "A response is already in progress for this session.",
-        409
-      );
-    }
-
     if (wantsStream) {
       return streamMessage(
         sessionId,
@@ -630,8 +736,12 @@ export function registerSessionRoutes(
       );
     }
 
+    const turnAbort = new AbortController();
+    sessionTurnRegistry.attachAbort(sessionId, turnAbort);
+    const turnSignal = AbortSignal.any([turnAbort.signal, c.req.raw.signal]);
+
     try {
-      const reply = await session.send(input);
+      const reply = await session.send(input, { signal: turnSignal });
       const contextUsage = session.getContextUsage() ?? undefined;
       sessionTurnRegistry.endTurn(sessionId, {
         reply,
@@ -647,6 +757,9 @@ export function registerSessionRoutes(
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       sessionTurnRegistry.endTurn(sessionId, { error: message, type: "error" });
+      if (error instanceof AtlasApiError) {
+        return errorResponse(error.message, error.status);
+      }
       return errorResponse(message, 500);
     }
   });

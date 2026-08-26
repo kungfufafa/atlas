@@ -9,6 +9,7 @@ import { markdownToDocx } from "../docx-write";
 import { pathExists } from "../fs";
 import { isOmniEnabled, omniRetrieveTool } from "../omni";
 import { createPptxBuffer } from "../presentation-engine";
+import { withProfileSoulMutationLock } from "../soul/mutation-lock";
 import { getProfileSoulDir } from "../soul/resolve";
 import { browserTool } from "./browser-tool";
 import { calculatorTool } from "./calculator";
@@ -310,6 +311,17 @@ export async function runWriteFile(
   context: ToolContext,
   options: FileToolRunOptions = {}
 ): Promise<WriteFileOutput> {
+  const { orgId, profileId } = requireProfileScope(context);
+  return await withProfileSoulMutationLock(orgId, profileId, () =>
+    runWriteFileUnlocked(input, context, options)
+  );
+}
+
+async function runWriteFileUnlocked(
+  input: unknown,
+  context: ToolContext,
+  options: FileToolRunOptions
+): Promise<WriteFileOutput> {
   const parsed = parseToolInput(writeFileInputSchema, input);
   refuseWordExtension(parsed.path);
   const contentBytes = Buffer.byteLength(parsed.content, "utf8");
@@ -541,6 +553,17 @@ export async function runDeleteFile(
   context: ToolContext,
   options: FileToolRunOptions = {}
 ): Promise<DeleteFileOutput> {
+  const { orgId, profileId } = requireProfileScope(context);
+  return await withProfileSoulMutationLock(orgId, profileId, () =>
+    runDeleteFileUnlocked(input, context, options)
+  );
+}
+
+async function runDeleteFileUnlocked(
+  input: unknown,
+  context: ToolContext,
+  options: FileToolRunOptions
+): Promise<DeleteFileOutput> {
   const parsed = parseToolInput(deleteFileInputSchema, input);
   const guardOptions = buildFileGuardOptions(context, options);
 
@@ -571,6 +594,17 @@ export async function runEditFile(
   input: unknown,
   context: ToolContext,
   options: FileToolRunOptions = {}
+): Promise<EditFileOutput> {
+  const { orgId, profileId } = requireProfileScope(context);
+  return await withProfileSoulMutationLock(orgId, profileId, () =>
+    runEditFileUnlocked(input, context, options)
+  );
+}
+
+async function runEditFileUnlocked(
+  input: unknown,
+  context: ToolContext,
+  options: FileToolRunOptions
 ): Promise<EditFileOutput> {
   const parsed = parseToolInput(editFileInputSchema, input);
   // Editing a Word document as UTF-8 text would corrupt the archive.

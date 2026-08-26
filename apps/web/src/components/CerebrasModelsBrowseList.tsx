@@ -10,6 +10,9 @@ export type CerebrasBrowseSelectHandler = (row: CerebrasModelRow) => void;
 
 interface CerebrasModelsBrowseListProps {
   className?: string;
+  disabled?: boolean;
+  multiSelect?: boolean;
+  onAddMany?: (rows: CerebrasModelRow[]) => void;
   onSelect: CerebrasBrowseSelectHandler;
 }
 
@@ -18,12 +21,16 @@ const EMPTY_ROWS: CerebrasModelRow[] = [];
 export function CerebrasModelsBrowseList({
   onSelect,
   className,
+  multiSelect,
+  onAddMany,
+  disabled = false,
 }: CerebrasModelsBrowseListProps) {
   const { data, isLoading, error } = useCerebrasModels();
 
   return (
     <CatalogModelsBrowseList<CerebrasModelRow>
       className={className}
+      disabled={disabled}
       filterRows={(rows, search, hideDeprecated) =>
         filterCapabilityBrowseRows(rows, {
           hideDeprecated,
@@ -31,6 +38,8 @@ export function CerebrasModelsBrowseList({
         }) as CerebrasModelRow[]
       }
       isDeprecated={(row) => row.deprecated}
+      multiSelect={multiSelect}
+      onAddMany={onAddMany}
       onSelect={onSelect}
       query={{ error, isLoading }}
       rows={data?.rows ?? EMPTY_ROWS}

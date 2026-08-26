@@ -8,6 +8,7 @@ describe("NotificationWebhookService", () => {
     const databaseAdapter = createInMemoryDatabaseAdapter();
     const authService = new AuthService();
     const apiKey = "secret_key";
+    const now = "2026-07-04T10:00:00.000Z";
     const calls: Array<{
       text: string;
       chatIds?: number[];
@@ -15,15 +16,22 @@ describe("NotificationWebhookService", () => {
       parseMode?: "HTML";
     }> = [];
 
+    await databaseAdapter.upsertOrganization({
+      createdAt: now,
+      id: "org_1",
+      name: "Workspace",
+      slug: "workspace",
+      updatedAt: now,
+    });
     await databaseAdapter.upsertNotificationDestination({
       channel: "telegram",
       config: { chatId: 1001, topicId: 22 },
-      createdAt: "2026-07-04T10:00:00.000Z",
+      createdAt: now,
       id: "dest_1",
       name: "Payments",
       orgId: "org_1",
       secretHash: authService.hashToken(apiKey),
-      updatedAt: "2026-07-04T10:00:00.000Z",
+      updatedAt: now,
     });
 
     const service = new NotificationWebhookService(
@@ -89,5 +97,48 @@ describe("NotificationWebhookService", () => {
       message: "Invalid notification credentials.",
       status: 401,
     });
+  });
+
+  test("does not deliver notifications for archived organizations", async () => {
+    const databaseAdapter = createInMemoryDatabaseAdapter();
+    const authService = new AuthService();
+    const apiKey = "secret_key";
+    const now = "2026-07-04T10:00:00.000Z";
+    let deliveryCount = 0;
+
+    await databaseAdapter.upsertOrganization({
+      archivedAt: now,
+      createdAt: now,
+      id: "org_1",
+      name: "Archived workspace",
+      slug: "archived-workspace",
+      updatedAt: now,
+    });
+    await databaseAdapter.upsertNotificationDestination({
+      channel: "telegram",
+      config: { chatId: 1001, topicId: null },
+      createdAt: now,
+      id: "dest_1",
+      name: "Payments",
+      orgId: "org_1",
+      secretHash: authService.hashToken(apiKey),
+      updatedAt: now,
+    });
+
+    const service = new NotificationWebhookService(
+      databaseAdapter,
+      authService,
+      {
+        send: async () => {
+          deliveryCount += 1;
+          return { ok: true };
+        },
+      }
+    );
+
+    await expect(
+      service.deliver("dest_1", apiKey, { body: "Hello" })
+    ).rejects.toMatchObject({ status: 404 });
+    expect(deliveryCount).toBe(0);
   });
 });

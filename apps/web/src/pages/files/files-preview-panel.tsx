@@ -1,7 +1,16 @@
 import type { ArtifactPreview } from "@atlas/core";
+import {
+  ARTIFACT_EDIT_MAX_COLUMNS,
+  ARTIFACT_EDIT_MAX_ROWS,
+} from "@atlas/core/artifact-editing-limits";
 import type { ArtifactFile } from "@atlas/core/contract";
-import { Cancel01Icon, Download01Icon } from "hugeicons-react";
-import { useEffect, useState } from "react";
+import {
+  Cancel01Icon,
+  Download01Icon,
+  FloppyDiskIcon,
+  PencilEdit01Icon,
+} from "hugeicons-react";
+import { useCallback, useEffect, useState } from "react";
 import { ArtifactCodeCanvas } from "@/components/artifacts/ArtifactCodeCanvas";
 import {
   type ArtifactPreviewMode,
@@ -10,17 +19,30 @@ import {
 import { HtmlPreviewFrame } from "@/components/artifacts/HtmlPreviewFrame";
 import { SafeMarkdownPreview } from "@/components/artifacts/SafeMarkdownPreview";
 import { SvgPreview } from "@/components/artifacts/SvgPreview";
+import {
+  type ArtifactEditDraft,
+  useArtifactEditor,
+} from "@/components/artifacts/use-artifact-editor";
 import { DocumentViewer } from "@/components/artifacts/viewers/DocumentViewer";
+import { MarkdownViewer } from "@/components/artifacts/viewers/MarkdownViewer";
 import { PdfViewer } from "@/components/artifacts/viewers/PdfViewer";
 import { PresentationViewer } from "@/components/artifacts/viewers/PresentationViewer";
 import { SpreadsheetViewer } from "@/components/artifacts/viewers/SpreadsheetViewer";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Spinner } from "@/components/ui/spinner";
+import { useAuth } from "@/context/use-auth";
 import {
   artifactCanvasSourceLanguage,
   artifactSupportsPreviewCodeToggle,
 } from "@/lib/artifact-canvas";
+import {
+  addEditableColumn,
+  addEditableRow,
+  isEditableArtifactFilename,
+  knownArtifactEditLimitReason,
+  updateEditableCell,
+} from "@/lib/artifact-editing";
 import {
   isMermaidArtifactFilename,
   markdownForMermaidSource,
@@ -40,6 +62,9 @@ import {
   dirnameArtifactPath,
   htmlWithVirtualArtifactFiles,
 } from "@/lib/playable-html-preview";
+import { queryClient } from "@/lib/query-client";
+import { queryKeys } from "@/lib/query-keys";
+import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 const TEXT_SIBLING = /\.(css|js|json|svg|txt|csv|map)$/i;
@@ -306,6 +331,10 @@ function FilesPreviewBody({
   downloadUrl,
   onSelectSheet,
   mode,
+  editDraft,
+  editSaving,
+  onEditContent,
+  onEditRows,
 }: {
   artifact: ArtifactFile;
   artifacts: ArtifactFile[];
@@ -314,6 +343,10 @@ function FilesPreviewBody({
   downloadUrl: string;
   onSelectSheet: (sheetName: string, sheetIndex?: number) => void;
   mode: ArtifactPreviewMode;
+  editDraft: ArtifactEditDraft | null;
+  editSaving: boolean;
+  onEditContent: (content: string) => void;
+  onEditRows: (rows: string[][]) => void;
 }) {
   const mimeType = resolveArtifactMimeType(
     artifact.mimeType,
@@ -457,14 +490,19 @@ function FilesPreviewBody({
       return <ArtifactCodeCanvas code={preview.formatted} language="json" />;
     case "markdown":
       return (
-        <div className="overflow-y-auto px-8 py-10">
-          <div className="mx-auto w-full max-w-[42rem]">
-            <SafeMarkdownPreview
-              className="artifact-canvas-markdown leading-7"
-              content={preview.content}
-            />
-          </div>
-        </div>
+        <MarkdownViewer
+          downloadUrl={downloadUrl}
+          editor={
+            editDraft?.source.kind === "markdown"
+              ? {
+                  content: editDraft.content,
+                  disabled: editSaving,
+                  onChange: onEditContent,
+                }
+              : undefined
+          }
+          preview={preview}
+        />
       );
     case "code":
       return (
@@ -481,6 +519,30 @@ function FilesPreviewBody({
       return (
         <SpreadsheetViewer
           downloadUrl={downloadUrl}
+          editor={
+            editDraft?.source.kind === "delimited"
+              ? {
+                  canAddColumn:
+                    Math.max(0, ...editDraft.rows.map((row) => row.length)) <
+                    ARTIFACT_EDIT_MAX_COLUMNS,
+                  canAddRow: editDraft.rows.length < ARTIFACT_EDIT_MAX_ROWS,
+                  disabled: editSaving,
+                  onAddColumn: () =>
+                    onEditRows(addEditableColumn(editDraft.rows)),
+                  onAddRow: () => onEditRows(addEditableRow(editDraft.rows)),
+                  onChangeCell: (rowIndex, columnIndex, value) =>
+                    onEditRows(
+                      updateEditableCell(
+                        editDraft.rows,
+                        rowIndex,
+                        columnIndex,
+                        value
+                      )
+                    ),
+                  rows: editDraft.rows,
+                }
+              : undefined
+          }
           onSelectSheet={onSelectSheet}
           preview={preview}
         />
@@ -503,12 +565,15 @@ export function FilesPreviewPanel({
   artifacts,
   profileId,
   onClose,
+  onSavingChange,
 }: {
   artifact: ArtifactFile;
   artifacts: ArtifactFile[];
   profileId: string;
   onClose: () => void;
+  onSavingChange?: (saving: boolean) => void;
 }) {
+  const { activeOrg, user } = useAuth();
   const [preview, setPreview] = useState<ArtifactPreview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -525,6 +590,40 @@ export function FilesPreviewPanel({
     artifact.filename,
     artifact.mimeType
   );
+  const handleArtifactSaved = useCallback(async () => {
+    const next = await client.getProfileArtifactPreview(profileId, path, {
+      forceRegenerate: true,
+      sheet: sheet.sheet,
+      sheetIndex: sheet.sheetIndex,
+    });
+    setPreview(next);
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.artifacts.profile(profileId),
+    });
+    toast("Artifact saved.");
+  }, [path, profileId, sheet.sheet, sheet.sheetIndex]);
+  const editor = useArtifactEditor({
+    artifactPath: path,
+    onSaved: handleArtifactSaved,
+    profileId,
+  });
+
+  useEffect(() => {
+    onSavingChange?.(editor.saving);
+  }, [editor.saving, onSavingChange]);
+
+  useEffect(
+    () => () => {
+      onSavingChange?.(false);
+    },
+    [onSavingChange]
+  );
+  const canOfferEditing =
+    (activeOrg?.role === "admin" || user?.isPlatformAdmin === true) &&
+    isEditableArtifactFilename(artifact.filename);
+  const editDisabledReason =
+    knownArtifactEditLimitReason(artifact.sizeBytes) ??
+    editor.unavailableReason;
 
   useEffect(() => {
     setPreviewMode("preview");
@@ -533,12 +632,20 @@ export function FilesPreviewPanel({
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        onClose();
+        if (editor.saving) {
+          event.preventDefault();
+          return;
+        }
+        if (editor.draft) {
+          editor.cancel();
+        } else {
+          onClose();
+        }
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
+  }, [editor.cancel, editor.draft, editor.saving, onClose]);
 
   useEffect(() => {
     let cancelled = false;
@@ -581,11 +688,53 @@ export function FilesPreviewPanel({
         <div className="min-w-0 flex-1">
           <h2 className="truncate font-medium text-sm">{artifact.filename}</h2>
         </div>
-        {showModeToggle ? (
+        {showModeToggle && !editor.draft ? (
           <ArtifactPreviewModeToggle
             mode={previewMode}
             onChange={setPreviewMode}
           />
+        ) : null}
+        {canOfferEditing && editor.draft ? (
+          <>
+            <Button
+              disabled={editor.saving}
+              onClick={() => void editor.save()}
+              size="sm"
+              type="button"
+            >
+              {editor.saving ? (
+                <Spinner className="size-3.5" />
+              ) : (
+                <FloppyDiskIcon className="size-3.5" />
+              )}
+              Save
+            </Button>
+            <Button
+              disabled={editor.saving}
+              onClick={editor.cancel}
+              size="sm"
+              type="button"
+              variant="ghost"
+            >
+              Cancel
+            </Button>
+          </>
+        ) : canOfferEditing ? (
+          <Button
+            aria-label="Edit artifact"
+            disabled={editor.loading || loading || Boolean(editDisabledReason)}
+            onClick={() => void editor.start()}
+            size="icon-sm"
+            title={editDisabledReason ?? "Edit artifact"}
+            type="button"
+            variant="ghost"
+          >
+            {editor.loading ? (
+              <Spinner className="size-4" />
+            ) : (
+              <PencilEdit01Icon className="size-4" />
+            )}
+          </Button>
         ) : null}
         <a
           aria-label="Download"
@@ -598,6 +747,7 @@ export function FilesPreviewPanel({
         </a>
         <Button
           aria-label="Close preview"
+          disabled={editor.saving}
           onClick={onClose}
           size="icon-sm"
           type="button"
@@ -607,6 +757,14 @@ export function FilesPreviewPanel({
         </Button>
       </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        {editor.error || editor.unavailableReason ? (
+          <div
+            className="border-destructive/30 border-b bg-destructive/5 px-4 py-2 text-destructive text-sm"
+            role="alert"
+          >
+            {editor.error ?? editor.unavailableReason}
+          </div>
+        ) : null}
         {loading ? (
           <div className="flex flex-1 items-center justify-center text-muted-foreground">
             <Spinner className="size-5" />
@@ -618,7 +776,11 @@ export function FilesPreviewPanel({
             artifact={artifact}
             artifacts={artifacts}
             downloadUrl={downloadUrl}
+            editDraft={editor.draft}
+            editSaving={editor.saving}
             mode={previewMode}
+            onEditContent={editor.setContent}
+            onEditRows={editor.setRows}
             onSelectSheet={(sheetName, sheetIndex) =>
               setSheet({ sheet: sheetName, sheetIndex })
             }

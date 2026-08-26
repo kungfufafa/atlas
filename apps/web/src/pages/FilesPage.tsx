@@ -1,5 +1,5 @@
 import type { ArtifactFile } from "@atlas/core/contract";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   ARTIFACT_TYPE_FILTER_LABELS,
@@ -22,6 +22,12 @@ import {
   resolveFilesProfileId,
   setStoredFilesViewMode,
 } from "@/lib/files-page.shared";
+import { ArtifactFolderBreadcrumb } from "@/pages/files/files-artifact-folder-breadcrumb";
+import {
+  filterArtifactFolderMetadata,
+  listArtifactsInFolder,
+  normalizeArtifactFolderPrefix,
+} from "@/pages/files/files-artifact-folders";
 import { FilesArtifactViews } from "@/pages/files/files-artifact-views";
 import { FilesDeleteDialog } from "@/pages/files/files-delete-dialog";
 import { FilesPreviewPanel } from "@/pages/files/files-preview-panel";
@@ -34,18 +40,23 @@ export function FilesPage() {
   const { profileId: activeProfileId } = useActiveChatProfile();
   const { data: profiles = [] } = useProfilesQuery();
   const profileId = resolveFilesProfileId({ activeProfileId, profiles });
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const view =
     searchParams.get("tab") === "knowledge" ? "knowledge" : "artifacts";
+  const folderPrefix = normalizeArtifactFolderPrefix(
+    searchParams.get("folder") ?? ""
+  );
 
   const [deleteTarget, setDeleteTarget] = useState<ArtifactFile | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [previewTarget, setPreviewTarget] = useState<ArtifactFile | null>(null);
+  const [previewSaving, setPreviewSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<ArtifactTypeFilter>("all");
   const [viewMode, setViewMode] = useState<FilesViewMode>(() =>
     getStoredFilesViewMode()
   );
+  const isSearching = searchQuery.trim().length > 0;
   const {
     data,
     isLoading,
@@ -55,7 +66,10 @@ export function FilesPage() {
     refetch,
     fetchNextPage,
     hasNextPage,
-  } = useArtifactsInfiniteQuery(profileId);
+  } = useArtifactsInfiniteQuery(
+    profileId,
+    isSearching ? undefined : folderPrefix
+  );
   const deleteMutation = useDeleteArtifactMutation();
 
   const artifacts = useMemo(
@@ -63,10 +77,12 @@ export function FilesPage() {
     [data]
   );
   const totalCount = data?.pages[0]?.total ?? 0;
+  const folderMetadata = data?.pages[0]?.folders ?? [];
+  const hasArtifacts = totalCount > 0 || folderMetadata.length > 0;
   const remainingCount = Math.max(totalCount - artifacts.length, 0);
   const typeOptions = useMemo(
-    () => availableArtifactTypeFilters(artifacts),
-    [artifacts]
+    () => availableArtifactTypeFilters(artifacts, folderMetadata),
+    [artifacts, folderMetadata]
   );
   const effectiveTypeFilter: ArtifactTypeFilter = typeOptions.includes(
     typeFilter
@@ -91,6 +107,41 @@ export function FilesPage() {
       return haystack.includes(trimmed);
     });
   }, [artifacts, searchQuery, effectiveTypeFilter]);
+  const listing = useMemo(() => {
+    if (isSearching) {
+      return { files: filteredArtifacts, folders: [] };
+    }
+
+    return listArtifactsInFolder(
+      filteredArtifacts,
+      folderPrefix,
+      filterArtifactFolderMetadata(folderMetadata, effectiveTypeFilter)
+    );
+  }, [
+    effectiveTypeFilter,
+    filteredArtifacts,
+    folderMetadata,
+    folderPrefix,
+    isSearching,
+  ]);
+  const handleFolderChange = useCallback(
+    (prefix: string) => {
+      if (previewSaving) {
+        return;
+      }
+      setSearchParams((current) => {
+        const next = new URLSearchParams(current);
+        const normalized = normalizeArtifactFolderPrefix(prefix);
+        if (normalized) {
+          next.set("folder", normalized);
+        } else {
+          next.delete("folder");
+        }
+        return next;
+      });
+    },
+    [previewSaving, setSearchParams]
+  );
 
   function handleViewModeChange(mode: FilesViewMode) {
     setViewMode(mode);
@@ -139,6 +190,9 @@ export function FilesPage() {
       parts.push(`“${trimmed}”`);
     }
     if (parts.length === 0) {
+      if (folderPrefix && !isSearching) {
+        return "This folder is empty.";
+      }
       return "No artifacts match.";
     }
     return `No artifacts match ${parts.join(" · ")}.`;
@@ -160,11 +214,11 @@ export function FilesPage() {
                   isFetching={isFetching}
                   onRefresh={() => void refetch()}
                   onViewModeChange={handleViewModeChange}
-                  showViewModeToggle={totalCount > 0}
+                  showViewModeToggle={hasArtifacts}
                   viewMode={viewMode}
                 />
 
-                {totalCount > 0 ? (
+                {hasArtifacts ? (
                   <FilesSearchRow
                     onSearchQueryChange={setSearchQuery}
                     onTypeFilterChange={setTypeFilter}
@@ -174,23 +228,40 @@ export function FilesPage() {
                   />
                 ) : null}
 
+                {folderPrefix && !isSearching ? (
+                  <ArtifactFolderBreadcrumb
+                    onNavigate={handleFolderChange}
+                    prefix={folderPrefix}
+                  />
+                ) : null}
+
                 <FilesArtifactViews
                   artifacts={artifacts}
                   deletePending={deleteMutation.isPending}
                   emptyFilterMessage={emptyFilterMessage}
                   error={error}
-                  filteredArtifacts={filteredArtifacts}
+                  folders={listing.folders}
                   hasMore={hasNextPage ?? false}
                   isLoading={isLoading}
                   isLoadingMore={isFetchingNextPage}
+                  listingFiles={listing.files}
                   onDelete={(artifact) => {
+                    if (previewSaving) {
+                      return;
+                    }
                     setDeleteError(null);
                     setDeleteTarget(artifact);
                   }}
-                  onPreview={setPreviewTarget}
+                  onOpenFolder={handleFolderChange}
+                  onPreview={(artifact) => {
+                    if (!previewSaving) {
+                      setPreviewTarget(artifact);
+                    }
+                  }}
                   onShowMore={() => void fetchNextPage()}
                   profileId={profileId}
                   remainingCount={remainingCount}
+                  showFullPath={isSearching}
                   viewMode={viewMode}
                 />
               </div>
@@ -209,7 +280,12 @@ export function FilesPage() {
           <FilesPreviewPanel
             artifact={previewTarget}
             artifacts={artifacts}
-            onClose={() => setPreviewTarget(null)}
+            onClose={() => {
+              if (!previewSaving) {
+                setPreviewTarget(null);
+              }
+            }}
+            onSavingChange={setPreviewSaving}
             profileId={profileId}
           />
         ) : null}

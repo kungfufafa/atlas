@@ -1,4 +1,8 @@
-import { type AutomationSchedule, isWorkerSchedulable } from "@atlas/core";
+import {
+  type AutomationSchedule,
+  isWorkerSchedulable,
+  type StoredAutomation,
+} from "@atlas/core";
 import type { ServerOptions } from "../context";
 import { errorResponse, json, readJson } from "../shared";
 import type { HonoApp } from "../types";
@@ -7,7 +11,7 @@ export function registerInternalAutomationRoutes(
   app: HonoApp,
   options: ServerOptions
 ): void {
-  const { agent, automationService } = options;
+  const { agent, automationService, orgService } = options;
 
   app.get("/v1/internal/automations/schedules", async (c) => {
     const auth = c.get("auth");
@@ -16,13 +20,27 @@ export function registerInternalAutomationRoutes(
     }
 
     const automations = await automationService.listAll();
+    const archivedOrgIds = new Set(
+      orgService
+        ? (await orgService.listOrganizations())
+            .filter((organization) => organization.archivedAt)
+            .map((organization) => organization.id)
+        : []
+    );
+    // Org-less rows can only be pre-tenant legacy data; the run route 400s a
+    // missing org now, so the worker must never receive an id it cannot run.
     const schedules: AutomationSchedule[] = automations
-      .filter((automation) => isWorkerSchedulable(automation))
+      .filter(
+        (automation): automation is StoredAutomation & { orgId: string } =>
+          isWorkerSchedulable(automation) &&
+          Boolean(automation.orgId) &&
+          !archivedOrgIds.has(automation.orgId ?? "")
+      )
       .map((automation) => {
         if (automation.trigger.type === "runAt") {
           return {
             id: automation.id,
-            orgId: automation.orgId ?? "",
+            orgId: automation.orgId,
             profileId: automation.profileId,
             runAt: automation.trigger.at,
             timezone: automation.trigger.timezone ?? null,
@@ -33,7 +51,7 @@ export function registerInternalAutomationRoutes(
           return {
             cron: automation.trigger.cron,
             id: automation.id,
-            orgId: automation.orgId ?? "",
+            orgId: automation.orgId,
             profileId: automation.profileId,
             timezone: automation.trigger.timezone ?? null,
           };
@@ -54,10 +72,22 @@ export function registerInternalAutomationRoutes(
     }
 
     const automationId = decodeURIComponent(c.req.param("automationId"));
-    const automation = await automationService.get(automationId);
+    const orgId = c.req.query("orgId")?.trim();
+    if (!orgId) {
+      return errorResponse("orgId query parameter is required.", 400);
+    }
+
+    const automation = await automationService.get(automationId, orgId);
 
     if (!automation) {
       return errorResponse("Automation not found", 404);
+    }
+
+    if (orgService) {
+      const organization = await orgService.getOrganization(orgId);
+      if (!organization || organization.archivedAt) {
+        return errorResponse("Not found", 404);
+      }
     }
 
     const body = await readJson<{ fireId?: string }>(c.req.raw).catch(() => ({

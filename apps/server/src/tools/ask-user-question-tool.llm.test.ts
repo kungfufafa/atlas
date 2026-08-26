@@ -88,6 +88,7 @@ test("ask_user_question schema is callable by a real OpenAI model", async () => 
       channel: "web",
       createdAt: new Date().toISOString(),
       id: "session_llm",
+      modelOverride: null,
       profileId: "default",
       title: null,
     });

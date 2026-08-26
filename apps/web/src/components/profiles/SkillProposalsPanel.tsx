@@ -61,6 +61,12 @@ function proposalPreview(proposal: SkillProposal): string {
   if (proposal.action === "remove_file") {
     return `Remove supporting file "${proposal.relativePath ?? "?"}" from skill "${proposal.skillName}"`;
   }
+  if (proposal.action === "consolidate") {
+    const loserNames =
+      proposal.consolidation?.losers.map((loser) => loser.name).join(", ") ??
+      "unknown";
+    return `Keep "${proposal.skillName}" and archive: ${loserNames}\n\n${proposal.content ?? ""}`;
+  }
   return `Delete skill "${proposal.skillName}"`;
 }
 
@@ -79,6 +85,9 @@ function actionLabel(action: SkillProposal["action"]): string {
   }
   if (action === "remove_file") {
     return "Remove file";
+  }
+  if (action === "consolidate") {
+    return "Consolidate";
   }
   return "Delete";
 }

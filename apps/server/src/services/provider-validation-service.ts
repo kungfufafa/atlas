@@ -2,6 +2,10 @@ import type {
   CustomModelEntry,
   TestProviderRequest,
 } from "@atlas/core/contract";
+import {
+  defaultDiscoveryBaseUrl,
+  isDiscoveryModelProvider,
+} from "@atlas/core/discovery-providers";
 import { ollamaRequiresApiKey } from "@atlas/core/ollama-provider-config";
 import type { ProviderInstance } from "@atlas/core/user-config";
 import { fetchRemoteOpenAIModels } from "../providers/compatible-models";
@@ -15,7 +19,8 @@ export async function validateProviderConnection(
 ): Promise<void> {
   const type = request.type;
   const apiKey = request.apiKey?.trim() ?? "";
-  const baseUrl = request.baseUrl?.trim() || undefined;
+  const baseUrl =
+    request.baseUrl?.trim() || defaultDiscoveryBaseUrl(type) || undefined;
   const hostMode = request.hostMode;
 
   if (!apiKey && type !== "openai_compatible" && type !== "ollama") {
@@ -32,13 +37,18 @@ export async function validateProviderConnection(
 
   let customModels = request.customModels;
   const shouldDiscoverCompatibleModels =
-    type === "openai_compatible" &&
+    isDiscoveryModelProvider(type) &&
     Boolean(baseUrl) &&
     !request.model?.trim() &&
     !customModels?.length;
 
   if (shouldDiscoverCompatibleModels && baseUrl) {
-    customModels = await fetchRemoteOpenAIModels(baseUrl, apiKey);
+    customModels = await fetchRemoteOpenAIModels(baseUrl, apiKey, {
+      localAccess:
+        type === "openai_compatible"
+          ? { kind: "openai-compatible-local" }
+          : undefined,
+    });
   }
 
   const probeInstance: ProviderInstance = {
@@ -50,6 +60,9 @@ export async function validateProviderConnection(
     type,
     ...(baseUrl ? { baseUrl } : {}),
     ...(hostMode ? { hostMode } : {}),
+    ...(type === "openai_compatible" && request.wireApi
+      ? { wireApi: request.wireApi }
+      : {}),
   };
 
   const modelsToProbe = probeModels(probeInstance, request.model, customModels);

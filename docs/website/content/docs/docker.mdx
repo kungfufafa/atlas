@@ -32,6 +32,22 @@ The data root follows `ATLAS_CONFIG_DIR` when set. By default it is `/atlas/data
 
 On first run, complete the setup wizard in the browser and add your LLM provider. See [Providers](/providers) and [First-time setup](/first-time-setup).
 
+### Crash reporting (optional)
+
+Atlas can send uncaught server and worker crashes to a Sentry-compatible endpoint such as Sentry, GlitchTip, Bugsink, or a self-hosted installation. Reporting is off by default.
+
+Set the project's public DSN when starting the container:
+
+```bash
+docker run -d -p 4310:4310 -v atlas-data:/atlas/data \
+  -e ATLAS_ERROR_TRACKING_DSN=https://public-key@errors.example.com/7 \
+  --name atlas ghcr.io/kungfufafa/atlas:latest
+```
+
+Reports cover uncaught exceptions and unhandled rejections in the server, automation worker, Telegram worker, WhatsApp worker, and Discord worker. Atlas sends a normalized error type, fingerprint, component, and runtime metadata—not the raw message or stack—and does not attach an org, user, or hostname. Handled request and tool errors are outside this crash-only scope.
+
+Set `DO_NOT_TRACK=1` to disable delivery even when a DSN is configured. Failed deliveries remain in a private, five-event local queue and retry when the server next starts. Keep the complete DSN in deployment secrets rather than source control or logs.
+
 ### First-boot seed (optional)
 
 To skip the setup wizard on a fresh data volume, set all three admin seed variables before the first boot. Atlas creates the admin account, a `Personal` org (override with `ATLAS_SEED_ORG_NAME`), and an OpenCode Zen provider. Self-hosted installs without these variables behave as today.
@@ -61,6 +77,22 @@ To remove the container, volume, and image and start fresh:
 ./scripts/docker-destroy.sh
 ./scripts/docker-build-run.sh
 ```
+
+## Optional: CloakBrowser with agent-browser
+
+The Atlas image does not include [CloakBrowser](https://github.com/CloakHQ/CloakBrowser). Stock Chrome remains the default for the [agent-browser](/agent-browser) skill.
+
+To use Cloak, bind-mount its Chromium binary read-only and pass the host variables inherited by Atlas `bash` runs:
+
+```bash
+docker run -d -p 4310:4310 -v atlas-data:/atlas/data \
+  -v /path/to/cloak-chromium:/cloak/chromium:ro \
+  -e AGENT_BROWSER_EXECUTABLE_PATH=/cloak/chromium \
+  -e AGENT_BROWSER_ARGS="<copy from Cloak's agent-browser example>" \
+  --name atlas ghcr.io/kungfufafa/atlas:latest
+```
+
+See [Agent browser](/agent-browser#3-optional-cloakbrowser-for-antibot-sites).
 
 ## Next steps
 

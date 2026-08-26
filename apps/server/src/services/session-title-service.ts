@@ -1,6 +1,6 @@
 import { generateSessionTitleFromMessages } from "@atlas/agent";
 import type { ChatMessage, UserConfig } from "@atlas/core";
-import type { DatabaseAdapter } from "@atlas/db";
+import type { DatabaseAdapter, StoredProfileRecord } from "@atlas/db";
 import { createProviderForInstance } from "../providers/create";
 import { resolveProfileProviderSelection } from "./provider-instance-helpers";
 
@@ -13,7 +13,8 @@ export class SessionTitleService {
     private readonly db: DatabaseAdapter,
     private readonly getUserConfig: (
       orgId: string
-    ) => UserConfig | null | Promise<UserConfig | null>
+    ) => UserConfig | null | Promise<UserConfig | null>,
+    private readonly providerFactory: typeof createProviderForInstance = createProviderForInstance
   ) {}
 
   scheduleSessionTitleGeneration(sessionId: string): void {
@@ -25,7 +26,7 @@ export class SessionTitleService {
     });
   }
 
-  private async generateSessionTitle(sessionId: string): Promise<void> {
+  async generateSessionTitle(sessionId: string): Promise<void> {
     if (this.inFlight.has(sessionId)) {
       return;
     }
@@ -39,6 +40,18 @@ export class SessionTitleService {
         return;
       }
 
+      const profile = await this.db.getProfile(session.profileId);
+
+      if (!(session.orgId && profile?.orgId === session.orgId)) {
+        return;
+      }
+
+      const organization = await this.db.getOrganizationById(profile.orgId);
+
+      if (!organization || organization.archivedAt) {
+        return;
+      }
+
       const storedMessages = await this.db.listMessagesForSession(sessionId);
       const messages = storedMessages.map(
         (record) => record.payload as ChatMessage
@@ -48,17 +61,21 @@ export class SessionTitleService {
         return;
       }
 
-      const profile = await this.db.getProfile(session.profileId);
-      const userConfig = profile?.orgId
-        ? await this.getUserConfig(profile.orgId)
-        : null;
-      const provider = await this.resolveProviderForProfile(
-        session.profileId,
-        userConfig
-      );
+      const userConfig = await this.getUserConfig(profile.orgId);
+      if (
+        !(await this.isEligibleContext(sessionId, profile.id, profile.orgId))
+      ) {
+        return;
+      }
+      const provider = this.resolveProviderForProfile(profile, userConfig);
 
       if (!provider) {
-        await this.db.updateSessionTitle(sessionId, SESSION_TITLE_FALLBACK);
+        await this.commitTitleIfEligible(
+          sessionId,
+          profile.id,
+          profile.orgId,
+          SESSION_TITLE_FALLBACK
+        );
         return;
       }
 
@@ -66,8 +83,10 @@ export class SessionTitleService {
         provider,
       });
 
-      await this.db.updateSessionTitle(
+      await this.commitTitleIfEligible(
         sessionId,
+        profile.id,
+        profile.orgId,
         title ?? SESSION_TITLE_FALLBACK
       );
     } finally {
@@ -75,17 +94,46 @@ export class SessionTitleService {
     }
   }
 
-  private async resolveProviderForProfile(
+  private async commitTitleIfEligible(
+    sessionId: string,
     profileId: string,
+    orgId: string,
+    title: string
+  ): Promise<void> {
+    if (!(await this.isEligibleContext(sessionId, profileId, orgId))) {
+      return;
+    }
+
+    await this.db.updateSessionTitle(sessionId, title);
+  }
+
+  private async isEligibleContext(
+    sessionId: string,
+    profileId: string,
+    orgId: string
+  ): Promise<boolean> {
+    const [session, profile, organization] = await Promise.all([
+      this.db.getSession(sessionId),
+      this.db.getProfile(profileId),
+      this.db.getOrganizationById(orgId),
+    ]);
+
+    return Boolean(
+      session &&
+        session.title === null &&
+        session.profileId === profileId &&
+        session.orgId === orgId &&
+        profile?.orgId === orgId &&
+        organization &&
+        !organization.archivedAt
+    );
+  }
+
+  private resolveProviderForProfile(
+    profile: StoredProfileRecord,
     userConfig: UserConfig | null
   ) {
     if (!userConfig) {
-      return null;
-    }
-
-    const profile = await this.db.getProfile(profileId);
-
-    if (!profile) {
       return null;
     }
 
@@ -99,7 +147,7 @@ export class SessionTitleService {
       return null;
     }
 
-    return createProviderForInstance(
+    return this.providerFactory(
       selection.instance,
       selection.model,
       process.env

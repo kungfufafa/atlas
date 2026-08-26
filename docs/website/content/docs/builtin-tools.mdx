@@ -38,6 +38,8 @@ If a turn mixes parallel-safe and sequential tools — for example `read_file` a
 
 Custom JavaScript tools under `~/.atlas/tools/` default to sequential. Export `parallelSafe = true` from the module to opt in.
 
+Custom JavaScript tools also default to no automatic retries. For an idempotent tool, export `retrySafe = true` to retry transient failures at most twice, after 500 ms and 1 second. Do not enable it for payments, messages, record creation, or any operation that could repeat a side effect.
+
 Parallel execution speeds up multi-file research and lets a parent agent delegate several independent `sub_agent` tasks at once. See [`sub_agent`](#sub_agent) below.
 
 ## Default assignments
@@ -93,6 +95,14 @@ They are not a separate builtin. Agents use `write_file` or `write_docx` with th
 On web chat, `write_file` and `write_docx` saves under `artifacts/` appear as attachment chips on the assistant message. Click a chip to open a resizable preview panel with copy, download, and fullscreen:
 
 On **WhatsApp**, Atlas attaches the file in the chat and does not post a share link or filename in the text. On **Telegram** and **Discord**, the same paired saves post a Publish share link after the agent reply; ask to “send the file” when you want a native attachment. See [WhatsApp](/whatsapp#supported-message-types), [Telegram](/telegram/chat#saved-artifacts-and-share-links) and [Discord](/discord#saved-artifacts-and-share-links).
+
+### Edit an artifact manually
+
+Workspace Admins and Superadmins can open a Markdown (`.md`, `.markdown`), CSV, or TSV artifact in **Files → Artifacts** or from its web-chat attachment, then select **Edit**. Markdown opens as source text; CSV and TSV files open as an editable grid. Select **Save** to refresh the preview or **Cancel** to discard the draft.
+
+Atlas detects when the file changed after you started editing and keeps your draft instead of overwriting the newer version. Dashboard editing is limited to UTF-8 files up to 2 MB, 500 rows, and 50 columns. A larger or truncated preview remains available but its Edit action is disabled. Values beginning with spreadsheet formula characters are stored as text to prevent formulas from running when the CSV or TSV is opened elsewhere.
+
+Published links are snapshots. Editing the source artifact does not change an existing public link; publish it again when you want to share the new version.
 
 | Content type | Preview behavior |
 |--------------|------------------|
@@ -318,7 +328,7 @@ Run a one-off shell command in the profile workspace and return stdout, stderr, 
 
 **Scope:** Profile workspace only. Do not use `bash` to create persistent tools or `.sh` wrappers — register JavaScript tools under `~/.atlas/tools/` instead.
 
-**Availability:** When assigned to the profile. Super Agent receives `bash` by default. Required for the [coding agent](/coding-agent) workflow and the opt-in [agent-browser](/agent-browser) skill.
+**Availability:** When assigned to the profile. Super Agent receives `bash` by default. Required for the [coding agent](/coding-agent) workflow and the opt-in [agent-browser](/agent-browser) skill. Browser runs inherit optional host `AGENT_BROWSER_EXECUTABLE_PATH` / `AGENT_BROWSER_ARGS` when the operator configures CloakBrowser.
 
 ### `sub_agent`
 
@@ -342,7 +352,7 @@ Multiple `sub_agent` calls in one turn can run **in parallel** when the model ba
 - One level of nesting — sub-agents cannot call `sub_agent` again
 - No persisted child chat session — audit via parent tool result + server logs
 - Child runs share the profile workspace; side effects persist even if the parent times out
-- Default timeout counts toward the parent web stream budget (10 minute total turn limit)
+- The sub-agent timeout still counts toward the parent chat stream budget (24 hours by default; self-hosted operators can lower it with `ATLAS_CHAT_STREAM_TIMEOUT_MS`)
 
 **Availability:** When assigned to the profile (opt-in; not part of default custom profile assignments).
 

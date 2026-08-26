@@ -16,6 +16,7 @@ export * from "./org-profiles";
 export * from "./seed";
 export * from "./skill-rank-fts5";
 export * from "./types";
+export * from "./workspace-settings";
 
 export interface Database {
   adapter: DatabaseAdapter;

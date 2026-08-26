@@ -26,6 +26,7 @@ import type {
   ChangePasswordRequest,
   CloneProfileRequest,
   CloneProfileResponse,
+  CodingHarnessSettingsResponse,
   CompactionResponse,
   ComposioConnectRequest,
   ComposioConnectResponse,
@@ -41,6 +42,7 @@ import type {
   CreateProfileRequest,
   CreateProviderRequest,
   CreateProviderResponse,
+  CreateSessionRequest,
   CreateSessionResponse,
   CreateSkillRequest,
   CreateTaskRequest,
@@ -54,6 +56,7 @@ import type {
   DraftAutomationResponse,
   DraftTaskPromptRequest,
   DraftTaskPromptResponse,
+  EditableArtifactResponse,
   EmailSettingsResponse,
   GenerateImageRequest,
   GenerateImageResponse,
@@ -80,6 +83,7 @@ import type {
   ListProfilesResponse,
   ListProvidersResponse,
   ListSessionsResponse,
+  ListSkillCuratorScheduleOrgsResponse,
   ListSkillProposalsResponse,
   ListSkillSuggestionsResponse,
   ListSkillsResponse,
@@ -112,6 +116,9 @@ import type {
   PreviewMetadata,
   PreviewOptions,
   PreviewOrgInviteResponse,
+  ProfilePackImportRequest,
+  ProfilePackImportResponse,
+  ProfilePackPreviewResponse,
   ProfileResponse,
   PublishArtifactShareRequest,
   PublishArtifactShareResponse,
@@ -133,6 +140,9 @@ import type {
   SetActiveOrgRequest,
   SetupAuthRequest,
   SetupRestoreDataImportResponse,
+  SkillCuratorDueRunResponse,
+  SkillCuratorRunResult,
+  SkillCuratorStatusResponse,
   SkillProposalResponse,
   SkillResponse,
   SoulStackResponse,
@@ -165,6 +175,7 @@ import type {
   UpdateAutomationRequest,
   UpdateComposioSettingsRequest,
   UpdateDiscordSettingsRequest,
+  UpdateEditableArtifactRequest,
   UpdateEmailSettingsRequest,
   UpdateImageGenerationRequest,
   UpdateMcpServerRequest,
@@ -176,6 +187,7 @@ import type {
   UpdateProfileRequest,
   UpdateProviderRequest,
   UpdateProviderResponse,
+  UpdateSessionRequest,
   UpdateSoulFileRequest,
   UpdateTaskRequest,
   UpdateTelegramSettingsRequest,
@@ -276,6 +288,29 @@ export class AtlasClient {
     return this.request<TokenOptimizationResponse>("/v1/token-optimization");
   }
 
+  async getCodingHarnessSettings(
+    orgId?: string
+  ): Promise<CodingHarnessSettingsResponse> {
+    return this.request<CodingHarnessSettingsResponse>(
+      "/v1/settings/coding-harnesses",
+      orgId ? { headers: { "X-Org-Id": orgId } } : undefined
+    );
+  }
+
+  async setCodingHarnessSettings(
+    providerPassthroughEnabled: boolean,
+    orgId?: string
+  ): Promise<CodingHarnessSettingsResponse> {
+    return this.request<CodingHarnessSettingsResponse>(
+      "/v1/settings/coding-harnesses",
+      {
+        body: JSON.stringify({ providerPassthroughEnabled }),
+        ...(orgId ? { headers: { "X-Org-Id": orgId } } : {}),
+        method: "PUT",
+      }
+    );
+  }
+
   async getUsageReport(params: {
     groupBy: LlmUsageReportGroupBy;
     from?: string;
@@ -344,6 +379,55 @@ export class AtlasClient {
       filename:
         readContentDispositionFilename(response.headers) ?? "atlas-export.zip",
     };
+  }
+
+  async exportProfilePack(profileId: string): Promise<{
+    data: ArrayBuffer;
+    filename: string;
+  }> {
+    const response = await this.fetchRaw(
+      `/v1/profiles/${encodeURIComponent(profileId)}/pack/export`
+    );
+    return {
+      data: await response.arrayBuffer(),
+      filename:
+        readContentDispositionFilename(response.headers) ??
+        "atlas-profile-export.zip",
+    };
+  }
+
+  async previewProfilePackImport(
+    data: Blob | BinaryBufferSource | string,
+    options: { name?: string } = {}
+  ): Promise<ProfilePackPreviewResponse> {
+    const request: { data: string; name?: string } = {
+      data: await encodeArchiveData(data),
+    };
+    if (options.name?.trim()) {
+      request.name = options.name.trim();
+    }
+    return this.request<ProfilePackPreviewResponse>(
+      "/v1/profiles/pack/import/preview",
+      {
+        body: JSON.stringify(request),
+        method: "POST",
+      }
+    );
+  }
+
+  async importProfilePack(
+    data: Blob | BinaryBufferSource | string,
+    options: { confirm: boolean; name?: string }
+  ): Promise<ProfilePackImportResponse> {
+    const request: ProfilePackImportRequest = {
+      confirm: options.confirm,
+      data: await encodeArchiveData(data),
+      ...(options.name?.trim() ? { name: options.name.trim() } : {}),
+    };
+    return this.request<ProfilePackImportResponse>("/v1/profiles/pack/import", {
+      body: JSON.stringify(request),
+      method: "POST",
+    });
   }
 
   async previewDataImport(
@@ -469,16 +553,29 @@ export class AtlasClient {
     return this.request(`/v1/model-catalogs/${encodeURIComponent(catalogId)}`);
   }
 
-  async discoverModels(request: {
-    baseUrl?: string;
-    apiKey?: string;
-    providerId?: string;
-    provider?: "ollama" | "openai_compatible" | "fireworks" | "opencode_go";
-    hostMode?: "local" | "cloud";
-  }): Promise<ModelsResponse> {
+  async discoverModels(
+    request: {
+      baseUrl?: string;
+      apiKey?: string;
+      providerId?: string;
+      provider?:
+        | "ollama"
+        | "openai_compatible"
+        | "fireworks"
+        | "opencode_go"
+        | "minimax"
+        | "minimax_cn"
+        | "xai"
+        | "zhipu"
+        | "zhipu_cn";
+      hostMode?: "local" | "cloud";
+    },
+    options: { signal?: AbortSignal } = {}
+  ): Promise<ModelsResponse> {
     return this.request<ModelsResponse>("/v1/models/discover", {
       body: JSON.stringify(request),
       method: "POST",
+      signal: options.signal,
     });
   }
 
@@ -535,21 +632,29 @@ export class AtlasClient {
 
   async createSession(
     channel: AgentChannel,
-    options: {
-      profileId?: string;
-      externalPrincipal?: { channelUserId: string };
-    } = {}
+    options: Omit<CreateSessionRequest, "channel"> = {}
   ): Promise<RemoteChatSession> {
     const response = await this.request<CreateSessionResponse>("/v1/sessions", {
       body: JSON.stringify({
         channel,
         externalPrincipal: options.externalPrincipal,
+        model: options.model,
         profileId: options.profileId,
       }),
       method: "POST",
     });
 
     return this.createChatSession(response.sessionId, channel);
+  }
+
+  async updateSession(
+    sessionId: string,
+    request: UpdateSessionRequest
+  ): Promise<void> {
+    await this.request<void>(`/v1/sessions/${encodeURIComponent(sessionId)}`, {
+      body: JSON.stringify(request),
+      method: "PATCH",
+    });
   }
 
   async getSessionMessages(
@@ -982,9 +1087,12 @@ export class AtlasClient {
 
   async listProfileArtifacts(
     profileId: string,
-    options: { limit?: number; offset?: number } = {}
+    options: { folder?: string; limit?: number; offset?: number } = {}
   ): Promise<ListArtifactsResponse> {
     const query = new URLSearchParams();
+    if (options.folder !== undefined) {
+      query.set("folder", options.folder);
+    }
     if (options.limit !== undefined) {
       query.set("limit", String(options.limit));
     }
@@ -1005,6 +1113,31 @@ export class AtlasClient {
     return this.request<DeleteArtifactResponse>(
       `/v1/profiles/${encodeURIComponent(profileId)}/artifacts?${query.toString()}`,
       { method: "DELETE" }
+    );
+  }
+
+  async getEditableProfileArtifact(
+    profileId: string,
+    artifactPath: string
+  ): Promise<EditableArtifactResponse> {
+    const query = new URLSearchParams({ path: artifactPath });
+    return this.request<EditableArtifactResponse>(
+      `/v1/profiles/${encodeURIComponent(profileId)}/artifacts/editable?${query.toString()}`
+    );
+  }
+
+  async updateEditableProfileArtifact(
+    profileId: string,
+    artifactPath: string,
+    request: UpdateEditableArtifactRequest
+  ): Promise<EditableArtifactResponse> {
+    const query = new URLSearchParams({ path: artifactPath });
+    return this.request<EditableArtifactResponse>(
+      `/v1/profiles/${encodeURIComponent(profileId)}/artifacts/editable?${query.toString()}`,
+      {
+        body: JSON.stringify(request),
+        method: "PUT",
+      }
     );
   }
 
@@ -1472,16 +1605,32 @@ export class AtlasClient {
     );
   }
 
+  async listSkillCuratorOrgs(): Promise<ListSkillCuratorScheduleOrgsResponse> {
+    return this.request<ListSkillCuratorScheduleOrgsResponse>(
+      "/v1/internal/curator/orgs"
+    );
+  }
+
   async runAutomationInternal(
     automationId: string,
-    fireId: string
+    fireId: string,
+    orgId: string
   ): Promise<void> {
     await this.request(
-      `/v1/internal/automations/${encodeURIComponent(automationId)}/run`,
+      `/v1/internal/automations/${encodeURIComponent(automationId)}/run?orgId=${encodeURIComponent(orgId)}`,
       withStreamFetchIdle({
         body: JSON.stringify({ fireId }),
         method: "POST",
       })
+    );
+  }
+
+  async runSkillCuratorDueInternal(
+    orgId: string
+  ): Promise<SkillCuratorDueRunResponse> {
+    return this.request<SkillCuratorDueRunResponse>(
+      `/v1/internal/curator/orgs/${encodeURIComponent(orgId)}/run-due`,
+      { method: "POST" }
     );
   }
 
@@ -2133,6 +2282,15 @@ export class AtlasClient {
     return response;
   }
 
+  async archivePlatformOrganization(
+    orgId: string
+  ): Promise<OrganizationResponse> {
+    return this.request<OrganizationResponse>(
+      `/v1/platform/orgs/${encodeURIComponent(orgId)}`,
+      { method: "DELETE" }
+    );
+  }
+
   async listPlatformOrganizations(): Promise<ListOrganizationsResponse> {
     return this.request<ListOrganizationsResponse>("/v1/platform/orgs");
   }
@@ -2397,6 +2555,29 @@ export class AtlasClient {
     return this.request<ListSkillProposalsResponse>(
       `/v1/orgs/${encodeURIComponent(orgId)}/skill-proposals${query ? `?${query}` : ""}`,
       { headers: { "X-Org-Id": orgId } }
+    );
+  }
+
+  async getSkillCuratorStatus(
+    orgId: string
+  ): Promise<SkillCuratorStatusResponse> {
+    return this.request<SkillCuratorStatusResponse>(
+      `/v1/orgs/${encodeURIComponent(orgId)}/skill-curator`,
+      { headers: { "X-Org-Id": orgId } }
+    );
+  }
+
+  async runSkillCurator(
+    orgId: string,
+    profileId?: string
+  ): Promise<SkillCuratorRunResult> {
+    return this.request<SkillCuratorRunResult>(
+      `/v1/orgs/${encodeURIComponent(orgId)}/skill-curator/consolidate`,
+      {
+        body: JSON.stringify(profileId ? { profileId } : {}),
+        headers: { "X-Org-Id": orgId },
+        method: "POST",
+      }
     );
   }
 

@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { parseProviderName, resolveProvider } from "./provider-resolution";
+import {
+  apiKeyEnvVarForProvider,
+  parseProviderName,
+  resolveProvider,
+} from "./provider-resolution";
 
 describe("parseProviderName", () => {
   test("accepts known providers", () => {
@@ -11,11 +15,37 @@ describe("parseProviderName", () => {
     expect(parseProviderName("deepseek")).toBe("deepseek");
     expect(parseProviderName("cerebras")).toBe("cerebras");
     expect(parseProviderName("fireworks")).toBe("fireworks");
+    expect(parseProviderName("cloudflare")).toBe("cloudflare");
+    expect(parseProviderName("minimax")).toBe("minimax");
+    expect(parseProviderName("minimax_cn")).toBe("minimax_cn");
+    expect(parseProviderName("xai")).toBe("xai");
+    expect(parseProviderName("zhipu")).toBe("zhipu");
+    expect(parseProviderName("zhipu_cn")).toBe("zhipu_cn");
   });
 
   test("rejects unknown values", () => {
     expect(parseProviderName("azure")).toBeNull();
     expect(parseProviderName("")).toBeNull();
+  });
+});
+
+describe("native provider environment keys", () => {
+  const cases = [
+    ["cloudflare", "CLOUDFLARE_API_KEY"],
+    ["minimax", "MINIMAX_API_KEY"],
+    ["minimax_cn", "MINIMAX_CN_API_KEY"],
+    ["xai", "XAI_API_KEY"],
+    ["zhipu", "ZHIPU_API_KEY"],
+    ["zhipu_cn", "ZHIPU_CN_API_KEY"],
+  ] as const;
+
+  test("maps each provider to an isolated key and resolves it", () => {
+    for (const [provider, envName] of cases) {
+      expect(apiKeyEnvVarForProvider(provider)).toBe(envName);
+      expect(resolveProvider({ env: { [envName]: "test-key" } })).toBe(
+        provider
+      );
+    }
   });
 });
 

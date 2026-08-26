@@ -25,6 +25,7 @@ export function resolveOllamaBaseUrl(
 export function createOllamaProvider(options: {
   apiKey: string;
   model: string;
+  providerReplayRevision?: string;
   instance?: ProviderInstance | null;
 }): ProviderClient {
   const instance = options.instance;
@@ -41,7 +42,9 @@ export function createOllamaProvider(options: {
     baseUrl: resolveOllamaBaseUrl(instance),
     displayName: instance?.label?.trim() || defaultOllamaLabel(hostMode),
     model: options.model,
+    providerInstanceId: instance?.id,
     providerName: "ollama",
+    providerReplayRevision: options.providerReplayRevision,
     supportsThinking: compatibleModelSupportsThinking(
       options.model,
       instance?.customModels

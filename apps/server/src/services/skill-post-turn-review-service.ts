@@ -21,6 +21,8 @@ export type PostTurnReviewSkipReason =
   | "session_missing"
   | "profile_missing"
   | "org_missing"
+  | "org_archived"
+  | "org_mismatch"
   | "channel_not_interactive"
   | "flag_disabled"
   | "manage_skills_unassigned"
@@ -48,6 +50,13 @@ export interface PostTurnReviewRunnerContext {
 export type PostTurnReviewRunner = (
   context: PostTurnReviewRunnerContext
 ) => Promise<SkillPostTurnReviewOutcome | void>;
+
+export type PostTurnReviewPersistence = () => Promise<void>;
+
+export type PostTurnReviewPersistencePlanner = (
+  context: PostTurnReviewRunnerContext,
+  outcome: Exclude<SkillPostTurnReviewOutcome, { action: "noop" }>
+) => Promise<PostTurnReviewPersistence | void>;
 
 export function countToolCallsInTurn(turnMessages: ChatMessage[]): number {
   let count = 0;
@@ -136,6 +145,7 @@ export function evaluatePostTurnReviewTurnEligibility(
 
 export class SkillPostTurnReviewService {
   private readonly inFlight = new Set<string>();
+  private persistencePlanner: PostTurnReviewPersistencePlanner | null = null;
   private runner: PostTurnReviewRunner;
 
   constructor(
@@ -148,9 +158,13 @@ export class SkillPostTurnReviewService {
     this.runner = runner ?? ((context) => this.reviewTurnWithLlm(context));
   }
 
-  /** Test/injection hook — U4 wraps this to stage/suggest after the LLM outcome. */
+  /** Test/injection hook for the outcome-generation phase. */
   setRunner(runner: PostTurnReviewRunner): void {
     this.runner = runner;
+  }
+
+  setPersistencePlanner(planner: PostTurnReviewPersistencePlanner): void {
+    this.persistencePlanner = planner;
   }
 
   schedulePostTurnSkillReview(sessionId: string): void {
@@ -162,6 +176,16 @@ export class SkillPostTurnReviewService {
   async reviewTurnWithLlm(
     context: PostTurnReviewRunnerContext
   ): Promise<SkillPostTurnReviewOutcome> {
+    const organization = await this.db.getOrganizationById(context.orgId);
+    const profile = await this.db.getProfile(context.profileId);
+    if (
+      !organization ||
+      organization.archivedAt ||
+      profile?.orgId !== context.orgId
+    ) {
+      return { action: "noop", reason: "organization_inactive" };
+    }
+
     const provider = await this.resolveProviderForProfile(context.profileId);
     if (!provider) {
       return { action: "noop", reason: "provider_unavailable" };
@@ -212,9 +236,16 @@ export class SkillPostTurnReviewService {
         return "profile_missing";
       }
 
+      if (session.orgId !== profile.orgId) {
+        return "org_mismatch";
+      }
+
       const org = await this.db.getOrganizationById(profile.orgId);
       if (!org) {
         return "org_missing";
+      }
+      if (org.archivedAt) {
+        return "org_archived";
       }
 
       const enabled = resolveSkillPostTurnReviewEnabled({
@@ -240,14 +271,40 @@ export class SkillPostTurnReviewService {
         return eligibility.reason ?? "turn_not_complex";
       }
 
-      await this.runner({
+      const context: PostTurnReviewRunnerContext = {
         messages,
         orgId: profile.orgId,
         profileId: profile.id,
         sessionId,
         turnMessages,
         userId: session.userId ?? null,
-      });
+      };
+      const beforeRunnerReason = await this.recheckActiveContext(context);
+      if (beforeRunnerReason) {
+        return beforeRunnerReason;
+      }
+
+      const outcome = await this.runner(context);
+      if (!outcome || outcome.action === "noop" || !this.persistencePlanner) {
+        return "ran";
+      }
+
+      const afterRunnerReason = await this.recheckActiveContext(context);
+      if (afterRunnerReason) {
+        return afterRunnerReason;
+      }
+
+      const persist = await this.persistencePlanner(context, outcome);
+      if (!persist) {
+        return "ran";
+      }
+
+      const beforePersistenceReason = await this.recheckActiveContext(context);
+      if (beforePersistenceReason) {
+        return beforePersistenceReason;
+      }
+
+      await persist();
 
       return "ran";
     } finally {
@@ -277,5 +334,36 @@ export class SkillPostTurnReviewService {
     }
 
     return createProviderForInstance(selection.instance, selection.model);
+  }
+
+  private async recheckActiveContext(
+    context: PostTurnReviewRunnerContext
+  ): Promise<PostTurnReviewSkipReason | null> {
+    const [session, profile, organization] = await Promise.all([
+      this.db.getSession(context.sessionId),
+      this.db.getProfile(context.profileId),
+      this.db.getOrganizationById(context.orgId),
+    ]);
+
+    if (!session) {
+      return "session_missing";
+    }
+    if (!profile?.orgId) {
+      return "profile_missing";
+    }
+    if (
+      session.profileId !== context.profileId ||
+      session.orgId !== context.orgId ||
+      profile.orgId !== context.orgId
+    ) {
+      return "org_mismatch";
+    }
+    if (!organization) {
+      return "org_missing";
+    }
+    if (organization.archivedAt) {
+      return "org_archived";
+    }
+    return null;
   }
 }

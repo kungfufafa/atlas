@@ -57,6 +57,35 @@ describe("ensureLocalClientAccess", () => {
     expect(await db.countHumanUsers()).toBe(0);
   });
 
+  test("does not add local-client membership to archived workspaces", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await db.upsertOrganization({
+      archivedAt: now,
+      createdAt: now,
+      id: "org_archived",
+      name: "Archived",
+      slug: "archived",
+      updatedAt: now,
+    });
+    await db.upsertOrganization({
+      createdAt: now,
+      id: "org_active",
+      name: "Active",
+      slug: "active",
+      updatedAt: now,
+    });
+
+    await ensureLocalClientAccess(db);
+
+    expect(
+      await db.getOrgMember("org_archived", LOCAL_CLIENT_USER_ID)
+    ).toBeNull();
+    expect(
+      await db.getOrgMember("org_active", LOCAL_CLIENT_USER_ID)
+    ).toMatchObject({ role: "admin" });
+  });
+
   test("creates the local client user with a non-placeholder password hash", async () => {
     const db = createInMemoryDatabaseAdapter();
 

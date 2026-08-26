@@ -79,6 +79,24 @@ export function isOpenRouterModelFree(
   return prompt === 0 && completion === 0;
 }
 
+// OpenRouter uses a far-future date on live stealth/preview models instead of
+// leaving expiration_date empty.
+const OPENROUTER_SENTINEL_EXPIRATION_YEAR = 2090;
+
+export function isOpenRouterModelDeprecated(
+  expirationDate: string | null | undefined
+): boolean {
+  if (!expirationDate) {
+    return false;
+  }
+
+  const year = Number.parseInt(expirationDate.slice(0, 4), 10);
+
+  // Preserve the previous conservative behavior for malformed non-empty
+  // values; only a recognizable far-future sentinel is treated as live.
+  return !Number.isFinite(year) || year < OPENROUTER_SENTINEL_EXPIRATION_YEAR;
+}
+
 export function normalizeOpenRouterModel(
   entry: OpenRouterApiModel
 ): OpenRouterModelRow {
@@ -88,7 +106,7 @@ export function normalizeOpenRouterModel(
 
   return {
     contextLength: entry.context_length ?? 0,
-    deprecated: entry.expiration_date != null,
+    deprecated: isOpenRouterModelDeprecated(entry.expiration_date),
     description: truncateDescription(entry.description ?? ""),
     id: entry.id,
     isFree: isOpenRouterModelFree(entry.pricing),

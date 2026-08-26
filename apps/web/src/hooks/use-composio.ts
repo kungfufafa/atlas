@@ -9,6 +9,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { client } from "@/lib/client";
+import { validateComposioOAuthRedirect } from "@/lib/composio-oauth";
 import { queryKeys } from "@/lib/query-keys";
 
 export const composioSettingsQueryOptions = queryOptions({
@@ -67,6 +68,18 @@ export function useDisableComposioToolkit() {
       client.disableComposioToolkit(toolkitSlug),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.composio.toolkits });
+    },
+  });
+}
+
+export function useConnectComposioToolkit() {
+  return useMutation({
+    mutationFn: async (toolkitSlug: string) => {
+      const response = await client.connectComposioToolkit(toolkitSlug);
+      return validateComposioOAuthRedirect(response.redirectUrl);
+    },
+    onSuccess: (redirectUrl) => {
+      window.location.assign(redirectUrl);
     },
   });
 }

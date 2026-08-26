@@ -6,7 +6,9 @@ import {
   createAgentHarness,
   draftTaskPromptFromFields,
   executeToolCall,
+  expandLearnInLastUserMessage,
   suggestToolParamsFromPrompt,
+  tryParseLearnCommand,
 } from "@atlas/agent";
 import type {
   AgentBrowserStatusResponse,
@@ -62,6 +64,7 @@ import type {
   ProfileResponse,
   ProviderChatOptions,
   ProviderClient,
+  ProviderInstance,
   RunToolResponse,
   SendEmailTestResponse,
   SkillResponse,
@@ -118,6 +121,7 @@ import {
   DEFAULT_THINKING_ENABLED,
   DEFAULT_TIMEZONE,
   DISCORD_BOT_TOKEN_IN_USE_MESSAGE,
+  defaultDiscoveryBaseUrl,
   defaultOllamaBaseUrl,
   deleteArtifactFile,
   discordBotTokenUsedByAnotherWorkspace,
@@ -128,9 +132,11 @@ import {
   getProfileSoulDir,
   getResolvedSoulStatus,
   initSoulDirectory,
+  isDiscoveryModelProvider,
   isEmailConfigComplete,
   isProviderConfigured,
   isServiceAccountUserId,
+  isValidTimezone,
   isWritableSoulFileKey,
   listArtifacts,
   loadComposioSettingsPublic,
@@ -149,6 +155,7 @@ import {
   messageContentHasImages,
   migrateLegacyChannelToWorkspace,
   nanoid,
+  normalizeBaseUrl,
   normalizeUserContextContent,
   type OrgRole,
   ollamaRequiresApiKey,
@@ -177,9 +184,9 @@ import {
   TELEGRAM_BOT_TOKEN_IN_USE_MESSAGE,
   telegramBotTokenUsedByAnotherWorkspace,
   USER_CONTEXT_TEMPLATE,
-  validateTimezone,
   WHATSAPP_PHONE_IN_USE_MESSAGE,
   whatsAppPhoneUsedByAnotherWorkspace,
+  withProfileSoulMutationLock,
   writeSoulFile,
 } from "@atlas/core";
 import { canAccessSuperAgentProfile } from "@atlas/core/profiles";
@@ -187,6 +194,7 @@ import {
   appendRuntimeProfileRules,
   type DatabaseAdapter,
   type LlmUsageDimensions,
+  mergeWorkspaceSettings,
   type StoredProfileRecord,
   type StoredSessionRecord,
   type StoredTaskRunRecord,
@@ -206,6 +214,7 @@ import {
   getModelById,
   getModelsForProviderInstance,
   isCostEstimated,
+  readApiKeyForInstance,
   withLiveOpenCodeGoCatalog,
 } from "../providers";
 import { isAllowedImageGenerationSelection } from "../providers/models";
@@ -255,6 +264,7 @@ import {
   type CodingAgentHarnessStatus,
   getCodingHarnessInstallCommand,
   listInstalledCodingAgentHarnesses,
+  loadCodingAgentProviderPassthroughForOrg,
 } from "./coding-agent-harness-service";
 import type { ComposioService } from "./composio-service";
 import {
@@ -276,11 +286,11 @@ import {
   VISION_MODEL_REQUIRED_MESSAGE,
 } from "./image-vision-fallback";
 import {
-  invalidateJavascriptModuleCache,
   loadJavascriptTool,
-  resolveJavascriptModulePath,
+  validateJavascriptToolModule,
 } from "./javascript-tool-loader";
 import { composeKnowledgeBaseTurnGrounding } from "./knowledge-base-grounding";
+import { shouldExpandLearnCommand } from "./learn-command";
 import { LearningPlaneService } from "./learning-plane-service";
 import type { LlmUsageTracker } from "./llm-usage-tracker";
 import type { McpClientManager } from "./mcp-client-manager";
@@ -293,6 +303,7 @@ import {
   applyProviderInstanceUpdate,
   buildProviderInstanceFromCreateRequest,
   countModelsForInstance,
+  decodeStoredModelSelection,
   mergeModelsForConfig,
   mergeModelsForConfigAsync,
   resolveDefaultModelForInstance,
@@ -325,6 +336,8 @@ import {
 interface StoredSession {
   channel: AgentChannel;
   isPlatformAdmin: boolean;
+  modelOverride: string | null;
+  orgId: string;
   orgRole: OrgRole | null;
   profileId: string;
   session: AgentChatSession;
@@ -336,6 +349,7 @@ export interface SessionAccessOptions {
   excludeSuperAgent?: boolean;
   externalPrincipal?: { channelUserId: string };
   isPlatformAdmin?: boolean;
+  model?: string | null;
   orgRole?: OrgRole | null;
 }
 
@@ -343,6 +357,33 @@ export interface SessionActor {
   isPlatformAdmin?: boolean;
   orgRole?: OrgRole | null;
   userId: string;
+}
+
+function providerBaseUrlChanged(
+  instance: ProviderInstance,
+  nextBaseUrl: string | undefined
+): boolean {
+  if (nextBaseUrl === undefined) {
+    return false;
+  }
+
+  return (
+    normalizeBaseUrl(nextBaseUrl) !== normalizeBaseUrl(instance.baseUrl ?? "")
+  );
+}
+
+function requireCredentialForProviderEndpointChange(
+  instance: ProviderInstance,
+  nextBaseUrl: string | undefined,
+  replacementApiKey: string | undefined
+): void {
+  if (
+    providerBaseUrlChanged(instance, nextBaseUrl) &&
+    readApiKeyForInstance(instance, process.env)?.trim() &&
+    !replacementApiKey?.trim()
+  ) {
+    throw new Error("Re-enter the API key when changing a provider base URL.");
+  }
 }
 
 export class AgentService {
@@ -374,10 +415,12 @@ export class AgentService {
   readonly learningPlane: LearningPlaneService;
   readonly subagents: SubagentService;
   private readonly sessions = new Map<string, StoredSession>();
+  private readonly sessionInvalidationVersions = new Map<string, number>();
   private readonly sessionTitleService: SessionTitleService;
   private skillPostTurnReviewService: SkillPostTurnReviewService;
   private _providerConfigured: boolean;
   private providerSettingsPromise: Promise<void> | null = null;
+  private readonly orgConfigMutationLocks = new Map<string, Promise<unknown>>();
   private visionSettingsPromise: Promise<void> | null = null;
   private transcriptionSettingsPromise: Promise<void> | null = null;
   private imageGenerationSettingsPromise: Promise<void> | null = null;
@@ -411,7 +454,12 @@ export class AgentService {
     this.todoTools = createTodoTools(this.agentTodoState);
     this.superAgentTools = createSuperAgentTools(
       this.profileService,
-      this.superAgentSessionState
+      this.superAgentSessionState,
+      {
+        onProfileUpdated: (profileId) => {
+          this.invalidateProfileSessions(profileId);
+        },
+      }
     );
     this.orgMemoryTools = createOrgMemoryTools(this.getOrgMemoryService());
     this._providerConfigured =
@@ -435,15 +483,20 @@ export class AgentService {
     userId?: string | null;
     profileId: string;
     userConfig: UserConfig | null;
-    modelId?: string | null;
+    modelSelection?: string | null;
   }): { dimensions: LlmUsageDimensions; pricing: PricingContext } | undefined {
-    const instance = getActiveProviderInstance(options.userConfig);
+    const resolved = this.resolveConfiguredProviderSelection(
+      options.userConfig,
+      options.modelSelection
+    );
+    const instance =
+      resolved?.instance ?? getActiveProviderInstance(options.userConfig);
     if (!instance) {
       return;
     }
 
     const modelId =
-      options.modelId?.trim() ||
+      resolved?.model ||
       resolveDefaultModelForInstance(instance) ||
       instance.type;
 
@@ -554,6 +607,28 @@ export class AgentService {
     return user?.isPlatformAdmin === true;
   }
 
+  private async canActorUpdateSessionModel(
+    orgId: string,
+    record: StoredSessionRecord,
+    actor: SessionActor
+  ): Promise<boolean> {
+    const actorUserId = actor.userId.trim();
+    if (!actorUserId) {
+      return false;
+    }
+
+    const [orgRole, isPlatformAdmin] = await Promise.all([
+      this.resolveOrgRole(orgId, actorUserId),
+      this.resolveIsPlatformAdmin(actorUserId),
+    ]);
+    const ownsSession = Boolean(record.userId) && record.userId === actorUserId;
+    return (
+      isPlatformAdmin ||
+      orgRole === "admin" ||
+      (orgRole === "member" && ownsSession)
+    );
+  }
+
   setAutomationTools(tools: ToolDefinition[]): void {
     this.automationTools = tools;
     this.sessions.clear();
@@ -600,9 +675,9 @@ export class AgentService {
   }
 
   /**
-   * U4: once both services are injected, review outcomes from the LLM runner
-   * are turned into a staged proposal (write-approval gate on) or a pending
-   * suggestion (gate off) instead of being discarded.
+   * Once both services are injected, plan where a generated review outcome
+   * will be stored. The post-turn service revalidates the active organization
+   * after this planning step and immediately before running the returned write.
    */
   private wireSkillPostTurnReviewOutcomeHandling(): void {
     const proposals = this.skillProposalService;
@@ -611,51 +686,57 @@ export class AgentService {
       return;
     }
 
-    this.skillPostTurnReviewService.setRunner(async (context) => {
-      const outcome =
-        await this.skillPostTurnReviewService.reviewTurnWithLlm(context);
-      if (outcome.action === "noop") {
-        return outcome;
-      }
+    this.skillPostTurnReviewService.setPersistencePlanner(
+      async (context, outcome) => {
+        try {
+          const writeApprovalRequired = await proposals.isWriteApprovalRequired(
+            context.orgId,
+            context.profileId
+          );
 
-      try {
-        const writeApprovalRequired = await proposals.isWriteApprovalRequired(
-          context.orgId,
-          context.profileId
-        );
+          const persist = writeApprovalRequired
+            ? () =>
+                proposals.stageProposal({
+                  action: outcome.action,
+                  content:
+                    outcome.action === "create" ? outcome.content : undefined,
+                  newString:
+                    outcome.action === "patch" ? outcome.newString : undefined,
+                  oldString:
+                    outcome.action === "patch" ? outcome.oldString : undefined,
+                  orgId: context.orgId,
+                  profileId: context.profileId,
+                  proposedByUserId: context.userId,
+                  sessionId: context.sessionId,
+                  skillName: outcome.name,
+                })
+            : () =>
+                suggestions.createSuggestion({
+                  orgId: context.orgId,
+                  outcome,
+                  profileId: context.profileId,
+                  proposedByUserId: context.userId,
+                  sessionId: context.sessionId,
+                });
 
-        if (writeApprovalRequired) {
-          await proposals.stageProposal({
-            action: outcome.action,
-            content: outcome.action === "create" ? outcome.content : undefined,
-            newString:
-              outcome.action === "patch" ? outcome.newString : undefined,
-            oldString:
-              outcome.action === "patch" ? outcome.oldString : undefined,
-            orgId: context.orgId,
-            profileId: context.profileId,
-            proposedByUserId: context.userId,
-            sessionId: context.sessionId,
-            skillName: outcome.name,
-          });
-        } else {
-          await suggestions.createSuggestion({
-            orgId: context.orgId,
-            outcome,
-            profileId: context.profileId,
-            proposedByUserId: context.userId,
-            sessionId: context.sessionId,
-          });
+          return async () => {
+            try {
+              await persist();
+            } catch (error) {
+              console.error(
+                "Failed to record post-turn skill review outcome:",
+                error
+              );
+            }
+          };
+        } catch (error) {
+          console.error(
+            "Failed to record post-turn skill review outcome:",
+            error
+          );
         }
-      } catch (error) {
-        console.error(
-          "Failed to record post-turn skill review outcome:",
-          error
-        );
       }
-
-      return outcome;
-    });
+    );
   }
 
   getMcpService(): McpService {
@@ -682,11 +763,23 @@ export class AgentService {
     return (await this.getOrgUserConfig(orgId))?.timezone ?? DEFAULT_TIMEZONE;
   }
 
-  async setOrgTimezone(orgId: string, timezone: string): Promise<string> {
-    const normalized = validateTimezone(timezone);
-    const config = await this.getOrgConfigForUpdate(orgId);
-    await this.saveOrgUserConfig(orgId, { ...config, timezone: normalized });
-    return normalized;
+  async setOrgTimezone(
+    orgId: string,
+    timezone: string | undefined
+  ): Promise<string> {
+    const trimmed = timezone?.trim() ?? "";
+    if (!trimmed) {
+      throw new AtlasApiError("Timezone is required.", 400);
+    }
+    if (!isValidTimezone(trimmed)) {
+      throw new AtlasApiError(`Invalid timezone: ${trimmed}`, 400);
+    }
+
+    return this.runSerializedOrgConfigMutation(orgId, async () => {
+      const config = await this.getOrgConfigForUpdate(orgId);
+      await this.saveOrgUserConfig(orgId, { ...config, timezone: trimmed });
+      return trimmed;
+    });
   }
 
   async getOrgThinkingSettings(
@@ -705,18 +798,20 @@ export class AgentService {
     orgId: string,
     input: UpdateThinkingRequest
   ): Promise<ThinkingSettingsResponse> {
-    const config = await this.getOrgConfigForUpdate(orgId);
-    const current = await this.getOrgThinkingSettings(orgId);
-    const thinking = {
-      effort: input.effort ?? current.thinking.effort,
-      enabled: input.enabled,
-    };
-    await this.saveOrgUserConfig(orgId, {
-      ...config,
-      thinkingEffort: thinking.effort,
-      thinkingEnabled: thinking.enabled,
+    return this.runSerializedOrgConfigMutation(orgId, async () => {
+      const config = await this.getOrgConfigForUpdate(orgId);
+      const thinking = {
+        effort:
+          input.effort ?? config.thinkingEffort ?? DEFAULT_THINKING_EFFORT,
+        enabled: input.enabled,
+      };
+      await this.saveOrgUserConfig(orgId, {
+        ...config,
+        thinkingEffort: thinking.effort,
+        thinkingEnabled: thinking.enabled,
+      });
+      return { thinking };
     });
-    return { thinking };
   }
 
   async getOrgVisionSettings(orgId: string): Promise<VisionSettingsResponse> {
@@ -731,19 +826,21 @@ export class AgentService {
     orgId: string,
     input: UpdateVisionRequest
   ): Promise<VisionSettingsResponse> {
-    const config = await this.getOrgConfigForUpdate(orgId);
     const model = input.model?.trim() || null;
-    if (
-      model &&
-      !resolveVisionProviderSelection({ ...config, visionModel: model })
-    ) {
-      throw new AtlasApiError(
-        "Selected image parsing model is unavailable. Choose a vision-capable model.",
-        400
-      );
-    }
-    await this.saveOrgUserConfig(orgId, { ...config, visionModel: model });
-    return { vision: { model } };
+    return this.runSerializedOrgConfigMutation(orgId, async () => {
+      const config = await this.getOrgConfigForUpdate(orgId);
+      if (
+        model &&
+        !resolveVisionProviderSelection({ ...config, visionModel: model })
+      ) {
+        throw new AtlasApiError(
+          "Selected image parsing model is unavailable. Choose a vision-capable model.",
+          400
+        );
+      }
+      await this.saveOrgUserConfig(orgId, { ...config, visionModel: model });
+      return { vision: { model } };
+    });
   }
 
   async getOrgTranscriptionSettings(
@@ -760,25 +857,27 @@ export class AgentService {
     orgId: string,
     input: UpdateTranscriptionRequest
   ): Promise<TranscriptionSettingsResponse> {
-    const config = await this.getOrgConfigForUpdate(orgId);
     const model = input.model?.trim() || null;
-    if (
-      model &&
-      !resolveTranscriptionProviderSelection({
+    return this.runSerializedOrgConfigMutation(orgId, async () => {
+      const config = await this.getOrgConfigForUpdate(orgId);
+      if (
+        model &&
+        !resolveTranscriptionProviderSelection({
+          ...config,
+          transcriptionModel: model,
+        })
+      ) {
+        throw new AtlasApiError(
+          "Selected audio transcription model is unavailable. Choose an OpenAI Whisper model.",
+          400
+        );
+      }
+      await this.saveOrgUserConfig(orgId, {
         ...config,
         transcriptionModel: model,
-      })
-    ) {
-      throw new AtlasApiError(
-        "Selected audio transcription model is unavailable. Choose an OpenAI Whisper model.",
-        400
-      );
-    }
-    await this.saveOrgUserConfig(orgId, {
-      ...config,
-      transcriptionModel: model,
+      });
+      return { transcription: { model } };
     });
-    return { transcription: { model } };
   }
 
   async getOrgImageGenerationSettings(
@@ -795,7 +894,6 @@ export class AgentService {
     orgId: string,
     input: UpdateImageGenerationRequest
   ): Promise<ImageGenerationSettingsResponse> {
-    const config = await this.getOrgConfigForUpdate(orgId);
     const model = input.model?.trim() || null;
     if (model && !isAllowedImageGenerationSelection(model)) {
       throw new AtlasApiError(
@@ -803,8 +901,11 @@ export class AgentService {
         400
       );
     }
-    await this.saveOrgUserConfig(orgId, { ...config, imageModel: model });
-    return { imageGeneration: { model } };
+    return this.runSerializedOrgConfigMutation(orgId, async () => {
+      const config = await this.getOrgConfigForUpdate(orgId);
+      await this.saveOrgUserConfig(orgId, { ...config, imageModel: model });
+      return { imageGeneration: { model } };
+    });
   }
 
   async transcribeAudioForOrg(
@@ -823,14 +924,14 @@ export class AgentService {
     return this.generateImageWithConfig(input, config, orgId);
   }
 
-  async setUserTimezone(timezone: string): Promise<string> {
-    await saveUserTimezone(timezone);
+  async setUserTimezone(timezone: string | undefined): Promise<string> {
+    const saved = await saveUserTimezone(timezone);
 
     if (this.userConfig) {
-      this.userConfig = { ...this.userConfig, timezone };
+      this.userConfig = { ...this.userConfig, timezone: saved };
     }
 
-    return timezone;
+    return saved;
   }
 
   async getThinkingSettings(): Promise<ThinkingSettingsResponse> {
@@ -893,18 +994,18 @@ export class AgentService {
 
     const vision: VisionSettings = { model };
     const existing = await this.db.getWorkspaceSettings();
-    await this.db.upsertWorkspaceSettings({
-      codingAgentHarnesses: existing?.codingAgentHarnesses ?? [],
-      id: WORKSPACE_SETTINGS_ID,
-      imageModel: existing?.imageModel ?? this.userConfig?.imageModel ?? null,
-      selectedCodingAgentHarness: existing?.selectedCodingAgentHarness ?? null,
-      transcriptionModel:
-        existing?.transcriptionModel ??
-        this.userConfig?.transcriptionModel ??
-        null,
-      updatedAt: new Date().toISOString(),
-      visionModel: model,
-    });
+    await this.db.upsertWorkspaceSettings(
+      mergeWorkspaceSettings(existing, {
+        id: WORKSPACE_SETTINGS_ID,
+        imageModel: existing?.imageModel ?? this.userConfig?.imageModel ?? null,
+        transcriptionModel:
+          existing?.transcriptionModel ??
+          this.userConfig?.transcriptionModel ??
+          null,
+        updatedAt: new Date().toISOString(),
+        visionModel: model,
+      })
+    );
 
     if (this.userConfig) {
       this.userConfig = {
@@ -948,16 +1049,16 @@ export class AgentService {
 
     const transcription: TranscriptionSettings = { model };
     const existing = await this.db.getWorkspaceSettings();
-    await this.db.upsertWorkspaceSettings({
-      codingAgentHarnesses: existing?.codingAgentHarnesses ?? [],
-      id: WORKSPACE_SETTINGS_ID,
-      imageModel: existing?.imageModel ?? this.userConfig?.imageModel ?? null,
-      selectedCodingAgentHarness: existing?.selectedCodingAgentHarness ?? null,
-      transcriptionModel: model,
-      updatedAt: new Date().toISOString(),
-      visionModel:
-        existing?.visionModel ?? this.userConfig?.visionModel ?? null,
-    });
+    await this.db.upsertWorkspaceSettings(
+      mergeWorkspaceSettings(existing, {
+        id: WORKSPACE_SETTINGS_ID,
+        imageModel: existing?.imageModel ?? this.userConfig?.imageModel ?? null,
+        transcriptionModel: model,
+        updatedAt: new Date().toISOString(),
+        visionModel:
+          existing?.visionModel ?? this.userConfig?.visionModel ?? null,
+      })
+    );
 
     if (this.userConfig) {
       this.userConfig = {
@@ -1037,15 +1138,15 @@ export class AgentService {
       (await loadUserTranscriptionSettings()).model ??
       null;
 
-    await this.db.upsertWorkspaceSettings({
-      codingAgentHarnesses: [],
-      id: WORKSPACE_SETTINGS_ID,
-      imageModel: this.userConfig?.imageModel ?? null,
-      selectedCodingAgentHarness: null,
-      transcriptionModel: legacyModel,
-      updatedAt: new Date().toISOString(),
-      visionModel: this.userConfig?.visionModel ?? null,
-    });
+    await this.db.upsertWorkspaceSettings(
+      mergeWorkspaceSettings(null, {
+        id: WORKSPACE_SETTINGS_ID,
+        imageModel: this.userConfig?.imageModel ?? null,
+        transcriptionModel: legacyModel,
+        updatedAt: new Date().toISOString(),
+        visionModel: this.userConfig?.visionModel ?? null,
+      })
+    );
 
     if (this.userConfig) {
       this.userConfig = { ...this.userConfig, transcriptionModel: legacyModel };
@@ -1077,19 +1178,19 @@ export class AgentService {
 
     const imageGeneration: ImageGenerationSettings = { model };
     const existing = await this.db.getWorkspaceSettings();
-    await this.db.upsertWorkspaceSettings({
-      codingAgentHarnesses: existing?.codingAgentHarnesses ?? [],
-      id: WORKSPACE_SETTINGS_ID,
-      imageModel: model,
-      selectedCodingAgentHarness: existing?.selectedCodingAgentHarness ?? null,
-      transcriptionModel:
-        existing?.transcriptionModel ??
-        this.userConfig?.transcriptionModel ??
-        null,
-      updatedAt: new Date().toISOString(),
-      visionModel:
-        existing?.visionModel ?? this.userConfig?.visionModel ?? null,
-    });
+    await this.db.upsertWorkspaceSettings(
+      mergeWorkspaceSettings(existing, {
+        id: WORKSPACE_SETTINGS_ID,
+        imageModel: model,
+        transcriptionModel:
+          existing?.transcriptionModel ??
+          this.userConfig?.transcriptionModel ??
+          null,
+        updatedAt: new Date().toISOString(),
+        visionModel:
+          existing?.visionModel ?? this.userConfig?.visionModel ?? null,
+      })
+    );
 
     if (this.userConfig) {
       this.userConfig = {
@@ -1169,15 +1270,15 @@ export class AgentService {
 
     const legacyModel = this.userConfig?.imageModel ?? null;
 
-    await this.db.upsertWorkspaceSettings({
-      codingAgentHarnesses: [],
-      id: WORKSPACE_SETTINGS_ID,
-      imageModel: legacyModel,
-      selectedCodingAgentHarness: null,
-      transcriptionModel: this.userConfig?.transcriptionModel ?? null,
-      updatedAt: new Date().toISOString(),
-      visionModel: this.userConfig?.visionModel ?? null,
-    });
+    await this.db.upsertWorkspaceSettings(
+      mergeWorkspaceSettings(null, {
+        id: WORKSPACE_SETTINGS_ID,
+        imageModel: legacyModel,
+        transcriptionModel: this.userConfig?.transcriptionModel ?? null,
+        updatedAt: new Date().toISOString(),
+        visionModel: this.userConfig?.visionModel ?? null,
+      })
+    );
 
     if (this.userConfig) {
       this.userConfig = { ...this.userConfig, imageModel: legacyModel };
@@ -1215,7 +1316,9 @@ export class AgentService {
       }
     }
 
-    const organizations = await this.db.listOrganizations();
+    const organizations = (await this.db.listOrganizations()).filter(
+      (organization) => !organization.archivedAt
+    );
     for (const org of organizations) {
       const config = await this.getOrgUserConfig(org.id);
       if (isProviderConfigured(config)) {
@@ -1259,15 +1362,15 @@ export class AgentService {
       null;
     const legacyImageModel = this.userConfig?.imageModel ?? null;
 
-    await this.db.upsertWorkspaceSettings({
-      codingAgentHarnesses: [],
-      id: WORKSPACE_SETTINGS_ID,
-      imageModel: legacyImageModel,
-      selectedCodingAgentHarness: null,
-      transcriptionModel: legacyTranscriptionModel,
-      updatedAt: new Date().toISOString(),
-      visionModel: legacyVisionModel,
-    });
+    await this.db.upsertWorkspaceSettings(
+      mergeWorkspaceSettings(null, {
+        id: WORKSPACE_SETTINGS_ID,
+        imageModel: legacyImageModel,
+        transcriptionModel: legacyTranscriptionModel,
+        updatedAt: new Date().toISOString(),
+        visionModel: legacyVisionModel,
+      })
+    );
 
     if (this.userConfig) {
       this.userConfig = {
@@ -1672,6 +1775,8 @@ export class AgentService {
   ): Promise<string> {
     const actor = runAsPrincipal(principal, (value) => value);
     const userConfig = await this.getOrgUserConfig(orgId);
+    const toolConfigurationVersion =
+      this.sessionInvalidationVersions.get(orgId) ?? 0;
     if (!isProviderConfigured(userConfig)) {
       throw new Error("Provider is not configured.");
     }
@@ -1711,6 +1816,8 @@ export class AgentService {
       toolContext: buildToolExecutionContext({
         automationId,
         automationRunId,
+        beforeToolCall: () =>
+          this.requireCurrentToolConfiguration(orgId, toolConfigurationVersion),
         forbidProfileSkillMarkdownWrites:
           await this.shouldForbidProfileSkillMarkdownWrites(profile.id),
         isPlatformAdmin: actor.isPlatformAdmin,
@@ -1745,6 +1852,8 @@ export class AgentService {
     }
 
     const userConfig = await this.getOrgUserConfig(input.orgId);
+    const toolConfigurationVersion =
+      this.sessionInvalidationVersions.get(input.orgId) ?? 0;
     if (!isProviderConfigured(userConfig)) {
       return failSubAgentResult("Provider is not configured.");
     }
@@ -1813,6 +1922,11 @@ export class AgentService {
       systemPrompt: childSystemPrompt,
       toolContext: buildToolExecutionContext({
         agentDepth: input.agentDepth,
+        beforeToolCall: () =>
+          this.requireCurrentToolConfiguration(
+            input.orgId,
+            toolConfigurationVersion
+          ),
         clientOrigin: input.clientOrigin,
         forbidProfileSkillMarkdownWrites:
           await this.shouldForbidProfileSkillMarkdownWrites(input.profileId),
@@ -2108,6 +2222,10 @@ export class AgentService {
     }
 
     const sessionId = nanoid();
+    const modelOverride = await this.normalizeSessionModelOverride(
+      orgId,
+      access?.model
+    );
     let principalUserId = userId ?? null;
     if (
       channel === "telegram" ||
@@ -2141,6 +2259,7 @@ export class AgentService {
       channel,
       createdAt: new Date().toISOString(),
       id: sessionId,
+      modelOverride,
       orgId,
       profileId: resolvedProfileId,
       title: null,
@@ -2152,6 +2271,7 @@ export class AgentService {
       orgId,
       resolvedProfileId,
       sessionId,
+      modelOverride,
       principalUserId,
       access?.orgRole,
       access?.isPlatformAdmin
@@ -2160,6 +2280,8 @@ export class AgentService {
     this.sessions.set(sessionId, {
       channel,
       isPlatformAdmin: access?.isPlatformAdmin === true,
+      modelOverride,
+      orgId,
       orgRole: access?.orgRole ?? null,
       profileId: resolvedProfileId,
       session,
@@ -2177,7 +2299,6 @@ export class AgentService {
     if (!record) {
       return null;
     }
-
     return this.agentTodoState.listActive(sessionId);
   }
 
@@ -2196,24 +2317,35 @@ export class AgentService {
 
   async getSessionMessages(
     orgId: string,
-    sessionId: string
+    sessionId: string,
+    actor?: SessionActor
   ): Promise<{
+    canUpdateModel: boolean;
     channel: AgentChannel;
     messages: ChatMessage[];
     messageMeta: Array<{ id: string; seq: number; createdAt: string }>;
     contextUsage: ChatContextUsage | null;
+    model: string | null;
   } | null> {
     const record = await this.getSessionRecordForOrg(orgId, sessionId);
 
     if (!record) {
       return null;
     }
+    const modelOverride = await this.resolveApprovedStoredSessionModelOverride(
+      orgId,
+      record
+    );
 
     const channel = parseAgentChannel(record.channel);
 
     if (!channel) {
       return null;
     }
+
+    const canUpdateModel = actor
+      ? await this.canActorUpdateSessionModel(orgId, record, actor)
+      : false;
 
     if (sessionTurnRegistry.isActive(sessionId)) {
       const liveSession = await this.resolveSession(orgId, sessionId);
@@ -2225,6 +2357,7 @@ export class AgentService {
           new Date().toISOString();
 
         return {
+          canUpdateModel,
           channel,
           contextUsage: liveSession.getContextUsage(),
           messageMeta: history.map((_, index) => ({
@@ -2233,6 +2366,7 @@ export class AgentService {
             seq: index,
           })),
           messages: [...history],
+          model: modelOverride,
         };
       }
     }
@@ -2245,6 +2379,7 @@ export class AgentService {
         null);
 
     return {
+      canUpdateModel,
       channel,
       contextUsage,
       messageMeta: storedMessages.map((message) => ({
@@ -2253,22 +2388,47 @@ export class AgentService {
         seq: message.seq,
       })),
       messages: storedMessages.map((message) => message.payload as ChatMessage),
+      model: modelOverride,
     };
   }
 
   async branchSession(
     orgId: string,
     sessionId: string,
-    messageIndex: number
+    messageIndex: number,
+    actor?: SessionActor
   ): Promise<BranchSessionResponse | null> {
     const record = await this.getSessionRecordForOrg(orgId, sessionId);
 
     if (!record) {
       return null;
     }
+    const modelOverride = await this.resolveApprovedStoredSessionModelOverride(
+      orgId,
+      record
+    );
 
     if (!Number.isInteger(messageIndex) || messageIndex < 0) {
       throw new Error("messageIndex must be a non-negative integer.");
+    }
+
+    const branchUserId = actor?.userId.trim() || record.userId || null;
+    const [branchOrgRole, branchIsPlatformAdmin] = await Promise.all([
+      this.resolveOrgRole(orgId, branchUserId),
+      this.resolveIsPlatformAdmin(branchUserId),
+    ]);
+    if (
+      actor &&
+      !(
+        branchIsPlatformAdmin ||
+        branchOrgRole === "admin" ||
+        branchOrgRole === "member"
+      )
+    ) {
+      throw new AtlasApiError(
+        "You do not have permission to branch this session.",
+        403
+      );
     }
 
     const sourceMessages = await loadSessionHistory(this.db, sessionId);
@@ -2289,10 +2449,11 @@ export class AgentService {
       channel: record.channel,
       createdAt: new Date().toISOString(),
       id: nextSessionId,
+      modelOverride,
       orgId,
       profileId: record.profileId,
       title: null,
-      userId: record.userId ?? null,
+      userId: branchUserId,
     });
 
     await replaceSessionHistory(
@@ -2308,22 +2469,21 @@ export class AgentService {
       throw new Error("Session channel is invalid.");
     }
 
-    const branchOrgRole = await this.resolveOrgRole(orgId, record.userId);
-    const branchIsPlatformAdmin = await this.resolveIsPlatformAdmin(
-      record.userId
-    );
     const session = await this.buildChatSession(
       channel,
       orgId,
       record.profileId,
       nextSessionId,
-      record.userId ?? null,
+      modelOverride,
+      branchUserId,
       branchOrgRole,
       branchIsPlatformAdmin
     );
     this.sessions.set(nextSessionId, {
       channel,
       isPlatformAdmin: branchIsPlatformAdmin,
+      modelOverride,
+      orgId,
       orgRole: branchOrgRole,
       profileId: record.profileId,
       session,
@@ -2388,11 +2548,18 @@ export class AgentService {
     sessionId: string,
     actor?: SessionActor
   ): Promise<AgentChatSession | null> {
+    await this.getOrgUserConfig(orgId);
+    const invalidationVersion =
+      this.sessionInvalidationVersions.get(orgId) ?? 0;
     const record = await this.getSessionRecordForOrg(orgId, sessionId);
 
     if (!record) {
       return null;
     }
+    const modelOverride = await this.resolveApprovedStoredSessionModelOverride(
+      orgId,
+      record
+    );
 
     const actorUserId = actor?.userId?.trim() || record.userId || null;
     const orgRole = await this.resolveOrgRole(orgId, actorUserId);
@@ -2416,6 +2583,7 @@ export class AgentService {
     if (
       stored &&
       stored.profileId === record.profileId &&
+      stored.modelOverride === modelOverride &&
       stored.orgRole === orgRole &&
       stored.isPlatformAdmin === isPlatformAdmin
     ) {
@@ -2433,20 +2601,96 @@ export class AgentService {
       orgId,
       record.profileId,
       sessionId,
+      modelOverride,
       actorUserId,
       orgRole,
       isPlatformAdmin
     );
 
+    await this.requireActiveOrganizationForTurn(orgId);
+    if (
+      (this.sessionInvalidationVersions.get(orgId) ?? 0) !== invalidationVersion
+    ) {
+      throw new AtlasApiError(
+        "Session configuration changed. Retry the request.",
+        409
+      );
+    }
+
     this.sessions.set(sessionId, {
       channel,
       isPlatformAdmin,
+      modelOverride,
+      orgId,
       orgRole,
       profileId: record.profileId,
       session,
     });
 
     return session;
+  }
+
+  async updateSessionModel(
+    orgId: string,
+    sessionId: string,
+    model: string | null,
+    actor: SessionActor
+  ): Promise<boolean> {
+    const record = await this.getSessionRecordForOrg(orgId, sessionId);
+
+    if (!record) {
+      return false;
+    }
+
+    if (!(await this.canActorUpdateSessionModel(orgId, record, actor))) {
+      throw new AtlasApiError(
+        "You do not have permission to change this session model.",
+        403
+      );
+    }
+
+    await this.requireActiveOrganizationForTurn(orgId);
+    const turn = sessionTurnRegistry.beginTurn(sessionId, orgId);
+    if (!turn.started) {
+      throw new AtlasApiError(
+        "Wait for the current response before changing models.",
+        409
+      );
+    }
+
+    try {
+      const modelOverride = await this.normalizeSessionModelOverride(
+        orgId,
+        model
+      );
+      if (record.modelOverride === modelOverride) {
+        return true;
+      }
+
+      const updated = await this.db.updateSessionModelOverride(
+        sessionId,
+        modelOverride
+      );
+      if (updated) {
+        this.sessions.delete(sessionId);
+      }
+      return updated;
+    } finally {
+      sessionTurnRegistry.cancelTurn(sessionId);
+    }
+  }
+
+  async beginSessionTurn(
+    orgId: string,
+    sessionId: string
+  ): Promise<boolean | null> {
+    const record = await this.getSessionRecordForOrg(orgId, sessionId);
+    if (!record) {
+      return null;
+    }
+
+    await this.requireActiveOrganizationForTurn(orgId);
+    return sessionTurnRegistry.beginTurn(sessionId, orgId).started;
   }
 
   async clearSession(orgId: string, sessionId: string): Promise<boolean> {
@@ -2558,7 +2802,8 @@ export class AgentService {
 
   async discoverModels(
     orgId: string,
-    request: DiscoverModelsRequest
+    request: DiscoverModelsRequest,
+    options: { signal?: AbortSignal } = {}
   ): Promise<ModelsResponse> {
     const userConfig = await this.getOrgUserConfig(orgId);
     const providerId = request.providerId?.trim();
@@ -2570,7 +2815,8 @@ export class AgentService {
           baseUrl: request.baseUrl?.trim() || undefined,
           hostMode: request.hostMode,
         },
-        userConfig
+        userConfig,
+        options
       );
     }
 
@@ -2581,7 +2827,7 @@ export class AgentService {
         throw new Error("API key is required to discover Fireworks models.");
       }
 
-      const entries = await fetchFireworksGatewayModels(apiKey);
+      const entries = await fetchFireworksGatewayModels(apiKey, options);
       const staticModels = AVAILABLE_MODELS.filter(
         (model) => model.provider === "fireworks"
       );
@@ -2613,7 +2859,7 @@ export class AgentService {
     }
 
     if (request.provider === "opencode_go") {
-      const entries = await fetchOpenCodeGoGatewayModels();
+      const entries = await fetchOpenCodeGoGatewayModels(options);
       const staticModels = AVAILABLE_MODELS.filter(
         (model) => model.provider === "opencode_go"
       );
@@ -2634,21 +2880,42 @@ export class AgentService {
       };
     }
 
-    const baseUrl = request.baseUrl?.trim();
+    const requestedDiscoveryProvider =
+      request.provider && isDiscoveryModelProvider(request.provider)
+        ? request.provider
+        : "openai_compatible";
+    const baseUrl =
+      request.baseUrl?.trim() ||
+      defaultDiscoveryBaseUrl(requestedDiscoveryProvider) ||
+      undefined;
     if (!baseUrl) {
       throw new Error("baseUrl or providerId is required.");
     }
 
+    const ollamaHostMode =
+      request.provider === "ollama"
+        ? resolveOllamaHostMode({
+            baseUrl,
+            hostMode: request.hostMode,
+          })
+        : null;
     const entries =
       request.provider === "ollama"
-        ? await fetchOllamaModels(baseUrl, request.apiKey ?? "")
-        : await fetchRemoteOpenAIModels(baseUrl, request.apiKey ?? "");
+        ? await fetchOllamaModels(baseUrl, request.apiKey ?? "", {
+            hostMode: ollamaHostMode ?? "local",
+            signal: options.signal,
+          })
+        : await fetchRemoteOpenAIModels(baseUrl, request.apiKey ?? "", {
+            localAccess:
+              requestedDiscoveryProvider === "openai_compatible"
+                ? { kind: "openai-compatible-local" }
+                : undefined,
+            signal: options.signal,
+          });
 
     const probeType =
-      request.provider === "ollama"
-        ? ("ollama" as const)
-        : ("openai_compatible" as const);
-    const probeInstance = {
+      request.provider === "ollama" ? "ollama" : requestedDiscoveryProvider;
+    const probeInstance: ProviderInstance = {
       apiKey: request.apiKey ?? "",
       baseUrl,
       id: "discover",
@@ -2678,7 +2945,8 @@ export class AgentService {
       apiKey?: string;
       hostMode?: DiscoverModelsRequest["hostMode"];
     },
-    userConfig: UserConfig | null = this.userConfig
+    userConfig: UserConfig | null = this.userConfig,
+    options: { signal?: AbortSignal } = {}
   ): Promise<ModelsResponse> {
     const instance = findProviderInstance(
       userConfig ?? { defaultProviderId: null, providers: [] },
@@ -2689,45 +2957,56 @@ export class AgentService {
       throw new Error("Provider not found.");
     }
 
-    if (instance.type === "ollama" || instance.type === "openai_compatible") {
+    if (instance.type === "ollama" || isDiscoveryModelProvider(instance.type)) {
       const hostMode =
         instance.type === "ollama"
           ? (overrides?.hostMode ?? resolveOllamaHostMode(instance))
           : undefined;
+      // Prefer an explicit baseUrl (e.g. unsaved Edit provider field) over the stored one.
+      const baseUrl =
+        overrides?.baseUrl ||
+        instance.baseUrl?.trim() ||
+        (instance.type === "ollama"
+          ? defaultOllamaBaseUrl(hostMode!)
+          : defaultDiscoveryBaseUrl(instance.type) || "");
+
+      if (!baseUrl) {
+        throw new Error("A base URL is required to discover models.");
+      }
+
+      requireCredentialForProviderEndpointChange(
+        instance,
+        overrides?.baseUrl,
+        overrides?.apiKey
+      );
       const apiKey =
         overrides?.apiKey?.trim() ||
-        instance.apiKey.trim() ||
-        (instance.type === "ollama"
-          ? readEnvValue(
-              process.env,
-              apiKeyEnvVarForProvider("ollama") ?? ""
-            ) || ""
-          : "");
+        readApiKeyForInstance(instance, process.env)?.trim() ||
+        "";
 
       if (
         instance.type === "ollama" &&
-        ollamaRequiresApiKey(hostMode!) &&
-        !apiKey.trim()
+        ollamaRequiresApiKey(hostMode ?? "local") &&
+        !apiKey
       ) {
         throw new Error(
           "Add an API key before discovering Ollama Cloud models."
         );
       }
 
-      // Prefer an explicit baseUrl (e.g. unsaved Edit provider field) over the stored one.
-      const baseUrl =
-        overrides?.baseUrl ||
-        instance.baseUrl?.trim() ||
-        (instance.type === "ollama" ? defaultOllamaBaseUrl(hostMode!) : "");
-
-      if (!baseUrl) {
-        throw new Error("A base URL is required to discover models.");
-      }
-
       const entries =
         instance.type === "ollama"
-          ? await fetchOllamaModels(baseUrl, apiKey)
-          : await fetchRemoteOpenAIModels(baseUrl, apiKey);
+          ? await fetchOllamaModels(baseUrl, apiKey, {
+              hostMode: hostMode ?? "local",
+              signal: options.signal,
+            })
+          : await fetchRemoteOpenAIModels(baseUrl, apiKey, {
+              localAccess:
+                instance.type === "openai_compatible"
+                  ? { kind: "openai-compatible-local" }
+                  : undefined,
+              signal: options.signal,
+            });
       const remoteInstance = { ...instance, baseUrl, customModels: entries };
       const models = getModelsForProviderInstance(remoteInstance);
 
@@ -2753,7 +3032,7 @@ export class AgentService {
         throw new Error("Add an API key before discovering Fireworks models.");
       }
 
-      const entries = await fetchFireworksGatewayModels(apiKey);
+      const entries = await fetchFireworksGatewayModels(apiKey, options);
       const remoteInstance = { ...instance, customModels: entries };
       const models = getModelsForProviderInstance(remoteInstance);
 
@@ -2769,7 +3048,7 @@ export class AgentService {
     }
 
     if (instance.type === "opencode_go") {
-      const entries = await fetchOpenCodeGoGatewayModels();
+      const entries = await fetchOpenCodeGoGatewayModels(options);
       const remoteInstance = { ...instance, customModels: entries };
       const models = getModelsForProviderInstance(remoteInstance);
 
@@ -2790,12 +3069,13 @@ export class AgentService {
       );
     }
 
-    if (!instance.apiKey.trim()) {
+    const apiKey = readApiKeyForInstance(instance, process.env)?.trim() ?? "";
+    if (!apiKey) {
       throw new Error("Add an API key before discovering models.");
     }
 
     const baseUrl = instance.baseUrl?.trim() || "https://api.openai.com/v1";
-    const entries = await fetchRemoteOpenAIModels(baseUrl, instance.apiKey);
+    const entries = await fetchRemoteOpenAIModels(baseUrl, apiKey, options);
     const staticModels = AVAILABLE_MODELS.filter(
       (model) => model.provider === "openai"
     );
@@ -2841,6 +3121,15 @@ export class AgentService {
     orgId: string,
     request: CreateProviderRequest
   ): Promise<CreateProviderResponse> {
+    return this.runSerializedOrgConfigMutation(orgId, () =>
+      this.performCreateProvider(orgId, request)
+    );
+  }
+
+  private async performCreateProvider(
+    orgId: string,
+    request: CreateProviderRequest
+  ): Promise<CreateProviderResponse> {
     const userConfig = await this.getOrgUserConfig(orgId);
     const shouldSkipValidation =
       request.skipValidation === true ||
@@ -2855,6 +3144,7 @@ export class AgentService {
         hostMode: request.hostMode,
         model: request.model,
         type: request.type,
+        wireApi: request.wireApi,
       });
     }
 
@@ -2883,7 +3173,7 @@ export class AgentService {
     await this.saveOrgUserConfig(orgId, updatedConfig);
 
     if (isFirst) {
-      await this.ensureSoulScaffolded();
+      await this.ensureSoulScaffolded(orgId);
     }
 
     return {
@@ -2901,6 +3191,16 @@ export class AgentService {
     providerId: string,
     request: UpdateProviderRequest
   ): Promise<UpdateProviderResponse> {
+    return this.runSerializedOrgConfigMutation(orgId, () =>
+      this.performUpdateProvider(orgId, providerId, request)
+    );
+  }
+
+  private async performUpdateProvider(
+    orgId: string,
+    providerId: string,
+    request: UpdateProviderRequest
+  ): Promise<UpdateProviderResponse> {
     const userConfig = await this.getOrgUserConfig(orgId);
     if (!userConfig) {
       throw new Error("Provider is not configured.");
@@ -2912,20 +3212,33 @@ export class AgentService {
       throw new Error("Provider not found.");
     }
 
+    requireCredentialForProviderEndpointChange(
+      current,
+      request.baseUrl,
+      request.apiKey
+    );
     const updated = applyProviderInstanceUpdate(current, request);
 
     const shouldSkipValidation =
       request.skipValidation === true ||
       process.env.ATLAS_SKIP_PROVIDER_VALIDATION === "true" ||
       process.env.NODE_ENV === "test";
+    const connectionSemanticsChanged =
+      request.apiKey !== undefined ||
+      request.baseUrl !== undefined ||
+      request.customModels !== undefined ||
+      request.hostMode !== undefined ||
+      request.wireApi !== undefined;
 
-    if (!shouldSkipValidation && request.apiKey != null) {
+    if (!shouldSkipValidation && connectionSemanticsChanged) {
       await validateProviderConnection({
         apiKey: updated.apiKey,
         baseUrl: updated.baseUrl,
         customModels: updated.customModels,
         hostMode: updated.hostMode,
+        model: resolveInitialModel(updated),
         type: updated.type,
+        wireApi: updated.wireApi,
       });
     }
 
@@ -2944,6 +3257,15 @@ export class AgentService {
   }
 
   async deleteProvider(
+    orgId: string,
+    providerId: string
+  ): Promise<DeleteProviderResponse> {
+    return this.runSerializedOrgConfigMutation(orgId, () =>
+      this.performDeleteProvider(orgId, providerId)
+    );
+  }
+
+  private async performDeleteProvider(
     orgId: string,
     providerId: string
   ): Promise<DeleteProviderResponse> {
@@ -2975,6 +3297,26 @@ export class AgentService {
     await this.saveOrgUserConfig(orgId, updatedConfig);
 
     return { defaultProviderId };
+  }
+
+  private runSerializedOrgConfigMutation<T>(
+    orgId: string,
+    mutate: () => Promise<T>
+  ): Promise<T> {
+    const previous =
+      this.orgConfigMutationLocks.get(orgId) ?? Promise.resolve();
+    const next = previous.then(mutate, mutate);
+    const tail = next.then(
+      () => undefined,
+      () => undefined
+    );
+    this.orgConfigMutationLocks.set(orgId, tail);
+    void tail.then(() => {
+      if (this.orgConfigMutationLocks.get(orgId) === tail) {
+        this.orgConfigMutationLocks.delete(orgId);
+      }
+    });
+    return next;
   }
 
   async getModels(
@@ -3009,7 +3351,8 @@ export class AgentService {
     ) {
       const remote = await fetchRemoteOpenAIModels(
         active.baseUrl,
-        active.apiKey
+        readApiKeyForInstance(active, process.env) ?? "",
+        { localAccess: { kind: "openai-compatible-local" } }
       );
       const remoteInstance = { ...active, customModels: remote };
       const models = mergeModelsForConfig(
@@ -3103,6 +3446,7 @@ export class AgentService {
       label: request.displayName,
       model: request.model,
       type: request.provider,
+      wireApi: request.wireApi,
     });
 
     const instance = findProviderInstance(
@@ -3131,7 +3475,9 @@ export class AgentService {
     channel: "telegram" | "discord" | "whatsapp",
     orgId: string
   ): Promise<void> {
-    const organizations = await this.db.listOrganizations();
+    const organizations = (await this.db.listOrganizations()).filter(
+      (organization) => !organization.archivedAt
+    );
     const bootstrapOrg = organizations
       .slice()
       .sort((left, right) => left.createdAt.localeCompare(right.createdAt))[0];
@@ -3154,7 +3500,9 @@ export class AgentService {
       return storedConfig;
     }
 
-    const organizations = await this.db.listOrganizations();
+    const organizations = (await this.db.listOrganizations()).filter(
+      (organization) => !organization.archivedAt
+    );
     const bootstrapOrg = organizations
       .slice()
       .sort((left, right) => left.createdAt.localeCompare(right.createdAt))[0];
@@ -3193,7 +3541,7 @@ export class AgentService {
     } else {
       this._providerConfigured = await this.checkAnyProviderConfigured();
     }
-    this.sessions.clear();
+    this.invalidateSessionsForOrg(orgId);
   }
 
   private async getOrgConfigForUpdate(orgId: string): Promise<UserConfig> {
@@ -3405,11 +3753,11 @@ export class AgentService {
         ? (record.handlerConfig as { modulePath?: string })
         : null;
 
+    let reloadSucceeded = false;
     if (handlerConfig?.modulePath) {
       try {
-        invalidateJavascriptModuleCache(
-          resolveJavascriptModulePath(handlerConfig.modulePath)
-        );
+        await validateJavascriptToolModule(handlerConfig.modulePath);
+        reloadSucceeded = true;
       } catch {
         // Invalid module paths fail when loading the tool.
       }
@@ -3421,7 +3769,13 @@ export class AgentService {
       throw new Error(`Failed to load tool "${tool.name}".`);
     }
 
+    if (reloadSucceeded) {
+      this.invalidateSessionsForOrg(context.orgId);
+    }
+
     const toolContext = buildToolExecutionContext({
+      beforeToolCall: () =>
+        this.requireActiveOrganizationForTurn(context.orgId),
       orgId: context.orgId,
       profileId,
       userId: context.userId,
@@ -3719,26 +4073,39 @@ export class AgentService {
     profileId: string,
     includeContents = false
   ): Promise<SoulStatusResponse> {
-    const profile = await this.requireProfile(orgId, profileId);
-    const status = await getResolvedSoulStatus(orgId, profileId);
+    return withProfileSoulMutationLock(orgId, profileId, async () => {
+      const profile = await this.requireProfile(orgId, profileId);
+      const status = await getResolvedSoulStatus(orgId, profileId);
 
-    if (!includeContents) {
-      return { ...status, profileId };
-    }
+      if (!includeContents) {
+        return { ...status, profileId };
+      }
 
-    const stack = await loadSoulStack(getProfileSoulDir(orgId, profileId));
-    return { ...status, contents: stack.files, profileId };
+      const stack = await loadSoulStack(getProfileSoulDir(orgId, profileId));
+      return { ...status, contents: stack.files, profileId };
+    });
   }
 
-  async ensureSoulScaffolded(): Promise<void> {
+  async ensureSoulScaffolded(orgId?: string): Promise<void> {
+    const activeOrgIds = new Set(
+      (await this.db.listOrganizations())
+        .filter((organization) => !organization.archivedAt)
+        .map((organization) => organization.id)
+    );
     const profiles = await this.db.listProfiles();
 
     for (const profile of profiles) {
-      if (!profile.orgId) {
+      const profileOrgId = profile.orgId;
+      if (
+        !(profileOrgId && activeOrgIds.has(profileOrgId)) ||
+        (orgId && profileOrgId !== orgId)
+      ) {
         continue;
       }
 
-      await initSoulDirectory(getProfileSoulDir(profile.orgId, profile.id));
+      await withProfileSoulMutationLock(profileOrgId, profile.id, async () => {
+        await initSoulDirectory(getProfileSoulDir(profileOrgId, profile.id));
+      });
     }
   }
 
@@ -3746,8 +4113,14 @@ export class AgentService {
     orgId: string,
     profileId: string
   ): Promise<InitSoulResponse> {
-    await this.requireProfile(orgId, profileId);
-    const result = await initSoulDirectory(getProfileSoulDir(orgId, profileId));
+    const result = await withProfileSoulMutationLock(
+      orgId,
+      profileId,
+      async () => {
+        await this.requireProfile(orgId, profileId);
+        return initSoulDirectory(getProfileSoulDir(orgId, profileId));
+      }
+    );
     this.invalidateProfileSessions(profileId);
     return { ...result, profileId };
   }
@@ -3756,9 +4129,11 @@ export class AgentService {
     orgId: string,
     profileId: string
   ): Promise<SoulStackResponse> {
-    await this.requireProfile(orgId, profileId);
-    const stack = await loadSoulStack(getProfileSoulDir(orgId, profileId));
-    return { ...stack, profileId };
+    return withProfileSoulMutationLock(orgId, profileId, async () => {
+      await this.requireProfile(orgId, profileId);
+      const stack = await loadSoulStack(getProfileSoulDir(orgId, profileId));
+      return { ...stack, profileId };
+    });
   }
 
   async writeProfileSoulFile(
@@ -3767,17 +4142,18 @@ export class AgentService {
     key: string,
     request: UpdateSoulFileRequest
   ): Promise<void> {
-    await this.requireProfile(orgId, profileId);
-
     if (!isWritableSoulFileKey(key)) {
       throw new Error(`Invalid soul file key: ${key}`);
     }
 
-    await writeSoulFile(
-      getProfileSoulDir(orgId, profileId),
-      key,
-      request.content
-    );
+    await withProfileSoulMutationLock(orgId, profileId, async () => {
+      await this.requireProfile(orgId, profileId);
+      await writeSoulFile(
+        getProfileSoulDir(orgId, profileId),
+        key,
+        request.content
+      );
+    });
     this.invalidateProfileSessions(profileId);
   }
 
@@ -4082,6 +4458,42 @@ export class AgentService {
     };
   }
 
+  private async requireActiveOrganizationForTurn(orgId: string): Promise<void> {
+    const organization = await this.db.getOrganizationById(orgId);
+    if (organization && !organization.archivedAt) {
+      return;
+    }
+
+    // Preserve the pre-tenant database shape while failing closed as soon as
+    // organization rows exist. An archived tenant is therefore never treated
+    // as legacy merely because it is the only tenant in the database.
+    if (!organization && (await this.db.listOrganizations()).length === 0) {
+      return;
+    }
+
+    throw new AtlasApiError("Organization not found.", 404);
+  }
+
+  private async requireCurrentToolConfiguration(
+    orgId: string,
+    expectedVersion: number
+  ): Promise<void> {
+    await this.requireActiveOrganizationForTurn(orgId);
+    if (
+      (this.sessionInvalidationVersions.get(orgId) ?? 0) === expectedVersion
+    ) {
+      return;
+    }
+
+    throw Object.assign(
+      new Error("Tool configuration changed. Retry the request."),
+      {
+        code: "CANCELLED" as const,
+        retryable: false,
+      }
+    );
+  }
+
   private async requireProfile(
     orgId: string,
     profileId: string
@@ -4216,7 +4628,12 @@ export class AgentService {
       ];
     }
 
-    if (this.composioService && this.mcpClientManager && options.userId) {
+    if (
+      this.composioService &&
+      this.mcpClientManager &&
+      options.userId &&
+      !isServiceAccountUserId(options.userId)
+    ) {
       const orgId = profile.orgId;
 
       if (!orgId) {
@@ -4317,16 +4734,40 @@ export class AgentService {
     }
   }
 
+  invalidateSessionsForOrg(orgId: string): void {
+    this.sessionInvalidationVersions.set(
+      orgId,
+      (this.sessionInvalidationVersions.get(orgId) ?? 0) + 1
+    );
+    const sessionIds = new Set(sessionTurnRegistry.cancelTurnsForOrg(orgId));
+
+    for (const [sessionId, record] of this.sessions.entries()) {
+      if (record.orgId === orgId) {
+        sessionIds.add(sessionId);
+        this.sessions.delete(sessionId);
+      }
+    }
+
+    for (const sessionId of sessionIds) {
+      this.superAgentSessionState.clearSession(sessionId);
+      this.agentTodoState.clearSession(sessionId);
+      this.agentQuestionnaireState.clearSession(sessionId);
+    }
+  }
+
   private async buildChatSession(
     channel: AgentChannel,
     orgId: string,
     profileId: string,
     sessionId: string,
+    modelOverride: string | null,
     userId?: string | null,
     orgRole?: OrgRole | null,
     isPlatformAdmin?: boolean
   ): Promise<AgentChatSession> {
     const userConfig = await this.getOrgUserConfig(orgId);
+    const toolConfigurationVersion =
+      this.sessionInvalidationVersions.get(orgId) ?? 0;
     const profile = await this.requireProfile(orgId, profileId);
     const includeSkillManageTools = channel === "web" || channel === "cli";
     let tools = await this.resolveProfileTools(
@@ -4368,8 +4809,17 @@ export class AgentService {
     const initialHistory = await loadSessionHistory(this.db, sessionId);
     const userTimezone = userConfig?.timezone ?? DEFAULT_TIMEZONE;
     const userContext = await this.loadUserContextForUser(orgId, userId);
-    const compaction = this.resolveCompactionConfig(profile, userConfig);
-    const harness = this.createHarnessForProfile(profile, userConfig);
+    const selectedModel = modelOverride ?? profile.model;
+    const compaction = this.resolveCompactionConfig(
+      profile,
+      userConfig,
+      selectedModel
+    );
+    const harness = this.createHarnessForProfile(
+      profile,
+      userConfig,
+      selectedModel
+    );
     const saveAttachment = createAttachmentSaver(this.db, {
       channel,
       orgId,
@@ -4382,6 +4832,8 @@ export class AgentService {
     });
     const forbidProfileSkillMarkdownWrites =
       await this.shouldForbidProfileSkillMarkdownWrites(profile.id);
+    const expandLearnCommand = shouldExpandLearnCommand(channel, tools);
+    let forceSkillWriteProposal = false;
 
     const session = harness.createChatSession({
       channel,
@@ -4389,6 +4841,15 @@ export class AgentService {
       enableToolLoop: true,
       initialHistory,
       preprocessUserContent: async (content) => {
+        const commandText =
+          typeof content === "string"
+            ? content
+            : content.find((part) => part.type === "text")?.text;
+        forceSkillWriteProposal = Boolean(
+          expandLearnCommand &&
+            commandText &&
+            tryParseLearnCommand(commandText) !== null
+        );
         content = await persistInlineAttachmentsInContent(
           content,
           saveAttachment
@@ -4405,7 +4866,7 @@ export class AgentService {
 
         const primarySupportsVision = resolvePrimaryModelVisionSupport(
           userConfig,
-          profile.model
+          selectedModel
         );
 
         if (primarySupportsVision !== false) {
@@ -4435,8 +4896,15 @@ export class AgentService {
 
         return replaceImagePartsWithDescriptions(forVision, descriptions);
       },
-      rehydrateMessagesForProvider: (messages) =>
-        rehydrateAttachmentMessages(messages, loadAttachment),
+      rehydrateMessagesForProvider: async (messages) => {
+        const rehydrated = await rehydrateAttachmentMessages(
+          messages,
+          loadAttachment
+        );
+        return expandLearnCommand
+          ? expandLearnInLastUserMessage(rehydrated)
+          : rehydrated;
+      },
       resolvePromptContext: async (context) => {
         const parts: string[] = [];
 
@@ -4541,8 +5009,11 @@ export class AgentService {
       soul: soulActive,
       systemPrompt: resolvedSystemPrompt,
       toolContext: buildToolExecutionContext({
+        beforeToolCall: () =>
+          this.requireCurrentToolConfiguration(orgId, toolConfigurationVersion),
         channel,
         forbidProfileSkillMarkdownWrites,
+        forceSkillWriteProposal: () => forceSkillWriteProposal,
         isPlatformAdmin: isPlatformAdmin === true,
         loadAttachment,
         orgId,
@@ -4551,7 +5022,13 @@ export class AgentService {
         recordToolOutputSavings: this.savingsRecorderFor(orgId),
         recordTurnUsage: this.turnUsageRecorderFor(
           orgId,
-          this.buildUsageAttribution({ orgId, profileId, userConfig, userId })
+          this.buildUsageAttribution({
+            modelSelection: selectedModel,
+            orgId,
+            profileId,
+            userConfig,
+            userId,
+          })
         ),
         sessionId,
         tokenOptimizerEnabled: tokenOptimizerEnabled ?? undefined,
@@ -4563,8 +5040,9 @@ export class AgentService {
     });
 
     return wrapPersistedSession(sessionId, session, this.db, {
-      onBeginTurn: (id) => {
-        this.superAgentSessionState.beginTurn(id);
+      beforePersist: () => this.requireActiveOrganizationForTurn(orgId),
+      onBeginTurn: (id, userMessage) => {
+        this.superAgentSessionState.beginTurn(id, userMessage);
         void this.agentQuestionnaireState.clear(id);
       },
     });
@@ -4598,12 +5076,19 @@ export class AgentService {
     profileId: string
   ): Promise<string> {
     const profile = await this.db.getProfile(profileId);
-    const installed = await listInstalledCodingAgentHarnesses(this.db);
-    const workspaceRoot = getProfileSoulDir(orgId, profileId);
+    const providerPassthroughEnabled =
+      await loadCodingAgentProviderPassthroughForOrg(this.db, orgId);
     const probeContext = {
       profileModel: profile?.model ?? null,
+      providerPassthroughEnabled,
+      scopeKey: orgId,
       userConfig: await this.getOrgUserConfig(orgId),
     };
+    const installed = await listInstalledCodingAgentHarnesses(
+      this.db,
+      probeContext
+    );
+    const workspaceRoot = getProfileSoulDir(orgId, profileId);
 
     if (installed.length === 0) {
       const installLines = [
@@ -4651,6 +5136,7 @@ export class AgentService {
     probeContext: {
       userConfig: UserConfig | null;
       profileModel: string | null;
+      providerPassthroughEnabled: boolean;
     }
   ): Promise<string> {
     try {
@@ -4673,7 +5159,9 @@ export class AgentService {
       return [
         "# Coding Agent Harness",
         `${harness.name} is installed (\`${harness.command}\`) but is not ready yet.`,
-        "Check Settings → Provider for passthrough compatibility, or retry after the CLI finishes installing.",
+        probeContext.providerPassthroughEnabled
+          ? "Check Settings → Provider for passthrough compatibility, or retry after the CLI finishes installing."
+          : "Authenticate the CLI on the server host, then retry.",
       ].join("\n");
     }
   }
@@ -4767,15 +5255,37 @@ export class AgentService {
     return this.skillsService;
   }
 
+  private resolveConfiguredProviderSelection(
+    userConfig: UserConfig | null,
+    modelSelection: string | null | undefined
+  ): ReturnType<typeof resolveProfileProviderSelection> {
+    const resolved = resolveProfileProviderSelection({
+      defaultProviderId: userConfig?.defaultProviderId,
+      profileModel: modelSelection,
+      providers: userConfig?.providers ?? [],
+    });
+    const explicit = decodeStoredModelSelection(modelSelection);
+    const explicitModelId = explicit?.modelId.trim();
+
+    if (
+      resolved &&
+      explicitModelId &&
+      explicit?.providerId === resolved.instance.id
+    ) {
+      return { ...resolved, model: explicitModelId };
+    }
+
+    return resolved;
+  }
+
   private resolveProviderClientForProfile(
     profile: StoredProfileRecord,
     userConfig: UserConfig | null = this.userConfig
   ): ProviderClient | null {
-    const resolved = resolveProfileProviderSelection({
-      defaultProviderId: userConfig?.defaultProviderId,
-      profileModel: profile.model,
-      providers: userConfig?.providers ?? [],
-    });
+    const resolved = this.resolveConfiguredProviderSelection(
+      userConfig,
+      profile.model
+    );
 
     if (!resolved) {
       return null;
@@ -4786,13 +5296,13 @@ export class AgentService {
 
   private createHarnessForProfile(
     profile: StoredProfileRecord,
-    userConfig: UserConfig | null = this.userConfig
+    userConfig: UserConfig | null = this.userConfig,
+    modelSelection: string | null = profile.model
   ): AgentHarness {
-    const resolved = resolveProfileProviderSelection({
-      defaultProviderId: userConfig?.defaultProviderId,
-      profileModel: profile.model,
-      providers: userConfig?.providers ?? [],
-    });
+    const resolved = this.resolveConfiguredProviderSelection(
+      userConfig,
+      modelSelection
+    );
 
     if (!resolved) {
       return this.createHarness({
@@ -4809,7 +5319,7 @@ export class AgentService {
     );
     const primarySupportsVision = resolvePrimaryModelVisionSupport(
       userConfig,
-      profile.model
+      modelSelection
     );
     const resolvedProvider =
       primarySupportsVision === false && provider
@@ -4822,6 +5332,82 @@ export class AgentService {
       providerInstance: resolved.instance,
       thinking: this.resolveWorkspaceThinkingDefaults(userConfig),
     });
+  }
+
+  private async normalizeSessionModelOverride(
+    orgId: string,
+    model: string | null | undefined
+  ): Promise<string | null> {
+    const normalized = model?.trim();
+    if (!normalized) {
+      return null;
+    }
+
+    const decoded = decodeStoredModelSelection(normalized);
+    const providerId = decoded?.providerId.trim();
+    const modelId = decoded?.modelId.trim();
+    if (!(providerId && modelId) || providerId === "__unknown__") {
+      throw new AtlasApiError(
+        "Select a model from a configured provider.",
+        400
+      );
+    }
+
+    const userConfig = await this.getOrgUserConfig(orgId);
+    const provider = userConfig?.providers.find(
+      (instance) => instance.id === providerId
+    );
+    if (!provider) {
+      throw new AtlasApiError(
+        "The selected model provider is not configured in this workspace.",
+        400
+      );
+    }
+
+    const modelIsApproved = getModelsForProviderInstance(provider).some(
+      (entry) => entry.id === modelId
+    );
+    if (!modelIsApproved) {
+      throw new AtlasApiError(
+        "Select a model approved for this provider in the workspace.",
+        400
+      );
+    }
+
+    return `${provider.id}::${modelId}`;
+  }
+
+  private async resolveApprovedStoredSessionModelOverride(
+    orgId: string,
+    record: StoredSessionRecord
+  ): Promise<string | null> {
+    const storedOverride = record.modelOverride?.trim();
+    if (!storedOverride) {
+      return null;
+    }
+
+    const decoded = decodeStoredModelSelection(storedOverride);
+    const providerId = decoded?.providerId.trim();
+    const modelId = decoded?.modelId.trim();
+    const userConfig = await this.getOrgUserConfig(orgId);
+    const provider = userConfig?.providers.find(
+      (instance) => instance.id === providerId
+    );
+    const isStillApproved = Boolean(
+      provider &&
+        modelId &&
+        getModelsForProviderInstance(provider).some(
+          (entry) => entry.id === modelId
+        )
+    );
+
+    if (isStillApproved) {
+      return storedOverride;
+    }
+
+    await this.db.updateSessionModelOverride(record.id, null);
+    this.sessions.delete(record.id);
+    return null;
   }
 
   private async resolvePlaygroundProfileId(
@@ -4853,13 +5439,13 @@ export class AgentService {
 
   private resolveCompactionConfig(
     profile: StoredProfileRecord,
-    userConfig: UserConfig | null = this.userConfig
+    userConfig: UserConfig | null = this.userConfig,
+    modelSelection: string | null = profile.model
   ): CompactionConfig | undefined {
-    const resolved = resolveProfileProviderSelection({
-      defaultProviderId: userConfig?.defaultProviderId,
-      profileModel: profile.model,
-      providers: userConfig?.providers ?? [],
-    });
+    const resolved = this.resolveConfiguredProviderSelection(
+      userConfig,
+      modelSelection
+    );
 
     if (!resolved) {
       return;

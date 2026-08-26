@@ -1,4 +1,4 @@
-import type { ProviderInstanceSummary } from "@atlas/core/contract";
+import type { ProviderInstanceSummary, WireApi } from "@atlas/core/contract";
 import { ViewIcon, ViewOffIcon } from "hugeicons-react";
 import type { ReactNode } from "react";
 import { CustomProviderFields } from "@/components/CustomProviderFields";
@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FormField } from "@/components/ui/form-field";
 import {
   InputGroup,
   InputGroupAddon,
@@ -162,6 +163,7 @@ export function ProviderCompatibleEditDialog({
   editBaseUrl,
   manageModels,
   apiKey = "",
+  showApiKey,
   browseSource = "remote",
   remoteProvider = "openai_compatible",
   providerInstanceId,
@@ -170,8 +172,12 @@ export function ProviderCompatibleEditDialog({
   onOpenChange,
   onDisplayNameChange,
   onBaseUrlChange,
+  onApiKeyChange,
   onCustomModelsChange,
+  onWireApiChange,
   onSave,
+  onToggleShowApiKey,
+  wireApi,
 }: {
   open: boolean;
   busy: boolean;
@@ -180,16 +186,28 @@ export function ProviderCompatibleEditDialog({
   editBaseUrl: string;
   manageModels: ModelListRow[];
   apiKey?: string;
+  showApiKey: boolean;
   browseSource?: "remote" | "models.dev";
-  remoteProvider?: "ollama" | "openai_compatible";
+  remoteProvider?:
+    | "ollama"
+    | "openai_compatible"
+    | "minimax"
+    | "minimax_cn"
+    | "xai"
+    | "zhipu"
+    | "zhipu_cn";
   providerInstanceId?: string;
   hostMode?: "local" | "cloud";
   browseLabel?: string;
   onOpenChange: (open: boolean) => void;
   onDisplayNameChange: (value: string) => void;
   onBaseUrlChange: (value: string) => void;
+  onApiKeyChange: (value: string) => void;
   onCustomModelsChange: (rows: ModelListRow[]) => void;
+  onWireApiChange?: (value: WireApi) => void;
   onSave: () => void;
+  onToggleShowApiKey: () => void;
+  wireApi?: WireApi;
 }) {
   return (
     <ProviderModelsDialogShell
@@ -206,6 +224,30 @@ export function ProviderCompatibleEditDialog({
         baseUrlError={null}
         browseLabel={browseLabel}
         browseSource={browseSource}
+        connectionExtra={
+          <FormField id="provider-edit-api-key" label="API key">
+            <InputGroup>
+              <InputGroupInput
+                autoComplete="off"
+                disabled={busy}
+                id="provider-edit-api-key"
+                onChange={(event) => onApiKeyChange(event.target.value)}
+                placeholder={apiKeyPlaceholder(remoteProvider)}
+                type={showApiKey ? "text" : "password"}
+                value={apiKey}
+              />
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                  aria-label={showApiKey ? "Hide API key" : "Show API key"}
+                  onClick={onToggleShowApiKey}
+                  size="icon-sm"
+                >
+                  {showApiKey ? <ViewOffIcon /> : <ViewIcon />}
+                </InputGroupButton>
+              </InputGroupAddon>
+            </InputGroup>
+          </FormField>
+        }
         customModels={manageModels}
         disabled={busy}
         displayName={editLabel}
@@ -215,8 +257,10 @@ export function ProviderCompatibleEditDialog({
         onBaseUrlChange={onBaseUrlChange}
         onCustomModelsChange={onCustomModelsChange}
         onDisplayNameChange={onDisplayNameChange}
+        onWireApiChange={onWireApiChange}
         providerInstanceId={providerInstanceId}
         remoteProvider={remoteProvider}
+        wireApi={wireApi}
       />
     </ProviderModelsDialogShell>
   );

@@ -19,7 +19,9 @@ type Subscriber = {
 };
 
 type ActiveTurn = {
-  abort?: AbortController;
+  abort: AbortController;
+  attachedAborts: Set<AbortController>;
+  orgId?: string;
   startedAt: string;
   events: StreamEvent[];
   bufferBytes: number;
@@ -173,14 +175,17 @@ function trimBuffer(turn: ActiveTurn): void {
 export class SessionTurnRegistry {
   private readonly turns = new Map<string, ActiveTurn>();
 
-  beginTurn(sessionId: string): BeginTurnResult {
+  beginTurn(sessionId: string, orgId?: string): BeginTurnResult {
     if (this.turns.has(sessionId)) {
       return { started: false };
     }
 
     this.turns.set(sessionId, {
+      abort: new AbortController(),
+      attachedAborts: new Set(),
       bufferBytes: 0,
       events: [],
+      orgId,
       snapshotIndexes: new Map(),
       startedAt: new Date().toISOString(),
       subscribers: new Set(),
@@ -191,8 +196,14 @@ export class SessionTurnRegistry {
 
   attachAbort(sessionId: string, abort: AbortController): void {
     const turn = this.turns.get(sessionId);
-    if (turn) {
-      turn.abort = abort;
+    if (!turn) {
+      abort.abort();
+      return;
+    }
+
+    turn.attachedAborts.add(abort);
+    if (turn.abort.signal.aborted) {
+      abort.abort();
     }
   }
 
@@ -207,8 +218,23 @@ export class SessionTurnRegistry {
       return;
     }
 
-    turn.abort?.abort();
+    turn.abort.abort();
+    for (const abort of turn.attachedAborts) {
+      abort.abort();
+    }
     this.endTurn(sessionId, { error: "Turn cancelled.", type: "error" });
+  }
+
+  cancelTurnsForOrg(orgId: string): string[] {
+    const sessionIds = [...this.turns.entries()]
+      .filter(([, turn]) => turn.orgId === orgId)
+      .map(([sessionId]) => sessionId);
+
+    for (const sessionId of sessionIds) {
+      this.cancelTurn(sessionId);
+    }
+
+    return sessionIds;
   }
 
   getStatus(sessionId: string): TurnStatus {

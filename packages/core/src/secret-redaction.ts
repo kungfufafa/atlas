@@ -32,7 +32,7 @@ const SENSITIVE_KEY_PATTERNS = [
 
 const BEARER_PATTERN = /Bearer\s+([A-Za-z0-9_\-.~+/=]+)/gi;
 const PRIVATE_KEY_PATTERN =
-  /-----BEGIN [A-Z0-9_ -]+ PRIVATE KEY-----[\s\S]*?-----END [A-Z0-9_ -]+ PRIVATE KEY-----/g;
+  /-----BEGIN (?:[A-Z0-9_ -]+ )?PRIVATE KEY-----[\s\S]*?-----END (?:[A-Z0-9_ -]+ )?PRIVATE KEY-----/g;
 const DB_URL_AUTH_PATTERN =
   /((?:postgres|postgresql|mysql|mongodb(?:\+srv)?|redis|amqp):\/\/[^:\s@/]+):([^@\s/]+)@/gi;
 const INLINE_PASSWORD_PATTERN =

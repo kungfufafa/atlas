@@ -92,6 +92,57 @@ describe("coding-agent provider routing", () => {
     expect(isProviderCompatibleWithHarness("openrouter", "opencode")).toBe(
       true
     );
+
+    for (const provider of [
+      "cloudflare",
+      "minimax",
+      "minimax_cn",
+      "xai",
+      "zhipu",
+      "zhipu_cn",
+    ] as const) {
+      expect(isProviderCompatibleWithHarness(provider, "codex")).toBe(false);
+      expect(isProviderCompatibleWithHarness(provider, "opencode")).toBe(true);
+      expect(isProviderCompatibleWithHarness(provider, "pi")).toBe(true);
+      expect(isProviderCompatibleWithHarness(provider, "claude_code")).toBe(
+        false
+      );
+    }
+  });
+
+  test("routes direct compatible providers through their configured API roots", () => {
+    const providers: ProviderInstance[] = [
+      {
+        apiKey: "cf-key",
+        baseUrl: "https://api.cloudflare.com/client/v4/accounts/account/ai/v1",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        id: "prov_cloudflare",
+        label: "Cloudflare Workers AI",
+        type: "cloudflare",
+      },
+      {
+        apiKey: "minimax-key",
+        baseUrl: "https://api.minimax.io/v1",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        id: "prov_minimax",
+        label: "MiniMax",
+        type: "minimax",
+      },
+    ];
+
+    for (const provider of providers) {
+      expect(getProviderApiBaseUrl(provider, "pi")).toBe(provider.baseUrl);
+      const routing = resolveCodingAgentProviderRouting({
+        harnessKind: "pi",
+        profileModel: `${provider.id}::${provider.type === "cloudflare" ? "@cf/meta/llama-3.3-70b-instruct-fp8-fast" : "MiniMax-M2.1"}`,
+        userConfig: {
+          defaultProviderId: provider.id,
+          providers: [provider],
+        },
+      });
+      expect(routing.active).toBe(true);
+      expect(routing.providerType).toBe(provider.type);
+    }
   });
 
   test("getProviderApiBaseUrl resolves OpenRouter chat endpoint for Codex", () => {

@@ -20,7 +20,6 @@ export function ChatPageContent(state: ChatPageState) {
     availableSkills,
     chatStatus,
     busy,
-    canManageProfileModel,
     lastSuccessfulTurnAt,
     turnStartedAt,
     canStop,
@@ -33,6 +32,7 @@ export function ChatPageContent(state: ChatPageState) {
     health,
     providerModelGroups,
     currentModelSelection,
+    profileModelSelection,
     activeModelSupportsVision,
     showThinking,
     thinkingEffortVisible,
@@ -56,6 +56,7 @@ export function ChatPageContent(state: ChatPageState) {
     agentTodos,
     agentQuestionnaire,
     workspaceReadOnly,
+    canUpdateSessionModel,
   } = state;
 
   const { banner: skillReviewBanner } = usePostTurnSkillReviewOverlay({
@@ -98,7 +99,7 @@ export function ChatPageContent(state: ChatPageState) {
         currentModelSelection={currentModelSelection}
         disabled={composerDisabled}
         error={error}
-        modelSelectionDisabled={!canManageProfileModel}
+        modelSelectionDisabled={!canUpdateSessionModel}
         onModelChange={handleModelChange}
         onNavigateSetup={navigateSetup}
         onStop={stopStreaming}
@@ -119,6 +120,7 @@ export function ChatPageContent(state: ChatPageState) {
         onThinkingEffortChange={handleThinkingEffortChange}
         primarySupportsVision={activeModelSupportsVision}
         profileModelId={extractModelId(activeProfile?.model)}
+        profileModelSelection={profileModelSelection}
         providerConfigured={health?.providerConfigured}
         providerModelGroups={providerModelGroups}
         questionnaire={agentQuestionnaire}

@@ -11,7 +11,8 @@ export interface AutomationSchedulerDelegate {
   listScheduledAutomations(): Promise<AutomationSchedule[]>;
   runAutomation(
     automationId: string,
-    fireId: string
+    fireId: string,
+    orgId: string
   ): Promise<{ ok: boolean; skipped?: boolean; error?: string }>;
 }
 
@@ -87,7 +88,7 @@ export class AutomationScheduler {
           const occurrence = job.currentRun() ?? new Date();
           const fireId = scheduledOccurrenceId(automation.id, occurrence);
           void this.delegate
-            .runAutomation(automation.id, fireId)
+            .runAutomation(automation.id, fireId, automation.orgId)
             .catch((error: unknown) => {
               const message =
                 error instanceof Error ? error.message : String(error);
@@ -118,7 +119,7 @@ export class AutomationScheduler {
         automation.runAt ?? new Date()
       );
       void this.delegate
-        .runAutomation(automation.id, fireId)
+        .runAutomation(automation.id, fireId, automation.orgId)
         .catch((error: unknown) => {
           const message =
             error instanceof Error ? error.message : String(error);

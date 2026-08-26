@@ -1,6 +1,13 @@
-import type { CustomModelEntry, ProviderName } from "./contract";
+import type { CustomModelEntry, ProviderName, WireApi } from "./contract";
 
 export const DISPLAY_NAME_MAX_LENGTH = 64;
+
+/** Unknown persisted values intentionally fall back to chat completions. */
+export function parseWireApi(value: unknown): WireApi | undefined {
+  return typeof value === "string" && value.trim() === "responses"
+    ? "responses"
+    : undefined;
+}
 
 export function normalizeBaseUrl(baseUrl: string): string {
   return baseUrl.trim().replace(/\/+$/, "");
@@ -63,6 +70,7 @@ export function validateCustomModels(entries: unknown): CustomModelEntry[] {
   }
 
   const result: CustomModelEntry[] = [];
+  const seenModelIds = new Set<string>();
   let defaultCount = 0;
 
   for (const entry of entries) {
@@ -76,6 +84,10 @@ export function validateCustomModels(entries: unknown): CustomModelEntry[] {
     if (!id) {
       throw new Error("Each model must have a non-empty id.");
     }
+    if (seenModelIds.has(id)) {
+      throw new Error(`Duplicate model id "${id}".`);
+    }
+    seenModelIds.add(id);
 
     const name =
       typeof record.name === "string" && record.name.trim()

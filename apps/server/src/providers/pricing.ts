@@ -1,5 +1,6 @@
 import {
   findCustomModel,
+  isDiscoveryModelProvider,
   type ProviderInstance,
   type ProviderName,
 } from "@atlas/core";
@@ -68,7 +69,7 @@ export function getModelPricing(
   const provider = context.provider ?? context.providerInstance?.type ?? null;
 
   if (
-    provider === "openai_compatible" ||
+    (provider !== null && isDiscoveryModelProvider(provider)) ||
     provider === "openrouter" ||
     provider === "cerebras" ||
     provider === "fireworks" ||

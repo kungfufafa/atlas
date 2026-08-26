@@ -4,10 +4,12 @@ import type {
   CustomModelEntry,
   GenerateChatInput,
   LlmToolDefinition,
+  ProviderName,
   StreamChatHandlers,
   ToolCall,
 } from "@atlas/core";
 import {
+  fetchWithoutIdleTimeout,
   isMessageContentPartArray,
   toOpenAIResponsesUserContent,
   WEB_SEARCH_TOOL_NAME,
@@ -15,10 +17,14 @@ import {
 import {
   buildTokenUsage,
   DEFAULT_USER_AGENT,
+  formatHttpErrorBody,
+  hasMatchingProviderContent,
+  notifyToolInputDelta,
   parseJsonRecord,
   readRecord,
   readSseEvents,
   resolveThinkingEffort,
+  sanitizeToolCallHistory,
 } from "../shared";
 import { openAIModelSupportsThinking } from "./thinking";
 
@@ -33,6 +39,16 @@ export async function generateOpenAIResponsesChat(options: {
   stream: boolean;
   handlers?: StreamChatHandlers;
   customModels?: CustomModelEntry[];
+  /** Ask a Responses-compatible endpoint for a JSON object. */
+  jsonOutput?: boolean;
+  /** Override OpenAI model-name heuristics for compatible endpoints. */
+  supportsThinking?: boolean;
+  /** Provider/model-specific reasoning effort values from the configured catalog. */
+  reasoningEffortValues?: string[];
+  /** Provider identity used to gate opaque Responses replay. */
+  providerName?: ProviderName;
+  providerInstanceId?: string;
+  providerReplayRevision?: string;
 }): Promise<ChatCompletionResult> {
   const label = options.label ?? "OpenAI";
   const baseUrl = (options.baseUrl ?? "https://api.openai.com/v1").replace(
@@ -43,9 +59,15 @@ export async function generateOpenAIResponsesChat(options: {
     options.model,
     options.input,
     options.stream,
-    options.customModels
+    options.customModels,
+    options.supportsThinking,
+    options.jsonOutput,
+    options.reasoningEffortValues,
+    options.providerName,
+    options.providerInstanceId,
+    options.providerReplayRevision
   );
-  const response = await fetch(`${baseUrl}/responses`, {
+  const response = await fetchWithoutIdleTimeout(`${baseUrl}/responses`, {
     body: JSON.stringify(body),
     headers: {
       Authorization: `Bearer ${options.apiKey}`,
@@ -58,7 +80,7 @@ export async function generateOpenAIResponsesChat(options: {
 
   if (!response.ok) {
     throw new Error(
-      `${label} request failed (${response.status}): ${await response.text()}`
+      formatHttpErrorBody(label, response.status, await response.text())
     );
   }
 
@@ -67,21 +89,37 @@ export async function generateOpenAIResponsesChat(options: {
       throw new Error(`${label} returned an empty stream.`);
     }
 
-    return readOpenAIResponsesStream(response.body, options.handlers);
+    return readOpenAIResponsesStream(
+      response.body,
+      options.handlers,
+      label,
+      options.providerName,
+      options.providerInstanceId,
+      options.model,
+      options.providerReplayRevision
+    );
   }
 
   const payload = (await response.json()) as {
+    error?: unknown;
     output?: ResponseItem[];
+    status?: unknown;
     usage?: {
       input_tokens?: number;
       output_tokens?: number;
       total_tokens?: number;
     };
   };
+  assertResponsesSucceeded(payload, label);
   return parseResponsesOutput(
     payload.output ?? [],
     options.handlers,
-    payload.usage
+    payload.usage,
+    label,
+    options.providerName,
+    options.providerInstanceId,
+    options.model,
+    options.providerReplayRevision
   );
 }
 
@@ -89,7 +127,13 @@ async function buildResponsesRequestBody(
   model: string,
   input: GenerateChatInput,
   stream: boolean,
-  customModels?: CustomModelEntry[]
+  customModels?: CustomModelEntry[],
+  supportsThinking?: boolean,
+  jsonOutput?: boolean,
+  reasoningEffortValues?: string[],
+  providerName?: ProviderName,
+  providerInstanceId?: string,
+  providerReplayRevision?: string
 ) {
   const tools = buildResponsesTools(
     input.tools,
@@ -97,11 +141,24 @@ async function buildResponsesRequestBody(
   );
 
   return {
-    input: await toResponsesInput(input.messages),
+    input: await toResponsesInput(
+      input.messages,
+      providerName,
+      providerInstanceId,
+      model,
+      providerReplayRevision
+    ),
     instructions: input.system,
     model,
     ...(tools.length > 0 ? { tools } : {}),
-    ...buildOpenAIReasoningRequest(model, input, customModels),
+    ...buildOpenAIReasoningRequest(
+      model,
+      input,
+      customModels,
+      supportsThinking,
+      reasoningEffortValues
+    ),
+    ...(jsonOutput ? { text: { format: { type: "json_object" } } } : {}),
     ...(stream ? { stream: true } : {}),
   };
 }
@@ -109,20 +166,23 @@ async function buildResponsesRequestBody(
 function buildOpenAIReasoningRequest(
   model: string,
   input: GenerateChatInput,
-  customModels?: CustomModelEntry[]
+  customModels?: CustomModelEntry[],
+  supportsThinking?: boolean,
+  reasoningEffortValues?: string[]
 ): Record<string, unknown> {
-  if (
-    !(
-      input.providerOptions?.thinking?.enabled &&
-      openAIModelSupportsThinking(model, customModels)
-    )
-  ) {
+  const modelSupportsThinking =
+    supportsThinking ?? openAIModelSupportsThinking(model, customModels);
+
+  if (!(input.providerOptions?.thinking?.enabled && modelSupportsThinking)) {
     return {};
   }
 
   return {
     reasoning: {
-      effort: resolveThinkingEffort(input.providerOptions.thinking.effort),
+      effort: resolveThinkingEffort(
+        input.providerOptions.thinking.effort,
+        reasoningEffortValues
+      ),
       summary: "auto",
     },
   };
@@ -144,18 +204,30 @@ function buildResponsesTools(
 }
 
 export async function toResponsesInput(
-  messages: ChatMessage[]
+  messages: ChatMessage[],
+  provider: ProviderName = "openai",
+  providerInstanceId?: string,
+  modelId?: string,
+  providerReplayRevision?: string
 ): Promise<unknown[]> {
   const input: unknown[] = [];
 
-  for (const message of messages) {
+  for (const message of sanitizeToolCallHistory(messages)) {
     if (message.role === "user") {
-      input.push(await toResponsesUserInput(message));
+      input.push(await toResponsesUserInput(message, provider));
       continue;
     }
 
     if (message.role === "assistant") {
-      input.push(...toResponsesAssistantInput(message));
+      input.push(
+        ...toResponsesAssistantInput(
+          message,
+          provider,
+          providerInstanceId,
+          modelId,
+          providerReplayRevision
+        )
+      );
       continue;
     }
 
@@ -166,9 +238,10 @@ export async function toResponsesInput(
 }
 
 async function toResponsesUserInput(
-  message: Extract<ChatMessage, { role: "user" }>
+  message: Extract<ChatMessage, { role: "user" }>,
+  provider: ProviderName
 ): Promise<unknown> {
-  const content = await toOpenAIResponsesUserContent(message.content);
+  const content = await toOpenAIResponsesUserContent(message.content, provider);
 
   if (isMessageContentPartArray(message.content)) {
     return {
@@ -185,19 +258,32 @@ async function toResponsesUserInput(
 }
 
 function toResponsesAssistantInput(
-  message: Extract<ChatMessage, { role: "assistant" }>
+  message: Extract<ChatMessage, { role: "assistant" }>,
+  provider: ProviderName,
+  providerInstanceId?: string,
+  modelId?: string,
+  providerReplayRevision?: string
 ): unknown[] {
   const input: unknown[] = [];
+  const canReplayOpaqueContent = hasMatchingProviderContent(
+    message,
+    provider,
+    "openai-responses",
+    providerInstanceId,
+    modelId,
+    providerReplayRevision
+  );
+  const providerContent = canReplayOpaqueContent
+    ? (message.providerContent ?? [])
+    : [];
 
   if (message.toolCalls?.length) {
-    if (message.content.trim()) {
+    if (canReplayOpaqueContent) {
+      // providerContent already carries the assistant message item; pushing
+      // message.content as well would replay the same text twice.
+      input.push(...providerContent.filter(isNonFunctionCallProviderItem));
+    } else if (message.content.trim()) {
       input.push(toResponsesAssistantTextMessage(message.content));
-    }
-
-    if (message.providerContent?.length) {
-      input.push(
-        ...message.providerContent.filter(isNonFunctionCallProviderItem)
-      );
     }
 
     input.push(
@@ -212,8 +298,8 @@ function toResponsesAssistantInput(
     return input;
   }
 
-  if (message.providerContent?.length) {
-    input.push(...message.providerContent);
+  if (canReplayOpaqueContent) {
+    input.push(...providerContent);
     return input;
   }
 
@@ -247,6 +333,33 @@ function toResponsesToolOutput(
   };
 }
 
+function describeResponsesError(value: unknown): string | undefined {
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+
+  const error = readRecord(value);
+  const message = typeof error.message === "string" ? error.message.trim() : "";
+  const code = typeof error.code === "string" ? error.code.trim() : "";
+  return message || code || undefined;
+}
+
+function assertResponsesSucceeded(
+  payload: { error?: unknown; status?: unknown },
+  label: string
+): void {
+  const status =
+    typeof payload.status === "string" ? payload.status.trim() : "";
+  const error = describeResponsesError(payload.error);
+
+  if (!(error || (status && status !== "completed"))) {
+    return;
+  }
+
+  const detail = error ?? `response status was ${status}`;
+  throw new Error(`${label} request failed: ${detail}`);
+}
+
 function parseResponsesOutput(
   output: ResponseItem[],
   handlers?: StreamChatHandlers,
@@ -254,13 +367,23 @@ function parseResponsesOutput(
     input_tokens?: number;
     output_tokens?: number;
     total_tokens?: number;
-  }
+  },
+  label = "OpenAI",
+  provider: ProviderName = "openai",
+  providerInstanceId?: string,
+  modelId?: string,
+  providerReplayRevision?: string
 ): ChatCompletionResult {
   const textParts: string[] = [];
   const thinkingParts: string[] = [];
   const toolCalls: ToolCall[] = [];
 
   for (const item of output) {
+    if (item.type === "refusal" && typeof item.refusal === "string") {
+      textParts.push(item.refusal);
+      continue;
+    }
+
     if (item.type === "reasoning") {
       const summaryText = extractReasoningSummaryText(item);
 
@@ -276,14 +399,18 @@ function parseResponsesOutput(
 
       if (Array.isArray(content)) {
         for (const block of content) {
+          const contentBlock = readRecord(block);
           if (
-            typeof block === "object" &&
-            block !== null &&
-            "type" in block &&
-            block.type === "output_text" &&
-            typeof block.text === "string"
+            contentBlock.type === "output_text" &&
+            typeof contentBlock.text === "string"
           ) {
-            textParts.push(block.text);
+            textParts.push(contentBlock.text);
+          }
+          if (
+            contentBlock.type === "refusal" &&
+            typeof contentBlock.refusal === "string"
+          ) {
+            textParts.push(contentBlock.refusal);
           }
         }
       }
@@ -311,8 +438,8 @@ function parseResponsesOutput(
     totalTokens: usage?.total_tokens,
   });
 
-  if (!content && toolCalls.length === 0 && !providerContent?.length) {
-    throw new Error("OpenAI returned an empty response.");
+  if (!content && toolCalls.length === 0 && !thinking) {
+    throw new Error(`${label} returned an empty response.`);
   }
 
   return {
@@ -321,7 +448,18 @@ function parseResponsesOutput(
       role: "assistant",
       ...(thinking ? { thinking } : {}),
       ...(toolCalls.length > 0 ? { toolCalls } : {}),
-      ...(providerContent ? { providerContent } : {}),
+      ...(providerContent
+        ? {
+            providerContent,
+            providerContentProvenance: {
+              ...(modelId ? { modelId } : {}),
+              ...(providerReplayRevision ? { providerReplayRevision } : {}),
+              ...(providerInstanceId ? { providerInstanceId } : {}),
+              protocol: "openai-responses",
+              provider,
+            },
+          }
+        : {}),
     },
     content,
     toolCalls,
@@ -378,80 +516,179 @@ function emitWebSearchToolEvent(
 
 async function readOpenAIResponsesStream(
   body: ReadableStream<Uint8Array>,
-  handlers?: StreamChatHandlers
+  handlers?: StreamChatHandlers,
+  label = "OpenAI",
+  provider: ProviderName = "openai",
+  providerInstanceId?: string,
+  modelId?: string,
+  providerReplayRevision?: string
 ): Promise<ChatCompletionResult> {
   let content = "";
   let thinking = "";
   let usage: ChatCompletionResult["usage"];
+  let streamedRefusal = false;
+  let sawTerminal = false;
+  let completedOutput: ResponseItem[] | undefined;
   const output: ResponseItem[] = [];
   const outputIndex = new Map<string, ResponseItem>();
 
-  await readSseEvents(body, ({ data }) => {
-    const payload = JSON.parse(data) as Record<string, unknown>;
-    const type = String(payload.type ?? "");
-    const responseRecord = readRecord(payload.response);
-    usage =
-      buildTokenUsage({
-        inputTokens:
-          responseRecord.usage && readRecord(responseRecord.usage).input_tokens,
-        outputTokens:
-          responseRecord.usage &&
-          readRecord(responseRecord.usage).output_tokens,
-        totalTokens:
-          responseRecord.usage && readRecord(responseRecord.usage).total_tokens,
-      }) ?? usage;
-
-    if (type === "response.output_text.delta") {
-      const delta = String(payload.delta ?? "");
-      content += delta;
-      handlers?.onChunk(delta);
-    }
-
-    if (type === "response.reasoning_summary_text.delta") {
-      const delta = String(payload.delta ?? "");
-      thinking += delta;
-      handlers?.onThinking?.(delta);
-    }
-
-    if (type === "response.output_item.added") {
-      const item = readRecord(payload.item);
-      const itemId = String(item.id ?? "");
-
-      if (itemId) {
-        outputIndex.set(itemId, item);
-      }
-    }
-
-    if (type === "response.output_item.done") {
-      const item = readRecord(payload.item);
-      const itemId = String(item.id ?? "");
-      output.push(item);
-
-      if (itemId) {
-        outputIndex.set(itemId, item);
+  await readSseEvents(
+    body,
+    ({ data }) => {
+      if (data.trim() === "[DONE]") {
+        sawTerminal = true;
+        return;
       }
 
-      if (item.type === "web_search_call") {
-        emitWebSearchToolEvent(item, handlers);
-      }
-    }
-  });
+      const payload = JSON.parse(data) as Record<string, unknown>;
+      const type = String(payload.type ?? "");
+      const responseRecord = readRecord(payload.response);
+      usage =
+        buildTokenUsage({
+          inputTokens:
+            responseRecord.usage &&
+            readRecord(responseRecord.usage).input_tokens,
+          outputTokens:
+            responseRecord.usage &&
+            readRecord(responseRecord.usage).output_tokens,
+          totalTokens:
+            responseRecord.usage &&
+            readRecord(responseRecord.usage).total_tokens,
+        }) ?? usage;
 
-  if (output.length === 0 && outputIndex.size > 0) {
-    output.push(...outputIndex.values());
+      if (
+        type === "response.failed" ||
+        type === "response.incomplete" ||
+        type === "error"
+      ) {
+        assertResponsesSucceeded(
+          {
+            error: responseRecord.error ?? payload.error ?? payload,
+            status:
+              responseRecord.status ??
+              (type === "response.incomplete" ? "incomplete" : "failed"),
+          },
+          label
+        );
+      }
+
+      if (type === "response.completed") {
+        assertResponsesSucceeded(responseRecord, label);
+        sawTerminal = true;
+        if (Array.isArray(responseRecord.output)) {
+          completedOutput = responseRecord.output.map(readRecord);
+        }
+      }
+
+      if (type === "response.output_text.delta") {
+        const delta = String(payload.delta ?? "");
+        content += delta;
+        handlers?.onChunk(delta);
+      }
+
+      if (type === "response.refusal.delta") {
+        const delta = String(payload.delta ?? "");
+        streamedRefusal = true;
+        content += delta;
+        handlers?.onChunk(delta);
+      }
+
+      if (type === "response.reasoning_summary_text.delta") {
+        const delta = String(payload.delta ?? "");
+        thinking += delta;
+        handlers?.onThinking?.(delta);
+      }
+
+      if (type === "response.output_item.added") {
+        const item = readRecord(payload.item);
+        const itemId = String(item.id ?? payload.item_id ?? "");
+
+        if (itemId) {
+          outputIndex.set(itemId, item);
+        }
+      }
+
+      if (type === "response.function_call_arguments.delta") {
+        const itemId = String(payload.item_id ?? "");
+        const item = outputIndex.get(itemId);
+        const delta = String(payload.delta ?? "");
+
+        if (item && delta) {
+          const argumentsText = `${String(item.arguments ?? "")}${delta}`;
+          const updatedItem: ResponseItem = {
+            ...item,
+            arguments: argumentsText,
+          };
+          outputIndex.set(itemId, updatedItem);
+          notifyToolInputDelta(
+            handlers,
+            {
+              arguments: argumentsText,
+              id: String(updatedItem.call_id ?? updatedItem.id ?? ""),
+              name: String(updatedItem.name ?? ""),
+            },
+            delta
+          );
+        }
+      }
+
+      if (type === "response.output_item.done") {
+        const item = readRecord(payload.item);
+        const itemId = String(item.id ?? "");
+        output.push(item);
+
+        if (itemId) {
+          outputIndex.set(itemId, item);
+        }
+      }
+    },
+    { includeDoneSentinel: true }
+  );
+
+  if (!sawTerminal) {
+    throw new Error(`${label} stream ended before response.completed.`);
   }
 
-  const parsed = parseResponsesOutput(output, handlers);
+  let finalOutput = completedOutput ?? output;
+  if (finalOutput.length === 0 && outputIndex.size > 0) {
+    finalOutput = [...outputIndex.values()];
+  }
 
-  const thinkingText = thinking.trim() || parsed.assistantMessage.thinking;
+  if (content.trim() && finalOutput.length === 0) {
+    finalOutput = [
+      {
+        content: [
+          streamedRefusal
+            ? { refusal: content, type: "refusal" }
+            : { text: content, type: "output_text" },
+        ],
+        role: "assistant",
+        type: "message",
+      },
+    ];
+  }
+
+  const parsed = parseResponsesOutput(
+    finalOutput,
+    handlers,
+    undefined,
+    label,
+    provider,
+    providerInstanceId,
+    modelId,
+    providerReplayRevision
+  );
+
+  const thinkingText = parsed.assistantMessage.thinking || thinking.trim();
+  const resolvedContent = parsed.content || content.trim();
 
   return {
     ...parsed,
-    content: content.trim() || parsed.content,
+    content: resolvedContent,
     ...(usage ? { usage } : {}),
     assistantMessage: {
       ...parsed.assistantMessage,
-      content: content.trim() || parsed.content,
+      content: resolvedContent,
       ...(thinkingText ? { thinking: thinkingText } : {}),
     },
   };

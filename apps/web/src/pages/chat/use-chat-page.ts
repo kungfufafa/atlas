@@ -31,7 +31,7 @@ import { useAuth } from "@/context/use-auth";
 import { useProfileQuery } from "@/hooks/use-app-queries";
 import {
   useBranchSessionMutation,
-  useUpdateProfileMutation,
+  useUpdateSessionMutation,
 } from "@/hooks/use-resource-mutations";
 import {
   buildThinkingSettingsPayload,
@@ -92,6 +92,7 @@ import {
   shouldShowThinkingEffort,
 } from "@/lib/thinking-settings";
 import {
+  canSelectSessionModel,
   findRetryCheckpoint,
   findRetryPrompt,
   isSupersededChatTurn,
@@ -134,6 +135,8 @@ export function useChatPage() {
     })
   );
   const [session, setSession] = useState<RemoteChatSession | null>(null);
+  const [sessionModel, setSessionModel] = useState<string | null>(null);
+  const [canUpdateSessionModel, setCanUpdateSessionModel] = useState(true);
   const [sessionChannel, setSessionChannel] = useState<AgentChannel>("web");
   const [messages, setMessages] = useState<ChatListItem[]>([]);
   const [agentTodos, setAgentTodos] = useState<AgentTodo[]>([]);
@@ -165,6 +168,7 @@ export function useChatPage() {
   const loadedRouteRef = useRef<string | null>(null);
   const profileIdRef = useRef(profileId);
   const busyRef = useRef(busy);
+  const activeSessionIdRef = useRef<string | null>(null);
   const workspaceIdRef = useRef(activeOrg?.id ?? null);
 
   useEffect(() => {
@@ -177,6 +181,7 @@ export function useChatPage() {
 
   useEffect(() => {
     sessionRef.current = session;
+    activeSessionIdRef.current = session?.id ?? null;
   }, [session]);
 
   const supersedeInFlightTurn = useCallback(() => {
@@ -221,7 +226,7 @@ export function useChatPage() {
 
   const showOfflineHint = health != null && !health.providerConfigured;
   const branchSessionMutation = useBranchSessionMutation();
-  const updateProfileMutation = useUpdateProfileMutation();
+  const updateSessionMutation = useUpdateSessionMutation();
   const { data: thinkingSettings, isLoading: thinkingSettingsLoading } =
     useThinkingSettings();
   const saveThinkingSettingsMutation = useSaveThinkingSettings();
@@ -241,10 +246,19 @@ export function useChatPage() {
     [models?.models]
   );
 
-  const currentModelSelection = useMemo(
+  const profileModelSelection = useMemo(
     () =>
       effectiveProfileModelSelection(activeProfile?.model, providerModelGroups),
     [activeProfile?.model, providerModelGroups]
+  );
+
+  const currentModelSelection = useMemo(
+    () =>
+      effectiveProfileModelSelection(
+        sessionModel ?? profileModelSelection,
+        providerModelGroups
+      ),
+    [profileModelSelection, providerModelGroups, sessionModel]
   );
 
   const renderModelLabel = useCallback(
@@ -292,6 +306,12 @@ export function useChatPage() {
 
   const readOnlySession = isReadOnlySessionChannel(sessionChannel);
   const workspaceReadOnly = isViewerRole(activeOrg?.role);
+  const modelSelectionAllowed = canSelectSessionModel({
+    canUpdateExistingSession: canUpdateSessionModel,
+    hasSession: session !== null,
+    readOnlySession,
+    workspaceReadOnly,
+  });
   const showThinking = shouldShowThinkingBlocks(activeModelSupportsThinking);
   const thinkingEffortVisible = shouldShowThinkingEffort(
     activeModelSupportsThinking
@@ -305,30 +325,50 @@ export function useChatPage() {
     workspaceReadOnly;
 
   const handleModelChange = useCallback(
-    (selection: string) => {
-      if (!(canManageProfileModel && profileId && selection)) {
+    (selection: string | null) => {
+      if (
+        !profileId ||
+        busy ||
+        updateSessionMutation.isPending ||
+        !modelSelectionAllowed
+      ) {
         return;
       }
-      const decoded = decodeModelSelection(selection);
-      if (!decoded) {
+      if (selection && !decodeModelSelection(selection)) {
         return;
       }
-      void updateProfileMutation
-        .mutateAsync({ input: { model: selection }, profileId })
-        .then(() => {
-          setProfiles((current) =>
-            current.map((profile) =>
-              profile.id === profileId
-                ? { ...profile, model: selection }
-                : profile
-            )
-          );
+
+      const previousModel = sessionModel;
+      setSessionModel(selection);
+      if (!session) {
+        return;
+      }
+
+      const updatedSessionId = session.id;
+      void updateSessionMutation
+        .mutateAsync({
+          channel: sessionChannel,
+          input: { model: selection },
+          profileId,
+          sessionId: updatedSessionId,
         })
         .catch((err) => {
+          if (activeSessionIdRef.current !== updatedSessionId) {
+            return;
+          }
+          setSessionModel(previousModel);
           setError(formatError(err));
         });
     },
-    [canManageProfileModel, profileId, updateProfileMutation]
+    [
+      busy,
+      profileId,
+      modelSelectionAllowed,
+      session,
+      sessionChannel,
+      sessionModel,
+      updateSessionMutation,
+    ]
   );
 
   const loadProfiles = useCallback(async () => {
@@ -370,7 +410,10 @@ export function useChatPage() {
       isSendingRef.current = false;
       setQueuedMessages([]);
       sessionRef.current = null;
+      activeSessionIdRef.current = null;
       setSession(null);
+      setSessionModel(null);
+      setCanUpdateSessionModel(true);
       setSessionChannel("web");
       setMessages([]);
       setError(null);
@@ -403,7 +446,10 @@ export function useChatPage() {
     loadedRouteRef.current = null;
     setQueuedMessages([]);
     sessionRef.current = null;
+    activeSessionIdRef.current = null;
     setSession(null);
+    setSessionModel(null);
+    setCanUpdateSessionModel(true);
     setSessionChannel("web");
     setMessages([]);
     setError(null);
@@ -510,6 +556,7 @@ export function useChatPage() {
 
   const resumeSession = useCallback(
     async (nextProfileId: string, sessionId: string) => {
+      activeSessionIdRef.current = sessionId;
       const generation = supersedeInFlightTurn();
       isSendingRef.current = true;
       setBusy(true);
@@ -517,9 +564,11 @@ export function useChatPage() {
       try {
         skipNextProfileSessionRef.current = nextProfileId !== profileId;
         const {
+          canUpdateModel,
           channel,
           messages: storedMessages,
           messageMeta,
+          model,
           todos,
           questionnaire,
           contextUsage: nextContextUsage,
@@ -534,6 +583,8 @@ export function useChatPage() {
         setSessionChannel(channel);
         sessionRef.current = nextSession;
         setSession(nextSession);
+        setSessionModel(model);
+        setCanUpdateSessionModel(canUpdateModel);
         setMessages(listItems);
         setAgentTodos(todos);
         setAgentQuestionnaire(questionnaire);
@@ -580,6 +631,8 @@ export function useChatPage() {
             setAgentTodos(refreshed.todos);
             setAgentQuestionnaire(refreshed.questionnaire);
             setContextUsage(refreshed.contextUsage ?? null);
+            setSessionModel(refreshed.model);
+            setCanUpdateSessionModel(refreshed.canUpdateModel);
 
             if (reconnected) {
               setLastSuccessfulTurnAt(Date.now());
@@ -703,7 +756,10 @@ export function useChatPage() {
     supersedeInFlightTurn();
     setQueuedMessages([]);
     sessionRef.current = null;
+    activeSessionIdRef.current = null;
     setSession(null);
+    setSessionModel(null);
+    setCanUpdateSessionModel(true);
     setSessionChannel("web");
     setMessages([]);
     setError(null);
@@ -821,14 +877,19 @@ export function useChatPage() {
 
       if (!activeSession) {
         try {
-          activeSession = await client.createSession("web", { profileId });
+          activeSession = await client.createSession("web", {
+            model: sessionModel ?? undefined,
+            profileId,
+          });
           if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
             return;
           }
           localStorage.setItem(sessionStorageKey(profileId), activeSession.id);
+          activeSessionIdRef.current = activeSession.id;
           setSessionChannel("web");
           sessionRef.current = activeSession;
           setSession(activeSession);
+          setCanUpdateSessionModel(true);
           syncChatUrl(profileId, activeSession.id);
         } catch (err) {
           if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
@@ -876,8 +937,10 @@ export function useChatPage() {
         }
 
         const {
+          canUpdateModel,
           messages: storedMessages,
           messageMeta,
+          model: nextSessionModel,
           todos,
           questionnaire,
           contextUsage: nextContextUsage,
@@ -889,6 +952,8 @@ export function useChatPage() {
         setAgentTodos(todos);
         setAgentQuestionnaire(questionnaire);
         setContextUsage(nextContextUsage ?? null);
+        setSessionModel(nextSessionModel);
+        setCanUpdateSessionModel(canUpdateModel);
         setLastSuccessfulTurnAt(Date.now());
       } catch (err) {
         if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
@@ -911,14 +976,18 @@ export function useChatPage() {
         if (message.includes("Session not found") && profileId) {
           try {
             const nextSession = await client.createSession("web", {
+              model: sessionModel ?? undefined,
               profileId,
             });
             if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
               return;
             }
             localStorage.setItem(sessionStorageKey(profileId), nextSession.id);
+            activeSessionIdRef.current = nextSession.id;
             setSessionChannel("web");
+            sessionRef.current = nextSession;
             setSession(nextSession);
+            setCanUpdateSessionModel(true);
             setError(
               "Chat session expired. Started a new session — please send again."
             );
@@ -964,7 +1033,13 @@ export function useChatPage() {
         }
       }
     },
-    [profileId, syncChatUrl, showThinking, activeModelSupportsVision]
+    [
+      profileId,
+      syncChatUrl,
+      showThinking,
+      activeModelSupportsVision,
+      sessionModel,
+    ]
   );
 
   const sendMessage = useCallback(
@@ -1060,7 +1135,10 @@ export function useChatPage() {
               item.historyIndex <= checkpoint.historyIndex!
           );
         } else {
-          retrySession = await client.createSession("web", { profileId });
+          retrySession = await client.createSession("web", {
+            model: sessionModel ?? undefined,
+            profileId,
+          });
         }
 
         if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
@@ -1068,6 +1146,8 @@ export function useChatPage() {
         }
 
         localStorage.setItem(sessionStorageKey(profileId), retrySession.id);
+        activeSessionIdRef.current = retrySession.id;
+        sessionRef.current = retrySession;
         setSession(retrySession);
         syncChatUrl(profileId, retrySession.id);
 
@@ -1091,13 +1171,18 @@ export function useChatPage() {
       profileId,
       sendMessage,
       session,
+      sessionModel,
       syncChatUrl,
       workspaceReadOnly,
     ]
   );
 
   const isEmptyState = messages.length === 0 && !busy;
-  const composerDisabled = !profileId || readOnlySession || workspaceReadOnly;
+  const composerDisabled =
+    !profileId ||
+    readOnlySession ||
+    workspaceReadOnly ||
+    updateSessionMutation.isPending;
 
   return {
     activeModelSupportsVision,
@@ -1109,6 +1194,7 @@ export function useChatPage() {
     busy,
     canManageProfileModel,
     canStop,
+    canUpdateSessionModel: modelSelectionAllowed,
     chatStatus,
     composerDisabled,
     composerDraft,
@@ -1126,6 +1212,7 @@ export function useChatPage() {
     messages,
     navigateSetup: () => navigate(SETUP_PATH),
     profileId,
+    profileModelSelection,
     profiles,
     providerModelGroups,
     queuedMessages,

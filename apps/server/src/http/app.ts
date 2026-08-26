@@ -9,12 +9,14 @@ import { registerArtifactPreviewRoutes } from "./routes/artifact-preview";
 import { registerArtifactShareRoutes } from "./routes/artifact-shares";
 import { registerAuthRoutes } from "./routes/auth";
 import { registerAutomationRoutes } from "./routes/automations";
+import { registerCodingHarnessSettingsRoutes } from "./routes/coding-harnesses";
 import {
   registerComposioOAuthRoutes,
   registerComposioRoutes,
 } from "./routes/composio";
 import { registerDataPortabilityRoutes } from "./routes/data-portability";
 import { registerInternalAutomationRoutes } from "./routes/internal-automations";
+import { registerInternalCuratorRoutes } from "./routes/internal-curator";
 import { registerMcpRoutes } from "./routes/mcp";
 import { registerModelRoutes } from "./routes/models";
 import { registerNotificationDestinationRoutes } from "./routes/notification-destinations";
@@ -22,9 +24,11 @@ import { registerNotificationWebhookRoutes } from "./routes/notification-webhook
 import { registerOrgMemberRoutes } from "./routes/org-members";
 import { registerOrgMemoryRoutes } from "./routes/org-memory";
 import { registerPlatformOrgRoutes } from "./routes/platform-orgs";
+import { registerProfilePortabilityRoutes } from "./routes/profile-portability";
 import { registerProfileRoutes } from "./routes/profiles";
 import { registerSessionRoutes } from "./routes/sessions";
 import { registerSetupImportRoutes } from "./routes/setup-import";
+import { registerSkillCuratorRoutes } from "./routes/skill-curator";
 import { registerSkillProposalRoutes } from "./routes/skill-proposals";
 import { registerSkillSuggestionRoutes } from "./routes/skill-suggestions";
 import { registerSkillRoutes } from "./routes/skills";
@@ -102,6 +106,7 @@ export function createHonoApp(options: ServerOptions) {
 
   app.use("*", createAuthMiddleware(options));
   registerInternalAutomationRoutes(app, options);
+  registerInternalCuratorRoutes(app, options);
   registerNotificationWebhookRoutes(app, options);
   registerComposioOAuthRoutes(app, options);
   app.use("*", createOrgContextMiddleware(options));
@@ -114,6 +119,7 @@ export function createHonoApp(options: ServerOptions) {
   registerSessionRoutes(app, options);
   registerSubagentRoutes(app, options);
   registerProfileRoutes(app, options);
+  registerProfilePortabilityRoutes(app, options);
   registerArtifactShareRoutes(app, options);
   registerArtifactPreviewRoutes(app, options);
   registerMcpRoutes(app, options);
@@ -122,6 +128,7 @@ export function createHonoApp(options: ServerOptions) {
   registerAutomationRoutes(app, options);
   registerNotificationDestinationRoutes(app, options);
   registerTokenOptimizationRoutes(app, options);
+  registerCodingHarnessSettingsRoutes(app, options);
   registerUsageRoutes(app, options);
   registerComposioRoutes(app, options);
   registerTaskRoutes(app, options);
@@ -130,6 +137,7 @@ export function createHonoApp(options: ServerOptions) {
   registerOrgMemberRoutes(app, options);
   registerOrgMemoryRoutes(app, options);
   registerSkillProposalRoutes(app, options);
+  registerSkillCuratorRoutes(app, options);
   registerSkillSuggestionRoutes(app, options);
 
   app.get("/openapi.json", (c) => {

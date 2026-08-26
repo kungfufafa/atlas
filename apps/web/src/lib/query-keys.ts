@@ -55,14 +55,16 @@ export const queryKeys = {
     ["providers", providerId, "modelDiscovery"] as const,
   providers: ["providers"] as const,
   remoteModelDiscovery: (options: {
+    apiKey?: string;
     providerId?: string;
     baseUrl?: string;
     provider?: string;
     hostMode?: string;
-    apiKey?: string;
+    credentialRevision?: number;
   }) => ["remoteModelDiscovery", options] as const,
   sessions: (profileId: string, channel: string) =>
     ["sessions", profileId, channel] as const,
+  skillCurator: (orgId: string) => ["skillCurator", orgId] as const,
   skillProposals: (orgId: string, status?: string, profileId?: string) =>
     ["skillProposals", orgId, status ?? "all", profileId ?? "all"] as const,
   skillSuggestions: (

@@ -71,9 +71,20 @@ export async function ensureProfileSuperAgentBundledSkills(
 export async function ensureBundledSkillsAssigned(
   db: DatabaseAdapter
 ): Promise<void> {
+  const organizations = await db.listOrganizations();
+  const hasTenantOrganizations = organizations.length > 0;
+  const activeOrgIds = new Set(
+    organizations.filter((org) => !org.archivedAt).map((org) => org.id)
+  );
   const profiles = await db.listProfiles();
 
   for (const profile of profiles) {
+    if (
+      hasTenantOrganizations &&
+      !(profile.orgId && activeOrgIds.has(profile.orgId))
+    ) {
+      continue;
+    }
     await ensureProfileDefaultBundledSkills(db, profile.id);
   }
 }
@@ -155,6 +166,9 @@ export async function ensureOrgSuperAgentProfiles(
   const orgs = await db.listOrganizations();
 
   for (const org of orgs) {
+    if (org.archivedAt) {
+      continue;
+    }
     await seedOrgSuperAgentProfile(db, org.id);
   }
 }

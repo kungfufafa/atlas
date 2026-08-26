@@ -43,15 +43,16 @@ export function toOpenCodeGoCatalogModelId(model: string): string {
     : `opencode-go/${toOpenCodeGoApiModelId(trimmed)}`;
 }
 
-export async function fetchOpenCodeGoGatewayModels(): Promise<
-  CustomModelEntry[]
-> {
+export async function fetchOpenCodeGoGatewayModels(
+  options: { signal?: AbortSignal } = {}
+): Promise<CustomModelEntry[]> {
   if (catalogCache && Date.now() - catalogCache.fetchedAt < CACHE_TTL_MS) {
     return catalogCache.entries;
   }
 
   const response = await fetch(OPENCODE_GO_MODELS_URL, {
     headers: { "User-Agent": DEFAULT_USER_AGENT },
+    signal: options.signal,
   });
 
   if (!response.ok) {

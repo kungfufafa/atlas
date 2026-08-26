@@ -89,6 +89,16 @@ export class AutomationService {
     return this.enrichAutomation(automation);
   }
 
+  async isOrganizationActive(orgId: string): Promise<boolean> {
+    const normalizedOrgId = orgId.trim();
+    if (!normalizedOrgId) {
+      return false;
+    }
+
+    const organization = await this.db.getOrganizationById(normalizedOrgId);
+    return Boolean(organization && !organization.archivedAt);
+  }
+
   async create(
     orgId: string,
     input: CreateAutomationRequest,
@@ -120,7 +130,7 @@ export class AutomationService {
     const now = new Date().toISOString();
     const ownerId = createdByUserId?.trim();
     const automation: StoredAutomation = {
-      description: input.description.trim() || input.prompt.trim(),
+      description: input.description?.trim() || input.prompt.trim(),
       enabled: input.enabled ?? true,
       id: createId("automation"),
       name: input.name.trim(),

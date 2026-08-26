@@ -1,5 +1,4 @@
-import { afterEach, describe, expect, spyOn, test } from "bun:test";
-import { serve } from "bun";
+import { describe, expect, spyOn, test } from "bun:test";
 import {
   compatibleModelSupportsThinking,
   fetchRemoteOpenAIModels,
@@ -7,12 +6,9 @@ import {
   mergeOpenRouterCatalog,
 } from "./compatible-models";
 
-let mockServer: ReturnType<typeof serve> | undefined;
-
-afterEach(() => {
-  mockServer?.stop(true);
-  mockServer = undefined;
-});
+const resolvePublicDns = async () => [
+  { address: "8.8.8.8", family: 4 as const },
+];
 
 describe("mergeOpenRouterCatalog", () => {
   test("merges custom display names over static entries", () => {
@@ -313,37 +309,35 @@ describe("getModelsForProviderInstance openai_compatible", () => {
 
 describe("fetchRemoteOpenAIModels TokenRouter payload", () => {
   test("parses the gateway list that only includes ids", async () => {
-    mockServer = serve({
-      fetch() {
-        return Response.json({
-          data: [
-            {
-              created: 1_786_810_001,
-              id: "qwen/qwen3.8-max-free",
-              object: "model",
-              owned_by: "custom",
-              supported_endpoint_types: ["openai"],
-              tags: "Text",
-            },
-            {
-              created: 1_777_427_216,
-              id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-              object: "model",
-              owned_by: "custom",
-              supported_endpoint_types: ["openai"],
-              tags: "Text",
-            },
-          ],
-          object: "list",
-          success: true,
-        });
-      },
-      port: 0,
-    });
-
     const models = await fetchRemoteOpenAIModels(
-      `http://127.0.0.1:${mockServer.port}/v1`,
-      "sk-test"
+      "https://models.example/v1",
+      "sk-test",
+      {
+        fetch: async () =>
+          Response.json({
+            data: [
+              {
+                created: 1_786_810_001,
+                id: "qwen/qwen3.8-max-free",
+                object: "model",
+                owned_by: "custom",
+                supported_endpoint_types: ["openai"],
+                tags: "Text",
+              },
+              {
+                created: 1_777_427_216,
+                id: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+                object: "model",
+                owned_by: "custom",
+                supported_endpoint_types: ["openai"],
+                tags: "Text",
+              },
+            ],
+            object: "list",
+            success: true,
+          }),
+        resolveDns: resolvePublicDns,
+      }
     );
 
     expect(models.map((model) => model.id)).toEqual([
@@ -384,30 +378,28 @@ describe("compatibleModelSupportsThinking", () => {
 
 describe("fetchRemoteOpenAIModels capabilities", () => {
   test("keeps reasoning fields advertised by the endpoint", async () => {
-    mockServer = serve({
-      fetch() {
-        return Response.json({
-          data: [
-            {
-              id: "qwen/qwen3.8-max-free",
-              name: "Qwen 3.8 Max Free",
-              supported_parameters: ["reasoning", "reasoning_effort"],
-              supported_params_details: {
-                reasoning_effort: {
-                  accepted_values: ["low", "medium", "xhigh"],
+    const models = await fetchRemoteOpenAIModels(
+      "https://models.example/v1",
+      "sk-test",
+      {
+        fetch: async () =>
+          Response.json({
+            data: [
+              {
+                id: "qwen/qwen3.8-max-free",
+                name: "Qwen 3.8 Max Free",
+                supported_parameters: ["reasoning", "reasoning_effort"],
+                supported_params_details: {
+                  reasoning_effort: {
+                    accepted_values: ["low", "medium", "xhigh"],
+                  },
                 },
               },
-            },
-            { id: "meta-llama/llama-3.3-70b" },
-          ],
-        });
-      },
-      port: 0,
-    });
-
-    const models = await fetchRemoteOpenAIModels(
-      `http://127.0.0.1:${mockServer.port}/v1`,
-      "sk-test"
+              { id: "meta-llama/llama-3.3-70b" },
+            ],
+          }),
+        resolveDns: resolvePublicDns,
+      }
     );
 
     expect(models).toEqual([
@@ -433,20 +425,17 @@ describe("fetchRemoteOpenAIModels auth errors", () => {
       });
       const warn = spyOn(console, "warn").mockImplementation(() => {});
 
-      mockServer = serve({
-        fetch() {
-          return new Response(upstreamBody, {
-            headers: { "content-type": "application/json" },
-            status,
-          });
-        },
-        port: 0,
-      });
-
-      const baseUrl = `http://127.0.0.1:${mockServer.port}/v1`;
+      const baseUrl = "https://models.example/v1";
 
       try {
-        await fetchRemoteOpenAIModels(baseUrl, "");
+        await fetchRemoteOpenAIModels(baseUrl, "", {
+          fetch: async () =>
+            new Response(upstreamBody, {
+              headers: { "content-type": "application/json" },
+              status,
+            }),
+          resolveDns: resolvePublicDns,
+        });
         expect.unreachable("expected discovery to fail");
       } catch (error) {
         expect(error).toBeInstanceOf(Error);
@@ -456,16 +445,160 @@ describe("fetchRemoteOpenAIModels auth errors", () => {
         expect(message).not.toContain("API key required for remote API access");
       }
 
-      expect(
-        warn.mock.calls.some(
-          (args) =>
-            typeof args[0] === "string" &&
-            args[0].includes("Could not fetch models") &&
-            String(args[1] ?? args[0]).includes(upstreamBody)
-        )
-      ).toBe(true);
+      const warning = warn.mock.calls.flat().join(" ");
+      expect(warning).toContain("Could not fetch models");
+      expect(warning).not.toContain(upstreamBody);
+      expect(warning).not.toContain("API key required for remote API access");
 
       warn.mockRestore();
     });
   }
+});
+
+describe("fetchRemoteOpenAIModels request budget", () => {
+  test("does not fall back when endpoint safety validation fails", async () => {
+    let dnsCalls = 0;
+    let fetchCalls = 0;
+
+    await expect(
+      fetchRemoteOpenAIModels("https://models.example/v1", "test-key", {
+        fetch: async () => {
+          fetchCalls += 1;
+          return Response.json({ data: [] });
+        },
+        resolveDns: async () => {
+          dnsCalls += 1;
+          return [{ address: "127.0.0.1", family: 4 }];
+        },
+      })
+    ).rejects.toMatchObject({ code: "blocked-address" });
+
+    expect(dnsCalls).toBe(1);
+    expect(fetchCalls).toBe(0);
+  });
+
+  test("applies the shared deadline while resolving DNS", async () => {
+    let fetchCalls = 0;
+    const neverResolves = new Promise<never>(() => undefined);
+
+    const request = fetchRemoteOpenAIModels(
+      "https://models.example/v1",
+      "test-key",
+      {
+        fetch: async () => {
+          fetchCalls += 1;
+          return Response.json({ data: [] });
+        },
+        resolveDns: () => neverResolves,
+        timeoutMs: 0,
+      }
+    );
+
+    await expect(request).rejects.toMatchObject({ name: "TimeoutError" });
+    expect(fetchCalls).toBe(0);
+  });
+
+  test("shares one bounded signal across raw and SDK fallback", async () => {
+    const signals: Array<AbortSignal | null | undefined> = [];
+    const idleTimeouts: Array<number | undefined> = [];
+    let calls = 0;
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    const models = await fetchRemoteOpenAIModels(
+      "https://models.example/v1",
+      "test-key",
+      {
+        fetch: (async (_input: RequestInfo | URL, init?: RequestInit) => {
+          calls += 1;
+          signals.push(init?.signal);
+          idleTimeouts.push(
+            (init as RequestInit & { idleTimeout?: number })?.idleTimeout
+          );
+          if (calls === 1) {
+            return new Response("raw unsupported", { status: 404 });
+          }
+          return Response.json({
+            data: [{ id: "sdk-model" }],
+            object: "list",
+          });
+        }) as typeof fetch,
+        resolveDns: resolvePublicDns,
+      }
+    );
+
+    expect(models.map((model) => model.id)).toEqual(["sdk-model"]);
+    expect(calls).toBe(2);
+    expect(signals[0]).toBeInstanceOf(AbortSignal);
+    expect(signals[1]).toBe(signals[0]);
+    expect(idleTimeouts).toEqual([0, 0]);
+    warn.mockRestore();
+  });
+
+  test("disables SDK retries after the raw request fails", async () => {
+    let calls = 0;
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    const request = fetchRemoteOpenAIModels(
+      "https://models.example/v1",
+      "test-key",
+      {
+        fetch: (async () => {
+          calls += 1;
+          return new Response("unavailable", { status: 500 });
+        }) as typeof fetch,
+        resolveDns: resolvePublicDns,
+      }
+    );
+
+    await expect(request).rejects.toBeInstanceOf(Error);
+    expect(calls).toBe(2);
+    warn.mockRestore();
+  });
+
+  test("rethrows caller aborts without falling back", async () => {
+    const caller = new AbortController();
+    const reason = new DOMException("cancelled", "AbortError");
+    caller.abort(reason);
+    let calls = 0;
+
+    try {
+      await fetchRemoteOpenAIModels("https://models.example/v1", "test-key", {
+        fetch: (async () => {
+          calls += 1;
+          throw reason;
+        }) as typeof fetch,
+        resolveDns: resolvePublicDns,
+        signal: caller.signal,
+      });
+      expect.unreachable("expected caller abort");
+    } catch (error) {
+      expect(error).toBe(reason);
+    }
+    expect(calls).toBe(0);
+  });
+
+  test("rethrows the shared deadline without falling back", async () => {
+    let calls = 0;
+    const request = fetchRemoteOpenAIModels(
+      "https://models.example/v1",
+      "test-key",
+      {
+        fetch: ((_input: RequestInfo | URL, init?: RequestInit) => {
+          calls += 1;
+          const signal = init?.signal;
+          if (signal?.aborted) {
+            return Promise.reject(signal.reason);
+          }
+          return new Promise<Response>((_resolve, reject) => {
+            signal?.addEventListener("abort", () => reject(signal.reason), {
+              once: true,
+            });
+          });
+        }) as typeof fetch,
+        resolveDns: resolvePublicDns,
+        timeoutMs: 0,
+      }
+    );
+
+    await expect(request).rejects.toMatchObject({ name: "TimeoutError" });
+    expect(calls).toBe(1);
+  });
 });

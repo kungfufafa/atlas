@@ -1167,7 +1167,9 @@ export function registerModelRoutes(
     const body = await readJson<DiscoverModelsRequest>(c.req.raw);
 
     try {
-      const result = await agent.discoverModels(orgId, body);
+      const result = await agent.discoverModels(orgId, body, {
+        signal: c.req.raw.signal,
+      });
       return json<ModelsResponse>(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

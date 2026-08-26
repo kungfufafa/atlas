@@ -47,8 +47,17 @@ export async function executeToolCall(
   const startMs = Date.now();
   try {
     return await withSpan(`tool.${call.name}`, async () => {
+      const guardedTool: ToolDefinition = context.beforeToolCall
+        ? {
+            ...tool,
+            async run(input, runContext) {
+              await runContext.beforeToolCall?.();
+              return tool.run(input, runContext);
+            },
+          }
+        : tool;
       const execution = await executeProtectedTool(
-        tool,
+        guardedTool,
         call.arguments,
         context
       );
