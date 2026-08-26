@@ -28,16 +28,22 @@ export function OpenRouterProviderModelFields({
       footerHint="Add models by ID or browse OpenRouter. Pricing from browse is saved for usage cost on the Status page."
       modelsError={modelsError}
       onCustomModelsChange={onCustomModelsChange}
-      renderBrowse={(onSelect) => (
+      renderBrowse={({ multiSelect, onAddMany, onSelect }) => (
         <OpenRouterModelsBrowseList
           className="h-72 rounded-md border border-border"
+          disabled={disabled}
+          multiSelect={multiSelect}
+          onAddMany={onAddMany}
           onSelect={onSelect}
         />
       )}
+      showThinking
+      showVision
       toModelRow={(row: OpenRouterModelRow) => ({
         id: row.id,
         name: row.name,
         supportsThinking: row.reasoning,
+        supportsVision: row.vision,
         ...(row.inputPerMillionUsd === undefined
           ? {}
           : { inputPerMillionUsd: row.inputPerMillionUsd }),

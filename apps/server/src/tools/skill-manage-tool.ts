@@ -207,10 +207,21 @@ export function createSkillManageTools(
       async run(input, context: ToolContext) {
         const { orgId, profileId } = requireSkillManageAccess(context);
         const action = readAction(input);
+        const proposalOnly = context.forceSkillWriteProposal?.() === true;
+
+        if (proposalOnly && skillProposalService === null) {
+          throw new Error(
+            "This skill change requires an admin-reviewed proposal, but proposal storage is unavailable."
+          );
+        }
 
         if (
           skillProposalService !== null &&
-          (await skillProposalService.isWriteApprovalRequired(orgId, profileId))
+          (proposalOnly ||
+            (await skillProposalService.isWriteApprovalRequired(
+              orgId,
+              profileId
+            )))
         ) {
           if (action === "create") {
             const content = readRawString(input, "content");

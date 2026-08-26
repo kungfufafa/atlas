@@ -31,6 +31,8 @@ const CODING_AGENT_LOG_RETENTION = 10;
 
 export interface BashInput {
   codingAgent?: boolean;
+  /** Internal flag set after tool-input validation for host-native CLI login. */
+  codingAgentNativeLogin?: boolean;
   command: string;
   cwd?: string;
   env?: Record<string, string>;
@@ -50,6 +52,7 @@ interface BashRunOptions {
 
 interface ShellRunOptions {
   codingAgentMode: boolean;
+  codingAgentNativeLogin: boolean;
   signal?: AbortSignal;
   workspaceRoot: string;
 }
@@ -128,10 +131,13 @@ export async function runBash(
   const codingAgentMode =
     readOptionalBoolean(input, "codingAgent") === true ||
     commandLooksLikeCursorAgent(command);
+  const codingAgentNativeLogin =
+    readOptionalBoolean(input, "codingAgentNativeLogin") === true;
 
   return withProtectedProfileSkillTree(context, workspaceRoot, () =>
     runShellCommand(command, cwd, timeoutMs, env, {
       codingAgentMode,
+      codingAgentNativeLogin,
       signal: context.signal,
       workspaceRoot,
     })
@@ -148,7 +154,9 @@ function runShellCommand(
   return new Promise((resolve, reject) => {
     const child = spawn("/bin/bash", ["-lc", command], {
       cwd,
-      env: mergeCodingAgentSpawnEnv(process.env, envOverrides),
+      env: mergeCodingAgentSpawnEnv(process.env, envOverrides, {
+        scrubCredentialKeys: options.codingAgentNativeLogin,
+      }),
       // SIGTERMs the shell when the turn is cancelled, so a stopped chat does not
       // leave an ffmpeg or coding-agent run holding the session turn open.
       signal: options.signal,

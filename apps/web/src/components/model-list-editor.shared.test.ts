@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   applyInferredCompatibleCapabilities,
+  modelListRowVisionEnabled,
   normalizeModelListRows,
   toggleModelListRow,
 } from "./model-list-editor.shared";
@@ -58,6 +59,19 @@ describe("toggleModelListRow", () => {
         { id: "llama3.2", name: "Llama 3.2" }
       )
     ).toEqual([{ id: "qwen3", name: "Qwen 3" }]);
+  });
+});
+
+describe("modelListRowVisionEnabled", () => {
+  test("uses the provider default only when vision is not explicit", () => {
+    expect(modelListRowVisionEnabled({}, true)).toBe(true);
+    expect(modelListRowVisionEnabled({ supportsVision: false }, true)).toBe(
+      false
+    );
+    expect(modelListRowVisionEnabled({}, false)).toBe(false);
+    expect(modelListRowVisionEnabled({ supportsVision: true }, false)).toBe(
+      true
+    );
   });
 });
 

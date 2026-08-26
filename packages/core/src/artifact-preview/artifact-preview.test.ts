@@ -95,6 +95,106 @@ describe("Artifact Preview Platform - Core Engine", () => {
       }
     });
 
+    test("preserves multiline semicolon CSV cells, whitespace, and blank rows", async () => {
+      const csvBuffer = Buffer.from(
+        'Name;Notes\r\n" Alice ";"line 1\r\nline ""2"""\r\n\r\n',
+        "utf8"
+      );
+      const previewer = defaultPreviewRegistry.findPreviewer({
+        filename: "notes.csv",
+        mimeType: "text/csv",
+      });
+
+      const preview = await previewer.generate(
+        {
+          filename: "notes.csv",
+          mimeType: "text/csv",
+          sizeBytes: csvBuffer.length,
+        },
+        csvBuffer,
+        {},
+        testContext
+      );
+
+      expect(preview.type).toBe("spreadsheet");
+      if (preview.type === "spreadsheet") {
+        expect(preview.activeSheet.rowCount).toBe(3);
+        expect(preview.activeSheet.data).toEqual([
+          ["Name", "Notes"],
+          [" Alice ", 'line 1\r\nline "2"'],
+          [null],
+        ]);
+      }
+    });
+
+    test("parses TSV files as spreadsheet grids", async () => {
+      const tsvBuffer = Buffer.from(
+        "Item\tQuantity\nLaptop\t15\nPhone\t2",
+        "utf8"
+      );
+      const previewer = defaultPreviewRegistry.findPreviewer({
+        filename: "inventory.tsv",
+        mimeType: "text/tab-separated-values",
+      });
+
+      expect(previewer.type).toBe("spreadsheet");
+      const preview = await previewer.generate(
+        {
+          filename: "inventory.tsv",
+          mimeType: "text/tab-separated-values",
+          sizeBytes: tsvBuffer.length,
+        },
+        tsvBuffer,
+        {},
+        testContext
+      );
+
+      expect(preview.type).toBe("spreadsheet");
+      if (preview.type === "spreadsheet") {
+        expect(preview.activeSheet.data).toEqual([
+          ["Item", "Quantity"],
+          ["Laptop", 15],
+          ["Phone", 2],
+        ]);
+        expect(preview.mimeType).toBe("text/tab-separated-values");
+      }
+    });
+
+    test("bounds delimited preview payloads while retaining total dimensions", async () => {
+      const csvBuffer = Buffer.from(
+        Array.from({ length: 502 }, (_, rowIndex) =>
+          Array.from(
+            { length: 52 },
+            (_, columnIndex) => `${rowIndex}-${columnIndex}`
+          ).join(",")
+        ).join("\n"),
+        "utf8"
+      );
+      const previewer = defaultPreviewRegistry.findPreviewer({
+        filename: "large.csv",
+        mimeType: "text/csv",
+      });
+
+      const preview = await previewer.generate(
+        {
+          filename: "large.csv",
+          mimeType: "text/csv",
+          sizeBytes: csvBuffer.length,
+        },
+        csvBuffer,
+        { maxLines: 10_000 },
+        testContext
+      );
+
+      expect(preview.type).toBe("spreadsheet");
+      if (preview.type === "spreadsheet") {
+        expect(preview.activeSheet.rowCount).toBe(502);
+        expect(preview.activeSheet.columnCount).toBe(52);
+        expect(preview.activeSheet.data).toHaveLength(500);
+        expect(preview.activeSheet.data[0]).toHaveLength(50);
+      }
+    });
+
     test("parses XLSX buffer with formatted cells and multiple sheets", async () => {
       const ExcelJS = (await import("exceljs")).default;
       const wb = new ExcelJS.Workbook();

@@ -1,14 +1,18 @@
-import { readdir, readFile, realpath, stat, unlink } from "node:fs/promises";
+import { readdir, readFile, stat, unlink } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
+import { AtlasApiError } from "./api-error";
+import { classifyArtifactCategory } from "./artifact-category";
 import {
   inferArtifactMimeType,
   isDocxFile,
   isLegacyDocFile,
 } from "./artifact-mime";
 import { resolveServedArtifactContentType } from "./artifact-preview/signature";
+import { resolveProfileArtifactsRoot } from "./artifact-root";
 import type {
   ArtifactFile,
+  ArtifactFolderMetadata,
   DeleteArtifactResponse,
   ListArtifactsOptions,
   ListArtifactsResponse,
@@ -51,16 +55,31 @@ export async function listArtifacts(
   options: ListArtifactsOptions = {}
 ): Promise<ListArtifactsResponse> {
   const directory = getProfileArtifactsDir(orgId, profileId);
-
-  if (!(await pathExists(directory))) {
-    return { artifacts: [], directory, profileId, total: 0 };
+  let resolvedDirectory: string;
+  try {
+    resolvedDirectory = await resolveProfileArtifactsRoot(orgId, profileId);
+  } catch (error) {
+    if (error instanceof AtlasApiError && error.status === 404) {
+      return { artifacts: [], directory, folders: [], profileId, total: 0 };
+    }
+    throw error;
   }
 
-  const resolvedDirectory = await realpath(directory);
-  const artifacts = await walkArtifacts(resolvedDirectory, resolvedDirectory);
-  artifacts.sort((left, right) =>
+  const allArtifacts = await walkArtifacts(
+    resolvedDirectory,
+    resolvedDirectory
+  );
+  allArtifacts.sort((left, right) =>
     right.updatedAt.localeCompare(left.updatedAt)
   );
+  const folder = normalizeArtifactFolder(options.folder);
+  const folders = summarizeImmediateArtifactFolders(allArtifacts, folder);
+  const artifacts =
+    options.folder === undefined
+      ? allArtifacts
+      : allArtifacts.filter((artifact) =>
+          isImmediateArtifactChild(artifact.filename, folder)
+        );
 
   const total = artifacts.length;
   const offset = options.offset ?? 0;
@@ -69,6 +88,7 @@ export async function listArtifacts(
     return {
       artifacts: artifacts.slice(offset, offset + options.limit),
       directory: resolvedDirectory,
+      folders,
       limit: options.limit,
       offset,
       profileId,
@@ -76,7 +96,98 @@ export async function listArtifacts(
     };
   }
 
-  return { artifacts, directory: resolvedDirectory, profileId, total };
+  return {
+    artifacts,
+    directory: resolvedDirectory,
+    folders,
+    profileId,
+    total,
+  };
+}
+
+function normalizeArtifactFolder(folder: string | undefined): string {
+  if (folder === undefined || folder === "") {
+    return "";
+  }
+  if (
+    folder.includes("\\") ||
+    path.isAbsolute(folder) ||
+    folder
+      .split("/")
+      .some((segment) => !segment || segment === "." || segment === "..")
+  ) {
+    throw new AtlasApiError("Artifact folder path is invalid.", 400);
+  }
+  return folder;
+}
+
+function isImmediateArtifactChild(filename: string, folder: string): boolean {
+  const prefix = folder ? `${folder}/` : "";
+  if (!filename.startsWith(prefix)) {
+    return false;
+  }
+  const rest = filename.slice(prefix.length);
+  return Boolean(rest) && !rest.includes("/");
+}
+
+function summarizeImmediateArtifactFolders(
+  artifacts: ArtifactFile[],
+  folder: string
+): ArtifactFolderMetadata[] {
+  const prefix = folder ? `${folder}/` : "";
+  const folders = new Map<string, ArtifactFolderMetadata>();
+
+  for (const artifact of artifacts) {
+    if (!artifact.filename.startsWith(prefix)) {
+      continue;
+    }
+    const rest = artifact.filename.slice(prefix.length);
+    const separator = rest.indexOf("/");
+    if (separator <= 0) {
+      continue;
+    }
+
+    const name = rest.slice(0, separator);
+    const childPrefix = folder ? `${folder}/${name}` : name;
+    const category = classifyArtifactCategory(artifact);
+    const existing = folders.get(childPrefix);
+    if (!existing) {
+      folders.set(childPrefix, {
+        fileCount: 1,
+        latestUpdatedAt: artifact.updatedAt,
+        name,
+        prefix: childPrefix,
+        typeStats: {
+          [category]: {
+            fileCount: 1,
+            latestUpdatedAt: artifact.updatedAt,
+          },
+        },
+      });
+      continue;
+    }
+
+    existing.fileCount += 1;
+    if (artifact.updatedAt > existing.latestUpdatedAt) {
+      existing.latestUpdatedAt = artifact.updatedAt;
+    }
+    const categoryStats = existing.typeStats[category];
+    if (categoryStats) {
+      categoryStats.fileCount += 1;
+      if (artifact.updatedAt > categoryStats.latestUpdatedAt) {
+        categoryStats.latestUpdatedAt = artifact.updatedAt;
+      }
+    } else {
+      existing.typeStats[category] = {
+        fileCount: 1,
+        latestUpdatedAt: artifact.updatedAt,
+      };
+    }
+  }
+
+  return [...folders.values()].sort((left, right) =>
+    left.name.localeCompare(right.name)
+  );
 }
 
 async function walkArtifacts(
@@ -164,6 +275,13 @@ export function mapArtifactReadError(
   const err = error as NodeJS.ErrnoException | undefined;
   const message = error instanceof Error ? error.message : String(error);
 
+  if (error instanceof AtlasApiError) {
+    return {
+      message: error.message,
+      status: error.status === 400 || error.status === 404 ? error.status : 500,
+    };
+  }
+
   if (err?.code === "ENOENT" || message.includes("Artifact not found")) {
     return { message: `Artifact not found: ${filename}`, status: 404 };
   }
@@ -189,8 +307,10 @@ export async function readArtifactFile(input: {
   /** Workspace-relative POSIX-style path, safe to expose in client URLs. */
   relativePath: string;
 }> {
-  const artifactsDir = getProfileArtifactsDir(input.orgId, input.profileId);
-  const resolvedArtifactsDir = await realpath(artifactsDir);
+  const resolvedArtifactsDir = await resolveProfileArtifactsRoot(
+    input.orgId,
+    input.profileId
+  );
   const guarded = await guardFilePath(input.filename, null, undefined, {
     allowedDirs: [resolvedArtifactsDir],
     cwd: resolvedArtifactsDir,
@@ -246,8 +366,10 @@ export async function deleteArtifactFile(input: {
   profileId: string;
   filename: string;
 }): Promise<DeleteArtifactResponse> {
-  const artifactsDir = getProfileArtifactsDir(input.orgId, input.profileId);
-  const resolvedArtifactsDir = await realpath(artifactsDir);
+  const resolvedArtifactsDir = await resolveProfileArtifactsRoot(
+    input.orgId,
+    input.profileId
+  );
   const guarded = await guardFilePath(input.filename, null, undefined, {
     allowedDirs: [resolvedArtifactsDir],
     cwd: resolvedArtifactsDir,

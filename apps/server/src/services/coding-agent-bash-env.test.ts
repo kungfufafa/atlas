@@ -20,6 +20,89 @@ const openaiProvider: ProviderInstance = {
 };
 
 describe("enrichCodingAgentBashInput", () => {
+  test("keeps host-native login isolated to the selected workspace", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await db.upsertWorkspaceSettings({
+      codingAgentHarnesses: [
+        {
+          args: [],
+          command: "echo",
+          enabled: true,
+          id: "coding-harness-claude-code",
+          kind: "claude_code",
+          name: "Claude Code",
+        },
+      ],
+      codingAgentProviderPassthrough: true,
+      id: "workspace-settings",
+      imageModel: null,
+      selectedCodingAgentHarness: null,
+      transcriptionModel: null,
+      updatedAt: now,
+      visionModel: null,
+    });
+    await db.upsertWorkspaceSettings({
+      codingAgentHarnesses: [],
+      codingAgentProviderPassthrough: false,
+      id: "workspace-settings:org-native",
+      imageModel: null,
+      orgId: "org-native",
+      selectedCodingAgentHarness: null,
+      transcriptionModel: null,
+      updatedAt: now,
+      visionModel: null,
+    });
+    for (const [id, orgId] of [
+      ["profile_native", "org-native"],
+      ["profile_atlas", "org-atlas"],
+    ] as const) {
+      await db.upsertProfile({
+        createdAt: now,
+        id,
+        isDefault: true,
+        isSuper: false,
+        model: "anthropic:claude-sonnet-4-6",
+        name: id,
+        orgId,
+        systemPrompt: "test",
+        updatedAt: now,
+      });
+    }
+
+    const native = (await enrichCodingAgentBashInput(
+      db,
+      { command: "echo task", env: { SAFE: "1" } },
+      { orgId: "org-native", profileId: "profile_native" },
+      {
+        defaultProviderId: anthropicProvider.id,
+        providers: [anthropicProvider],
+      }
+    )) as {
+      codingAgent?: boolean;
+      codingAgentNativeLogin?: boolean;
+      env?: Record<string, string>;
+    };
+    expect(native).toMatchObject({
+      codingAgent: true,
+      codingAgentNativeLogin: true,
+      env: { SAFE: "1" },
+    });
+    expect(native.env?.ANTHROPIC_API_KEY).toBeUndefined();
+    expect(native.env?.OPENAI_API_KEY).toBeUndefined();
+
+    const atlas = (await enrichCodingAgentBashInput(
+      db,
+      { command: "echo task" },
+      { orgId: "org-atlas", profileId: "profile_atlas" },
+      {
+        defaultProviderId: anthropicProvider.id,
+        providers: [anthropicProvider],
+      }
+    )) as { env?: Record<string, string> };
+    expect(atlas.env?.ANTHROPIC_API_KEY).toBe("sk-ant-test");
+  });
+
   test("merges provider passthrough env when coding agent command is detected", async () => {
     const db = createInMemoryDatabaseAdapter();
     await db.upsertWorkspaceSettings({
@@ -64,6 +147,7 @@ describe("enrichCodingAgentBashInput", () => {
 
     expect(enriched.env?.ANTHROPIC_API_KEY).toBe("sk-ant-test");
     expect(enriched.env?.ANTHROPIC_BASE_URL).toBe("https://api.anthropic.com");
+    expect(enriched.env?.PATH).toBeUndefined();
   });
 
   test("resolves spawn env from command binary even when another harness is selected", async () => {

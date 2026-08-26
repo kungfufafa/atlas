@@ -36,6 +36,7 @@ describe("isAttachOnlyCommand", () => {
     expect(isAttachOnlyCommand("/attach")).toBe(true);
     expect(isAttachOnlyCommand("/attach@bot")).toBe(true);
     expect(isAttachOnlyCommand("send me the file")).toBe(false);
+    expect(isAttachOnlyCommand("/attach after editing the report")).toBe(false);
   });
 });
 

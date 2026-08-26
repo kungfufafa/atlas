@@ -112,13 +112,13 @@ describe("AutomationScheduler", () => {
 
   test("passes a deterministic fire id for runAt occurrences", async () => {
     const at = new Date(Date.now() + 20).toISOString();
-    const runs: Array<{ fireId: string; id: string }> = [];
+    const runs: Array<{ fireId: string; id: string; orgId: string }> = [];
     const delegate = createDelegate({
       listScheduledAutomations: async () => [
         schedule({ cron: undefined, id: "a1", runAt: at }),
       ],
-      runAutomation: async (id, fireId) => {
-        runs.push({ fireId, id });
+      runAutomation: async (id, fireId, orgId) => {
+        runs.push({ fireId, id, orgId });
         return { ok: true };
       },
     });
@@ -129,6 +129,32 @@ describe("AutomationScheduler", () => {
     expect(runs).toHaveLength(1);
     expect(runs[0]?.id).toBe("a1");
     expect(runs[0]?.fireId).toContain("a1:");
+    expect(runs[0]?.orgId).toBe("org_1");
+  });
+
+  test("run delegate receives the schedule's org id", async () => {
+    const at = new Date(Date.now() + 20).toISOString();
+    const runs: Array<{ id: string; orgId: string }> = [];
+    const delegate = createDelegate({
+      listScheduledAutomations: async () => [
+        schedule({ cron: undefined, id: "a1", orgId: "org_1", runAt: at }),
+      ],
+      runAutomation: async (id, _fireId, orgId) => {
+        runs.push({ id, orgId });
+        return { ok: true };
+      },
+    });
+
+    const scheduler = new AutomationScheduler(delegate);
+    await scheduler.start();
+
+    const deadline = Date.now() + 2000;
+    while (runs.length === 0 && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+
+    expect(runs).toEqual([{ id: "a1", orgId: "org_1" }]);
+    scheduler.stop();
   });
 
   test("registers runAt schedules as timers", async () => {

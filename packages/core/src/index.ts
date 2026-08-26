@@ -4,6 +4,8 @@ export * from "./agent-todo";
 export * from "./api-error";
 export * from "./approval/resume";
 export * from "./approval-grant";
+export * from "./artifact-category";
+export * from "./artifact-editing";
 export * from "./artifact-lineage";
 export * from "./artifact-mime";
 export * from "./artifact-path";
@@ -26,6 +28,7 @@ export * from "./channel-artifacts";
 export * from "./channel-org";
 export * from "./channel-rate-limiter";
 export * from "./channels";
+export * from "./cloudflare-provider-config";
 export * from "./compatible-model-capabilities";
 export * from "./compatible-provider-config";
 export * from "./composio";
@@ -75,8 +78,13 @@ export {
   resolveDiscordWorkerStatus,
   writeDiscordWorkerHeartbeat,
 } from "./discord-worker";
+export * from "./discovery-providers";
 export * from "./document-content";
 export * from "./email-config";
+export * from "./error-tracking";
+export * from "./error-tracking-config";
+export * from "./error-tracking-queue";
+export * from "./error-tracking-sentry";
 export * from "./execution/action-descriptor";
 export * from "./execution/outbox";
 export * from "./execution/run-state";

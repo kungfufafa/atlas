@@ -16,6 +16,13 @@ describe("SUPER_AGENT_SYSTEM_PROMPT", () => {
     );
   });
 
+  test("requires an exact confirmed draft before update_profile", () => {
+    expect(SUPER_AGENT_SYSTEM_PROMPT).toContain("update_profile");
+    expect(SUPER_AGENT_SYSTEM_PROMPT).toMatch(/exact.*draft/i);
+    expect(SUPER_AGENT_SYSTEM_PROMPT).toMatch(/later turn/i);
+    expect(SUPER_AGENT_SYSTEM_PROMPT).toMatch(/write-approval.*unchanged/i);
+  });
+
   test("clarifies profile vs skill and blocks list_skills hallucination", () => {
     expect(SUPER_AGENT_SYSTEM_PROMPT).toMatch(
       /new agent.*profile|new bot.*profile/i

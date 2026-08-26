@@ -62,6 +62,46 @@ async function createTestDb() {
   return db;
 }
 
+async function archiveTestOrganization(
+  db: ReturnType<typeof createInMemoryDatabaseAdapter>
+): Promise<boolean> {
+  const now = new Date().toISOString();
+  await db.upsertOrganization({
+    createdAt: now,
+    id: "org_remaining",
+    name: "Remaining Org",
+    slug: "remaining-org",
+    updatedAt: now,
+  });
+  return db.tryMarkOrganizationArchived(ORG_ID, now);
+}
+
+async function seedTelegramAutomation(
+  db: ReturnType<typeof createInMemoryDatabaseAdapter>,
+  input: { id: string; name: string; prompt: string }
+): Promise<string> {
+  const now = new Date().toISOString();
+  await db.upsertAutomation({
+    createdAt: now,
+    definition: {
+      delivery: { channel: "telegram" },
+      description: input.prompt,
+      prompt: input.prompt,
+      steps: [],
+      trigger: { type: "manual" },
+      version: 1,
+    },
+    enabled: true,
+    id: input.id,
+    name: input.name,
+    orgId: ORG_ID,
+    profileId: PROFILE_ID,
+    updatedAt: now,
+    version: 1,
+  });
+  return input.id;
+}
+
 function createRunner(
   db: ReturnType<typeof createInMemoryDatabaseAdapter>,
   service: AutomationService,
@@ -143,6 +183,27 @@ describe("AutomationService", () => {
       channel: "email",
       to: "hey@ahmadrosid.com",
     });
+  });
+
+  test("falls back to the prompt when description is omitted", async () => {
+    const db = await createTestDb();
+    const service = new AutomationService(db, {
+      getUserTimezone: async () => "UTC",
+    });
+
+    // The HTTP route casts the body with readJson, so an absent field reaches
+    // create() as undefined however the type is declared.
+    const automation = await service.create(
+      ORG_ID,
+      {
+        name: "Nightly pull",
+        prompt: "run the tool",
+        trigger: { type: "manual" },
+      } as Parameters<typeof service.create>[1],
+      PROFILE_ID
+    );
+
+    expect(automation.description).toBe("run the tool");
   });
 
   test("defaults schedule timezone from user config", async () => {
@@ -358,6 +419,148 @@ describe("AutomationService", () => {
 });
 
 describe("AutomationRunner", () => {
+  test("does not claim or invoke providers for an archived organization", async () => {
+    const db = await createTestDb();
+    const service = new AutomationService(db, {
+      getUserTimezone: async () => "UTC",
+    });
+    const automationId = await seedTelegramAutomation(db, {
+      id: "automation_archived_before_run",
+      name: "Archived task",
+      prompt: "Do not run",
+    });
+    let promptCalls = 0;
+    let deliveryCalls = 0;
+    const deliveryService = new AutomationDeliveryService(service, {
+      telegram: {
+        send: async () => {
+          deliveryCalls += 1;
+          return { ok: true };
+        },
+      },
+    });
+    const runner = createRunner(
+      db,
+      service,
+      {
+        runAutomationPrompt: async () => {
+          promptCalls += 1;
+          return "should not run";
+        },
+      },
+      deliveryService
+    );
+
+    expect(await archiveTestOrganization(db)).toBe(true);
+
+    const result = await runner.run(automationId, { principal: PRINCIPAL });
+
+    expect(result).toMatchObject({ skipped: true });
+    expect(result.error).toMatch(/organization/i);
+    expect(promptCalls).toBe(0);
+    expect(deliveryCalls).toBe(0);
+    expect(await service.listRuns(automationId)).toHaveLength(0);
+    expect(await runner.isRunning(automationId)).toBe(false);
+  });
+
+  test("re-checks organization state after claiming and before the prompt", async () => {
+    const db = await createTestDb();
+    const service = new AutomationService(db, {
+      getUserTimezone: async () => "UTC",
+    });
+    const automationId = await seedTelegramAutomation(db, {
+      id: "automation_archived_before_prompt",
+      name: "Archive race task",
+      prompt: "Do not run",
+    });
+    const originalCreateRun = service.createRun.bind(service);
+    service.createRun = async (automationId) => {
+      const run = await originalCreateRun(automationId);
+      expect(await archiveTestOrganization(db)).toBe(true);
+      return run;
+    };
+    let promptCalls = 0;
+    let deliveryCalls = 0;
+    const deliveryService = new AutomationDeliveryService(service, {
+      telegram: {
+        send: async () => {
+          deliveryCalls += 1;
+          return { ok: true };
+        },
+      },
+    });
+    const runner = createRunner(
+      db,
+      service,
+      {
+        runAutomationPrompt: async () => {
+          promptCalls += 1;
+          return "should not run";
+        },
+      },
+      deliveryService
+    );
+
+    const result = await runner.run(automationId, { principal: PRINCIPAL });
+
+    expect(result).toMatchObject({ skipped: true });
+    expect(promptCalls).toBe(0);
+    expect(deliveryCalls).toBe(0);
+    expect(await runner.isRunning(automationId)).toBe(false);
+    const runs = await service.listRuns(automationId);
+    expect(runs).toHaveLength(1);
+    expect(runs[0]).toMatchObject({
+      error: "Automation organization is unavailable.",
+      status: "failed",
+    });
+  });
+
+  test("does not deliver when the organization is archived after the prompt", async () => {
+    const db = await createTestDb();
+    const service = new AutomationService(db, {
+      getUserTimezone: async () => "UTC",
+    });
+    const automationId = await seedTelegramAutomation(db, {
+      id: "automation_archived_before_delivery",
+      name: "Archive delivery race",
+      prompt: "Archive after generating",
+    });
+    let promptCalls = 0;
+    let deliveryCalls = 0;
+    const deliveryService = new AutomationDeliveryService(service, {
+      telegram: {
+        send: async () => {
+          deliveryCalls += 1;
+          return { ok: true };
+        },
+      },
+    });
+    const runner = createRunner(
+      db,
+      service,
+      {
+        runAutomationPrompt: async () => {
+          promptCalls += 1;
+          expect(await archiveTestOrganization(db)).toBe(true);
+          return "Generated while active";
+        },
+      },
+      deliveryService
+    );
+
+    const result = await runner.run(automationId, { principal: PRINCIPAL });
+
+    expect(result.output).toBe("Generated while active");
+    expect(promptCalls).toBe(1);
+    expect(deliveryCalls).toBe(0);
+    const runs = await service.listRuns(automationId);
+    expect(runs[0]).toMatchObject({
+      deliveryError: null,
+      deliveryStatus: "skipped",
+      status: "completed",
+    });
+  });
+
   test("writes completed run records", async () => {
     const db = await createTestDb();
     const service = new AutomationService(db, {

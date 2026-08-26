@@ -3,6 +3,7 @@ import type {
   CreateProfileRequest,
   DeleteArtifactResponse,
   DeleteKnowledgeBaseResponse,
+  EditableArtifactResponse,
   ImageAttachment,
   InitSoulResponse,
   ListArtifactsResponse,
@@ -16,6 +17,7 @@ import type {
   UploadKnowledgeBaseRequest,
   UploadKnowledgeBaseResponse,
 } from "@atlas/core";
+import { readEditableArtifact, writeEditableArtifact } from "@atlas/core";
 import { filterProfilesForChatAccess } from "@atlas/core/profiles";
 import { createRoute, z } from "@hono/zod-openapi";
 import type { ServerOptions } from "../context";
@@ -26,6 +28,10 @@ import {
 } from "../org-guards";
 import { getRequestAuth, json, readJson } from "../shared";
 import type { HonoApp } from "../types";
+import {
+  parseArtifactEditRequest,
+  readArtifactEditJsonBody,
+} from "./artifact-editing-body";
 
 export function registerProfileRoutes(
   app: HonoApp,
@@ -91,6 +97,17 @@ export function registerProfileRoutes(
     .object({})
     .passthrough()
     .openapi("DeleteArtifactResponse");
+  const editableArtifactSchema = z
+    .object({})
+    .passthrough()
+    .openapi("EditableArtifactResponse");
+  const updateEditableArtifactSchema = z
+    .object({
+      content: z.string().optional(),
+      expectedHash: z.string().regex(/^[a-f0-9]{64}$/),
+      rows: z.array(z.array(z.string())).optional(),
+    })
+    .openapi("UpdateEditableArtifactRequest");
   const listKnowledgeBaseSchema = z
     .object({})
     .passthrough()
@@ -218,6 +235,63 @@ export function registerProfileRoutes(
   app.openAPIRegistry.registerPath(
     createRoute({
       method: "get",
+      operationId: "getEditableProfileArtifact",
+      path: "/v1/profiles/{profileId}/artifacts/editable",
+      request: { params: profileIdParam, query: artifactPathQuery },
+      responses: {
+        200: {
+          content: { "application/json": { schema: editableArtifactSchema } },
+          description: "Bounded editable artifact source",
+        },
+        400: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Unsupported or unsafe artifact path",
+        },
+        403: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Workspace Admin access required",
+        },
+      },
+      summary: "Read Markdown, CSV, or TSV source for safe manual editing",
+      tags: ["Profiles"],
+    })
+  );
+  app.openAPIRegistry.registerPath(
+    createRoute({
+      method: "put",
+      operationId: "updateEditableProfileArtifact",
+      path: "/v1/profiles/{profileId}/artifacts/editable",
+      request: {
+        body: {
+          content: {
+            "application/json": { schema: updateEditableArtifactSchema },
+          },
+          required: true,
+        },
+        params: profileIdParam,
+        query: artifactPathQuery,
+      },
+      responses: {
+        200: {
+          content: { "application/json": { schema: editableArtifactSchema } },
+          description: "Saved artifact source",
+        },
+        409: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Artifact changed since editing began",
+        },
+        413: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Edit exceeds a safety limit",
+        },
+      },
+      summary: "Safely update a Markdown, CSV, or TSV artifact",
+      tags: ["Profiles"],
+    })
+  );
+  app.openAPIRegistry.registerPath(
+    createRoute({
+      method: "get",
       operationId: "getProfileSoulStatus",
       path: "/v1/profiles/{profileId}/soul",
       request: { params: profileIdParam, query: contentsQuery },
@@ -306,6 +380,7 @@ export function registerProfileRoutes(
       request: {
         params: profileIdParam,
         query: z.object({
+          folder: z.string().max(1024).optional(),
           limit: z.coerce.number().int().min(1).max(100).optional(),
           offset: z.coerce.number().int().min(0).optional(),
         }),
@@ -634,6 +709,7 @@ export function registerProfileRoutes(
     requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
+    const folder = c.req.query("folder");
     const limitRaw = c.req.query("limit");
     const offsetRaw = c.req.query("offset");
 
@@ -656,9 +732,13 @@ export function registerProfileRoutes(
     if (offset !== undefined && (!Number.isFinite(offset) || offset < 0)) {
       return json({ error: "offset must be a non-negative integer" }, 400);
     }
+    if (folder !== undefined && folder.length > 1024) {
+      return json({ error: "folder must be at most 1024 characters" }, 400);
+    }
 
     return json<ListArtifactsResponse>(
       await agent.listProfileArtifacts(orgId, profileId, {
+        folder,
         limit,
         offset,
       })
@@ -707,6 +787,48 @@ export function registerProfileRoutes(
 
     return json<DeleteArtifactResponse>(
       await agent.deleteProfileArtifact(orgId, profileId, artifactPath)
+    );
+  });
+
+  app.get("/v1/profiles/:profileId/artifacts/editable", async (c) => {
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    const profileId = decodeURIComponent(c.req.param("profileId"));
+    const artifactPath = c.req.query("path");
+    if (!artifactPath) {
+      return json({ error: "path is required" }, 400);
+    }
+
+    await agent.getProfile(orgId, profileId);
+    return json<EditableArtifactResponse>(
+      await readEditableArtifact({
+        filename: artifactPath,
+        orgId,
+        profileId,
+      })
+    );
+  });
+
+  app.put("/v1/profiles/:profileId/artifacts/editable", async (c) => {
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    const profileId = decodeURIComponent(c.req.param("profileId"));
+    const artifactPath = c.req.query("path");
+    if (!artifactPath) {
+      return json({ error: "path is required" }, 400);
+    }
+
+    await agent.getProfile(orgId, profileId);
+    const body = parseArtifactEditRequest(
+      await readArtifactEditJsonBody(c.req.raw)
+    );
+    return json<EditableArtifactResponse>(
+      await writeEditableArtifact({
+        filename: artifactPath,
+        orgId,
+        profileId,
+        request: body,
+      })
     );
   });
 

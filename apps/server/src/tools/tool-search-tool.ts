@@ -49,6 +49,7 @@ const SUPER_AGENT_ONLY_TOOLS = new Set([
   "list_profiles",
   "get_profile",
   "create_profile",
+  "update_profile",
   "assign_tool_to_profile",
   "list_tools",
   "create_tool",

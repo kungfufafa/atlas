@@ -99,6 +99,10 @@ Atlas injects your configured LLM provider credentials at coding-agent spawn tim
 - A compatible provider configured in Atlas (Settings → Provider)
 - Claude Code requires an **Anthropic** provider; Codex and OpenCode support OpenAI-compatible providers (OpenAI, OpenRouter, DeepSeek, etc.)
 
+Provider passthrough is the default. A Superadmin can switch the active workspace to **host-native login** under **Integrations → Coding agents** when the coding CLIs should use vendor accounts already authenticated on the server.
+
+In host-native mode, Atlas does not inject that workspace's provider credentials. Authenticate the needed CLI on the host with `codex login`, `claude auth login`, `opencode auth login`, or by opening `pi` and entering `/login`. The toggle is isolated per workspace, while the host credentials themselves remain shared server infrastructure and are therefore Superadmin-controlled.
+
 The `bash` tool merges spawn env when:
 
 - the command starts with a known harness binary (`codex`, `claude`, `opencode`, `pi`, or `agent`), or
@@ -108,7 +112,7 @@ If `codingAgent: true` is set but the command does not start with a known binary
 
 Passthrough follows the **binary in the command**, not a dashboard selection.
 
-**Security:** Passthrough injects the real org provider API key into subprocess env on the host. Use on trusted machines only.
+**Security:** Passthrough injects the real workspace provider API key into subprocess env on the host. Host-native mode removes Atlas-supported provider keys and provider overrides from the child process while preserving host-native config locations such as `CODEX_HOME`; the CLI uses its own login state from the server account instead.
 
 ## When to use a coding agent vs Atlas alone
 
@@ -172,8 +176,8 @@ Tool and skill assignment remain per profile.
 | Cursor Agent missing / auth fails | Install and authenticate Cursor Agent CLI on the server host; verify with `agent --version` |
 | Atlas asks which coding agent to use | Multiple CLIs are installed; answer for this conversation |
 | Atlas explains instead of coding | Message may not match the skill; ask for an explicit repo change |
-| Claude Code asks for `/login` | Provider passthrough not applied — ensure Settings → Provider is compatible and the bash command starts with `claude` |
-| Provider passthrough inactive / no provider | Configure a compatible model provider in Atlas Settings for the profile |
+| Claude Code asks for `/login` | With passthrough, ensure Settings → Provider is compatible and the command starts with `claude`. With host-native mode, run `claude auth login` on the server |
+| Provider passthrough inactive / no provider | Configure a compatible model provider, or have a Superadmin choose host-native login under **Integrations → Coding agents** and authenticate the CLI on the host |
 | Run times out | Increase `bash` `timeoutMs`; split the task into smaller coding-agent runs |
 | Changes land outside the workspace | Command `cwd` or backend `--dir` may point outside the profile tree |
 

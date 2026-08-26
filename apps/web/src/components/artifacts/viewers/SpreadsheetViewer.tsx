@@ -1,6 +1,7 @@
 import type { SpreadsheetPreview } from "@atlas/core";
-import { Search01Icon } from "hugeicons-react";
+import { Add01Icon, Search01Icon } from "hugeicons-react";
 import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 function columnNumberToLetter(colIndex: number): string {
   let temp = colIndex;
@@ -15,13 +16,27 @@ function columnNumberToLetter(colIndex: number): string {
 export function SpreadsheetViewer({
   preview,
   onSelectSheet,
+  editor,
 }: {
   preview: SpreadsheetPreview;
   downloadUrl: string;
   onSelectSheet?: (sheetName: string, sheetIndex: number) => void;
+  editor?: {
+    canAddColumn: boolean;
+    canAddRow: boolean;
+    disabled: boolean;
+    onAddColumn: () => void;
+    onAddRow: () => void;
+    onChangeCell: (
+      rowIndex: number,
+      columnIndex: number,
+      value: string
+    ) => void;
+    rows: string[][];
+  };
 }) {
   const activeSheet = preview.activeSheet;
-  const data = activeSheet?.data || [];
+  const data = editor?.rows ?? activeSheet?.data ?? [];
   const [selectedCell, setSelectedCell] = useState<{
     col: number;
     row: number;
@@ -38,7 +53,7 @@ export function SpreadsheetViewer({
   );
 
   const filteredRowIndices = useMemo(() => {
-    if (!filterQuery.trim()) {
+    if (editor || !filterQuery.trim()) {
       return data.map((_, idx) => idx);
     }
     const q = filterQuery.toLowerCase();
@@ -54,7 +69,7 @@ export function SpreadsheetViewer({
       }
     });
     return indices;
-  }, [data, filterQuery]);
+  }, [data, editor, filterQuery]);
 
   const selectedValue =
     data[selectedCell.row]?.[selectedCell.col] === undefined
@@ -81,6 +96,7 @@ export function SpreadsheetViewer({
           <Search01Icon className="absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             className="h-7 w-36 rounded-md border border-border bg-background pr-2 pl-7 text-foreground text-xs placeholder:text-muted-foreground focus:outline-hidden focus:ring-1 focus:ring-ring"
+            disabled={Boolean(editor)}
             onChange={(e) => setFilterQuery(e.target.value)}
             placeholder="Search"
             type="text"
@@ -199,7 +215,26 @@ export function SpreadsheetViewer({
                             setSelectedCell({ col: cIdx, row: rIdx })
                           }
                         >
-                          <span className="block truncate">{displayVal}</span>
+                          {editor ? (
+                            <input
+                              aria-label={`Cell ${columnNumberToLetter(cIdx)}${rIdx + 1}`}
+                              className="block h-full min-h-7 w-full bg-transparent outline-none"
+                              disabled={editor.disabled}
+                              onChange={(event) =>
+                                editor.onChangeCell(
+                                  rIdx,
+                                  cIdx,
+                                  event.target.value
+                                )
+                              }
+                              onFocus={() =>
+                                setSelectedCell({ col: cIdx, row: rIdx })
+                              }
+                              value={displayVal}
+                            />
+                          ) : (
+                            <span className="block truncate">{displayVal}</span>
+                          )}
                         </td>
                       );
                     })}
@@ -212,7 +247,30 @@ export function SpreadsheetViewer({
       </div>
 
       {/* Bottom Sheet Tabs Bar */}
-      {preview.sheetNames && preview.sheetNames.length > 0 ? (
+      {editor ? (
+        <div className="flex items-center gap-2 border-border border-t px-2 py-1.5">
+          <Button
+            disabled={editor.disabled || !editor.canAddRow}
+            onClick={editor.onAddRow}
+            size="sm"
+            type="button"
+            variant="ghost"
+          >
+            <Add01Icon className="size-3.5" />
+            Row
+          </Button>
+          <Button
+            disabled={editor.disabled || !editor.canAddColumn}
+            onClick={editor.onAddColumn}
+            size="sm"
+            type="button"
+            variant="ghost"
+          >
+            <Add01Icon className="size-3.5" />
+            Column
+          </Button>
+        </div>
+      ) : preview.sheetNames && preview.sheetNames.length > 0 ? (
         <div className="flex items-center gap-1 overflow-x-auto border-border border-t px-2 py-1">
           {preview.sheetNames.map((sheetName, sIdx) => {
             const isActive = sIdx === (preview.activeSheetIndex ?? 0);

@@ -1,13 +1,15 @@
-import { afterEach, describe, expect, test } from "bun:test";
-import { serve } from "bun";
+import { afterEach, describe, expect, mock, test } from "bun:test";
 import { validateProviderConnection } from "./provider-validation-service";
 
-let mockServer: ReturnType<typeof serve> | null = null;
+const originalFetch = globalThis.fetch;
 
 afterEach(() => {
-  mockServer?.stop(true);
-  mockServer = null;
+  globalThis.fetch = originalFetch;
 });
+
+function requestUrl(input: RequestInfo | URL): URL {
+  return new URL(input instanceof Request ? input.url : String(input));
+}
 
 describe("validateProviderConnection", () => {
   test("throws error when API key is missing for key-required providers", async () => {
@@ -30,9 +32,9 @@ describe("validateProviderConnection", () => {
   });
 
   test("discovers openai-compatible models then probes chat", async () => {
-    mockServer = serve({
-      async fetch(request) {
-        const url = new URL(request.url);
+    globalThis.fetch = mock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = requestUrl(input);
         if (url.pathname === "/v1/models") {
           return Response.json({
             data: [
@@ -50,7 +52,7 @@ describe("validateProviderConnection", () => {
         }
 
         if (url.pathname === "/v1/chat/completions") {
-          const body = (await request.json()) as {
+          const body = JSON.parse(String(init?.body ?? "{}")) as {
             model?: string;
           };
           expect(body.model).toBe("qwen/qwen3.8-max-free");
@@ -66,22 +68,21 @@ describe("validateProviderConnection", () => {
         }
 
         return new Response("not found", { status: 404 });
-      },
-      port: 0,
-    });
+      }
+    ) as unknown as typeof fetch;
 
     await validateProviderConnection({
       apiKey: "sk-test",
-      baseUrl: `http://127.0.0.1:${mockServer.port}/v1`,
+      baseUrl: "http://localhost:1234/v1",
       type: "openai_compatible",
     });
   });
 
   test("retries a later discovered model when the first has no quota", async () => {
     const probed: string[] = [];
-    mockServer = serve({
-      async fetch(request) {
-        const url = new URL(request.url);
+    globalThis.fetch = mock(
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = requestUrl(input);
         if (url.pathname === "/v1/models") {
           return Response.json({
             data: [
@@ -93,7 +94,9 @@ describe("validateProviderConnection", () => {
         }
 
         if (url.pathname === "/v1/chat/completions") {
-          const body = (await request.json()) as { model?: string };
+          const body = JSON.parse(String(init?.body ?? "{}")) as {
+            model?: string;
+          };
           probed.push(body.model ?? "");
           if (body.model?.includes("nemotron")) {
             return Response.json(
@@ -115,13 +118,12 @@ describe("validateProviderConnection", () => {
         }
 
         return new Response("not found", { status: 404 });
-      },
-      port: 0,
-    });
+      }
+    ) as unknown as typeof fetch;
 
     await validateProviderConnection({
       apiKey: "sk-test",
-      baseUrl: `http://127.0.0.1:${mockServer.port}/v1`,
+      baseUrl: "http://localhost:1234/v1",
       type: "openai_compatible",
     });
 
@@ -129,6 +131,10 @@ describe("validateProviderConnection", () => {
   });
 
   test("validates provider API key failure gracefully", async () => {
+    globalThis.fetch = mock(
+      async () => new Response("invalid credential", { status: 401 })
+    ) as unknown as typeof fetch;
+
     await expect(
       validateProviderConnection({
         apiKey: "invalid-key-12345",

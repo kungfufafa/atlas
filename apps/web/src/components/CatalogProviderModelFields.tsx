@@ -1,7 +1,12 @@
 import type { ProviderModelOption } from "@atlas/core/contract";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import type { CatalogShortlistProvider } from "@/components/catalog-provider-model-fields.shared";
+import {
+  type CatalogShortlistProvider,
+  catalogModelToModelListRow,
+  mergeCatalogModelsIntoRows,
+  shouldShowCatalogModelBrowser,
+} from "@/components/catalog-provider-model-fields.shared";
 import {
   ModelListEditor,
   type ModelListRow,
@@ -64,6 +69,10 @@ export function CatalogProviderModelFields({
   onCustomModelsChange,
 }: CatalogProviderModelFieldsProps) {
   const [isBrowsing, setIsBrowsing] = useState(false);
+  const showBrowse = shouldShowCatalogModelBrowser({
+    customModelCount: customModels.length,
+    isBrowsing,
+  });
   const { data: modelsResponse } = useModelsQuery();
   const providerLabel = formatProviderLabel(provider);
   const canDiscoverRemote =
@@ -94,7 +103,7 @@ export function CatalogProviderModelFields({
     isLoading: remoteLoading,
     error: remoteError,
   } = useQuery({
-    enabled: isBrowsing && canDiscoverRemote,
+    enabled: showBrowse && canDiscoverRemote,
     queryFn: () =>
       provider === "opencode_go"
         ? client.discoverModels({ provider: "opencode_go" })
@@ -127,31 +136,16 @@ export function CatalogProviderModelFields({
   );
 
   const addCatalogModel = (model: ProviderModelOption) => {
+    if (disabled) {
+      return;
+    }
+
     if (usedIds.has(model.id)) {
       setIsBrowsing(false);
       return;
     }
 
-    onCustomModelsChange([
-      ...customModels,
-      {
-        id: model.id,
-        name: model.name,
-        ...(model.default ? { default: true } : {}),
-        ...(model.inputPerMillionUsd === undefined
-          ? {}
-          : { inputPerMillionUsd: model.inputPerMillionUsd }),
-        ...(model.outputPerMillionUsd === undefined
-          ? {}
-          : { outputPerMillionUsd: model.outputPerMillionUsd }),
-        ...(model.supportsThinking === undefined
-          ? {}
-          : { supportsThinking: model.supportsThinking }),
-        ...(model.reasoningEffortValues?.length
-          ? { reasoningEffortValues: model.reasoningEffortValues }
-          : {}),
-      },
-    ]);
+    onCustomModelsChange([...customModels, catalogModelToModelListRow(model)]);
     setIsBrowsing(false);
   };
 
@@ -182,7 +176,7 @@ export function CatalogProviderModelFields({
       id={`${provider}-provider-models`}
       label="Models"
     >
-      {isBrowsing ? (
+      {showBrowse ? (
         <div className="space-y-2">
           {remoteLoading ? (
             <div className="flex h-72 items-center justify-center rounded-md border border-border">
@@ -191,6 +185,7 @@ export function CatalogProviderModelFields({
           ) : (
             <OpenCodeGoModelsBrowseList
               className="h-72 rounded-md border border-border"
+              disabled={disabled}
               models={browseModels}
               onSelect={addCatalogModel}
             />
@@ -200,23 +195,7 @@ export function CatalogProviderModelFields({
               disabled={disabled || remoteLoading || browseModels.length === 0}
               onClick={() =>
                 onCustomModelsChange(
-                  browseModels.map((model) => ({
-                    default: model.default,
-                    id: model.id,
-                    name: model.name,
-                    ...(model.inputPerMillionUsd === undefined
-                      ? {}
-                      : { inputPerMillionUsd: model.inputPerMillionUsd }),
-                    ...(model.outputPerMillionUsd === undefined
-                      ? {}
-                      : { outputPerMillionUsd: model.outputPerMillionUsd }),
-                    ...(model.supportsThinking === undefined
-                      ? {}
-                      : { supportsThinking: model.supportsThinking }),
-                    ...(model.reasoningEffortValues?.length
-                      ? { reasoningEffortValues: model.reasoningEffortValues }
-                      : {}),
-                  }))
+                  mergeCatalogModelsIntoRows(customModels, browseModels)
                 )
               }
               size="sm"
@@ -225,15 +204,17 @@ export function CatalogProviderModelFields({
             >
               Add all
             </Button>
-            <Button
-              disabled={disabled}
-              onClick={() => setIsBrowsing(false)}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              Back
-            </Button>
+            {customModels.length > 0 ? (
+              <Button
+                disabled={disabled}
+                onClick={() => setIsBrowsing(false)}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                Back
+              </Button>
+            ) : null}
           </div>
         </div>
       ) : (
@@ -244,6 +225,8 @@ export function CatalogProviderModelFields({
           onBrowse={() => setIsBrowsing(true)}
           onChange={onCustomModelsChange}
           showPricing
+          showThinking
+          showVision
         />
       )}
     </FormField>

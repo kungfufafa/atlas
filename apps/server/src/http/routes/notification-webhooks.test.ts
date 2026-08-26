@@ -32,10 +32,19 @@ describe("notification webhook routes", () => {
       { ensureDir: getTelegramConfigDir("org_1") }
     );
 
-    return createMinimalHonoApp({
+    const result = createMinimalHonoApp({
       agent: {},
       systemStatus: {},
     });
+    const now = "2026-07-04T10:00:00.000Z";
+    await result.databaseAdapter.upsertOrganization({
+      createdAt: now,
+      id: "org_1",
+      name: "Acme",
+      slug: "acme",
+      updatedAt: now,
+    });
+    return result;
   }
 
   test("accepts authenticated webhook requests and delivers to telegram topics", async () => {
@@ -112,5 +121,53 @@ describe("notification webhook routes", () => {
     );
 
     expect(response.status).toBe(401);
+  });
+
+  test("does not deliver for an archived organization", async () => {
+    const telegramCalls: unknown[] = [];
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (_input, init) => {
+      telegramCalls.push(init?.body);
+      return new Response("ok", { status: 200 });
+    };
+
+    try {
+      const { app, databaseAdapter, authService } = await createApp();
+      const now = "2026-08-26T00:00:00.000Z";
+      await databaseAdapter.upsertOrganization({
+        archivedAt: now,
+        createdAt: "2026-07-04T10:00:00.000Z",
+        id: "org_1",
+        name: "Acme",
+        slug: "acme",
+        updatedAt: now,
+      });
+      await databaseAdapter.upsertNotificationDestination({
+        channel: "telegram",
+        config: { chatId: 1001, topicId: null },
+        createdAt: now,
+        id: "dest_1",
+        name: "Payments",
+        orgId: "org_1",
+        secretHash: authService.hashToken("secret_key"),
+        updatedAt: now,
+      });
+
+      const response = await app.fetch(
+        new Request("http://localhost:4310/v1/notify/dest_1", {
+          body: JSON.stringify({ body: "Hello" }),
+          headers: {
+            "Content-Type": "application/json",
+            "X-API-Key": "secret_key",
+          },
+          method: "POST",
+        })
+      );
+
+      expect(response.status).toBe(404);
+      expect(telegramCalls).toEqual([]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });

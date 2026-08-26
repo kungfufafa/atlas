@@ -9,14 +9,16 @@ import type {
   ProviderClient,
   StreamChatHandlers,
   ToolCall,
+  WireApi,
 } from "@atlas/core";
-import { normalizeBaseUrl } from "@atlas/core";
+import { fetchWithoutIdleTimeout, normalizeBaseUrl } from "@atlas/core";
 import OpenAI from "openai";
 import {
   parseOpenAIToolCalls,
   toOpenAIMessages,
   toOpenAITools,
 } from "../openai";
+import { generateOpenAIResponsesChat } from "../openai/responses";
 import { openAIModelRejectsChatToolsWithReasoning } from "../openai/thinking";
 import {
   buildChatCompletionResult,
@@ -33,9 +35,13 @@ export interface OpenAICompatibleProviderOptions {
   baseUrl: string;
   displayName: string;
   model: string;
+  providerInstanceId?: string;
   providerName?: ProviderClient["name"];
+  providerReplayRevision?: string;
   reasoningEffortValues?: string[];
   supportsThinking: boolean;
+  /** `responses` targets `/responses`; all other values use chat completions. */
+  wireApi?: WireApi;
 }
 
 interface PendingToolCall {
@@ -51,6 +57,8 @@ export function createOpenAICompatibleProvider(
   const model = options.model;
   const baseUrl = normalizeBaseUrl(options.baseUrl);
   const apiKey = options.apiKey || "not-needed";
+  const useResponsesApi = options.wireApi === "responses";
+  const providerName = options.providerName ?? "openai_compatible";
 
   const client = new OpenAI({
     apiKey,
@@ -58,12 +66,29 @@ export function createOpenAICompatibleProvider(
     defaultHeaders: {
       "User-Agent": DEFAULT_USER_AGENT,
     },
+    fetch: fetchWithoutIdleTimeout,
     maxRetries: 0,
     timeout: 300_000,
   });
 
   return {
     generateChat(input: GenerateChatInput) {
+      if (useResponsesApi) {
+        return generateOpenAIResponsesChat({
+          apiKey,
+          baseUrl,
+          input,
+          label,
+          model,
+          providerInstanceId: options.providerInstanceId,
+          providerName,
+          providerReplayRevision: options.providerReplayRevision,
+          reasoningEffortValues: options.reasoningEffortValues,
+          stream: false,
+          supportsThinking: options.supportsThinking,
+        });
+      }
+
       return requestChatCompletion(client, label, {
         messages: input.messages,
         model,
@@ -75,27 +100,79 @@ export function createOpenAICompatibleProvider(
         tools: input.tools,
       });
     },
-    generateText(input: GenerateTextInput) {
+    async generateText(input: GenerateTextInput) {
       const useJson = (input.format ?? "json") === "json";
-      return requestChatCompletion(client, label, {
+      const system = useJson
+        ? input.system
+        : `${input.system}\n\nReturn only the requested text. No JSON, keys, labels, markdown fences, or surrounding quotes.`;
+
+      if (useResponsesApi) {
+        const result = await generateOpenAIResponsesChat({
+          apiKey,
+          baseUrl,
+          input: {
+            messages: [{ content: input.prompt, role: "user" }],
+            providerOptions: input.providerOptions as
+              | ProviderChatOptions
+              | undefined,
+            signal: input.signal,
+            system,
+          },
+          jsonOutput: useJson,
+          label,
+          model,
+          providerInstanceId: options.providerInstanceId,
+          providerName,
+          providerReplayRevision: options.providerReplayRevision,
+          reasoningEffortValues: options.reasoningEffortValues,
+          stream: false,
+          supportsThinking: options.supportsThinking,
+        });
+
+        return {
+          content: result.content,
+          data: useJson ? parseJsonRecord(result.content) : result.content,
+          usage: result.usage,
+        };
+      }
+
+      const result = await requestChatCompletion(client, label, {
         messages: [{ content: input.prompt, role: "user" }],
         model,
         signal: input.signal,
-        system: input.system ?? "",
+        system,
         thinking: options.supportsThinking
           ? (input.providerOptions?.thinking as
               | { enabled: boolean; effort?: string }
               | undefined)
           : undefined,
-      }).then((result) => ({
+      });
+
+      return {
         content: result.content,
         data: useJson ? parseJsonRecord(result.content) : result.content,
         usage: result.usage,
-      }));
+      };
     },
-    name: (options.providerName ??
-      "openai_compatible") as ProviderClient["name"],
+    name: providerName,
     streamChat(input: GenerateChatInput, handlers: StreamChatHandlers) {
+      if (useResponsesApi) {
+        return generateOpenAIResponsesChat({
+          apiKey,
+          baseUrl,
+          handlers,
+          input,
+          label,
+          model,
+          providerInstanceId: options.providerInstanceId,
+          providerName,
+          providerReplayRevision: options.providerReplayRevision,
+          reasoningEffortValues: options.reasoningEffortValues,
+          stream: true,
+          supportsThinking: options.supportsThinking,
+        });
+      }
+
       return streamChatCompletion({
         apiKey,
         baseUrl,
@@ -270,31 +347,34 @@ async function streamChatCompletion(options: {
   handlers: StreamChatHandlers;
   signal?: AbortSignal;
 }): Promise<ChatCompletionResult> {
-  const response = await fetch(`${options.baseUrl}/chat/completions`, {
-    body: JSON.stringify({
-      messages: await buildMessages(options.system, options.messages),
-      model: options.model,
-      stream: true,
-      stream_options: { include_usage: true },
-      ...buildThinkingBody(options.thinking, {
-        hasTools: Boolean(options.tools?.length),
+  const response = await fetchWithoutIdleTimeout(
+    `${options.baseUrl}/chat/completions`,
+    {
+      body: JSON.stringify({
+        messages: await buildMessages(options.system, options.messages),
         model: options.model,
+        stream: true,
+        stream_options: { include_usage: true },
+        ...buildThinkingBody(options.thinking, {
+          hasTools: Boolean(options.tools?.length),
+          model: options.model,
+        }),
+        ...(options.tools?.length
+          ? {
+              tool_choice: "auto",
+              tools: toOpenAITools(options.tools),
+            }
+          : {}),
       }),
-      ...(options.tools?.length
-        ? {
-            tool_choice: "auto",
-            tools: toOpenAITools(options.tools),
-          }
-        : {}),
-    }),
-    headers: {
-      Authorization: `Bearer ${options.apiKey}`,
-      "Content-Type": "application/json",
-      "User-Agent": DEFAULT_USER_AGENT,
-    },
-    method: "POST",
-    signal: options.signal,
-  });
+      headers: {
+        Authorization: `Bearer ${options.apiKey}`,
+        "Content-Type": "application/json",
+        "User-Agent": DEFAULT_USER_AGENT,
+      },
+      method: "POST",
+      signal: options.signal,
+    }
+  );
 
   const bodyText = response.ok ? null : await response.text();
 

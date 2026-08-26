@@ -164,7 +164,8 @@ export function normalizeGatewayModel(
 }
 
 export async function fetchFireworksGatewayModels(
-  apiKey: string
+  apiKey: string,
+  options: { signal?: AbortSignal } = {}
 ): Promise<CustomModelEntry[]> {
   const key = apiKey.trim();
 
@@ -192,6 +193,7 @@ export async function fetchFireworksGatewayModels(
         Accept: "application/json",
         Authorization: `Bearer ${key}`,
       },
+      signal: options.signal,
     });
 
     if (!response.ok) {

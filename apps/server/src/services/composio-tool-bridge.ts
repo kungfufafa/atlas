@@ -6,6 +6,7 @@ import type {
 import {
   isLoopbackComposioCallbackBaseUrl,
   resolveComposioCallbackBaseUrl,
+  validateComposioOAuthRedirectUrl,
 } from "./composio-callback-url";
 import type { ComposioService } from "./composio-service";
 import type { McpClientManager } from "./mcp-client-manager";
@@ -245,11 +246,14 @@ export async function buildComposioConnectTools(
             } satisfies ComposioToolErrorResult;
           }
 
-          const { redirectUrl } = await composioService.connectToolkit(
+          const connection = await composioService.connectToolkit(
             orgId,
             userId,
             toolkitSlug,
             callbackBaseUrl
+          );
+          const redirectUrl = validateComposioOAuthRedirectUrl(
+            connection.redirectUrl
           );
 
           const displayName =

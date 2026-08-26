@@ -5,6 +5,7 @@ import type {
   DatabaseAdapter,
   LlmUsageAggregateRow,
   LlmUsageStatsDelta,
+  ProfileImportPublication,
   StoredActionApprovalRecord,
   StoredArtifactShareRecord,
   StoredAttachmentRecord,
@@ -64,6 +65,93 @@ function mcpServerNameKey(
 
 function toolNameKey(orgId: string | null | undefined, name: string): string {
   return `${orgId ?? ""}\0${name}`;
+}
+
+function canonicalJson(value: unknown): string | null {
+  const seen = new Set<object>();
+  const normalize = (current: unknown): unknown => {
+    if (
+      current === null ||
+      typeof current === "string" ||
+      typeof current === "boolean"
+    ) {
+      return current;
+    }
+    if (typeof current === "number") {
+      if (!Number.isFinite(current)) {
+        throw new Error("Non-finite JSON number");
+      }
+      return current;
+    }
+    if (Array.isArray(current)) {
+      if (seen.has(current)) {
+        throw new Error("Cyclic JSON value");
+      }
+      seen.add(current);
+      const normalized = current.map(normalize);
+      seen.delete(current);
+      return normalized;
+    }
+    if (typeof current === "object" && current) {
+      if (seen.has(current)) {
+        throw new Error("Cyclic JSON value");
+      }
+      seen.add(current);
+      const normalized: Record<string, unknown> = {};
+      for (const key of Object.keys(current).sort()) {
+        const item = (current as Record<string, unknown>)[key];
+        if (item !== undefined) {
+          normalized[key] = normalize(item);
+        }
+      }
+      seen.delete(current);
+      return normalized;
+    }
+    throw new Error("Non-JSON value");
+  };
+
+  try {
+    return JSON.stringify(normalize(value));
+  } catch {
+    return null;
+  }
+}
+
+function importToolExpectationMatches(
+  current: StoredToolRecord,
+  expected: ProfileImportPublication["expectedTools"][number]
+): boolean {
+  const currentConfig = canonicalJson(current.handlerConfig);
+  return (
+    current.id === expected.id &&
+    current.name === expected.name &&
+    current.description === expected.description &&
+    current.handlerType === expected.handlerType &&
+    current.orgId === expected.orgId &&
+    currentConfig !== null &&
+    currentConfig === canonicalJson(expected.handlerConfig)
+  );
+}
+
+function readConversationMessagePayload(payload: unknown): {
+  role: string;
+  text: string;
+} {
+  if (typeof payload === "string") {
+    return { role: "user", text: payload };
+  }
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return { role: "user", text: JSON.stringify(payload ?? "") };
+  }
+
+  const record = payload as Record<string, unknown>;
+  return {
+    role: typeof record.role === "string" ? record.role : "user",
+    text:
+      typeof record.content === "string"
+        ? record.content
+        : JSON.stringify(record.content ?? ""),
+  };
 }
 
 const IN_MEMORY_ACTIVE_EXECUTION_STATUSES = new Set([
@@ -256,19 +344,120 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       sessionMessages.set(sessionId, [...existing, ...messages]);
     },
 
+    async applySkillConsolidation(input) {
+      const organization = organizations.get(input.orgId);
+      const profile = profiles.get(input.profileId);
+      const proposal = skillProposals.get(input.proposalId);
+      if (
+        !organization ||
+        organization.archivedAt ||
+        profile?.orgId !== input.orgId ||
+        profile.isImporting ||
+        !proposal ||
+        proposal.orgId !== input.orgId ||
+        proposal.profileId !== input.profileId ||
+        proposal.status !== "pending" ||
+        proposal.action !== "consolidate" ||
+        JSON.stringify(proposal.consolidation) !==
+          JSON.stringify(input.expectedConsolidation)
+      ) {
+        return false;
+      }
+      const assigned = profileSkills.get(input.profileId) ?? new Set<string>();
+      const expectedRefs = [
+        input.expectedConsolidation.winner,
+        ...input.expectedConsolidation.losers,
+      ];
+      const archivedById = new Map(
+        input.archivedLosers.map((loser) => [loser.id, loser])
+      );
+      if (
+        expectedRefs.length < 2 ||
+        archivedById.size !== input.expectedConsolidation.losers.length
+      ) {
+        return false;
+      }
+      for (const reference of expectedRefs) {
+        const skill = skills.get(reference.id);
+        if (
+          !(skill && skill.enabled) ||
+          skill.orgId !== input.orgId ||
+          skill.name !== reference.name ||
+          !assigned.has(reference.id)
+        ) {
+          return false;
+        }
+      }
+      if (
+        input.winner.id !== input.expectedConsolidation.winner.id ||
+        input.winner.name !== input.expectedConsolidation.winner.name ||
+        input.winner.orgId !== input.orgId
+      ) {
+        return false;
+      }
+      for (const reference of input.expectedConsolidation.losers) {
+        const archived = archivedById.get(reference.id);
+        if (!archived || archived.name !== reference.name) {
+          return false;
+        }
+      }
+
+      const nextSkills = new Map(skills);
+      nextSkills.set(input.winner.id, input.winner);
+      for (const loser of input.archivedLosers) {
+        const current = nextSkills.get(loser.id);
+        if (!current) {
+          return false;
+        }
+        nextSkills.set(loser.id, {
+          ...current,
+          enabled: false,
+          sourcePath: loser.archivedSourcePath,
+          updatedAt: input.reviewedAt,
+        });
+      }
+      for (const [id, record] of nextSkills) {
+        skills.set(id, record);
+      }
+      skillsBySourcePath.clear();
+      for (const record of skills.values()) {
+        skillsBySourcePath.set(record.sourcePath, record);
+      }
+      for (const loser of input.archivedLosers) {
+        assigned.delete(loser.id);
+      }
+      profileSkills.set(input.profileId, assigned);
+      skillProposals.set(input.proposalId, {
+        ...proposal,
+        reviewedAt: input.reviewedAt,
+        reviewerUserId: input.reviewerUserId,
+        status: "approved",
+      });
+      return true;
+    },
+
     async assignMcpServerToProfile(profileId, serverId) {
+      if (profiles.get(profileId)?.isImporting) {
+        return;
+      }
       const assigned = profileMcpServers.get(profileId) ?? new Set<string>();
       assigned.add(serverId);
       profileMcpServers.set(profileId, assigned);
     },
 
     async assignSkillToProfile(profileId, skillId) {
+      if (profiles.get(profileId)?.isImporting) {
+        return;
+      }
       const assigned = profileSkills.get(profileId) ?? new Set<string>();
       assigned.add(skillId);
       profileSkills.set(profileId, assigned);
     },
 
     async assignToolToProfile(profileId, toolId) {
+      if (profiles.get(profileId)?.isImporting) {
+        return;
+      }
       const assigned = profileTools.get(profileId) ?? new Set<string>();
       assigned.add(toolId);
       profileTools.set(profileId, assigned);
@@ -306,6 +495,22 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         }
       }
       executionRuns.set(input.id, { ...input.next, id: existing.id });
+      return true;
+    },
+
+    async compareAndSwapComposioUserConnection(record, expectedOAuthStateHash) {
+      const current = composioUserConnections.get(record.id);
+      if (
+        !current ||
+        current.orgId !== record.orgId ||
+        current.userId !== record.userId ||
+        current.toolkitId !== record.toolkitId ||
+        current.oauthStateHash !== expectedOAuthStateHash
+      ) {
+        return false;
+      }
+
+      composioUserConnections.set(record.id, { ...record });
       return true;
     },
 
@@ -424,6 +629,21 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       orgMemoryProposals.set(record.id, record);
     },
 
+    async createProfileIfAbsent(record) {
+      if (profiles.has(record.id)) {
+        return false;
+      }
+      if (record.isDefault && record.orgId) {
+        for (const profile of profiles.values()) {
+          if (profile.orgId === record.orgId && profile.isDefault) {
+            profiles.set(profile.id, { ...profile, isDefault: false });
+          }
+        }
+      }
+      profiles.set(record.id, { ...record, isImporting: false });
+      return true;
+    },
+
     async createSkillProposal(record) {
       skillProposals.set(record.id, record);
     },
@@ -523,6 +743,33 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
       profileTools.delete(id);
       profileMcpServers.delete(id);
+      profileSkills.delete(id);
+      profileComposioToolkits.delete(id);
+      return true;
+    },
+
+    async deleteProfileForOrg(id, orgId) {
+      if (profiles.get(id)?.orgId !== orgId) {
+        return false;
+      }
+      profiles.delete(id);
+      profileTools.delete(id);
+      profileMcpServers.delete(id);
+      profileSkills.delete(id);
+      profileComposioToolkits.delete(id);
+      return true;
+    },
+
+    async deleteProfileImportReservation(id, orgId) {
+      const profile = profiles.get(id);
+      if (!(profile?.isImporting && profile.orgId === orgId)) {
+        return false;
+      }
+      profiles.delete(id);
+      profileTools.delete(id);
+      profileMcpServers.delete(id);
+      profileSkills.delete(id);
+      profileComposioToolkits.delete(id);
       return true;
     },
 
@@ -667,14 +914,53 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       return composioUserConnections.get(id) ?? null;
     },
 
-    getConversationHistory() {
-      return Promise.resolve(null);
+    async getConversationHistory(orgId, sessionId, options = {}) {
+      const session = sessions.get(sessionId);
+      const profile = session ? profiles.get(session.profileId) : null;
+      if (
+        !session ||
+        session.orgId !== orgId ||
+        profile?.orgId !== orgId ||
+        profile.isImporting ||
+        (options.userId && session.userId !== options.userId) ||
+        (options.excludeSuperAgent && profile.isSuper)
+      ) {
+        return null;
+      }
+
+      const allMessages = [...(sessionMessages.get(sessionId) ?? [])].sort(
+        (left, right) => left.seq - right.seq
+      );
+      const limit = Math.min(100, options.limit ?? 50);
+      const offset = options.offset ?? 0;
+      const messages = allMessages
+        .slice(offset, offset + limit)
+        .map((message) => {
+          const parsed = readConversationMessagePayload(message.payload);
+          return {
+            createdAt: message.createdAt,
+            id: message.id,
+            role: parsed.role,
+            seq: message.seq,
+            text: parsed.text.slice(0, 4000),
+          };
+        });
+
+      return {
+        createdAt: session.createdAt,
+        messages,
+        profileId: session.profileId,
+        sessionId: session.id,
+        title: session.title ?? null,
+        totalMessages: allMessages.length,
+      };
     },
 
     async getDefaultProfileForOrg(orgId) {
       return (
         Array.from(profiles.values()).find(
-          (profile) => profile.orgId === orgId && profile.isDefault
+          (profile) =>
+            profile.orgId === orgId && profile.isDefault && !profile.isImporting
         ) ?? null
       );
     },
@@ -833,16 +1119,20 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     },
 
     async getProfile(id) {
-      return profiles.get(id) ?? null;
+      const profile = profiles.get(id);
+      return profile && !profile.isImporting ? profile : null;
     },
 
     async getProfileForOrg(id, orgId) {
       const profile = profiles.get(id);
-      return profile?.orgId === orgId ? profile : null;
+      return profile?.orgId === orgId && !profile.isImporting ? profile : null;
     },
 
     async getSession(id) {
-      return sessions.get(id) ?? null;
+      const session = sessions.get(id);
+      return session && !profiles.get(session.profileId)?.isImporting
+        ? session
+        : null;
     },
 
     async getSessionQuestionnaire(sessionId) {
@@ -937,6 +1227,8 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
                 args: [...harness.args],
               })
             ),
+            codingAgentProviderPassthrough:
+              selected.codingAgentProviderPassthrough !== false,
           }
         : null;
     },
@@ -1155,6 +1447,12 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       );
     },
 
+    async listComposioUserConnectionsForOrg(orgId) {
+      return Array.from(composioUserConnections.values()).filter(
+        (record) => record.orgId === orgId
+      );
+    },
+
     async listComposioUserConnectionsForUser(orgId, userId) {
       return Array.from(composioUserConnections.values()).filter(
         (record) => record.orgId === orgId && record.userId === userId
@@ -1243,6 +1541,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     },
 
     async listMcpServersForProfile(profileId) {
+      if (profiles.get(profileId)?.isImporting) {
+        return [];
+      }
       const assigned = profileMcpServers.get(profileId);
 
       if (!assigned) {
@@ -1312,11 +1613,16 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     },
 
     async listProfileComposioToolkits(profileId) {
+      if (profiles.get(profileId)?.isImporting) {
+        return [];
+      }
       return profileComposioToolkits.get(profileId) ?? [];
     },
 
     async listProfiles() {
-      return Array.from(profiles.values());
+      return Array.from(profiles.values()).filter(
+        (profile) => !profile.isImporting
+      );
     },
 
     async listProfilesForMcpServer(serverId) {
@@ -1329,7 +1635,7 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
         const profile = profiles.get(profileId);
 
-        if (profile) {
+        if (profile && !profile.isImporting) {
           matches.push(profile);
         }
       }
@@ -1339,7 +1645,7 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
     async listProfilesForOrg(orgId) {
       return Array.from(profiles.values())
-        .filter((profile) => profile.orgId === orgId)
+        .filter((profile) => profile.orgId === orgId && !profile.isImporting)
         .sort((left, right) => {
           if (left.isDefault !== right.isDefault) {
             return left.isDefault ? -1 : 1;
@@ -1355,6 +1661,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     },
 
     async listSessionSummaries(profileId, channel) {
+      if (profiles.get(profileId)?.isImporting) {
+        return [];
+      }
       return Array.from(sessions.values())
         .filter(
           (session) =>
@@ -1368,7 +1677,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     },
 
     async listSessions() {
-      return Array.from(sessions.values());
+      return Array.from(sessions.values()).filter(
+        (session) => !profiles.get(session.profileId)?.isImporting
+      );
     },
 
     async listSkillProposals(orgId, options = {}) {
@@ -1425,6 +1736,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     },
 
     async listSkillsForProfile(profileId) {
+      if (profiles.get(profileId)?.isImporting) {
+        return [];
+      }
       const assigned = profileSkills.get(profileId);
 
       if (!assigned) {
@@ -1490,6 +1804,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     },
 
     async listToolsForProfile(profileId) {
+      if (profiles.get(profileId)?.isImporting) {
+        return [];
+      }
       const assigned = profileTools.get(profileId);
 
       if (!assigned) {
@@ -1506,7 +1823,7 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         .filter((member) => member.userId === userId)
         .map((member) => {
           const organization = organizations.get(member.orgId);
-          if (!organization) {
+          if (!organization || organization.archivedAt) {
             return null;
           }
 
@@ -1535,6 +1852,25 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       orgInvitesByTokenHash.set(updated.tokenHash, updated);
     },
 
+    async markSkillCuratorRunCompleted(orgId, completedAt) {
+      const organization = organizations.get(orgId);
+      if (
+        !organization ||
+        organization.archivedAt ||
+        !organization.skillsCuratorConsolidation
+      ) {
+        return false;
+      }
+      const updated = {
+        ...organization,
+        skillsCuratorLastRunAt: completedAt,
+        updatedAt: completedAt,
+      };
+      organizations.set(orgId, updated);
+      organizationsBySlug.set(updated.slug, updated);
+      return true;
+    },
+
     async markSkillSuggestionApplied(orgId, id, appliedAt) {
       const suggestion = skillSuggestions.get(id);
       if (!suggestion || suggestion.orgId !== orgId) {
@@ -1558,15 +1894,187 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       return Promise.resolve(removed);
     },
 
+    async publishProfileImport(publication) {
+      const organization = organizations.get(publication.orgId);
+      const reservation = profiles.get(publication.profileId);
+      if (!organization || organization.archivedAt) {
+        return "inactive";
+      }
+      if (
+        !reservation?.isImporting ||
+        reservation.orgId !== publication.orgId ||
+        reservation.isDefault ||
+        reservation.isSuper
+      ) {
+        return "conflict";
+      }
+
+      const toolIds = new Set(publication.toolIds);
+      const skillIds = new Set(publication.skillIds);
+      const mcpServerIds = new Set(publication.mcpServerIds);
+      const composioToolkitIds = new Set(
+        publication.composioAssignments.map(
+          (assignment) => assignment.toolkitId
+        )
+      );
+      const newToolsById = new Map(
+        publication.newTools.map((tool) => [tool.id, tool])
+      );
+      const newSkillsById = new Map(
+        publication.newSkills.map((skill) => [skill.id, skill])
+      );
+      const expectedToolIds = new Set(
+        publication.expectedTools.map((tool) => tool.id)
+      );
+      if (
+        toolIds.size !== publication.toolIds.length ||
+        skillIds.size !== publication.skillIds.length ||
+        mcpServerIds.size !== publication.mcpServerIds.length ||
+        composioToolkitIds.size !== publication.composioAssignments.length ||
+        newToolsById.size !== publication.newTools.length ||
+        newSkillsById.size !== publication.newSkills.length ||
+        expectedToolIds.size !== publication.expectedTools.length ||
+        publication.newTools.some((tool) => !toolIds.has(tool.id)) ||
+        publication.newSkills.some((skill) => !skillIds.has(skill.id)) ||
+        publication.toolIds.some((id) =>
+          newToolsById.has(id)
+            ? expectedToolIds.has(id)
+            : !expectedToolIds.has(id)
+        )
+      ) {
+        return "conflict";
+      }
+      const newToolNames = new Set<string>();
+      for (const tool of publication.newTools) {
+        const nameKey = toolNameKey(tool.orgId, tool.name);
+        if (
+          tool.orgId !== publication.orgId ||
+          tools.has(tool.id) ||
+          toolsByName.has(nameKey) ||
+          toolsByName.has(toolNameKey(null, tool.name)) ||
+          newToolNames.has(nameKey)
+        ) {
+          return "conflict";
+        }
+        newToolNames.add(nameKey);
+      }
+      const newSkillNames = new Set<string>();
+      const newSkillPaths = new Set<string>();
+      for (const skill of publication.newSkills) {
+        const hasVisibleNameCollision = Array.from(skills.values()).some(
+          (existing) =>
+            existing.name === skill.name &&
+            (existing.orgId == null || existing.orgId === publication.orgId)
+        );
+        if (
+          skill.orgId !== publication.orgId ||
+          skills.has(skill.id) ||
+          skillsBySourcePath.has(skill.sourcePath) ||
+          hasVisibleNameCollision ||
+          newSkillNames.has(skill.name) ||
+          newSkillPaths.has(skill.sourcePath)
+        ) {
+          return "conflict";
+        }
+        newSkillNames.add(skill.name);
+        newSkillPaths.add(skill.sourcePath);
+      }
+      for (const toolId of publication.toolIds) {
+        const tool = newToolsById.get(toolId) ?? tools.get(toolId);
+        if (
+          !(tool && (tool.orgId == null || tool.orgId === publication.orgId))
+        ) {
+          return "conflict";
+        }
+      }
+      for (const expectation of publication.expectedTools) {
+        const current = tools.get(expectation.id);
+        if (
+          newToolsById.has(expectation.id) ||
+          !toolIds.has(expectation.id) ||
+          !current ||
+          !importToolExpectationMatches(current, expectation)
+        ) {
+          return "conflict";
+        }
+      }
+      for (const skillId of publication.skillIds) {
+        const skill = newSkillsById.get(skillId) ?? skills.get(skillId);
+        if (
+          !(skill && (skill.orgId == null || skill.orgId === publication.orgId))
+        ) {
+          return "conflict";
+        }
+      }
+      for (const serverId of publication.mcpServerIds) {
+        if (mcpServers.get(serverId)?.orgId !== publication.orgId) {
+          return "conflict";
+        }
+      }
+      for (const assignment of publication.composioAssignments) {
+        if (
+          assignment.profileId !== publication.profileId ||
+          composioToolkits.get(assignment.toolkitId)?.orgId !==
+            publication.orgId
+        ) {
+          return "conflict";
+        }
+      }
+
+      for (const tool of publication.newTools) {
+        tools.set(tool.id, tool);
+        toolsByName.set(toolNameKey(tool.orgId, tool.name), tool);
+      }
+      for (const skill of publication.newSkills) {
+        skills.set(skill.id, skill);
+        skillsBySourcePath.set(skill.sourcePath, skill);
+      }
+      profileTools.set(publication.profileId, new Set(publication.toolIds));
+      profileSkills.set(publication.profileId, new Set(publication.skillIds));
+      profileMcpServers.set(
+        publication.profileId,
+        new Set(publication.mcpServerIds)
+      );
+      profileComposioToolkits.set(
+        publication.profileId,
+        publication.composioAssignments.map((assignment) => ({
+          ...assignment,
+          profileId: publication.profileId,
+        }))
+      );
+      profiles.set(publication.profileId, {
+        ...reservation,
+        isImporting: false,
+      });
+      return "published";
+    },
+
     async replaceMessagesForSession(sessionId, messages) {
       sessionMessages.set(sessionId, [...messages]);
     },
 
     async replaceProfileComposioToolkits(profileId, assignments) {
+      if (profiles.get(profileId)?.isImporting) {
+        return;
+      }
       profileComposioToolkits.set(
         profileId,
         assignments.map((assignment) => ({ ...assignment, profileId }))
       );
+    },
+
+    async reserveProfileImport(record) {
+      const organization = record.orgId
+        ? organizations.get(record.orgId)
+        : null;
+      if (!organization || organization.archivedAt) {
+        return "inactive";
+      }
+      if (profiles.has(record.id)) {
+        return "exists";
+      }
+      profiles.set(record.id, { ...record, isImporting: true });
+      return "reserved";
     },
 
     async revokeArtifactShare(id, revokedAt) {
@@ -1611,8 +2119,60 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       return revoked;
     },
 
-    searchConversationMessages() {
-      return Promise.resolve([]);
+    async searchConversationMessages(orgId, queryText, options = {}) {
+      const clean = queryText.trim();
+      if (!clean) {
+        return [];
+      }
+
+      const needle = clean.toLowerCase();
+      const results = [];
+      for (const session of sessions.values()) {
+        const profile = profiles.get(session.profileId);
+        if (
+          session.orgId !== orgId ||
+          profile?.orgId !== orgId ||
+          profile.isImporting ||
+          (options.profileId && session.profileId !== options.profileId) ||
+          (options.userId && session.userId !== options.userId) ||
+          (options.excludeSuperAgent && profile.isSuper)
+        ) {
+          continue;
+        }
+
+        for (const message of sessionMessages.get(session.id) ?? []) {
+          if (
+            (options.after && message.createdAt < options.after) ||
+            (options.before && message.createdAt > options.before)
+          ) {
+            continue;
+          }
+          const parsed = readConversationMessagePayload(message.payload);
+          const matchIndex = parsed.text.toLowerCase().indexOf(needle);
+          if (matchIndex < 0) {
+            continue;
+          }
+          const start = Math.max(0, matchIndex - 80);
+          const end = Math.min(
+            parsed.text.length,
+            matchIndex + clean.length + 80
+          );
+          results.push({
+            createdAt: message.createdAt,
+            matchedSnippet: `...${parsed.text.slice(start, end).trim()}...`,
+            messageId: message.id,
+            profileId: session.profileId,
+            role: parsed.role,
+            sessionId: session.id,
+            sessionTitle: session.title ?? null,
+          });
+        }
+      }
+
+      results.sort((left, right) =>
+        right.createdAt.localeCompare(left.createdAt)
+      );
+      return results.slice(0, options.limit ?? 20);
     },
 
     async searchMemories(orgId, query, scope, ownerId, limit) {
@@ -1646,6 +2206,26 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       const updated = { ...user, updatedAt };
       usersById.set(userId, updated);
       usersByEmail.set(updated.email, updated);
+    },
+
+    async tryMarkOrganizationArchived(orgId, archivedAt) {
+      const activeCount = Array.from(organizations.values()).filter(
+        (organization) => !organization.archivedAt
+      ).length;
+      const organization = organizations.get(orgId);
+
+      if (activeCount <= 1 || !organization || organization.archivedAt) {
+        return false;
+      }
+
+      const updated = {
+        ...organization,
+        archivedAt,
+        updatedAt: archivedAt,
+      };
+      organizations.set(orgId, updated);
+      organizationsBySlug.set(updated.slug, updated);
+      return true;
     },
 
     async unassignMcpServerFromProfile(profileId, serverId) {
@@ -1737,6 +2317,17 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         reviewerUserId: update.reviewerUserId,
         status: update.status,
       });
+      return true;
+    },
+
+    async updateSessionModelOverride(sessionId, modelOverride) {
+      const session = sessions.get(sessionId);
+
+      if (!session) {
+        return false;
+      }
+
+      sessions.set(sessionId, { ...session, modelOverride });
       return true;
     },
 
@@ -1905,8 +2496,20 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     },
 
     async upsertOrganization(record) {
-      organizations.set(record.id, record);
-      organizationsBySlug.set(record.slug, record);
+      const existing = organizations.get(record.id);
+      const withSchedule = {
+        ...record,
+        skillsCuratorLastRunAt:
+          record.skillsCuratorLastRunAt === undefined
+            ? existing?.skillsCuratorLastRunAt
+            : record.skillsCuratorLastRunAt,
+      };
+      const updated =
+        existing?.archivedAt && !record.archivedAt
+          ? { ...withSchedule, archivedAt: existing.archivedAt }
+          : withSchedule;
+      organizations.set(record.id, updated);
+      organizationsBySlug.set(updated.slug, updated);
     },
 
     async upsertOrgMember(record) {
@@ -1922,6 +2525,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     },
 
     async upsertProfile(record) {
+      if (profiles.get(record.id)?.isImporting) {
+        return;
+      }
       if (record.isDefault && record.orgId) {
         for (const profile of profiles.values()) {
           if (
@@ -1934,10 +2540,13 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         }
       }
 
-      profiles.set(record.id, record);
+      profiles.set(record.id, { ...record, isImporting: false });
     },
 
     async upsertSession(record) {
+      if (profiles.get(record.profileId)?.isImporting) {
+        return;
+      }
       sessions.set(record.id, record);
     },
 
@@ -1968,12 +2577,17 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     },
 
     async upsertWorkspaceSettings(record) {
+      const normalized = {
+        ...record,
+        codingAgentProviderPassthrough:
+          record.codingAgentProviderPassthrough !== false,
+      };
       if (record.orgId) {
-        orgWorkspaceSettings.set(record.orgId, structuredClone(record));
+        orgWorkspaceSettings.set(record.orgId, structuredClone(normalized));
         return;
       }
       workspaceSettings = {
-        ...record,
+        ...normalized,
         codingAgentHarnesses: record.codingAgentHarnesses.map((harness) => ({
           ...harness,
           args: [...harness.args],

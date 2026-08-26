@@ -131,6 +131,26 @@ describe("agent chat cancellation", () => {
     expect(providerSignal).toBe(controller.signal);
   });
 
+  test("hands cancellation to the provider for non-stream turns", async () => {
+    const controller = new AbortController();
+    let providerSignal: AbortSignal | undefined;
+    const provider: ProviderClient = {
+      generateChat: (input: GenerateChatInput) => {
+        providerSignal = input.signal;
+        return Promise.resolve(callThenReply[1] as ChatCompletionResult);
+      },
+      generateText: () => Promise.resolve({ content: "{}" }),
+      name: "openai",
+      streamChat: () =>
+        Promise.resolve(callThenReply[1] as ChatCompletionResult),
+    };
+    const session = createAgentHarness({ provider }).createChatSession();
+
+    await session.send("hello", { signal: controller.signal });
+
+    expect(providerSignal).toBe(controller.signal);
+  });
+
   test("runs to completion when nothing aborts", async () => {
     const controller = new AbortController();
     const tool: ToolDefinition = {

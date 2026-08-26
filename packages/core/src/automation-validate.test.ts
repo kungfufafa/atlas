@@ -18,6 +18,26 @@ describe("validateAutomationInput", () => {
     ).not.toThrow();
   });
 
+  test("names the missing field when name is absent", () => {
+    expect(() =>
+      validateAutomationInput({
+        name: undefined,
+        prompt: "Summarize news",
+        trigger: { type: "manual" },
+      })
+    ).toThrow("Automation name is required.");
+  });
+
+  test("names the missing field when prompt is absent", () => {
+    expect(() =>
+      validateAutomationInput({
+        name: "Daily digest",
+        prompt: undefined,
+        trigger: { type: "manual" },
+      })
+    ).toThrow("Automation prompt is required.");
+  });
+
   test("rejects invalid cron", () => {
     expect(() =>
       validateAutomationInput({

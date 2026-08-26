@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdir, mkdtemp } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -28,6 +28,9 @@ describe("bundled agent-browser skill", () => {
     expect(parsed.body).toMatch(/ENOENT|command not found/i);
     expect(parsed.body).toContain("timeoutMs");
     expect(parsed.body).toContain("artifacts/");
+    expect(parsed.body).toContain("CloakBrowser");
+    expect(parsed.body).toContain("AGENT_BROWSER_EXECUTABLE_PATH");
+    expect(parsed.body).toContain("AGENT_BROWSER_ARGS");
   });
 
   test("description matches interactive browse requests but not plain fetch or explainers", async () => {
@@ -117,5 +120,29 @@ describe("ensureBundledSkillFiles for agent-browser", () => {
   test("writes agent-browser when missing", async () => {
     const created = await ensureBundledSkillFiles();
     expect(created).toContain("agent-browser");
+  });
+
+  test("refreshes a stale installed agent-browser skill", async () => {
+    const skillPath = join(
+      configDir,
+      "agent",
+      "skills",
+      "agent-browser",
+      "SKILL.md"
+    );
+    await mkdir(join(configDir, "agent", "skills", "agent-browser"), {
+      recursive: true,
+    });
+    await Bun.write(
+      skillPath,
+      "---\nname: agent-browser\ndescription: stale\n---\n"
+    );
+
+    const refreshed = await ensureBundledSkillFiles();
+    const content = await readFile(skillPath, "utf8");
+
+    expect(refreshed).toContain("agent-browser");
+    expect(content).toContain("AGENT_BROWSER_EXECUTABLE_PATH");
+    expect(content).not.toContain("description: stale");
   });
 });

@@ -15,6 +15,9 @@ import type { AutomationService } from "./automation-service";
 import type { ExecutionPlaneService } from "./execution-plane-service";
 import type { IdentityService } from "./identity-service";
 
+const ORGANIZATION_UNAVAILABLE_ERROR =
+  "Automation organization is unavailable.";
+
 export interface AutomationRunOptions {
   fireId?: string;
   principal?: CanonicalPrincipal;
@@ -46,6 +49,10 @@ export class AutomationRunner {
     const orgId = automation.orgId?.trim();
     if (!orgId) {
       throw new Error("Automation organization is missing.");
+    }
+
+    if (!(await this.automationService.isOrganizationActive(orgId))) {
+      return { error: ORGANIZATION_UNAVAILABLE_ERROR, skipped: true };
     }
 
     if (!this.executionPlane) {
@@ -91,6 +98,19 @@ export class AutomationRunner {
         enabled: false,
       });
     }
+
+    if (!(await this.automationService.isOrganizationActive(orgId))) {
+      await this.executionPlane.complete(
+        claimed.run.id,
+        "cancelled",
+        leaseOwner
+      );
+      await this.automationService.completeRun(run.id, automationId, {
+        error: ORGANIZATION_UNAVAILABLE_ERROR,
+      });
+      return { error: ORGANIZATION_UNAVAILABLE_ERROR, skipped: true };
+    }
+
     const heartbeat = setInterval(() => {
       void this.executionPlane
         ?.heartbeat(claimed.run!.id, leaseOwner)

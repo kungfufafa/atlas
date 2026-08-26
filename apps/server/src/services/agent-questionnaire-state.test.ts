@@ -12,6 +12,7 @@ async function createState() {
     channel: "web",
     createdAt: new Date().toISOString(),
     id: "session_test",
+    modelOverride: null,
     profileId: "default",
     title: null,
   });

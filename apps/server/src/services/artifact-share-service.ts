@@ -282,12 +282,15 @@ export class ArtifactShareService {
       throw new AtlasApiError("Not found", 404);
     }
 
+    await this.requireActiveOrganization(share.orgId);
+
     let bytes: Buffer;
     try {
       bytes = await readArtifactShareSnapshot(share.storagePath);
     } catch {
       throw new AtlasApiError("Not found", 404);
     }
+    await this.requireActiveOrganization(share.orgId);
     // Sidecars sometimes store application/octet-stream; resolve from the filename
     // so <video>/<img> can play with X-Content-Type-Options: nosniff.
     const mimeType = resolveArtifactMimeType(share.mimeType, share.filename);
@@ -322,8 +325,16 @@ export class ArtifactShareService {
       { ...options, strategy: "semantic" },
       { orgId, profileId }
     );
+    await this.requireActiveOrganization(orgId);
 
     return toPublicSharePreview(preview, token.trim());
+  }
+
+  private async requireActiveOrganization(orgId: string): Promise<void> {
+    const organization = await this.db.getOrganizationById(orgId);
+    if (!organization || organization.archivedAt) {
+      throw new AtlasApiError("Not found", 404);
+    }
   }
 
   private async requireProfile(

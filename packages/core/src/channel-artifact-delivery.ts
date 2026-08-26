@@ -50,7 +50,7 @@ export function isAttachIntent(text: string): boolean {
 
 /** Discord `/attach` shortcut (no agent turn). */
 export function isAttachOnlyCommand(text: string): boolean {
-  return /^\/attach(?:@\w+)?(?:\s|$)/i.test(text.trim());
+  return /^\/attach(?:@\w+)?\s*$/i.test(text.trim());
 }
 
 /**

@@ -1,14 +1,8 @@
-import type { ArtifactFile } from "@atlas/core/contract";
-import {
-  isDocxFile,
-  isHtmlArtifactMimeType,
-  isImageArtifactMimeType,
-  isLegacyDocFile,
-  isMarkdownArtifactMimeType,
-  isTextArtifactMimeType,
-  isVideoArtifactMimeType,
-  resolveArtifactMimeType,
-} from "@/lib/chat-artifacts";
+import { classifyArtifactCategory } from "@atlas/core/artifact-category";
+import type {
+  ArtifactFile,
+  ArtifactFolderMetadata,
+} from "@atlas/core/contract";
 
 export const ARTIFACT_TYPE_FILTERS = [
   "all",
@@ -37,40 +31,7 @@ export const ARTIFACT_TYPE_FILTER_LABELS: Record<ArtifactTypeFilter, string> = {
 export function classifyArtifactType(
   artifact: ArtifactFile
 ): Exclude<ArtifactTypeFilter, "all"> {
-  const mimeType = resolveArtifactMimeType(
-    artifact.mimeType,
-    artifact.filename
-  );
-
-  if (isMarkdownArtifactMimeType(mimeType)) {
-    return "markdown";
-  }
-
-  if (isHtmlArtifactMimeType(mimeType)) {
-    return "html";
-  }
-
-  if (isImageArtifactMimeType(mimeType)) {
-    return "image";
-  }
-
-  if (isVideoArtifactMimeType(mimeType)) {
-    return "video";
-  }
-
-  if (
-    isDocxFile(artifact.filename, mimeType) ||
-    isLegacyDocFile(artifact.filename, mimeType) ||
-    mimeType === "application/pdf"
-  ) {
-    return "document";
-  }
-
-  if (isTextArtifactMimeType(mimeType)) {
-    return "text";
-  }
-
-  return "other";
+  return classifyArtifactCategory(artifact);
 }
 
 export function artifactMatchesTypeFilter(
@@ -82,9 +43,15 @@ export function artifactMatchesTypeFilter(
 
 /** Type options present in the list (plus `all`), ordered for the filter menu. */
 export function availableArtifactTypeFilters(
-  artifacts: ArtifactFile[]
+  artifacts: ArtifactFile[],
+  folders: ArtifactFolderMetadata[] = []
 ): ArtifactTypeFilter[] {
   const present = new Set(artifacts.map(classifyArtifactType));
+  for (const folder of folders) {
+    for (const category of Object.keys(folder.typeStats)) {
+      present.add(category as Exclude<ArtifactTypeFilter, "all">);
+    }
+  }
   return ARTIFACT_TYPE_FILTERS.filter(
     (filter) => filter === "all" || present.has(filter)
   );

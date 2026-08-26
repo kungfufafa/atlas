@@ -1,9 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import type { ProviderInstance } from "@atlas/core";
+import { AtlasApiError, type ProviderInstance } from "@atlas/core";
 import {
   applyProviderInstanceUpdate,
+  buildProviderInstanceFromCreateRequest,
+  countModelsForInstance,
+  isProviderInstanceUsable,
+  mergeModelsForConfig,
   modelExistsOnInstance,
   resolveProfileProviderSelection,
+  toProviderInstanceSummary,
 } from "./provider-instance-helpers";
 
 function createProviderInstance(
@@ -43,6 +48,33 @@ describe("resolveProfileProviderSelection", () => {
     expect(resolved?.model).toBe("gpt-5.4");
   });
 
+  test("keeps an explicit native provider when its model is newer than the catalog", () => {
+    const resolved = resolveProfileProviderSelection({
+      defaultProviderId: "zen-1",
+      profileModel: "openai-1::gpt-5.9-not-in-catalog",
+      providers: [
+        createProviderInstance({
+          apiKey: "public",
+          baseUrl: "https://opencode.ai/zen/v1",
+          customModels: [
+            { default: true, id: "big-pickle", name: "Big Pickle" },
+          ],
+          id: "zen-1",
+          label: "OpenCode Zen",
+          type: "openai_compatible",
+        }),
+        createProviderInstance({
+          id: "openai-1",
+          label: "OpenAI",
+          type: "openai",
+        }),
+      ],
+    });
+
+    expect(resolved?.instance.id).toBe("openai-1");
+    expect(resolved?.model).toBe("gpt-5.9-not-in-catalog");
+  });
+
   test("falls back to the provider that actually supports a raw stored model id", () => {
     const providers: ProviderInstance[] = [
       createProviderInstance({
@@ -65,6 +97,63 @@ describe("resolveProfileProviderSelection", () => {
 
     expect(resolved).not.toBeNull();
     expect(resolved?.instance.id).toBe("openai-1");
+    expect(resolved?.model).toBe("gpt-5.4");
+  });
+
+  test("routes an unqualified legacy catalog model to its static owner before the active provider", () => {
+    const providers: ProviderInstance[] = [
+      createProviderInstance({
+        apiKey: "public",
+        baseUrl: "https://opencode.ai/zen/v1",
+        customModels: [
+          { default: true, id: "big-pickle", name: "Big Pickle" },
+          { id: "gpt-5.4", name: "GPT 5.4" },
+        ],
+        id: "zen-1",
+        label: "OpenCode Zen",
+        type: "openai_compatible",
+      }),
+      createProviderInstance({
+        id: "openai-1",
+        label: "OpenAI",
+        type: "openai",
+      }),
+    ];
+
+    const resolved = resolveProfileProviderSelection({
+      defaultProviderId: "zen-1",
+      profileModel: "gpt-5.4",
+      providers,
+    });
+
+    expect(resolved?.instance.id).toBe("openai-1");
+    expect(resolved?.model).toBe("gpt-5.4");
+  });
+
+  test("keeps an explicit provider authoritative for a shared catalog model", () => {
+    const providers: ProviderInstance[] = [
+      createProviderInstance({
+        apiKey: "public",
+        baseUrl: "https://opencode.ai/zen/v1",
+        customModels: [{ id: "gpt-5.4", name: "GPT 5.4" }],
+        id: "zen-1",
+        label: "OpenCode Zen",
+        type: "openai_compatible",
+      }),
+      createProviderInstance({
+        id: "openai-1",
+        label: "OpenAI",
+        type: "openai",
+      }),
+    ];
+
+    const resolved = resolveProfileProviderSelection({
+      defaultProviderId: "openai-1",
+      profileModel: "zen-1::gpt-5.4",
+      providers,
+    });
+
+    expect(resolved?.instance.id).toBe("zen-1");
     expect(resolved?.model).toBe("gpt-5.4");
   });
 
@@ -124,7 +213,86 @@ describe("resolveProfileProviderSelection", () => {
   });
 });
 
+describe("environment-backed provider visibility", () => {
+  test("keeps models and configured status available without exposing the key", () => {
+    const instance = createProviderInstance({
+      apiKey: "",
+      customModels: [{ default: true, id: "grok-default" }, { id: "grok-alt" }],
+      id: "xai-env",
+      label: "xAI",
+      type: "xai",
+    });
+    const env = { XAI_API_KEY: "environment-secret" };
+
+    expect(isProviderInstanceUsable(instance, env)).toBe(true);
+    expect(countModelsForInstance(instance, env)).toBe(2);
+    expect(mergeModelsForConfig([instance], env)).toHaveLength(2);
+    expect(toProviderInstanceSummary(instance, 2, env).hasApiKey).toBe(true);
+    expect(
+      JSON.stringify(toProviderInstanceSummary(instance, 2, env))
+    ).not.toContain("environment-secret");
+  });
+});
+
 describe("applyProviderInstanceUpdate", () => {
+  test("does not forward a stored credential to a changed base URL", () => {
+    const instance = createProviderInstance({
+      baseUrl: "https://trusted.example/v1",
+      id: "compatible-1",
+      label: "Trusted",
+      type: "openai_compatible",
+    });
+
+    expect(() =>
+      applyProviderInstanceUpdate(instance, {
+        baseUrl: "https://different.example/v1",
+      })
+    ).toThrow("Re-enter the API key");
+    expect(
+      applyProviderInstanceUpdate(instance, {
+        apiKey: "new-key",
+        baseUrl: "https://different.example/v1/",
+      })
+    ).toMatchObject({
+      apiKey: "new-key",
+      baseUrl: "https://different.example/v1",
+    });
+    expect(
+      applyProviderInstanceUpdate(instance, {
+        baseUrl: "https://trusted.example/v1/",
+      })
+    ).toMatchObject({ apiKey: "test-key" });
+  });
+
+  test("stores Responses mode only for an OpenAI-compatible instance", () => {
+    const compatible = createProviderInstance({
+      baseUrl: "https://endpoint.test/v1",
+      id: "compatible-1",
+      label: "Endpoint",
+      type: "openai_compatible",
+      wireApi: "responses",
+    });
+
+    expect(
+      applyProviderInstanceUpdate(compatible, {
+        wireApi: "nonsense" as never,
+      }).wireApi
+    ).toBeUndefined();
+    expect(
+      applyProviderInstanceUpdate(compatible, { wireApi: "responses" }).wireApi
+    ).toBe("responses");
+    expect(
+      applyProviderInstanceUpdate(
+        createProviderInstance({
+          id: "xai-1",
+          label: "xAI Grok",
+          type: "xai",
+        }),
+        { wireApi: "responses" }
+      ).wireApi
+    ).toBeUndefined();
+  });
+
   test("preserves supportsThinking on compatible custom models", () => {
     const instance = createProviderInstance({
       apiKey: "",
@@ -251,5 +419,53 @@ describe("applyProviderInstanceUpdate", () => {
 
     const next = applyProviderInstanceUpdate(instance, { customModels: [] });
     expect(next.customModels).toBeUndefined();
+  });
+});
+
+describe("buildProviderInstanceFromCreateRequest", () => {
+  test("uses native discovery defaults without losing custom capabilities", () => {
+    const instance = buildProviderInstanceFromCreateRequest(
+      {
+        apiKey: "xai-key",
+        customModels: [
+          {
+            default: true,
+            id: "grok-4-vision",
+            supportsVision: true,
+          },
+        ],
+        type: "xai",
+      },
+      []
+    );
+
+    expect(instance.baseUrl).toBe("https://api.x.ai/v1");
+    expect(instance.customModels).toEqual([
+      {
+        default: true,
+        id: "grok-4-vision",
+        supportsVision: true,
+      },
+    ]);
+  });
+
+  // readJson casts the body without validating it, so both fields can arrive
+  // undefined however the contract types them.
+  test("names the missing field and answers 400, not a TypeError at 500", () => {
+    const cases = [
+      [{}, "Provider type is required."],
+      [{ type: "openai" }, "API key is required."],
+    ] as const;
+
+    for (const [request, message] of cases) {
+      try {
+        buildProviderInstanceFromCreateRequest(request, []);
+        throw new Error("expected a rejection");
+      } catch (error) {
+        expect(error).toBeInstanceOf(AtlasApiError);
+        expect((error as AtlasApiError).message).toBe(message);
+        expect((error as AtlasApiError).status).toBe(400);
+      }
+    }
   });
 });

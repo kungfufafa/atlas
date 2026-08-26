@@ -9,6 +9,7 @@ import {
   buildArtifactThumbnailUrl,
 } from "@/lib/chat-artifacts";
 import { formatBytes } from "@/lib/knowledge-base-files";
+import { artifactBasename } from "@/pages/files/files-artifact-folders";
 import { ArtifactIcon } from "@/pages/files/files-artifact-icon";
 import { ArtifactRowMenu } from "@/pages/files/files-artifact-row-menu";
 import { formatTimestamp } from "@/pages/files/files-shared";
@@ -17,12 +18,14 @@ export function ArtifactGridCard({
   profileId,
   artifact,
   deletePending,
+  showFullPath,
   onDelete,
   onPreview,
 }: {
   profileId: string;
   artifact: ArtifactFile;
   deletePending: boolean;
+  showFullPath: boolean;
   onDelete: () => void;
   onPreview: () => void;
 }) {
@@ -76,7 +79,9 @@ export function ArtifactGridCard({
           type="button"
         >
           <p className="truncate font-medium text-foreground text-sm transition-colors hover:text-primary">
-            {artifact.filename}
+            {showFullPath
+              ? artifact.filename
+              : artifactBasename(artifact.filename)}
           </p>
           <p className="text-pretty text-muted-foreground text-xs">
             {typeLabel}

@@ -8,9 +8,31 @@ import {
   resolveComposioCallbackBaseUrl,
   resolveComposioOAuthCallbackBaseUrl,
   resolveRequestClientOrigin,
+  validateComposioOAuthRedirectUrl,
 } from "./composio-callback-url";
 
 describe("composio-callback-url", () => {
+  test("validateComposioOAuthRedirectUrl accepts HTTPS and loopback development", () => {
+    expect(
+      validateComposioOAuthRedirectUrl("https://oauth.example.com/start")
+    ).toBe("https://oauth.example.com/start");
+    expect(
+      validateComposioOAuthRedirectUrl("http://127.0.0.1:4310/start")
+    ).toBe("http://127.0.0.1:4310/start");
+  });
+
+  for (const unsafeUrl of [
+    "javascript:alert(1)",
+    "http://oauth.example.com/start",
+    "https://user:password@oauth.example.com/start",
+  ]) {
+    test(`validateComposioOAuthRedirectUrl rejects ${unsafeUrl}`, () => {
+      expect(() => validateComposioOAuthRedirectUrl(unsafeUrl)).toThrow(
+        /OAuth URL/
+      );
+    });
+  }
+
   test("resolveRequestClientOrigin prefers explicit origin", () => {
     const request = new Request(
       "http://api.example.com/v1/composio/toolkits/gmail/connect",

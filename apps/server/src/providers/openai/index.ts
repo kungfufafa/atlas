@@ -13,6 +13,8 @@ import type {
   ToolCall,
 } from "@atlas/core";
 import {
+  fetchWithoutIdleTimeout,
+  formatConfiguredProviderLabel,
   messagesIncludeUserDocuments,
   messagesIncludeUserImages,
   toOpenAIChatUserContent,
@@ -42,7 +44,9 @@ export interface OpenAIProviderOptions {
   customModels?: CustomModelEntry[];
   extraHeaders?: Record<string, string>;
   model?: string;
+  providerInstanceId?: string;
   providerName?: ProviderName;
+  providerReplayRevision?: string;
 }
 
 interface OpenAIClientConfig {
@@ -68,6 +72,9 @@ export function createOpenAIProvider(
     client.providerName === "openai" &&
     client.baseUrl === DEFAULT_OPENAI_BASE_URL;
   const customModels = options.customModels;
+  const reasoningEffortValues = customModels?.find(
+    (entry) => entry.id === model
+  )?.reasoningEffortValues;
 
   return {
     generateChat(input: GenerateChatInput) {
@@ -77,6 +84,10 @@ export function createOpenAIProvider(
           customModels,
           input,
           model,
+          providerInstanceId: options.providerInstanceId,
+          providerName: client.providerName,
+          providerReplayRevision: options.providerReplayRevision,
+          reasoningEffortValues,
           stream: false,
         });
       }
@@ -103,6 +114,7 @@ export function createOpenAIProvider(
         ],
         model,
         responseFormat: useJson ? { type: "json_object" } : undefined,
+        signal: input.signal,
       });
     },
     name: client.providerName,
@@ -114,6 +126,10 @@ export function createOpenAIProvider(
           handlers,
           input,
           model,
+          providerInstanceId: options.providerInstanceId,
+          providerName: client.providerName,
+          providerReplayRevision: options.providerReplayRevision,
+          reasoningEffortValues,
           stream: true,
         });
       }
@@ -136,19 +152,7 @@ function normalizeBaseUrl(baseUrl: string): string {
 }
 
 function providerLabel(providerName: ProviderName): string {
-  if (providerName === "anthropic") {
-    return "Anthropic";
-  }
-
-  if (providerName === "opencode_go") {
-    return "OpenCode Go";
-  }
-
-  if (providerName === "deepseek") {
-    return "DeepSeek";
-  }
-
-  return "OpenAI";
+  return formatConfiguredProviderLabel(providerName);
 }
 
 function chatCompletionsUrl(client: OpenAIClientConfig): string {
@@ -429,7 +433,7 @@ async function requestChatCompletion(
     thinking?: ProviderChatOptions["thinking"];
   }
 ): Promise<ChatCompletionResult> {
-  const response = await fetch(chatCompletionsUrl(client), {
+  const response = await fetchWithoutIdleTimeout(chatCompletionsUrl(client), {
     body: JSON.stringify(
       await buildChatCompletionRequestBody({
         ...options,
@@ -492,7 +496,7 @@ async function streamChatCompletion(
     handlers: StreamChatHandlers;
   }
 ): Promise<ChatCompletionResult> {
-  const response = await fetch(chatCompletionsUrl(client), {
+  const response = await fetchWithoutIdleTimeout(chatCompletionsUrl(client), {
     body: JSON.stringify(
       await buildChatCompletionRequestBody({
         messages: options.messages,
@@ -529,9 +533,10 @@ async function requestCompletion(
     model: string;
     messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
     responseFormat?: { type: "json_object" };
+    signal?: AbortSignal;
   }
 ): Promise<GenerateTextResult> {
-  const response = await fetch(chatCompletionsUrl(client), {
+  const response = await fetchWithoutIdleTimeout(chatCompletionsUrl(client), {
     body: JSON.stringify({
       messages: options.messages,
       model: options.model,
@@ -541,6 +546,7 @@ async function requestCompletion(
     }),
     headers: buildRequestHeaders(client),
     method: "POST",
+    signal: options.signal,
   });
 
   if (!response.ok) {

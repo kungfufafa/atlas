@@ -21,6 +21,185 @@ function createOrgService() {
 }
 
 describe("OrgService", () => {
+  test("archives an organization while keeping its data and hiding membership", async () => {
+    const { orgService, authService, databaseAdapter } = createOrgService();
+    const now = new Date().toISOString();
+    await databaseAdapter.createUser({
+      createdAt: now,
+      email: "platform@example.com",
+      id: "user_platform",
+      isPlatformAdmin: true,
+      passwordHash: "unused",
+      updatedAt: now,
+    });
+    for (const [id, slug] of [
+      ["org_a", "org-a"],
+      ["org_b", "org-b"],
+    ] as const) {
+      await databaseAdapter.upsertOrganization({
+        createdAt: now,
+        id,
+        name: id,
+        slug,
+        updatedAt: now,
+      });
+      await databaseAdapter.upsertOrgMember({
+        createdAt: now,
+        orgId: id,
+        role: "admin",
+        userId: "user_platform",
+      });
+    }
+    await databaseAdapter.upsertComposioToolkit({
+      cachedTools: [],
+      createdAt: now,
+      displayName: "Gmail",
+      id: "toolkit_pending",
+      lastError: null,
+      orgId: "org_a",
+      status: "enabled",
+      toolkitSlug: "gmail",
+      updatedAt: now,
+    });
+    await databaseAdapter.upsertComposioUserConnection({
+      connectedAccountId: "ca_existing",
+      createdAt: now,
+      id: "connection_pending",
+      lastError: null,
+      oauthStateHash: authService.hashToken("pending-nonce"),
+      orgId: "org_a",
+      sessionIdEnc: null,
+      status: "oauth_in_progress",
+      toolkitId: "toolkit_pending",
+      updatedAt: now,
+      userId: "user_platform",
+    });
+    await databaseAdapter.upsertComposioUserConnection({
+      connectedAccountId: "ca_connected",
+      createdAt: now,
+      id: "connection_connected",
+      lastError: null,
+      oauthStateHash: null,
+      orgId: "org_a",
+      sessionIdEnc: "encrypted-session",
+      status: "connected",
+      toolkitId: "toolkit_pending",
+      updatedAt: now,
+      userId: "user_platform",
+    });
+    await databaseAdapter.upsertComposioUserConnection({
+      connectedAccountId: "ca_removed_member",
+      createdAt: now,
+      id: "connection_removed_member",
+      lastError: null,
+      oauthStateHash: null,
+      orgId: "org_a",
+      sessionIdEnc: "encrypted-removed-member-session",
+      status: "connected",
+      toolkitId: "toolkit_pending",
+      updatedAt: now,
+      userId: "user_removed_from_org",
+    });
+
+    const archived = await orgService.archiveOrganization(
+      "org_a",
+      "user_platform"
+    );
+    expect(archived.archivedAt).toBeString();
+    expect(await databaseAdapter.getOrganizationById("org_a")).toMatchObject({
+      archivedAt: archived.archivedAt,
+    });
+    expect(
+      await databaseAdapter.getOrgMember("org_a", "user_platform")
+    ).not.toBeNull();
+    expect(
+      (await databaseAdapter.listUserOrganizations("user_platform")).map(
+        (membership) => membership.organization.id
+      )
+    ).toEqual(["org_b"]);
+    expect(
+      await databaseAdapter.getComposioUserConnectionById("connection_pending")
+    ).toMatchObject({
+      connectedAccountId: "ca_existing",
+      oauthStateHash: null,
+      status: "error",
+    });
+    expect(
+      await databaseAdapter.getComposioUserConnectionById(
+        "connection_connected"
+      )
+    ).toMatchObject({
+      connectedAccountId: "ca_connected",
+      sessionIdEnc: null,
+      status: "error",
+    });
+    expect(
+      await databaseAdapter.getComposioUserConnectionById(
+        "connection_removed_member"
+      )
+    ).toMatchObject({
+      connectedAccountId: "ca_removed_member",
+      sessionIdEnc: null,
+      status: "error",
+    });
+    await expect(
+      orgService.updateOrganization("org_a", { name: "No" })
+    ).rejects.toMatchObject({ status: 404 });
+  });
+
+  test("serializes concurrent archive requests so an actor keeps one membership", async () => {
+    const { orgService, databaseAdapter } = createOrgService();
+    const now = new Date().toISOString();
+    await databaseAdapter.createUser({
+      createdAt: now,
+      email: "platform@example.com",
+      id: "user_platform",
+      isPlatformAdmin: true,
+      passwordHash: "unused",
+      updatedAt: now,
+    });
+    for (const [id, slug] of [
+      ["org_a", "org-a"],
+      ["org_b", "org-b"],
+      ["org_c", "org-c"],
+    ] as const) {
+      await databaseAdapter.upsertOrganization({
+        createdAt: now,
+        id,
+        name: id,
+        slug,
+        updatedAt: now,
+      });
+    }
+    for (const orgId of ["org_a", "org_b"]) {
+      await databaseAdapter.upsertOrgMember({
+        createdAt: now,
+        orgId,
+        role: "admin",
+        userId: "user_platform",
+      });
+    }
+
+    const results = await Promise.allSettled([
+      orgService.archiveOrganization("org_a", "user_platform"),
+      orgService.archiveOrganization("org_b", "user_platform"),
+    ]);
+    expect(
+      results.filter((result) => result.status === "fulfilled")
+    ).toHaveLength(1);
+    expect(
+      results.filter((result) => result.status === "rejected")
+    ).toHaveLength(1);
+    expect(
+      await databaseAdapter.listUserOrganizations("user_platform")
+    ).toHaveLength(1);
+    expect(
+      (await databaseAdapter.listOrganizations()).filter(
+        (organization) => !organization.archivedAt
+      )
+    ).toHaveLength(2);
+  });
+
   test("bootstrapInitialSetup creates org and admin membership", async () => {
     const { orgService, authService, databaseAdapter } = createOrgService();
 
@@ -106,6 +285,45 @@ describe("OrgService", () => {
     expect(bootstrapped.organization.id).toBe("org_orphan");
     expect(await databaseAdapter.listOrganizations()).toHaveLength(1);
     expect(await databaseAdapter.countHumanUsers()).toBe(1);
+  });
+
+  test("bootstrapInitialSetup does not reuse or provision an archived orphan org", async () => {
+    const { orgService, authService, databaseAdapter } = createOrgService();
+    const now = new Date().toISOString();
+    await databaseAdapter.upsertOrganization({
+      archivedAt: now,
+      createdAt: now,
+      id: "org_archived_orphan",
+      name: "Archived Acme",
+      slug: "acme-archived-retry",
+      updatedAt: now,
+    });
+
+    await expect(
+      orgService.bootstrapInitialSetup({
+        admin: {
+          email: "admin@acme.com",
+          name: "Acme Admin",
+          passwordHash: await authService.hashPassword("password123"),
+          phone: "",
+        },
+        organization: {
+          name: "Acme",
+          slug: "acme-archived-retry",
+        },
+      })
+    ).rejects.toMatchObject({ status: 409 });
+
+    expect(
+      await databaseAdapter.listProfilesForOrg("org_archived_orphan")
+    ).toEqual([]);
+    expect(
+      await databaseAdapter.listMcpServersForOrg("org_archived_orphan")
+    ).toEqual([]);
+    expect(await databaseAdapter.countHumanUsers()).toBe(0);
+    expect(await databaseAdapter.listOrgMembers("org_archived_orphan")).toEqual(
+      []
+    );
   });
 
   test("bootstrapInitialSetup allows admin without phone", async () => {

@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
+  buildConfigureProviderRequest,
+  buildCreateProviderRequest,
   effectiveProfileModelSelection,
   encodeModelSelection,
   firstAvailableProviderOption,
@@ -8,9 +10,11 @@ import {
   IMAGE_GENERATION_SELECTION,
   isOpenCodeZenBaseUrl,
   isProviderTypeAlreadyConfigured,
+  profileModelSelectionValue,
   resolveModelReasoningEffortValues,
   resolveModelThinkingSupport,
   resolveModelVisionSupport,
+  validateCustomModelsInput,
 } from "./models";
 
 function group(
@@ -22,7 +26,9 @@ function group(
     | "openrouter"
     | "deepseek"
     | "cerebras"
-    | "fireworks",
+    | "cloudflare"
+    | "fireworks"
+    | "xai",
   flags?: {
     reasoningEffortValues?: string[];
     supportsThinking?: boolean;
@@ -58,6 +64,14 @@ function group(
     },
   ];
 }
+
+describe("validateCustomModelsInput", () => {
+  test("rejects ids that collide after trimming", () => {
+    expect(validateCustomModelsInput([{ id: "same" }, { id: " same " }])).toBe(
+      'Model IDs must be unique ("same" is duplicated).'
+    );
+  });
+});
 
 describe("resolveModelThinkingSupport", () => {
   test("treats openai-compatible models as opt-in only", () => {
@@ -255,6 +269,65 @@ describe("resolveModelVisionSupport", () => {
       )
     ).toBe(true);
   });
+
+  test("keeps direct discovery and Cloudflare models opt-in for vision", () => {
+    expect(
+      resolveModelVisionSupport(
+        encodeModelSelection("xai-1", "grok-4"),
+        group("xai-1", "xai", {}, "grok-4")
+      )
+    ).toBe(false);
+    expect(
+      resolveModelVisionSupport(
+        encodeModelSelection("xai-1", "grok-4-vision"),
+        group("xai-1", "xai", { supportsVision: true }, "grok-4-vision")
+      )
+    ).toBe(true);
+    expect(
+      resolveModelVisionSupport(
+        encodeModelSelection("cf-1", "@cf/meta/llama"),
+        group("cf-1", "cloudflare", {}, "@cf/meta/llama")
+      )
+    ).toBe(false);
+  });
+});
+
+describe("provider request builders", () => {
+  test("persists the selected wire API for compatible endpoints", () => {
+    expect(
+      buildCreateProviderRequest({
+        apiKey: "",
+        baseUrl: "https://endpoint.test/v1/",
+        customModels: [{ default: true, id: "gpt-5.4" }],
+        displayName: "Endpoint",
+        provider: "openai_compatible",
+        wireApi: "responses",
+      })
+    ).toEqual({
+      apiKey: "",
+      baseUrl: "https://endpoint.test/v1/",
+      customModels: [{ default: true, id: "gpt-5.4" }],
+      label: "Endpoint",
+      type: "openai_compatible",
+      wireApi: "responses",
+    });
+  });
+
+  test("keeps dynamic-provider endpoint and discovered model metadata", () => {
+    expect(
+      buildConfigureProviderRequest({
+        apiKey: "xai-key",
+        baseUrl: "https://api.x.ai/v1",
+        customModels: [{ id: "grok-4-vision", supportsVision: true }],
+        provider: "xai",
+      })
+    ).toEqual({
+      apiKey: "xai-key",
+      baseUrl: "https://api.x.ai/v1",
+      customModels: [{ id: "grok-4-vision", supportsVision: true }],
+      provider: "xai",
+    });
+  });
 });
 
 describe("isProviderTypeAlreadyConfigured", () => {
@@ -290,6 +363,39 @@ describe("effectiveProfileModelSelection", () => {
   });
 });
 
+describe("profileModelSelectionValue", () => {
+  test("keeps an explicit provider when its selected model is not in the catalog yet", () => {
+    const groups = [
+      {
+        models: [
+          {
+            id: "gpt-5.9-not-in-catalog",
+            name: "Proxied GPT",
+            provider: "openai_compatible" as const,
+          },
+        ],
+        providerId: "zen-1",
+        providerLabel: "OpenCode Zen",
+      },
+      {
+        models: [
+          {
+            id: "gpt-5.4",
+            name: "GPT-5.4",
+            provider: "openai" as const,
+          },
+        ],
+        providerId: "openai-1",
+        providerLabel: "OpenAI",
+      },
+    ];
+
+    expect(
+      profileModelSelectionValue("openai-1::gpt-5.9-not-in-catalog", groups)
+    ).toBe("openai-1::gpt-5.9-not-in-catalog");
+  });
+});
+
 describe("firstAvailableProviderOption", () => {
   test("keeps preferred provider when it is still free", () => {
     expect(firstAvailableProviderOption(new Set(["anthropic"]), "openai")).toBe(
@@ -310,6 +416,7 @@ describe("firstAvailableProviderOption", () => {
           "gemini",
           "deepseek",
           "cerebras",
+          "cloudflare",
           "fireworks",
           "opencode_go",
         ]),

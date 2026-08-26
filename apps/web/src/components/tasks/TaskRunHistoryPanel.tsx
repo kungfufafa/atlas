@@ -177,7 +177,7 @@ export function TaskRunHistoryPanel({
   }, []);
 
   const handleModelChange = useCallback(
-    (selection: string) => {
+    (selection: string | null) => {
       if (!(profileId && selection)) {
         return;
       }

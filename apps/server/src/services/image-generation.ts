@@ -191,6 +191,13 @@ export async function generateImageWithOpenAI(
   const size = normalizeImageGenerationSize(input.size);
   const apiKey = input.apiKey?.trim();
 
+  if (model !== IMAGE_GENERATION_MODEL_ID) {
+    throw new AtlasApiError(
+      `Unsupported OpenAI image generation model "${model}".`,
+      400
+    );
+  }
+
   if (!apiKey) {
     throw new AtlasApiError(
       "API key is missing. Configure a provider in Settings.",

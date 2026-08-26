@@ -1,5 +1,17 @@
-import { type CustomModelEntry, normalizeBaseUrl } from "@atlas/core";
+import {
+  type CustomModelEntry,
+  LLM_FETCH_TIMEOUT_MS,
+  normalizeBaseUrl,
+  type OllamaHostMode,
+  withDisabledFetchIdle,
+} from "@atlas/core";
 import { fetchRemoteOpenAIModels } from "../compatible-models";
+import {
+  fetchSafeProviderDiscoveryEndpoint,
+  type ProviderDiscoveryDnsResolver,
+  type ProviderDiscoveryFetch,
+  ProviderDiscoverySafetyError,
+} from "../provider-discovery-safety";
 
 interface OllamaTagsResponse {
   models?: Array<{ name?: string; model?: string }>;
@@ -18,18 +30,35 @@ function ollamaTagsUrl(baseUrl: string): string {
 
 async function fetchOllamaTagsModels(
   baseUrl: string,
-  apiKey: string
+  apiKey: string,
+  options: FetchOllamaModelsOptions
 ): Promise<CustomModelEntry[]> {
-  const response = await fetch(ollamaTagsUrl(baseUrl), {
-    headers: {
-      ...(apiKey.trim() ? { Authorization: `Bearer ${apiKey.trim()}` } : {}),
-      Accept: "application/json",
-    },
-  });
+  const deadline = AbortSignal.timeout(
+    options.timeoutMs ?? LLM_FETCH_TIMEOUT_MS
+  );
+  const signal = options.signal
+    ? AbortSignal.any([options.signal, deadline])
+    : deadline;
+  const response = await fetchSafeProviderDiscoveryEndpoint(
+    ollamaTagsUrl(baseUrl),
+    withDisabledFetchIdle({
+      headers: {
+        ...(apiKey.trim() ? { Authorization: `Bearer ${apiKey.trim()}` } : {}),
+        Accept: "application/json",
+      },
+      signal,
+    }),
+    {
+      fetchImpl: options.fetch,
+      localAccess:
+        options.hostMode === "local" ? { kind: "ollama-local" } : undefined,
+      resolveDns: options.resolveDns,
+    }
+  );
 
   if (!response.ok) {
     throw new Error(
-      `Could not fetch Ollama models from /api/tags (${response.status}): ${await response.text()}`
+      `Could not fetch Ollama models from /api/tags (${response.status}).`
     );
   }
 
@@ -49,21 +78,48 @@ async function fetchOllamaTagsModels(
     .map((id) => ({ id, name: id }));
 }
 
+export interface FetchOllamaModelsOptions {
+  fetch?: ProviderDiscoveryFetch;
+  hostMode: OllamaHostMode;
+  resolveDns?: ProviderDiscoveryDnsResolver;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+}
+
 export async function fetchOllamaModels(
   baseUrl: string,
-  apiKey = ""
+  apiKey: string,
+  options: FetchOllamaModelsOptions
 ): Promise<CustomModelEntry[]> {
   const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
+  const localAccess =
+    options.hostMode === "local"
+      ? ({ kind: "ollama-local" } as const)
+      : undefined;
 
   try {
-    const remote = await fetchRemoteOpenAIModels(normalizedBaseUrl, apiKey);
+    const remote = await fetchRemoteOpenAIModels(normalizedBaseUrl, apiKey, {
+      fetch: options.fetch,
+      localAccess,
+      resolveDns: options.resolveDns,
+      signal: options.signal,
+      timeoutMs: options.timeoutMs,
+    });
 
     if (remote.length > 0) {
       return remote;
     }
-  } catch {
+  } catch (error) {
+    if (
+      error instanceof ProviderDiscoverySafetyError ||
+      options.signal?.aborted ||
+      (error instanceof Error &&
+        (error.name === "AbortError" || error.name === "TimeoutError"))
+    ) {
+      throw error;
+    }
     // Fall through to native /api/tags.
   }
 
-  return fetchOllamaTagsModels(normalizedBaseUrl, apiKey);
+  return fetchOllamaTagsModels(normalizedBaseUrl, apiKey, options);
 }

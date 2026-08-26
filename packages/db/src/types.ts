@@ -43,10 +43,14 @@ export interface StoredProfileRecord {
   createdAt: string;
   id: string;
   isDefault?: boolean;
+  /** Internal reservation state; importing profiles must never be user-visible. */
+  isImporting?: boolean;
   isSuper: boolean;
   model: string | null;
   name: string;
   orgId?: string | null;
+  /** null = inherit org default; true/false = force curator consolidation on/off */
+  skillsCuratorConsolidation?: boolean | null;
   /** null = inherit org default; true/false = force post-turn review on/off for this profile */
   skillsPostTurnReview?: boolean | null;
   /** null = inherit org default; true/false = force gate on/off for this profile */
@@ -56,6 +60,27 @@ export interface StoredProfileRecord {
   thinkingEnabled?: boolean | null;
   updatedAt: string;
 }
+
+export interface ProfileImportPublication {
+  composioAssignments: StoredProfileComposioToolkitRecord[];
+  /** Existing tool records captured while planning, revalidated at publish. */
+  expectedTools: ProfileImportExpectedTool[];
+  mcpServerIds: string[];
+  newSkills: StoredSkillRecord[];
+  newTools: StoredToolRecord[];
+  orgId: string;
+  profileId: string;
+  skillIds: string[];
+  toolIds: string[];
+}
+
+export type ProfileImportExpectedTool = Pick<
+  StoredToolRecord,
+  "description" | "handlerConfig" | "handlerType" | "id" | "name" | "orgId"
+>;
+
+export type ProfileImportAdmission = "exists" | "inactive" | "reserved";
+export type ProfileImportPublishResult = "conflict" | "inactive" | "published";
 
 export interface StoredToolRecord {
   createdAt: string;
@@ -74,6 +99,7 @@ export interface StoredSessionRecord {
   channel: string;
   createdAt: string;
   id: string;
+  modelOverride: string | null;
   orgId?: string | null;
   profileId: string;
   title: string | null;
@@ -166,6 +192,8 @@ export interface StoredLlmUsageModelStatsRecord {
 
 export interface StoredWorkspaceSettingsRecord {
   codingAgentHarnesses: StoredCodingAgentHarnessRecord[];
+  /** False opts this organization into host-native coding-harness login. */
+  codingAgentProviderPassthrough: boolean;
   id: string;
   imageModel: string | null;
   orgId?: string | null;
@@ -195,6 +223,8 @@ export interface StoredCodingAgentHarnessProbeCache {
   checkedAt: string;
   nextStep: "install" | "retry" | null;
   ready: boolean;
+  /** Prevents a readiness result from one organization/auth mode being reused by another. */
+  scopeKey?: string | null;
   statusMessage: string | null;
 }
 
@@ -473,9 +503,12 @@ export interface StoredUserRecord {
 }
 
 export interface StoredOrganizationRecord {
+  archivedAt?: string | null;
   createdAt: string;
   id: string;
   name: string;
+  skillsCuratorConsolidation?: boolean;
+  skillsCuratorLastRunAt?: string | null;
   skillsPostTurnReview?: boolean;
   skillsWriteApproval?: boolean;
   slug: string;
@@ -532,10 +565,23 @@ export type SkillProposalAction =
   | "delete"
   | "edit"
   | "write_file"
-  | "remove_file";
+  | "remove_file"
+  | "consolidate";
+
+export interface StoredSkillConsolidationRef {
+  id: string;
+  name: string;
+  sha256: string;
+}
+
+export interface StoredSkillConsolidationPayload {
+  losers: StoredSkillConsolidationRef[];
+  winner: StoredSkillConsolidationRef;
+}
 
 export interface StoredSkillProposal {
   action: SkillProposalAction;
+  consolidation?: StoredSkillConsolidationPayload | null;
   content: string | null;
   createdAt: string;
   id: string;
@@ -768,10 +814,33 @@ export interface DatabaseAdapter {
     sessionId: string,
     messages: StoredSessionMessageRecord[]
   ): Promise<void>;
+  /** Atomically publishes DB state for a filesystem-staged skill consolidation. */
+  applySkillConsolidation(input: {
+    archivedLosers: Array<{
+      archivedSourcePath: string;
+      id: string;
+      name: string;
+    }>;
+    expectedConsolidation: StoredSkillConsolidationPayload;
+    orgId: string;
+    profileId: string;
+    proposalId: string;
+    reviewedAt: string;
+    reviewerUserId: string;
+    winner: StoredSkillRecord;
+  }): Promise<boolean>;
   assignMcpServerToProfile(profileId: string, serverId: string): Promise<void>;
   assignSkillToProfile(profileId: string, skillId: string): Promise<void>;
   assignToolToProfile(profileId: string, toolId: string): Promise<void>;
   casExecutionRun(input: CasExecutionRunInput): Promise<boolean>;
+  /**
+   * Atomically replaces an existing Composio connection only when its current
+   * OAuth state hash matches the expected generation.
+   */
+  compareAndSwapComposioUserConnection(
+    record: StoredComposioUserConnectionRecord,
+    expectedOAuthStateHash: string | null
+  ): Promise<boolean>;
   /** Users excluding the auto-created CLI bearer-auth identity. */
   countHumanUsers(): Promise<number>;
   countOrgMemoryProposals(
@@ -804,6 +873,9 @@ export interface DatabaseAdapter {
 
   createOrgMemoryProposal(record: StoredOrgMemoryProposal): Promise<void>;
 
+  /** Atomically inserts a profile and returns false when its global id exists. */
+  createProfileIfAbsent(record: StoredProfileRecord): Promise<boolean>;
+
   createSkillProposal(record: StoredSkillProposal): Promise<void>;
   createSkillRevision(record: StoredSkillRevisionRecord): Promise<void>;
 
@@ -825,6 +897,8 @@ export interface DatabaseAdapter {
   deleteNotificationDestination(id: string): Promise<boolean>;
   deleteOrgMember(orgId: string, userId: string): Promise<boolean>;
   deleteProfile(id: string): Promise<boolean>;
+  deleteProfileForOrg(id: string, orgId: string): Promise<boolean>;
+  deleteProfileImportReservation(id: string, orgId: string): Promise<boolean>;
   deleteSession(id: string): Promise<boolean>;
   deleteSkill(id: string): Promise<boolean>;
   deleteTask(id: string): Promise<boolean>;
@@ -878,6 +952,7 @@ export interface DatabaseAdapter {
     orgId: string,
     sessionId: string,
     options?: {
+      excludeSuperAgent?: boolean;
       limit?: number;
       offset?: number;
       userId?: string;
@@ -1059,6 +1134,10 @@ export interface DatabaseAdapter {
     orgId: string
   ): Promise<StoredComposioToolkitRecord[]>;
 
+  listComposioUserConnectionsForOrg(
+    orgId: string
+  ): Promise<StoredComposioUserConnectionRecord[]>;
+
   listComposioUserConnectionsForUser(
     orgId: string,
     userId: string
@@ -1167,6 +1246,10 @@ export interface DatabaseAdapter {
     userId: string
   ): Promise<StoredUserOrganizationRecord[]>;
   markOrgInviteAccepted(id: string, acceptedAt: string): Promise<void>;
+  markSkillCuratorRunCompleted(
+    orgId: string,
+    completedAt: string
+  ): Promise<boolean>;
   markSkillSuggestionApplied(
     orgId: string,
     id: string,
@@ -1175,6 +1258,9 @@ export interface DatabaseAdapter {
 
   /** Delete rollup rows on or before a `YYYY-MM-DD` day (retention). */
   pruneLlmUsageDaily(beforeDay: string): Promise<number>;
+  publishProfileImport(
+    publication: ProfileImportPublication
+  ): Promise<ProfileImportPublishResult>;
   replaceMessagesForSession(
     sessionId: string,
     messages: StoredSessionMessageRecord[]
@@ -1183,6 +1269,9 @@ export interface DatabaseAdapter {
     profileId: string,
     assignments: StoredProfileComposioToolkitRecord[]
   ): Promise<void>;
+  reserveProfileImport(
+    record: StoredProfileRecord
+  ): Promise<ProfileImportAdmission>;
   revokeArtifactShare(id: string, revokedAt: string): Promise<boolean>;
   revokeBrowserSessionBySessionTokenHash(
     sessionTokenHash: string,
@@ -1201,6 +1290,7 @@ export interface DatabaseAdapter {
     options?: {
       after?: string;
       before?: string;
+      excludeSuperAgent?: boolean;
       limit?: number;
       profileId?: string;
       userId?: string;
@@ -1219,6 +1309,11 @@ export interface DatabaseAdapter {
     content: string,
     updatedAt: string
   ): Promise<void>;
+  /** Atomically archives an active org only when another active org remains. */
+  tryMarkOrganizationArchived(
+    orgId: string,
+    archivedAt: string
+  ): Promise<boolean>;
   unassignMcpServerFromProfile(
     profileId: string,
     serverId: string
@@ -1255,6 +1350,10 @@ export interface DatabaseAdapter {
       reviewedAt: string;
       pinned?: boolean;
     }
+  ): Promise<boolean>;
+  updateSessionModelOverride(
+    sessionId: string,
+    modelOverride: string | null
   ): Promise<boolean>;
   updateSessionQuestionnaire(
     sessionId: string,

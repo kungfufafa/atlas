@@ -2,6 +2,86 @@ import type { BrowserHarness } from "../browser-harness";
 import type { ReleaseGateCheck } from "../decision-engine";
 import type { TestTenantData } from "../test-factories";
 
+interface ParsedStreamEvent {
+  type: string;
+  [key: string]: unknown;
+}
+
+export function parseChatStreamEvents(body: string): ParsedStreamEvent[] {
+  const events: ParsedStreamEvent[] = [];
+
+  for (const line of body.split(/\r?\n/)) {
+    if (!line.startsWith("data: ")) {
+      continue;
+    }
+
+    const payload = line.slice("data: ".length).trim();
+    if (!payload || payload === "[DONE]") {
+      continue;
+    }
+
+    const parsed = JSON.parse(payload) as unknown;
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      !("type" in parsed) ||
+      typeof parsed.type !== "string"
+    ) {
+      throw new Error("Chat stream contained an invalid event payload.");
+    }
+    events.push(parsed as ParsedStreamEvent);
+  }
+
+  return events;
+}
+
+export function requirePendingDeleteApproval(
+  events: ParsedStreamEvent[]
+): void {
+  const approvalEvents = events.filter(
+    (event) => event.type === "approval_requested"
+  );
+  if (approvalEvents.length !== 1) {
+    throw new Error(
+      `Expected exactly one approval request, received ${approvalEvents.length}.`
+    );
+  }
+
+  const event = approvalEvents[0];
+  const approval = event?.approval;
+  if (typeof approval !== "object" || approval === null) {
+    throw new Error("Approval request did not include approval details.");
+  }
+
+  const record = approval as Record<string, unknown>;
+  const details = record.details;
+  if (
+    record.status !== "pending" ||
+    record.tool !== "delete_file" ||
+    record.title !== "Permanently delete 1 file(s)" ||
+    typeof record.consequenceSummary !== "string" ||
+    !record.consequenceSummary.includes(
+      "Target: artifacts/archived-atlas-export.zip"
+    ) ||
+    !record.consequenceSummary.includes("This action is irreversible.") ||
+    typeof details !== "object" ||
+    details === null ||
+    (details as Record<string, unknown>).path !==
+      "artifacts/archived-atlas-export.zip"
+  ) {
+    throw new Error("Approval request did not match the destructive action.");
+  }
+
+  if (events.some((streamEvent) => streamEvent.type === "tool_end")) {
+    throw new Error("Destructive tool executed before user approval.");
+  }
+
+  const terminal = events.find((streamEvent) => streamEvent.type === "done");
+  if (terminal?.reply !== "Waiting for approval to continue.") {
+    throw new Error("Approval-gated turn did not pause before execution.");
+  }
+}
+
 async function requireAssistantTokens(
   page: {
     textContent: (selector: string) => Promise<string | null>;
@@ -212,8 +292,43 @@ export async function runGoldenJourneysSuite(
     "golden_journey_j",
     "Journey J: Approval",
     async ({ page, sendMessage, screenshot }) => {
-      await sendMessage("Place the order for Atlas Pro.");
-      await requireAssistantTokens(page, ["Confirmation #ORD-9821"]);
+      const streamResponse = page.waitForResponse(
+        (response: {
+          request: () => { method: () => string };
+          url: () => string;
+        }) =>
+          response.request().method() === "POST" &&
+          response.url().includes("/v1/sessions/") &&
+          response.url().includes("/messages?stream=true"),
+        { timeout: 10_000 }
+      );
+      await sendMessage("Delete the archived Atlas export permanently.");
+      const response = await streamResponse;
+      const events = parseChatStreamEvents(await response.text());
+      requirePendingDeleteApproval(events);
+
+      await page
+        .getByText("Permanently delete 1 file(s)", { exact: true })
+        .waitFor({ state: "visible", timeout: 10_000 });
+      await page
+        .getByText("Target: artifacts/archived-atlas-export.zip", {
+          exact: false,
+        })
+        .waitFor({ state: "visible", timeout: 10_000 });
+      await page
+        .getByRole("button", { exact: true, name: "Confirm" })
+        .waitFor({ state: "visible", timeout: 10_000 });
+      await page
+        .getByRole("button", { exact: true, name: "Cancel" })
+        .waitFor({ state: "visible", timeout: 10_000 });
+
+      const transcript = (await page.textContent("body")) ?? "";
+      if (
+        transcript.includes("archived Atlas export deleted") ||
+        transcript.includes("Confirmation #ORD-9821")
+      ) {
+        throw new Error("UI reported success before user approval.");
+      }
       await screenshot("journey_j_approval.png");
     }
   );

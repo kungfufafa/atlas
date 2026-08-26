@@ -10,6 +10,7 @@ import {
   buildPiSpawnEnv,
   buildSpawnEnvForHarness,
   formatModelForHarness,
+  mapAtlasProviderToPi,
   mergeCodingAgentSpawnEnv,
   normalizeCodingAgentModel,
   redactSpawnEnvForPrompt,
@@ -36,6 +37,19 @@ describe("coding-agent spawn env", () => {
     expect(
       formatModelForHarness("codex", "opencode_go", "opencode-go/glm-5.1")
     ).toBe("glm-5.1");
+  });
+
+  test("preserves slash-bearing Cloudflare model ids for compatible harnesses", () => {
+    const model = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+    for (const harness of ["opencode", "pi"] as const) {
+      expect(formatModelForHarness(harness, "cloudflare", model)).toBe(model);
+    }
+    expect(
+      mapAtlasProviderToPi(
+        "cloudflare",
+        "https://api.cloudflare.com/client/v4/accounts/account/ai/v1"
+      )
+    ).toBe("atlas");
   });
 
   test("returns no env overrides when routing is inactive", () => {
@@ -122,6 +136,30 @@ describe("coding-agent spawn env", () => {
     expect(modelsJson.providers.atlas.apiKey).toBe("sk-custom-test");
     expect(modelsJson.providers.atlas.api).toBe("openai-completions");
     await env.cleanup?.();
+  });
+
+  test("writes a pi custom provider for Cloudflare without truncating its model id", async () => {
+    const model = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+    const env = await buildPiSpawnEnv(
+      activeAnthropicRouting({
+        apiKey: "cf-key",
+        baseUrl: "https://api.cloudflare.com/client/v4/accounts/account/ai/v1",
+        model,
+        providerLabel: "Cloudflare Workers AI",
+        providerType: "cloudflare",
+      }),
+      "cloudflare"
+    );
+
+    try {
+      const { readFile } = await import("node:fs/promises");
+      const modelsJson = JSON.parse(
+        await readFile(`${env.env.PI_CODING_AGENT_DIR}/models.json`, "utf-8")
+      );
+      expect(modelsJson.providers.atlas.models[0].id).toBe(model);
+    } finally {
+      await env.cleanup?.();
+    }
   });
 
   test("uses atlas provider in models.json for anthropic with custom base URL", async () => {
@@ -214,6 +252,42 @@ describe("coding-agent spawn env", () => {
 
     expect(env.ANTHROPIC_API_KEY).toBe("sk-from-atlas");
     expect(env.CUSTOM_FLAG).toBe("1");
+  });
+
+  test("scrubs inherited, generated, and caller credential env in native mode", () => {
+    const env = mergeCodingAgentSpawnEnv(
+      {
+        CLOUDFLARE_API_KEY: "cloudflare-inherited",
+        HOME: "/tmp",
+        OPENAI_API_KEY: "sk-inherited",
+        OPENAI_BASE_URL: "https://inherited.example.com",
+      },
+      {
+        ANTHROPIC_API_KEY: "sk-generated",
+        OPENROUTER_API_KEY: "openrouter-generated",
+        SAFE_GENERATED: "1",
+      },
+      {
+        callerEnv: {
+          CODEX_HOME: "/tmp/atlas-codex",
+          OPENAI_API_KEY: "sk-caller",
+          SAFE_CALLER: "1",
+          XAI_API_KEY: "xai-caller",
+        },
+        scrubCredentialKeys: true,
+      }
+    );
+
+    expect(env.HOME).toBe("/tmp");
+    expect(env.SAFE_GENERATED).toBe("1");
+    expect(env.SAFE_CALLER).toBe("1");
+    expect(env.OPENAI_API_KEY).toBeUndefined();
+    expect(env.OPENAI_BASE_URL).toBeUndefined();
+    expect(env.ANTHROPIC_API_KEY).toBeUndefined();
+    expect(env.CODEX_HOME).toBe("/tmp/atlas-codex");
+    expect(env.CLOUDFLARE_API_KEY).toBeUndefined();
+    expect(env.OPENROUTER_API_KEY).toBeUndefined();
+    expect(env.XAI_API_KEY).toBeUndefined();
   });
 
   test("redacts secrets for prompt context", () => {

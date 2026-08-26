@@ -53,6 +53,7 @@ import {
   type StoredSkillRecord,
   type StoredSkillUsageRecord,
 } from "@atlas/db";
+import { withProfileSkillMutationLock } from "./skill-mutation-lock";
 import {
   type SkillUsageRecordingContext,
   SkillUsageService,
@@ -128,6 +129,19 @@ export class SkillsService {
     orgId: string,
     request: CreateSkillRequest
   ): Promise<SkillResponse> {
+    const profileId = request.profileId?.trim() || undefined;
+    if (profileId) {
+      return withProfileSkillMutationLock(orgId, profileId, () =>
+        this.createSkillUnlocked(orgId, { ...request, profileId })
+      );
+    }
+    return this.createSkillUnlocked(orgId, request);
+  }
+
+  private async createSkillUnlocked(
+    orgId: string,
+    request: CreateSkillRequest
+  ): Promise<SkillResponse> {
     const name = request.name.trim();
 
     if (!name) {
@@ -166,6 +180,27 @@ export class SkillsService {
   }
 
   async patchSkill(
+    orgId: string,
+    skillId: string,
+    request: PatchSkillRequest,
+    options?: { profileId?: string }
+  ): Promise<SkillResponse> {
+    const existing = await this.requireSkill(skillId);
+    const ownerOrgId = existing.orgId ?? orgId;
+    const profileId =
+      options?.profileId?.trim() ||
+      (existing.orgId
+        ? await this.resolveOwningProfileId(existing.orgId, existing.sourcePath)
+        : null);
+    if (profileId) {
+      return withProfileSkillMutationLock(ownerOrgId, profileId, () =>
+        this.patchSkillUnlocked(orgId, skillId, request, options)
+      );
+    }
+    return this.patchSkillUnlocked(orgId, skillId, request, options);
+  }
+
+  private async patchSkillUnlocked(
     orgId: string,
     skillId: string,
     request: PatchSkillRequest,
@@ -233,14 +268,16 @@ export class SkillsService {
     profileId: string,
     request: Omit<CreateSkillRequest, "profileId">
   ): Promise<SkillResponse> {
-    const created = await this.createSkill(orgId, {
-      ...request,
-      profileId,
+    return withProfileSkillMutationLock(orgId, profileId, async () => {
+      const created = await this.createSkillUnlocked(orgId, {
+        ...request,
+        profileId,
+      });
+
+      await this.db.assignSkillToProfile(profileId, created.skill.id);
+
+      return created;
     });
-
-    await this.db.assignSkillToProfile(profileId, created.skill.id);
-
-    return created;
   }
 
   async installSkillFromGitHub(
@@ -315,6 +352,22 @@ export class SkillsService {
     content: string,
     options?: { createdBy?: SkillCreatedBy }
   ): Promise<SkillResponse & { created: boolean }> {
+    return withProfileSkillMutationLock(orgId, profileId, () =>
+      this.createAndAssignRawSkillToProfileUnlocked(
+        orgId,
+        profileId,
+        content,
+        options
+      )
+    );
+  }
+
+  private async createAndAssignRawSkillToProfileUnlocked(
+    orgId: string,
+    profileId: string,
+    content: string,
+    options?: { createdBy?: SkillCreatedBy }
+  ): Promise<SkillResponse & { created: boolean }> {
     const { name } = parseRawProfileSkillContent(content, orgId, profileId);
     const createdBy = options?.createdBy ?? "agent";
 
@@ -379,6 +432,17 @@ export class SkillsService {
     name: string,
     content: string
   ): Promise<SkillResponse> {
+    return withProfileSkillMutationLock(orgId, profileId, () =>
+      this.editAssignedProfileSkillUnlocked(orgId, profileId, name, content)
+    );
+  }
+
+  private async editAssignedProfileSkillUnlocked(
+    orgId: string,
+    profileId: string,
+    name: string,
+    content: string
+  ): Promise<SkillResponse> {
     const skillName = assertValidSkillName(name);
     const { name: parsedName } = parseRawProfileSkillContent(
       content,
@@ -425,6 +489,24 @@ export class SkillsService {
     relativePath: string,
     content: string
   ): Promise<{ skillName: string; relativePath: string }> {
+    return withProfileSkillMutationLock(orgId, profileId, () =>
+      this.writeAssignedProfileSkillSupportingFileUnlocked(
+        orgId,
+        profileId,
+        name,
+        relativePath,
+        content
+      )
+    );
+  }
+
+  private async writeAssignedProfileSkillSupportingFileUnlocked(
+    orgId: string,
+    profileId: string,
+    name: string,
+    relativePath: string,
+    content: string
+  ): Promise<{ skillName: string; relativePath: string }> {
     const skillName = assertValidSkillName(name);
     await this.assertProfileOwnedSkill(orgId, profileId, skillName);
 
@@ -445,6 +527,22 @@ export class SkillsService {
     name: string,
     relativePath: string
   ): Promise<{ skillName: string; relativePath: string }> {
+    return withProfileSkillMutationLock(orgId, profileId, () =>
+      this.removeAssignedProfileSkillSupportingFileUnlocked(
+        orgId,
+        profileId,
+        name,
+        relativePath
+      )
+    );
+  }
+
+  private async removeAssignedProfileSkillSupportingFileUnlocked(
+    orgId: string,
+    profileId: string,
+    name: string,
+    relativePath: string
+  ): Promise<{ skillName: string; relativePath: string }> {
     const skillName = assertValidSkillName(name);
     await this.assertProfileOwnedSkill(orgId, profileId, skillName);
 
@@ -459,6 +557,24 @@ export class SkillsService {
   }
 
   async patchAssignedProfileSkill(
+    orgId: string,
+    profileId: string,
+    name: string,
+    oldString: string,
+    newString: string
+  ): Promise<SkillResponse> {
+    return withProfileSkillMutationLock(orgId, profileId, () =>
+      this.patchAssignedProfileSkillUnlocked(
+        orgId,
+        profileId,
+        name,
+        oldString,
+        newString
+      )
+    );
+  }
+
+  private async patchAssignedProfileSkillUnlocked(
     orgId: string,
     profileId: string,
     name: string,
@@ -485,6 +601,16 @@ export class SkillsService {
   }
 
   async deleteAssignedProfileSkill(
+    orgId: string,
+    profileId: string,
+    name: string
+  ): Promise<void> {
+    return withProfileSkillMutationLock(orgId, profileId, () =>
+      this.deleteAssignedProfileSkillUnlocked(orgId, profileId, name)
+    );
+  }
+
+  private async deleteAssignedProfileSkillUnlocked(
     orgId: string,
     profileId: string,
     name: string
@@ -520,6 +646,24 @@ export class SkillsService {
   async deleteSkill(skillId: string): Promise<void> {
     const record = await this.requireSkill(skillId);
 
+    if (record.orgId) {
+      const profileId = await this.resolveOwningProfileId(
+        record.orgId,
+        record.sourcePath
+      );
+      if (profileId) {
+        return withProfileSkillMutationLock(record.orgId, profileId, () =>
+          this.deleteSkillUnlocked(skillId)
+        );
+      }
+    }
+
+    return this.deleteSkillUnlocked(skillId);
+  }
+
+  private async deleteSkillUnlocked(skillId: string): Promise<void> {
+    const record = await this.requireSkill(skillId);
+
     if (bundledSkillNames.has(record.name)) {
       throw new Error("Bundled system skills cannot be deleted.");
     }
@@ -533,6 +677,18 @@ export class SkillsService {
     if (!deleted) {
       throw new Error("Skill not found.");
     }
+  }
+
+  private async resolveOwningProfileId(
+    orgId: string,
+    sourcePath: string
+  ): Promise<string | null> {
+    const profiles = await this.db.listProfilesForOrg(orgId);
+    return (
+      profiles.find((profile) =>
+        isPathWithinProfileSkillsDir(orgId, profile.id, sourcePath)
+      )?.id ?? null
+    );
   }
 
   async getSkill(skillId: string): Promise<SkillResponse> {

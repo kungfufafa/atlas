@@ -12,10 +12,14 @@ const PASSWORD = "password123";
 
 function createApp() {
   const calls: string[] = [];
+  const callArgs = new Map<string, unknown[][]>();
   const record =
     (name: string) =>
-    async (..._args: unknown[]) => {
+    async (...args: unknown[]) => {
       calls.push(name);
+      const previous = callArgs.get(name) ?? [];
+      previous.push(args);
+      callArgs.set(name, previous);
       return { id: "x", name: "x", prompt: "x" } as any;
     };
 
@@ -74,7 +78,7 @@ function createApp() {
     },
   });
 
-  return { ...result, calls };
+  return { ...result, callArgs, calls };
 }
 
 async function seedUser(
@@ -311,6 +315,34 @@ describe("RBAC: provider management requires an admin", () => {
 
     expect(response.status).not.toBe(403);
     expect(calls).toContain("agent.createProvider");
+  });
+
+  test("model discovery forwards the request abort signal", async () => {
+    const { app, authService, callArgs, databaseAdapter } = createApp();
+    await seedUser(databaseAdapter, authService, "admin@example.com", "admin");
+    const admin = await loginUserSession(
+      app,
+      "admin@example.com",
+      PASSWORD,
+      ORG_ID
+    );
+
+    const response = await app.fetch(
+      new Request("http://localhost:4310/v1/models/discover", {
+        body: JSON.stringify({
+          baseUrl: "https://example.com/v1",
+          provider: "openai_compatible",
+        }),
+        headers: admin.headers({ "X-CSRF-Token": admin.csrfToken }),
+        method: "POST",
+      })
+    );
+
+    expect(response.status).not.toBe(403);
+    const options = callArgs.get("agent.discoverModels")?.[0]?.[2] as
+      | { signal?: AbortSignal }
+      | undefined;
+    expect(options?.signal).toBeInstanceOf(AbortSignal);
   });
 });
 

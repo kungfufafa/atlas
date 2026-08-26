@@ -95,6 +95,79 @@ describe("tool-loop", () => {
     });
   });
 
+  test("revalidates the organization immediately before invoking a tool", async () => {
+    let invoked = false;
+    const guardedTool: ToolDefinition = {
+      ...sampleTool,
+      async run() {
+        invoked = true;
+        return { ok: true };
+      },
+    };
+
+    const result = await executeToolCall(
+      [guardedTool],
+      {
+        arguments: { message: "hello" },
+        id: "call_archived",
+        name: "sample",
+      },
+      {
+        async beforeToolCall() {
+          throw new Error("Organization not found.");
+        },
+      }
+    );
+
+    expect(invoked).toBe(false);
+    expect(result).toEqual({
+      error: "Organization not found.",
+      errorCode: "NOT_FOUND",
+    });
+  });
+
+  test("revalidates again before a retried tool attempt", async () => {
+    let attempts = 0;
+    let validations = 0;
+    const retryingTool: ToolDefinition = {
+      ...sampleTool,
+      retryPolicy: {
+        initialDelayMs: 0,
+        jitter: false,
+        maxRetries: 1,
+        retryableCodes: ["INTERNAL_ERROR"],
+      },
+      async run() {
+        attempts += 1;
+        throw new Error("transient failure");
+      },
+    };
+
+    const result = await executeToolCall(
+      [retryingTool],
+      {
+        arguments: { message: "hello" },
+        id: "call_retry_archived",
+        name: "sample",
+      },
+      {
+        async beforeToolCall() {
+          validations += 1;
+          if (validations > 1) {
+            throw new Error("Organization not found.");
+          }
+        },
+      }
+    );
+
+    expect(attempts).toBe(1);
+    expect(validations).toBe(2);
+    expect(result).toEqual({
+      error: "Organization not found.",
+      errorCode: "NOT_FOUND",
+    });
+  });
+
   test("keeps detected artifacts when a tool returns plain text", async () => {
     const workspaceRoot = await mkdtemp(
       path.join(tmpdir(), "atlas-agent-tool-artifact-")

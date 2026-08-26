@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { SYNTHETIC_SECRET_FIXTURES } from "../testing/synthetic-secret-fixtures";
 import {
   assertOutboundEnvelope,
   OutboundEnvelopeError,
@@ -22,9 +23,9 @@ describe("outbound envelope", () => {
     const envelope = assertOutboundEnvelope({
       orgId: "org_1",
       replyTarget: { channel: "telegram", telegram: { chatId: 42 } },
-      text: "token=sk-abcdefghijklmnopqrstuvwxyz",
+      text: `token=${SYNTHETIC_SECRET_FIXTURES.openAiApiKey}`,
     });
-    expect(envelope.text).not.toContain("sk-abcdefghijklmnopqrstuvwxyz");
+    expect(envelope.text).not.toContain(SYNTHETIC_SECRET_FIXTURES.openAiApiKey);
   });
 
   test("revalidates telegram replyTarget against paired allowlist", () => {

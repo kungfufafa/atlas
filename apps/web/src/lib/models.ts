@@ -3,7 +3,9 @@ import type {
   CreateProviderRequest,
   OllamaHostMode,
   ProviderModelOption,
+  WireApi,
 } from "@atlas/core/contract";
+import { isDiscoveryModelProvider } from "@atlas/core/discovery-providers";
 import {
   OLLAMA_CLOUD_DEFAULT_BASE_URL,
   OLLAMA_LOCAL_DEFAULT_BASE_URL,
@@ -54,10 +56,16 @@ export function formatProviderLabel(
     provider === "gemini" ||
     provider === "deepseek" ||
     provider === "cerebras" ||
+    provider === "cloudflare" ||
     provider === "fireworks" ||
     provider === "ollama" ||
     provider === "openai_compatible" ||
-    provider === "opencode_go"
+    provider === "opencode_go" ||
+    provider === "minimax" ||
+    provider === "minimax_cn" ||
+    provider === "xai" ||
+    provider === "zhipu" ||
+    provider === "zhipu_cn"
   ) {
     return formatConfiguredProviderLabel(provider, displayName);
   }
@@ -73,9 +81,15 @@ export const PROVIDER_OPTIONS: Array<{ id: SelectedProvider; label: string }> =
     { id: "gemini", label: "Gemini" },
     { id: "deepseek", label: "DeepSeek" },
     { id: "cerebras", label: "Cerebras" },
+    { id: "cloudflare", label: "Cloudflare Workers AI" },
     { id: "fireworks", label: "Fireworks" },
     { id: "ollama", label: "Ollama" },
     { id: "opencode_go", label: "OpenCode Go" },
+    { id: "minimax", label: "MiniMax" },
+    { id: "xai", label: "xAI Grok" },
+    { id: "minimax_cn", label: "MiniMax (CN)" },
+    { id: "zhipu", label: "GLM (Z.ai)" },
+    { id: "zhipu_cn", label: "GLM (CN)" },
     { id: "openai_compatible", label: "Custom (OpenAI-compatible)" },
   ];
 
@@ -187,6 +201,10 @@ export function apiKeyPlaceholder(provider: SelectedProvider): string {
     return "Optional for local endpoints";
   }
 
+  if (provider === "opencode_go") {
+    return "oc-…";
+  }
+
   return "sk-…";
 }
 
@@ -249,6 +267,15 @@ export function validateCustomModelsInput(
 
   if (valid.length === 0) {
     return "Add at least one model.";
+  }
+
+  const seenModelIds = new Set<string>();
+  for (const model of valid) {
+    const id = model.id.trim();
+    if (seenModelIds.has(id)) {
+      return `Model IDs must be unique ("${id}" is duplicated).`;
+    }
+    seenModelIds.add(id);
   }
 
   return null;
@@ -565,6 +592,7 @@ export function buildCreateProviderRequest(options: {
   baseUrl?: string;
   hostMode?: OllamaHostMode;
   customModels?: ConfigureProviderRequest["customModels"];
+  wireApi?: WireApi;
 }): CreateProviderRequest {
   const request = buildConfigureProviderRequest(options);
 
@@ -578,6 +606,9 @@ export function buildCreateProviderRequest(options: {
     ...(options.baseUrl?.trim() ? { baseUrl: options.baseUrl.trim() } : {}),
     ...(options.hostMode ? { hostMode: options.hostMode } : {}),
     ...(request.customModels ? { customModels: request.customModels } : {}),
+    ...(options.provider === "openai_compatible" && options.wireApi
+      ? { wireApi: options.wireApi }
+      : {}),
   };
 }
 
@@ -589,6 +620,7 @@ export function buildConfigureProviderRequest(options: {
   baseUrl?: string;
   hostMode?: OllamaHostMode;
   customModels?: ConfigureProviderRequest["customModels"];
+  wireApi?: WireApi;
 }): ConfigureProviderRequest {
   const request: ConfigureProviderRequest = {
     apiKey: options.apiKey,
@@ -602,6 +634,18 @@ export function buildConfigureProviderRequest(options: {
       baseUrl: options.baseUrl?.trim(),
       customModels: options.customModels,
       displayName: options.displayName?.trim(),
+      ...(options.wireApi ? { wireApi: options.wireApi } : {}),
+    };
+  }
+
+  if (
+    isDiscoveryModelProvider(options.provider) &&
+    options.customModels?.length
+  ) {
+    return {
+      ...request,
+      baseUrl: options.baseUrl?.trim(),
+      customModels: options.customModels,
     };
   }
 
@@ -734,7 +778,9 @@ export function profileModelSelectionValue(
       (entry) => entry.providerId === decoded.providerId
     );
 
-    if (group?.models.some((model) => model.id === decoded.modelId)) {
+    // Keep a stored provider-qualified selection even when its model is newer
+    // than the catalog currently returned by that provider.
+    if (group) {
       return modelId;
     }
   }
@@ -937,12 +983,13 @@ export function resolveModelVisionSupport(
   }
 
   if (
-    model.provider === "openai_compatible" ||
+    isDiscoveryModelProvider(model.provider) ||
     model.provider === "opencode_go" ||
     model.provider === "deepseek" ||
     model.provider === "cerebras" ||
     model.provider === "fireworks" ||
-    model.provider === "ollama"
+    model.provider === "ollama" ||
+    model.provider === "cloudflare"
   ) {
     return model.supportsVision === true;
   }

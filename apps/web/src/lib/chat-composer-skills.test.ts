@@ -1,9 +1,13 @@
 import { describe, expect, test } from "bun:test";
 import type { SkillSummary } from "@atlas/core/contract";
 import {
+  filterComposerSlashSuggestions,
   filterSkillsForSlashQuery,
   findActiveSkillSlashRange,
+  getReservedCommandTokenRanges,
   getSkillTokenRanges,
+  isLeadingComposerSlashRange,
+  replaceSlashRangeWithReservedCommand,
   replaceSlashRangeWithSkillInvocation,
 } from "./chat-composer-skills";
 
@@ -123,6 +127,62 @@ describe("replaceSlashRangeWithSkillInvocation", () => {
   });
 });
 
+describe("reserved /learn suggestions", () => {
+  test("lists /learn before skills only when manage-skills is assigned", () => {
+    expect(
+      filterComposerSlashSuggestions([manageSkillsSkill, weatherSkill], "").map(
+        (item) =>
+          item.kind === "command" ? item.command.name : item.skill.name
+      )
+    ).toEqual(["learn", "weather"]);
+    expect(
+      filterComposerSlashSuggestions([weatherSkill, deploySkill], "").map(
+        (item) =>
+          item.kind === "command" ? item.command.name : item.skill.name
+      )
+    ).toEqual(["weather", "deploy"]);
+  });
+
+  test("matches /learn by name prefix rather than description", () => {
+    expect(
+      filterComposerSlashSuggestions([manageSkillsSkill, weatherSkill], "lea")
+    ).toEqual([
+      {
+        command: {
+          description: "Distill a reusable skill from sources",
+          name: "learn",
+        },
+        kind: "command",
+      },
+    ]);
+    expect(filterComposerSlashSuggestions([manageSkillsSkill], "re")).toEqual(
+      []
+    );
+  });
+
+  test("inserts /learn without converting it to a skill invocation", () => {
+    const range = findActiveSkillSlashRange("/lea", 4);
+    expect(range).not.toBeNull();
+    expect(
+      replaceSlashRangeWithReservedCommand("/lea", range!, { name: "learn" })
+    ).toEqual({ cursorIndex: 7, value: "/learn " });
+  });
+
+  test("does not offer reserved commands after ordinary message text", () => {
+    const value = "please /lea";
+    const range = findActiveSkillSlashRange(value, value.length);
+    expect(range).not.toBeNull();
+    expect(isLeadingComposerSlashRange(value, range!)).toBe(false);
+    expect(
+      filterComposerSlashSuggestions(
+        [manageSkillsSkill, weatherSkill],
+        range!.query,
+        { includeReservedCommands: false }
+      )
+    ).toEqual([]);
+  });
+});
+
 describe("getSkillTokenRanges", () => {
   test("detects explicit skill invocations for highlighting", () => {
     expect(getSkillTokenRanges("/skill weather please")).toEqual([
@@ -135,5 +195,24 @@ describe("getSkillTokenRanges", () => {
 
   test("does not create token ranges for partial invocations", () => {
     expect(getSkillTokenRanges("/skill ")).toEqual([]);
+  });
+});
+
+describe("getReservedCommandTokenRanges", () => {
+  test("highlights only a complete leading /learn command", () => {
+    expect(getReservedCommandTokenRanges(" /learn filing")).toEqual([
+      { end: 7, name: "learn", start: 1 },
+    ]);
+    expect(getReservedCommandTokenRanges("/learn")).toEqual([
+      { end: 6, name: "learn", start: 0 },
+    ]);
+    expect(getReservedCommandTokenRanges("/learning")).toEqual([]);
+    expect(getReservedCommandTokenRanges("please /learn later")).toEqual([]);
+  });
+
+  test("can disable highlighting when the profile lacks manage-skills", () => {
+    expect(
+      getReservedCommandTokenRanges("/learn filing", { enableLearn: false })
+    ).toEqual([]);
   });
 });

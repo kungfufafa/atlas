@@ -1,10 +1,15 @@
+import { resolveCloudflareAccountInput } from "./cloudflare-provider-config";
 import {
   isValidBaseUrl,
   normalizeBaseUrl,
   validateCustomModels,
   validateDisplayName,
 } from "./compatible-provider-config";
-import type { ProviderModelOption } from "./contract";
+import type { ProviderModelOption, WireApi } from "./contract";
+import {
+  defaultDiscoveryBaseUrl,
+  isDiscoveryModelProvider,
+} from "./discovery-providers";
 import {
   defaultOllamaBaseUrl,
   defaultOllamaLabel,
@@ -34,9 +39,15 @@ const PROVIDER_CHOICES: Array<{ id: UserProviderName; label: string }> = [
   { id: "gemini", label: "Gemini" },
   { id: "deepseek", label: "DeepSeek" },
   { id: "cerebras", label: "Cerebras" },
+  { id: "cloudflare", label: "Cloudflare Workers AI" },
   { id: "fireworks", label: "Fireworks" },
   { id: "ollama", label: "Ollama" },
   { id: "opencode_go", label: "OpenCode Go" },
+  { id: "minimax", label: "MiniMax" },
+  { id: "minimax_cn", label: "MiniMax (CN)" },
+  { id: "xai", label: "xAI Grok" },
+  { id: "zhipu", label: "GLM (Z.ai)" },
+  { id: "zhipu_cn", label: "GLM (CN)" },
   { id: "openai_compatible", label: "Custom (OpenAI-compatible)" },
 ];
 
@@ -88,6 +99,30 @@ export async function promptForProviderConfig(
       continue;
     }
 
+    if (isDiscoveryModelProvider(provider)) {
+      const instance = await promptForDiscoveryProviderInstance(
+        provider,
+        apiKey,
+        question,
+        writeLine
+      );
+      if (instance) {
+        return buildUserConfigFromInstance(instance);
+      }
+      continue;
+    }
+
+    const cloudflareBaseUrl =
+      provider === "cloudflare"
+        ? resolveCloudflareAccountInput(
+            await question("Cloudflare account ID or Workers AI URL: ")
+          )
+        : null;
+    if (provider === "cloudflare" && !cloudflareBaseUrl) {
+      writeLine("Enter a valid Cloudflare account ID or Workers AI URL.\n");
+      continue;
+    }
+
     const models = getModelsForProvider(provider);
     writeLine(`\nSelected provider: ${provider}`);
     writeLine("\nAvailable models:");
@@ -133,6 +168,7 @@ export async function promptForProviderConfig(
       id: createProviderInstanceId(),
       label: defaultProviderLabel(provider, []),
       type: getModelById(selectedModel)?.provider ?? provider,
+      ...(cloudflareBaseUrl ? { baseUrl: cloudflareBaseUrl } : {}),
       ...(customModels ? { customModels } : {}),
     };
 
@@ -157,10 +193,16 @@ function resolveProviderChoice(input: string): UserProviderName | null {
     normalized === "gemini" ||
     normalized === "deepseek" ||
     normalized === "cerebras" ||
+    normalized === "cloudflare" ||
     normalized === "fireworks" ||
     normalized === "ollama" ||
     normalized === "openai_compatible" ||
-    normalized === "opencode_go"
+    normalized === "opencode_go" ||
+    normalized === "minimax" ||
+    normalized === "minimax_cn" ||
+    normalized === "xai" ||
+    normalized === "zhipu" ||
+    normalized === "zhipu_cn"
   ) {
     return normalized;
   }
@@ -284,6 +326,10 @@ async function promptForCompatibleProviderInstance(
 
     const baseUrl = normalizeBaseUrl(baseUrlInput);
     const apiKey = (await question("API key (optional): ")).trim();
+    const wireInput = (await question("API [chat/responses] (chat): "))
+      .trim()
+      .toLowerCase();
+    const wireApi: WireApi = wireInput === "responses" ? "responses" : "chat";
     const modelIds = (await question("Model IDs (comma-separated): "))
       .split(",")
       .map((value) => value.trim())
@@ -309,6 +355,52 @@ async function promptForCompatibleProviderInstance(
       id: createProviderInstanceId(),
       label: displayName,
       type: "openai_compatible",
+      wireApi,
     };
   }
+}
+
+async function promptForDiscoveryProviderInstance(
+  provider: UserProviderName,
+  apiKey: string,
+  question: (prompt: string) => Promise<string>,
+  writeLine: (line: string) => void
+): Promise<ProviderInstance | null> {
+  const defaultBaseUrl = defaultDiscoveryBaseUrl(provider);
+  if (!defaultBaseUrl) {
+    return null;
+  }
+
+  const baseUrlInput = (
+    await question(`Base URL (${defaultBaseUrl}): `)
+  ).trim();
+  const baseUrl = normalizeBaseUrl(baseUrlInput || defaultBaseUrl);
+  if (!isValidBaseUrl(baseUrl)) {
+    writeLine("Enter a valid http(s) base URL.\n");
+    return null;
+  }
+
+  const modelIds = (await question("Model IDs (comma-separated): "))
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (modelIds.length === 0) {
+    writeLine("Enter at least one model id.\n");
+    return null;
+  }
+
+  return {
+    apiKey,
+    baseUrl,
+    createdAt: new Date().toISOString(),
+    customModels: validateCustomModels(
+      modelIds.map((id, index) => ({
+        id,
+        ...(index === 0 ? { default: true } : {}),
+      }))
+    ),
+    id: createProviderInstanceId(),
+    label: defaultProviderLabel(provider, []),
+    type: provider,
+  };
 }

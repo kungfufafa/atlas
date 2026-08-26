@@ -15,6 +15,7 @@ async function createTool() {
     channel: "web",
     createdAt: new Date().toISOString(),
     id: "session_test",
+    modelOverride: null,
     profileId: "default",
     title: null,
   });

@@ -56,6 +56,7 @@ async function seedEligibleTurn(db: DatabaseAdapter, channel: string) {
     channel,
     createdAt: now,
     id: "session_1",
+    modelOverride: null,
     orgId: "org_1",
     profileId: "profile_1",
     title: null,
@@ -82,6 +83,19 @@ async function seedEligibleTurn(db: DatabaseAdapter, channel: string) {
       sessionId: "session_1",
     }))
   );
+}
+
+async function archiveOrganization(db: DatabaseAdapter): Promise<void> {
+  const organization = await db.getOrganizationById("org_1");
+  if (!organization) {
+    throw new Error("Expected seeded organization");
+  }
+  const archivedAt = "2026-08-26T12:00:00.000Z";
+  await db.upsertOrganization({
+    ...organization,
+    archivedAt,
+    updatedAt: archivedAt,
+  });
 }
 
 describe("evaluatePostTurnReviewTurnEligibility", () => {
@@ -181,6 +195,7 @@ describe("SkillPostTurnReviewService", () => {
       channel: "automation",
       createdAt: now,
       id: "session_1",
+      modelOverride: null,
       orgId: "org_1",
       profileId: "profile_1",
       title: null,
@@ -229,6 +244,7 @@ describe("SkillPostTurnReviewService", () => {
       channel: "web",
       createdAt: now,
       id: "session_1",
+      modelOverride: null,
       orgId: "org_1",
       profileId: "profile_1",
       title: null,
@@ -273,6 +289,96 @@ describe("SkillPostTurnReviewService", () => {
     release();
     expect(await first).toBe("ran");
     expect(ran).toBe(1);
+  });
+
+  test("skips an archived organization before invoking the review runner", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    await seedEligibleTurn(db, "web");
+    await archiveOrganization(db);
+
+    let runnerCalls = 0;
+    let plannerCalls = 0;
+    const service = new SkillPostTurnReviewService(
+      db,
+      () => null,
+      async () => {
+        runnerCalls += 1;
+        return {
+          action: "create",
+          content: "---\nname: learned\ndescription: Learned\n---\n",
+          name: "learned",
+        };
+      }
+    );
+    service.setPersistencePlanner(async () => {
+      plannerCalls += 1;
+      return async () => undefined;
+    });
+
+    expect(await service.runPostTurnSkillReview("session_1")).toBe(
+      "org_archived"
+    );
+    expect(runnerCalls).toBe(0);
+    expect(plannerCalls).toBe(0);
+  });
+
+  test("does not plan or persist an outcome when the org is archived during review generation", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    await seedEligibleTurn(db, "web");
+
+    let plannerCalls = 0;
+    let persistenceCalls = 0;
+    const service = new SkillPostTurnReviewService(
+      db,
+      () => null,
+      async () => {
+        await archiveOrganization(db);
+        return {
+          action: "create",
+          content: "---\nname: learned\ndescription: Learned\n---\n",
+          name: "learned",
+        };
+      }
+    );
+    service.setPersistencePlanner(async () => {
+      plannerCalls += 1;
+      return async () => {
+        persistenceCalls += 1;
+      };
+    });
+
+    expect(await service.runPostTurnSkillReview("session_1")).toBe(
+      "org_archived"
+    );
+    expect(plannerCalls).toBe(0);
+    expect(persistenceCalls).toBe(0);
+  });
+
+  test("rechecks the org after persistence planning and suppresses the write", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    await seedEligibleTurn(db, "web");
+
+    let persistenceCalls = 0;
+    const service = new SkillPostTurnReviewService(
+      db,
+      () => null,
+      async () => ({
+        action: "create",
+        content: "---\nname: learned\ndescription: Learned\n---\n",
+        name: "learned",
+      })
+    );
+    service.setPersistencePlanner(async () => {
+      await archiveOrganization(db);
+      return async () => {
+        persistenceCalls += 1;
+      };
+    });
+
+    expect(await service.runPostTurnSkillReview("session_1")).toBe(
+      "org_archived"
+    );
+    expect(persistenceCalls).toBe(0);
   });
 
   test("resolveProviderForProfile passes the model string to createProvider", async () => {

@@ -42,7 +42,7 @@ const SECRET_LEAK_PATTERNS = [
   /sk-[a-zA-Z0-9_-]{16,}/,
   /ghp_[a-zA-Z0-9]{20,}/,
   /xoxb-[0-9]{8,}-[0-9]{8,}-[a-zA-Z0-9]{16,}/,
-  /-----BEGIN [A-Z0-9_ -]+ PRIVATE KEY-----/,
+  /-----BEGIN (?:[A-Z0-9_ -]+ )?PRIVATE KEY-----/,
 ];
 
 function assertNoRawSecretLeak(value: unknown, sink: RedactionSink): void {

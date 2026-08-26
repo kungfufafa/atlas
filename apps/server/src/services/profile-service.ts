@@ -1,4 +1,7 @@
-import { access, cp, rm } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
+import { constants } from "node:fs";
+import { access, cp, lstat, mkdir, open, rename, rm } from "node:fs/promises";
+import { isAbsolute, join, relative, resolve } from "node:path";
 import type {
   AssignMcpServerRequest,
   AssignSkillRequest,
@@ -28,6 +31,7 @@ import {
   deleteProfileAvatar,
   getKnowledgeBaseDir,
   getProfileSoulDir,
+  getUserConfigDir,
   hasProfileAvatar,
   initSoulDirectory,
   listKnowledgeBaseDocuments,
@@ -38,6 +42,8 @@ import {
   deleteKnowledgeBaseDocument as removeKnowledgeBaseDocument,
   resolveSoulStackForProfile,
   saveProfileAvatar,
+  withProfileSoulMutationLock,
+  withProfileSoulMutationLocks,
   writeSoulFile,
 } from "@atlas/core";
 import { isProtectedToolId } from "@atlas/core/tools/protected";
@@ -72,6 +78,13 @@ const CLONED_SOUL_FILE_KEYS = ["instructions", "soul", "style"] as const;
 
 /** How many `-2`, `-3` suffixes to try before giving up on a generated id. */
 const CLONE_ID_ATTEMPTS = 50;
+const MAX_PROFILE_NAME_BYTES = 256;
+const MAX_SOUL_FILE_BYTES = 1024 * 1024;
+const MAX_SOUL_UPDATE_BYTES = 2 * 1024 * 1024;
+
+export interface ProfileUpdateActor {
+  userId: string;
+}
 
 function isToolVisibleToOrg(tool: StoredToolRecord, orgId: string): boolean {
   return tool.orgId == null || tool.orgId === orgId;
@@ -157,6 +170,16 @@ export class ProfileService {
     };
   }
 
+  async getProfileSoulFiles(
+    orgId: string,
+    profileId: string
+  ): Promise<NonNullable<UpdateProfileRequest["soulFiles"]>> {
+    return withProfileSoulMutationLock(orgId, profileId, async () => {
+      await this.requireProfile(orgId, profileId);
+      return readBoundedSoulFiles(getProfileSoulDir(orgId, profileId));
+    });
+  }
+
   async createProfile(
     orgId: string,
     request: CreateProfileRequest
@@ -184,9 +207,11 @@ export class ProfileService {
     };
 
     await this.db.upsertProfile(profile);
-    const soulDir = getProfileSoulDir(orgId, profile.id);
-    await initSoulDirectory(soulDir);
-    await writeGeneratedSoulFiles(soulDir, request.soulFiles);
+    await withProfileSoulMutationLock(orgId, profile.id, async () => {
+      const soulDir = getProfileSoulDir(orgId, profile.id);
+      await initSoulDirectory(soulDir);
+      await writeGeneratedSoulFiles(soulDir, request.soulFiles);
+    });
     await this.assignDefaultTools(profile.id);
     await ensureProfileDefaultBundledSkills(this.db, profile.id);
 
@@ -223,6 +248,7 @@ export class ProfileService {
       model: source.model,
       name,
       orgId,
+      skillsCuratorConsolidation: source.skillsCuratorConsolidation,
       skillsPostTurnReview: source.skillsPostTurnReview,
       skillsWriteApproval: source.skillsWriteApproval,
       systemPrompt: source.systemPrompt,
@@ -242,48 +268,53 @@ export class ProfileService {
     profileId: string,
     request: UpdateProfileRequest
   ): Promise<ProfileResponse> {
-    const profile = await this.requireProfile(orgId, profileId);
-    const now = new Date().toISOString();
-
-    await this.db.upsertProfile({
-      ...profile,
-      model: request.model === undefined ? profile.model : request.model,
-      name: request.name?.trim() ?? profile.name,
-      skillsPostTurnReview:
-        request.skillsPostTurnReview === undefined
-          ? profile.skillsPostTurnReview
-          : request.skillsPostTurnReview,
-      skillsWriteApproval:
-        request.skillsWriteApproval === undefined
-          ? profile.skillsWriteApproval
-          : request.skillsWriteApproval,
-      systemPrompt: request.systemPrompt?.trim() ?? profile.systemPrompt,
-      updatedAt: now,
+    return withProfileSoulMutationLock(orgId, profileId, async () => {
+      const profile = await this.requireProfile(orgId, profileId);
+      return this.commitProfileUpdate(orgId, profile, request);
     });
+  }
 
-    return this.getProfile(orgId, profileId);
+  async updateProfileAsActor(
+    orgId: string,
+    profileId: string,
+    request: UpdateProfileRequest,
+    actor: ProfileUpdateActor
+  ): Promise<ProfileResponse> {
+    return withProfileSoulMutationLock(orgId, profileId, async () => {
+      const profile = await this.requireProfileUpdateActor(
+        orgId,
+        profileId,
+        actor
+      );
+
+      return this.commitProfileUpdate(orgId, profile, request, () =>
+        this.requireProfileUpdateActor(orgId, profileId, actor)
+      );
+    });
   }
 
   async deleteProfile(orgId: string, profileId: string): Promise<void> {
-    const profile = await this.requireProfile(orgId, profileId);
+    await withProfileSoulMutationLock(orgId, profileId, async () => {
+      const profile = await this.requireProfile(orgId, profileId);
 
-    if (profile.isDefault) {
-      throw new Error(
-        "The default profile for an organization cannot be deleted."
-      );
-    }
+      if (profile.isDefault) {
+        throw new Error(
+          "The default profile for an organization cannot be deleted."
+        );
+      }
 
-    const deleted = await this.db.deleteProfile(profileId);
+      const deleted = await this.db.deleteProfile(profileId);
 
-    if (!deleted) {
-      throw new Error("Profile not found.");
-    }
+      if (!deleted) {
+        throw new Error("Profile not found.");
+      }
 
-    // The soul dir holds MEMORY.md, skills, and knowledge base files — remove
-    // it so deleted profiles do not leave workspace data behind.
-    await rm(getProfileSoulDir(orgId, profileId), {
-      force: true,
-      recursive: true,
+      // The soul dir holds MEMORY.md, skills, and knowledge base files — remove
+      // it so deleted profiles do not leave workspace data behind.
+      await rm(getProfileSoulDir(orgId, profileId), {
+        force: true,
+        recursive: true,
+      });
     });
   }
 
@@ -648,23 +679,117 @@ export class ProfileService {
     return profile;
   }
 
+  private async commitProfileUpdate(
+    orgId: string,
+    profile: StoredProfileRecord,
+    request: UpdateProfileRequest,
+    revalidate?: () => Promise<StoredProfileRecord>
+  ): Promise<ProfileResponse> {
+    validateProfileUpdateRequest(request);
+    const updated = buildUpdatedProfileRecord(profile, request);
+    const stagedSoulFiles = await stageSoulFileUpdates(
+      getProfileSoulDir(orgId, profile.id),
+      request.soulFiles
+    );
+    let soulFilesPublished = false;
+
+    try {
+      const beforeFiles = revalidate
+        ? await revalidate()
+        : await this.requireProfile(orgId, profile.id);
+      assertProfileUnchanged(profile, beforeFiles);
+
+      await publishStagedSoulFiles(stagedSoulFiles);
+      soulFilesPublished = stagedSoulFiles.length > 0;
+
+      // This is intentionally the last asynchronous authorization check before
+      // the database commit. It catches org archival, role revocation, target
+      // moves, and concurrent profile edits that happened while files staged.
+      const beforeDatabase = revalidate
+        ? await revalidate()
+        : await this.requireProfile(orgId, profile.id);
+      assertProfileUnchanged(profile, beforeDatabase);
+      await this.db.upsertProfile(updated);
+    } catch (error) {
+      if (soulFilesPublished) {
+        try {
+          await restorePublishedSoulFiles(stagedSoulFiles);
+        } catch (rollbackError) {
+          throw new AggregateError(
+            [error, rollbackError],
+            "Profile update failed and its soul-file rollback also failed."
+          );
+        }
+      }
+
+      throw error;
+    } finally {
+      await cleanupStagedSoulFiles(stagedSoulFiles);
+    }
+
+    return this.getProfile(orgId, profile.id);
+  }
+
+  private async requireProfileUpdateActor(
+    orgId: string,
+    profileId: string,
+    actor: ProfileUpdateActor
+  ): Promise<StoredProfileRecord> {
+    const userId = actor.userId.trim();
+    if (!userId) {
+      throw new AtlasApiError("Authenticated user is required.", 403);
+    }
+
+    const [organization, profile, member, user] = await Promise.all([
+      this.db.getOrganizationById(orgId),
+      this.db.getProfileForOrg(profileId, orgId),
+      this.db.getOrgMember(orgId, userId),
+      this.db.getUserById(userId),
+    ]);
+
+    if (!organization || organization.archivedAt) {
+      throw new AtlasApiError("Organization is not active.", 409);
+    }
+
+    if (!profile) {
+      throw new AtlasApiError("Profile not found.", 404);
+    }
+
+    if (!(member?.role === "admin" || user?.isPlatformAdmin === true)) {
+      throw new AtlasApiError(
+        "Workspace admin permission is required to update profiles.",
+        403
+      );
+    }
+
+    return profile;
+  }
+
   private async copyProfileSoul(
     orgId: string,
     sourceId: string,
     profileId: string
   ): Promise<void> {
-    const cloneSoulDir = getProfileSoulDir(orgId, profileId);
-    await initSoulDirectory(cloneSoulDir);
+    await withProfileSoulMutationLocks(
+      [
+        { orgId, profileId: sourceId },
+        { orgId, profileId },
+      ],
+      async () => {
+        const cloneSoulDir = getProfileSoulDir(orgId, profileId);
+        await initSoulDirectory(cloneSoulDir);
 
-    const sourceSoul = await resolveSoulStackForProfile(orgId, sourceId);
+        const sourceSoul = await resolveSoulStackForProfile(orgId, sourceId);
 
-    for (const key of CLONED_SOUL_FILE_KEYS) {
-      const content = sourceSoul?.files[key];
+        for (const key of CLONED_SOUL_FILE_KEYS) {
+          const content = sourceSoul?.files[key];
 
-      if (content) {
-        await writeSoulFile(cloneSoulDir, key, content);
+          if (content) {
+            await writeSoulFile(cloneSoulDir, key, content);
+          }
+        }
       }
-    }
+    );
   }
 
   private async copyProfileAssignments(
@@ -775,6 +900,7 @@ export class ProfileService {
       mcpServerCount: mcpServers.length,
       model: profile.model,
       name: profile.name,
+      skillsCuratorConsolidation: profile.skillsCuratorConsolidation ?? null,
       skillsPostTurnReview: profile.skillsPostTurnReview ?? null,
       skillsWriteApproval: profile.skillsWriteApproval ?? null,
       soulActive: soulStack !== null,
@@ -888,6 +1014,471 @@ function validateGeneratedSoulFiles(
       throw new Error(`Soul file content must be a string: ${key}`);
     }
   }
+}
+
+interface StagedSoulFile {
+  directoryDevice: number;
+  directoryInode: number;
+  fileName: keyof typeof SOUL_FILE_KEY_BY_NAME;
+  next: Buffer;
+  original: Buffer | null;
+  soulDir: string;
+  targetPath: string;
+  tempPath: string;
+}
+
+interface SoulDirectoryIdentity {
+  device: number;
+  inode: number;
+}
+
+function validateProfileUpdateRequest(request: UpdateProfileRequest): void {
+  const allowedFields = new Set([
+    "model",
+    "name",
+    "skillsCuratorConsolidation",
+    "skillsPostTurnReview",
+    "skillsWriteApproval",
+    "soulFiles",
+    "systemPrompt",
+  ]);
+
+  for (const key of Object.keys(request)) {
+    if (!allowedFields.has(key)) {
+      throw new AtlasApiError(`Unsupported profile update field: ${key}`, 400);
+    }
+  }
+
+  if (request.name !== undefined) {
+    const name = request.name.trim();
+    if (!name) {
+      throw new AtlasApiError("Profile name is required.", 400);
+    }
+    if (Buffer.byteLength(name, "utf8") > MAX_PROFILE_NAME_BYTES) {
+      throw new AtlasApiError("Profile name is too large.", 413);
+    }
+  }
+
+  if (
+    request.model !== undefined &&
+    request.model !== null &&
+    (typeof request.model !== "string" || !request.model.trim())
+  ) {
+    throw new AtlasApiError(
+      "Profile model must be a non-empty string or null.",
+      400
+    );
+  }
+
+  if (
+    request.systemPrompt !== undefined &&
+    (typeof request.systemPrompt !== "string" ||
+      Buffer.byteLength(request.systemPrompt, "utf8") > MAX_SOUL_FILE_BYTES)
+  ) {
+    throw new AtlasApiError("Profile system prompt is too large.", 413);
+  }
+
+  for (const key of [
+    "skillsCuratorConsolidation",
+    "skillsPostTurnReview",
+    "skillsWriteApproval",
+  ] as const) {
+    const value = request[key];
+    if (value !== undefined && value !== null && typeof value !== "boolean") {
+      throw new AtlasApiError(`${key} must be a boolean or null.`, 400);
+    }
+  }
+
+  validateGeneratedSoulFiles(request.soulFiles);
+  let totalSoulBytes = 0;
+  for (const content of Object.values(request.soulFiles ?? {})) {
+    if (content === undefined) {
+      continue;
+    }
+    const size = Buffer.byteLength(content, "utf8");
+    if (size > MAX_SOUL_FILE_BYTES) {
+      throw new AtlasApiError("A soul file is too large.", 413);
+    }
+    totalSoulBytes += size;
+  }
+
+  if (totalSoulBytes > MAX_SOUL_UPDATE_BYTES) {
+    throw new AtlasApiError("The combined soul-file update is too large.", 413);
+  }
+}
+
+function buildUpdatedProfileRecord(
+  profile: StoredProfileRecord,
+  request: UpdateProfileRequest
+): StoredProfileRecord {
+  return {
+    ...profile,
+    model:
+      request.model === undefined
+        ? profile.model
+        : typeof request.model === "string"
+          ? request.model.trim()
+          : null,
+    name: request.name?.trim() ?? profile.name,
+    skillsCuratorConsolidation:
+      request.skillsCuratorConsolidation === undefined
+        ? profile.skillsCuratorConsolidation
+        : request.skillsCuratorConsolidation,
+    skillsPostTurnReview:
+      request.skillsPostTurnReview === undefined
+        ? profile.skillsPostTurnReview
+        : request.skillsPostTurnReview,
+    skillsWriteApproval:
+      request.skillsWriteApproval === undefined
+        ? profile.skillsWriteApproval
+        : request.skillsWriteApproval,
+    systemPrompt:
+      request.systemPrompt === undefined
+        ? profile.systemPrompt
+        : request.systemPrompt.trim(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function assertProfileUnchanged(
+  expected: StoredProfileRecord,
+  actual: StoredProfileRecord
+): void {
+  const fields: Array<keyof StoredProfileRecord> = [
+    "createdAt",
+    "id",
+    "isDefault",
+    "isImporting",
+    "isSuper",
+    "model",
+    "name",
+    "orgId",
+    "skillsCuratorConsolidation",
+    "skillsPostTurnReview",
+    "skillsWriteApproval",
+    "systemPrompt",
+    "thinkingEffort",
+    "thinkingEnabled",
+    "updatedAt",
+  ];
+
+  if (fields.some((field) => expected[field] !== actual[field])) {
+    throw new AtlasApiError(
+      "Profile changed while the update was being prepared. Review and confirm the latest profile first.",
+      409
+    );
+  }
+}
+
+async function assertPrivateSoulDirectory(
+  soulDir: string,
+  expected?: SoulDirectoryIdentity
+): Promise<SoulDirectoryIdentity> {
+  const configRoot = resolve(getUserConfigDir());
+  const target = resolve(soulDir);
+  const relativePath = relative(configRoot, target);
+
+  if (
+    isAbsolute(relativePath) ||
+    relativePath === ".." ||
+    relativePath.startsWith(`..${process.platform === "win32" ? "\\" : "/"}`)
+  ) {
+    throw new AtlasApiError("Profile soul directory escapes config root.", 409);
+  }
+
+  await mkdir(configRoot, { mode: 0o700, recursive: true });
+  const rootStats = await lstat(configRoot);
+  if (rootStats.isSymbolicLink() || !rootStats.isDirectory()) {
+    throw new AtlasApiError(
+      "Atlas config directory is not safe to write.",
+      409
+    );
+  }
+  const segments = relativePath.split(/[\\/]+/u).filter(Boolean);
+  let current = configRoot;
+
+  for (const segment of segments) {
+    current = join(current, segment);
+    try {
+      await mkdir(current, { mode: 0o700 });
+    } catch (error) {
+      if (errorCode(error) !== "EEXIST") {
+        throw error;
+      }
+    }
+
+    const stats = await lstat(current);
+    if (stats.isSymbolicLink() || !stats.isDirectory()) {
+      throw new AtlasApiError(
+        "Profile soul directory is not safe to write.",
+        409
+      );
+    }
+  }
+
+  let directoryHandle: Awaited<ReturnType<typeof open>>;
+  try {
+    const directoryFlags =
+      constants.O_RDONLY + constants.O_DIRECTORY + constants.O_NOFOLLOW;
+    directoryHandle = await open(soulDir, directoryFlags);
+  } catch {
+    throw new AtlasApiError(
+      "Profile soul directory is not safe to write.",
+      409
+    );
+  }
+
+  try {
+    const finalStats = await directoryHandle.stat();
+    if (!finalStats.isDirectory()) {
+      throw new AtlasApiError(
+        "Profile soul directory is not safe to write.",
+        409
+      );
+    }
+    const identity = { device: finalStats.dev, inode: finalStats.ino };
+
+    if (
+      expected &&
+      (identity.device !== expected.device || identity.inode !== expected.inode)
+    ) {
+      throw new AtlasApiError(
+        "Profile soul directory changed while the update was prepared.",
+        409
+      );
+    }
+
+    await directoryHandle.chmod(0o700);
+    return identity;
+  } finally {
+    await directoryHandle.close();
+  }
+}
+
+function errorCode(error: unknown): string | undefined {
+  if (typeof error !== "object" || error === null) {
+    return;
+  }
+
+  try {
+    const code = Reflect.get(error, "code");
+    return typeof code === "string" ? code : undefined;
+  } catch {
+    // Hostile error objects can throw from property access.
+  }
+}
+
+async function readPrivateRegularFile(
+  targetPath: string
+): Promise<Buffer | null> {
+  let handle: Awaited<ReturnType<typeof open>>;
+  try {
+    handle = await open(
+      targetPath,
+      constants.O_RDONLY + constants.O_NOFOLLOW + constants.O_NONBLOCK
+    );
+  } catch (error) {
+    if (errorCode(error) === "ENOENT") {
+      return null;
+    }
+    throw new AtlasApiError("Profile soul file is not safe to read.", 409);
+  }
+
+  try {
+    const stats = await handle.stat();
+    if (!stats.isFile()) {
+      throw new AtlasApiError("Profile soul file is not a regular file.", 409);
+    }
+    if (stats.size > MAX_SOUL_FILE_BYTES) {
+      throw new AtlasApiError("Profile soul file is too large.", 413);
+    }
+    return await handle.readFile();
+  } finally {
+    await handle.close();
+  }
+}
+
+async function writePrivateTemporaryFile(
+  tempPath: string,
+  content: Buffer
+): Promise<void> {
+  const writeFlags =
+    constants.O_WRONLY +
+    constants.O_CREAT +
+    constants.O_EXCL +
+    constants.O_NOFOLLOW;
+  const handle = await open(tempPath, writeFlags, 0o600);
+
+  try {
+    await handle.writeFile(content);
+    await handle.sync();
+    await handle.chmod(0o600);
+  } finally {
+    await handle.close();
+  }
+}
+
+async function stageSoulFileUpdates(
+  soulDir: string,
+  soulFiles: UpdateProfileRequest["soulFiles"] | undefined
+): Promise<StagedSoulFile[]> {
+  if (!soulFiles || Object.keys(soulFiles).length === 0) {
+    return [];
+  }
+
+  const directoryIdentity = await assertPrivateSoulDirectory(soulDir);
+  const staged: StagedSoulFile[] = [];
+
+  try {
+    for (const fileName of Object.keys(soulFiles) as Array<
+      keyof typeof SOUL_FILE_KEY_BY_NAME
+    >) {
+      const content = soulFiles[fileName];
+      if (content === undefined) {
+        continue;
+      }
+
+      await assertPrivateSoulDirectory(soulDir, directoryIdentity);
+      const targetPath = join(soulDir, fileName);
+      const tempPath = join(
+        soulDir,
+        `.${fileName}.profile-update-${randomUUID()}`
+      );
+      const original = await readPrivateRegularFile(targetPath);
+      const next = Buffer.from(content, "utf8");
+      const entry = {
+        directoryDevice: directoryIdentity.device,
+        directoryInode: directoryIdentity.inode,
+        fileName,
+        next,
+        original,
+        soulDir,
+        targetPath,
+        tempPath,
+      };
+      staged.push(entry);
+      await writePrivateTemporaryFile(tempPath, next);
+    }
+    return staged;
+  } catch (error) {
+    await cleanupStagedSoulFiles(staged);
+    throw error;
+  }
+}
+
+async function assertSoulFileSnapshotUnchanged(
+  staged: StagedSoulFile,
+  expected: Buffer | null = staged.original
+): Promise<void> {
+  await assertPrivateSoulDirectory(staged.soulDir, {
+    device: staged.directoryDevice,
+    inode: staged.directoryInode,
+  });
+  const current = await readPrivateRegularFile(staged.targetPath);
+  const unchanged =
+    expected === null
+      ? current === null
+      : current !== null && expected.equals(current);
+
+  if (!unchanged) {
+    throw new AtlasApiError(
+      `${staged.fileName} changed while the update was being prepared.`,
+      409
+    );
+  }
+}
+
+async function restoreSoulFiles(entries: StagedSoulFile[]): Promise<void> {
+  for (const entry of entries) {
+    await assertSoulFileSnapshotUnchanged(entry, entry.next);
+  }
+
+  for (const entry of [...entries].reverse()) {
+    await assertSoulFileSnapshotUnchanged(entry, entry.next);
+    await assertPrivateSoulDirectory(entry.soulDir, {
+      device: entry.directoryDevice,
+      inode: entry.directoryInode,
+    });
+    if (entry.original === null) {
+      await rm(entry.targetPath, { force: true });
+      continue;
+    }
+
+    const rollbackPath = `${entry.tempPath}.rollback-${randomUUID()}`;
+    await writePrivateTemporaryFile(rollbackPath, entry.original);
+    await rename(rollbackPath, entry.targetPath);
+  }
+}
+
+async function publishStagedSoulFiles(staged: StagedSoulFile[]): Promise<void> {
+  for (const entry of staged) {
+    await assertSoulFileSnapshotUnchanged(entry);
+  }
+
+  const published: StagedSoulFile[] = [];
+  try {
+    for (const entry of staged) {
+      await assertSoulFileSnapshotUnchanged(entry);
+      await assertPrivateSoulDirectory(entry.soulDir, {
+        device: entry.directoryDevice,
+        inode: entry.directoryInode,
+      });
+      await rename(entry.tempPath, entry.targetPath);
+      published.push(entry);
+    }
+  } catch (error) {
+    await restoreSoulFiles(published);
+    throw error;
+  }
+}
+
+async function restorePublishedSoulFiles(
+  staged: StagedSoulFile[]
+): Promise<void> {
+  await restoreSoulFiles(staged);
+}
+
+async function cleanupStagedSoulFiles(staged: StagedSoulFile[]): Promise<void> {
+  await Promise.all(
+    staged.map(async (entry) => {
+      try {
+        await assertPrivateSoulDirectory(entry.soulDir, {
+          device: entry.directoryDevice,
+          inode: entry.directoryInode,
+        });
+        await rm(entry.tempPath, { force: true });
+      } catch {
+        // A changed directory is untrusted. Leave an unreachable private temp
+        // file behind instead of following a replacement path during cleanup.
+      }
+    })
+  );
+}
+
+async function readBoundedSoulFiles(
+  soulDir: string
+): Promise<NonNullable<UpdateProfileRequest["soulFiles"]>> {
+  const directoryIdentity = await assertPrivateSoulDirectory(soulDir);
+  const result: NonNullable<UpdateProfileRequest["soulFiles"]> = {};
+  let totalBytes = 0;
+
+  for (const fileName of Object.keys(SOUL_FILE_KEY_BY_NAME) as Array<
+    keyof typeof SOUL_FILE_KEY_BY_NAME
+  >) {
+    await assertPrivateSoulDirectory(soulDir, directoryIdentity);
+    const content = await readPrivateRegularFile(join(soulDir, fileName));
+    await assertPrivateSoulDirectory(soulDir, directoryIdentity);
+    if (content === null) {
+      continue;
+    }
+    totalBytes += content.byteLength;
+    if (totalBytes > MAX_SOUL_UPDATE_BYTES) {
+      throw new AtlasApiError("The combined soul files are too large.", 413);
+    }
+    result[fileName] = content.toString("utf8");
+  }
+
+  return result;
 }
 
 function readJavascriptToolHandlerConfig(handlerConfig: unknown): {

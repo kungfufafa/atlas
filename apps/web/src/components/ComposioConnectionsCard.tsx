@@ -21,6 +21,7 @@ import { useAuth } from "@/context/use-auth";
 import {
   useComposioSettings,
   useComposioToolkits,
+  useConnectComposioToolkit,
   useDisableComposioToolkit,
   useDisconnectComposioToolkit,
   useEnableComposioToolkit,
@@ -30,6 +31,34 @@ import { formatError } from "@/lib/client";
 import { cn } from "@/lib/utils";
 
 const CATALOG_PAGE_SIZE = 15;
+const FEATURED_TOOLKIT_SLUGS = new Set([
+  "airtable",
+  "asana",
+  "clickup",
+  "discord",
+  "dropbox",
+  "github",
+  "gmail",
+  "googlecalendar",
+  "googledocs",
+  "googledrive",
+  "googlemeet",
+  "googlesheets",
+  "googletasks",
+  "jira",
+  "linear",
+  "linkedin",
+  "notion",
+  "one_drive",
+  "outlook",
+  "reddit",
+  "slack",
+  "trello",
+  "twitter",
+  "whatsapp",
+  "youtube",
+  "zoom",
+]);
 
 function compareToolkitRows(a: ToolkitRowModel, b: ToolkitRowModel): number {
   const aActive = isActiveToolkit(a) ? 0 : 1;
@@ -123,6 +152,7 @@ function StatusPill({
 interface ComposioToolkitRowProps {
   busy: boolean;
   isOrgAdmin: boolean;
+  onConnect: (slug: string) => void;
   onDisable: (slug: string) => void;
   onDisconnect: (slug: string) => void;
   onEnable: (slug: string) => void;
@@ -134,6 +164,7 @@ function ComposioToolkitRow({
   row,
   isOrgAdmin,
   busy,
+  onConnect,
   onEnable,
   onDisable,
   onSync,
@@ -219,6 +250,19 @@ function ComposioToolkitRow({
           </DropdownMenu>
         ) : null}
 
+        {orgEnabled && userStatus !== "connected" ? (
+          <Button
+            disabled={busy}
+            onClick={() => onConnect(catalog.slug)}
+            size="sm"
+            type="button"
+          >
+            {userStatus === "oauth_in_progress"
+              ? "Finish connecting"
+              : "Connect"}
+          </Button>
+        ) : null}
+
         {isOrgAdmin && orgEnabled && userStatus !== "connected" ? (
           <Button
             disabled={busy}
@@ -236,9 +280,11 @@ function ComposioToolkitRow({
 }
 
 interface ComposioToolkitListProps {
+  actionError: string | null;
   busy: boolean;
   data: ListComposioToolkitsResponse;
   isOrgAdmin: boolean;
+  onConnect: (slug: string) => void;
   onDisable: (slug: string) => void;
   onDisconnect: (slug: string) => void;
   onEnable: (slug: string) => void;
@@ -249,6 +295,8 @@ function ComposioToolkitList({
   data,
   isOrgAdmin,
   busy,
+  actionError,
+  onConnect,
   onEnable,
   onDisable,
   onSync,
@@ -256,6 +304,7 @@ function ComposioToolkitList({
 }: ComposioToolkitListProps) {
   const [search, setSearch] = useState("");
   const [visibleCount, setVisibleCount] = useState(CATALOG_PAGE_SIZE);
+  const [showAllApps, setShowAllApps] = useState(false);
   const deferredSearch = useDeferredValue(search);
 
   const query = deferredSearch.trim().toLowerCase();
@@ -307,8 +356,14 @@ function ComposioToolkitList({
       return activeRows.filter((row) => row.orgToolkit?.status === "enabled");
     }
 
-    return rows.toSorted(compareToolkitRows);
-  }, [activeRows, isOrgAdmin, isSearching, query, rows]);
+    const base = showAllApps
+      ? rows
+      : rows.filter(
+          (row) =>
+            FEATURED_TOOLKIT_SLUGS.has(row.catalog.slug) || isActiveToolkit(row)
+        );
+    return base.toSorted(compareToolkitRows);
+  }, [activeRows, isOrgAdmin, isSearching, query, rows, showAllApps]);
 
   const displayedRows = filteredRows.slice(0, visibleCount);
   const remainingCount = Math.max(
@@ -323,8 +378,8 @@ function ComposioToolkitList({
           <p className="font-medium text-foreground text-sm">SaaS toolkits</p>
           <p className="mt-0.5 text-muted-foreground text-xs">
             {isOrgAdmin
-              ? "Enable an app for your org. Members connect their own accounts from chat when they need a toolkit."
-              : "Ask your agent in chat to connect org-enabled apps. Chat uses your credentials, not a shared org login."}
+              ? "Enable an app for your org. Each person connects their own account."
+              : "Connect an enabled app with your own account."}
           </p>
         </div>
 
@@ -348,22 +403,45 @@ function ComposioToolkitList({
           />
         </div>
 
-        <p className="text-muted-foreground text-xs tabular-nums">
-          {isSearching ? (
-            <>
-              {filteredRows.length} match{filteredRows.length === 1 ? "" : "es"}
-            </>
-          ) : isOrgAdmin ? (
-            <>
-              {enabledCount} enabled · {connectedCount} connected by you ·{" "}
-              {data.catalog.length} available
-            </>
-          ) : (
-            <>
-              {enabledCount} enabled · {connectedCount} connected by you
-            </>
-          )}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-muted-foreground text-xs tabular-nums">
+            {isSearching ? (
+              <>
+                {filteredRows.length} match
+                {filteredRows.length === 1 ? "" : "es"}
+              </>
+            ) : isOrgAdmin ? (
+              <>
+                {enabledCount} enabled · {connectedCount} connected by you ·{" "}
+                {showAllApps ? data.catalog.length : filteredRows.length} shown
+              </>
+            ) : (
+              <>
+                {enabledCount} enabled · {connectedCount} connected by you
+              </>
+            )}
+          </p>
+          {isOrgAdmin && !isSearching ? (
+            <Button
+              className="h-auto p-0 text-xs"
+              onClick={() => {
+                setShowAllApps((current) => !current);
+                setVisibleCount(CATALOG_PAGE_SIZE);
+              }}
+              type="button"
+              variant="link"
+            >
+              {showAllApps
+                ? "Show popular apps"
+                : `Show all ${data.catalog.length} apps`}
+            </Button>
+          ) : null}
+        </div>
+        {actionError ? (
+          <p className="text-destructive text-sm" role="alert">
+            {actionError}
+          </p>
+        ) : null}
       </div>
 
       {data.catalog.length === 0 ? (
@@ -395,6 +473,7 @@ function ComposioToolkitList({
                   busy={busy}
                   isOrgAdmin={isOrgAdmin}
                   key={row.catalog.slug}
+                  onConnect={onConnect}
                   onDisable={onDisable}
                   onDisconnect={onDisconnect}
                   onEnable={onEnable}
@@ -478,16 +557,25 @@ export function ComposioConnectionsCard({
   const isOrgAdmin = activeOrg?.role === "admin";
   const { data: settings } = useComposioSettings();
   const toolkitsQuery = useComposioToolkits();
+  const connectMutation = useConnectComposioToolkit();
   const enableMutation = useEnableComposioToolkit();
   const disableMutation = useDisableComposioToolkit();
   const disconnectMutation = useDisconnectComposioToolkit();
   const syncMutation = useSyncComposioToolkit();
 
   const busy =
+    connectMutation.isPending ||
     enableMutation.isPending ||
     disableMutation.isPending ||
     disconnectMutation.isPending ||
     syncMutation.isPending;
+  const actionError = [
+    connectMutation.error,
+    enableMutation.error,
+    disableMutation.error,
+    disconnectMutation.error,
+    syncMutation.error,
+  ].find((error): error is Error => error instanceof Error);
 
   const shellProps = { bordered, embedded };
 
@@ -553,9 +641,11 @@ export function ComposioConnectionsCard({
   return (
     <IntegrationCardShell {...shellProps}>
       <ComposioToolkitList
+        actionError={actionError ? formatError(actionError) : null}
         busy={busy}
         data={data}
         isOrgAdmin={isOrgAdmin}
+        onConnect={(slug) => connectMutation.mutate(slug)}
         onDisable={(slug) => disableMutation.mutate(slug)}
         onDisconnect={(slug) => disconnectMutation.mutate(slug)}
         onEnable={(slug) => enableMutation.mutate(slug)}

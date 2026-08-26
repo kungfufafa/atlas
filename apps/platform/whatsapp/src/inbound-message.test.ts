@@ -5,8 +5,15 @@ import {
   inspectInboundWhatsAppMedia,
   isPrivateWhatsAppChat,
   isSelfWhatsAppChat,
+  parseInboundWhatsAppMessage,
   shouldHandleInboundMessage,
 } from "./inbound-message";
+
+const ME = {
+  id: "6281379292556:12@s.whatsapp.net",
+  lid: "236283431522503:0@lid",
+};
+const GROUP_JID = "120363042000000000@g.us";
 
 describe("inbound message routing", () => {
   test("accepts private phone and lid chats", () => {
@@ -142,5 +149,176 @@ describe("inbound message routing", () => {
     };
 
     expect(extractInboundText(payload as any)).toBe("hi from toJSON");
+  });
+
+  test("ignores unaddressed and unsupported-command group messages", () => {
+    expect(
+      parseInboundWhatsAppMessage(
+        {
+          key: {
+            participant: "628122222222@s.whatsapp.net",
+            remoteJid: GROUP_JID,
+          },
+          message: { conversation: "hello everyone" },
+        },
+        ME
+      )
+    ).toBeNull();
+    expect(
+      parseInboundWhatsAppMessage(
+        {
+          key: {
+            participant: "628122222222@s.whatsapp.net",
+            remoteJid: GROUP_JID,
+          },
+          message: { conversation: "/unknown" },
+        },
+        ME
+      )
+    ).toBeNull();
+  });
+
+  test("drops echoed outbound group commands before command handling", () => {
+    expect(
+      parseInboundWhatsAppMessage(
+        {
+          key: {
+            fromMe: true,
+            participant: ME.id,
+            remoteJid: GROUP_JID,
+          },
+          message: { conversation: "/clear" },
+        },
+        ME
+      )
+    ).toBeNull();
+  });
+
+  test("parses group mention metadata and normalizes sender identities", () => {
+    expect(
+      parseInboundWhatsAppMessage(
+        {
+          key: {
+            participant: "104784384290844:0@lid",
+            participantPn: "628122222222:8@s.whatsapp.net",
+            remoteJid: GROUP_JID,
+          },
+          message: {
+            extendedTextMessage: {
+              contextInfo: { mentionedJid: [ME.id] },
+              text: "@Atlas hello",
+            },
+          },
+        },
+        ME
+      )
+    ).toEqual({
+      fromMe: false,
+      isGroup: true,
+      jid: GROUP_JID,
+      me: ME,
+      mentionedJids: ["6281379292556@s.whatsapp.net"],
+      quotedParticipant: null,
+      quotedText: null,
+      senderJid: "628122222222@s.whatsapp.net",
+      senderJids: ["628122222222@s.whatsapp.net", "104784384290844@lid"],
+      senderPn: "628122222222:8@s.whatsapp.net",
+      text: "@Atlas hello",
+    });
+  });
+
+  test("keeps same-group quoted text for reply context", () => {
+    const parsed = parseInboundWhatsAppMessage(
+      {
+        key: {
+          participant: "628122222222@s.whatsapp.net",
+          remoteJid: GROUP_JID,
+        },
+        message: {
+          extendedTextMessage: {
+            contextInfo: {
+              participant: ME.lid,
+              quotedMessage: { conversation: "The earlier group report" },
+              remoteJid: GROUP_JID,
+            },
+            text: "please continue",
+          },
+        },
+      },
+      ME
+    );
+
+    expect(parsed?.quotedParticipant).toBe("236283431522503@lid");
+    expect(parsed?.quotedText).toBe("The earlier group report");
+  });
+
+  test("does not trigger or expose a quote attributed to another group", () => {
+    const message = {
+      extendedTextMessage: {
+        contextInfo: {
+          participant: ME.id,
+          quotedMessage: { conversation: "Secret from another group" },
+          remoteJid: "120363099999999999@g.us",
+        },
+        text: "continue",
+      },
+    };
+
+    expect(
+      parseInboundWhatsAppMessage(
+        {
+          key: {
+            participant: "628122222222@s.whatsapp.net",
+            remoteJid: GROUP_JID,
+          },
+          message,
+        },
+        ME
+      )
+    ).toBeNull();
+
+    const explicitlyAddressed = parseInboundWhatsAppMessage(
+      {
+        key: {
+          participant: "628122222222@s.whatsapp.net",
+          remoteJid: GROUP_JID,
+        },
+        message: {
+          extendedTextMessage: {
+            ...message.extendedTextMessage,
+            contextInfo: {
+              ...message.extendedTextMessage.contextInfo,
+              mentionedJid: [ME.id],
+            },
+            text: "@Atlas continue",
+          },
+        },
+      },
+      ME
+    );
+    expect(explicitlyAddressed?.quotedParticipant).toBeNull();
+    expect(explicitlyAddressed?.quotedText).toBeNull();
+  });
+
+  test("handles captionless group media only when explicitly replying to the bot", () => {
+    const parsed = parseInboundWhatsAppMessage(
+      {
+        key: {
+          participant: "628122222222@s.whatsapp.net",
+          remoteJid: GROUP_JID,
+        },
+        message: {
+          documentMessage: {
+            contextInfo: { participant: ME.id },
+            fileName: "report.pdf",
+            mimetype: "application/pdf",
+          },
+        },
+      },
+      ME
+    );
+
+    expect(parsed?.isGroup).toBe(true);
+    expect(parsed?.text).toBe("");
   });
 });

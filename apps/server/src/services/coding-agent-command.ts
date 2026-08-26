@@ -18,6 +18,7 @@ export interface CodingAgentCommandTemplate {
   command: string;
   harnessName: string;
   notes: string[];
+  providerPassthroughEnabled: boolean;
   spawnEnv: Record<string, string>;
 }
 
@@ -98,19 +99,27 @@ export async function buildCodingAgentCommandTemplate(
   options: {
     userConfig?: import("@atlas/core").UserConfig | null;
     profileModel?: string | null;
+    providerPassthroughEnabled?: boolean;
   } = {}
 ): Promise<CodingAgentCommandTemplate> {
   const escapedTask = shellEscape(taskPrompt.trim());
   const baseCommand = [harness.command, ...harness.args].join(" ");
-  const { spawn, routing } = await resolveCodingAgentSpawnBundle({
-    harnessKind: harness.kind,
-    profileModel: options.profileModel,
-    userConfig: options.userConfig,
-  });
-  const spawnEnv = spawn.env;
+  const providerPassthroughEnabled =
+    harness.kind !== "cursor_agent" &&
+    options.providerPassthroughEnabled !== false;
+  const bundle = providerPassthroughEnabled
+    ? await resolveCodingAgentSpawnBundle({
+        harnessKind: harness.kind,
+        profileModel: options.profileModel,
+        userConfig: options.userConfig,
+      })
+    : null;
+  const routing = bundle?.routing ?? null;
+  const spawnEnv = bundle?.spawn.env ?? {};
   const shared = {
     backend: harness.kind,
     harnessName: harness.name,
+    providerPassthroughEnabled,
     spawnEnv,
   };
 
@@ -178,10 +187,10 @@ export async function buildCodingAgentCommandTemplate(
   }
 
   if (harness.kind === "pi") {
-    const piProvider = routing.providerType
+    const piProvider = routing?.providerType
       ? mapAtlasProviderToPi(routing.providerType, routing.baseUrl)
       : null;
-    const piModel = routing.model
+    const piModel = routing?.model
       ? formatModelForHarness(
           "pi",
           routing.providerType ?? "openai",
@@ -205,7 +214,9 @@ export async function buildCodingAgentCommandTemplate(
       command: commandParts.join(" "),
       notes: [
         "pi runs in non-interactive print mode with -p <prompt>.",
-        "Provider and model are passed via --provider and --model flags from Atlas provider routing.",
+        providerPassthroughEnabled
+          ? "Provider and model are passed via --provider and --model flags from Atlas provider routing."
+          : "pi uses the provider and model configured by its host-native login.",
         "Run from the profile workspace cwd unless the user specifies another path inside it.",
       ],
     };
@@ -237,7 +248,9 @@ export function formatCodingAgentCommandContext(
     `Selected backend: ${template.harnessName} (${template.backend}).`,
     template.backend === "cursor_agent"
       ? "Run via the `bash` tool with cwd set to the repo checkout and codingAgent: true (or argv0 `agent`). Cursor uses host auth — Atlas does not merge provider credentials. Do not use `cd … && agent`."
-      : "Run the coding agent via the `bash` tool. Set `codingAgent: true` so Atlas merges spawn env for this harness, or rely on auto-detection when the command starts with the harness binary.",
+      : template.providerPassthroughEnabled
+        ? "Run the coding agent via the `bash` tool. Set `codingAgent: true` so Atlas merges spawn env for this harness, or rely on auto-detection when the command starts with the harness binary."
+        : "Run the coding agent via the `bash` tool with `codingAgent: true` (or start with the harness binary). It uses host-native login; Atlas does not inject organization provider credentials.",
     "",
     "```bash",
     template.command,

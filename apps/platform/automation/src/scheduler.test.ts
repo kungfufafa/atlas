@@ -9,14 +9,22 @@ import { AutomationWorkerScheduler } from "./scheduler";
 function createMockClient(
   overrides: Partial<{
     listAutomationSchedules: () => Promise<AutomationSchedule[]>;
-    runAutomationInternal: (id: string, fireId: string) => Promise<void>;
+    listSkillCuratorOrgs: AtlasClient["listSkillCuratorOrgs"];
+    runAutomationInternal: (
+      id: string,
+      fireId: string,
+      orgId: string
+    ) => Promise<void>;
+    runSkillCuratorDueInternal: AtlasClient["runSkillCuratorDueInternal"];
     getTimezone: () => Promise<string>;
   }> = {}
 ): AtlasClient {
   return {
     getTimezone: async () => "UTC",
     listAutomationSchedules: async () => [],
+    listSkillCuratorOrgs: async () => ({ orgs: [] }),
     runAutomationInternal: async () => {},
+    runSkillCuratorDueInternal: async () => ({ result: null }),
     ...overrides,
   } as unknown as AtlasClient;
 }
@@ -115,6 +123,44 @@ describe("AutomationWorkerScheduler", () => {
     await scheduler.start();
 
     expect(scheduler.getStatus().scheduledJobs).toBe(1);
+    scheduler.stop();
+  });
+
+  test("poll keeps schedule reload and curator failures isolated", async () => {
+    let reloads = 0;
+    const curatorCalls: string[] = [];
+    const client = createMockClient({
+      listAutomationSchedules: async () => {
+        reloads += 1;
+        return [];
+      },
+      listSkillCuratorOrgs: async () => ({
+        orgs: [
+          { id: "org_broken", lastRunAt: null },
+          { id: "org_safe", lastRunAt: null },
+        ],
+      }),
+      runSkillCuratorDueInternal: async (orgId) => {
+        curatorCalls.push(orgId);
+        if (orgId === "org_broken") {
+          throw new Error("curator failed");
+        }
+        return { result: null };
+      },
+    });
+
+    const scheduler = new AutomationWorkerScheduler(client);
+    await scheduler.start();
+    await scheduler.pollOnce();
+
+    expect(reloads).toBe(2);
+    expect(curatorCalls).toEqual([
+      "org_broken",
+      "org_safe",
+      "org_broken",
+      "org_safe",
+    ]);
+    expect(scheduler.getStatus().running).toBe(true);
     scheduler.stop();
   });
 });

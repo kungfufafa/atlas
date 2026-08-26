@@ -1,9 +1,47 @@
 import { describe, expect, test } from "bun:test";
 import {
+  canSelectSessionModel,
   isSupersededChatTurn,
   resolveProfileIdForWorkspaceProfiles,
   shouldResetChatOnWorkspaceChange,
 } from "./chat-page.shared";
+
+describe("session model selection access", () => {
+  test("allows drafts and authorized sessions but blocks non-owners and read-only chat", () => {
+    expect(
+      canSelectSessionModel({
+        canUpdateExistingSession: false,
+        hasSession: false,
+        readOnlySession: false,
+        workspaceReadOnly: false,
+      })
+    ).toBe(true);
+    expect(
+      canSelectSessionModel({
+        canUpdateExistingSession: true,
+        hasSession: true,
+        readOnlySession: false,
+        workspaceReadOnly: false,
+      })
+    ).toBe(true);
+    expect(
+      canSelectSessionModel({
+        canUpdateExistingSession: false,
+        hasSession: true,
+        readOnlySession: false,
+        workspaceReadOnly: false,
+      })
+    ).toBe(false);
+    expect(
+      canSelectSessionModel({
+        canUpdateExistingSession: true,
+        hasSession: true,
+        readOnlySession: false,
+        workspaceReadOnly: true,
+      })
+    ).toBe(false);
+  });
+});
 
 describe("workspace chat reset", () => {
   test("resets only when the workspace id actually changes", () => {

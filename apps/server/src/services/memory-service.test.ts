@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, test } from "bun:test";
+import { SYNTHETIC_SECRET_FIXTURES } from "@atlas/core/testing/synthetic-secret-fixtures";
 import { createSqliteDatabase, type SqliteDatabase } from "@atlas/db";
 import { MemoryService } from "./memory-service";
 
@@ -85,7 +86,7 @@ describe("MemoryService", () => {
 
     await expect(
       memoryService.writeMemory(orgId, {
-        content: "My secret token is sk-1234567890abcdef1234567890abcdef",
+        content: `My secret token is ${SYNTHETIC_SECRET_FIXTURES.openAiApiKey}`,
         ownerId: userId,
         scope: "user",
       })

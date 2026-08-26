@@ -1,21 +1,36 @@
 import type { ArtifactFile } from "@atlas/core/contract";
+import { ArtifactFolderCard } from "@/pages/files/files-artifact-folder-card";
+import type { ArtifactFolderEntry } from "@/pages/files/files-artifact-folders";
 import { ArtifactGridCard } from "@/pages/files/files-artifact-grid-card";
 
 export function ArtifactGridView({
   profileId,
+  folders,
   artifacts,
   deletePending,
+  showFullPath,
   onDelete,
+  onOpenFolder,
   onPreview,
 }: {
   profileId: string;
+  folders: ArtifactFolderEntry[];
   artifacts: ArtifactFile[];
   deletePending: boolean;
+  showFullPath: boolean;
   onDelete: (artifact: ArtifactFile) => void;
+  onOpenFolder: (prefix: string) => void;
   onPreview: (artifact: ArtifactFile) => void;
 }) {
   return (
     <ul className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-3">
+      {folders.map((folder) => (
+        <ArtifactFolderCard
+          folder={folder}
+          key={folder.prefix}
+          onOpen={onOpenFolder}
+        />
+      ))}
       {artifacts.map((artifact) => (
         <ArtifactGridCard
           artifact={artifact}
@@ -24,6 +39,7 @@ export function ArtifactGridView({
           onDelete={() => onDelete(artifact)}
           onPreview={() => onPreview(artifact)}
           profileId={profileId}
+          showFullPath={showFullPath}
         />
       ))}
     </ul>

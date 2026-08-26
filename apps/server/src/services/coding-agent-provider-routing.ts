@@ -1,4 +1,5 @@
 import {
+  defaultDiscoveryBaseUrl,
   defaultOllamaBaseUrl,
   normalizeProviderInstanceLabel,
   type ProviderInstance,
@@ -19,6 +20,16 @@ const DEFAULT_ANTHROPIC_BASE_URL = "https://api.anthropic.com";
 const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1";
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 const DEFAULT_DEEPSEEK_BASE_URL = "https://api.deepseek.com";
+
+const OPENAI_COMPATIBLE_HARNESS_PROVIDER_TYPES = [
+  "cloudflare",
+  "minimax",
+  "minimax_cn",
+  "openai_compatible",
+  "xai",
+  "zhipu",
+  "zhipu_cn",
+] as const satisfies readonly ProviderName[];
 
 export interface CodingAgentProviderRouting {
   active: boolean;
@@ -48,7 +59,7 @@ const CODEX_PROVIDER_TYPES = new Set<ProviderName>([
 const OPENCODE_PROVIDER_TYPES = new Set<ProviderName>([
   "openai",
   "openrouter",
-  "openai_compatible",
+  ...OPENAI_COMPATIBLE_HARNESS_PROVIDER_TYPES,
   "opencode_go",
   "deepseek",
   "cerebras",
@@ -60,7 +71,7 @@ const PI_PROVIDER_TYPES = new Set<ProviderName>([
   "anthropic",
   "openai",
   "openrouter",
-  "openai_compatible",
+  ...OPENAI_COMPATIBLE_HARNESS_PROVIDER_TYPES,
   "opencode_go",
   "deepseek",
   "cerebras",
@@ -127,12 +138,17 @@ export function getProviderApiBaseUrl(
     return (override ?? defaultOllamaBaseUrl(hostMode)).replace(/\/$/, "");
   }
 
-  if (instance.type === "openai_compatible") {
-    if (!override) {
-      throw new Error("OpenAI-compatible provider requires a base URL.");
+  if (
+    OPENAI_COMPATIBLE_HARNESS_PROVIDER_TYPES.includes(
+      instance.type as (typeof OPENAI_COMPATIBLE_HARNESS_PROVIDER_TYPES)[number]
+    )
+  ) {
+    const baseUrl = override ?? defaultDiscoveryBaseUrl(instance.type);
+    if (!baseUrl) {
+      throw new Error(`${instance.label} requires a base URL.`);
     }
 
-    return override.replace(/\/$/, "");
+    return baseUrl.replace(/\/$/, "");
   }
 
   if (instance.type === "opencode_go") {

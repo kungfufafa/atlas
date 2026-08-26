@@ -81,6 +81,28 @@ describe("SessionTurnRegistry", () => {
     expect(registry.isActive("session_1")).toBe(false);
   });
 
+  test("cancels only turns owned by the archived organization", () => {
+    const registry = new SessionTurnRegistry();
+    const archivedAbort = new AbortController();
+    const activeAbort = new AbortController();
+    registry.beginTurn("session_archived", "org_archived");
+    registry.beginTurn("session_active", "org_active");
+    registry.attachAbort("session_archived", archivedAbort);
+    registry.attachAbort("session_active", activeAbort);
+
+    expect(registry.cancelTurnsForOrg("org_archived")).toEqual([
+      "session_archived",
+    ]);
+    expect(archivedAbort.signal.aborted).toBe(true);
+    expect(activeAbort.signal.aborted).toBe(false);
+    expect(registry.isActive("session_archived")).toBe(false);
+    expect(registry.isActive("session_active")).toBe(true);
+
+    const lateAbort = new AbortController();
+    registry.attachAbort("session_archived", lateAbort);
+    expect(lateAbort.signal.aborted).toBe(true);
+  });
+
   test("endTurn clears state and later subscribe returns null", () => {
     const registry = new SessionTurnRegistry();
     registry.beginTurn("session_1");

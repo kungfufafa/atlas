@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  isOpenRouterModelDeprecated,
   isOpenRouterModelFree,
   mergeOpenRouterModelOptions,
   normalizeOpenRouterModels,
@@ -50,6 +51,22 @@ describe("isOpenRouterModelFree", () => {
     expect(
       isOpenRouterModelFree({ completion: "0.0000025", prompt: "0" })
     ).toBe(false);
+  });
+});
+
+describe("isOpenRouterModelDeprecated", () => {
+  test("keeps OpenRouter far-future stealth sentinels live", () => {
+    expect(isOpenRouterModelDeprecated("2098-12-31")).toBe(false);
+  });
+
+  test("still marks real sunsets and malformed expiration values deprecated", () => {
+    expect(isOpenRouterModelDeprecated("2027-01-01")).toBe(true);
+    expect(isOpenRouterModelDeprecated("unknown")).toBe(true);
+  });
+
+  test("keeps models without an expiration live", () => {
+    expect(isOpenRouterModelDeprecated(null)).toBe(false);
+    expect(isOpenRouterModelDeprecated(undefined)).toBe(false);
   });
 });
 
@@ -108,6 +125,21 @@ describe("normalizeOpenRouterModels", () => {
     const owl = rows.find((row) => row.id === "openrouter/owl-alpha");
 
     expect(owl?.deprecated).toBe(true);
+  });
+
+  test("does not mark a live stealth model deprecated for the 2098 sentinel", () => {
+    const rows = normalizeOpenRouterModels({
+      data: [
+        {
+          expiration_date: "2098-12-31",
+          id: "stealth/ox-alpha",
+          name: "Ox Alpha",
+          pricing: { completion: "0", prompt: "0" },
+        },
+      ],
+    });
+
+    expect(rows[0]?.deprecated).toBe(false);
   });
 });
 

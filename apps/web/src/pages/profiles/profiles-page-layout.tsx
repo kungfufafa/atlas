@@ -1,7 +1,10 @@
-import { Copy01Icon, Delete02Icon } from "hugeicons-react";
+import { Copy01Icon, Delete02Icon, Upload04Icon } from "hugeicons-react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { ProfileAdminPlusButton } from "@/components/ProfileAdminPlusButton";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
+import { ExportProfileButton } from "@/components/profiles/ExportProfileButton";
+import { ProfileImportDialog } from "@/components/profiles/ProfileImportDialog";
 import { SkillProposalsPanel } from "@/components/profiles/SkillProposalsPanel";
 import { SoulTab } from "@/components/soul-tools/SoulTab";
 import { Button } from "@/components/ui/button";
@@ -47,6 +50,7 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
     setDetailTab,
     handleSelectProfile,
     setCreateOpen,
+    setSelectedId,
     handleCloneProfile,
     openDeleteDialog,
   } = state;
@@ -64,6 +68,7 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
     ? () => navigateToNewChat(superAgentProfileId)
     : undefined;
   const pageHeaderActions = usePageHeaderActions();
+  const [importOpen, setImportOpen] = useState(false);
 
   if (profilesLoading && profiles.length === 0) {
     return <PageState message="Loading profiles…" />;
@@ -117,9 +122,14 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
             pageHeaderActions
           )
         : null}
-      {pageHeaderActions && selectedId && detail && !detail.isSuper
+      {pageHeaderActions &&
+      selectedId &&
+      detail &&
+      canCreateProfile &&
+      !detail.isSuper
         ? createPortal(
             <>
+              <ExportProfileButton disabled={busy} profileId={selectedId} />
               <Button
                 aria-label="Clone profile"
                 className="hidden self-center lg:inline-flex"
@@ -204,16 +214,32 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
             </Select>
 
             {canCreateProfile ? (
-              <ProfileAdminPlusButton
-                disabled={busy}
-                label="New profile"
-                onClick={() => setCreateOpen(true)}
-              />
+              <div className="flex items-center gap-1">
+                <Button
+                  aria-label="Import profile"
+                  disabled={busy}
+                  onClick={() => setImportOpen(true)}
+                  size="icon-sm"
+                  title="Import profile"
+                  type="button"
+                  variant="ghost"
+                >
+                  <Upload04Icon aria-hidden className="size-4" />
+                </Button>
+                <ProfileAdminPlusButton
+                  disabled={busy}
+                  label="New profile"
+                  onClick={() => setCreateOpen(true)}
+                />
+              </div>
             ) : null}
           </div>
 
           {selectedId && detail && !detail.isSuper ? (
             <div className="flex items-center justify-end gap-2 lg:hidden">
+              {canCreateProfile ? (
+                <ExportProfileButton disabled={busy} profileId={selectedId} />
+              ) : null}
               <Button
                 aria-label="Clone profile"
                 disabled={busy}
@@ -245,12 +271,26 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
             <div className={profilePanelHeaderClass}>
               <span className={profilePanelHeaderLabelClass}>Profiles</span>
               {canCreateProfile ? (
-                <ProfileAdminPlusButton
-                  disabled={busy}
-                  label="New profile"
-                  onClick={() => setCreateOpen(true)}
-                  tooltipSide="top"
-                />
+                <div className="flex items-center gap-1">
+                  <Button
+                    aria-label="Import profile"
+                    className="text-muted-foreground hover:text-foreground"
+                    disabled={busy}
+                    onClick={() => setImportOpen(true)}
+                    size="icon-sm"
+                    title="Import profile"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <Upload04Icon aria-hidden className="size-4" />
+                  </Button>
+                  <ProfileAdminPlusButton
+                    disabled={busy}
+                    label="New profile"
+                    onClick={() => setCreateOpen(true)}
+                    tooltipSide="top"
+                  />
+                </div>
               ) : null}
             </div>
 
@@ -332,6 +372,11 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
           </div>
         </div>
       </section>
+      <ProfileImportDialog
+        onImported={setSelectedId}
+        onOpenChange={setImportOpen}
+        open={importOpen}
+      />
     </div>
   );
 }

@@ -68,6 +68,42 @@ describe("prepareChannelOrgContext", () => {
     }
   });
 
+  test("does not redirect a stale selection into the only remaining org", async () => {
+    let saved: string | undefined;
+    const remainingOrg = orgs[1]!;
+
+    const prompted = await prepareChannelOrgContext({
+      getSelectedOrgId: () => "org_a",
+      listOrgs: async () => ({ orgs: [remainingOrg] }),
+      saveSelectedOrgId: async (orgId) => {
+        saved = orgId;
+      },
+    });
+
+    expect(prompted).toEqual({
+      message: formatOrgSelectionPrompt([remainingOrg], "org_a"),
+      status: "prompt",
+    });
+    expect(saved).toBeUndefined();
+
+    const selected = await prepareChannelOrgContext({
+      getSelectedOrgId: () => "org_a",
+      listOrgs: async () => ({ orgs: [remainingOrg] }),
+      saveSelectedOrgId: async (orgId) => {
+        saved = orgId;
+      },
+      text: "beta",
+    });
+
+    expect(selected).toEqual({
+      justSelected: true,
+      orgId: "org_b",
+      orgName: "Beta",
+      status: "ready",
+    });
+    expect(saved).toBe("org_b");
+  });
+
   test("accepts numeric selection replies", async () => {
     let saved: string | undefined;
 

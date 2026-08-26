@@ -3,6 +3,7 @@ import type { DatabaseAdapter } from "@atlas/db";
 import {
   inferCodingAgentHarnessKind,
   isCodingAgentCommand,
+  loadCodingAgentProviderPassthroughForOrg,
   loadCodingAgentWorkspaceSettings,
   resolveCodingAgentHarness,
 } from "./coding-agent-harness-service";
@@ -60,17 +61,33 @@ export async function enrichCodingAgentBashInput(
     context.profileId !== undefined && context.profileId.length > 0
       ? await resolveProfileModelId(db, context.profileId)
       : null;
+  const orgId = context.orgId?.trim() || null;
+  const providerPassthroughEnabled = orgId
+    ? await loadCodingAgentProviderPassthroughForOrg(db, orgId)
+    : true;
   const harness = await resolveCodingAgentHarness(db, inferredKind, {
     profileModel,
+    providerPassthroughEnabled,
+    scopeKey: orgId,
     userConfig,
   });
+  if (!providerPassthroughEnabled || harness.kind === "cursor_agent") {
+    return {
+      ...record,
+      codingAgent: true,
+      codingAgentNativeLogin: true,
+    };
+  }
   const { spawn } = await resolveCodingAgentSpawnBundle({
     harnessKind: harness.kind,
     profileModel,
     userConfig,
   });
   const explicitEnv = readStringRecord(record.env);
-  const mergedEnv = mergeCodingAgentSpawnEnv(process.env, spawn.env, {
+  // Keep the enriched tool input limited to deliberate overrides. The child
+  // process inherits safe host env inside runBash; copying process.env here
+  // would expose unrelated server secrets to tool-call logging and history.
+  const mergedEnv = mergeCodingAgentSpawnEnv({}, spawn.env, {
     callerEnv: explicitEnv,
     protectCredentialKeys: spawn.env && Object.keys(spawn.env).length > 0,
   });

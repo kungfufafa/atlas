@@ -1,3 +1,7 @@
+import {
+  type DelimitedTextDelimiter,
+  parseDelimitedText,
+} from "../../delimited-text";
 import type { ArtifactFileTarget, ArtifactPreviewer } from "../previewer";
 import {
   PREVIEW_VERSION,
@@ -11,88 +15,61 @@ import {
 
 const DEFAULT_MAX_ROWS = 500;
 const DEFAULT_MAX_COLS = 50;
+const DEFAULT_MAX_CELL_BYTES = 64 * 1024;
 
-function parseCsvLine(line: string, delimiter = ","): string[] {
-  const result: string[] = [];
-  let current = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (char === delimiter && !inQuotes) {
-      result.push(current.trim());
-      current = "";
-    } else {
-      current += char;
-    }
+function boundedPreviewLimit(requested: number, maximum: number): number {
+  if (!Number.isFinite(requested)) {
+    return maximum;
   }
-  result.push(current.trim());
-  return result;
+  return Math.min(Math.max(Math.trunc(requested), 0), maximum);
+}
+
+function coerceDelimitedCell(value: string): string | number | boolean | null {
+  if (value === "") {
+    return null;
+  }
+  if (value.trim() !== value) {
+    return value;
+  }
+  if (value.toLowerCase() === "true") {
+    return true;
+  }
+  if (value.toLowerCase() === "false") {
+    return false;
+  }
+  const numberValue = Number(value);
+  if (
+    !(Number.isNaN(numberValue) || value.startsWith("0")) &&
+    value.length < 15
+  ) {
+    return numberValue;
+  }
+  return value;
 }
 
 function parseCsvBuffer(
   buffer: Buffer,
   maxRows = DEFAULT_MAX_ROWS,
-  maxCols = DEFAULT_MAX_COLS
+  maxCols = DEFAULT_MAX_COLS,
+  delimiterOverride?: DelimitedTextDelimiter
 ): SpreadsheetSheetData {
   const text = buffer.toString("utf8");
-  const rawLines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-
-  // Auto-detect delimiter
-  const firstLine = rawLines[0] || "";
-  let delimiter = ",";
-  const commaCount = (firstLine.match(/,/g) || []).length;
-  const semiCount = (firstLine.match(/;/g) || []).length;
-  const tabCount = (firstLine.match(/\t/g) || []).length;
-  if (semiCount > commaCount && semiCount > tabCount) {
-    delimiter = ";";
-  } else if (tabCount > commaCount && tabCount > semiCount) {
-    delimiter = "\t";
-  }
-
-  const rowsToProcess = rawLines.slice(0, maxRows);
-  const data: (string | number | boolean | null)[][] = [];
-  let maxColCount = 0;
-
-  for (const line of rowsToProcess) {
-    const parsed = parseCsvLine(line, delimiter).slice(0, maxCols);
-    const typedRow = parsed.map((val) => {
-      if (val === "") {
-        return null;
-      }
-      if (val.toLowerCase() === "true") {
-        return true;
-      }
-      if (val.toLowerCase() === "false") {
-        return false;
-      }
-      const num = Number(val);
-      if (!(Number.isNaN(num) || val.startsWith("0")) && val.length < 15) {
-        return num;
-      }
-      return val;
-    });
-    data.push(typedRow);
-    if (typedRow.length > maxColCount) {
-      maxColCount = typedRow.length;
-    }
-  }
+  const parsed = parseDelimitedText(text, {
+    delimiter: delimiterOverride,
+    maxCellBytes: DEFAULT_MAX_CELL_BYTES,
+    maxColumns: boundedPreviewLimit(maxCols, DEFAULT_MAX_COLS),
+    maxRows: boundedPreviewLimit(maxRows, DEFAULT_MAX_ROWS),
+  });
+  const data = parsed.rows.map((row) => row.map(coerceDelimitedCell));
 
   const headers = data.length > 0 ? (data[0].map(String) as string[]) : [];
 
   return {
-    columnCount: maxColCount,
+    columnCount: parsed.columnCount,
     data,
     headers,
     name: "Sheet1",
-    rowCount: rawLines.length,
+    rowCount: parsed.rowCount,
   };
 }
 
@@ -143,10 +120,12 @@ export class SpreadsheetPreviewer implements ArtifactPreviewer {
     return (
       lowerName.endsWith(".xlsx") ||
       lowerName.endsWith(".csv") ||
+      lowerName.endsWith(".tsv") ||
       lowerName.endsWith(".xls") ||
       artifact.mimeType ===
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
       artifact.mimeType === "text/csv" ||
+      artifact.mimeType === "text/tab-separated-values" ||
       artifact.mimeType === "application/vnd.ms-excel"
     );
   }
@@ -157,8 +136,14 @@ export class SpreadsheetPreviewer implements ArtifactPreviewer {
     _context: PreviewContext
   ): Promise<PreviewMetadata> {
     const lowerName = artifact.filename.toLowerCase();
-    const isCsv =
-      lowerName.endsWith(".csv") || artifact.mimeType === "text/csv";
+    const isDelimited =
+      lowerName.endsWith(".csv") ||
+      lowerName.endsWith(".tsv") ||
+      artifact.mimeType === "text/csv" ||
+      artifact.mimeType === "text/tab-separated-values";
+    const isTsv =
+      lowerName.endsWith(".tsv") ||
+      artifact.mimeType === "text/tab-separated-values";
     const isLegacyXls =
       lowerName.endsWith(".xls") && !lowerName.endsWith(".xlsx");
 
@@ -174,8 +159,13 @@ export class SpreadsheetPreviewer implements ArtifactPreviewer {
       };
     }
 
-    if (isCsv) {
-      const parsed = parseCsvBuffer(buffer, 5);
+    if (isDelimited) {
+      const parsed = parseCsvBuffer(
+        buffer,
+        5,
+        DEFAULT_MAX_COLS,
+        isTsv ? "\t" : undefined
+      );
       return {
         metadata: {
           columnCount: parsed.columnCount,
@@ -185,7 +175,7 @@ export class SpreadsheetPreviewer implements ArtifactPreviewer {
           sheetNames: ["Sheet1"],
         },
         status: "available",
-        summary: `CSV · 1 sheet · ${parsed.rowCount} rows`,
+        summary: `${isTsv ? "TSV" : "CSV"} · 1 sheet · ${parsed.rowCount} rows`,
         type: "spreadsheet",
       };
     }
@@ -236,8 +226,14 @@ export class SpreadsheetPreviewer implements ArtifactPreviewer {
     context: PreviewContext
   ): Promise<SpreadsheetPreview> {
     const lowerName = artifact.filename.toLowerCase();
-    const isCsv =
-      lowerName.endsWith(".csv") || artifact.mimeType === "text/csv";
+    const isDelimited =
+      lowerName.endsWith(".csv") ||
+      lowerName.endsWith(".tsv") ||
+      artifact.mimeType === "text/csv" ||
+      artifact.mimeType === "text/tab-separated-values";
+    const isTsv =
+      lowerName.endsWith(".tsv") ||
+      artifact.mimeType === "text/tab-separated-values";
     const isLegacyXls =
       lowerName.endsWith(".xls") && !lowerName.endsWith(".xlsx");
     const targetPath = artifact.path || artifact.filename;
@@ -272,10 +268,12 @@ export class SpreadsheetPreviewer implements ArtifactPreviewer {
       };
     }
 
-    if (isCsv) {
+    if (isDelimited) {
       const activeSheet = parseCsvBuffer(
         buffer,
-        options.maxLines ?? DEFAULT_MAX_ROWS
+        options.maxLines ?? DEFAULT_MAX_ROWS,
+        DEFAULT_MAX_COLS,
+        isTsv ? "\t" : undefined
       );
       return {
         activeSheet,
@@ -289,7 +287,9 @@ export class SpreadsheetPreviewer implements ArtifactPreviewer {
           totalColumns: activeSheet.columnCount,
           totalRows: activeSheet.rowCount,
         },
-        mimeType: artifact.mimeType || "text/csv",
+        mimeType:
+          artifact.mimeType ||
+          (isTsv ? "text/tab-separated-values" : "text/csv"),
         previewVersion: PREVIEW_VERSION,
         revision: artifact.revision,
         sheetNames: ["Sheet1"],

@@ -18,8 +18,10 @@ export interface AnthropicProviderOptions {
   /** Injected in tests to mock HTTP without touching global fetch. */
   fetch?: typeof fetch;
   model?: string;
+  providerInstanceId?: string;
   providerLabel?: string;
   providerName?: ProviderName;
+  providerReplayRevision?: string;
 }
 
 function createAnthropicClient(
@@ -80,6 +82,8 @@ export function createAnthropicProvider(
             messages: input.messages,
             model,
             provider: name,
+            providerInstanceId: options.providerInstanceId,
+            providerReplayRevision: options.providerReplayRevision,
             signal: input.signal,
             stream: false,
             system: input.system,
@@ -135,6 +139,8 @@ export function createAnthropicProvider(
             messages: input.messages,
             model,
             provider: name,
+            providerInstanceId: options.providerInstanceId,
+            providerReplayRevision: options.providerReplayRevision,
             signal: input.signal,
             stream: true,
             system: input.system,

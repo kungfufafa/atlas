@@ -1,4 +1,8 @@
 import type { ProviderName, UserConfig } from "@atlas/core";
+import {
+  apiKeyEnvVarForProvider,
+  USER_PROVIDER_NAMES,
+} from "@atlas/core/provider-resolution";
 import type { StoredCodingAgentHarnessKind } from "@atlas/db";
 import { toOpenCodeGoApiModelId } from "../providers/models";
 import {
@@ -11,6 +15,16 @@ import {
   type CodingAgentProviderRouting,
   resolveCodingAgentProviderRouting,
 } from "./coding-agent-provider-routing";
+
+const OPENAI_COMPATIBLE_MODEL_ID_PROVIDERS = new Set<ProviderName>([
+  "cloudflare",
+  "minimax",
+  "minimax_cn",
+  "openai_compatible",
+  "xai",
+  "zhipu",
+  "zhipu_cn",
+]);
 
 export function normalizeCodingAgentModel(
   model: string | null | undefined
@@ -47,6 +61,10 @@ export function formatModelForHarness(
   }
 
   if (providerType === "openrouter") {
+    return model.trim();
+  }
+
+  if (OPENAI_COMPATIBLE_MODEL_ID_PROVIDERS.has(providerType)) {
     return model.trim();
   }
 
@@ -105,7 +123,12 @@ export interface CodingAgentSpawnEnvResult {
   env: Record<string, string>;
 }
 
-export const CODING_AGENT_CREDENTIAL_ENV_KEYS = [
+const PROVIDER_API_KEY_ENV_KEYS = USER_PROVIDER_NAMES.flatMap((provider) => {
+  const envKey = apiKeyEnvVarForProvider(provider);
+  return envKey ? [envKey] : [];
+});
+
+const CODING_AGENT_PROVIDER_OVERRIDE_ENV_KEYS: readonly string[] = [
   "ANTHROPIC_BASE_URL",
   "ANTHROPIC_API_KEY",
   "ANTHROPIC_AUTH_TOKEN",
@@ -117,10 +140,32 @@ export const CODING_AGENT_CREDENTIAL_ENV_KEYS = [
   "OPENAI_BASE_URL",
   "OPENAI_API_KEY",
   "OPENAI_MODEL",
+  "CLOUDFLARE_ACCOUNT_ID",
+  // DeepSeek is intentionally not auto-selected from env by Atlas, but coding
+  // agent CLIs can still consume this conventional credential directly.
+  "DEEPSEEK_API_KEY",
+  "GOOGLE_API_KEY",
+  "GOOGLE_GENERATIVE_AI_API_KEY",
+  ...PROVIDER_API_KEY_ENV_KEYS,
+];
+
+const CODING_AGENT_CONFIG_LOCATION_ENV_KEYS = [
   "CODEX_HOME",
   "XDG_CONFIG_HOME",
   "PI_CODING_AGENT_DIR",
 ] as const;
+
+export const CODING_AGENT_CREDENTIAL_ENV_KEYS: readonly string[] = [
+  ...CODING_AGENT_PROVIDER_OVERRIDE_ENV_KEYS,
+  ...CODING_AGENT_CONFIG_LOCATION_ENV_KEYS,
+];
+
+const CODING_AGENT_CREDENTIAL_ENV_KEY_SET = new Set(
+  CODING_AGENT_CREDENTIAL_ENV_KEYS
+);
+const CODING_AGENT_PROVIDER_OVERRIDE_ENV_KEY_SET = new Set(
+  CODING_AGENT_PROVIDER_OVERRIDE_ENV_KEYS
+);
 
 /**
  * Maps a Atlas provider type to the pi CLI provider name.
@@ -134,13 +179,19 @@ export const CODING_AGENT_CREDENTIAL_ENV_KEYS = [
 const PI_PROVIDER_NAME: Partial<Record<ProviderName, string>> = {
   anthropic: "anthropic",
   cerebras: "cerebras",
+  cloudflare: "atlas",
   deepseek: "deepseek",
   fireworks: "fireworks",
+  minimax: "atlas",
+  minimax_cn: "atlas",
   ollama: "ollama",
   openai: "openai",
   openai_compatible: "atlas",
   opencode_go: "opencode",
   openrouter: "openrouter",
+  xai: "atlas",
+  zhipu: "atlas",
+  zhipu_cn: "atlas",
 };
 
 const PI_DEFAULT_BASE_URLS: Partial<Record<ProviderName, string>> = {
@@ -320,17 +371,26 @@ export function mergeCodingAgentSpawnEnv(
   options: {
     protectCredentialKeys?: boolean;
     callerEnv?: Record<string, string>;
+    scrubCredentialKeys?: boolean;
   } = {}
 ): NodeJS.ProcessEnv {
+  const inheritedEnv = { ...baseEnv };
   const callerEnv = options.callerEnv ?? {};
   const merged: Record<string, string> = { ...spawnEnv };
 
+  if (options.scrubCredentialKeys) {
+    for (const key of CODING_AGENT_PROVIDER_OVERRIDE_ENV_KEYS) {
+      delete inheritedEnv[key];
+      delete merged[key];
+    }
+  }
+
   for (const [key, value] of Object.entries(callerEnv)) {
     if (
-      options.protectCredentialKeys &&
-      CODING_AGENT_CREDENTIAL_ENV_KEYS.includes(
-        key as (typeof CODING_AGENT_CREDENTIAL_ENV_KEYS)[number]
-      )
+      (options.protectCredentialKeys &&
+        CODING_AGENT_CREDENTIAL_ENV_KEY_SET.has(key)) ||
+      (options.scrubCredentialKeys &&
+        CODING_AGENT_PROVIDER_OVERRIDE_ENV_KEY_SET.has(key))
     ) {
       continue;
     }
@@ -338,7 +398,7 @@ export function mergeCodingAgentSpawnEnv(
     merged[key] = value;
   }
 
-  return { ...baseEnv, ...merged };
+  return { ...inheritedEnv, ...merged };
 }
 
 export function redactSpawnEnvForPrompt(

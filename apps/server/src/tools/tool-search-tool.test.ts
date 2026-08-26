@@ -24,6 +24,11 @@ describe("tool_search tool", () => {
       name: "create_profile",
       run: async () => ({}),
     },
+    {
+      description: "Super agent profile update",
+      name: "update_profile",
+      run: async () => ({}),
+    },
   ];
 
   test("searches tools by keyword accurately", () => {
@@ -45,8 +50,10 @@ describe("tool_search tool", () => {
     const superResults = searchToolCatalog(dummyTools, "profile", {
       isSuperAgent: true,
     });
-    expect(superResults.length).toBe(1);
-    expect(superResults[0]?.name).toBe("create_profile");
+    expect(superResults.map((tool) => tool.name).sort()).toEqual([
+      "create_profile",
+      "update_profile",
+    ]);
   });
 
   test("createToolSearchTool executes and returns structured search results and activates tools", async () => {

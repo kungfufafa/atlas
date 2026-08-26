@@ -12,6 +12,7 @@ import os from "node:os";
 import path from "node:path";
 import { readLineageMeta } from "../artifact-lineage";
 import { convertDocxToMarkdown } from "../docx-text";
+import { withProfileSoulMutationLock } from "../soul/mutation-lock";
 import {
   PathGuardError,
   runDeleteFile,
@@ -24,6 +25,14 @@ import {
 
 const PROFILE_CONTEXT = { orgId: "org_test", profileId: "profile_test" };
 const originalConfigDir = process.env.ATLAS_CONFIG_DIR;
+
+function deferred(): { promise: Promise<void>; resolve: () => void } {
+  let resolvePromise: (() => void) | undefined;
+  const promise = new Promise<void>((resolve) => {
+    resolvePromise = resolve;
+  });
+  return { promise, resolve: () => resolvePromise?.() };
+}
 
 describe("file builtin tools", () => {
   let tempDir = "";
@@ -71,6 +80,40 @@ describe("file builtin tools", () => {
 
     expect(result.path).toBe(path.join(await realpath(tempDir), "notes.txt"));
     expect(await readFile(result.path, "utf8")).toBe("relative");
+  });
+
+  test("write_file waits for the shared profile soul mutation lock", async () => {
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-write-lock-"));
+    const targetPath = path.join(tempDir, "SOUL.md");
+    await writeFile(targetPath, "original", "utf8");
+    const entered = deferred();
+    const release = deferred();
+    const holder = withProfileSoulMutationLock(
+      PROFILE_CONTEXT.orgId,
+      PROFILE_CONTEXT.profileId,
+      async () => {
+        entered.resolve();
+        await release.promise;
+      }
+    );
+    await entered.promise;
+
+    let finished = false;
+    const write = runWriteFile(
+      { content: "updated", path: targetPath },
+      PROFILE_CONTEXT,
+      { workspaceRoot: tempDir }
+    ).then((result) => {
+      finished = true;
+      return result;
+    });
+    await Promise.resolve();
+
+    expect(finished).toBe(false);
+    expect(await readFile(targetPath, "utf8")).toBe("original");
+    release.resolve();
+    await Promise.all([holder, write]);
+    expect(await readFile(targetPath, "utf8")).toBe("updated");
   });
 
   test("write_file adds a date suffix when an artifact filename already exists", async () => {
@@ -227,6 +270,38 @@ describe("file builtin tools", () => {
     expect(result.replacements).toBe(1);
     expect(result.fuzzyMatches).toBe(0);
     expect(await readFile(targetPath, "utf8")).toBe("hello new world");
+  });
+
+  test("edit_file holds the soul lock from read through write", async () => {
+    tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-edit-lock-"));
+    const targetPath = path.join(tempDir, "MEMORY.md");
+    await writeFile(targetPath, "old", "utf8");
+    const entered = deferred();
+    const release = deferred();
+    const holder = withProfileSoulMutationLock(
+      PROFILE_CONTEXT.orgId,
+      PROFILE_CONTEXT.profileId,
+      async () => {
+        entered.resolve();
+        await release.promise;
+      }
+    );
+    await entered.promise;
+
+    const edit = runEditFile(
+      {
+        edits: [{ newText: "edited", oldText: "old" }],
+        path: targetPath,
+      },
+      PROFILE_CONTEXT,
+      { workspaceRoot: tempDir }
+    );
+    await Promise.resolve();
+    await writeFile(targetPath, "prefix old", "utf8");
+    release.resolve();
+
+    await Promise.all([holder, edit]);
+    expect(await readFile(targetPath, "utf8")).toBe("prefix edited");
   });
 
   test("edit_file resolves relative paths from profile workspace", async () => {

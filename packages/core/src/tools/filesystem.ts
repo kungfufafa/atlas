@@ -9,6 +9,7 @@ import {
 import path from "node:path";
 import { z } from "zod";
 import type { ToolContext, ToolDefinition } from "../contract";
+import { withProfileSoulMutationLock } from "../soul/mutation-lock";
 import { getProfileSoulDir } from "../soul/resolve";
 import {
   refuseProfileSkillMarkdownWrite,
@@ -328,6 +329,17 @@ export async function runCopyFile(
   context: ToolContext,
   options: FileToolRunOptions = {}
 ): Promise<CopyFileOutput> {
+  const { orgId, profileId } = requireProfileScope(context);
+  return await withProfileSoulMutationLock(orgId, profileId, () =>
+    runCopyFileUnlocked(input, context, options)
+  );
+}
+
+async function runCopyFileUnlocked(
+  input: unknown,
+  context: ToolContext,
+  options: FileToolRunOptions
+): Promise<CopyFileOutput> {
   const parsed = parseToolInput(copyFileInputSchema, input);
   const guardOptions = buildFileGuardOptions(context, options);
 
@@ -413,6 +425,17 @@ export async function runMoveFile(
   context: ToolContext,
   options: FileToolRunOptions = {}
 ): Promise<MoveFileOutput> {
+  const { orgId, profileId } = requireProfileScope(context);
+  return await withProfileSoulMutationLock(orgId, profileId, () =>
+    runMoveFileUnlocked(input, context, options)
+  );
+}
+
+async function runMoveFileUnlocked(
+  input: unknown,
+  context: ToolContext,
+  options: FileToolRunOptions
+): Promise<MoveFileOutput> {
   const parsed = parseToolInput(moveFileInputSchema, input);
   const guardOptions = buildFileGuardOptions(context, options);
 
@@ -493,6 +516,17 @@ export async function runCreateDirectory(
   input: unknown,
   context: ToolContext,
   options: FileToolRunOptions = {}
+): Promise<CreateDirectoryOutput> {
+  const { orgId, profileId } = requireProfileScope(context);
+  return await withProfileSoulMutationLock(orgId, profileId, () =>
+    runCreateDirectoryUnlocked(input, context, options)
+  );
+}
+
+async function runCreateDirectoryUnlocked(
+  input: unknown,
+  context: ToolContext,
+  options: FileToolRunOptions
 ): Promise<CreateDirectoryOutput> {
   const parsed = parseToolInput(createDirectoryInputSchema, input);
   const guardOptions = buildFileGuardOptions(context, options);

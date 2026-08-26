@@ -88,6 +88,7 @@ function renderTextContent({
         <SafeMarkdownPreview
           className="artifact-canvas-markdown leading-7"
           content={content}
+          showTableOfContents
           streaming={streaming}
         />
       </div>

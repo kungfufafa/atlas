@@ -54,6 +54,8 @@ describe("composeAgentBrowserCapabilityPrompt", () => {
     expect(prompt).toContain("/skill agent-browser");
     expect(prompt).toContain("screenshot artifacts/");
     expect(prompt).toContain("web_fetch");
+    expect(prompt).toContain("AGENT_BROWSER_EXECUTABLE_PATH");
+    expect(prompt).toContain("AGENT_BROWSER_ARGS");
   });
 
   test("returns empty string when agent-browser is not assigned", () => {

@@ -6,6 +6,7 @@ import {
   redactStringValue,
 } from "./secret-redaction";
 import { SecretScanner } from "./secret-scanner";
+import { SYNTHETIC_SECRET_FIXTURES } from "./testing/synthetic-secret-fixtures";
 
 describe("Secret Redaction & Scanner", () => {
   it("detects sensitive key names case-insensitively", () => {
@@ -55,14 +56,12 @@ describe("Secret Redaction & Scanner", () => {
       "Request failed with header: Bearer [REDACTED]"
     );
 
-    const textWithKey =
-      "Connected to postgresql://user123:secretPassword456@db.prod.internal:5432/atlas";
+    const textWithKey = `Connected to ${SYNTHETIC_SECRET_FIXTURES.databaseUri}`;
     expect(redactStringValue(textWithKey)).toBe(
-      "Connected to postgresql://user123:[REDACTED]@db.prod.internal:5432/atlas"
+      "Connected to postgresql://atlas_fixture:[REDACTED]@db.invalid:5432/atlas"
     );
 
-    const privateKeyBlock =
-      "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEA0...\n-----END RSA PRIVATE KEY-----";
+    const privateKeyBlock = SYNTHETIC_SECRET_FIXTURES.rsaPrivateKey;
     expect(redactStringValue(privateKeyBlock)).toBe("[REDACTED PRIVATE KEY]");
   });
 
@@ -71,7 +70,7 @@ describe("Secret Redaction & Scanner", () => {
       "Failed connecting with password=secretPassword999"
     );
     const topError = new Error(
-      "Provider rejected sk-abcdefghijklmnopqrstuvwxyz12345"
+      `Provider rejected ${SYNTHETIC_SECRET_FIXTURES.openAiApiKey}`
     );
     topError.cause = innerError;
     (topError as unknown as Record<string, unknown>).apiKey = "exposed-api-key";
@@ -79,10 +78,12 @@ describe("Secret Redaction & Scanner", () => {
     const sanitized = redactSensitiveData(topError);
 
     expect(sanitized.message).not.toContain(
-      "sk-abcdefghijklmnopqrstuvwxyz12345"
+      SYNTHETIC_SECRET_FIXTURES.openAiApiKey
     );
     expect(sanitized.message).toContain(REDACTED_MARKER);
-    expect(sanitized.stack).not.toContain("sk-abcdefghijklmnopqrstuvwxyz12345");
+    expect(sanitized.stack).not.toContain(
+      SYNTHETIC_SECRET_FIXTURES.openAiApiKey
+    );
     expect((sanitized as unknown as Record<string, unknown>).apiKey).toBe(
       REDACTED_MARKER
     );
@@ -96,8 +97,8 @@ describe("Secret Redaction & Scanner", () => {
 
     const leakedContent = `
       export const config = {
-        key: "sk-11223344556677889900aabbccddeeff",
-        db: "postgresql://admin:superSecretPass@localhost:5432/db"
+        db: "${SYNTHETIC_SECRET_FIXTURES.databaseUri}",
+        key: "${SYNTHETIC_SECRET_FIXTURES.openAiApiKey}",
       };
     `;
 
@@ -105,9 +106,9 @@ describe("Secret Redaction & Scanner", () => {
     expect(findings.length).toBeGreaterThan(0);
     for (const finding of findings) {
       expect(finding.redactedSnippet).not.toContain(
-        "sk-11223344556677889900aabbccddeeff"
+        SYNTHETIC_SECRET_FIXTURES.openAiApiKey
       );
-      expect(finding.redactedSnippet).not.toContain("superSecretPass");
+      expect(finding.redactedSnippet).not.toContain("ATLAS_FIXTURE_PASSWORD");
     }
   });
 });

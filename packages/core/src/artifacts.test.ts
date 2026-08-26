@@ -217,3 +217,44 @@ test("paginates artifacts with limit and offset", async () => {
   });
   expect(page3.artifacts).toHaveLength(1);
 });
+
+test("returns complete immediate folder metadata independently of file pages", async () => {
+  await writeArtifact("archive/old.md", "old");
+  await writeArtifact("archive/deep/new.txt", "new");
+  for (let index = 0; index < 35; index += 1) {
+    await writeArtifact(`root-${index}.txt`, `content ${index}`);
+  }
+
+  const rootPage = await listArtifacts(ORG_ID, PROFILE_ID, {
+    folder: "",
+    limit: 30,
+    offset: 0,
+  });
+
+  expect(rootPage.total).toBe(35);
+  expect(rootPage.artifacts).toHaveLength(30);
+  expect(
+    rootPage.artifacts.every((artifact) => !artifact.filename.includes("/"))
+  ).toBe(true);
+  expect(rootPage.folders).toHaveLength(1);
+  expect(rootPage.folders?.[0]).toMatchObject({
+    fileCount: 2,
+    name: "archive",
+    prefix: "archive",
+    typeStats: {
+      markdown: { fileCount: 1 },
+      text: { fileCount: 1 },
+    },
+  });
+
+  const archivePage = await listArtifacts(ORG_ID, PROFILE_ID, {
+    folder: "archive",
+    limit: 30,
+  });
+  expect(archivePage.artifacts.map((artifact) => artifact.filename)).toEqual([
+    "archive/old.md",
+  ]);
+  expect(archivePage.folders?.map((folder) => folder.prefix)).toEqual([
+    "archive/deep",
+  ]);
+});

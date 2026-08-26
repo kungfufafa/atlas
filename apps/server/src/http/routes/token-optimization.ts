@@ -4,6 +4,7 @@ import {
   isOmniInstalled,
   OPTIMIZER_ID,
 } from "@atlas/core";
+import { updateWorkspaceSettingsForOrg } from "@atlas/db";
 import type { ServerOptions } from "../context";
 import {
   requireActiveOrgIdFromContext,
@@ -159,19 +160,10 @@ export function registerTokenOptimizationRoutes(
     if (!db) {
       throw new Error("Database adapter is not configured.");
     }
-    const existing = await db.getWorkspaceSettings(orgId);
-
-    await db.upsertWorkspaceSettings({
-      codingAgentHarnesses: existing?.codingAgentHarnesses ?? [],
-      id: existing?.id ?? `workspace-settings:${orgId}`,
-      imageModel: existing?.imageModel ?? null,
-      orgId,
-      selectedCodingAgentHarness: existing?.selectedCodingAgentHarness ?? null,
+    await updateWorkspaceSettingsForOrg(db, orgId, () => ({
       tokenOptimizerEnabled: Boolean(body.enabled),
-      transcriptionModel: existing?.transcriptionModel ?? null,
       updatedAt: new Date().toISOString(),
-      visionModel: existing?.visionModel ?? null,
-    });
+    }));
 
     return json({ enabled: Boolean(body.enabled) });
   });

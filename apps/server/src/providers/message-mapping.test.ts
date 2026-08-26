@@ -210,6 +210,31 @@ describe("provider user content mapping", () => {
     });
   });
 
+  test("toResponsesInput extracts documents for compatible endpoints", async () => {
+    const textDocumentMessage: ChatMessage = {
+      content: [
+        { text: "Summarize", type: "text" },
+        {
+          data: Buffer.from("alpha beta", "utf8").toString("base64"),
+          filename: "notes.txt",
+          mediaType: "text/plain",
+          type: "document",
+        },
+      ],
+      role: "user",
+    };
+    const result = await toResponsesInput(
+      [textDocumentMessage],
+      "openai_compatible"
+    );
+    const user = result[0] as {
+      content: Array<Record<string, unknown>>;
+    };
+
+    expect(user.content.some((part) => part.type === "input_file")).toBe(false);
+    expect(user.content.some((part) => part.type === "input_text")).toBe(true);
+  });
+
   test("toResponsesInput aligns function_call ids with tool outputs", async () => {
     const result = (await toResponsesInput([
       { content: "run my digest", role: "user" },

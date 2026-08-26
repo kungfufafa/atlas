@@ -23,3 +23,4 @@ Notes:
 - Auth state is stored in `~/.atlas/whatsapp/auth/`
 - Chat session mappings are stored in `~/.atlas/whatsapp/chat-sessions.json`
 - Restart the bridge after changing the saved phone number
+- Groups respond only to an explicit mention of the connected account, a reply to an Atlas message, or a supported slash command. Authorize senders in a private chat first.

@@ -9,6 +9,7 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import { pathExists } from "../fs";
+import { applyRedactionBoundary } from "../redaction-boundary";
 import { getUserConfigDir } from "../user-config";
 import { BUNDLED_SKILL_NAMES } from "./bundled-names";
 import { isGlobalSkillSourcePath } from "./dedupe";
@@ -294,7 +295,8 @@ export async function writeProfileSkillSupportingFile(options: {
 
   await mkdir(path.dirname(absolutePath), { recursive: true });
   await assertSupportingPathIsNotSymlink(absolutePath);
-  await writeFile(absolutePath, options.content, "utf8");
+  const content = applyRedactionBoundary(options.content, "learning");
+  await writeFile(absolutePath, content, "utf8");
 
   return { absolutePath, relativePath };
 }
@@ -346,12 +348,15 @@ export async function createSkillFile(
     throw new Error(`Skill "${name}" already exists.`);
   }
 
-  const content = composeSkillMarkdown({
-    body: options.body,
-    description,
-    disableModelInvocation: options.disableModelInvocation,
-    name,
-  });
+  const content = applyRedactionBoundary(
+    composeSkillMarkdown({
+      body: options.body,
+      description,
+      disableModelInvocation: options.disableModelInvocation,
+      name,
+    }),
+    "learning"
+  );
 
   parseSkillMarkdown(content, skillFilePath);
 
@@ -372,8 +377,9 @@ export async function writeRawProfileSkillMarkdown(options: {
   description: string;
   created: boolean;
 }> {
+  const safeContent = applyRedactionBoundary(options.content, "learning");
   const { name, description } = parseRawProfileSkillContent(
-    options.content,
+    safeContent,
     options.orgId,
     options.profileId
   );
@@ -390,11 +396,11 @@ export async function writeRawProfileSkillMarkdown(options: {
     throw new Error(`Skill "${name}" already exists.`);
   }
 
-  parseSkillMarkdown(options.content, skillFilePath);
+  parseSkillMarkdown(safeContent, skillFilePath);
 
-  const nextContent = options.content.endsWith("\n")
-    ? options.content
-    : `${options.content}\n`;
+  const nextContent = safeContent.endsWith("\n")
+    ? safeContent
+    : `${safeContent}\n`;
 
   if (!exists) {
     await mkdir(directory, { recursive: true });
@@ -465,7 +471,10 @@ export async function patchSkillFile(options: {
     );
   }
 
-  const next = existing.replace(options.oldString, options.newString);
+  const next = applyRedactionBoundary(
+    existing.replace(options.oldString, options.newString),
+    "learning"
+  );
   const parsed = parseSkillMarkdown(next, skillFilePath);
 
   if (parsed.frontmatter.name !== expectedName) {

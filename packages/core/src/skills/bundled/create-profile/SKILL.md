@@ -1,6 +1,6 @@
 ---
 name: create-profile
-description: Create, design, or set up a new agent profile with soul files and appropriate tool assignments. Use when the user asks for a new profile, support agent, assistant, persona, or specialized agent.
+description: Create, design, or safely update an agent profile, including its name, model, prompt, governance overrides, or soul files. Use for new profiles, assistants, personas, or changes to an existing profile.
 include-body-on-match: true
 ---
 
@@ -48,3 +48,11 @@ Then summarize:
 - Profile id and name
 - How to open it in the dashboard (Profiles → select the new profile)
 - That the Default Agent work toolkit was auto-assigned, and any Super Agent extras still waiting on an explicit assign ask
+
+## Updating an existing profile
+
+Use `get_profile` first and identify the target by its exact id. Draft only the requested changes, including the full replacement content of every soul file that would change. Do not expose or add credentials, tokens, or other secrets.
+
+Wait for an explicit confirmation in a later user turn. Then call `update_profile` once with the unchanged draft. A changed field, target, workspace, or actor invalidates confirmation and requires a new review. Omit every field the user did not approve so existing model and governance settings—including skill write approval—remain unchanged.
+
+`update_profile` can change `name`, `model`, `systemPrompt`, `skillsPostTurnReview`, `skillsWriteApproval`, and only `SOUL.md`, `STYLE.md`, `INSTRUCTIONS.md`, or `MEMORY.md`. It cannot change profile ids, workspace ownership, default status, Super Agent status, tools, skills, MCP servers, or credentials.

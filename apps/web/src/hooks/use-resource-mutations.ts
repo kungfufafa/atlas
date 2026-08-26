@@ -6,6 +6,7 @@ import type {
   ImageAttachment,
   SoulStackFiles,
   UpdateProfileRequest,
+  UpdateSessionRequest,
   UserContextStatusResponse,
 } from "@atlas/core/contract";
 import {
@@ -90,6 +91,30 @@ export function useUpdateProfileMutation() {
           queryKey: queryKeys.profiles.detail(variables.profileId),
         }),
       ]);
+    },
+  });
+}
+
+export function useUpdateSessionMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      sessionId,
+      input,
+    }: {
+      channel?: AgentChannel;
+      input: UpdateSessionRequest;
+      profileId: string;
+      sessionId: string;
+    }) => client.updateSession(sessionId, input),
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.sessions(
+          variables.profileId,
+          variables.channel ?? "web"
+        ),
+      });
     },
   });
 }
@@ -490,7 +515,10 @@ export function useKnowledgeBaseQuery(profileId: string | null) {
 
 export const ARTIFACTS_PAGE_SIZE = 30;
 
-export function useArtifactsInfiniteQuery(profileId: string | null) {
+export function useArtifactsInfiniteQuery(
+  profileId: string | null,
+  folder?: string
+) {
   return useInfiniteQuery({
     enabled: Boolean(profileId),
     getNextPageParam: (lastPage) => {
@@ -500,10 +528,14 @@ export function useArtifactsInfiniteQuery(profileId: string | null) {
     initialPageParam: 0,
     queryFn: ({ pageParam }: { pageParam: number }) =>
       client.listProfileArtifacts(profileId!, {
+        folder,
         limit: ARTIFACTS_PAGE_SIZE,
         offset: pageParam,
       }),
-    queryKey: queryKeys.artifacts.profile(profileId ?? ""),
+    queryKey: [
+      ...queryKeys.artifacts.profile(profileId ?? ""),
+      folder === undefined ? "recursive" : `folder:${folder}`,
+    ],
   });
 }
 

@@ -22,12 +22,14 @@ The key is stored in `~/.atlas/composio/config.ini` on the Atlas server.
 
 ## Setup
 
-1. As a Superadmin or Workspace Admin, open **Integrations → Composio** and save the Composio **project API key**.
+1. As a Superadmin, open **Integrations → Composio** and save the Composio **project API key**.
 2. Confirm `/health` reports `composioConfigured: true`. Reachability (`composioAvailable`) is on `GET /v1/system/status` under `server`.
 3. As a Workspace Admin, **enable** a toolkit for the workspace.
-4. As any workspace member, click **Connect your account** and complete OAuth in the browser.
+4. As any workspace member, click **Connect** and complete OAuth in the browser.
 5. Click **Sync tools** after connecting.
 6. Assign the toolkit to a profile on the **Profiles** page.
+
+Integrations starts with commonly used apps plus anything already enabled. Search still covers the full catalog, and Workspace Admins can choose **Show all apps**. Enabling a toolkit never assigns it to a profile automatically.
 
 ## Tenancy model
 

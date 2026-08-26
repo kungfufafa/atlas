@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { globalApprovalGrantStore } from "../approval-grant";
 import type { ToolDefinition } from "../contract";
+import { computeActionHash } from "../risk-engine";
 import {
   executeProtectedTool,
   executeWithRetry,
@@ -57,6 +59,37 @@ describe("standardizeToolError", () => {
     const std = standardizeToolError(new Error("429 rate limit exceeded"));
     expect(std.code).toBe("PROVIDER_ERROR");
     expect(std.retryable).toBe(true);
+  });
+
+  test("handles hostile error objects without invoking throwing getters", () => {
+    const hostile = new Proxy(
+      {},
+      {
+        get() {
+          throw new Error("hostile getter");
+        },
+        getPrototypeOf() {
+          throw new Error("hostile prototype");
+        },
+      }
+    );
+
+    expect(standardizeToolError(hostile)).toEqual({
+      code: "INTERNAL_ERROR",
+      message: "Unknown tool execution error.",
+      retryable: false,
+    });
+  });
+
+  test("rejects unrecognized error codes instead of trusting arbitrary strings", () => {
+    const standardized = standardizeToolError({
+      code: "DELETE_EVERYTHING",
+      message: "custom failure",
+      retryable: true,
+    });
+
+    expect(standardized.code).toBe("INTERNAL_ERROR");
+    expect(standardized.retryable).toBe(false);
   });
 });
 
@@ -114,6 +147,88 @@ describe("executeWithRetry", () => {
 
     expect(attempts).toBe(1);
   });
+
+  test("cancels an in-progress retry backoff", async () => {
+    const controller = new AbortController();
+    let attempts = 0;
+    const pending = executeWithRetry(
+      async () => {
+        attempts += 1;
+        throw new Error("transient custom failure");
+      },
+      {
+        initialDelayMs: 1000,
+        maxRetries: 2,
+        retryableCodes: ["INTERNAL_ERROR"],
+      },
+      controller.signal
+    );
+
+    setTimeout(() => controller.abort(), 10);
+
+    await expect(pending).rejects.toThrow(/aborted/i);
+    expect(attempts).toBe(1);
+  });
+
+  test("never enters backoff when the signal aborts during an attempt", async () => {
+    const controller = new AbortController();
+    let attempts = 0;
+    const pending = executeWithRetry(
+      async () => {
+        attempts += 1;
+        controller.abort(new Error("cancelled during attempt"));
+        throw new Error("tool noticed cancellation");
+      },
+      {
+        initialDelayMs: 1000,
+        maxRetries: 2,
+        retryableCodes: ["INTERNAL_ERROR"],
+      },
+      controller.signal
+    );
+    const timed = Promise.race([
+      pending,
+      Bun.sleep(50).then(() => {
+        throw new Error("retry backoff was entered");
+      }),
+    ]);
+
+    await expect(timed).rejects.toThrow("cancelled during attempt");
+    expect(attempts).toBe(1);
+  });
+
+  test("retries a hostile rejection without letting its getters mask recovery", async () => {
+    const hostile = new Proxy(
+      {},
+      {
+        get() {
+          throw new Error("hostile getter");
+        },
+        getPrototypeOf() {
+          throw new Error("hostile prototype");
+        },
+      }
+    );
+    let attempts = 0;
+
+    const result = await executeWithRetry(
+      async () => {
+        attempts += 1;
+        if (attempts === 1) {
+          return Promise.reject(hostile);
+        }
+        return "recovered";
+      },
+      {
+        initialDelayMs: 1,
+        maxRetries: 2,
+        retryableCodes: ["INTERNAL_ERROR"],
+      }
+    );
+
+    expect(result).toEqual({ result: "recovered", retries: 1 });
+    expect(attempts).toBe(2);
+  });
 });
 
 describe("executeProtectedTool", () => {
@@ -139,6 +254,111 @@ describe("executeProtectedTool", () => {
     const res = await executeProtectedTool(sampleTool, { input: "fail" }, {});
     expect(res.success).toBe(false);
     expect(res.error?.code).toBe("INVALID_ARGUMENT");
+  });
+
+  test("does not retry a read tool without an explicit retry policy", async () => {
+    let attempts = 0;
+    const tool: ToolDefinition<Record<string, never>, never> = {
+      description: "Read without retry opt-in",
+      name: "web_search",
+      async run() {
+        attempts += 1;
+        throw new Error("ECONNREFUSED");
+      },
+    };
+
+    const result = await executeProtectedTool(tool, {}, {});
+
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("NETWORK_ERROR");
+    expect(attempts).toBe(1);
+  });
+
+  test("never applies a retry policy to a known mutating tool", async () => {
+    let attempts = 0;
+    const tool: ToolDefinition<{ content: string; path: string }, never> = {
+      description: "Write a file",
+      name: "write_file",
+      retryPolicy: {
+        initialDelayMs: 1,
+        maxRetries: 2,
+        retryableCodes: ["INTERNAL_ERROR"],
+      },
+      async run() {
+        attempts += 1;
+        throw new Error("transient custom failure");
+      },
+    };
+
+    const result = await executeProtectedTool(
+      tool,
+      { content: "data", path: "output.txt" },
+      {}
+    );
+
+    expect(result.success).toBe(false);
+    expect(attempts).toBe(1);
+  });
+
+  test("caps an explicit safe retry policy at two retries", async () => {
+    let attempts = 0;
+    const tool: ToolDefinition<Record<string, never>, never> = {
+      description: "Retry-safe custom read",
+      name: "custom_read_probe",
+      retryPolicy: {
+        initialDelayMs: 0,
+        jitter: false,
+        maxRetries: 20,
+        retryableCodes: ["INTERNAL_ERROR"],
+      },
+      async run() {
+        attempts += 1;
+        throw new Error("transient custom failure");
+      },
+    };
+
+    const result = await executeProtectedTool(tool, {}, {});
+
+    expect(result.success).toBe(false);
+    expect(attempts).toBe(3);
+  });
+
+  test("never applies a tool retry policy to irreversible actions", async () => {
+    const input = { message: "hello", to: "external@example.com" };
+    const grant = globalApprovalGrantStore.createGrant({
+      actionHash: computeActionHash({ args: input, tool: "send_message" }),
+      executionId: "execution_retry_gate",
+      orgId: "org_retry_gate",
+      sessionId: "session_retry_gate",
+      userId: "user_retry_gate",
+    });
+    let attempts = 0;
+    const tool: ToolDefinition<typeof input, never> = {
+      description: "Send a message",
+      name: "send_message",
+      retryPolicy: {
+        initialDelayMs: 1,
+        maxRetries: 2,
+        retryableCodes: ["INTERNAL_ERROR"],
+      },
+      async run() {
+        attempts += 1;
+        throw new Error("transient custom failure");
+      },
+    };
+
+    try {
+      const result = await executeProtectedTool(tool, input, {
+        approvalGrantId: grant.id,
+        orgId: "org_retry_gate",
+        userId: "user_retry_gate",
+      });
+
+      expect(result.success).toBe(false);
+      expect(attempts).toBe(1);
+    } finally {
+      globalApprovalGrantStore.clear();
+    }
   });
 
   test("captures files created under artifacts by any tool", async () => {

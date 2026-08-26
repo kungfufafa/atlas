@@ -84,6 +84,8 @@ export function createMockClient(
   const calls = {
     compact: 0,
     createSession: 0,
+    createSessionOrgIds: [] as Array<string | null>,
+    externalPrincipalIds: [] as string[],
     listProfiles: 0,
     listUserOrgs: 0,
     profileIds: [] as string[],
@@ -228,9 +230,16 @@ export function createMockClient(
     createChatSession: () => session,
     createSession: async (
       _channel: unknown,
-      sessionOptions: { profileId?: string } = {}
+      sessionOptions: {
+        externalPrincipal?: { channelUserId: string };
+        profileId?: string;
+      } = {}
     ) => {
       calls.createSession += 1;
+      calls.createSessionOrgIds.push(currentOrgId());
+      calls.externalPrincipalIds.push(
+        sessionOptions.externalPrincipal?.channelUserId ?? ""
+      );
       calls.profileIds.push(sessionOptions.profileId ?? "default");
       if (options.failCreateSession) {
         throw options.failCreateSession;

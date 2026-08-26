@@ -24,6 +24,19 @@ agent-browser install
 
 If `bash` returns `command not found`, `ENOENT`, or similar for `agent-browser`, tell the operator to run the install commands above (and `agent-browser install --with-deps` on Linux if Chrome libraries are missing). Do not invent a different browser tool.
 
+### Optional: CloakBrowser (stealth Chromium)
+
+Stock Chrome from `agent-browser install` is the default. Use [CloakBrowser](https://github.com/CloakHQ/CloakBrowser) only when a site blocks that Chrome through bot detection. Cloak is not bundled with Atlas and must never be assumed to be installed.
+
+The operator installs Cloak on the same host that runs `bash` and configures the Atlas process environment:
+
+```bash
+export AGENT_BROWSER_EXECUTABLE_PATH="/path/to/cloak-chromium"
+export AGENT_BROWSER_ARGS="<stealth args from Cloak's agent-browser example>"
+```
+
+After `cloakbrowser install`, get the binary path with `python -m cloakbrowser info` or `npx cloakbrowser info`. Copy `AGENT_BROWSER_ARGS` from Cloak's documented agent-browser integration; do not invent Chromium flags. If these variables are unset, keep using stock Chrome. Do not add per-command path overrides unless the operator explicitly asks for one.
+
 ## Browser workflow
 
 Drive the browser with the `bash` tool. Multiple `agent-browser` commands in the **same agent run** share one daemon session — that is how login → navigate → act stays coherent.

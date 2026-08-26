@@ -75,6 +75,39 @@ describe("resolveModel", () => {
     );
   });
 
+  test("resolves native discovery-provider models from each instance shortlist", () => {
+    const cases = [
+      ["minimax", "MiniMax-M3", "MiniMax-M2.7"],
+      ["minimax_cn", "MiniMax-M3", "MiniMax-M2.7"],
+      ["xai", "grok-4", "grok-4-fast"],
+      ["zhipu", "glm-5", "glm-4.7"],
+      ["zhipu_cn", "glm-5", "glm-4.7"],
+    ] as const;
+
+    for (const [provider, defaultModel, selectedModel] of cases) {
+      const customModels = [
+        { default: true, id: defaultModel },
+        { id: selectedModel },
+      ];
+      expect(resolveModel(provider, selectedModel, customModels)).toBe(
+        selectedModel
+      );
+      expect(getDefaultModel(provider, customModels)).toBe(defaultModel);
+      expect(resolveModel(provider, "unknown", customModels)).toBe(
+        defaultModel
+      );
+    }
+  });
+
+  test("uses the curated Cloudflare default and validates provider-scoped ids", () => {
+    expect(getDefaultModel("cloudflare")).toBe(
+      "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    );
+    expect(resolveModel("cloudflare", "@cf/meta/llama-3.1-8b-instruct")).toBe(
+      "@cf/meta/llama-3.1-8b-instruct"
+    );
+  });
+
   test("resolves catalog models for OpenCode Go", () => {
     expect(resolveModel("opencode_go", "opencode-go/kimi-k2.7-code")).toBe(
       "opencode-go/kimi-k2.7-code"

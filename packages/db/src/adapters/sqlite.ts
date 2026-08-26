@@ -1,6 +1,7 @@
 import { Database } from "bun:sqlite";
+import { chmodSync } from "node:fs";
 import type { AgentQuestionnaire, ChatMessage } from "@atlas/core";
-import { getUserMessageText } from "@atlas/core";
+import { getUserMessageText, PRIVATE_FILE_MODE } from "@atlas/core";
 import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
 import { LLM_USAGE_STATS_ID, WORKSPACE_SETTINGS_ID } from "../constants";
 import { ensureDatabaseDirectory, resolveDatabasePath } from "../database-url";
@@ -9,6 +10,7 @@ import type {
   DatabaseAdapter,
   MemoryScope,
   OrgMemoryProposalStatus,
+  ProfileImportPublication,
   StoredActionApprovalRecord,
   StoredArtifactShareRecord,
   StoredAttachmentRecord,
@@ -88,10 +90,12 @@ interface ProfileRow {
   created_at: string;
   id: string;
   is_default: number;
+  is_importing: number;
   is_super: number;
   model: string | null;
   name: string;
   org_id: string | null;
+  skills_curator_consolidation: number | null;
   skills_post_turn_review: number | null;
   skills_write_approval: number | null;
   system_prompt: string;
@@ -117,6 +121,7 @@ interface SessionRow {
   channel: string;
   created_at: string;
   id: string;
+  model_override: string | null;
   org_id: string | null;
   profile_id: string;
   title: string | null;
@@ -202,6 +207,7 @@ interface LlmUsageModelStatsRow {
 
 interface WorkspaceSettingsRow {
   coding_agent_harnesses: string;
+  coding_agent_provider_passthrough: number;
   id: string;
   image_model: string | null;
   org_id: string | null;
@@ -345,9 +351,12 @@ interface BrowserSessionRow {
 }
 
 interface OrganizationRow {
+  archived_at: string | null;
   created_at: string;
   id: string;
   name: string;
+  skills_curator_consolidation: number;
+  skills_curator_last_run_at: string | null;
   skills_post_turn_review: number;
   skills_write_approval: number;
   slug: string;
@@ -383,6 +392,7 @@ interface OrgMemoryProposalRow {
 
 interface SkillProposalRow {
   action: string;
+  consolidation_json: string | null;
   content: string | null;
   created_at: string;
   id: string;
@@ -432,13 +442,28 @@ interface ArtifactShareRow {
   token_hash: string;
 }
 
+/**
+ * The file holds plaintext MCP credentials and every transcript, so it carries
+ * the same 0600 the rest of ~/.atlas already uses. bun:sqlite takes no mode, and
+ * an existing loose file keeps its own, so chmod after open rather than at create.
+ */
+function openPrivateDatabase(databasePath: string): Database {
+  ensureDatabaseDirectory(databasePath);
+  const db = new Database(databasePath, { create: true });
+
+  if (databasePath !== ":memory:") {
+    chmodSync(databasePath, PRIVATE_FILE_MODE);
+  }
+
+  return db;
+}
+
 export async function createSqliteDatabase(
   databaseUrl: string
 ): Promise<SqliteDatabase> {
   const databasePath = resolveDatabasePath(databaseUrl);
-  ensureDatabaseDirectory(databasePath);
 
-  let db = new Database(databasePath, { create: true });
+  let db = openPrivateDatabase(databasePath);
   migrateDatabase(db);
   let adapter = createSqliteDatabaseAdapter(db);
 
@@ -458,8 +483,7 @@ export async function createSqliteDatabase(
       db.close();
     },
     async reopen() {
-      ensureDatabaseDirectory(databasePath);
-      const nextDb = new Database(databasePath, { create: true });
+      const nextDb = openPrivateDatabase(databasePath);
       migrateDatabase(nextDb);
       const nextAdapter = createSqliteDatabaseAdapter(nextDb);
       const previousDb = db;
@@ -545,19 +569,44 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     GROUP BY ar.automation_id
   `);
 
-  const listProfilesStmt = db.prepare("SELECT * FROM profiles");
-  const listProfilesForOrgStmt = db.prepare(
-    "SELECT * FROM profiles WHERE org_id = ? ORDER BY is_default DESC, name ASC"
+  const listProfilesStmt = db.prepare(
+    "SELECT * FROM profiles WHERE is_importing = 0"
   );
-  const getProfileStmt = db.prepare("SELECT * FROM profiles WHERE id = ?");
+  const listProfilesForOrgStmt = db.prepare(
+    "SELECT * FROM profiles WHERE org_id = ? AND is_importing = 0 ORDER BY is_default DESC, name ASC"
+  );
+  const getProfileStmt = db.prepare(
+    "SELECT * FROM profiles WHERE id = ? AND is_importing = 0"
+  );
   const getProfileForOrgStmt = db.prepare(
-    "SELECT * FROM profiles WHERE id = ? AND org_id = ?"
+    "SELECT * FROM profiles WHERE id = ? AND org_id = ? AND is_importing = 0"
   );
   const getDefaultProfileForOrgStmt = db.prepare(
-    "SELECT * FROM profiles WHERE org_id = ? AND is_default = 1 LIMIT 1"
+    "SELECT * FROM profiles WHERE org_id = ? AND is_default = 1 AND is_importing = 0 LIMIT 1"
   );
   const clearDefaultProfileForOrgStmt = db.prepare(`
     UPDATE profiles SET is_default = 0 WHERE org_id = ? AND id != ?
+  `);
+  const createProfileIfAbsentStmt = db.prepare(`
+    INSERT INTO profiles (
+      id,
+      name,
+      system_prompt,
+      model,
+      thinking_enabled,
+      thinking_effort,
+      is_super,
+      is_importing,
+      org_id,
+      is_default,
+      skills_write_approval,
+      skills_post_turn_review,
+      skills_curator_consolidation,
+      created_at,
+      updated_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO NOTHING
   `);
   const upsertProfileStmt = db.prepare(`
     INSERT INTO profiles (
@@ -568,14 +617,16 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       thinking_enabled,
       thinking_effort,
       is_super,
+      is_importing,
       org_id,
       is_default,
       skills_write_approval,
       skills_post_turn_review,
+      skills_curator_consolidation,
       created_at,
       updated_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       name = excluded.name,
       system_prompt = excluded.system_prompt,
@@ -583,13 +634,52 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       thinking_enabled = excluded.thinking_enabled,
       thinking_effort = excluded.thinking_effort,
       is_super = excluded.is_super,
+      is_importing = excluded.is_importing,
       org_id = excluded.org_id,
       is_default = excluded.is_default,
       skills_write_approval = excluded.skills_write_approval,
       skills_post_turn_review = excluded.skills_post_turn_review,
+      skills_curator_consolidation = excluded.skills_curator_consolidation,
       updated_at = excluded.updated_at
+    WHERE profiles.is_importing = 0
+  `);
+  const reserveProfileImportStmt = db.prepare(`
+    INSERT INTO profiles (
+      id, name, system_prompt, model, thinking_enabled, thinking_effort,
+      is_super, is_importing, org_id, is_default, skills_write_approval,
+      skills_post_turn_review, skills_curator_consolidation, created_at, updated_at
+    )
+    SELECT ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?
+    WHERE EXISTS (
+      SELECT 1 FROM organizations WHERE id = ? AND archived_at IS NULL
+    )
+    ON CONFLICT(id) DO NOTHING
+  `);
+  const publishProfileImportStmt = db.prepare(`
+    UPDATE profiles
+    SET is_importing = 0, updated_at = ?
+    WHERE id = ? AND org_id = ? AND is_importing = 1
+      AND EXISTS (
+        SELECT 1 FROM organizations WHERE id = ? AND archived_at IS NULL
+      )
+  `);
+  const getProfileImportReservationStmt = db.prepare(`
+    SELECT * FROM profiles
+    WHERE id = ? AND org_id = ? AND is_importing = 1
+    LIMIT 1
+  `);
+  const getAnyProfileImportReservationStmt = db.prepare(`
+    SELECT 1 AS found FROM profiles
+    WHERE id = ? AND is_importing = 1
+    LIMIT 1
   `);
   const deleteProfileStmt = db.prepare("DELETE FROM profiles WHERE id = ?");
+  const deleteProfileForOrgStmt = db.prepare(
+    "DELETE FROM profiles WHERE id = ? AND org_id = ?"
+  );
+  const deleteProfileImportReservationStmt = db.prepare(
+    "DELETE FROM profiles WHERE id = ? AND org_id = ? AND is_importing = 1"
+  );
 
   const listToolsStmt = db.prepare("SELECT * FROM tools");
   const listToolsForOrgStmt = db.prepare(`
@@ -618,13 +708,19 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       org_id = excluded.org_id,
       updated_at = excluded.updated_at
   `);
+  const createImportedToolStmt = db.prepare(`
+    INSERT INTO tools (
+      id, name, description, handler_type, handler_config, org_id, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
   const deleteToolStmt = db.prepare("DELETE FROM tools WHERE id = ?");
 
   const listToolsForProfileStmt = db.prepare(`
     SELECT tools.*
     FROM profile_tools
     INNER JOIN tools ON profile_tools.tool_id = tools.id
-    WHERE profile_tools.profile_id = ?
+    INNER JOIN profiles ON profiles.id = profile_tools.profile_id
+    WHERE profile_tools.profile_id = ? AND profiles.is_importing = 0
   `);
   const assignToolStmt = db.prepare(`
     INSERT INTO profile_tools (profile_id, tool_id)
@@ -636,18 +732,32 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     WHERE profile_id = ? AND tool_id = ?
   `);
 
-  const listSessionsStmt = db.prepare("SELECT * FROM sessions");
-  const getSessionStmt = db.prepare("SELECT * FROM sessions WHERE id = ?");
+  const listSessionsStmt = db.prepare(`
+    SELECT sessions.* FROM sessions
+    INNER JOIN profiles ON profiles.id = sessions.profile_id
+    WHERE profiles.is_importing = 0
+  `);
+  const getSessionStmt = db.prepare(`
+    SELECT sessions.* FROM sessions
+    INNER JOIN profiles ON profiles.id = sessions.profile_id
+    WHERE sessions.id = ? AND profiles.is_importing = 0
+  `);
   const upsertSessionStmt = db.prepare(`
-    INSERT INTO sessions (id, org_id, profile_id, channel, created_at, user_id)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO sessions (
+      id, org_id, profile_id, channel, created_at, user_id, model_override
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       org_id = excluded.org_id,
       profile_id = excluded.profile_id,
       channel = excluded.channel,
-      user_id = COALESCE(excluded.user_id, sessions.user_id)
+      user_id = COALESCE(excluded.user_id, sessions.user_id),
+      model_override = excluded.model_override
   `);
   const deleteSessionStmt = db.prepare("DELETE FROM sessions WHERE id = ?");
+  const updateSessionModelOverrideStmt = db.prepare(
+    "UPDATE sessions SET model_override = ? WHERE id = ?"
+  );
   const updateSessionTitleStmt = db.prepare(`
     UPDATE sessions SET title = ? WHERE id = ? AND title IS NULL
   `);
@@ -707,8 +817,9 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         LIMIT 1
       ) AS first_user_payload
     FROM sessions s
+    INNER JOIN profiles p ON p.id = s.profile_id
     LEFT JOIN session_messages m ON m.session_id = s.id
-    WHERE s.profile_id = ? AND s.channel = ?
+    WHERE s.profile_id = ? AND s.channel = ? AND p.is_importing = 0
     GROUP BY s.id
     HAVING COUNT(m.id) > 0
     ORDER BY updated_at DESC, s.created_at DESC
@@ -802,7 +913,8 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     SELECT mcp_servers.*
     FROM mcp_servers
     INNER JOIN profile_mcp_servers ON profile_mcp_servers.server_id = mcp_servers.id
-    WHERE profile_mcp_servers.profile_id = ?
+    INNER JOIN profiles ON profiles.id = profile_mcp_servers.profile_id
+    WHERE profile_mcp_servers.profile_id = ? AND profiles.is_importing = 0
     ORDER BY mcp_servers.name ASC
   `);
   const assignMcpServerStmt = db.prepare(`
@@ -820,7 +932,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     SELECT profiles.*
     FROM profiles
     INNER JOIN profile_mcp_servers ON profile_mcp_servers.profile_id = profiles.id
-    WHERE profile_mcp_servers.server_id = ?
+    WHERE profile_mcp_servers.server_id = ? AND profiles.is_importing = 0
     ORDER BY profiles.name ASC
   `);
   const listMcpServerProfileCountsStmt = db.prepare(`
@@ -857,12 +969,19 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       org_id = excluded.org_id,
       updated_at = excluded.updated_at
   `);
+  const createImportedSkillStmt = db.prepare(`
+    INSERT INTO skills (
+      id, name, description, source_path, has_tool, disable_model_invocation,
+      enabled, created_by, org_id, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
   const deleteSkillStmt = db.prepare("DELETE FROM skills WHERE id = ?");
   const listSkillsForProfileStmt = db.prepare(`
     SELECT skills.*
     FROM skills
     INNER JOIN profile_skills ON profile_skills.skill_id = skills.id
-    WHERE profile_skills.profile_id = ?
+    INNER JOIN profiles ON profiles.id = profile_skills.profile_id
+    WHERE profile_skills.profile_id = ? AND profiles.is_importing = 0
     ORDER BY skills.name ASC
   `);
   const assignSkillStmt = db.prepare(`
@@ -1028,10 +1147,11 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       image_model,
       coding_agent_harnesses,
       selected_coding_agent_harness,
+      coding_agent_provider_passthrough,
       token_optimizer_enabled,
       updated_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       vision_model = excluded.vision_model,
       org_id = excluded.org_id,
@@ -1039,6 +1159,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       image_model = excluded.image_model,
       coding_agent_harnesses = excluded.coding_agent_harnesses,
       selected_coding_agent_harness = excluded.selected_coding_agent_harness,
+      coding_agent_provider_passthrough = excluded.coding_agent_provider_passthrough,
       token_optimizer_enabled = excluded.token_optimizer_enabled,
       updated_at = excluded.updated_at
   `);
@@ -1162,9 +1283,10 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     DELETE FROM composio_toolkits WHERE id = ?
   `);
   const listProfileComposioToolkitsStmt = db.prepare(`
-    SELECT profile_id, toolkit_id, allowed_actions
-    FROM profile_composio_toolkits
-    WHERE profile_id = ?
+    SELECT assignment.profile_id, assignment.toolkit_id, assignment.allowed_actions
+    FROM profile_composio_toolkits assignment
+    INNER JOIN profiles ON profiles.id = assignment.profile_id
+    WHERE assignment.profile_id = ? AND profiles.is_importing = 0
   `);
   const deleteProfileComposioToolkitsStmt = db.prepare(`
     DELETE FROM profile_composio_toolkits WHERE profile_id = ?
@@ -1188,6 +1310,23 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       updated_at
     FROM composio_user_connections
     WHERE org_id = ? AND user_id = ?
+    ORDER BY updated_at DESC
+  `);
+  const listComposioUserConnectionsForOrgStmt = db.prepare(`
+    SELECT
+      id,
+      org_id,
+      user_id,
+      toolkit_id,
+      status,
+      connected_account_id,
+      session_id_enc,
+      oauth_state_hash,
+      last_error,
+      created_at,
+      updated_at
+    FROM composio_user_connections
+    WHERE org_id = ?
     ORDER BY updated_at DESC
   `);
   const getComposioUserConnectionStmt = db.prepare(`
@@ -1248,6 +1387,22 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       last_error = excluded.last_error,
       created_at = excluded.created_at,
       updated_at = excluded.updated_at
+  `);
+  const compareAndSwapComposioUserConnectionStmt = db.prepare(`
+    UPDATE composio_user_connections
+    SET
+      status = ?,
+      connected_account_id = ?,
+      session_id_enc = ?,
+      oauth_state_hash = ?,
+      last_error = ?,
+      created_at = ?,
+      updated_at = ?
+    WHERE id = ?
+      AND org_id = ?
+      AND user_id = ?
+      AND toolkit_id = ?
+      AND oauth_state_hash IS ?
   `);
   const deleteComposioUserConnectionStmt = db.prepare(`
     DELETE FROM composio_user_connections WHERE id = ?
@@ -1326,29 +1481,46 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     SET active_org_id = ?
     WHERE id = ?
   `);
+  const tryMarkOrganizationArchivedStmt = db.prepare(`
+    UPDATE organizations
+    SET archived_at = ?, updated_at = ?
+    WHERE id = ?
+      AND archived_at IS NULL
+      AND (SELECT COUNT(*) FROM organizations WHERE archived_at IS NULL) > 1
+  `);
+  const markSkillCuratorRunCompletedStmt = db.prepare(`
+    UPDATE organizations
+    SET skills_curator_last_run_at = ?, updated_at = ?
+    WHERE id = ?
+      AND archived_at IS NULL
+      AND skills_curator_consolidation = 1
+  `);
   const upsertOrganizationStmt = db.prepare(`
-    INSERT INTO organizations (id, name, slug, skills_write_approval, skills_post_turn_review, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO organizations (id, name, slug, skills_write_approval, skills_post_turn_review, skills_curator_consolidation, skills_curator_last_run_at, archived_at, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       name = excluded.name,
       slug = excluded.slug,
       skills_write_approval = excluded.skills_write_approval,
       skills_post_turn_review = excluded.skills_post_turn_review,
+      skills_curator_consolidation = excluded.skills_curator_consolidation,
+      skills_curator_last_run_at = COALESCE(excluded.skills_curator_last_run_at, organizations.skills_curator_last_run_at),
+      archived_at = COALESCE(organizations.archived_at, excluded.archived_at),
       updated_at = excluded.updated_at
   `);
   const listOrganizationsStmt = db.prepare(`
-    SELECT id, name, slug, skills_write_approval, skills_post_turn_review, created_at, updated_at
+    SELECT id, name, slug, skills_write_approval, skills_post_turn_review, skills_curator_consolidation, skills_curator_last_run_at, archived_at, created_at, updated_at
     FROM organizations
     ORDER BY name ASC
   `);
   const getOrganizationBySlugStmt = db.prepare(`
-    SELECT id, name, slug, skills_write_approval, skills_post_turn_review, created_at, updated_at
+    SELECT id, name, slug, skills_write_approval, skills_post_turn_review, skills_curator_consolidation, skills_curator_last_run_at, archived_at, created_at, updated_at
     FROM organizations
     WHERE slug = ?
     LIMIT 1
   `);
   const getOrganizationByIdStmt = db.prepare(`
-    SELECT id, name, slug, skills_write_approval, skills_post_turn_review, created_at, updated_at
+    SELECT id, name, slug, skills_write_approval, skills_post_turn_review, skills_curator_consolidation, skills_curator_last_run_at, archived_at, created_at, updated_at
     FROM organizations
     WHERE id = ?
     LIMIT 1
@@ -1431,14 +1603,14 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   const createSkillProposalStmt = db.prepare(`
     INSERT INTO skill_proposals (
       id, org_id, profile_id, session_id, proposed_by_user_id,
-      action, skill_name, content, patch_old_string, patch_new_string, relative_path,
+      action, skill_name, content, patch_old_string, patch_new_string, relative_path, consolidation_json,
       status, reviewer_user_id, reviewed_at, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const listSkillProposalsByStatusStmt = db.prepare(`
     SELECT
       id, org_id, profile_id, session_id, proposed_by_user_id,
-      action, skill_name, content, patch_old_string, patch_new_string, relative_path,
+      action, skill_name, content, patch_old_string, patch_new_string, relative_path, consolidation_json,
       status, reviewer_user_id, reviewed_at, created_at
     FROM skill_proposals
     WHERE org_id = ? AND status = ?
@@ -1447,7 +1619,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   const listSkillProposalsByStatusAndProfileStmt = db.prepare(`
     SELECT
       id, org_id, profile_id, session_id, proposed_by_user_id,
-      action, skill_name, content, patch_old_string, patch_new_string, relative_path,
+      action, skill_name, content, patch_old_string, patch_new_string, relative_path, consolidation_json,
       status, reviewer_user_id, reviewed_at, created_at
     FROM skill_proposals
     WHERE org_id = ? AND status = ? AND profile_id = ?
@@ -1456,7 +1628,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   const listAllSkillProposalsStmt = db.prepare(`
     SELECT
       id, org_id, profile_id, session_id, proposed_by_user_id,
-      action, skill_name, content, patch_old_string, patch_new_string, relative_path,
+      action, skill_name, content, patch_old_string, patch_new_string, relative_path, consolidation_json,
       status, reviewer_user_id, reviewed_at, created_at
     FROM skill_proposals
     WHERE org_id = ?
@@ -1465,7 +1637,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   const listAllSkillProposalsForProfileStmt = db.prepare(`
     SELECT
       id, org_id, profile_id, session_id, proposed_by_user_id,
-      action, skill_name, content, patch_old_string, patch_new_string, relative_path,
+      action, skill_name, content, patch_old_string, patch_new_string, relative_path, consolidation_json,
       status, reviewer_user_id, reviewed_at, created_at
     FROM skill_proposals
     WHERE org_id = ? AND profile_id = ?
@@ -1474,7 +1646,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   const getSkillProposalStmt = db.prepare(`
     SELECT
       id, org_id, profile_id, session_id, proposed_by_user_id,
-      action, skill_name, content, patch_old_string, patch_new_string, relative_path,
+      action, skill_name, content, patch_old_string, patch_new_string, relative_path, consolidation_json,
       status, reviewer_user_id, reviewed_at, created_at
     FROM skill_proposals
     WHERE org_id = ? AND id = ?
@@ -1483,7 +1655,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   const getPendingSkillProposalForCreateStmt = db.prepare(`
     SELECT
       id, org_id, profile_id, session_id, proposed_by_user_id,
-      action, skill_name, content, patch_old_string, patch_new_string, relative_path,
+      action, skill_name, content, patch_old_string, patch_new_string, relative_path, consolidation_json,
       status, reviewer_user_id, reviewed_at, created_at
     FROM skill_proposals
     WHERE org_id = ? AND profile_id = ? AND skill_name = ? AND action = 'create' AND status = 'pending'
@@ -1492,7 +1664,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   const getPendingSkillProposalForSkillStmt = db.prepare(`
     SELECT
       id, org_id, profile_id, session_id, proposed_by_user_id,
-      action, skill_name, content, patch_old_string, patch_new_string, relative_path,
+      action, skill_name, content, patch_old_string, patch_new_string, relative_path, consolidation_json,
       status, reviewer_user_id, reviewed_at, created_at
     FROM skill_proposals
     WHERE org_id = ? AND profile_id = ? AND skill_name = ? AND status = 'pending'
@@ -1501,7 +1673,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   const getPendingSkillProposalForPatchStmt = db.prepare(`
     SELECT
       id, org_id, profile_id, session_id, proposed_by_user_id,
-      action, skill_name, content, patch_old_string, patch_new_string, relative_path,
+      action, skill_name, content, patch_old_string, patch_new_string, relative_path, consolidation_json,
       status, reviewer_user_id, reviewed_at, created_at
     FROM skill_proposals
     WHERE org_id = ? AND profile_id = ? AND skill_name = ? AND action = 'patch'
@@ -1609,13 +1781,15 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       o.slug,
       o.skills_write_approval,
       o.skills_post_turn_review,
+      o.skills_curator_consolidation,
+      o.archived_at,
       o.created_at,
       o.updated_at,
       om.role,
       om.created_at AS joined_at
     FROM org_members om
     INNER JOIN organizations o ON o.id = om.org_id
-    WHERE om.user_id = ?
+    WHERE om.user_id = ? AND o.archived_at IS NULL
     ORDER BY o.name ASC
   `);
   const deleteOrgMemberStmt = db.prepare(`
@@ -1906,15 +2080,165 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       }
     },
 
+    async applySkillConsolidation(input) {
+      const apply = db.transaction((): boolean => {
+        const organization = db
+          .prepare("SELECT archived_at FROM organizations WHERE id = ?")
+          .get(input.orgId) as { archived_at: string | null } | null;
+        if (!organization || organization.archived_at) {
+          return false;
+        }
+        const profile = db
+          .prepare(
+            "SELECT org_id FROM profiles WHERE id = ? AND is_importing = 0"
+          )
+          .get(input.profileId) as { org_id: string | null } | null;
+        if (profile?.org_id !== input.orgId) {
+          return false;
+        }
+        const proposal = db
+          .prepare(
+            "SELECT status, action, profile_id, consolidation_json FROM skill_proposals WHERE id = ? AND org_id = ?"
+          )
+          .get(input.proposalId, input.orgId) as {
+          action: string;
+          consolidation_json: string | null;
+          profile_id: string;
+          status: string;
+        } | null;
+        if (
+          !proposal ||
+          proposal.status !== "pending" ||
+          proposal.action !== "consolidate" ||
+          proposal.profile_id !== input.profileId ||
+          proposal.consolidation_json !==
+            JSON.stringify(input.expectedConsolidation)
+        ) {
+          return false;
+        }
+
+        const expectedRefs = [
+          input.expectedConsolidation.winner,
+          ...input.expectedConsolidation.losers,
+        ];
+        const suppliedLosers = new Map(
+          input.archivedLosers.map((loser) => [loser.id, loser])
+        );
+        if (
+          expectedRefs.length < 2 ||
+          suppliedLosers.size !== input.expectedConsolidation.losers.length
+        ) {
+          return false;
+        }
+        for (const reference of expectedRefs) {
+          const row = db
+            .prepare(
+              "SELECT name, org_id FROM skills WHERE id = ? AND enabled = 1"
+            )
+            .get(reference.id) as {
+            name: string;
+            org_id: string | null;
+          } | null;
+          const assigned = db
+            .prepare(
+              "SELECT 1 AS present FROM profile_skills WHERE profile_id = ? AND skill_id = ?"
+            )
+            .get(input.profileId, reference.id) as { present: number } | null;
+          if (
+            !row ||
+            row.name !== reference.name ||
+            row.org_id !== input.orgId ||
+            !assigned
+          ) {
+            return false;
+          }
+        }
+        if (
+          input.winner.id !== input.expectedConsolidation.winner.id ||
+          input.winner.name !== input.expectedConsolidation.winner.name ||
+          input.winner.orgId !== input.orgId
+        ) {
+          return false;
+        }
+        for (const reference of input.expectedConsolidation.losers) {
+          const loser = suppliedLosers.get(reference.id);
+          if (!loser || loser.name !== reference.name) {
+            return false;
+          }
+        }
+
+        upsertSkillStmt.run(
+          input.winner.id,
+          input.winner.name,
+          input.winner.description,
+          input.winner.sourcePath,
+          input.winner.hasTool ? 1 : 0,
+          input.winner.disableModelInvocation ? 1 : 0,
+          input.winner.enabled ? 1 : 0,
+          input.winner.createdBy,
+          input.winner.orgId ?? null,
+          input.winner.createdAt,
+          input.winner.updatedAt
+        );
+        for (const loser of input.archivedLosers) {
+          db.prepare(
+            "UPDATE skills SET source_path = ?, enabled = 0, updated_at = ? WHERE id = ? AND org_id = ?"
+          ).run(
+            loser.archivedSourcePath,
+            input.reviewedAt,
+            loser.id,
+            input.orgId
+          );
+          db.prepare(
+            "DELETE FROM profile_skills WHERE profile_id = ? AND skill_id = ?"
+          ).run(input.profileId, loser.id);
+        }
+        const reviewed = db
+          .prepare(
+            "UPDATE skill_proposals SET status = 'approved', reviewer_user_id = ?, reviewed_at = ? WHERE id = ? AND org_id = ? AND status = 'pending'"
+          )
+          .run(
+            input.reviewerUserId,
+            input.reviewedAt,
+            input.proposalId,
+            input.orgId
+          );
+        if (reviewed.changes !== 1) {
+          throw new Error("SKILL_CONSOLIDATION_ABORTED");
+        }
+        return true;
+      });
+      try {
+        return apply.immediate();
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message === "SKILL_CONSOLIDATION_ABORTED"
+        ) {
+          return false;
+        }
+        throw error;
+      }
+    },
+
     async assignMcpServerToProfile(profileId, serverId) {
+      if (!getProfileStmt.get(profileId)) {
+        return;
+      }
       assignMcpServerStmt.run(profileId, serverId);
     },
 
     async assignSkillToProfile(profileId, skillId) {
+      if (!getProfileStmt.get(profileId)) {
+        return;
+      }
       assignSkillStmt.run(profileId, skillId);
     },
 
     async assignToolToProfile(profileId, toolId) {
+      if (!getProfileStmt.get(profileId)) {
+        return;
+      }
       assignToolStmt.run(profileId, toolId);
     },
     async casExecutionRun(input) {
@@ -1936,6 +2260,24 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         nowIso,
         requireExpired,
         nowIso
+      );
+      return result.changes === 1;
+    },
+
+    async compareAndSwapComposioUserConnection(record, expectedOAuthStateHash) {
+      const result = compareAndSwapComposioUserConnectionStmt.run(
+        record.status,
+        record.connectedAccountId,
+        record.sessionIdEnc,
+        record.oauthStateHash,
+        record.lastError,
+        record.createdAt,
+        record.updatedAt,
+        record.id,
+        record.orgId,
+        record.userId,
+        record.toolkitId,
+        expectedOAuthStateHash
       );
       return result.changes === 1;
     },
@@ -2106,6 +2448,45 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       );
     },
 
+    async createProfileIfAbsent(record) {
+      const result = createProfileIfAbsentStmt.run(
+        record.id,
+        record.name,
+        record.systemPrompt,
+        record.model,
+        record.thinkingEnabled == null ? null : record.thinkingEnabled ? 1 : 0,
+        record.thinkingEffort ?? null,
+        record.isSuper ? 1 : 0,
+        0,
+        record.orgId ?? null,
+        record.isDefault ? 1 : 0,
+        record.skillsWriteApproval == null
+          ? null
+          : record.skillsWriteApproval
+            ? 1
+            : 0,
+        record.skillsPostTurnReview == null
+          ? null
+          : record.skillsPostTurnReview
+            ? 1
+            : 0,
+        record.skillsCuratorConsolidation == null
+          ? null
+          : record.skillsCuratorConsolidation
+            ? 1
+            : 0,
+        record.createdAt,
+        record.updatedAt
+      );
+      if (result.changes !== 1) {
+        return false;
+      }
+      if (record.isDefault && record.orgId) {
+        clearDefaultProfileForOrgStmt.run(record.orgId, record.id);
+      }
+      return true;
+    },
+
     async createSkillProposal(record) {
       createSkillProposalStmt.run(
         record.id,
@@ -2119,6 +2500,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.patchOldString,
         record.patchNewString,
         record.relativePath,
+        record.consolidation ? JSON.stringify(record.consolidation) : null,
         record.status,
         record.reviewerUserId,
         record.reviewedAt,
@@ -2230,6 +2612,16 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
 
     async deleteProfile(id) {
       const result = deleteProfileStmt.run(id);
+      return result.changes > 0;
+    },
+
+    async deleteProfileForOrg(id, orgId) {
+      const result = deleteProfileForOrgStmt.run(id, orgId);
+      return result.changes > 0;
+    },
+
+    async deleteProfileImportReservation(id, orgId) {
+      const result = deleteProfileImportReservationStmt.run(id, orgId);
       return result.changes > 0;
     },
 
@@ -2357,11 +2749,24 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     },
 
     async getConversationHistory(orgId, sessionId, options = {}) {
-      const sessionRow = db
-        .prepare(
-          "SELECT id, title, profile_id, created_at FROM sessions WHERE org_id = ? AND id = ?"
-        )
-        .get(orgId, sessionId) as {
+      let sessionSql = `
+        SELECT s.id, s.title, s.profile_id, s.created_at
+        FROM sessions s
+        INNER JOIN profiles p
+          ON p.id = s.profile_id AND p.org_id = s.org_id
+        WHERE s.org_id = ? AND s.id = ?
+          AND p.is_importing = 0
+      `;
+      const sessionParams: string[] = [orgId, sessionId];
+      if (options.userId) {
+        sessionSql += " AND s.user_id = ?";
+        sessionParams.push(options.userId);
+      }
+      if (options.excludeSuperAgent) {
+        sessionSql += " AND p.is_super = 0";
+      }
+
+      const sessionRow = db.prepare(sessionSql).get(...sessionParams) as {
         created_at: string;
         id: string;
         profile_id: string;
@@ -2922,6 +3327,14 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         .map((row) => toComposioToolkitRecord(row as ComposioToolkitRow));
     },
 
+    async listComposioUserConnectionsForOrg(orgId) {
+      return listComposioUserConnectionsForOrgStmt
+        .all(orgId)
+        .map((row) =>
+          toComposioUserConnectionRecord(row as ComposioUserConnectionRow)
+        );
+    },
+
     async listComposioUserConnectionsForUser(orgId, userId) {
       return listComposioUserConnectionsForUserStmt
         .all(orgId, userId)
@@ -3304,29 +3717,14 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
 
     async listUserOrganizations(userId) {
       return listUserOrganizationsStmt.all(userId).map((row) => {
-        const record = row as {
-          id: string;
-          name: string;
-          slug: string;
-          skills_write_approval: number;
-          skills_post_turn_review: number;
-          created_at: string;
-          updated_at: string;
+        const record = row as OrganizationRow & {
           role: string;
           joined_at: string;
         };
 
         return {
           joinedAt: record.joined_at,
-          organization: {
-            createdAt: record.created_at,
-            id: record.id,
-            name: record.name,
-            skillsPostTurnReview: record.skills_post_turn_review !== 0,
-            skillsWriteApproval: record.skills_write_approval !== 0,
-            slug: record.slug,
-            updatedAt: record.updated_at,
-          },
+          organization: toOrganizationRecord(record),
           role: record.role as StoredUserOrganizationRecord["role"],
         };
       });
@@ -3334,6 +3732,15 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
 
     async markOrgInviteAccepted(id, acceptedAt) {
       markOrgInviteAcceptedStmt.run(acceptedAt, id);
+    },
+
+    async markSkillCuratorRunCompleted(orgId, completedAt) {
+      const result = markSkillCuratorRunCompletedStmt.run(
+        completedAt,
+        completedAt,
+        orgId
+      );
+      return result.changes > 0;
     },
 
     async markSkillSuggestionApplied(orgId, id, appliedAt) {
@@ -3344,6 +3751,217 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     pruneLlmUsageDaily(beforeDay) {
       const result = pruneLlmUsageDailyStmt.run(beforeDay);
       return Promise.resolve(Number(result.changes ?? 0));
+    },
+
+    async publishProfileImport(publication) {
+      const publish = db.transaction((input: typeof publication) => {
+        const organization = getOrganizationByIdStmt.get(
+          input.orgId
+        ) as OrganizationRow | null;
+        if (!organization || organization.archived_at) {
+          return "inactive" as const;
+        }
+        const reservation = getProfileImportReservationStmt.get(
+          input.profileId,
+          input.orgId
+        ) as ProfileRow | null;
+        if (!reservation || reservation.is_default || reservation.is_super) {
+          return "conflict" as const;
+        }
+
+        const newToolsById = new Map(
+          input.newTools.map((tool) => [tool.id, tool])
+        );
+        const newSkillsById = new Map(
+          input.newSkills.map((skill) => [skill.id, skill])
+        );
+        const toolIds = new Set(input.toolIds);
+        const skillIds = new Set(input.skillIds);
+        const mcpServerIds = new Set(input.mcpServerIds);
+        const composioToolkitIds = new Set(
+          input.composioAssignments.map((assignment) => assignment.toolkitId)
+        );
+        const expectedToolIds = new Set(
+          input.expectedTools.map((tool) => tool.id)
+        );
+        if (
+          toolIds.size !== input.toolIds.length ||
+          skillIds.size !== input.skillIds.length ||
+          mcpServerIds.size !== input.mcpServerIds.length ||
+          composioToolkitIds.size !== input.composioAssignments.length ||
+          newToolsById.size !== input.newTools.length ||
+          newSkillsById.size !== input.newSkills.length ||
+          expectedToolIds.size !== input.expectedTools.length ||
+          input.newTools.some((tool) => !toolIds.has(tool.id)) ||
+          input.newSkills.some((skill) => !skillIds.has(skill.id)) ||
+          input.toolIds.some((id) =>
+            newToolsById.has(id)
+              ? expectedToolIds.has(id)
+              : !expectedToolIds.has(id)
+          )
+        ) {
+          return "conflict" as const;
+        }
+
+        const newToolNames = new Set<string>();
+
+        for (const tool of input.newTools) {
+          const nameKey = `${tool.orgId ?? ""}\0${tool.name}`;
+          if (
+            tool.orgId !== input.orgId ||
+            getToolStmt.get(tool.id) ||
+            getToolByOrgNameStmt.get(tool.name, input.orgId) ||
+            newToolNames.has(nameKey)
+          ) {
+            return "conflict" as const;
+          }
+          newToolNames.add(nameKey);
+        }
+        const newSkillNames = new Set<string>();
+        const newSkillPaths = new Set<string>();
+        for (const skill of input.newSkills) {
+          if (
+            skill.orgId !== input.orgId ||
+            getSkillStmt.get(skill.id) ||
+            getSkillByNameStmt.get(skill.name, input.orgId) ||
+            getSkillBySourcePathStmt.get(skill.sourcePath) ||
+            newSkillNames.has(skill.name) ||
+            newSkillPaths.has(skill.sourcePath)
+          ) {
+            return "conflict" as const;
+          }
+          newSkillNames.add(skill.name);
+          newSkillPaths.add(skill.sourcePath);
+        }
+        for (const toolId of input.toolIds) {
+          const staged = newToolsById.get(toolId);
+          const row = staged
+            ? null
+            : (getToolStmt.get(toolId) as ToolRow | null);
+          if (
+            staged
+              ? staged.orgId !== input.orgId
+              : !(row && (row.org_id === null || row.org_id === input.orgId))
+          ) {
+            return "conflict" as const;
+          }
+        }
+        for (const expectation of input.expectedTools) {
+          const row = getToolStmt.get(expectation.id) as ToolRow | null;
+          if (
+            newToolsById.has(expectation.id) ||
+            !toolIds.has(expectation.id) ||
+            !row ||
+            !importToolExpectationMatches(toToolRecord(row), expectation)
+          ) {
+            return "conflict" as const;
+          }
+        }
+        for (const skillId of input.skillIds) {
+          const staged = newSkillsById.get(skillId);
+          const row = staged
+            ? null
+            : (getSkillStmt.get(skillId) as SkillRow | null);
+          if (
+            staged
+              ? staged.orgId !== input.orgId
+              : !(row && (row.org_id === null || row.org_id === input.orgId))
+          ) {
+            return "conflict" as const;
+          }
+        }
+        for (const serverId of input.mcpServerIds) {
+          const row = getMcpServerStmt.get(serverId) as McpServerRow | null;
+          if (row?.org_id !== input.orgId) {
+            return "conflict" as const;
+          }
+        }
+        for (const assignment of input.composioAssignments) {
+          const row = getComposioToolkitStmt.get(
+            assignment.toolkitId
+          ) as ComposioToolkitRow | null;
+          if (
+            assignment.profileId !== input.profileId ||
+            row?.org_id !== input.orgId
+          ) {
+            return "conflict" as const;
+          }
+        }
+
+        for (const tool of input.newTools) {
+          createImportedToolStmt.run(
+            tool.id,
+            tool.name,
+            tool.description,
+            tool.handlerType,
+            JSON.stringify(tool.handlerConfig),
+            tool.orgId ?? null,
+            tool.createdAt,
+            tool.updatedAt
+          );
+        }
+        for (const skill of input.newSkills) {
+          createImportedSkillStmt.run(
+            skill.id,
+            skill.name,
+            skill.description,
+            skill.sourcePath,
+            skill.hasTool ? 1 : 0,
+            skill.disableModelInvocation ? 1 : 0,
+            skill.enabled ? 1 : 0,
+            skill.createdBy ?? "human",
+            skill.orgId ?? null,
+            skill.createdAt,
+            skill.updatedAt
+          );
+        }
+        for (const toolId of input.toolIds) {
+          assignToolStmt.run(input.profileId, toolId);
+        }
+        for (const skillId of input.skillIds) {
+          assignSkillStmt.run(input.profileId, skillId);
+        }
+        for (const serverId of input.mcpServerIds) {
+          assignMcpServerStmt.run(input.profileId, serverId);
+        }
+        for (const assignment of input.composioAssignments) {
+          insertProfileComposioToolkitStmt.run(
+            input.profileId,
+            assignment.toolkitId,
+            assignment.allowedActions
+              ? JSON.stringify(assignment.allowedActions)
+              : null
+          );
+        }
+        const result = publishProfileImportStmt.run(
+          new Date().toISOString(),
+          input.profileId,
+          input.orgId,
+          input.orgId
+        );
+        if (result.changes !== 1) {
+          throw new Error("PROFILE_IMPORT_PUBLICATION_ABORTED");
+        }
+        return "published" as const;
+      });
+
+      try {
+        return publish.immediate(publication);
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          (/constraint/i.test(error.message) ||
+            error.message === "PROFILE_IMPORT_PUBLICATION_ABORTED")
+        ) {
+          const organization = getOrganizationByIdStmt.get(
+            publication.orgId
+          ) as OrganizationRow | null;
+          return !organization || organization.archived_at
+            ? "inactive"
+            : "conflict";
+        }
+        throw error;
+      }
     },
 
     async replaceMessagesForSession(sessionId, messages) {
@@ -3361,6 +3979,9 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     },
 
     async replaceProfileComposioToolkits(profileId, assignments) {
+      if (!getProfileStmt.get(profileId)) {
+        return;
+      }
       deleteProfileComposioToolkitsStmt.run(profileId);
 
       for (const assignment of assignments) {
@@ -3372,6 +3993,53 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
             : null
         );
       }
+    },
+
+    async reserveProfileImport(record) {
+      const organization = getOrganizationByIdStmt.get(
+        record.orgId ?? ""
+      ) as OrganizationRow | null;
+      if (!organization || organization.archived_at) {
+        return "inactive";
+      }
+      const result = reserveProfileImportStmt.run(
+        record.id,
+        record.name,
+        record.systemPrompt,
+        record.model,
+        record.thinkingEnabled == null ? null : record.thinkingEnabled ? 1 : 0,
+        record.thinkingEffort ?? null,
+        record.isSuper ? 1 : 0,
+        record.orgId ?? null,
+        record.isDefault ? 1 : 0,
+        record.skillsWriteApproval == null
+          ? null
+          : record.skillsWriteApproval
+            ? 1
+            : 0,
+        record.skillsPostTurnReview == null
+          ? null
+          : record.skillsPostTurnReview
+            ? 1
+            : 0,
+        record.skillsCuratorConsolidation == null
+          ? null
+          : record.skillsCuratorConsolidation
+            ? 1
+            : 0,
+        record.createdAt,
+        record.updatedAt,
+        record.orgId ?? ""
+      );
+      if (result.changes === 1) {
+        return "reserved";
+      }
+      const currentOrganization = getOrganizationByIdStmt.get(
+        record.orgId ?? ""
+      ) as OrganizationRow | null;
+      return !currentOrganization || currentOrganization.archived_at
+        ? "inactive"
+        : "exists";
     },
 
     async revokeArtifactShare(id, revokedAt) {
@@ -3416,7 +4084,9 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
           s.profile_id
         FROM session_messages m
         INNER JOIN sessions s ON s.id = m.session_id
-        WHERE s.org_id = ?
+        INNER JOIN profiles p
+          ON p.id = s.profile_id AND p.org_id = s.org_id
+        WHERE s.org_id = ? AND p.is_importing = 0
       `;
       const params: (string | number)[] = [orgId];
 
@@ -3427,6 +4097,9 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       if (options.userId) {
         sql += " AND s.user_id = ?";
         params.push(options.userId);
+      }
+      if (options.excludeSuperAgent) {
+        sql += " AND p.is_super = 0";
       }
       if (options.after) {
         sql += " AND m.created_at >= ?";
@@ -3509,6 +4182,15 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       setUserContextStmt.run(content, orgId, userId);
     },
 
+    async tryMarkOrganizationArchived(orgId, archivedAt) {
+      const result = tryMarkOrganizationArchivedStmt.run(
+        archivedAt,
+        archivedAt,
+        orgId
+      );
+      return result.changes > 0;
+    },
+
     async unassignMcpServerFromProfile(profileId, serverId) {
       const result = unassignMcpServerStmt.run(profileId, serverId);
       return result.changes > 0;
@@ -3575,6 +4257,14 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         update.pinned ? 1 : 0,
         orgId,
         id
+      );
+      return result.changes > 0;
+    },
+
+    async updateSessionModelOverride(sessionId, modelOverride) {
+      const result = updateSessionModelOverrideStmt.run(
+        modelOverride,
+        sessionId
       );
       return result.changes > 0;
     },
@@ -3827,6 +4517,9 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.slug,
         record.skillsWriteApproval ? 1 : 0,
         record.skillsPostTurnReview ? 1 : 0,
+        record.skillsCuratorConsolidation ? 1 : 0,
+        record.skillsCuratorLastRunAt ?? null,
+        record.archivedAt ?? null,
         record.createdAt,
         record.updatedAt
       );
@@ -3863,6 +4556,9 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     },
 
     async upsertProfile(record) {
+      if (getAnyProfileImportReservationStmt.get(record.id)) {
+        return;
+      }
       if (record.isDefault && record.orgId) {
         clearDefaultProfileForOrgStmt.run(record.orgId, record.id);
       }
@@ -3875,6 +4571,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.thinkingEnabled == null ? null : record.thinkingEnabled ? 1 : 0,
         record.thinkingEffort ?? null,
         record.isSuper ? 1 : 0,
+        0,
         record.orgId ?? null,
         record.isDefault ? 1 : 0,
         record.skillsWriteApproval == null
@@ -3887,19 +4584,28 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
           : record.skillsPostTurnReview
             ? 1
             : 0,
+        record.skillsCuratorConsolidation == null
+          ? null
+          : record.skillsCuratorConsolidation
+            ? 1
+            : 0,
         record.createdAt,
         record.updatedAt
       );
     },
 
     async upsertSession(record) {
+      if (!getProfileStmt.get(record.profileId)) {
+        return;
+      }
       upsertSessionStmt.run(
         record.id,
         record.orgId ?? null,
         record.profileId,
         record.channel,
         record.createdAt,
-        record.userId ?? null
+        record.userId ?? null,
+        record.modelOverride
       );
     },
 
@@ -3959,6 +4665,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.imageModel,
         JSON.stringify(record.codingAgentHarnesses),
         record.selectedCodingAgentHarness,
+        record.codingAgentProviderPassthrough === false ? 0 : 1,
         record.tokenOptimizerEnabled === null ||
           record.tokenOptimizerEnabled === undefined
           ? null
@@ -4203,10 +4910,15 @@ function toProfileRecord(row: ProfileRow): StoredProfileRecord {
     createdAt: row.created_at,
     id: row.id,
     isDefault: row.is_default !== 0,
+    isImporting: row.is_importing !== 0,
     isSuper: row.is_super !== 0,
     model: row.model,
     name: row.name,
     orgId: row.org_id ?? null,
+    skillsCuratorConsolidation:
+      row.skills_curator_consolidation == null
+        ? null
+        : row.skills_curator_consolidation !== 0,
     skillsPostTurnReview:
       row.skills_post_turn_review == null
         ? null
@@ -4295,6 +5007,72 @@ function toToolRecord(row: ToolRow): StoredToolRecord {
     orgId: row.org_id ?? null,
     updatedAt: row.updated_at,
   };
+}
+
+function canonicalJson(value: unknown): string | null {
+  const seen = new Set<object>();
+  const normalize = (current: unknown): unknown => {
+    if (
+      current === null ||
+      typeof current === "string" ||
+      typeof current === "boolean"
+    ) {
+      return current;
+    }
+    if (typeof current === "number") {
+      if (!Number.isFinite(current)) {
+        throw new Error("Non-finite JSON number");
+      }
+      return current;
+    }
+    if (Array.isArray(current)) {
+      if (seen.has(current)) {
+        throw new Error("Cyclic JSON value");
+      }
+      seen.add(current);
+      const normalized = current.map(normalize);
+      seen.delete(current);
+      return normalized;
+    }
+    if (typeof current === "object" && current) {
+      if (seen.has(current)) {
+        throw new Error("Cyclic JSON value");
+      }
+      seen.add(current);
+      const normalized: Record<string, unknown> = {};
+      for (const key of Object.keys(current).sort()) {
+        const item = (current as Record<string, unknown>)[key];
+        if (item !== undefined) {
+          normalized[key] = normalize(item);
+        }
+      }
+      seen.delete(current);
+      return normalized;
+    }
+    throw new Error("Non-JSON value");
+  };
+
+  try {
+    return JSON.stringify(normalize(value));
+  } catch {
+    return null;
+  }
+}
+
+function importToolExpectationMatches(
+  current: StoredToolRecord,
+  expected: ProfileImportPublication["expectedTools"][number]
+): boolean {
+  const currentConfig = canonicalJson(current.handlerConfig);
+  return (
+    current.id === expected.id &&
+    current.name === expected.name &&
+    current.description === expected.description &&
+    current.handlerType === expected.handlerType &&
+    current.orgId === expected.orgId &&
+    currentConfig !== null &&
+    currentConfig === canonicalJson(expected.handlerConfig)
+  );
 }
 
 function parseAgentTodos(
@@ -4390,6 +5168,7 @@ function toSessionRecord(row: SessionRow): StoredSessionRecord {
     channel: row.channel,
     createdAt: row.created_at,
     id: row.id,
+    modelOverride: row.model_override ?? null,
     orgId: row.org_id,
     profileId: row.profile_id,
     title: row.title ?? null,
@@ -4522,6 +5301,7 @@ function toWorkspaceSettingsRecord(
 ): StoredWorkspaceSettingsRecord {
   return {
     codingAgentHarnesses: parseCodingAgentHarnesses(row.coding_agent_harnesses),
+    codingAgentProviderPassthrough: row.coding_agent_provider_passthrough !== 0,
     id: row.id,
     imageModel: row.image_model?.trim() || null,
     orgId: row.org_id,
@@ -4575,6 +5355,8 @@ function parseCodingAgentHarnessProbeCache(
     checkedAt,
     nextStep: normalizedNextStep,
     ready: cache.ready === true,
+    scopeKey:
+      typeof cache.scopeKey === "string" ? cache.scopeKey.trim() || null : null,
     statusMessage:
       typeof cache.statusMessage === "string"
         ? cache.statusMessage
@@ -4734,9 +5516,12 @@ function toUserRecord(row: UserRow): StoredUserRecord {
 
 function toOrganizationRecord(row: OrganizationRow): StoredOrganizationRecord {
   return {
+    archivedAt: row.archived_at,
     createdAt: row.created_at,
     id: row.id,
     name: row.name,
+    skillsCuratorConsolidation: row.skills_curator_consolidation !== 0,
+    skillsCuratorLastRunAt: row.skills_curator_last_run_at,
     skillsPostTurnReview: row.skills_post_turn_review !== 0,
     skillsWriteApproval: row.skills_write_approval !== 0,
     slug: row.slug,
@@ -4780,6 +5565,7 @@ function toOrgMemoryProposalRecord(
 function toSkillProposalRecord(row: SkillProposalRow): StoredSkillProposal {
   return {
     action: row.action as StoredSkillProposal["action"],
+    consolidation: parseSkillConsolidationPayload(row.consolidation_json),
     content: row.content,
     createdAt: row.created_at,
     id: row.id,
@@ -4795,6 +5581,20 @@ function toSkillProposalRecord(row: SkillProposalRow): StoredSkillProposal {
     skillName: row.skill_name,
     status: row.status as StoredSkillProposal["status"],
   };
+}
+
+function parseSkillConsolidationPayload(
+  value: string | null
+): StoredSkillProposal["consolidation"] {
+  if (!value) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(value) as StoredSkillProposal["consolidation"];
+    return parsed ?? null;
+  } catch {
+    return null;
+  }
 }
 
 function toSkillSuggestionRecord(

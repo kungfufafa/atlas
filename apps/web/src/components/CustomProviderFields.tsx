@@ -1,3 +1,4 @@
+import type { WireApi } from "@atlas/core/contract";
 import { Cancel01Icon } from "hugeicons-react";
 import { type ReactNode, useMemo, useState } from "react";
 import {
@@ -41,6 +42,7 @@ interface CustomProviderFieldsProps {
    */
   browseSource?: "remote" | "models.dev";
   connectionExtra?: ReactNode;
+  credentialRevision?: number;
   customModels: ModelListRow[];
   density?: "default" | "compact";
   disabled?: boolean;
@@ -52,9 +54,18 @@ interface CustomProviderFieldsProps {
   onBaseUrlChange: (value: string) => void;
   onCustomModelsChange: (models: ModelListRow[]) => void;
   onDisplayNameChange: (value: string) => void;
+  onWireApiChange?: (value: WireApi) => void;
   providerInstanceId?: string;
-  remoteProvider?: "ollama" | "openai_compatible";
+  remoteProvider?:
+    | "ollama"
+    | "openai_compatible"
+    | "minimax"
+    | "minimax_cn"
+    | "xai"
+    | "zhipu"
+    | "zhipu_cn";
   showModelsEditor?: boolean;
+  wireApi?: WireApi;
 }
 
 export function CustomProviderFields({
@@ -75,9 +86,12 @@ export function CustomProviderFields({
   hostMode,
   browseLabel,
   connectionExtra,
+  credentialRevision,
   onDisplayNameChange,
   onBaseUrlChange,
   onCustomModelsChange,
+  wireApi = "chat",
+  onWireApiChange,
 }: CustomProviderFieldsProps) {
   const [isBrowsing, setIsBrowsing] = useState(false);
   const identityDisabled = disabled || identityReadOnly;
@@ -139,22 +153,38 @@ export function CustomProviderFields({
     );
   };
 
+  const remoteRowToModel = (row: RemoteModelRow): ModelListRow => ({
+    id: row.id,
+    name: row.name,
+    ...(row.supportsThinking === undefined
+      ? {}
+      : { supportsThinking: row.supportsThinking }),
+    ...(row.reasoningEffortValues?.length
+      ? { reasoningEffortValues: row.reasoningEffortValues }
+      : {}),
+    ...(row.supportsVision === undefined
+      ? {}
+      : { supportsVision: row.supportsVision }),
+  });
+
   const handleRemoteSelect = (row: RemoteModelRow) => {
-    handleModelsChange(
-      toggleModelListRow(customModels, {
-        id: row.id,
-        name: row.name,
-        ...(row.supportsThinking === undefined
-          ? {}
-          : { supportsThinking: row.supportsThinking }),
-        ...(row.reasoningEffortValues?.length
-          ? { reasoningEffortValues: row.reasoningEffortValues }
-          : {}),
-        ...(row.supportsVision === undefined
-          ? {}
-          : { supportsVision: row.supportsVision }),
-      })
-    );
+    handleModelsChange(toggleModelListRow(customModels, remoteRowToModel(row)));
+  };
+
+  const handleRemoteAddMany = (rows: RemoteModelRow[]) => {
+    const existingIds = new Set(selectedModelIds);
+    const additions: ModelListRow[] = [];
+    for (const row of rows) {
+      if (existingIds.has(row.id)) {
+        continue;
+      }
+      existingIds.add(row.id);
+      additions.push(remoteRowToModel(row));
+    }
+
+    if (additions.length > 0) {
+      handleModelsChange([...customModels, ...additions]);
+    }
   };
 
   const handleRemoveSelected = (modelId: string) => {
@@ -252,6 +282,28 @@ export function CustomProviderFields({
 
       {connectionExtra}
 
+      {onWireApiChange ? (
+        <FormField density={density} id="provider-wire-api" label="API">
+          <Select
+            disabled={disabled}
+            onValueChange={(value) =>
+              onWireApiChange(value === "responses" ? "responses" : "chat")
+            }
+            value={wireApi}
+          >
+            <SelectTrigger className="w-full" id="provider-wire-api">
+              <SelectValue>
+                {wireApi === "responses" ? "Responses" : "Chat completions"}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="chat">Chat completions</SelectItem>
+              <SelectItem value="responses">Responses</SelectItem>
+            </SelectContent>
+          </Select>
+        </FormField>
+      ) : null}
+
       {showModelsEditor ? (
         <FormField
           density={density}
@@ -298,7 +350,11 @@ export function CustomProviderFields({
                   baseUrl={baseUrl}
                   browseLabel={resolvedBrowseLabel}
                   className="h-72 rounded-md border border-border"
+                  credentialRevision={credentialRevision}
+                  disabled={disabled}
                   hostMode={hostMode}
+                  multiSelect
+                  onAddMany={handleRemoteAddMany}
                   onSelect={handleRemoteSelect}
                   provider={remoteProvider}
                   providerId={providerInstanceId}
@@ -312,6 +368,7 @@ export function CustomProviderFields({
               )}
               <div className="flex justify-end">
                 <Button
+                  disabled={disabled}
                   onClick={() => setIsBrowsing(false)}
                   size="sm"
                   type="button"

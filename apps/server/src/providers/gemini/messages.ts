@@ -6,10 +6,13 @@ import {
   createPartFromText,
   type Part,
 } from "@google/genai";
-import { readRecord } from "../shared";
+import { hasMatchingProviderContent, readRecord } from "../shared";
 
 export async function toGeminiContents(
-  messages: ChatMessage[]
+  messages: ChatMessage[],
+  providerInstanceId?: string,
+  modelId?: string,
+  providerReplayRevision?: string
 ): Promise<Content[]> {
   const contents: Content[] = [];
 
@@ -25,7 +28,12 @@ export async function toGeminiContents(
     }
 
     if (message.role === "assistant") {
-      const parts = toGeminiAssistantParts(message);
+      const parts = toGeminiAssistantParts(
+        message,
+        providerInstanceId,
+        modelId,
+        providerReplayRevision
+      );
 
       if (parts.length > 0) {
         contents.push({ parts, role: "model" });
@@ -86,11 +94,20 @@ async function toGeminiUserParts(
 }
 
 function toGeminiAssistantParts(
-  message: Extract<ChatMessage, { role: "assistant" }>
+  message: Extract<ChatMessage, { role: "assistant" }>,
+  providerInstanceId?: string,
+  modelId?: string,
+  providerReplayRevision?: string
 ): Part[] {
   if (
-    Array.isArray(message.providerContent) &&
-    message.providerContent.length > 0
+    hasMatchingProviderContent(
+      message,
+      "gemini",
+      "gemini-content",
+      providerInstanceId,
+      modelId,
+      providerReplayRevision
+    )
   ) {
     return message.providerContent as Part[];
   }

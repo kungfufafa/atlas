@@ -54,6 +54,48 @@ describe("chatMessagesToListItems", () => {
     });
   });
 
+  test("hydrates a persisted pending approval without a tool result", () => {
+    const messages: ChatMessage[] = [
+      { content: "Delete the export", role: "user" },
+      {
+        approval: {
+          consequenceSummary:
+            "Target: artifacts/archive.zip · This action is irreversible.",
+          createdAt: "2026-08-26T10:00:00.000Z",
+          details: { path: "artifacts/archive.zip" },
+          id: "app_call_delete",
+          status: "pending",
+          title: "Permanently delete 1 file(s)",
+          tool: "delete_file",
+          toolCallId: "call_delete",
+        },
+        content: "",
+        role: "assistant",
+        toolCalls: [
+          {
+            arguments: { path: "artifacts/archive.zip" },
+            id: "call_delete",
+            name: "delete_file",
+          },
+        ],
+      },
+    ];
+
+    const items = chatMessagesToListItems(messages);
+
+    expect(items).toHaveLength(2);
+    expect(items[1]).toMatchObject({
+      approval: {
+        id: "app_call_delete",
+        status: "pending",
+        tool: "delete_file",
+      },
+      content: "",
+      historyIndex: 1,
+      role: "assistant",
+    });
+  });
+
   test("renders described images as attachments and keeps vision-native images inline", () => {
     const messages: ChatMessage[] = [
       {

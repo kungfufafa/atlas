@@ -18,6 +18,25 @@ Treat export ZIPs as sensitive. They can include:
 - Custom tools and skills
 - The local SQLite database when it lives under the Atlas root
 
+## Move a single profile
+
+A profile-pack ZIP is a safer, narrower option when you want to copy one agent
+instead of restoring the entire Atlas installation. On **Profiles**, a
+Workspace Admin can export a standard profile, switch to another workspace,
+and import it as a new standard profile. Superadmins can do the same after
+switching into the workspace.
+
+Profile packs exclude Atlas-managed provider credentials, MCP configuration and
+secrets, Composio connections, generated artifacts, and archived memory.
+Host-level custom JavaScript source is excluded from Workspace Admin exports
+and can only be included by a Superadmin.
+Assignments reconnect only to matching resources that already exist in the
+destination workspace. User-authored soul, memory, knowledge-base, and skill
+text is included and may itself be sensitive.
+
+See [Profiles](/profiles#move-one-profile-between-workspaces) for the complete
+contents and import behavior.
+
 ## Import
 
 Importing is a whole-install restore:

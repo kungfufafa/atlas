@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 
 interface OpenCodeGoModelsBrowseListProps {
   className?: string;
+  disabled?: boolean;
   models: ProviderModelOption[];
   onSelect: (model: ProviderModelOption) => void;
   usedIds?: Set<string>;
@@ -15,6 +16,7 @@ export function OpenCodeGoModelsBrowseList({
   usedIds,
   onSelect,
   className,
+  disabled = false,
 }: OpenCodeGoModelsBrowseListProps) {
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
@@ -42,6 +44,7 @@ export function OpenCodeGoModelsBrowseList({
     <div className={cn("flex flex-col", className)}>
       <div className="border-border border-b px-3 py-2">
         <Input
+          disabled={disabled}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search model name or ID…"
           value={search}
@@ -63,6 +66,7 @@ export function OpenCodeGoModelsBrowseList({
           filtered.map((model) => (
             <button
               className="flex w-full flex-col gap-0.5 border-border/60 border-b px-3 py-2.5 text-left transition-colors hover:bg-muted/40"
+              disabled={disabled}
               key={model.id}
               onClick={() => onSelect(model)}
               type="button"

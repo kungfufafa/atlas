@@ -1,3 +1,4 @@
+import { Add01Icon } from "hugeicons-react";
 import { type ReactNode, useState } from "react";
 import {
   ModelListEditor,
@@ -12,12 +13,19 @@ interface BrowsableModelFieldsProps<T> {
   density?: "default" | "compact";
   disabled?: boolean;
   fieldId: string;
-  footerHint: ReactNode;
+  footerHint?: ReactNode;
   modelsError?: string | null;
   onCustomModelsChange: (models: ModelListRow[]) => void;
-  renderBrowse: (onSelect: (row: T) => void) => ReactNode;
+  renderBrowse: (context: {
+    multiSelect: boolean;
+    onAddMany: (rows: T[]) => void;
+    onSelect: (row: T) => void;
+  }) => ReactNode;
   showPricing?: boolean;
+  showThinking?: boolean;
+  showVision?: boolean;
   toModelRow: (row: T) => ModelListRow;
+  visionDefaultOn?: boolean;
 }
 
 export function BrowsableModelFields<T>({
@@ -29,13 +37,21 @@ export function BrowsableModelFields<T>({
   footerHint,
   browseLabel,
   showPricing = true,
+  showThinking = false,
+  showVision = false,
+  visionDefaultOn = false,
   onCustomModelsChange,
   toModelRow,
   renderBrowse,
 }: BrowsableModelFieldsProps<T>) {
   const [isBrowsing, setIsBrowsing] = useState(false);
+  const showBrowse = isBrowsing || customModels.length === 0;
 
   const handleBrowseSelect = (row: T) => {
+    if (disabled) {
+      return;
+    }
+
     const nextModel = toModelRow(row);
 
     if (customModels.some((model) => model.id === nextModel.id)) {
@@ -47,6 +63,32 @@ export function BrowsableModelFields<T>({
     setIsBrowsing(false);
   };
 
+  const handleAddMany = (rows: T[]) => {
+    if (disabled) {
+      return;
+    }
+
+    const existingIds = new Set(
+      customModels.map((model) => model.id.trim()).filter(Boolean)
+    );
+    const nextModels: ModelListRow[] = [];
+
+    for (const row of rows) {
+      const model = toModelRow(row);
+      const id = model.id.trim();
+      if (!id || existingIds.has(id)) {
+        continue;
+      }
+
+      existingIds.add(id);
+      nextModels.push(model);
+    }
+
+    if (nextModels.length > 0) {
+      onCustomModelsChange([...customModels, ...nextModels]);
+    }
+  };
+
   return (
     <FormField
       density={density}
@@ -55,26 +97,45 @@ export function BrowsableModelFields<T>({
           <p className="text-destructive text-sm" role="alert">
             {modelsError}
           </p>
-        ) : (
+        ) : footerHint ? (
           <p className="text-muted-foreground text-xs">{footerHint}</p>
-        )
+        ) : undefined
       }
       id={fieldId}
       label="Models"
     >
-      {isBrowsing ? (
+      {showBrowse ? (
         <div className="space-y-2">
-          {renderBrowse(handleBrowseSelect)}
-          <div className="flex justify-end">
+          {renderBrowse({
+            multiSelect: true,
+            onAddMany: handleAddMany,
+            onSelect: handleBrowseSelect,
+          })}
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <Button
               disabled={disabled}
-              onClick={() => setIsBrowsing(false)}
+              onClick={() => {
+                onCustomModelsChange([...customModels, { id: "", name: "" }]);
+                setIsBrowsing(false);
+              }}
               size="sm"
               type="button"
               variant="outline"
             >
-              Back
+              <Add01Icon className="mr-1 size-4" />
+              Add model
             </Button>
+            {customModels.length > 0 ? (
+              <Button
+                disabled={disabled}
+                onClick={() => setIsBrowsing(false)}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                Back
+              </Button>
+            ) : null}
           </div>
         </div>
       ) : (
@@ -85,6 +146,9 @@ export function BrowsableModelFields<T>({
           onBrowse={() => setIsBrowsing(true)}
           onChange={onCustomModelsChange}
           showPricing={showPricing}
+          showThinking={showThinking}
+          showVision={showVision}
+          visionDefaultOn={visionDefaultOn}
         />
       )}
     </FormField>

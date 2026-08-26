@@ -3,14 +3,24 @@ import {
   type CustomModelEntry,
   findCustomModel,
   inferCompatibleReasoningEffortValues,
+  isDiscoveryModelProvider,
+  LLM_FETCH_TIMEOUT_MS,
   normalizeBaseUrl,
   parseRemoteOpenAIModelEntry,
   resolveCompatibleModelCapabilities,
+  withDisabledFetchIdle,
 } from "@atlas/core";
 import OpenAI from "openai";
 import type { ProviderModelOption } from "./models";
 import { AVAILABLE_MODELS } from "./models";
 import { openRouterSlugSupportsThinking } from "./openrouter/thinking";
+import {
+  fetchSafeProviderDiscoveryEndpoint,
+  type ProviderDiscoveryDnsResolver,
+  type ProviderDiscoveryFetch,
+  type ProviderDiscoveryLocalAccess,
+  ProviderDiscoverySafetyError,
+} from "./provider-discovery-safety";
 import { DEFAULT_USER_AGENT } from "./shared";
 
 const DEFAULT_CONTEXT_WINDOW = 128_000;
@@ -299,17 +309,17 @@ export function getModelsForProviderInstance(
       providerLabel: instance.label,
     }));
 
-  if (instance.type === "openai_compatible") {
+  if (isDiscoveryModelProvider(instance.type)) {
     const entries = instance.customModels ?? [];
     const models = customModelsToCatalog(
       entries,
-      "openai_compatible",
+      instance.type,
       instance.label,
       instance.baseUrl
     );
 
     return annotate(
-      ensureCurrentModelInCatalog(models, currentModel, "openai_compatible")
+      ensureCurrentModelInCatalog(models, currentModel, instance.type)
     );
   }
 
@@ -365,7 +375,8 @@ export function getModelsForProviderInstance(
     instance.type === "anthropic" ||
     instance.type === "gemini" ||
     instance.type === "deepseek" ||
-    instance.type === "opencode_go"
+    instance.type === "opencode_go" ||
+    instance.type === "cloudflare"
   ) {
     const entries = instance.customModels ?? [];
     if (entries.length) {
@@ -477,17 +488,59 @@ export function resolveOllamaDefaultModel(
 
 export async function fetchRemoteOpenAIModels(
   baseUrl: string,
-  apiKey: string
+  apiKey: string,
+  options: {
+    fetch?: ProviderDiscoveryFetch;
+    localAccess?: ProviderDiscoveryLocalAccess;
+    resolveDns?: ProviderDiscoveryDnsResolver;
+    signal?: AbortSignal;
+    timeoutMs?: number;
+  } = {}
 ): Promise<CustomModelEntry[]> {
   const normalized = normalizeBaseUrl(baseUrl);
+  const deadline = AbortSignal.timeout(
+    options.timeoutMs ?? LLM_FETCH_TIMEOUT_MS
+  );
+  const signal = options.signal
+    ? AbortSignal.any([options.signal, deadline])
+    : deadline;
+  const fetchImpl: ProviderDiscoveryFetch = options.fetch ?? fetch;
+  const boundedFetch: ProviderDiscoveryFetch = (input, init) => {
+    const requestInit =
+      input instanceof Request
+        ? { headers: input.headers, method: input.method, ...init }
+        : init;
+    const requestUrl = input instanceof Request ? input.url : input;
+    return fetchSafeProviderDiscoveryEndpoint(
+      requestUrl,
+      withDisabledFetchIdle({
+        ...requestInit,
+        signal,
+      }),
+      {
+        fetchImpl,
+        localAccess: options.localAccess,
+        resolveDns: options.resolveDns,
+      }
+    );
+  };
 
   try {
-    const fromRaw = await fetchRemoteOpenAIModelsRaw(normalized, apiKey);
+    const fromRaw = await fetchRemoteOpenAIModelsRaw(
+      normalized,
+      apiKey,
+      boundedFetch
+    );
     if (fromRaw.length > 0) {
       return fromRaw;
     }
   } catch (error) {
-    if (isRemoteModelsAuthError(error)) {
+    if (
+      signal.aborted ||
+      isAbortOrTimeoutError(error) ||
+      error instanceof ProviderDiscoverySafetyError ||
+      isRemoteModelsAuthError(error)
+    ) {
       throw error;
     }
     // Fall through to the SDK for hosts that only speak the official list API.
@@ -499,6 +552,8 @@ export async function fetchRemoteOpenAIModels(
     defaultHeaders: {
       "User-Agent": DEFAULT_USER_AGENT,
     },
+    fetch: boundedFetch,
+    maxRetries: 0,
   });
 
   const page = await client.models.list();
@@ -525,9 +580,10 @@ export async function fetchRemoteOpenAIModels(
 
 async function fetchRemoteOpenAIModelsRaw(
   baseUrl: string,
-  apiKey: string
+  apiKey: string,
+  fetchImpl: ProviderDiscoveryFetch
 ): Promise<CustomModelEntry[]> {
-  const response = await fetch(`${baseUrl}/models`, {
+  const response = await fetchImpl(`${baseUrl}/models`, {
     headers: {
       ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
       Accept: "application/json",
@@ -536,10 +592,9 @@ async function fetchRemoteOpenAIModelsRaw(
   });
 
   if (!response.ok) {
-    const body = await response.text();
+    const endpointOrigin = new URL(baseUrl).origin;
     console.warn(
-      `Could not fetch models (${response.status}) from ${baseUrl}/models:`,
-      body
+      `Could not fetch models (${response.status}) from ${endpointOrigin}.`
     );
 
     if (response.status === 401 || response.status === 403) {
@@ -548,7 +603,9 @@ async function fetchRemoteOpenAIModelsRaw(
       );
     }
 
-    throw new Error(`Could not fetch models (${response.status}): ${body}`);
+    throw new Error(
+      `Could not fetch models from the remote endpoint (${response.status}).`
+    );
   }
 
   const payload = (await response.json()) as {
@@ -572,6 +629,13 @@ async function fetchRemoteOpenAIModelsRaw(
 
   return [...models.values()].sort((left, right) =>
     left.id.localeCompare(right.id)
+  );
+}
+
+function isAbortOrTimeoutError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error.name === "AbortError" || error.name === "TimeoutError")
   );
 }
 

@@ -1,6 +1,6 @@
-export const DEFAULT_CHAT_STREAM_TIMEOUT_MS = 1_800_000;
+export const DEFAULT_CHAT_STREAM_TIMEOUT_MS = 86_400_000;
 export const MIN_CHAT_STREAM_TIMEOUT_MS = 60_000;
-export const MAX_CHAT_STREAM_TIMEOUT_MS = 3_600_000;
+export const MAX_CHAT_STREAM_TIMEOUT_MS = 86_400_000;
 
 function readTimeoutEnvValue(
   env: Record<string, string | undefined>,
@@ -32,8 +32,8 @@ export function resolveChatStreamTimeoutMs(
 /**
  * A separate, much shorter budget for the provider's *first* output of a turn.
  *
- * The stream timeout has to stay long because a healthy turn can spend half an
- * hour in a tool loop. That same budget is far too generous for a provider that
+ * The stream timeout has to stay long because a healthy turn can spend hours
+ * in a tool loop. That same budget is far too generous for a provider that
  * accepted the connection and then said nothing at all, which is the case that
  * holds a session hostage with no way to reach it. Anything the provider emits
  * (a chunk, a thinking delta, a tool call) satisfies this deadline; the 4s

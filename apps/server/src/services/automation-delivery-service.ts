@@ -77,6 +77,14 @@ export class AutomationDeliveryService {
       throw new Error("Outbound envelope orgId is required.");
     }
 
+    if (!(await this.automationService.isOrganizationActive(orgId))) {
+      await this.automationService.updateRunDelivery(run.id, automation.id, {
+        deliveryError: null,
+        deliveryStatus: "skipped",
+      });
+      return;
+    }
+
     let result: { ok: boolean; error?: string };
 
     if (delivery.channel === "email") {

@@ -1,4 +1,5 @@
 import {
+  CodeIcon,
   HashtagIcon,
   Key01Icon,
   Notification01Icon,
@@ -8,6 +9,7 @@ import {
   WhatsappIcon,
 } from "hugeicons-react";
 import { Navigate, useSearchParams } from "react-router-dom";
+import { CodingAgentsSettingsCard } from "@/components/CodingAgentsSettingsCard";
 import { ComposioConnectionsCard } from "@/components/ComposioConnectionsCard";
 import { ComposioSettingsCard } from "@/components/ComposioSettingsCard";
 import { DiscordSettingsCard } from "@/components/DiscordSettingsCard";
@@ -60,6 +62,12 @@ const INTEGRATION_SECTIONS = [
     label: "Local token",
   },
   {
+    description: "Provider or host login",
+    icon: CodeIcon,
+    id: "coding-agents",
+    label: "Coding agents",
+  },
+  {
     description: "Shrink tool output before the model reads it",
     icon: RocketIcon,
     id: "optimization",
@@ -76,6 +84,7 @@ function resolveSection(value: string | null): IntegrationSectionId {
     value === "whatsapp" ||
     value === "discord" ||
     value === "composio" ||
+    value === "coding-agents" ||
     value === "optimization"
   ) {
     return value;
@@ -109,7 +118,9 @@ export function IntegrationsPage() {
   const visibleSections = isPlatformAdmin
     ? INTEGRATION_SECTIONS
     : canManageWorkspace
-      ? INTEGRATION_SECTIONS.filter((item) => item.id !== "token")
+      ? INTEGRATION_SECTIONS.filter(
+          (item) => item.id !== "token" && item.id !== "coding-agents"
+        )
       : INTEGRATION_SECTIONS.filter((item) => item.id === "composio");
   const visibleSection = visibleSections.some((item) => item.id === section)
     ? section
@@ -160,6 +171,15 @@ export function IntegrationsPage() {
           {visibleSection === "token" ? <LocalAuthTokenCard /> : null}
 
           {visibleSection === "optimization" ? <TokenOptimizationCard /> : null}
+
+          {visibleSection === "coding-agents" ? (
+            activeOrg ? (
+              <CodingAgentsSettingsCard
+                key={activeOrg.id}
+                orgId={activeOrg.id}
+              />
+            ) : null
+          ) : null}
 
           {visibleSection === "composio" ? (
             <div className={cn(isOrgAdmin && "space-y-4")}>

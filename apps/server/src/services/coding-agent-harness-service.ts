@@ -8,7 +8,12 @@ import type {
   StoredCodingAgentHarnessProbeCache,
   StoredCodingAgentHarnessRecord,
 } from "@atlas/db";
-import { WORKSPACE_SETTINGS_ID } from "@atlas/db";
+import {
+  isCodingAgentProviderPassthroughEnabled,
+  mergeWorkspaceSettings,
+  updateWorkspaceSettingsForOrg,
+  WORKSPACE_SETTINGS_ID,
+} from "@atlas/db";
 import {
   ensureBunGlobalInstallDirs,
   ensureProcessPath,
@@ -99,6 +104,8 @@ const PROBE_CACHE_TTL_MS = 5 * 60 * 1000;
 
 export interface CodingAgentHarnessProbeContext {
   profileModel?: string | null;
+  providerPassthroughEnabled?: boolean;
+  scopeKey?: string | null;
   userConfig?: UserConfig | null;
 }
 
@@ -170,6 +177,27 @@ export async function loadCodingAgentWorkspaceSettings(
   };
 }
 
+export async function loadCodingAgentProviderPassthroughForOrg(
+  db: DatabaseAdapter,
+  orgId: string
+): Promise<boolean> {
+  return isCodingAgentProviderPassthroughEnabled(
+    await db.getWorkspaceSettings(orgId)
+  );
+}
+
+export async function saveCodingAgentProviderPassthroughForOrg(
+  db: DatabaseAdapter,
+  orgId: string,
+  enabled: boolean
+): Promise<boolean> {
+  await updateWorkspaceSettingsForOrg(db, orgId, () => ({
+    codingAgentProviderPassthrough: enabled,
+    updatedAt: new Date().toISOString(),
+  }));
+  return enabled;
+}
+
 export async function listCodingAgentHarnessStatuses(
   db: DatabaseAdapter,
   options: ListCodingAgentHarnessStatusesOptions = {}
@@ -197,7 +225,7 @@ export async function listCodingAgentHarnessStatuses(
         probe && (probeHarnessId === null || probeHarnessId === harness.id);
 
       if (!shouldProbe) {
-        if (isProbeCacheFresh(harness.probeCache)) {
+        if (isProbeCacheFresh(harness.probeCache, options.probeContext)) {
           return buildHarnessStatusFromCache(harness, runtime);
         }
 
@@ -282,6 +310,7 @@ export async function refreshCodingAgentHarnessProbe(
     checkedAt,
     nextStep: probe.nextStep,
     ready: probe.ready,
+    scopeKey: codingHarnessProbeScopeKey(probeContext),
     statusMessage: probe.statusMessage,
   };
 
@@ -338,15 +367,14 @@ export async function saveCodingAgentWorkspaceSettings(
         ? input.selectedHarnessId
         : null;
 
-  await db.upsertWorkspaceSettings({
-    codingAgentHarnesses: nextHarnesses,
-    id: stored?.id ?? WORKSPACE_SETTINGS_ID,
-    imageModel: stored?.imageModel ?? null,
-    selectedCodingAgentHarness: selectedHarnessId,
-    transcriptionModel: stored?.transcriptionModel ?? null,
-    updatedAt: new Date().toISOString(),
-    visionModel: stored?.visionModel ?? null,
-  });
+  await db.upsertWorkspaceSettings(
+    mergeWorkspaceSettings(stored, {
+      codingAgentHarnesses: nextHarnesses,
+      id: stored?.id ?? WORKSPACE_SETTINGS_ID,
+      selectedCodingAgentHarness: selectedHarnessId,
+      updatedAt: new Date().toISOString(),
+    })
+  );
 
   return {
     harnesses: nextHarnesses,
@@ -404,9 +432,10 @@ export function inferCodingAgentHarnessKind(
 
 /** Light PATH discovery — installed harnesses without requiring a saved selection. */
 export async function listInstalledCodingAgentHarnesses(
-  db: DatabaseAdapter
+  db: DatabaseAdapter,
+  probeContext?: CodingAgentHarnessProbeContext
 ): Promise<CodingAgentHarnessStatus[]> {
-  const statuses = await listCodingAgentHarnessStatuses(db);
+  const statuses = await listCodingAgentHarnessStatuses(db, { probeContext });
   return statuses.filter((harness) => harness.enabled && harness.installed);
 }
 
@@ -415,7 +444,7 @@ export async function resolveCodingAgentHarness(
   preferredKind?: StoredCodingAgentHarnessKind | null,
   probeContext?: CodingAgentHarnessProbeContext
 ): Promise<CodingAgentHarnessStatus> {
-  const statuses = await listCodingAgentHarnessStatuses(db);
+  const statuses = await listCodingAgentHarnessStatuses(db, { probeContext });
   const enabled = statuses.filter((harness) => harness.enabled);
 
   const notReadyError = (harness: CodingAgentHarnessStatus): Error => {
@@ -431,7 +460,7 @@ export async function resolveCodingAgentHarness(
   const ensureReady = async (
     harness: CodingAgentHarnessStatus
   ): Promise<CodingAgentHarnessStatus> => {
-    if (harness.ready && isProbeCacheFresh(harness.probeCache)) {
+    if (harness.ready && isProbeCacheFresh(harness.probeCache, probeContext)) {
       return harness;
     }
 
@@ -584,7 +613,8 @@ function mergeHarnesses(
 }
 
 function isProbeCacheFresh(
-  cache: StoredCodingAgentHarnessProbeCache | null | undefined
+  cache: StoredCodingAgentHarnessProbeCache | null | undefined,
+  probeContext?: CodingAgentHarnessProbeContext
 ): boolean {
   if (!cache?.checkedAt) {
     return false;
@@ -596,7 +626,23 @@ function isProbeCacheFresh(
     return false;
   }
 
-  return Date.now() - checkedAt < PROBE_CACHE_TTL_MS;
+  const legacyScope = "global:passthrough";
+  const cachedScope = cache.scopeKey?.trim() || legacyScope;
+  return (
+    cachedScope === codingHarnessProbeScopeKey(probeContext) &&
+    Date.now() - checkedAt < PROBE_CACHE_TTL_MS
+  );
+}
+
+function codingHarnessProbeScopeKey(
+  probeContext?: CodingAgentHarnessProbeContext
+): string {
+  const tenant = probeContext?.scopeKey?.trim() || "global";
+  const mode =
+    probeContext?.providerPassthroughEnabled === false
+      ? "native"
+      : "passthrough";
+  return `${tenant}:${mode}`;
 }
 
 function buildHarnessStatusFromCache(
@@ -637,15 +683,14 @@ async function saveHarnessProbeCache(
     harness.id === harnessId ? { ...harness, probeCache } : harness
   );
 
-  await db.upsertWorkspaceSettings({
-    codingAgentHarnesses: nextHarnesses,
-    id: stored?.id ?? WORKSPACE_SETTINGS_ID,
-    imageModel: stored?.imageModel ?? null,
-    selectedCodingAgentHarness: settings.selectedHarnessId,
-    transcriptionModel: stored?.transcriptionModel ?? null,
-    updatedAt: new Date().toISOString(),
-    visionModel: stored?.visionModel ?? null,
-  });
+  await db.upsertWorkspaceSettings(
+    mergeWorkspaceSettings(stored, {
+      codingAgentHarnesses: nextHarnesses,
+      id: stored?.id ?? WORKSPACE_SETTINGS_ID,
+      selectedCodingAgentHarness: settings.selectedHarnessId,
+      updatedAt: new Date().toISOString(),
+    })
+  );
 }
 
 async function clearHarnessProbeCache(
@@ -658,15 +703,14 @@ async function clearHarnessProbeCache(
     harness.id === harnessId ? { ...harness, probeCache: null } : harness
   );
 
-  await db.upsertWorkspaceSettings({
-    codingAgentHarnesses: nextHarnesses,
-    id: stored?.id ?? WORKSPACE_SETTINGS_ID,
-    imageModel: stored?.imageModel ?? null,
-    selectedCodingAgentHarness: settings.selectedHarnessId,
-    transcriptionModel: stored?.transcriptionModel ?? null,
-    updatedAt: new Date().toISOString(),
-    visionModel: stored?.visionModel ?? null,
-  });
+  await db.upsertWorkspaceSettings(
+    mergeWorkspaceSettings(stored, {
+      codingAgentHarnesses: nextHarnesses,
+      id: stored?.id ?? WORKSPACE_SETTINGS_ID,
+      selectedCodingAgentHarness: settings.selectedHarnessId,
+      updatedAt: new Date().toISOString(),
+    })
+  );
 }
 
 async function getHarnessRuntimeStatus(
@@ -705,6 +749,7 @@ async function probeHarnessVersion(command: string): Promise<{
     });
     let stdout = "";
     let stderr = "";
+    let killTimeoutId: ReturnType<typeof setTimeout> | undefined;
 
     // The bash tool awaits this probe, so a CLI that never answers --version
     // would otherwise hold the turn open forever. Resolve on the timer instead
@@ -713,6 +758,9 @@ async function probeHarnessVersion(command: string): Promise<{
     // timeout a second time on its PATH retry.
     const timeoutId = setTimeout(() => {
       child.kill("SIGTERM");
+      // A CLI can trap SIGTERM and keep its stdio pipes open after this probe
+      // has resolved, so escalate after a short grace period.
+      killTimeoutId = setTimeout(() => child.kill("SIGKILL"), SIGTERM_GRACE_MS);
       resolve({ installed: false, missing: false, version: null });
     }, timeoutMs);
 
@@ -724,6 +772,7 @@ async function probeHarnessVersion(command: string): Promise<{
     });
     child.once("error", (error) => {
       clearTimeout(timeoutId);
+      clearTimeout(killTimeoutId);
       resolve({
         installed: false,
         missing: (error as NodeJS.ErrnoException).code === "ENOENT",
@@ -732,6 +781,7 @@ async function probeHarnessVersion(command: string): Promise<{
     });
     child.once("close", (code) => {
       clearTimeout(timeoutId);
+      clearTimeout(killTimeoutId);
       resolve({
         installed: code === 0,
         missing: false,
@@ -754,6 +804,43 @@ export function getCodingHarnessInstallCommand(
   kind: StoredCodingAgentHarnessKind
 ): string {
   return buildCodingHarnessInstallPlan(kind).displayCommand;
+}
+
+export function getCodingHarnessLoginCommand(
+  kind: StoredCodingAgentHarnessKind
+): string | null {
+  if (kind === "codex") {
+    return "codex login";
+  }
+  if (kind === "claude_code") {
+    return "claude auth login";
+  }
+  if (kind === "opencode") {
+    return "opencode auth login";
+  }
+  if (kind === "pi") {
+    return "pi (then enter /login)";
+  }
+  return null;
+}
+
+export function listCodingHarnessLoginCommands(): Array<{
+  command: string;
+  name: string;
+}> {
+  return DEFAULT_HARNESSES.flatMap((harness) => {
+    const command = getCodingHarnessLoginCommand(harness.kind);
+    return command ? [{ command, name: harness.name }] : [];
+  });
+}
+
+function harnessNativeLoginMessage(
+  harness: Pick<CodingAgentHarnessStatus, "kind" | "name">
+): string {
+  const command = getCodingHarnessLoginCommand(harness.kind);
+  return command
+    ? `${harness.name} uses host-native login (\`${command}\`).`
+    : `${harness.name} uses host Cursor authentication.`;
 }
 
 export function getCodingHarnessInstallHint(
@@ -839,12 +926,15 @@ async function probeHarnessLight(
   nextStep: "retry" | null;
   statusMessage: string | null;
 }> {
-  if (harness.kind === "cursor_agent") {
+  if (
+    harness.kind === "cursor_agent" ||
+    probeContext?.providerPassthroughEnabled === false
+  ) {
     return {
       authenticated: null,
       nextStep: null,
       ready: true,
-      statusMessage: `${harness.name} is installed. Uses host Cursor auth (no Atlas provider passthrough).`,
+      statusMessage: harnessNativeLoginMessage(harness),
     };
   }
 
@@ -887,32 +977,44 @@ async function probeHarnessExec(
       authenticated: null,
       nextStep: null,
       ready: true,
-      statusMessage: `${harness.name} is installed. Uses host Cursor auth (no Atlas provider passthrough).`,
+      statusMessage: harnessNativeLoginMessage(harness),
     };
   }
 
-  const { spawn, routing } = await resolveCodingAgentSpawnBundle({
-    harnessKind: harness.kind,
-    profileModel: probeContext?.profileModel ?? null,
-    userConfig: probeContext?.userConfig,
-  });
+  const providerPassthroughEnabled =
+    probeContext?.providerPassthroughEnabled !== false;
+  const bundle = providerPassthroughEnabled
+    ? await resolveCodingAgentSpawnBundle({
+        harnessKind: harness.kind,
+        profileModel: probeContext?.profileModel ?? null,
+        userConfig: probeContext?.userConfig,
+      })
+    : null;
+  const spawn = bundle?.spawn ?? { env: {} };
+  const routing = bundle?.routing ?? null;
   const tempDir = await mkdtemp(
     path.join(tmpdir(), "atlas-coding-agent-probe-")
   );
 
-  const piProvider = routing.providerType
+  const piProvider = routing?.providerType
     ? mapAtlasProviderToPi(routing.providerType, routing.baseUrl)
     : null;
   const piModel =
-    routing.model && routing.providerType
+    routing?.model && routing.providerType
       ? formatModelForHarness("pi", routing.providerType, routing.model)
       : null;
 
   try {
-    const result = await runProbeCommand(harness, tempDir, spawn.env, {
-      model: piModel,
-      provider: piProvider,
-    });
+    const result = await runProbeCommand(
+      harness,
+      tempDir,
+      spawn.env,
+      {
+        model: piModel,
+        provider: piProvider,
+      },
+      { scrubCredentialKeys: !providerPassthroughEnabled }
+    );
     const combinedOutput = [result.stdout, result.stderr]
       .filter(Boolean)
       .join("\n")
@@ -934,20 +1036,29 @@ async function probeHarnessExec(
         authenticated: true,
         nextStep: null,
         ready: true,
-        statusMessage: `${harness.name} is installed and ready via Atlas provider passthrough.`,
+        statusMessage: providerPassthroughEnabled
+          ? `${harness.name} is installed and ready via Atlas provider passthrough.`
+          : harnessNativeLoginMessage(harness),
       };
     }
 
     if (looksLikeAuthenticationFailure(combinedOutput)) {
+      const loginCommand = getCodingHarnessLoginCommand(harness.kind);
+      const nativeHint = loginCommand
+        ? `Run \`${loginCommand}\` on this server.`
+        : "Authenticate the CLI on this server.";
       return {
         authenticated: false,
         nextStep: "retry",
         ready: false,
-        statusMessage:
-          routing.error ??
-          (combinedOutput
-            ? `${harness.name} could not authenticate with the configured Atlas provider. ${summarizeProbeOutput(combinedOutput)} Check Settings → Provider.`
-            : `${harness.name} could not authenticate with the configured Atlas provider. Check Settings → Provider.`),
+        statusMessage: providerPassthroughEnabled
+          ? (routing?.error ??
+            (combinedOutput
+              ? `${harness.name} could not authenticate with the configured Atlas provider. ${summarizeProbeOutput(combinedOutput)} Check Settings → Provider.`
+              : `${harness.name} could not authenticate with the configured Atlas provider. Check Settings → Provider.`))
+          : combinedOutput
+            ? `${harness.name} could not authenticate with host-native login. ${summarizeProbeOutput(combinedOutput)} ${nativeHint}`
+            : `${harness.name} could not authenticate with host-native login. ${nativeHint}`,
       };
     }
 
@@ -969,7 +1080,8 @@ async function runProbeCommand(
   harness: CodingAgentHarnessStatus,
   cwd: string,
   spawnEnv: Record<string, string> = {},
-  piOptions?: { provider?: string | null; model?: string | null }
+  piOptions?: { provider?: string | null; model?: string | null },
+  envOptions: { scrubCredentialKeys?: boolean } = {}
 ): Promise<{
   exitCode: number | null;
   stdout: string;
@@ -990,7 +1102,9 @@ async function runProbeCommand(
   return new Promise((resolve) => {
     const child = spawn(harness.command, args, {
       cwd,
-      env: mergeCodingAgentSpawnEnv(getToolExecutionEnv(), spawnEnv),
+      env: mergeCodingAgentSpawnEnv(getToolExecutionEnv(), spawnEnv, {
+        scrubCredentialKeys: envOptions.scrubCredentialKeys,
+      }),
       stdio: ["ignore", "pipe", "pipe"],
     });
     let stdout = "";

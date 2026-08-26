@@ -1,9 +1,13 @@
 import {
+  AtlasApiError,
+  apiKeyEnvVarForProvider,
   createProviderInstanceId,
+  defaultDiscoveryBaseUrl,
   defaultOllamaBaseUrl,
   defaultOllamaLabel,
   findCustomModel,
   findProviderInstance,
+  isDiscoveryModelProvider,
   isOllamaCloudInstance,
   isValidBaseUrl,
   normalizeBaseUrl,
@@ -11,6 +15,8 @@ import {
   type OllamaHostMode,
   ollamaRequiresApiKey,
   type ProviderInstance,
+  parseWireApi,
+  readEnvValue,
   resolveOllamaHostMode,
   validateCustomModels,
   validateDisplayName,
@@ -30,6 +36,7 @@ import {
   isOpenRouterModelSlug,
   resolveModel,
   validateCerebrasCustomModels,
+  validateCloudflareCustomModels,
   validateFireworksCustomModels,
   validateOllamaCustomModels,
   validateOpenCodeGoCustomModels,
@@ -39,12 +46,13 @@ import { getModelsForOpenCodeGoInstance } from "../providers/opencode-go/catalog
 
 export function toProviderInstanceSummary(
   instance: ProviderInstance,
-  modelCount: number
+  modelCount: number,
+  env: Record<string, string | undefined> = process.env
 ): ProviderInstanceSummary {
   return {
     baseUrl: instance.baseUrl ?? null,
     hasApiKey:
-      Boolean(instance.apiKey.trim()) ||
+      hasResolvedProviderApiKey(instance, env) ||
       instance.type === "openai_compatible" ||
       (instance.type === "ollama" && !isOllamaCloudInstance(instance)),
     hostMode:
@@ -52,6 +60,7 @@ export function toProviderInstanceSummary(
     id: instance.id,
     label: normalizeProviderInstanceLabel(instance.type, instance.label, []),
     type: instance.type,
+    wireApi: instance.wireApi ?? null,
     ...(instance.customModels?.length
       ? { customModels: instance.customModels }
       : {}),
@@ -60,16 +69,34 @@ export function toProviderInstanceSummary(
   };
 }
 
-export function isProviderInstanceUsable(instance: ProviderInstance): boolean {
+function hasResolvedProviderApiKey(
+  instance: ProviderInstance,
+  env: Record<string, string | undefined>
+): boolean {
+  if (instance.apiKey.trim()) {
+    return true;
+  }
+
+  const envVar = apiKeyEnvVarForProvider(instance.type);
+  return Boolean(envVar && readEnvValue(env, envVar)?.trim());
+}
+
+export function isProviderInstanceUsable(
+  instance: ProviderInstance,
+  env: Record<string, string | undefined> = process.env
+): boolean {
   return (
-    Boolean(instance.apiKey?.trim()) ||
+    hasResolvedProviderApiKey(instance, env) ||
     instance.type === "openai_compatible" ||
     (instance.type === "ollama" && !isOllamaCloudInstance(instance))
   );
 }
 
-export function countModelsForInstance(instance: ProviderInstance): number {
-  if (!isProviderInstanceUsable(instance)) {
+export function countModelsForInstance(
+  instance: ProviderInstance,
+  env: Record<string, string | undefined> = process.env
+): number {
+  if (!isProviderInstanceUsable(instance, env)) {
     return 0;
   }
   return getModelsForProviderInstance(instance).length;
@@ -131,7 +158,7 @@ export function modelExistsOnInstance(
     return false;
   }
 
-  if (instance.type === "openai_compatible") {
+  if (isDiscoveryModelProvider(instance.type)) {
     return isCompatibleModelId(trimmed, instance.customModels);
   }
 
@@ -164,15 +191,25 @@ export function resolveDefaultModelForInstance(
 }
 
 export function buildProviderInstanceFromCreateRequest(
-  request: CreateProviderRequest,
+  // apiKey and type are widened here on purpose: request bodies reach this
+  // unvalidated, so an absent field has to name itself rather than throw a
+  // TypeError, and the type is what stops the guard being deleted later.
+  request: Omit<CreateProviderRequest, "apiKey" | "type"> & {
+    apiKey?: string;
+    type?: CreateProviderRequest["type"];
+  },
   existing: ProviderInstance[]
 ): ProviderInstance {
   const type = request.type;
-  const trimmedKey = request.apiKey.trim();
-  const apiKey = trimmedKey;
+
+  if (!type) {
+    throw new AtlasApiError("Provider type is required.", 400);
+  }
+
+  const apiKey = request.apiKey?.trim() ?? "";
 
   if (!apiKey && type !== "openai_compatible" && type !== "ollama") {
-    throw new Error("API key is required.");
+    throw new AtlasApiError("API key is required.", 400);
   }
 
   if (type === "ollama") {
@@ -182,11 +219,11 @@ export function buildProviderInstanceFromCreateRequest(
     });
 
     if (ollamaRequiresApiKey(hostMode) && !apiKey) {
-      throw new Error("API key is required for Ollama Cloud.");
+      throw new AtlasApiError("API key is required for Ollama Cloud.", 400);
     }
   }
 
-  const fields = buildProviderFieldsFromRequest(request);
+  const fields = buildProviderFieldsFromRequest({ ...request, apiKey, type });
   const rawLabel = request.label?.trim()
     ? validateProviderInstanceLabel(request.label, type)
     : fields.label;
@@ -200,6 +237,7 @@ export function buildProviderInstanceFromCreateRequest(
   return {
     apiKey,
     id: createProviderInstanceId(),
+    replayRevision: crypto.randomUUID(),
     type,
     ...fields,
     createdAt: new Date().toISOString(),
@@ -226,6 +264,15 @@ export function applyProviderInstanceUpdate(
     if (!isValidBaseUrl(normalized)) {
       throw new Error("A valid http(s) base URL is required.");
     }
+    const previousBaseUrl = instance.baseUrl
+      ? normalizeBaseUrl(instance.baseUrl)
+      : "";
+    const endpointChanged = normalized !== previousBaseUrl;
+    if (endpointChanged && instance.apiKey.trim() && !request.apiKey?.trim()) {
+      throw new Error(
+        "Re-enter the API key when changing a provider base URL."
+      );
+    }
     next.baseUrl = normalized;
   }
 
@@ -233,8 +280,12 @@ export function applyProviderInstanceUpdate(
     next.hostMode = request.hostMode;
   }
 
+  if (request.wireApi !== undefined && instance.type === "openai_compatible") {
+    next.wireApi = parseWireApi(request.wireApi);
+  }
+
   if (request.customModels !== undefined) {
-    if (instance.type === "openai_compatible") {
+    if (isDiscoveryModelProvider(instance.type)) {
       next.customModels = validateCustomModels(request.customModels);
       if (!next.customModels.length) {
         throw new Error("At least one model is required.");
@@ -247,6 +298,8 @@ export function applyProviderInstanceUpdate(
       next.customModels = validateFireworksCustomModels(request.customModels);
     } else if (instance.type === "ollama") {
       next.customModels = validateOllamaCustomModels(request.customModels);
+    } else if (instance.type === "cloudflare") {
+      next.customModels = validateCloudflareCustomModels(request.customModels);
     } else if (instance.type === "opencode_go") {
       next.customModels = request.customModels.length
         ? validateOpenCodeGoCustomModels(request.customModels)
@@ -269,12 +322,21 @@ export function applyProviderInstanceUpdate(
     }
   }
 
+  const connectionSemanticsChanged =
+    next.apiKey !== instance.apiKey ||
+    next.baseUrl !== instance.baseUrl ||
+    next.hostMode !== instance.hostMode ||
+    next.wireApi !== instance.wireApi;
+  if (connectionSemanticsChanged) {
+    next.replayRevision = crypto.randomUUID();
+  }
+
   return next;
 }
 
 function buildProviderFieldsFromRequest(request: CreateProviderRequest): Pick<
   ProviderInstance,
-  "baseUrl" | "customModels" | "hostMode"
+  "baseUrl" | "customModels" | "hostMode" | "wireApi"
 > & {
   label?: string;
 } {
@@ -341,7 +403,35 @@ function buildProviderFieldsFromRequest(request: CreateProviderRequest): Pick<
       throw new Error("At least one model is required.");
     }
 
-    return { baseUrl, customModels, label };
+    return {
+      baseUrl,
+      customModels,
+      label,
+      wireApi: parseWireApi(request.wireApi),
+    };
+  }
+
+  if (isDiscoveryModelProvider(type)) {
+    const baseUrl = normalizeBaseUrl(
+      request.baseUrl?.trim() || defaultDiscoveryBaseUrl(type) || ""
+    );
+    if (!isValidBaseUrl(baseUrl)) {
+      throw new Error("A valid http(s) base URL is required.");
+    }
+
+    let customModels = request.customModels?.length
+      ? validateCustomModels(request.customModels)
+      : undefined;
+    if (!customModels?.length && request.model?.trim()) {
+      customModels = validateCustomModels([
+        { default: true, id: request.model.trim() },
+      ]);
+    }
+    if (!customModels?.length) {
+      throw new Error("At least one discovered model is required.");
+    }
+
+    return { baseUrl, customModels };
   }
 
   if (type === "openrouter") {
@@ -392,6 +482,18 @@ function buildProviderFieldsFromRequest(request: CreateProviderRequest): Pick<
     return { customModels };
   }
 
+  if (type === "cloudflare") {
+    const baseUrl = normalizeBaseUrl(request.baseUrl ?? "");
+    if (!isValidBaseUrl(baseUrl)) {
+      throw new Error("A valid Cloudflare Workers AI base URL is required.");
+    }
+
+    const customModels = request.customModels?.length
+      ? validateCloudflareCustomModels(request.customModels)
+      : undefined;
+    return { baseUrl, ...(customModels ? { customModels } : {}) };
+  }
+
   const rawBaseUrl = request.baseUrl?.trim();
   if (!rawBaseUrl) {
     return {};
@@ -406,12 +508,13 @@ function buildProviderFieldsFromRequest(request: CreateProviderRequest): Pick<
 }
 
 export function mergeModelsForConfig(
-  providers: ProviderInstance[]
+  providers: ProviderInstance[],
+  env: Record<string, string | undefined> = process.env
 ): ProviderModelOption[] {
   const models: ProviderModelOption[] = [];
 
   for (const instance of providers) {
-    if (!isProviderInstanceUsable(instance)) {
+    if (!isProviderInstanceUsable(instance, env)) {
       continue;
     }
     models.push(...getModelsForProviderInstance(instance));
@@ -421,12 +524,13 @@ export function mergeModelsForConfig(
 }
 
 export async function mergeModelsForConfigAsync(
-  providers: ProviderInstance[]
+  providers: ProviderInstance[],
+  env: Record<string, string | undefined> = process.env
 ): Promise<ProviderModelOption[]> {
   const models: ProviderModelOption[] = [];
 
   for (const instance of providers) {
-    if (!isProviderInstanceUsable(instance)) {
+    if (!isProviderInstanceUsable(instance, env)) {
       continue;
     }
 
@@ -499,7 +603,10 @@ export function resolveProfileProviderSelection(options: {
   if (decoded && decoded.providerId !== "__unknown__") {
     const explicit = findProviderInstance({ providers }, decoded.providerId);
 
-    if (explicit && modelExistsOnInstance(explicit, decoded.modelId)) {
+    // A qualified selection records the provider decision itself. Native
+    // providers accept model ids newer than Atlas' static catalog, so do not
+    // reroute that selection merely because the catalog has not caught up yet.
+    if (explicit) {
       return {
         instance: explicit,
         model: resolveModel(
@@ -518,23 +625,13 @@ export function resolveProfileProviderSelection(options: {
       modelExistsOnInstance(instance, selectedModel)
     );
 
-    if (
-      active &&
-      matchingProviders.some((instance) => instance.id === active.id)
-    ) {
-      return {
-        instance: active,
-        model: resolveModel(active.type, selectedModel, active.customModels),
-      };
-    }
-
     const catalogProvider = getModelById(selectedModel)?.provider;
     const preferred =
-      (catalogProvider
-        ? matchingProviders.find(
-            (instance) => instance.type === catalogProvider
-          )
-        : null) ?? matchingProviders[0];
+      matchingProviders.find((instance) => instance.type === catalogProvider) ??
+      (active && matchingProviders.some((instance) => instance.id === active.id)
+        ? active
+        : undefined) ??
+      matchingProviders[0];
 
     if (preferred) {
       return {

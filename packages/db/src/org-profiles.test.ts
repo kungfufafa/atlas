@@ -217,6 +217,30 @@ describe("seedOrgSuperAgentProfile", () => {
 });
 
 describe("ensureBundledSkillsAssigned", () => {
+  test("keeps bundled-skill backfill for legacy profiles before organizations exist", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await db.upsertProfile({
+      createdAt: now,
+      id: "profile_legacy",
+      isSuper: false,
+      model: null,
+      name: "Legacy Agent",
+      systemPrompt: "",
+      updatedAt: now,
+    });
+    await upsertSkill(db, "create-automation");
+
+    await ensureBundledSkillsAssigned(db);
+
+    expect(await db.listOrganizations()).toEqual([]);
+    expect(
+      (await db.listSkillsForProfile("profile_legacy")).map(
+        (skill) => skill.name
+      )
+    ).toContain("create-automation");
+  });
+
   test("does not assign super agent-only skills to ordinary profiles", async () => {
     const db = createInMemoryDatabaseAdapter();
     const now = new Date().toISOString();
@@ -237,6 +261,34 @@ describe("ensureBundledSkillsAssigned", () => {
       await db.listSkillsForProfile(defaultProfile.id)
     ).map((skill) => skill.name);
     expect(defaultSkills).not.toContain("create-profile");
+  });
+
+  test("does not change skill assignments in archived workspaces", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    for (const [id, archivedAt] of [
+      ["org_active", undefined],
+      ["org_archived", now],
+    ] as const) {
+      await db.upsertOrganization({
+        archivedAt,
+        createdAt: now,
+        id,
+        name: id,
+        slug: id,
+        updatedAt: now,
+      });
+    }
+    const active = await seedOrgDefaultProfile(db, "org_active");
+    const archived = await seedOrgDefaultProfile(db, "org_archived");
+    await upsertSkill(db, "create-automation");
+
+    await ensureBundledSkillsAssigned(db);
+
+    expect(
+      (await db.listSkillsForProfile(active.id)).map((skill) => skill.name)
+    ).toContain("create-automation");
+    expect(await db.listSkillsForProfile(archived.id)).toHaveLength(0);
   });
 });
 
@@ -264,5 +316,30 @@ describe("ensureOrgSuperAgentProfiles", () => {
     const profiles = await db.listProfilesForOrg("org_legacy");
     expect(profiles).toHaveLength(2);
     expect(profiles.some((profile) => profile.isSuper)).toBe(true);
+  });
+
+  test("does not backfill super agents for archived workspaces", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await db.upsertOrganization({
+      archivedAt: now,
+      createdAt: now,
+      id: "org_archived",
+      name: "Archived",
+      slug: "archived",
+      updatedAt: now,
+    });
+    await db.upsertOrganization({
+      createdAt: now,
+      id: "org_active",
+      name: "Active",
+      slug: "active",
+      updatedAt: now,
+    });
+
+    await ensureOrgSuperAgentProfiles(db);
+
+    expect(await db.listProfilesForOrg("org_archived")).toHaveLength(0);
+    expect(await db.listProfilesForOrg("org_active")).toHaveLength(1);
   });
 });

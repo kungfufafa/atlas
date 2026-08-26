@@ -10,6 +10,7 @@ import {
   formatMemoryArchiveYearMonth,
   getMemoryArchiveDir,
 } from "./memory-paths";
+import { withProfileSoulMutationLock } from "./mutation-lock";
 import { getProfileSoulDir } from "./resolve";
 
 export const MEMORY_ARCHIVE_TEMPLATE = `# Archived Memory
@@ -182,11 +183,13 @@ export async function archiveProfileMemoryBullets(
   entries: string[],
   options: { reason?: string; archivedAt?: Date } = {}
 ): Promise<ArchiveMemoryResult> {
-  const soulDir = getProfileSoulDir(orgId, profileId);
-  const memoryPath = join(soulDir, "MEMORY.md");
-  await migrateLegacyMemoryArchiveDir(orgId, profileId);
-  const archiveDir = getMemoryArchiveDir(orgId, profileId);
-  return archiveMemoryBullets(memoryPath, archiveDir, entries, options);
+  return withProfileSoulMutationLock(orgId, profileId, async () => {
+    const soulDir = getProfileSoulDir(orgId, profileId);
+    const memoryPath = join(soulDir, "MEMORY.md");
+    await migrateLegacyMemoryArchiveDir(orgId, profileId);
+    const archiveDir = getMemoryArchiveDir(orgId, profileId);
+    return archiveMemoryBullets(memoryPath, archiveDir, entries, options);
+  });
 }
 
 /**

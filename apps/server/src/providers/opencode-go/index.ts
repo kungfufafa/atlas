@@ -23,6 +23,8 @@ export {
 export interface OpenCodeGoProviderOptions {
   apiKey: string;
   model?: string;
+  providerInstanceId?: string;
+  providerReplayRevision?: string;
 }
 
 export function createOpenCodeGoProvider(
@@ -37,8 +39,10 @@ export function createOpenCodeGoProvider(
       apiKey: options.apiKey,
       baseUrl: OPENCODE_GO_MESSAGES_BASE_URL,
       model,
+      providerInstanceId: options.providerInstanceId,
       providerLabel: "OpenCode Go",
       providerName: "opencode_go",
+      providerReplayRevision: options.providerReplayRevision,
     });
 
     return {
@@ -69,6 +73,9 @@ export function createOpenCodeGoProvider(
           input: { ...input, providerOptions: undefined },
           label: "OpenCode Go",
           model,
+          providerInstanceId: options.providerInstanceId,
+          providerName: "opencode_go",
+          providerReplayRevision: options.providerReplayRevision,
           stream: false,
         }),
       generateText: async (input: GenerateTextInput) => {
@@ -78,6 +85,9 @@ export function createOpenCodeGoProvider(
           input: toChatInput(input),
           label: "OpenCode Go",
           model,
+          providerInstanceId: options.providerInstanceId,
+          providerName: "opencode_go",
+          providerReplayRevision: options.providerReplayRevision,
           stream: false,
         });
 
@@ -95,6 +105,9 @@ export function createOpenCodeGoProvider(
           input: { ...input, providerOptions: undefined },
           label: "OpenCode Go",
           model,
+          providerInstanceId: options.providerInstanceId,
+          providerName: "opencode_go",
+          providerReplayRevision: options.providerReplayRevision,
           stream: true,
         }),
     };
@@ -104,6 +117,8 @@ export function createOpenCodeGoProvider(
     apiKey: options.apiKey,
     baseUrl: OPENCODE_GO_CHAT_BASE_URL,
     model,
+    providerInstanceId: options.providerInstanceId,
     providerName: "opencode_go",
+    providerReplayRevision: options.providerReplayRevision,
   });
 }

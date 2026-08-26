@@ -4,33 +4,33 @@ import {
 } from "@atlas/core/whatsapp-config";
 import {
   DisconnectReason,
-  extractMessageContent,
   fetchLatestBaileysVersion,
-  getContentType,
   makeWASocket,
-  useMultiFileAuthState,
   type WAMessage,
   type WASocket,
 } from "@whiskeysockets/baileys";
+import { usePrivateMultiFileAuthState } from "./auth-state";
 import {
-  extractInboundPhoneHint,
+  createBaileysLogger,
+  getSafeWhatsAppErrorType,
+} from "./baileys-logger";
+import {
   extractInboundText,
   inspectInboundWhatsAppMedia,
   isPrivateWhatsAppChat,
-  shouldHandleInboundMessage,
+  parseInboundWhatsAppMessage,
+  type WhatsAppInboundChat,
 } from "./inbound-message";
 
 export interface WhatsAppSocketDeps {
   onConnected?: (me: { id: string; lid?: string | null }) => void;
   onDevicePairingCode?: (code: string) => void;
   onDisconnected?: () => void;
-  onMessage: (data: {
-    fromMe?: boolean;
-    inbound?: WAMessage | null;
-    jid: string;
-    senderPn?: string | null;
-    text: string;
-  }) => Promise<void>;
+  onMessage: (
+    data: WhatsAppInboundChat & {
+      inbound?: WAMessage | null;
+    }
+  ) => Promise<void>;
   onPhoneNumberShare?: (lid: string, phoneJid: string) => void;
   onQr?: (qr: string) => void;
   phoneNumber?: string;
@@ -46,11 +46,13 @@ export async function createWhatsAppSocket(
   deps: WhatsAppSocketDeps
 ): Promise<WhatsAppSocketHandle> {
   const authDir = getWhatsAppConfigDir() + "/auth";
-  const { state, saveCreds } = await useMultiFileAuthState(authDir);
+  const { state, saveCreds } = await usePrivateMultiFileAuthState(authDir);
   const { version } = await fetchLatestBaileysVersion();
 
   let socket: WASocket | null = null;
   let stopped = false;
+  let generation = 0;
+  let reconnectAttempt = 0;
   let loggedMissingTextPayload = false;
   const baileysLogger = createBaileysLogger();
   const inboundDedupe = createInboundMessageDedupe();
@@ -64,11 +66,17 @@ export async function createWhatsAppSocket(
         return;
       }
 
+      const myGen = ++generation;
       await disposeWhatsAppSocket(socket);
-      socket = makeWASocket({
+      if (myGen !== generation || stopped) {
+        return;
+      }
+
+      const next = makeWASocket({
         auth: state,
         browser: ["Atlas", "Chrome", "4.0.0"] as [string, string, string],
         connectTimeoutMs: 30_000,
+        emitOwnEvents: false,
         logger: baileysLogger,
         markOnlineOnConnect: false,
         printQRInTerminal: false,
@@ -79,11 +87,17 @@ export async function createWhatsAppSocket(
         version,
       });
 
-      const current = socket;
+      if (myGen !== generation || stopped) {
+        await disposeWhatsAppSocket(next);
+        return;
+      }
+
+      socket = next;
+      const current = next;
       let pairingRequested = false;
 
-      socket.ev.on("connection.update", async (update) => {
-        if (socket !== current) {
+      next.ev.on("connection.update", async (update) => {
+        if (myGen !== generation || socket !== current) {
           return;
         }
 
@@ -115,13 +129,14 @@ export async function createWhatsAppSocket(
             } catch (error) {
               pairingRequested = false;
               console.error("WhatsApp pairing code request failed.", {
-                error: error instanceof Error ? error.message : String(error),
+                errorType: getSafeWhatsAppErrorType(error),
               });
             }
           }
         }
 
         if (connection === "open") {
+          reconnectAttempt = 0;
           const me = state.creds.me;
           if (me?.id) {
             deps.onConnected?.({ id: me.id, lid: me.lid ?? null });
@@ -129,6 +144,7 @@ export async function createWhatsAppSocket(
         }
 
         if (connection === "close") {
+          generation += 1;
           deps.onDisconnected?.();
           const statusCode = extractDisconnectStatusCode(lastDisconnect);
           const loggedOut = statusCode === DisconnectReason.loggedOut;
@@ -152,22 +168,33 @@ export async function createWhatsAppSocket(
             `WhatsApp disconnected (code: ${statusText}).${shouldReconnect ? " Reconnecting..." : ""}`
           );
 
-          if (shouldReconnect) {
-            await handle.start();
+          if (!shouldReconnect) {
+            return;
           }
+
+          const waitMs = whatsAppReconnectDelayMs(reconnectAttempt);
+          reconnectAttempt += 1;
+          await new Promise<void>((resolve) => {
+            setTimeout(resolve, waitMs);
+          });
+          if (stopped) {
+            return;
+          }
+
+          await handle.start();
         }
       });
 
-      socket.ev.on("creds.update", saveCreds);
+      next.ev.on("creds.update", saveCreds);
 
-      socket.ev.on("chats.phoneNumberShare", (share) => {
+      next.ev.on("chats.phoneNumberShare", (share) => {
         if (share.lid && share.jid) {
           deps.onPhoneNumberShare?.(share.lid, share.jid);
         }
       });
 
-      socket.ev.on("messages.upsert", async (m) => {
-        if (socket !== current) {
+      next.ev.on("messages.upsert", async (m) => {
+        if (myGen !== generation || socket !== current) {
           return;
         }
 
@@ -191,13 +218,17 @@ export async function createWhatsAppSocket(
           const remoteJid = msg.key.remoteJid ?? null;
           const messageId = msg.key.id?.trim();
           const text = extractInboundText(msg.message);
-          const senderPn = extractInboundPhoneHint(msg);
           const mediaKind = inspectInboundWhatsAppMedia(msg.message)?.kind;
-          const shouldHandle = shouldHandleInboundMessage(msg, me);
+          const inbound = parseInboundWhatsAppMessage(msg, me);
 
-          if (isVerbose && remoteJid) {
+          if (isVerbose) {
+            const chatKind = remoteJid
+              ? isPrivateWhatsAppChat(remoteJid)
+                ? "private"
+                : "group-or-other"
+              : "unknown";
             console.log(
-              `WhatsApp upsert item jid=${remoteJid} fromMe=${msg.key.fromMe ? "yes" : "no"} participant=${msg.key.participant ?? "-"} senderPn=${senderPn ?? "-"} text=${text ? "yes" : "no"} media=${mediaKind ?? "-"} handle=${shouldHandle ? "yes" : "no"}`
+              `WhatsApp upsert item chat=${chatKind} fromMe=${msg.key.fromMe ? "yes" : "no"} text=${text ? "yes" : "no"} media=${mediaKind ?? "-"} handle=${inbound ? "yes" : "no"}`
             );
           }
 
@@ -228,32 +259,29 @@ export async function createWhatsAppSocket(
             !claimInboundDelivery(inboundDedupe, {
               messageId,
               remoteJid,
-              shouldHandle,
+              shouldHandle: Boolean(inbound),
             })
           ) {
             continue;
           }
-          if (!remoteJid) {
+          if (!(remoteJid && inbound)) {
             continue;
           }
 
-          const preview = text.length > 120 ? `${text.slice(0, 120)}…` : text;
-          console.log(
-            `WhatsApp message received from ${remoteJid}: ${preview}`
-          );
+          console.log("WhatsApp message received.", {
+            group: inbound.isGroup,
+            hasMedia: Boolean(mediaKind),
+            hasText: Boolean(text),
+          });
 
           try {
             await deps.onMessage({
-              fromMe: Boolean(msg.key.fromMe),
+              ...inbound,
               inbound: msg,
-              jid: remoteJid,
-              senderPn,
-              text,
             });
           } catch (error) {
             console.error("WhatsApp inbound message handling failed.", {
-              error: error instanceof Error ? error.message : String(error),
-              jid: remoteJid,
+              errorType: getSafeWhatsAppErrorType(error),
             });
           }
         }
@@ -261,6 +289,7 @@ export async function createWhatsAppSocket(
     },
     stop() {
       stopped = true;
+      generation += 1;
       const current = socket;
       socket = null;
       void disposeWhatsAppSocket(current);
@@ -268,6 +297,10 @@ export async function createWhatsAppSocket(
   };
 
   return handle;
+}
+
+export function whatsAppReconnectDelayMs(attempt: number): number {
+  return Math.min(30_000, 1000 * 2 ** Math.min(attempt, 5));
 }
 
 function isVerboseLoggingEnabled(value: string | undefined): boolean {
@@ -381,7 +414,7 @@ async function disposeWhatsAppSocket(target: WASocket | null): Promise<void> {
   }
 }
 
-function summarizeMissingTextPayload(msg: {
+export function summarizeMissingTextPayload(msg: {
   key: {
     remoteJid?: string | null;
     fromMe?: boolean | null;
@@ -391,38 +424,19 @@ function summarizeMissingTextPayload(msg: {
   message?: Record<string, unknown> | null;
   messageStubType?: unknown;
 }): string {
-  const extracted = extractMessageContent(msg.message as any);
   const summary = {
-    extractedKeys: extracted ? Object.keys(extracted).slice(0, 10) : [],
-    extractedType: getContentType(extracted as any) ?? null,
+    hasContent: Boolean(msg.message),
     key: {
       fromMe: msg.key.fromMe ?? null,
-      id: msg.key.id ?? null,
-      participant: msg.key.participant ?? null,
-      remoteJid: msg.key.remoteJid ?? null,
+      hasId: Boolean(msg.key.id),
+      hasParticipant: Boolean(msg.key.participant),
+      isPrivate: msg.key.remoteJid
+        ? isPrivateWhatsAppChat(msg.key.remoteJid)
+        : null,
     },
-    message: msg.message ?? null,
-    messageStubType: msg.messageStubType ?? null,
-    topLevelKeys: msg.message ? Object.keys(msg.message).slice(0, 10) : [],
-    topLevelType: getContentType(msg.message as any) ?? null,
+    messageStubType:
+      typeof msg.messageStubType === "number" ? msg.messageStubType : null,
   };
 
   return JSON.stringify(summary);
-}
-
-// ponytail: keep Baileys on silent; worker logs what matters itself
-function createBaileysLogger() {
-  const noop = () => {};
-  const logger = {
-    child: () => logger,
-    debug: noop,
-    error: console.error.bind(console),
-    fatal: console.error.bind(console),
-    info: noop,
-    level: "silent",
-    trace: noop,
-    warn: console.warn.bind(console),
-  };
-
-  return logger;
 }

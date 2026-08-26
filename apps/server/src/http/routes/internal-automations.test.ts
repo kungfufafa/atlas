@@ -98,6 +98,142 @@ describe("internal automation routes", () => {
     });
   });
 
+  test("lists and runs schedules across multiple active local-token organizations", async () => {
+    const runCalls: string[] = [];
+    const options = createServerOptions({
+      agent: {
+        providerConfigured: true,
+        runAutomation: async (automationId: string) => {
+          runCalls.push(automationId);
+          return { skipped: false };
+        },
+      } as any,
+    });
+    await seedOrgAndProfile(options.databaseAdapter);
+    const now = new Date().toISOString();
+    await options.databaseAdapter.upsertOrganization({
+      createdAt: now,
+      id: "org_second",
+      name: "Second Org",
+      slug: "second-org",
+      updatedAt: now,
+    });
+    await options.databaseAdapter.upsertProfile({
+      createdAt: now,
+      id: "profile_second",
+      isDefault: true,
+      isSuper: false,
+      model: null,
+      name: "Second Agent",
+      orgId: "org_second",
+      systemPrompt: "",
+      updatedAt: now,
+    });
+    await seedLocalClientUser(options.databaseAdapter);
+    const first = await options.automationService.create(
+      ORG_ID,
+      {
+        description: "First",
+        name: "First schedule",
+        prompt: "Ping",
+        trigger: { cron: "0 * * * *", timezone: "UTC", type: "schedule" },
+      },
+      PROFILE_ID
+    );
+    await options.automationService.create(
+      "org_second",
+      {
+        description: "Second",
+        name: "Second schedule",
+        prompt: "Ping",
+        trigger: { cron: "30 * * * *", timezone: "UTC", type: "schedule" },
+      },
+      "profile_second"
+    );
+
+    const app = createHonoApp(options);
+    const token = await loadLocalAuthToken();
+    const schedules = await app.fetch(
+      new Request("http://localhost:4310/v1/internal/automations/schedules", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    );
+    expect(schedules.status).toBe(200);
+    await expect(schedules.json()).resolves.toHaveLength(2);
+
+    const run = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/internal/automations/${encodeURIComponent(first.id)}/run?orgId=${ORG_ID}`,
+        {
+          body: JSON.stringify({ fireId: "multi-org-tick" }),
+          headers: { Authorization: `Bearer ${token}` },
+          method: "POST",
+        }
+      )
+    );
+    expect(run.status).toBe(204);
+    expect(runCalls).toEqual([first.id]);
+  });
+
+  test("omits archived organizations and refuses their queued runs", async () => {
+    const runCalls: string[] = [];
+    const options = createServerOptions({
+      agent: {
+        providerConfigured: true,
+        runAutomation: async (automationId: string) => {
+          runCalls.push(automationId);
+          return { skipped: false };
+        },
+      } as any,
+    });
+    await seedOrgAndProfile(options.databaseAdapter);
+    await seedLocalClientUser(options.databaseAdapter);
+    const automation = await options.automationService.create(
+      ORG_ID,
+      {
+        description: "Ping",
+        name: "Hourly",
+        prompt: "Ping",
+        trigger: { cron: "0 * * * *", timezone: "UTC", type: "schedule" },
+      },
+      PROFILE_ID
+    );
+    const now = new Date().toISOString();
+    await options.databaseAdapter.upsertOrganization({
+      createdAt: now,
+      id: "org_remaining",
+      name: "Remaining",
+      slug: "remaining",
+      updatedAt: now,
+    });
+    expect(
+      await options.databaseAdapter.tryMarkOrganizationArchived(ORG_ID, now)
+    ).toBe(true);
+
+    const app = createHonoApp(options);
+    const token = await loadLocalAuthToken();
+    const schedules = await app.fetch(
+      new Request("http://localhost:4310/v1/internal/automations/schedules", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    );
+    expect(schedules.status).toBe(200);
+    await expect(schedules.json()).resolves.toEqual([]);
+
+    const run = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/internal/automations/${encodeURIComponent(automation.id)}/run?orgId=${ORG_ID}`,
+        {
+          body: JSON.stringify({ fireId: "tick-archived" }),
+          headers: { Authorization: `Bearer ${token}` },
+          method: "POST",
+        }
+      )
+    );
+    expect(run.status).toBe(404);
+    expect(runCalls).toEqual([]);
+  });
+
   test("rejects schedule list without local-token auth", async () => {
     const options = createServerOptions();
     const app = createHonoApp(options);
@@ -130,7 +266,7 @@ describe("internal automation routes", () => {
 
     const response = await app.fetch(
       new Request(
-        `http://localhost:4310/v1/internal/automations/${encodeURIComponent(automation.id)}/run`,
+        `http://localhost:4310/v1/internal/automations/${encodeURIComponent(automation.id)}/run?orgId=${ORG_ID}`,
         {
           body: JSON.stringify({ fireId: "tick-1" }),
           headers: { Authorization: `Bearer ${token}` },
@@ -140,6 +276,101 @@ describe("internal automation routes", () => {
     );
 
     expect(response.status).toBe(204);
+  });
+
+  test("rejects a run without an orgId assertion", async () => {
+    const options = createServerOptions();
+    await seedOrgAndProfile(options.databaseAdapter);
+    await seedLocalClientUser(options.databaseAdapter);
+
+    const automation = await options.automationService.create(
+      ORG_ID,
+      {
+        description: "Ping",
+        name: "Hourly",
+        prompt: "Ping",
+        trigger: { cron: "0 * * * *", timezone: "UTC", type: "schedule" },
+      },
+      PROFILE_ID
+    );
+
+    const app = createHonoApp(options);
+    const token = await loadLocalAuthToken();
+
+    const response = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/internal/automations/${encodeURIComponent(automation.id)}/run`,
+        {
+          body: JSON.stringify({ fireId: "tick-1" }),
+          headers: { Authorization: `Bearer ${token}` },
+          method: "POST",
+        }
+      )
+    );
+
+    expect(response.status).toBe(400);
+  });
+
+  test("refuses to run an automation under another org's id", async () => {
+    const runCalls: string[] = [];
+    const options = createServerOptions({
+      agent: {
+        providerConfigured: true,
+        runAutomation: async (automationId: string) => {
+          runCalls.push(automationId);
+          return { skipped: false };
+        },
+      } as any,
+    });
+    await seedOrgAndProfile(options.databaseAdapter);
+    await seedLocalClientUser(options.databaseAdapter);
+
+    const now = new Date().toISOString();
+    await options.databaseAdapter.upsertOrganization({
+      createdAt: now,
+      id: "org_other",
+      name: "Other Org",
+      slug: "other-org",
+      updatedAt: now,
+    });
+    await options.databaseAdapter.upsertProfile({
+      createdAt: now,
+      id: "profile_other",
+      isDefault: true,
+      isSuper: false,
+      model: null,
+      name: "Other Bot",
+      orgId: "org_other",
+      systemPrompt: "",
+      updatedAt: now,
+    });
+    const otherAutomation = await options.automationService.create(
+      "org_other",
+      {
+        description: "Ping",
+        name: "Hourly",
+        prompt: "Ping",
+        trigger: { cron: "0 * * * *", timezone: "UTC", type: "schedule" },
+      },
+      "profile_other"
+    );
+
+    const app = createHonoApp(options);
+    const token = await loadLocalAuthToken();
+
+    const response = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/internal/automations/${encodeURIComponent(otherAutomation.id)}/run?orgId=${ORG_ID}`,
+        {
+          body: JSON.stringify({ fireId: "tick-1" }),
+          headers: { Authorization: `Bearer ${token}` },
+          method: "POST",
+        }
+      )
+    );
+
+    expect(response.status).toBe(404);
+    expect(runCalls).toEqual([]);
   });
 
   test("requires fireId on the internal run endpoint", async () => {
@@ -160,7 +391,7 @@ describe("internal automation routes", () => {
     const token = await loadLocalAuthToken();
     const response = await app.fetch(
       new Request(
-        `http://localhost:4310/v1/internal/automations/${encodeURIComponent(automation.id)}/run`,
+        `http://localhost:4310/v1/internal/automations/${encodeURIComponent(automation.id)}/run?orgId=${ORG_ID}`,
         {
           headers: { Authorization: `Bearer ${token}` },
           method: "POST",
@@ -180,7 +411,7 @@ describe("internal automation routes", () => {
 
     const response = await app.fetch(
       new Request(
-        "http://localhost:4310/v1/internal/automations/unknown-automation/run",
+        `http://localhost:4310/v1/internal/automations/unknown-automation/run?orgId=${ORG_ID}`,
         {
           body: JSON.stringify({ fireId: "tick-1" }),
           headers: { Authorization: `Bearer ${token}` },
@@ -221,7 +452,7 @@ describe("internal automation routes", () => {
 
     const response = await app.fetch(
       new Request(
-        `http://localhost:4310/v1/internal/automations/${encodeURIComponent(automation.id)}/run`,
+        `http://localhost:4310/v1/internal/automations/${encodeURIComponent(automation.id)}/run?orgId=${ORG_ID}`,
         {
           body: JSON.stringify({ fireId: "tick-1" }),
           headers: { Authorization: `Bearer ${token}` },
@@ -231,5 +462,42 @@ describe("internal automation routes", () => {
     );
 
     expect(response.status).toBe(409);
+  });
+
+  test("omits automations without an org from the schedule list", async () => {
+    const options = createServerOptions();
+    await seedOrgAndProfile(options.databaseAdapter);
+    await seedLocalClientUser(options.databaseAdapter);
+
+    await options.automationService.create(
+      ORG_ID,
+      {
+        description: "Ping",
+        name: "Hourly",
+        prompt: "Ping",
+        trigger: { cron: "0 * * * *", timezone: "UTC", type: "schedule" },
+      },
+      PROFILE_ID
+    );
+
+    const records = await options.databaseAdapter.listAutomations();
+    await options.databaseAdapter.upsertAutomation({
+      ...records[0]!,
+      id: "automation_orgless",
+      orgId: null,
+    });
+
+    const app = createHonoApp(options);
+    const token = await loadLocalAuthToken();
+    const response = await app.fetch(
+      new Request("http://localhost:4310/v1/internal/automations/schedules", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    );
+
+    expect(response.status).toBe(200);
+    const schedules = (await response.json()) as Array<{ orgId: string }>;
+    expect(schedules).toHaveLength(1);
+    expect(schedules[0]).toMatchObject({ orgId: ORG_ID });
   });
 });

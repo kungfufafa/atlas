@@ -55,7 +55,7 @@ export class McpService {
     const name = request.name.trim();
 
     if (!name) {
-      throw new Error("MCP server name is required.");
+      throw invalidMcpServerRequest("MCP server name is required.");
     }
 
     const transport = normalizeTransport(request.transport);
@@ -64,11 +64,11 @@ export class McpService {
     const existing = await this.db.getMcpServerByName(name, orgId);
 
     if (existing) {
-      throw new Error(`MCP server already exists: ${name}`);
+      throw new AtlasApiError(`MCP server already exists: ${name}`, 409);
     }
 
     const now = new Date().toISOString();
-    const record: StoredMcpServerRecord = {
+    let record: StoredMcpServerRecord = {
       cachedTools: [],
       config: request.config,
       createdAt: now,
@@ -82,14 +82,24 @@ export class McpService {
       updatedAt: now,
     };
 
-    await this.db.upsertMcpServer(record);
-
+    // Connect before persisting so a failed initial connection is a client
+    // error (4xx) and never leaves a broken server row behind.
     if (request.connect !== false && record.enabled) {
-      await this.connectServer(orgId, record.id);
-      return this.getServer(orgId, record.id);
+      try {
+        const cachedTools = await this.manager.connect(record);
+        record = { ...record, cachedTools, status: "connected" };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new AtlasApiError(
+          `Could not connect MCP server "${name}": ${message}`,
+          422
+        );
+      }
     }
 
-    return { server: toMcpServerDetail(record) };
+    await this.db.upsertMcpServer(record);
+
+    return this.getServer(orgId, record.id);
   }
 
   async updateServer(
@@ -282,9 +292,19 @@ export class McpService {
 
   async connectEnabledServers(): Promise<void> {
     const servers = await this.db.listMcpServers();
+    const organizations = await this.db.listOrganizations();
+    const hasTenantOrganizations = organizations.length > 0;
+    const activeOrgIds = new Set(
+      organizations
+        .filter((organization) => !organization.archivedAt)
+        .map((organization) => organization.id)
+    );
 
     for (const server of servers) {
-      if (!server.enabled) {
+      const canConnect = server.orgId
+        ? activeOrgIds.has(server.orgId)
+        : !hasTenantOrganizations;
+      if (!(server.enabled && canConnect)) {
         continue;
       }
 
@@ -587,6 +607,10 @@ function redactMcpConfig(
   };
 }
 
+function invalidMcpServerRequest(message: string): AtlasApiError {
+  return new AtlasApiError(message, 400);
+}
+
 function redactStringRecord(
   value: Record<string, string> | undefined
 ): Record<string, string> | undefined {
@@ -614,7 +638,7 @@ function normalizeTransport(transport: string | undefined): McpTransport {
     return "stdio";
   }
 
-  throw new Error('MCP transport must be "http" or "stdio".');
+  throw invalidMcpServerRequest('MCP transport must be "http" or "stdio".');
 }
 
 function validateTransport(
@@ -625,7 +649,7 @@ function validateTransport(
 
 function validateConfig(transport: McpTransport, config: unknown): void {
   if (typeof config !== "object" || config === null) {
-    throw new Error("MCP server config is required.");
+    throw invalidMcpServerRequest("MCP server config is required.");
   }
 
   const record = config as Record<string, unknown>;
@@ -634,13 +658,13 @@ function validateConfig(transport: McpTransport, config: unknown): void {
     const url = record.url;
 
     if (typeof url !== "string" || !url.trim()) {
-      throw new Error("HTTP MCP servers require config.url.");
+      throw invalidMcpServerRequest("HTTP MCP servers require config.url.");
     }
 
     try {
       new URL(url);
     } catch {
-      throw new Error(`Invalid MCP server URL: ${url}`);
+      throw invalidMcpServerRequest(`Invalid MCP server URL: ${url}`);
     }
 
     return;
@@ -649,7 +673,7 @@ function validateConfig(transport: McpTransport, config: unknown): void {
   const command = record.command;
 
   if (typeof command !== "string" || !command.trim()) {
-    throw new Error("stdio MCP servers require config.command.");
+    throw invalidMcpServerRequest("stdio MCP servers require config.command.");
   }
 }
 

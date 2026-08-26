@@ -17,7 +17,9 @@ describe("fetchOllamaModels", () => {
 
     globalThis.fetch = fetchMock as typeof fetch;
 
-    const models = await fetchOllamaModels("http://localhost:11434/v1");
+    const models = await fetchOllamaModels("http://localhost:11434/v1", "", {
+      hostMode: "local",
+    });
 
     expect(models).toEqual([{ id: "llama3", name: "llama3" }]);
   });
@@ -44,7 +46,9 @@ describe("fetchOllamaModels", () => {
 
     globalThis.fetch = fetchMock as typeof fetch;
 
-    const models = await fetchOllamaModels("http://localhost:11434/v1");
+    const models = await fetchOllamaModels("http://localhost:11434/v1", "", {
+      hostMode: "local",
+    });
 
     expect(models).toEqual([
       { id: "gemma3:latest", name: "gemma3:latest" },
@@ -78,7 +82,9 @@ describe("fetchOllamaModels", () => {
 
     globalThis.fetch = fetchMock as typeof fetch;
 
-    await fetchOllamaModels("https://ollama.com/v1", "secret-key");
+    await fetchOllamaModels("https://8.8.8.8/v1", "secret-key", {
+      hostMode: "cloud",
+    });
 
     expect(seen).toEqual(["Bearer secret-key"]);
   });

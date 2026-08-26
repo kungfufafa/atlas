@@ -3,7 +3,7 @@ title: "WhatsApp"
 description: "Connect WhatsApp to Atlas, authorize chats, and troubleshoot the bridge."
 ---
 
-Use WhatsApp when you want the same Atlas agent available from your phone in a direct chat.
+Use WhatsApp when you want the same Atlas agent available from your phone in a private chat or team group.
 
 The WhatsApp bridge talks to the same Atlas server as the web app and CLI. It is a chat channel, not a separate agent system.
 
@@ -14,13 +14,14 @@ WhatsApp works well for:
 - quick questions while away from your desk
 - using one Atlas profile from phone and web
 - private chats with authorized users
+- group conversations where the agent should join only when addressed
 - lightweight status checks and short back-and-forth conversations
 
 ## What WhatsApp can do
 
 With WhatsApp enabled, users can:
 
-- chat with an Atlas profile in a private WhatsApp chat
+- chat with an Atlas profile in a private WhatsApp chat or group
 - send photos, voice notes, and supported documents the same way as in the web app
 - get saved files back in the chat, not only as a link
 - switch org with commands
@@ -113,12 +114,17 @@ Atlas authorizes that chat, clears the code, and blocks chats that do not have a
 
 ## Chat behavior
 
-WhatsApp currently works as a **private chat** channel.
+WhatsApp works in **private chats** and **groups**.
 
-- direct chats are supported
-- group chats are not handled by the current bridge
-- each authorized WhatsApp chat keeps its own Atlas session
+- private chats send each supported message to Atlas
+- in a group, Atlas responds only when someone mentions the connected account, replies to an Atlas message, or sends a supported `/command`
+- each private chat and each group keeps its own Atlas session
+- `/org` in a group changes only that group's workspace selection
+- replying to another group message while mentioning Atlas includes that quoted text in the agent turn
+- chat access codes work only in private chats
 - allowlists and denylists match the sender **phone number**. If WhatsApp identifies the chat as a LID (`…@lid`) instead of `…@s.whatsapp.net`, Atlas resolves the phone from the message (or a saved mapping) before checking the list. The linked owner account is still recognized by its paired LID.
+
+These rules let Atlas participate without interrupting ordinary group conversation. A group sender must still be allowed by the workspace's **Access mode**.
 
 If you change the reply profile, new messages use that profile. Starting a new conversation with `/new` gives you a fresh session.
 
@@ -170,6 +176,7 @@ Useful WhatsApp commands:
 | `/new` | Starts a fresh conversation |
 | `/compact` | Compacts the current conversation history |
 | `/stop` | Stops an in-progress reply |
+| `/attach` | Sends the latest file saved in this conversation |
 
 ## Troubleshooting
 
@@ -209,6 +216,16 @@ If QR linking does not finish:
 1. use **Reconnect with QR** in **Integrations → WhatsApp**
 2. wait for a fresh QR code
 3. scan it again from WhatsApp
+
+### Atlas does not reply in a group
+
+Check that the message does one of the following:
+
+1. mentions the connected WhatsApp account
+2. replies to a message sent by Atlas
+3. sends one of the commands listed above
+
+The sender must also be allowed by **Integrations → WhatsApp → Access mode**. Authorize a number with a chat access code in a private chat before using it in a group. If Atlas should read a message from another participant, reply to that message and mention Atlas.
 
 ### The wrong bot is answering
 

@@ -7,6 +7,8 @@ import {
   ensureServerRunning,
   stopSpawnedServer,
 } from "@atlas/core/ensure-server";
+import { installErrorHandlers } from "@atlas/core/error-tracking";
+import { installErrorTrackingSink } from "@atlas/core/error-tracking-sentry";
 import { loadLocalAuthToken } from "@atlas/core/local-auth";
 import { resolveWebPublicUrl } from "@atlas/core/runtime";
 import {
@@ -19,6 +21,9 @@ import { TelegramAuthStore } from "./auth-store";
 import { createBot } from "./bot";
 import { loadConfig } from "./config";
 import { SessionStore } from "./session-store";
+
+installErrorHandlers("worker:telegram");
+await installErrorTrackingSink();
 
 let spawnedChild: Bun.Subprocess | null = null;
 let botStop: (() => void) | null = null;

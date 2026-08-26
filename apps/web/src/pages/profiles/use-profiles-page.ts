@@ -5,6 +5,7 @@ import type {
 } from "@atlas/core/contract";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useActiveChatProfile } from "@/context/use-active-chat-profile";
 import {
   useMcpServersQuery,
   useModelsQuery,
@@ -35,6 +36,7 @@ import {
   useUpdateProfileMutation,
   useUploadProfileAvatarMutation,
 } from "@/hooks/use-resource-mutations";
+import { resolveProfilesPageProfileId } from "@/lib/chat-history";
 import { formatError } from "@/lib/client";
 import {
   extractModelId,
@@ -54,6 +56,7 @@ import {
 
 export function useProfilesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { profileId: liveChatProfileId } = useActiveChatProfile();
   const {
     data: profiles = [],
     isLoading: profilesLoading,
@@ -116,8 +119,16 @@ export function useProfilesPage() {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savingRef = useRef(false);
+  const saveCompletionRef = useRef<Promise<boolean> | null>(null);
+  const resolveSaveCompletionRef = useRef<
+    ((savedSuccessfully: boolean) => void) | null
+  >(null);
   const pendingSaveRef = useRef(false);
   const performSaveRef = useRef<() => Promise<boolean>>(async () => true);
+  const switchingProfileRef = useRef(false);
+  const handleSelectProfileRef = useRef<(profileId: string) => Promise<void>>(
+    async () => undefined
+  );
   const editStateRef = useRef({
     detail,
     editModel,
@@ -230,7 +241,7 @@ export function useProfilesPage() {
   const performSave = useCallback(async (): Promise<boolean> => {
     if (savingRef.current) {
       pendingSaveRef.current = true;
-      return false;
+      return (await saveCompletionRef.current) ?? false;
     }
 
     const {
@@ -263,6 +274,9 @@ export function useProfilesPage() {
     }
 
     savingRef.current = true;
+    saveCompletionRef.current = new Promise<boolean>((resolve) => {
+      resolveSaveCompletionRef.current = resolve;
+    });
     setSaveStatus("saving");
     setError(null);
 
@@ -304,6 +318,10 @@ export function useProfilesPage() {
       return false;
     } finally {
       savingRef.current = false;
+      const resolveSaveCompletion = resolveSaveCompletionRef.current;
+      resolveSaveCompletionRef.current = null;
+      saveCompletionRef.current = null;
+      resolveSaveCompletion?.(savedSuccessfully);
 
       const queuedDuringSave = pendingSaveRef.current;
       pendingSaveRef.current = false;
@@ -345,7 +363,16 @@ export function useProfilesPage() {
 
   const flushSave = useCallback(async (): Promise<boolean> => {
     clearScheduledSave();
-    return performSave();
+
+    while (profileHasPendingEdits(editStateRef.current)) {
+      const saved = await performSave();
+      clearScheduledSave();
+      if (!saved) {
+        return false;
+      }
+    }
+
+    return true;
   }, [clearScheduledSave, performSave]);
 
   const handleEditNameChange = useCallback(
@@ -431,15 +458,15 @@ export function useProfilesPage() {
 
     if (!profileInitializedRef.current) {
       profileInitializedRef.current = true;
-      const matchedProfile = urlProfileId
-        ? profiles.find((profile) => profile.id === urlProfileId)
-        : null;
-      const defaultProfile =
-        matchedProfile ??
-        profiles.find((profile) => profile.id === "default") ??
-        profiles[0]!;
+      const initialProfileId = resolveProfilesPageProfileId({
+        liveChatProfileId,
+        profiles,
+        search: searchParams.toString(),
+      });
 
-      setSelectedId(defaultProfile.id);
+      if (initialProfileId) {
+        setSelectedId(initialProfileId);
+      }
       return;
     }
 
@@ -448,7 +475,7 @@ export function useProfilesPage() {
       profiles.some((profile) => profile.id === urlProfileId) &&
       urlProfileId !== selectedIdRef.current
     ) {
-      setSelectedId(urlProfileId);
+      void handleSelectProfileRef.current(urlProfileId);
       return;
     }
 
@@ -456,7 +483,7 @@ export function useProfilesPage() {
     if (current && !profiles.some((profile) => profile.id === current)) {
       setSelectedId(profiles[0]!.id);
     }
-  }, [profiles, searchParams, setSelectedId]);
+  }, [liveChatProfileId, profiles, searchParams, setSelectedId]);
 
   const detailId = detail?.id ?? null;
 
@@ -566,35 +593,68 @@ export function useProfilesPage() {
     [detail?.skills]
   );
 
-  async function handleSelectProfile(profileId: string) {
-    if (profileId === selectedId) {
+  const handleSelectProfile = useCallback(
+    async (profileId: string) => {
+      if (profileId === selectedIdRef.current || switchingProfileRef.current) {
+        return;
+      }
+
+      clearScheduledSave();
+
+      const {
+        editName: nameDraft,
+        editPrompt: promptDraft,
+        editModel: modelDraft,
+        savedName: baselineName,
+        savedPrompt: baselinePrompt,
+        savedModel: baselineModel,
+      } = editStateRef.current;
+      const hasPendingEdits =
+        nameDraft.trim() !== baselineName ||
+        promptDraft !== baselinePrompt ||
+        modelDraft !== baselineModel;
+
+      switchingProfileRef.current = true;
+
+      try {
+        if (hasPendingEdits && nameDraft.trim()) {
+          const saved = await flushSave();
+          if (!saved) {
+            const current = selectedIdRef.current;
+            if (current) {
+              setSelectedId(current);
+            }
+            return;
+          }
+        }
+
+        setSelectedId(profileId);
+      } finally {
+        switchingProfileRef.current = false;
+      }
+    },
+    [clearScheduledSave, flushSave, setSelectedId]
+  );
+
+  useEffect(() => {
+    handleSelectProfileRef.current = handleSelectProfile;
+  }, [handleSelectProfile]);
+
+  useEffect(() => {
+    if (searchParams.get("create") !== "1") {
       return;
     }
 
-    clearScheduledSave();
-
-    const {
-      editName: nameDraft,
-      editPrompt: promptDraft,
-      editModel: modelDraft,
-      savedName: baselineName,
-      savedPrompt: baselinePrompt,
-      savedModel: baselineModel,
-    } = editStateRef.current;
-    const hasPendingEdits =
-      nameDraft.trim() !== baselineName ||
-      promptDraft !== baselinePrompt ||
-      modelDraft !== baselineModel;
-
-    if (hasPendingEdits && nameDraft.trim()) {
-      const saved = await performSave();
-      if (!saved) {
-        return;
-      }
-    }
-
-    setSelectedId(profileId);
-  }
+    setCreateOpen(true);
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete("create");
+        return next;
+      },
+      { replace: true }
+    );
+  }, [searchParams, setSearchParams]);
 
   function openDeleteDialog(profileId: string) {
     setDeleteTargetId(profileId);

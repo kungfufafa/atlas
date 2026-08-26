@@ -17,10 +17,15 @@ const TEST_CONFIG_DIR = path.join(
   ".tmp-test-config",
   `artifact-shares-${crypto.randomUUID()}`
 );
+const ORIGINAL_CONFIG_DIR = process.env.ATLAS_CONFIG_DIR;
 
 describe("artifact shares", () => {
   afterEach(async () => {
-    process.env.ATLAS_CONFIG_DIR = undefined;
+    if (ORIGINAL_CONFIG_DIR === undefined) {
+      delete process.env.ATLAS_CONFIG_DIR;
+    } else {
+      process.env.ATLAS_CONFIG_DIR = ORIGINAL_CONFIG_DIR;
+    }
     await rm(TEST_CONFIG_DIR, { force: true, recursive: true });
   });
 

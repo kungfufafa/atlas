@@ -6,6 +6,7 @@ import {
   formatSessionChannelLabel,
   HISTORY_SESSION_CHANNELS,
   isChatSessionPath,
+  isProfilesPath,
   isReadOnlySessionChannel,
   parseChatRouteParams,
   pickKnownProfileId,
@@ -16,6 +17,7 @@ import {
   resolveActiveProfileIdFromLocation,
   resolveDefaultProfileId,
   resolveHistoryProfileId,
+  resolveProfilesPageProfileId,
   sessionStorageKey,
   writeStoredActiveChatProfileId,
 } from "./chat-history";
@@ -117,6 +119,46 @@ describe("chat history route helpers", () => {
       resolveActiveProfileIdFromLocation({
         liveChatProfileId: "super",
         pathname: "/history",
+        profiles,
+        search: "",
+      })
+    ).toBe("super");
+
+    expect(
+      resolveActiveProfileIdFromLocation({
+        liveChatProfileId: "default",
+        pathname: "/profiles",
+        profiles,
+        search: "?profile=super",
+      })
+    ).toBe("super");
+
+    expect(
+      resolveActiveProfileIdFromLocation({
+        liveChatProfileId: "super",
+        pathname: "/profiles/skills/skill-1",
+        profiles,
+        search: "?profile=default",
+      })
+    ).toBe("default");
+  });
+
+  test("recognizes profile routes and resolves URL selection first", () => {
+    const profiles = [{ id: "default" }, { id: "super" }];
+
+    expect(isProfilesPath("/profiles")).toBe(true);
+    expect(isProfilesPath("/profiles/skills/skill-1")).toBe(true);
+    expect(isProfilesPath("/chat")).toBe(false);
+    expect(
+      resolveProfilesPageProfileId({
+        liveChatProfileId: "default",
+        profiles,
+        search: "?profile=super",
+      })
+    ).toBe("super");
+    expect(
+      resolveProfilesPageProfileId({
+        liveChatProfileId: "super",
         profiles,
         search: "",
       })
