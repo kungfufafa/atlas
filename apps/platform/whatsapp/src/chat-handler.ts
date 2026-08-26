@@ -2,6 +2,7 @@ import type { AtlasClient, RemoteChatSession } from "@atlas/client";
 import {
   type ChannelArtifactRef,
   channelArtifactRefFromArtifact,
+  saveInboundWorkspaceDocument,
 } from "@atlas/core";
 import {
   type ChannelOrgStore,
@@ -29,6 +30,7 @@ import {
 import {
   buildWhatsAppMediaInput,
   downloadWhatsAppMedia,
+  mergeWhatsAppUserMessage,
   PAIRING_MEDIA_REPLY,
   UNSUPPORTED_MEDIA_REPLY,
   type WhatsAppMediaDownload,
@@ -208,7 +210,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           jid,
           {
             ...mediaInput,
-            message: trimmed || mediaInput.message,
+            message: mergeWhatsAppUserMessage(trimmed, mediaInput.message),
           },
           inbound
         );
@@ -465,10 +467,28 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return null;
     }
 
-    const result = await buildWhatsAppMediaInput(inbound, (message) =>
-      downloadMedia
-        ? downloadMedia(message)
-        : downloadWhatsAppMedia(message, getSocket())
+    const result = await buildWhatsAppMediaInput(
+      inbound,
+      (message) =>
+        downloadMedia
+          ? downloadMedia(message)
+          : downloadWhatsAppMedia(message, getSocket()),
+      {
+        saveInboundDocument: async (file) => {
+          const orgId = fixedWorkspaceId ?? orgStore.get(chatKey(jid))?.orgId;
+          if (!orgId) {
+            throw new Error("WhatsApp workspace is not selected.");
+          }
+
+          const profileId = await resolveProfileId();
+          return saveInboundWorkspaceDocument({
+            bytes: file.bytes,
+            filename: file.filename,
+            orgId,
+            profileId,
+          });
+        },
+      }
     );
 
     if (!result) {

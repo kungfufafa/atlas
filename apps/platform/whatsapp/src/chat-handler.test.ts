@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, test } from "bun:test";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { ChatMessage } from "@atlas/core/contract";
+import { MAX_DOCUMENT_BYTES } from "@atlas/core/message-content";
 import { resetActiveStreamsForTests } from "./active-stream";
+import { formatSavedWhatsAppDocumentMessage } from "./attachments";
 import { WhatsAppAuthStore } from "./auth-store";
 import { createChatHandler, resetChatLocksForTests } from "./chat-handler";
 import { SessionStore } from "./session-store";
@@ -1251,6 +1254,77 @@ describe("bridge API integration", () => {
         ],
         message: "Analyze",
       });
+    });
+  });
+
+  test("saves oversized WhatsApp xlsx files to artifacts instead of rejecting", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls, getLastStreamInput } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket } = createMockSocket();
+      const xlsxBytes = Buffer.alloc(MAX_DOCUMENT_BYTES + 1, 1);
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        downloadMedia: async () => xlsxBytes,
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({
+        inbound: {
+          key: { fromMe: false, id: "xlsx-large", remoteJid: PAIRED_JID },
+          message: {
+            documentMessage: {
+              caption: "Analyze",
+              fileName: "sales.xlsx",
+              mimetype:
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            },
+          },
+        },
+        jid: PAIRED_JID,
+        text: "Analyze",
+      });
+
+      expect(calls.sendStream).toBe(1);
+      expect(getLastStreamInput()).toEqual({
+        message: formatSavedWhatsAppDocumentMessage({
+          caption: "Analyze",
+          filename: "sales.xlsx",
+          mediaType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          relativePath: "artifacts/sales.xlsx",
+          sizeBytes: xlsxBytes.byteLength,
+        }),
+      });
+
+      const saved = await readFile(
+        path.join(
+          homeDir,
+          ".atlas",
+          "orgs",
+          "org_test",
+          "profiles",
+          "default",
+          "artifacts",
+          "sales.xlsx"
+        )
+      );
+      expect(saved.byteLength).toBe(xlsxBytes.byteLength);
     });
   });
 

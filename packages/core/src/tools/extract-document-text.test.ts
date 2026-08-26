@@ -13,6 +13,10 @@ import {
 } from "../mail/attachment-reference";
 import type { MailReader } from "../mail/types";
 import {
+  MAX_DOCUMENT_BYTES,
+  MAX_DOCUMENT_INGEST_BYTES,
+} from "../message-content";
+import {
   MISSING_DOCUMENT_REF_ERROR,
   runExtractDocumentText,
 } from "./extract-document-text";
@@ -176,6 +180,53 @@ describe("extract_document_text tool", () => {
     } finally {
       await rm(workspaceRoot, { force: true, recursive: true });
     }
+  });
+
+  test("rejects workspace documents above the ingest ceiling", async () => {
+    const workspaceRoot = await mkdtemp(
+      path.join(os.tmpdir(), "atlas-extract-huge-")
+    );
+
+    try {
+      const artifactsDir = path.join(workspaceRoot, "artifacts");
+      await mkdir(artifactsDir, { recursive: true });
+      await writeFile(
+        path.join(artifactsDir, "huge.xlsx"),
+        Buffer.alloc(MAX_DOCUMENT_INGEST_BYTES + 1)
+      );
+
+      const result = await runExtractDocumentText(
+        { documentRef: "artifacts/huge.xlsx" },
+        { ...context, workspaceRoot },
+        { loadConfig: async () => ({}) as typeof completeConfig }
+      );
+
+      expect(result).toEqual({
+        error: `Document exceeds ${MAX_DOCUMENT_INGEST_BYTES} bytes.`,
+      });
+    } finally {
+      await rm(workspaceRoot, { force: true, recursive: true });
+    }
+  });
+
+  test("does not reject stored attachments only because they exceed the 5 MB inline limit", async () => {
+    const result = await runExtractDocumentText(
+      { documentRef: "att_large" },
+      {
+        ...context,
+        loadAttachment: async () => ({
+          bytes: Buffer.alloc(MAX_DOCUMENT_BYTES + 1),
+          filename: "notes.bin",
+          mediaType: "application/octet-stream",
+        }),
+      },
+      { loadConfig: async () => ({}) as typeof completeConfig }
+    );
+
+    expect(result).toEqual({
+      error:
+        "The selected document is not a supported PDF, Word, or Excel file.",
+    });
   });
 
   test("does not treat a guessed filename as an email document provider", async () => {

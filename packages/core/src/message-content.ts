@@ -19,6 +19,8 @@ export const MAX_ATTACHMENTS_PER_MESSAGE = 5;
 export const MAX_IMAGES_PER_MESSAGE = MAX_ATTACHMENTS_PER_MESSAGE;
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 export const MAX_DOCUMENT_BYTES = 5 * 1024 * 1024;
+/** Store/extract ceiling for channel ingest (WhatsApp documents, extract_document_text). */
+export const MAX_DOCUMENT_INGEST_BYTES = 25 * 1024 * 1024;
 export const TOKENS_PER_IMAGE_ESTIMATE = 1500;
 export const TOKENS_PER_DOCUMENT_ESTIMATE = 2000;
 
@@ -208,6 +210,20 @@ export function isSupportedDocumentMediaType(
 ): boolean {
   return ALLOWED_DOCUMENT_MEDIA_TYPES.has(
     normalizeDocumentMediaType(mediaType, filename)
+  );
+}
+
+export function isSpreadsheetDocumentMediaType(
+  mediaType: string,
+  filename: string
+): boolean {
+  const normalized = normalizeDocumentMediaType(mediaType, filename);
+
+  return (
+    normalized === XLSX_MEDIA_TYPE ||
+    normalized === XLS_MEDIA_TYPE ||
+    normalized === XLSM_MEDIA_TYPE ||
+    normalized === XLSB_MEDIA_TYPE
   );
 }
 

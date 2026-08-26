@@ -87,6 +87,7 @@ export * from "./fs";
 export * from "./identity/principal";
 export * from "./ids";
 export * from "./image-content";
+export * from "./inbound-document";
 export * from "./knowledge-base";
 export * from "./learning/cas";
 export * from "./learning/loop";

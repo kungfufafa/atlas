@@ -203,6 +203,7 @@ test("buildChatSystemPrompt nudges assigned work tools without extra product mod
   expect(prompt).toContain("Take a screenshot of the useful page");
   expect(prompt).toContain("use write_pptx");
   expect(prompt).toContain("use spreadsheet");
+  expect(prompt).toContain("write the finished output");
   expect(prompt).toContain("Use them when needed to finish the work");
   expect(prompt).not.toContain("ChatGPT");
 });

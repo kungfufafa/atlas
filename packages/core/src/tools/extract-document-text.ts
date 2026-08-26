@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
   type AnydocFormat,
   convertDocumentBytes,
+  documentExtractTimeoutMs,
   resolveAnydocFormat,
 } from "../anydoc-text";
 import { LEGACY_DOC_UNSUPPORTED_MESSAGE } from "../artifact-mime";
@@ -23,7 +24,7 @@ import { sanitizeMailError } from "../mail/sanitize";
 import type { MailReader } from "../mail/types";
 import { MAX_EMAIL_BODY_BYTES, truncateMailBody } from "../mail/types";
 import {
-  MAX_DOCUMENT_BYTES,
+  MAX_DOCUMENT_INGEST_BYTES,
   normalizeDocumentMediaType,
 } from "../message-content";
 import { getProfileSoulDir } from "../soul/resolve";
@@ -148,7 +149,7 @@ async function tryLoadWorkspaceDocument(
     const guarded = await guardFilePath(documentRef, null, undefined, {
       allowedDirs: [workspaceRoot],
       cwd: workspaceRoot,
-      maxFileBytes: MAX_DOCUMENT_BYTES,
+      maxFileBytes: MAX_DOCUMENT_INGEST_BYTES,
     });
 
     let fileStat;
@@ -168,9 +169,9 @@ async function tryLoadWorkspaceDocument(
       };
     }
 
-    if (fileStat.size > MAX_DOCUMENT_BYTES) {
+    if (fileStat.size > MAX_DOCUMENT_INGEST_BYTES) {
       return {
-        error: `Document exceeds ${MAX_DOCUMENT_BYTES} bytes.`,
+        error: `Document exceeds ${MAX_DOCUMENT_INGEST_BYTES} bytes.`,
         kind: "error",
       };
     }
@@ -273,8 +274,8 @@ export async function runExtractDocumentText(
     if (!bytes) {
       return { error: "Document was not found." };
     }
-    if (bytes.length > MAX_DOCUMENT_BYTES) {
-      return { error: `Document exceeds ${MAX_DOCUMENT_BYTES} bytes.` };
+    if (bytes.length > MAX_DOCUMENT_INGEST_BYTES) {
+      return { error: `Document exceeds ${MAX_DOCUMENT_INGEST_BYTES} bytes.` };
     }
 
     const safeFilename = filename?.trim() || "document";
@@ -295,6 +296,7 @@ export async function runExtractDocumentText(
       format,
       maxOutputBytes: MAX_EMAIL_BODY_BYTES,
       mediaType,
+      timeoutMs: documentExtractTimeoutMs(bytes.byteLength),
     });
     const bounded = truncateMailBody(converted.text);
     const truncated = converted.truncated || bounded.truncated;

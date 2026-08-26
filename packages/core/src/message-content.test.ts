@@ -4,6 +4,7 @@ import {
   countUserImages,
   estimateUserContentTokens,
   getUserMessageText,
+  isSpreadsheetDocumentMediaType,
   isSupportedDocumentMediaType,
   isSupportedImageMediaType,
   normalizeUserContent,
@@ -31,6 +32,21 @@ describe("shared attachment allowlist", () => {
     expect(isSupportedDocumentMediaType("application/zip", "archive.zip")).toBe(
       false
     );
+  });
+
+  test("detects excel workbooks as spreadsheet documents", () => {
+    expect(
+      isSpreadsheetDocumentMediaType(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "sheet.xlsx"
+      )
+    ).toBe(true);
+    expect(
+      isSpreadsheetDocumentMediaType("application/octet-stream", "budget.xls")
+    ).toBe(true);
+    expect(
+      isSpreadsheetDocumentMediaType("application/pdf", "report.pdf")
+    ).toBe(false);
   });
 
   test("accepts jpeg png gif webp images", () => {

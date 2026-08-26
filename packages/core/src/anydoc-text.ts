@@ -1,7 +1,18 @@
 /** Shared with email body truncation (`MAX_EMAIL_BODY_BYTES`) — keep in sync. */
 export const ANYDOC_MAX_OUTPUT_BYTES = 256 * 1024;
 export const ANYDOC_TIMEOUT_MS = 10_000;
+export const ANYDOC_MAX_TIMEOUT_MS = 30_000;
 export const ANYDOC_MAX_CONCURRENT = 2;
+
+export function documentExtractTimeoutMs(byteLength: number): number {
+  if (!Number.isFinite(byteLength) || byteLength <= 0) {
+    return ANYDOC_TIMEOUT_MS;
+  }
+
+  const extraMb = Math.max(0, Math.ceil(byteLength / (1024 * 1024)) - 1);
+
+  return Math.min(ANYDOC_MAX_TIMEOUT_MS, ANYDOC_TIMEOUT_MS + extraMb * 5000);
+}
 
 function truncateUtf8(
   value: string,

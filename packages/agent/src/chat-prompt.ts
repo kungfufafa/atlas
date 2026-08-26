@@ -201,7 +201,8 @@ export function buildChatSystemPrompt(
 
     if (tools.some((tool) => tool.name === "spreadsheet")) {
       sections.push(
-        "When the user asks for a spreadsheet, model, or workbook, use spreadsheet with a path under artifacts/ (for example artifacts/sales.xlsx). Do not leave a table dump in chat as a substitute."
+        "When the user asks for a spreadsheet, model, or workbook, use spreadsheet with a path under artifacts/ (for example artifacts/sales.xlsx). Do not leave a table dump in chat as a substitute.",
+        "For an existing workbook, inspect and read what you need, then write the finished output to a new artifacts/ file in this turn. Do not stop at a plan."
       );
     }
 

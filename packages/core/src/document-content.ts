@@ -58,10 +58,13 @@ export async function extractInboundDocumentText(input: {
   bytes: Buffer;
   filename: string;
   mediaType: string;
+  timeoutMs?: number;
 }): Promise<{ text: string; truncated: boolean }> {
-  const { ANYDOC_MAX_OUTPUT_BYTES, convertDocumentBytes } = await import(
-    "./anydoc-text"
-  );
+  const {
+    ANYDOC_MAX_OUTPUT_BYTES,
+    convertDocumentBytes,
+    documentExtractTimeoutMs,
+  } = await import("./anydoc-text");
 
   if (PLAIN_DOCUMENT_MEDIA_TYPES.has(input.mediaType)) {
     return truncateUtf8(input.bytes.toString("utf8"), ANYDOC_MAX_OUTPUT_BYTES);
@@ -70,6 +73,8 @@ export async function extractInboundDocumentText(input: {
   return convertDocumentBytes(input.bytes, {
     filename: input.filename,
     mediaType: input.mediaType,
+    timeoutMs:
+      input.timeoutMs ?? documentExtractTimeoutMs(input.bytes.byteLength),
   });
 }
 

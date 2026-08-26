@@ -3,8 +3,10 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   ANYDOC_MAX_OUTPUT_BYTES,
+  ANYDOC_MAX_TIMEOUT_MS,
   ANYDOC_TIMEOUT_MS,
   convertDocumentBytes,
+  documentExtractTimeoutMs,
   resolveAnydocFormat,
 } from "./anydoc-text";
 
@@ -12,6 +14,16 @@ const FIXTURES = join(import.meta.dir, "__fixtures__");
 const SAMPLE_PDF = readFileSync(join(FIXTURES, "sample.pdf"));
 const SAMPLE_XLSX = readFileSync(join(FIXTURES, "sample.xlsx"));
 const SAMPLE_DOCX = readFileSync(join(FIXTURES, "sample.docx"));
+
+describe("documentExtractTimeoutMs", () => {
+  test("grows with file size and caps at 30 seconds", () => {
+    expect(documentExtractTimeoutMs(1024)).toBe(ANYDOC_TIMEOUT_MS);
+    expect(documentExtractTimeoutMs(22 * 1024 * 1024)).toBe(
+      ANYDOC_MAX_TIMEOUT_MS
+    );
+    expect(ANYDOC_MAX_TIMEOUT_MS).toBe(30_000);
+  });
+});
 
 describe("resolveAnydocFormat", () => {
   test("maps spreadsheet media types and extensions to xlsx", () => {

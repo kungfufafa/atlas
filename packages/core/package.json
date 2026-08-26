@@ -20,6 +20,7 @@
     "./message-content": "./src/message-content.ts",
     "./attachments/store": "./src/attachments/store.ts",
     "./attachments/content": "./src/attachments/content.ts",
+    "./inbound-document": "./src/inbound-document.ts",
     "./image-content": "./src/image-content.ts",
     "./normalize-task-prompt": "./src/normalize-task-prompt.ts",
     "./ollama-provider-config": "./src/ollama-provider-config.ts",

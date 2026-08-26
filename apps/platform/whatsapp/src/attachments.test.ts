@@ -3,9 +3,13 @@ import type { WAMessage } from "@whiskeysockets/baileys";
 import {
   buildWhatsAppMediaInput,
   formatExtractedWhatsAppDocumentMessage,
+  formatSavedWhatsAppDocumentMessage,
+  mergeWhatsAppUserMessage,
   OVERSIZED_FILE_REPLY,
   OVERSIZED_IMAGE_REPLY,
   resolveWhatsAppDocumentHandling,
+  SAVE_FAILED_DOCUMENT_REPLY,
+  savedWorkspaceDocumentHint,
   UNREADABLE_DOCUMENT_REPLY,
   UNSUPPORTED_DOCUMENT_TYPES_REPLY,
   UNSUPPORTED_MEDIA_REPLY,
@@ -265,6 +269,137 @@ describe("buildWhatsAppMediaInput", () => {
     });
   });
 
+  test("saves oversized documents of every supported type instead of extracting text", async () => {
+    const cases = [
+      {
+        fileName: "sales.xlsx",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      },
+      {
+        fileName: "report.pdf",
+        mimeType: "application/pdf",
+      },
+      {
+        fileName: "notes.docx",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      },
+      {
+        fileName: "export.csv",
+        mimeType: "text/csv",
+      },
+      {
+        fileName: "readme.txt",
+        mimeType: "text/plain",
+      },
+      {
+        fileName: "notes.md",
+        mimeType: "text/markdown",
+      },
+    ];
+
+    for (const file of cases) {
+      let extracted = false;
+      const bytes = Buffer.from("extracted-source");
+      const relativePath = `artifacts/${file.fileName}`;
+      const result = await buildWhatsAppMediaInput(
+        createDocumentMessage({
+          caption: "Analyze",
+          fileName: file.fileName,
+          mimeType: file.mimeType,
+        }),
+        async () => bytes,
+        {
+          extractDocumentText: async () => {
+            extracted = true;
+            return { text: "should not run", truncated: false };
+          },
+          ingestMaxBytes: 100,
+          inlineMaxBytes: 8,
+          saveInboundDocument: async () => ({
+            relativePath,
+            sizeBytes: bytes.byteLength,
+          }),
+        }
+      );
+
+      expect(extracted).toBe(false);
+      expect(result).toEqual({
+        input: {
+          message: formatSavedWhatsAppDocumentMessage({
+            caption: "Analyze",
+            filename: file.fileName,
+            mediaType: file.mimeType,
+            relativePath,
+            sizeBytes: bytes.byteLength,
+          }),
+        },
+        kind: "input",
+      });
+    }
+  });
+
+  test("rejects when saving a mid-size document fails instead of extracting text", async () => {
+    let extracted = false;
+    const result = await buildWhatsAppMediaInput(
+      createDocumentMessage({
+        caption: "Analyze",
+        fileName: "sales.xlsx",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      }),
+      async () => Buffer.from("extracted-source"),
+      {
+        extractDocumentText: async () => {
+          extracted = true;
+          return { text: "should not run", truncated: false };
+        },
+        ingestMaxBytes: 100,
+        inlineMaxBytes: 8,
+        saveInboundDocument: async () => {
+          throw new Error("disk full");
+        },
+      }
+    );
+
+    expect(extracted).toBe(false);
+    expect(result).toEqual({
+      kind: "reject",
+      message: SAVE_FAILED_DOCUMENT_REPLY,
+    });
+  });
+
+  test("rejects unsafe saved paths instead of extracting text", async () => {
+    let extracted = false;
+    const result = await buildWhatsAppMediaInput(
+      createDocumentMessage({
+        fileName: "sales.xlsx",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      }),
+      async () => Buffer.from("extracted-source"),
+      {
+        extractDocumentText: async () => {
+          extracted = true;
+          return { text: "should not run", truncated: false };
+        },
+        ingestMaxBytes: 100,
+        inlineMaxBytes: 8,
+        saveInboundDocument: async () => ({
+          relativePath: "../sales.xlsx",
+          sizeBytes: 16,
+        }),
+      }
+    );
+
+    expect(extracted).toBe(false);
+    expect(result).toEqual({
+      kind: "reject",
+      message: SAVE_FAILED_DOCUMENT_REPLY,
+    });
+  });
+
   test("rejects oversized photos from the declared file length", async () => {
     let downloaded = false;
     const result = await buildWhatsAppMediaInput(
@@ -292,6 +427,68 @@ describe("buildWhatsAppMediaInput", () => {
       kind: "reject",
       message: OVERSIZED_IMAGE_REPLY,
     });
+  });
+});
+
+describe("savedWorkspaceDocumentHint", () => {
+  test("points spreadsheets at the spreadsheet tool and other files at extract or read", () => {
+    expect(
+      savedWorkspaceDocumentHint({
+        filename: "sales.xlsx",
+        mediaType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        relativePath: "artifacts/sales.xlsx",
+      })
+    ).toContain("spreadsheet tool");
+    expect(
+      savedWorkspaceDocumentHint({
+        filename: "export.csv",
+        mediaType: "text/csv",
+        relativePath: "artifacts/export.csv",
+      })
+    ).toContain("process the full workbook");
+    expect(
+      savedWorkspaceDocumentHint({
+        filename: "report.pdf",
+        mediaType: "application/pdf",
+        relativePath: "artifacts/report.pdf",
+      })
+    ).toContain("extract_document_text");
+    expect(
+      savedWorkspaceDocumentHint({
+        filename: "notes.docx",
+        mediaType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        relativePath: "artifacts/notes.docx",
+      })
+    ).toContain("Finish the user's request in this turn");
+    expect(
+      savedWorkspaceDocumentHint({
+        filename: "readme.txt",
+        mediaType: "text/plain",
+        relativePath: "artifacts/readme.txt",
+      })
+    ).toContain("Read it from the profile workspace");
+  });
+});
+
+describe("mergeWhatsAppUserMessage", () => {
+  test("keeps saved-file instructions when the caption is repeated as chat text", () => {
+    const media = formatSavedWhatsAppDocumentMessage({
+      caption: "Analyze",
+      filename: "sales.xlsx",
+      mediaType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      relativePath: "artifacts/sales.xlsx",
+      sizeBytes: 22 * 1024 * 1024,
+    });
+
+    expect(mergeWhatsAppUserMessage("Analyze", media)).toBe(media);
+    expect(mergeWhatsAppUserMessage("", media)).toBe(media);
+    expect(mergeWhatsAppUserMessage("Please review", media)).toBe(
+      `Please review\n\n${media}`
+    );
+    expect(mergeWhatsAppUserMessage("A", media)).toBe(`A\n\n${media}`);
   });
 });
 
