@@ -534,7 +534,13 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     inbound?: WAMessage | null
   ): Promise<void> {
     const conversationKey = chatKey(jid);
-    const session = await resolveSession(conversationKey);
+    let session: RemoteChatSession;
+    try {
+      session = await resolveSession(conversationKey);
+    } catch (error) {
+      await sendText(jid, formatError(error));
+      return;
+    }
     const profileId = sessionStore.get(conversationKey)?.profileId;
 
     if (profileId) {

@@ -78,6 +78,7 @@ export function createMockClient(
     artifactContentBytes?: Uint8Array;
     failPublishShare?: boolean;
     failReadArtifact?: boolean;
+    failCreateSession?: Error;
   } = {}
 ) {
   const calls = {
@@ -227,10 +228,13 @@ export function createMockClient(
     createChatSession: () => session,
     createSession: async (
       _channel: unknown,
-      options: { profileId?: string } = {}
+      sessionOptions: { profileId?: string } = {}
     ) => {
       calls.createSession += 1;
-      calls.profileIds.push(options.profileId ?? "default");
+      calls.profileIds.push(sessionOptions.profileId ?? "default");
+      if (options.failCreateSession) {
+        throw options.failCreateSession;
+      }
       return session;
     },
     getModels: async () => ({

@@ -194,4 +194,41 @@ describe("IdentityService", () => {
       })
     ).rejects.toThrow(/external principal/);
   });
+
+  test("worker channel sessions bind unmapped callers to a workspace admin", async () => {
+    const db = await seed();
+    const identity = new IdentityService(db);
+    const principal = await identity.resolveForChannelSession({
+      authUserId: LOCAL_CLIENT_USER_ID,
+      channel: "whatsapp",
+      channelUserId: "154352568283178@lid",
+      isPlatformAdmin: false,
+      orgId: "org_1",
+      orgRole: "member",
+    });
+    expect(principal.userId).toBe("user_admin");
+    expect(principal.orgId).toBe("org_1");
+    await expect(
+      identity.resolve({
+        channel: "whatsapp",
+        channelUserId: "154352568283178@lid",
+        orgId: "org_1",
+      })
+    ).resolves.toMatchObject({ userId: "user_admin" });
+  });
+
+  test("browser channel sessions still fail closed without a mapping", async () => {
+    const db = await seed();
+    const identity = new IdentityService(db);
+    await expect(
+      identity.resolveForChannelSession({
+        authUserId: "user_1",
+        channel: "whatsapp",
+        channelUserId: "154352568283178@lid",
+        isPlatformAdmin: false,
+        orgId: "org_1",
+        orgRole: "member",
+      })
+    ).rejects.toThrow(/No canonical user mapping/);
+  });
 });

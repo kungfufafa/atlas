@@ -214,11 +214,25 @@ export class IdentityService {
     ) {
       const channelUserId = input.channelUserId?.trim();
       if (channelUserId) {
-        return this.resolve({
-          channel: input.channel,
-          channelUserId,
-          orgId: input.orgId,
-        });
+        try {
+          return await this.resolve({
+            channel: input.channel,
+            channelUserId,
+            orgId: input.orgId,
+          });
+        } catch (error) {
+          if (
+            error instanceof PrincipalRequiredError &&
+            isServiceAccountUserId(input.authUserId)
+          ) {
+            return await this.bindAuthorizedWorkerPrincipal({
+              channel: input.channel,
+              channelUserId,
+              orgId: input.orgId,
+            });
+          }
+          throw error;
+        }
       }
       if (input.authUserId && !isServiceAccountUserId(input.authUserId)) {
         return assertCanonicalPrincipal({
@@ -261,6 +275,30 @@ export class IdentityService {
       orgId: input.orgId,
       orgRole: input.orgRole,
       userId: input.authUserId,
+    });
+  }
+
+  private async bindAuthorizedWorkerPrincipal(input: {
+    channel: ChannelType;
+    channelUserId: string;
+    orgId: string;
+  }): Promise<CanonicalPrincipal> {
+    const members = await this.db.listOrgMembers(input.orgId);
+    const admin = members.find(
+      (member) =>
+        member.role === "admin" && !isServiceAccountUserId(member.userId)
+    );
+    if (!admin) {
+      throw new PrincipalRequiredError(
+        "Mapped user is not a member of the active workspace."
+      );
+    }
+
+    return this.bindExternalPrincipal({
+      channel: input.channel,
+      channelUserId: input.channelUserId,
+      orgId: input.orgId,
+      userId: admin.userId,
     });
   }
 

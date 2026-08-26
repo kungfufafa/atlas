@@ -1613,6 +1613,49 @@ describe("bridge API integration", () => {
     });
   });
 
+  test("replies when creating a chat session fails instead of staying silent", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        accessMode: "open",
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        failCreateSession: new Error(
+          "No canonical user mapping for whatsapp:6289999999@s.whatsapp.net. Re-pair the channel."
+        ),
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        fixedWorkspaceId: "org_a",
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({
+        jid: "6289999999@s.whatsapp.net",
+        text: "Hello",
+      });
+      expect(calls.sendStream).toBe(0);
+      expect(
+        sent.some((message) =>
+          message.text.includes("No canonical user mapping")
+        )
+      ).toBe(true);
+    });
+  });
+
   test("rejects messages exceeding max character length", async () => {
     await withTempHome(async (homeDir) => {
       await writeWhatsAppConfigIni(homeDir, {
