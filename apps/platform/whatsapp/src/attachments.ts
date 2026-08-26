@@ -269,8 +269,12 @@ async function buildExtractedWhatsAppDocumentInput(input: {
   mediaType: string;
   saveInboundDocument?: WhatsAppMediaInputOptions["saveInboundDocument"];
 }): Promise<WhatsAppMediaBuildResult> {
-  if (input.saveInboundDocument) {
-    return buildSavedWhatsAppDocumentInput(input);
+  const saveInboundDocument = input.saveInboundDocument;
+  if (saveInboundDocument) {
+    return buildSavedWhatsAppDocumentInput({
+      ...input,
+      saveInboundDocument,
+    });
   }
 
   let extracted: { text: string; truncated: boolean } | null = null;
