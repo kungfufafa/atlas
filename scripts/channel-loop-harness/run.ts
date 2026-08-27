@@ -110,32 +110,6 @@ export async function runChannelLoopHarness(): Promise<ChannelLoopHarnessResult>
     process.env.ATLAS_WORKSPACE_ID = tenant.orgId;
 
     await loadLocalAuthToken();
-
-    atlasServer = new AtlasServerHarness({
-      env,
-      preferredPort: serverPort,
-    });
-    const { baseUrl } = await atlasServer.start(30_000);
-    console.log(`[atlas] ${baseUrl}`);
-
-    const authToken = await loadLocalAuthToken();
-    if (!authToken) {
-      throw new Error("Failed to mint local auth token for the isolated env.");
-    }
-
-    const client = createClient({
-      authToken,
-      baseUrl,
-      orgId: tenant.orgId,
-    });
-
-    const profiles = await client.listProfiles();
-    const profile =
-      profiles.profiles.find((item) => item.isDefault) ?? profiles.profiles[0];
-    if (!profile) {
-      throw new Error("No profile available after tenant bootstrap.");
-    }
-
     await writeChannelConfigs();
     const channelUserIds: Array<{
       channel: "telegram" | "whatsapp" | "discord";
@@ -165,6 +139,31 @@ export async function runChannelLoopHarness(): Promise<ChannelLoopHarnessResult>
     resetWhatsAppLocks();
     resetTelegramLocks();
     resetDiscordLocks();
+
+    atlasServer = new AtlasServerHarness({
+      env,
+      preferredPort: serverPort,
+    });
+    const { baseUrl } = await atlasServer.start(30_000);
+    console.log(`[atlas] ${baseUrl}`);
+
+    const authToken = await loadLocalAuthToken();
+    if (!authToken) {
+      throw new Error("Failed to mint local auth token for the isolated env.");
+    }
+
+    const client = createClient({
+      authToken,
+      baseUrl,
+      orgId: tenant.orgId,
+    });
+
+    const profiles = await client.listProfiles();
+    const profile =
+      profiles.profiles.find((item) => item.isDefault) ?? profiles.profiles[0];
+    if (!profile) {
+      throw new Error("No profile available after tenant bootstrap.");
+    }
 
     const csv = salesCsv();
     const notes = notesTxt();

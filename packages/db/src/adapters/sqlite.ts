@@ -442,6 +442,18 @@ interface ArtifactShareRow {
   token_hash: string;
 }
 
+export const SQLITE_BUSY_TIMEOUT_MS = 5000;
+
+function configureSqliteConnection(db: Database, databasePath: string): void {
+  // Server, workers, and test harnesses can share one on-disk file. WAL lets
+  // readers proceed during a write; busy_timeout retries instead of failing
+  // immediately with SQLITE_BUSY.
+  if (databasePath !== ":memory:") {
+    db.exec("PRAGMA journal_mode = WAL");
+  }
+  db.exec(`PRAGMA busy_timeout = ${SQLITE_BUSY_TIMEOUT_MS}`);
+}
+
 /**
  * The file holds plaintext MCP credentials and every transcript, so it carries
  * the same 0600 the rest of ~/.atlas already uses. bun:sqlite takes no mode, and
@@ -455,6 +467,7 @@ function openPrivateDatabase(databasePath: string): Database {
     chmodSync(databasePath, PRIVATE_FILE_MODE);
   }
 
+  configureSqliteConnection(db, databasePath);
   return db;
 }
 
