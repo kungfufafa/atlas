@@ -5,6 +5,8 @@ import { setupServer } from "msw/node";
 
 export type LlmCassetteMode = "auto" | "record" | "replay";
 
+export type LlmCassetteBodyEncoding = "base64" | "json" | "text";
+
 export type LlmCassetteExchange = {
   request: {
     method: string;
@@ -15,6 +17,8 @@ export type LlmCassetteExchange = {
   response: {
     status: number;
     body: unknown;
+    encoding?: LlmCassetteBodyEncoding;
+    mediaType?: string;
   };
 };
 
@@ -140,27 +144,18 @@ export async function withMswCassette<T>(
           );
         }
         replayIndex += 1;
-        return HttpResponse.json(exchange.response.body, {
-          status: exchange.response.status,
-        });
+        return cassetteHttpResponse(exchange.response);
       }
 
-      const requestBodyText = await request.clone().text();
-      let requestBody: unknown = requestBodyText;
-      try {
-        requestBody = JSON.parse(requestBodyText);
-      } catch {
-        // keep raw text
-      }
-
+      const requestBody = await captureCassetteRequestBody(request);
       const response = await fetch(bypass(request));
-      const contentType = response.headers.get("content-type") ?? "";
-      const body = contentType.includes("application/json")
-        ? await response.json()
-        : await response.text();
+      const recorded = await captureCassetteResponse(response);
 
       if (!response.ok) {
-        const detail = typeof body === "string" ? body : JSON.stringify(body);
+        const detail =
+          typeof recorded.body === "string"
+            ? recorded.body
+            : JSON.stringify(recorded.body);
         throw new Error(`LLM request failed (${response.status}): ${detail}`);
       }
 
@@ -170,13 +165,10 @@ export async function withMswCassette<T>(
           method: "POST",
           url: request.url,
         },
-        response: {
-          body,
-          status: response.status,
-        },
+        response: recorded,
       });
 
-      return HttpResponse.json(body, { status: response.status });
+      return cassetteHttpResponse(recorded);
     })
   );
 
@@ -204,4 +196,87 @@ export async function withMswCassette<T>(
     server.resetHandlers();
     server.close();
   }
+}
+
+async function captureCassetteRequestBody(request: Request): Promise<unknown> {
+  const contentType = request.headers.get("content-type") ?? "";
+  if (contentType.includes("multipart/form-data")) {
+    return { encoding: "multipart" };
+  }
+  if (
+    contentType.startsWith("audio/") ||
+    contentType.startsWith("image/") ||
+    contentType.includes("octet-stream")
+  ) {
+    const bytes = new Uint8Array(await request.clone().arrayBuffer());
+    return {
+      byteLength: bytes.byteLength,
+      encoding: "base64",
+      mediaType: contentType.split(";")[0]?.trim() || contentType,
+    };
+  }
+
+  const requestBodyText = await request.clone().text();
+  try {
+    return JSON.parse(requestBodyText) as unknown;
+  } catch {
+    return requestBodyText;
+  }
+}
+
+async function captureCassetteResponse(
+  response: Response
+): Promise<LlmCassetteExchange["response"]> {
+  const contentType = response.headers.get("content-type") ?? "";
+  const mediaType = contentType.split(";")[0]?.trim() || undefined;
+  if (contentType.includes("application/json")) {
+    return {
+      body: await response.json(),
+      encoding: "json",
+      status: response.status,
+    };
+  }
+  if (
+    contentType.startsWith("image/") ||
+    contentType.includes("octet-stream") ||
+    contentType.includes("application/png")
+  ) {
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    return {
+      body: Buffer.from(bytes).toString("base64"),
+      encoding: "base64",
+      mediaType: mediaType ?? "application/octet-stream",
+      status: response.status,
+    };
+  }
+
+  return {
+    body: await response.text(),
+    encoding: "text",
+    ...(mediaType ? { mediaType } : {}),
+    status: response.status,
+  };
+}
+
+function cassetteHttpResponse(
+  recorded: LlmCassetteExchange["response"]
+): Response {
+  if (recorded.encoding === "base64" && typeof recorded.body === "string") {
+    const bytes = Uint8Array.from(Buffer.from(recorded.body, "base64"));
+    return new Response(bytes, {
+      headers: {
+        "Content-Type": recorded.mediaType ?? "application/octet-stream",
+      },
+      status: recorded.status,
+    });
+  }
+  if (recorded.encoding === "text" && typeof recorded.body === "string") {
+    return HttpResponse.text(recorded.body, {
+      ...(recorded.mediaType
+        ? { headers: { "Content-Type": recorded.mediaType } }
+        : {}),
+      status: recorded.status,
+    });
+  }
+  return HttpResponse.json(recorded.body, { status: recorded.status });
 }

@@ -3,6 +3,7 @@ import {
   CLOUDFLARE_API_ROOT,
   createCloudflareProvider,
   resolveCloudflareBaseUrl,
+  resolveCloudflareModelRunUrl,
 } from "./index";
 
 const originalFetch = globalThis.fetch;
@@ -111,6 +112,19 @@ describe("Cloudflare Workers AI provider", () => {
     expect(resolveCloudflareBaseUrl("env-account")).toBe(
       `${CLOUDFLARE_API_ROOT}/env-account/ai/v1`
     );
+  });
+
+  test("maps the chat root to a Workers AI run URL", () => {
+    expect(
+      resolveCloudflareModelRunUrl("@cf/openai/whisper", {
+        apiKey: "key",
+        baseUrl: `${CLOUDFLARE_API_ROOT}/stored-account/ai/v1`,
+        createdAt: new Date(0).toISOString(),
+        id: "cf-1",
+        label: "Cloudflare Workers AI",
+        type: "cloudflare",
+      })
+    ).toBe(`${CLOUDFLARE_API_ROOT}/stored-account/ai/run/@cf/openai/whisper`);
   });
 
   test("rejects missing account configuration and API keys", () => {

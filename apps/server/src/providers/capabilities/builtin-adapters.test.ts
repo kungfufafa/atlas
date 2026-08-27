@@ -26,7 +26,32 @@ describe("built-in provider adapter registry", () => {
     expect(
       fireworks.manifest.capabilities[PROVIDER_CAPABILITY_IDS.imageGeneration]
         ?.implementation.status
+    ).toBe("available");
+    expect(
+      fireworks.manifest.capabilities[
+        PROVIDER_CAPABILITY_IDS.audioTranscription
+      ]?.implementation.status
+    ).toBe("available");
+    expect(
+      registry.require("minimax").manifest.capabilities[
+        PROVIDER_CAPABILITY_IDS.audioTranscription
+      ]?.native.status
+    ).toBe("unsupported");
+    expect(
+      registry.require("minimax").manifest.capabilities[
+        PROVIDER_CAPABILITY_IDS.audioTranscription
+      ]?.implementation.status
     ).toBe("unavailable");
+    expect(
+      registry.require("ollama").manifest.capabilities[
+        PROVIDER_CAPABILITY_IDS.audioTranscription
+      ]?.native.status
+    ).toBe("unknown");
+    expect(
+      registry.require("ollama").manifest.capabilities[
+        PROVIDER_CAPABILITY_IDS.audioTranscription
+      ]?.implementation.status
+    ).toBe("available");
     expect(
       gemini.manifest.models?.find(
         (model) => model.id === "gemini-2.5-flash-image"

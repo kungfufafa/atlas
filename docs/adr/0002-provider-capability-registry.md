@@ -65,12 +65,26 @@ required capabilities return structured errors.
 - **Gemini** exercises multimodal chat plus audio transcription and image
   generation with model-specific declarations and request constraints. It
   proves that provider support and model support must remain separate.
-- **Fireworks** documents vision, audio, and image generation, while Atlas does
-  not yet implement every native operation. It proves that `native: supported`
-  must never imply `implementation: available`.
+- **Fireworks** documents vision, audio, and image generation. Chat stays on
+  the inference OpenAI-compatible root, while audio transcription uses dedicated
+  Whisper hosts and image generation uses `/workflows` or `/image_generation`
+  paths (including binary image bytes). Native support is model-dependent.
+- **MiniMax / MiniMax CN** offer image generation (`POST /v1/image_generation`)
+  but not speech-to-text. Atlas records that as `native: unsupported` rather
+  than an unimplemented executor.
 - **Custom OpenAI-compatible** starts with unknown evidence and admin-supplied
   endpoint/model configuration. It proves that unknown providers can be added
   without optimistic feature assumptions.
+
+Chat OpenAI-compatibility is not a media-API contract. xAI speech-to-text is
+`POST /v1/stt`, OpenRouter transcription is JSON `input_audio` on
+`/audio/transcriptions`, OpenRouter images are `POST /images`, Cloudflare media
+uses `/ai/run/{model}`, MiniMax CN image generation must keep the CN host, and
+Fireworks image workflows may return raw image bytes. Those details stay inside
+adapter executors; routing still consumes the shared `audio.transcription` /
+`image.generation` DTOs. The LLM cassette helper stores binary responses as
+base64 so Fireworks-style image bytes can be replayed. New media replay tests
+are registered only after a real cassette is committed.
 
 ## Configuration boundary
 
@@ -100,4 +114,29 @@ specialist routing through Settings.
 Provider-specific HTTP and SDK details remain intentionally adapter-local.
 Atlas can expose upstream support only after an executor exists and a real
 integration succeeds. Until then, the capability remains visible as native but
-unavailable, rather than being silently routed or falsely advertised.
+unavailable, rather than being silently routed or falsely advertised. When a
+provider does not offer the capability at all, Atlas records `native:
+unsupported` (not offered) instead of leaving a fail-closed unimplemented
+handler.
+
+## Specialist media baseline (2026-08-27)
+
+Status letters:
+
+- **S** — native supported and Atlas executor available for the documented models
+- **MD** — native supported, executor available, model-dependent
+- **P/MD** — partial protocol or host/model limits plus model-dependent routing
+- **U** — unknown / not verified against a live account
+- **N** — not offered by the provider (`native: unsupported`)
+
+| Provider | audio.transcription | image.generation |
+| --- | --- | --- |
+| OpenAI | S | S |
+| Gemini | MD | MD |
+| Fireworks | P/MD | MD |
+| Cloudflare Workers AI | MD | MD |
+| OpenRouter | MD | MD |
+| MiniMax / MiniMax CN | N | S |
+| xAI | S | S |
+| Z.ai / GLM CN | S | S |
+| Ollama | U | P/MD |

@@ -353,6 +353,30 @@ describe("AgentService capability configuration", () => {
         .find((provider) => provider.id === "openai")
         ?.models.some((model) => model.id === "whisper-1")
     ).toBe(true);
+    expect(
+      catalog.providers.find((provider) => provider.id === "fireworks")
+        ?.capabilities
+    ).toContainEqual({
+      capabilityId: PROVIDER_CAPABILITY_IDS.imageGeneration,
+      implementationAvailable: true,
+      nativeStatus: "supported",
+    });
+    expect(
+      catalog.providers.find((provider) => provider.id === "minimax")
+        ?.capabilities
+    ).toContainEqual({
+      capabilityId: PROVIDER_CAPABILITY_IDS.audioTranscription,
+      implementationAvailable: false,
+      nativeStatus: "unsupported",
+    });
+    expect(
+      catalog.providers.find((provider) => provider.id === "ollama")
+        ?.capabilities
+    ).toContainEqual({
+      capabilityId: PROVIDER_CAPABILITY_IDS.audioTranscription,
+      implementationAvailable: true,
+      nativeStatus: "unknown",
+    });
   });
 
   test("persists a mapping only in the selected workspace", async () => {

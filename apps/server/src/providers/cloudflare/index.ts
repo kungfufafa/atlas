@@ -27,6 +27,28 @@ export function resolveCloudflareBaseUrl(
   return cloudflareBaseUrlFromAccountId(trimmedAccountId);
 }
 
+/** Workers AI run URL for non-chat models (`/ai/run/{model}`), derived from the chat `/ai/v1` root. */
+export function resolveCloudflareModelRunUrl(
+  model: string,
+  instance?: ProviderInstance | null,
+  accountId = ""
+): string {
+  const trimmedModel = model.trim().replace(/^\/+/, "");
+  if (!trimmedModel) {
+    throw new Error("Cloudflare model id is required.");
+  }
+
+  const chatRoot = resolveCloudflareBaseUrl(accountId, instance);
+  const runRoot = chatRoot.replace(/\/ai\/v1\/?$/, "/ai/run");
+  if (runRoot === chatRoot) {
+    throw new Error(
+      "Cloudflare media models require a Workers AI endpoint such as https://api.cloudflare.com/client/v4/accounts/{accountId}/ai/v1."
+    );
+  }
+
+  return `${runRoot}/${trimmedModel}`;
+}
+
 export function createCloudflareProvider(options: {
   accountId: string;
   apiKey: string;

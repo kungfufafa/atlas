@@ -33,13 +33,28 @@ import { createOpenCodeGoProvider } from "../opencode-go";
 import { getModelsForOpenCodeGoInstance } from "../opencode-go/catalog";
 import { createOpenRouterProvider } from "../openrouter";
 import {
+  cloudflareAudioTranscriptionExecutor,
+  fireworksAudioTranscriptionExecutor,
   geminiAudioTranscriptionExecutor,
+  ollamaAudioTranscriptionExecutor,
   openAIAudioTranscriptionExecutor,
+  openRouterAudioTranscriptionExecutor,
+  xAIAudioTranscriptionExecutor,
+  zhipuAudioTranscriptionExecutor,
+  zhipuCnAudioTranscriptionExecutor,
 } from "./executors/audio-transcription";
 import {
+  cloudflareImageGenerationExecutor,
+  fireworksImageGenerationExecutor,
   geminiImageGenerationExecutor,
   IMAGE_GENERATION_SIZES,
+  minimaxImageGenerationExecutor,
+  ollamaImageGenerationExecutor,
   openAIImageGenerationExecutor,
+  openRouterImageGenerationExecutor,
+  xAIImageGenerationExecutor,
+  zhipuCnImageGenerationExecutor,
+  zhipuImageGenerationExecutor,
 } from "./executors/image-generation";
 import { createVisionUnderstandingExecutor } from "./executors/vision-understanding";
 import {
@@ -293,6 +308,8 @@ function modelsSupporting(
 
 function openAIStyleRegistration(options: {
   displayName: string;
+  executors?: Readonly<Record<string, ProviderCapabilityExecutor>>;
+  models?: BuiltinManifestOptions["models"];
   native?: BuiltinManifestOptions["native"];
   providerId:
     | "deepseek"
@@ -330,14 +347,24 @@ function openAIStyleRegistration(options: {
         })
       : undefined,
     displayName: options.displayName,
+    executors: options.executors,
     modelDefaults: {
       [CHAT_INPUT_IMAGE]:
         options.providerId === "deepseek" ? "unsupported" : "unknown",
     },
+    models: options.models,
     native: options.native,
     providerId: options.providerId,
   });
 }
+
+const ALL_IMAGE_SIZES: ProviderCapabilityConstraints = {
+  supportedValues: { size: [...IMAGE_GENERATION_SIZES] },
+};
+
+const SQUARE_OR_AUTO_IMAGE_SIZES: ProviderCapabilityConstraints = {
+  supportedValues: { size: ["1024x1024", "auto"] },
+};
 
 export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
   [
@@ -401,6 +428,28 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
         }),
       discoverModels: discoverFireworksModels,
       displayName: "Fireworks",
+      executors: {
+        [PROVIDER_CAPABILITY_IDS.audioTranscription]:
+          fireworksAudioTranscriptionExecutor,
+        [PROVIDER_CAPABILITY_IDS.imageGeneration]:
+          fireworksImageGenerationExecutor,
+      },
+      models: [
+        ...modelsSupporting(PROVIDER_CAPABILITY_IDS.audioTranscription, [
+          "whisper-v3",
+          "whisper-v3-turbo",
+        ]),
+        ...modelsSupporting(
+          PROVIDER_CAPABILITY_IDS.imageGeneration,
+          [
+            "accounts/fireworks/models/flux-1-schnell-fp8",
+            "accounts/fireworks/models/flux-1-dev-fp8",
+            "accounts/fireworks/models/flux-kontext-pro",
+            "accounts/fireworks/models/playground-v2-5-1024px-aesthetic",
+          ],
+          ALL_IMAGE_SIZES
+        ),
+      ],
       native: {
         [CHAT_INPUT_IMAGE]: "supported",
         [PROVIDER_CAPABILITY_IDS.audioTranscription]: "supported",
@@ -418,6 +467,24 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
           providerReplayRevision: context.providerReplayRevision,
         }),
       displayName: "Cloudflare Workers AI",
+      executors: {
+        [PROVIDER_CAPABILITY_IDS.audioTranscription]:
+          cloudflareAudioTranscriptionExecutor,
+        [PROVIDER_CAPABILITY_IDS.imageGeneration]:
+          cloudflareImageGenerationExecutor,
+      },
+      models: [
+        ...modelsSupporting(PROVIDER_CAPABILITY_IDS.audioTranscription, [
+          "@cf/openai/whisper",
+          "@cf/openai/whisper-large-v3-turbo",
+          "@cf/openai/whisper-tiny-en",
+        ]),
+        ...modelsSupporting(
+          PROVIDER_CAPABILITY_IDS.imageGeneration,
+          ["@cf/black-forest-labs/flux-1-schnell"],
+          SQUARE_OR_AUTO_IMAGE_SIZES
+        ),
+      ],
       native: {
         [CHAT_INPUT_IMAGE]: "supported",
         [PROVIDER_CAPABILITY_IDS.audioTranscription]: "supported",
@@ -555,6 +622,23 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
           model: context.model,
         }),
       displayName: "OpenRouter",
+      executors: {
+        [PROVIDER_CAPABILITY_IDS.audioTranscription]:
+          openRouterAudioTranscriptionExecutor,
+        [PROVIDER_CAPABILITY_IDS.imageGeneration]:
+          openRouterImageGenerationExecutor,
+      },
+      models: [
+        ...modelsSupporting(PROVIDER_CAPABILITY_IDS.audioTranscription, [
+          "openai/whisper-large-v3",
+          "openai/whisper-1",
+        ]),
+        ...modelsSupporting(
+          PROVIDER_CAPABILITY_IDS.imageGeneration,
+          ["black-forest-labs/flux-1-schnell", "bytedance-seed/seedream-4.5"],
+          ALL_IMAGE_SIZES
+        ),
+      ],
       native: {
         [CHAT_INPUT_IMAGE]: "supported",
         [PROVIDER_CAPABILITY_IDS.audioTranscription]: "supported",
@@ -588,11 +672,27 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
       }),
       discoverModels: discoverOllamaModels,
       displayName: "Ollama",
+      executors: {
+        [PROVIDER_CAPABILITY_IDS.audioTranscription]:
+          ollamaAudioTranscriptionExecutor,
+        [PROVIDER_CAPABILITY_IDS.imageGeneration]:
+          ollamaImageGenerationExecutor,
+      },
       missingCredentialMessage: (_instance, operation) =>
         operation === "connection-validation"
           ? "API key is required for Ollama Cloud mode."
           : "API key is required for Ollama Cloud.",
-      native: { [CHAT_INPUT_IMAGE]: "supported" },
+      models: [
+        ...modelsSupporting(
+          PROVIDER_CAPABILITY_IDS.imageGeneration,
+          ["x/z-image-turbo", "x/flux2-klein:4b"],
+          ALL_IMAGE_SIZES
+        ),
+      ],
+      native: {
+        [CHAT_INPUT_IMAGE]: "supported",
+        [PROVIDER_CAPABILITY_IDS.imageGeneration]: "supported",
+      },
       providerId: "ollama",
     }),
     registration({
@@ -606,16 +706,55 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
     }),
     openAIStyleRegistration({
       displayName: "MiniMax",
-      native: { [PROVIDER_CAPABILITY_IDS.imageGeneration]: "supported" },
+      executors: {
+        [PROVIDER_CAPABILITY_IDS.imageGeneration]:
+          minimaxImageGenerationExecutor,
+      },
+      models: modelsSupporting(
+        PROVIDER_CAPABILITY_IDS.imageGeneration,
+        ["image-01", "image-01-live"],
+        ALL_IMAGE_SIZES
+      ),
+      native: {
+        [PROVIDER_CAPABILITY_IDS.audioTranscription]: "unsupported",
+        [PROVIDER_CAPABILITY_IDS.imageGeneration]: "supported",
+      },
       providerId: "minimax",
     }),
     openAIStyleRegistration({
       displayName: "MiniMax (CN)",
-      native: { [PROVIDER_CAPABILITY_IDS.imageGeneration]: "supported" },
+      executors: {
+        [PROVIDER_CAPABILITY_IDS.imageGeneration]:
+          minimaxImageGenerationExecutor,
+      },
+      models: modelsSupporting(
+        PROVIDER_CAPABILITY_IDS.imageGeneration,
+        ["image-01", "image-01-live"],
+        ALL_IMAGE_SIZES
+      ),
+      native: {
+        [PROVIDER_CAPABILITY_IDS.audioTranscription]: "unsupported",
+        [PROVIDER_CAPABILITY_IDS.imageGeneration]: "supported",
+      },
       providerId: "minimax_cn",
     }),
     openAIStyleRegistration({
       displayName: "xAI",
+      executors: {
+        [PROVIDER_CAPABILITY_IDS.audioTranscription]:
+          xAIAudioTranscriptionExecutor,
+        [PROVIDER_CAPABILITY_IDS.imageGeneration]: xAIImageGenerationExecutor,
+      },
+      models: [
+        ...modelsSupporting(PROVIDER_CAPABILITY_IDS.audioTranscription, [
+          "grok-stt",
+        ]),
+        ...modelsSupporting(
+          PROVIDER_CAPABILITY_IDS.imageGeneration,
+          ["grok-imagine-image-2.0", "grok-2-image"],
+          ALL_IMAGE_SIZES
+        ),
+      ],
       native: {
         [CHAT_INPUT_IMAGE]: "supported",
         [PROVIDER_CAPABILITY_IDS.audioTranscription]: "supported",
@@ -625,6 +764,21 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
     }),
     openAIStyleRegistration({
       displayName: "Z.ai",
+      executors: {
+        [PROVIDER_CAPABILITY_IDS.audioTranscription]:
+          zhipuAudioTranscriptionExecutor,
+        [PROVIDER_CAPABILITY_IDS.imageGeneration]: zhipuImageGenerationExecutor,
+      },
+      models: [
+        ...modelsSupporting(PROVIDER_CAPABILITY_IDS.audioTranscription, [
+          "glm-asr-2512",
+        ]),
+        ...modelsSupporting(
+          PROVIDER_CAPABILITY_IDS.imageGeneration,
+          ["glm-image", "cogview-4-250304"],
+          ALL_IMAGE_SIZES
+        ),
+      ],
       native: {
         [CHAT_INPUT_IMAGE]: "supported",
         [PROVIDER_CAPABILITY_IDS.audioTranscription]: "supported",
@@ -634,6 +788,22 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
     }),
     openAIStyleRegistration({
       displayName: "GLM (CN)",
+      executors: {
+        [PROVIDER_CAPABILITY_IDS.audioTranscription]:
+          zhipuCnAudioTranscriptionExecutor,
+        [PROVIDER_CAPABILITY_IDS.imageGeneration]:
+          zhipuCnImageGenerationExecutor,
+      },
+      models: [
+        ...modelsSupporting(PROVIDER_CAPABILITY_IDS.audioTranscription, [
+          "glm-asr-2512",
+        ]),
+        ...modelsSupporting(
+          PROVIDER_CAPABILITY_IDS.imageGeneration,
+          ["glm-image", "cogview-4-250304"],
+          ALL_IMAGE_SIZES
+        ),
+      ],
       native: {
         [CHAT_INPUT_IMAGE]: "supported",
         [PROVIDER_CAPABILITY_IDS.audioTranscription]: "supported",

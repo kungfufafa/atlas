@@ -1,15 +1,16 @@
-import type {
-  ChatCompletionResult,
-  ChatMessage,
-  CustomModelEntry,
-  GenerateChatInput,
-  GenerateTextInput,
-  GenerateTextResult,
-  LlmToolDefinition,
-  ProviderChatOptions,
-  ProviderClient,
-  StreamChatHandlers,
-  ToolCall,
+import {
+  type ChatCompletionResult,
+  type ChatMessage,
+  type CustomModelEntry,
+  type GenerateChatInput,
+  type GenerateTextInput,
+  type GenerateTextResult,
+  type LlmToolDefinition,
+  normalizeBaseUrl,
+  type ProviderChatOptions,
+  type ProviderClient,
+  type StreamChatHandlers,
+  type ToolCall,
 } from "@atlas/core";
 import OpenAI from "openai";
 import {
@@ -31,7 +32,73 @@ import { fireworksModelSupportsThinking } from "./thinking";
 
 export const FIREWORKS_INFERENCE_BASE_URL =
   "https://api.fireworks.ai/inference/v1";
+export const FIREWORKS_AUDIO_PROD_BASE_URL =
+  "https://audio-prod.api.fireworks.ai/v1";
+export const FIREWORKS_AUDIO_TURBO_BASE_URL =
+  "https://audio-turbo.api.fireworks.ai/v1";
+const FIREWORKS_ACCOUNT_MODELS_PREFIX = "accounts/fireworks/models/";
 const PROVIDER_LABEL = "Fireworks";
+
+export function fireworksModelResource(model: string): string {
+  const trimmed = model.trim();
+  if (trimmed.startsWith("accounts/")) {
+    return trimmed;
+  }
+  return `${FIREWORKS_ACCOUNT_MODELS_PREFIX}${trimmed.replace(/^\/+/, "")}`;
+}
+
+export function resolveFireworksAudioTranscriptionTarget(model: string): {
+  model: string;
+  url: string;
+} {
+  const slug = model.trim().toLowerCase();
+  if (slug.includes("turbo")) {
+    return {
+      model: "whisper-v3-turbo",
+      url: `${FIREWORKS_AUDIO_TURBO_BASE_URL}/audio/transcriptions`,
+    };
+  }
+  return {
+    model: "whisper-v3",
+    url: `${FIREWORKS_AUDIO_PROD_BASE_URL}/audio/transcriptions`,
+  };
+}
+
+export type FireworksImageGenerationKind =
+  | "image_generation"
+  | "workflows"
+  | "workflows_async";
+
+export function resolveFireworksImageGenerationTarget(
+  model: string,
+  baseUrl = FIREWORKS_INFERENCE_BASE_URL
+): { kind: FireworksImageGenerationKind; pollUrl?: string; url: string } {
+  const resource = fireworksModelResource(model);
+  const root = normalizeBaseUrl(baseUrl);
+  const slug = resource.toLowerCase();
+  if (
+    slug.includes("playground") ||
+    slug.includes("stable-diffusion") ||
+    slug.includes("ssd-1b") ||
+    slug.includes("japanese-stable-diffusion")
+  ) {
+    return {
+      kind: "image_generation",
+      url: `${root}/image_generation/${resource}`,
+    };
+  }
+  if (slug.includes("flux-kontext")) {
+    return {
+      kind: "workflows_async",
+      pollUrl: `${root}/workflows/${resource}/get_result`,
+      url: `${root}/workflows/${resource}`,
+    };
+  }
+  return {
+    kind: "workflows",
+    url: `${root}/workflows/${resource}/text_to_image`,
+  };
+}
 
 export interface FireworksProviderOptions {
   apiKey: string;

@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
-import { createFireworksProvider } from "./index";
+import {
+  createFireworksProvider,
+  resolveFireworksAudioTranscriptionTarget,
+  resolveFireworksImageGenerationTarget,
+} from "./index";
 
 const originalFetch = globalThis.fetch;
 
@@ -22,6 +26,41 @@ function streamFromChunks(chunks: string[]): ReadableStream<Uint8Array> {
 }
 
 const FIREWORKS_TEST_MODEL = "accounts/fireworks/models/gpt-oss-120b";
+
+describe("Fireworks media endpoints", () => {
+  test("routes whisper models to the dedicated audio hosts", () => {
+    expect(resolveFireworksAudioTranscriptionTarget("whisper-v3")).toEqual({
+      model: "whisper-v3",
+      url: "https://audio-prod.api.fireworks.ai/v1/audio/transcriptions",
+    });
+    expect(
+      resolveFireworksAudioTranscriptionTarget(
+        "accounts/fireworks/models/whisper-v3-turbo"
+      )
+    ).toEqual({
+      model: "whisper-v3-turbo",
+      url: "https://audio-turbo.api.fireworks.ai/v1/audio/transcriptions",
+    });
+  });
+
+  test("selects sync workflows, async kontext, or size-based image_generation", () => {
+    expect(
+      resolveFireworksImageGenerationTarget("flux-1-schnell-fp8").url
+    ).toBe(
+      "https://api.fireworks.ai/inference/v1/workflows/accounts/fireworks/models/flux-1-schnell-fp8/text_to_image"
+    );
+    expect(
+      resolveFireworksImageGenerationTarget(
+        "accounts/fireworks/models/flux-kontext-pro"
+      ).kind
+    ).toBe("workflows_async");
+    expect(
+      resolveFireworksImageGenerationTarget(
+        "accounts/fireworks/models/playground-v2-5-1024px-aesthetic"
+      ).kind
+    ).toBe("image_generation");
+  });
+});
 
 describe("Fireworks provider", () => {
   test("sends reasoning_effort only when the model supports thinking", async () => {
