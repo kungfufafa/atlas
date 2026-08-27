@@ -478,32 +478,32 @@ function ArtifactWorkspaceViewer({
   switch (activePreview.type) {
     case "pdf":
       return <PdfViewer downloadUrl={downloadUrl} preview={activePreview} />;
-    case "spreadsheet":
+    case "spreadsheet": {
+      const draft = editor.draft;
       return (
         <SpreadsheetViewer
           downloadUrl={downloadUrl}
           editor={
-            editor.draft?.source.kind === "delimited"
+            draft?.source.kind === "delimited"
               ? {
                   canAddColumn:
-                    Math.max(0, ...editor.draft.rows.map((row) => row.length)) <
+                    Math.max(0, ...draft.rows.map((row) => row.length)) <
                     ARTIFACT_EDIT_MAX_COLUMNS,
-                  canAddRow: editor.draft.rows.length < ARTIFACT_EDIT_MAX_ROWS,
+                  canAddRow: draft.rows.length < ARTIFACT_EDIT_MAX_ROWS,
                   disabled: editor.saving,
                   onAddColumn: () =>
-                    editor.setRows(addEditableColumn(editor.draft.rows)),
-                  onAddRow: () =>
-                    editor.setRows(addEditableRow(editor.draft.rows)),
+                    editor.setRows(addEditableColumn(draft.rows)),
+                  onAddRow: () => editor.setRows(addEditableRow(draft.rows)),
                   onChangeCell: (rowIndex, columnIndex, value) =>
                     editor.setRows(
                       updateEditableCell(
-                        editor.draft.rows,
+                        draft.rows,
                         rowIndex,
                         columnIndex,
                         value
                       )
                     ),
-                  rows: editor.draft.rows,
+                  rows: draft.rows,
                 }
               : undefined
           }
@@ -511,6 +511,7 @@ function ArtifactWorkspaceViewer({
           preview={activePreview}
         />
       );
+    }
     case "presentation":
       return (
         <PresentationViewer downloadUrl={downloadUrl} preview={activePreview} />

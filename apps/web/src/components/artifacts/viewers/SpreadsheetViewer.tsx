@@ -22,7 +22,7 @@ export function SpreadsheetViewer({
 }: {
   preview: SpreadsheetPreview;
   downloadUrl: string;
-  onSelectSheet?: (sheetName: string, sheetIndex: number) => void;
+  onSelectSheet?: (sheetName: string, sheetIndex?: number) => void;
   editor?: {
     canAddColumn: boolean;
     canAddRow: boolean;

@@ -650,14 +650,14 @@ function ArtifactAttachmentPreviewCanvas({
   downloadUrl: string;
   error: string | null;
   imagePreviewUrl: string | null;
-  language: string | undefined;
+  language: string | null;
   loading: boolean;
   loadingOverride?: boolean;
-  onSelectSheet: (sheetName: string, sheetIndex: number) => void;
+  onSelectSheet: (sheetName: string, sheetIndex?: number) => void;
   richError: string | null;
   richLoading: boolean;
   richPreview: ArtifactPreview | null;
-  sourceLanguage: string | undefined;
+  sourceLanguage: string | null;
   textFormat: "mermaid" | "markdown" | "plain";
   videoPreviewUrl: string | null;
 }) {
@@ -685,7 +685,7 @@ function ArtifactAttachmentPreviewCanvas({
         error={error}
         format="plain"
         kind="text"
-        language={sourceLanguage}
+        language={sourceLanguage ?? null}
         loading={loadingOverride ?? loading}
       />
     );
@@ -699,7 +699,7 @@ function ArtifactAttachmentPreviewCanvas({
       error={error}
       imagePreviewUrl={imagePreviewUrl}
       kind={canvasKind}
-      language={language}
+      language={language ?? null}
       loading={loadingOverride ?? loading}
       textFormat={canvasKind === "text" ? textFormat : "plain"}
       videoPreviewUrl={videoPreviewUrl}

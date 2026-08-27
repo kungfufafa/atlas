@@ -1,4 +1,7 @@
-import type { ArtifactFile } from "@atlas/core/contract";
+import type {
+  ArtifactFile,
+  ArtifactFolderMetadata,
+} from "@atlas/core/contract";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -24,7 +27,6 @@ import {
 } from "@/lib/files-page.shared";
 import { ArtifactFolderBreadcrumb } from "@/pages/files/files-artifact-folder-breadcrumb";
 import {
-  type ArtifactFolderEntry,
   filterArtifactFolderMetadata,
   listArtifactsInFolder,
   normalizeArtifactFolderPrefix,
@@ -36,7 +38,7 @@ import { FilesSearchRow } from "@/pages/files/files-search-row";
 import { FilesToolbar } from "@/pages/files/files-toolbar";
 
 const EMPTY_ARTIFACTS: ArtifactFile[] = [];
-const EMPTY_FOLDERS: ArtifactFolderEntry[] = [];
+const EMPTY_FOLDERS: ArtifactFolderMetadata[] = [];
 
 export function FilesPage() {
   const { profileId: activeProfileId } = useActiveChatProfile();
@@ -79,7 +81,8 @@ export function FilesPage() {
     [data]
   );
   const totalCount = data?.pages[0]?.total ?? 0;
-  const folderMetadata = data?.pages[0]?.folders ?? EMPTY_FOLDERS;
+  const folderMetadata: ArtifactFolderMetadata[] =
+    data?.pages[0]?.folders ?? EMPTY_FOLDERS;
   const hasArtifacts = totalCount > 0 || folderMetadata.length > 0;
   const remainingCount = Math.max(totalCount - artifacts.length, 0);
   const typeOptions = useMemo(
