@@ -712,4 +712,73 @@ describe("AgentService session model overrides", () => {
       )?.canUpdateModel
     ).toBe(false);
   });
+
+  test("subscription catalog snapshot persist does not abort in-flight turns", async () => {
+    const { db, service } = await createSubscriptionScenario();
+    let models = [
+      {
+        default: true,
+        id: "model-a",
+        name: "Model A",
+        provider: "chatgpt" as const,
+      },
+    ];
+    setChatgptRuntimeForTests({
+      async listModels() {
+        return models;
+      },
+    } as ChatgptSubscriptionRuntime);
+
+    const sessionId = await service.createSession(
+      ORG_ID,
+      "web",
+      PROFILE_ID,
+      "user_owner",
+      { model: "chatgpt-1::model-a", orgRole: "member" }
+    );
+    const abort = new AbortController();
+    expect(await service.beginSessionTurn(ORG_ID, sessionId)).toBe(true);
+    sessionTurnRegistry.attachAbort(sessionId, abort);
+
+    models = [
+      {
+        default: true,
+        id: "model-a",
+        name: "Model A",
+        provider: "chatgpt" as const,
+      },
+      {
+        id: "model-b",
+        name: "Model B",
+        provider: "chatgpt" as const,
+      },
+    ];
+
+    try {
+      const catalog = await service.getModels(ORG_ID);
+      expect(catalog.models.map((model) => model.id)).toEqual([
+        "model-a",
+        "model-b",
+      ]);
+      expect(
+        (await db.getOrgAiConfig(ORG_ID))?.config.providers[0]?.customModels
+      ).toEqual([
+        { default: true, id: "model-a", name: "Model A" },
+        { id: "model-b", name: "Model B" },
+      ]);
+      expect(abort.signal.aborted).toBe(false);
+      expect(sessionTurnRegistry.isActive(sessionId)).toBe(true);
+
+      await expect(
+        service.resolveSession(ORG_ID, sessionId, {
+          orgRole: "member",
+          userId: "user_owner",
+        })
+      ).resolves.toBeTruthy();
+      expect(abort.signal.aborted).toBe(false);
+      expect(sessionTurnRegistry.isActive(sessionId)).toBe(true);
+    } finally {
+      sessionTurnRegistry.cancelTurn(sessionId);
+    }
+  });
 });

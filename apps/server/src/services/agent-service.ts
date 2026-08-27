@@ -3540,14 +3540,18 @@ export class AgentService {
         return;
       }
 
-      await this.saveOrgUserConfig(orgId, {
-        ...config,
-        providers: config.providers.map((instance) =>
-          instance.id === providerId
-            ? { ...instance, customModels: snapshot }
-            : instance
-        ),
-      });
+      await this.saveOrgUserConfig(
+        orgId,
+        {
+          ...config,
+          providers: config.providers.map((instance) =>
+            instance.id === providerId
+              ? { ...instance, customModels: snapshot }
+              : instance
+          ),
+        },
+        { invalidateSessions: false }
+      );
     });
   }
 
@@ -3789,7 +3793,8 @@ export class AgentService {
 
   private async saveOrgUserConfig(
     orgId: string,
-    config: UserConfig
+    config: UserConfig,
+    options: { invalidateSessions?: boolean } = {}
   ): Promise<void> {
     await this.db.upsertOrgAiConfig({
       config,
@@ -3802,7 +3807,9 @@ export class AgentService {
     } else {
       this._providerConfigured = await this.checkAnyProviderConfigured();
     }
-    this.invalidateSessionsForOrg(orgId);
+    if (options.invalidateSessions !== false) {
+      this.invalidateSessionsForOrg(orgId);
+    }
   }
 
   private async getOrgConfigForUpdate(orgId: string): Promise<UserConfig> {
