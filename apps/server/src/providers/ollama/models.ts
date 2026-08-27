@@ -1,5 +1,6 @@
 import {
   type CustomModelEntry,
+  createTimeoutAbortSignal,
   LLM_FETCH_TIMEOUT_MS,
   normalizeBaseUrl,
   type OllamaHostMode,
@@ -33,49 +34,56 @@ async function fetchOllamaTagsModels(
   apiKey: string,
   options: FetchOllamaModelsOptions
 ): Promise<CustomModelEntry[]> {
-  const deadline = AbortSignal.timeout(
+  const timeout = createTimeoutAbortSignal(
     options.timeoutMs ?? LLM_FETCH_TIMEOUT_MS
   );
   const signal = options.signal
-    ? AbortSignal.any([options.signal, deadline])
-    : deadline;
-  const response = await fetchSafeProviderDiscoveryEndpoint(
-    ollamaTagsUrl(baseUrl),
-    withDisabledFetchIdle({
-      headers: {
-        ...(apiKey.trim() ? { Authorization: `Bearer ${apiKey.trim()}` } : {}),
-        Accept: "application/json",
-      },
-      signal,
-    }),
-    {
-      fetchImpl: options.fetch,
-      localAccess:
-        options.hostMode === "local" ? { kind: "ollama-local" } : undefined,
-      resolveDns: options.resolveDns,
+    ? AbortSignal.any([options.signal, timeout.signal])
+    : timeout.signal;
+
+  try {
+    const response = await fetchSafeProviderDiscoveryEndpoint(
+      ollamaTagsUrl(baseUrl),
+      withDisabledFetchIdle({
+        headers: {
+          ...(apiKey.trim()
+            ? { Authorization: `Bearer ${apiKey.trim()}` }
+            : {}),
+          Accept: "application/json",
+        },
+        signal,
+      }),
+      {
+        fetchImpl: options.fetch,
+        localAccess:
+          options.hostMode === "local" ? { kind: "ollama-local" } : undefined,
+        resolveDns: options.resolveDns,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Could not fetch Ollama models from /api/tags (${response.status}).`
+      );
     }
-  );
 
-  if (!response.ok) {
-    throw new Error(
-      `Could not fetch Ollama models from /api/tags (${response.status}).`
-    );
+    const payload = (await response.json()) as OllamaTagsResponse;
+    const ids = (payload.models ?? [])
+      .map((entry) => entry.name?.trim() || entry.model?.trim())
+      .filter((id): id is string => Boolean(id));
+
+    if (ids.length === 0) {
+      throw new Error(
+        "Ollama /api/tags response did not include any model names."
+      );
+    }
+
+    return [...new Set(ids)]
+      .sort((left, right) => left.localeCompare(right))
+      .map((id) => ({ id, name: id }));
+  } finally {
+    timeout.dispose();
   }
-
-  const payload = (await response.json()) as OllamaTagsResponse;
-  const ids = (payload.models ?? [])
-    .map((entry) => entry.name?.trim() || entry.model?.trim())
-    .filter((id): id is string => Boolean(id));
-
-  if (ids.length === 0) {
-    throw new Error(
-      "Ollama /api/tags response did not include any model names."
-    );
-  }
-
-  return [...new Set(ids)]
-    .sort((left, right) => left.localeCompare(right))
-    .map((id) => ({ id, name: id }));
 }
 
 export interface FetchOllamaModelsOptions {

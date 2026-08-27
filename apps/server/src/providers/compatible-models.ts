@@ -1,6 +1,7 @@
 import type { ProviderInstance, ProviderName } from "@atlas/core";
 import {
   type CustomModelEntry,
+  createTimeoutAbortSignal,
   findCustomModel,
   inferCompatibleReasoningEffortValues,
   isDiscoveryModelProvider,
@@ -525,12 +526,12 @@ export async function fetchRemoteOpenAIModels(
   } = {}
 ): Promise<CustomModelEntry[]> {
   const normalized = normalizeBaseUrl(baseUrl);
-  const deadline = AbortSignal.timeout(
+  const timeout = createTimeoutAbortSignal(
     options.timeoutMs ?? LLM_FETCH_TIMEOUT_MS
   );
   const signal = options.signal
-    ? AbortSignal.any([options.signal, deadline])
-    : deadline;
+    ? AbortSignal.any([options.signal, timeout.signal])
+    : timeout.signal;
   const fetchImpl: ProviderDiscoveryFetch = options.fetch ?? fetch;
   const boundedFetch: ProviderDiscoveryFetch = (input, init) => {
     const requestInit =
@@ -553,56 +554,60 @@ export async function fetchRemoteOpenAIModels(
   };
 
   try {
-    const fromRaw = await fetchRemoteOpenAIModelsRaw(
-      normalized,
-      apiKey,
-      boundedFetch
-    );
-    if (fromRaw.length > 0) {
-      return fromRaw;
+    try {
+      const fromRaw = await fetchRemoteOpenAIModelsRaw(
+        normalized,
+        apiKey,
+        boundedFetch
+      );
+      if (fromRaw.length > 0) {
+        return fromRaw;
+      }
+    } catch (error) {
+      if (
+        signal.aborted ||
+        isAbortOrTimeoutError(error) ||
+        error instanceof ProviderDiscoverySafetyError ||
+        isRemoteModelsAuthError(error)
+      ) {
+        throw error;
+      }
+      // Fall through to the SDK for hosts that only speak the official list API.
     }
-  } catch (error) {
-    if (
-      signal.aborted ||
-      isAbortOrTimeoutError(error) ||
-      error instanceof ProviderDiscoverySafetyError ||
-      isRemoteModelsAuthError(error)
-    ) {
-      throw error;
+
+    const client = new OpenAI({
+      apiKey: apiKey || "not-needed",
+      baseURL: normalized,
+      defaultHeaders: {
+        "User-Agent": DEFAULT_USER_AGENT,
+      },
+      fetch: boundedFetch,
+      maxRetries: 0,
+    });
+
+    const page = await client.models.list();
+    const ids = new Set<string>();
+
+    for await (const model of page) {
+      const id = model.id?.trim();
+
+      if (id) {
+        ids.add(id);
+      }
     }
-    // Fall through to the SDK for hosts that only speak the official list API.
-  }
 
-  const client = new OpenAI({
-    apiKey: apiKey || "not-needed",
-    baseURL: normalized,
-    defaultHeaders: {
-      "User-Agent": DEFAULT_USER_AGENT,
-    },
-    fetch: boundedFetch,
-    maxRetries: 0,
-  });
-
-  const page = await client.models.list();
-  const ids = new Set<string>();
-
-  for await (const model of page) {
-    const id = model.id?.trim();
-
-    if (id) {
-      ids.add(id);
+    if (ids.size === 0) {
+      throw new Error("Remote models response did not include any model ids.");
     }
-  }
 
-  if (ids.size === 0) {
-    throw new Error("Remote models response did not include any model ids.");
+    return [...ids]
+      .sort((left, right) => left.localeCompare(right))
+      .map((id) =>
+        toDiscoveredCustomModel({ id, name: id }, { baseUrl: normalized })
+      );
+  } finally {
+    timeout.dispose();
   }
-
-  return [...ids]
-    .sort((left, right) => left.localeCompare(right))
-    .map((id) =>
-      toDiscoveredCustomModel({ id, name: id }, { baseUrl: normalized })
-    );
 }
 
 async function fetchRemoteOpenAIModelsRaw(
