@@ -2,6 +2,7 @@ import {
   type CustomModelEntry,
   findCustomModel,
   getBuiltinProviderDefinition,
+  isSubscriptionProvider,
   type ProviderName,
   validateCustomModels,
 } from "@atlas/core";
@@ -13,6 +14,23 @@ export type ProviderModelOption = ContractProviderModelOption & {
 };
 
 export const AVAILABLE_MODELS: ProviderModelOption[] = [
+  {
+    contextWindow: 200_000,
+    default: true,
+    id: "claude-sonnet-4-6",
+    maxOutputTokens: 8192,
+    name: "Sonnet 4.6",
+    provider: "claude",
+    reasoningEffortValues: ["low", "medium", "high", "xhigh"],
+  },
+  {
+    contextWindow: 200_000,
+    id: "claude-opus-4-6",
+    maxOutputTokens: 8192,
+    name: "Opus 4.6",
+    provider: "claude",
+    reasoningEffortValues: ["low", "medium", "high", "xhigh"],
+  },
   {
     contextWindow: 200_000,
     default: true,
@@ -53,6 +71,23 @@ export const AVAILABLE_MODELS: ProviderModelOption[] = [
     name: "GPT-5.4",
     outputPerMillionUsd: 8,
     provider: "openai",
+    reasoningEffortValues: ["low", "medium", "high"],
+  },
+  {
+    contextWindow: 128_000,
+    default: true,
+    id: "gpt-5.4",
+    maxOutputTokens: 8192,
+    name: "GPT-5.4",
+    provider: "chatgpt",
+    reasoningEffortValues: ["low", "medium", "high"],
+  },
+  {
+    contextWindow: 128_000,
+    id: "gpt-5.3-codex",
+    maxOutputTokens: 8192,
+    name: "GPT-5.3 Codex",
+    provider: "chatgpt",
     reasoningEffortValues: ["low", "medium", "high"],
   },
   {
@@ -522,7 +557,25 @@ export function getAvailableModels(): ProviderModelOption[] {
 }
 
 export function getModelById(modelId: string): ProviderModelOption | undefined {
-  return AVAILABLE_MODELS.find((model) => model.id === modelId);
+  const matches = AVAILABLE_MODELS.filter((model) => model.id === modelId);
+  return (
+    matches.find(
+      (model) =>
+        !isSubscriptionProvider(model.provider) && hasExplicitPricing(model)
+    ) ??
+    matches.find((model) => !isSubscriptionProvider(model.provider)) ??
+    matches.find(hasExplicitPricing) ??
+    matches[0]
+  );
+}
+
+export function getModelByIdForProvider(
+  modelId: string,
+  provider: ProviderName
+): ProviderModelOption | undefined {
+  return AVAILABLE_MODELS.find(
+    (model) => model.id === modelId && model.provider === provider
+  );
 }
 
 export function getModelsForProvider(
@@ -603,5 +656,12 @@ function preferredCustomModel(
 ): string | undefined {
   return (
     customModels?.find((entry) => entry.default)?.id ?? customModels?.[0]?.id
+  );
+}
+
+function hasExplicitPricing(model: ProviderModelOption): boolean {
+  return (
+    model.inputPerMillionUsd !== undefined &&
+    model.outputPerMillionUsd !== undefined
   );
 }

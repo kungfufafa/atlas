@@ -77,6 +77,41 @@ describe("buildDiscordAttachmentInput", () => {
     });
   });
 
+  test("canonicalizes an image MIME alias before forwarding", async () => {
+    const jpegBytes = Buffer.from(
+      "/9j/4AAQSkZJRgABAgAAAQABAAD//gAQTGF2YzYyLjI4LjEwMQD/2wBDAAgEBAQEBAUFBQUFBQYGBgYGBgYGBgYGBgYHBwcICAgHBwcGBgcHCAgICAkJCQgICAgJCQoKCgwMCwsODg4RERT/xABLAAEBAAAAAAAAAAAAAAAAAAAABwEBAAAAAAAAAAAAAAAAAAAAABABAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/AABEIAAIAAgMBIgACEQADEQD/2gAMAwEAAhEDEQA/AL+AD//Z",
+      "base64"
+    );
+    fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(jpegBytes)
+    );
+
+    const result = await buildDiscordAttachmentInput(
+      createMessage({
+        attachments: [
+          {
+            contentType: "IMAGE/JPG; charset=binary",
+            name: "photo.jpg",
+          },
+        ],
+      })
+    );
+
+    expect(result).toEqual({
+      input: {
+        documents: undefined,
+        images: [
+          {
+            data: jpegBytes.toString("base64"),
+            mediaType: "image/jpeg",
+          },
+        ],
+        message: "",
+      },
+      kind: "input",
+    });
+  });
+
   test("accepts xlsx like the web app", async () => {
     fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
       new Response("xlsx-bytes")

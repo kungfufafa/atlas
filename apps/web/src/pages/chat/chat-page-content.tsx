@@ -37,6 +37,7 @@ export function ChatPageContent(state: ChatPageState) {
     showThinking,
     thinkingEffortVisible,
     thinkingEffort,
+    thinkingDefaultEffort,
     thinkingEffortDisabled,
     thinkingEffortValues,
     readOnlySession,
@@ -128,6 +129,7 @@ export function ChatPageContent(state: ChatPageState) {
         renderModelLabel={renderModelLabel}
         showOfflineHint={showOfflineHint}
         showTips={isEmptyState && !workspaceReadOnly}
+        thinkingDefaultEffort={thinkingDefaultEffort}
         thinkingEffort={thinkingEffort}
         thinkingEffortDisabled={thinkingEffortDisabled}
         thinkingEffortValues={thinkingEffortValues}

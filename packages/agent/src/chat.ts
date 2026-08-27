@@ -202,6 +202,9 @@ export interface AgentChatSessionOptions {
   compaction?: CompactionConfig;
   enableToolLoop?: boolean;
   initialHistory?: ChatMessage[];
+  preprocessHistoryForTurn?: (
+    messages: readonly ChatMessage[]
+  ) => Promise<readonly ChatMessage[]>;
   preprocessUserContent?: (
     content: string | MessageContentPart[]
   ) => Promise<string | MessageContentPart[]>;
@@ -274,6 +277,20 @@ export function createAgentChatSession(
 
   function bumpHistoryRevision(): void {
     historyRevision += 1;
+  }
+
+  async function preprocessHistoryForTurn(): Promise<void> {
+    if (!options.preprocessHistoryForTurn) {
+      return;
+    }
+
+    const prepared = await options.preprocessHistoryForTurn(history);
+    if (prepared === history) {
+      return;
+    }
+
+    history.splice(0, history.length, ...prepared);
+    bumpHistoryRevision();
   }
 
   function llmToolsForEstimate() {
@@ -377,6 +394,7 @@ export function createAgentChatSession(
       return historyRevision;
     },
     async send(input, sendOptions) {
+      await preprocessHistoryForTurn();
       return sendMessage(
         dependencies,
         tools,
@@ -398,6 +416,7 @@ export function createAgentChatSession(
       );
     },
     async sendStream(input, handlers, streamOptions) {
+      await preprocessHistoryForTurn();
       return sendMessage(
         dependencies,
         tools,
@@ -525,7 +544,6 @@ async function sendMessage(
       ? toLlmToolDefinitions(localTools)
       : undefined;
   const providerOptions = buildProviderOptions(dependencies, {
-    multimodalTurn,
     webSearch: nativeWebSearch,
   });
   const chatCapabilityRequest = resolveChatCapabilityRequest(
@@ -711,7 +729,8 @@ async function runConversation(
         handlers,
         rehydrateMessagesForProvider,
         signal,
-        userTimezone
+        userTimezone,
+        toolContext?.sessionId
       );
 
       // Providers are expected to honor the signal, but a late successful
@@ -1233,7 +1252,8 @@ async function generateReply(
     messages: readonly ChatMessage[]
   ) => Promise<ChatMessage[]>,
   signal?: AbortSignal,
-  userTimezone?: string
+  userTimezone?: string,
+  conversationId?: string
 ) {
   const dateLine = currentTurnClockLine(userTimezone);
   const replaySafeHistory = history.map((message) => {
@@ -1255,6 +1275,7 @@ async function generateReply(
       ? replaySafeHistory
       : await rehydrateMessagesForProvider(replaySafeHistory);
   const input = {
+    ...(conversationId ? { conversationId } : {}),
     messages,
     providerOptions,
     signal,
@@ -1304,7 +1325,11 @@ export function resolveChatCapabilityRequest(
     requireChatCapability(policy, PROVIDER_CAPABILITY_IDS.chatToolUse);
   }
   if (request.requestsReasoning) {
-    requireChatCapability(policy, PROVIDER_CAPABILITY_IDS.chatReasoning);
+    requireChatCapabilityForRequest(
+      policy,
+      PROVIDER_CAPABILITY_IDS.chatReasoning,
+      { "request.multimodal": request.usesImageInput === true }
+    );
   }
   if (request.usesImageInput) {
     requireChatCapability(policy, PROVIDER_CAPABILITY_IDS.chatInputImage);
@@ -1357,15 +1382,31 @@ function chatCapabilitySupportsRequest(
   });
 }
 
+function requireChatCapabilityForRequest(
+  policy: ChatCapabilityPolicy,
+  capabilityId: ProviderCapabilityId,
+  requestValues: Readonly<Record<string, boolean | number | string>>
+): void {
+  requireChatCapability(policy, capabilityId);
+  if (chatCapabilitySupportsRequest(policy, capabilityId, requestValues)) {
+    return;
+  }
+
+  const entry = policy.capabilities[capabilityId];
+  throw new ChatCapabilityError(capabilityId, {
+    constraints: entry?.constraints,
+    reasons: [...(entry?.reasons ?? []), "request-constraints-unsupported"],
+    selectable: false,
+    status: "unsupported",
+  });
+}
+
 function buildProviderOptions(
   dependencies: AgentDependencies,
-  options: { webSearch: boolean; multimodalTurn: boolean }
+  options: { webSearch: boolean }
 ): ProviderChatOptions | undefined {
   const base = dependencies.chatOptions;
-  const thinking =
-    options.multimodalTurn || !base?.thinking?.enabled
-      ? undefined
-      : base.thinking;
+  const thinking = base?.thinking?.enabled ? base.thinking : undefined;
   const webSearch = options.webSearch ? true : undefined;
 
   if (!(webSearch || thinking)) {

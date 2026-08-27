@@ -19,6 +19,8 @@ export interface ServerOptions {
   automationService: AutomationService;
   composioService?: ComposioService | null;
   databaseAdapter?: DatabaseAdapter | null;
+  /** Optional request-body deadline override, primarily for embedded servers. */
+  dataImportBodyReadTimeoutMs?: number;
   mcpService: McpService;
   /** Close/reopen SQLite and reload config after a data-root restore. */
   onDataRestored?: () => Promise<void>;

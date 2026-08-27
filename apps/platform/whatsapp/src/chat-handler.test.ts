@@ -20,6 +20,10 @@ import {
 const PAIRED_JID = "1234567890@s.whatsapp.net";
 const GROUP_JID = "120363042000000000@g.us";
 const OTHER_GROUP_JID = "120363043000000000@g.us";
+const TINY_JPEG_BYTES = Buffer.from(
+  "/9j/4AAQSkZJRgABAgAAAQABAAD//gAQTGF2YzYyLjI4LjEwMQD/2wBDAAgEBAQEBAUFBQUFBQYGBgYGBgYGBgYGBgYHBwcICAgHBwcGBgcHCAgICAkJCQgICAgJCQoKCgwMCwsODg4RERT/xABLAAEBAAAAAAAAAAAAAAAAAAAABwEBAAAAAAAAAAAAAAAAAAAAABABAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/AABEIAAIAAgMBIgACEQADEQD/2gAMAwEAAhEDEQA/AL+AD//Z",
+  "base64"
+);
 const BOT_ME = {
   id: "628100000000:12@s.whatsapp.net",
   lid: "236283431522503:0@lid",
@@ -1545,7 +1549,7 @@ describe("bridge API integration", () => {
       const orgStore = createTestOrgStore(homeDir);
       await orgStore.load();
       const { socket } = createMockSocket();
-      const imageBytes = Buffer.from("jpeg-bytes");
+      const imageBytes = TINY_JPEG_BYTES;
       const handleMessage = createChatHandler({
         authStore,
         client,

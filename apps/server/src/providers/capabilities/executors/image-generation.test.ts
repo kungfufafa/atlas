@@ -197,7 +197,7 @@ describe("image generation executors", () => {
           unknown
         >;
         expect(body.output_format).toBeUndefined();
-        expect(body.aspect_ratio).toBe("1:1");
+        expect(body.aspect_ratio).toBe("auto");
         expect(body.response_format).toBe("b64_json");
         return Response.json({
           data: [{ b64_json: Buffer.from(pngBytes).toString("base64") }],

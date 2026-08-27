@@ -3,6 +3,7 @@ import type {
   ProviderModelOption,
   UpdateProviderRequest,
 } from "@atlas/core/contract";
+import { isSubscriptionProvider } from "@atlas/core/provider-catalog";
 import {
   Delete02Icon,
   Edit03Icon,
@@ -16,6 +17,7 @@ import { CustomProviderFields } from "@/components/CustomProviderFields";
 import type { CatalogShortlistProvider } from "@/components/catalog-provider-model-fields.shared";
 import { OpenRouterProviderModelFields } from "@/components/OpenRouterProviderModelFields";
 import { ShortlistBrowseProviderModelFields } from "@/components/ShortlistBrowseProviderModelFields";
+import { SubscriptionAuthPanel } from "@/components/SubscriptionAuthPanel";
 import { CapabilityEvidenceEditor } from "@/components/settings/CapabilityEvidenceEditor";
 import {
   ProviderCompatibleEditDialog,
@@ -73,12 +75,14 @@ function ProviderActionButton({
 export function ProviderInstanceCard({
   instance,
   catalog,
+  catalogActionsDisabled = false,
   onUpdate,
   onDelete,
   onError,
 }: {
   instance: ProviderInstanceSummary;
   catalog: ProviderModelOption[];
+  catalogActionsDisabled?: boolean;
   onUpdate: (
     providerId: string,
     request: UpdateProviderRequest
@@ -99,6 +103,7 @@ export function ProviderInstanceCard({
     card.isOpenRouter ||
     card.isShortlistBrowse ||
     card.isCatalogShortlist;
+  const subscriptionProvider = isSubscriptionProvider(instance.type);
 
   const endpoint = instance.baseUrl?.trim() || null;
   const modelLabel =
@@ -111,6 +116,9 @@ export function ProviderInstanceCard({
           <p className="truncate font-medium text-foreground text-sm">
             {instance.label}
           </p>
+          {subscriptionProvider ? (
+            <SubscriptionAuthPanel density="compact" provider={instance.type} />
+          ) : null}
         </td>
         <td className="px-3 py-2.5 align-middle">
           {endpoint ? (
@@ -136,6 +144,7 @@ export function ProviderInstanceCard({
             ) : null}
             {canManage ? (
               <ProviderActionButton
+                disabled={catalogActionsDisabled}
                 label="Manage models"
                 onClick={card.openManage}
               >
@@ -148,12 +157,14 @@ export function ProviderInstanceCard({
             >
               <Settings01Icon className="size-3.5" />
             </ProviderActionButton>
-            <ProviderActionButton
-              label={instance.hasApiKey ? "Update key" : "Add key"}
-              onClick={() => card.setReplaceKeyOpen(true)}
-            >
-              <Key01Icon className="size-3.5" />
-            </ProviderActionButton>
+            {subscriptionProvider ? null : (
+              <ProviderActionButton
+                label={instance.hasApiKey ? "Update key" : "Add key"}
+                onClick={() => card.setReplaceKeyOpen(true)}
+              >
+                <Key01Icon className="size-3.5" />
+              </ProviderActionButton>
+            )}
             <ProviderActionButton
               destructive
               disabled={card.busy}
@@ -166,19 +177,21 @@ export function ProviderInstanceCard({
         </td>
       </tr>
 
-      <ProviderReplaceKeyDialog
-        apiKey={card.apiKey}
-        busy={card.busy}
-        dialogError={card.dialogError}
-        instance={instance}
-        onApiKeyChange={card.setApiKey}
-        onOpenChange={card.setReplaceKeyOpen}
-        onSave={() => void card.handleReplaceKey()}
-        onToggleShowApiKey={() => card.setShowApiKey((current) => !current)}
-        open={card.replaceKeyOpen}
-        providerType={card.providerType}
-        showApiKey={card.showApiKey}
-      />
+      {subscriptionProvider ? null : (
+        <ProviderReplaceKeyDialog
+          apiKey={card.apiKey}
+          busy={card.busy}
+          dialogError={card.dialogError}
+          instance={instance}
+          onApiKeyChange={card.setApiKey}
+          onOpenChange={card.setReplaceKeyOpen}
+          onSave={() => void card.handleReplaceKey()}
+          onToggleShowApiKey={() => card.setShowApiKey((current) => !current)}
+          open={card.replaceKeyOpen}
+          providerType={card.providerType}
+          showApiKey={card.showApiKey}
+        />
+      )}
 
       <CapabilityEvidenceEditor
         busy={card.busy}

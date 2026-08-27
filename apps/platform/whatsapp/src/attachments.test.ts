@@ -15,6 +15,11 @@ import {
   UNSUPPORTED_MEDIA_REPLY,
 } from "./attachments";
 
+const tinyJpegBytes = Buffer.from(
+  "/9j/4AAQSkZJRgABAgAAAQABAAD//gAQTGF2YzYyLjI4LjEwMQD/2wBDAAgEBAQEBAUFBQUFBQYGBgYGBgYGBgYGBgYHBwcICAgHBwcGBgcHCAgICAkJCQgICAgJCQoKCgwMCwsODg4RERT/xABLAAEBAAAAAAAAAAAAAAAAAAAABwEBAAAAAAAAAAAAAAAAAAAAABABAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/AABEIAAIAAgMBIgACEQADEQD/2gAMAwEAAhEDEQA/AL+AD//Z",
+  "base64"
+);
+
 function createDocumentMessage(options: {
   caption?: string;
   fileLength?: number;
@@ -158,11 +163,11 @@ describe("buildWhatsAppMediaInput", () => {
   });
 
   test("forwards a jpeg photo", async () => {
-    const bytes = Buffer.from("fake-jpeg");
+    const bytes = tinyJpegBytes;
     const result = await buildWhatsAppMediaInput(
       createImageMessage({
         caption: "what is this",
-        mimeType: "image/jpeg",
+        mimeType: "IMAGE/JPG; charset=binary",
       }),
       async () => bytes
     );

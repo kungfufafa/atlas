@@ -57,6 +57,7 @@ import {
   ensureBuiltinToolDefinitions,
   ensureProfileDefaultBundledSkills,
 } from "@atlas/db";
+import { validateDecodedImageAttachments } from "./image-decoder-validation";
 import {
   loadJavascriptTool,
   validateJavascriptToolModule,
@@ -112,10 +113,12 @@ async function copyProfileAvatarTo(
     return;
   }
 
-  await saveProfileAvatar(orgId, profileId, {
+  const attachment = {
     data: avatar.bytes.toString("base64"),
     mediaType: avatar.mediaType,
-  });
+  };
+  await validateDecodedImageAttachments([attachment]);
+  await saveProfileAvatar(orgId, profileId, attachment);
 }
 
 async function copyKnowledgeBaseTo(
@@ -515,6 +518,7 @@ export class ProfileService {
   ): Promise<ProfileResponse> {
     const profile = await this.requireProfile(orgId, profileId);
 
+    await validateDecodedImageAttachments([attachment]);
     await saveProfileAvatar(orgId, profileId, attachment);
 
     const now = new Date().toISOString();

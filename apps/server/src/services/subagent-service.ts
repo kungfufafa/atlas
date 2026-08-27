@@ -121,6 +121,7 @@ export class SubagentService {
       agentDepth: input.agentDepth,
       clientOrigin: input.clientOrigin,
       context: input.context,
+      executionId: id,
       isPlatformAdmin: principal.isPlatformAdmin,
       onActivity: input.onActivity,
       orgId: input.orgId,

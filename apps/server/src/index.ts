@@ -144,8 +144,11 @@ registerGenerateImageTool(
     db: database.adapter,
     ensureSettingsLoaded: () => agent.ensureImageGenerationSettingsLoaded(),
     getUserConfig: (orgId) => agent.getUserConfigForOrg(orgId),
-    recordUsage: (modelId, inputTokens, outputTokens) => {
-      llmUsageTracker.record(modelId, inputTokens, outputTokens);
+    recordUsage: (modelId, inputTokens, outputTokens, instance) => {
+      llmUsageTracker.record(modelId, inputTokens, outputTokens, {
+        provider: instance.type,
+        providerInstance: instance,
+      });
     },
   })
 );

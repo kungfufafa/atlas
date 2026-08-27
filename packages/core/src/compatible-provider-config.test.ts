@@ -47,6 +47,33 @@ describe("validateCustomModels", () => {
     expect(models[0]?.supportsThinking).toBe(true);
   });
 
+  test("preserves a runtime reasoning default from the advertised values", () => {
+    const models = validateCustomModels([
+      {
+        defaultReasoningEffort: " high ",
+        id: "runtime-model",
+        reasoningEffortValues: ["low", "high"],
+      },
+    ]);
+
+    expect(models[0]).toMatchObject({
+      defaultReasoningEffort: "high",
+      reasoningEffortValues: ["low", "high"],
+    });
+  });
+
+  test("rejects a reasoning default outside the advertised values", () => {
+    expect(() =>
+      validateCustomModels([
+        {
+          defaultReasoningEffort: "ultra",
+          id: "runtime-model",
+          reasoningEffortValues: ["low", "high"],
+        },
+      ])
+    ).toThrow("default reasoning effort");
+  });
+
   test("rejects non-boolean supportsThinking values", () => {
     expect(() =>
       validateCustomModels([

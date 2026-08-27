@@ -15,8 +15,6 @@ export class LlmUsageTracker {
     string,
     Omit<LlmUsageModelStats, "totalTokens">
   >();
-  private pricingContext: PricingContext = {};
-
   private constructor(private readonly db?: DatabaseAdapter) {}
 
   static async create(db?: DatabaseAdapter): Promise<LlmUsageTracker> {
@@ -62,16 +60,17 @@ export class LlmUsageTracker {
     await this.load();
   }
 
-  setPricingContext(context: PricingContext): void {
-    this.pricingContext = context;
-  }
-
-  record(modelId: string, inputTokens: number, outputTokens: number): void {
+  record(
+    modelId: string,
+    inputTokens: number,
+    outputTokens: number,
+    pricingContext: PricingContext = {}
+  ): void {
     const costDelta = estimateUsageCostUsd(
       modelId,
       inputTokens,
       outputTokens,
-      this.pricingContext
+      pricingContext
     );
 
     this.requestCount += 1;

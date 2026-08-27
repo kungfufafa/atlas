@@ -1,5 +1,8 @@
 import type { ImageAttachment } from "@atlas/core/contract";
-import { MAX_IMAGE_BYTES } from "@atlas/core/message-content";
+import {
+  MAX_IMAGE_BYTES,
+  normalizeImageMediaType,
+} from "@atlas/core/message-content";
 import type { Context } from "grammy";
 import {
   downloadTelegramFile,
@@ -63,8 +66,9 @@ export async function downloadTelegramImage(
 }
 
 function inferMediaType(filePath: string, headerType: string | null): string {
-  if (headerType?.startsWith("image/")) {
-    return headerType.split(";")[0]!.trim();
+  const normalizedHeaderType = normalizeImageMediaType(headerType ?? "");
+  if (normalizedHeaderType.startsWith("image/")) {
+    return normalizedHeaderType;
   }
 
   const extension = filePath.slice(filePath.lastIndexOf(".")).toLowerCase();

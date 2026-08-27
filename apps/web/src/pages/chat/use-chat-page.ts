@@ -77,6 +77,7 @@ import {
   decodeModelSelection,
   effectiveProfileModelSelection,
   groupModelsByProvider,
+  resolveModelDefaultReasoningEffort,
   resolveModelReasoningEffortValues,
   resolveModelThinkingSupport,
   resolveModelVisionSupport,
@@ -293,6 +294,15 @@ export function useChatPage() {
   const activeModelReasoningEffortValues = useMemo(
     () =>
       resolveModelReasoningEffortValues(
+        currentModelSelection,
+        providerModelGroups
+      ),
+    [currentModelSelection, providerModelGroups]
+  );
+
+  const activeModelDefaultReasoningEffort = useMemo(
+    () =>
+      resolveModelDefaultReasoningEffort(
         currentModelSelection,
         providerModelGroups
       ),
@@ -1233,6 +1243,7 @@ export function useChatPage() {
     showOfflineHint,
     showThinking,
     stopStreaming,
+    thinkingDefaultEffort: activeModelDefaultReasoningEffort,
     thinkingEffort,
     thinkingEffortDisabled,
     thinkingEffortValues: activeModelReasoningEffortValues,

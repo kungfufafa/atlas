@@ -76,6 +76,44 @@ describe("resolveProfileProviderSelection", () => {
     expect(resolved?.model).toBe("gpt-5.9-not-in-catalog");
   });
 
+  test("keeps an explicitly selected subscription model only while it is advertised", () => {
+    const provider = createProviderInstance({
+      apiKey: "",
+      customModels: [{ default: true, id: "gpt-live" }, { id: "gpt-selected" }],
+      id: "chatgpt-1",
+      label: "ChatGPT",
+      type: "chatgpt",
+    });
+
+    expect(
+      resolveProfileProviderSelection({
+        defaultProviderId: provider.id,
+        profileModel: `${provider.id}::gpt-selected`,
+        providers: [provider],
+      })
+    ).toEqual({ instance: provider, model: "gpt-selected" });
+  });
+
+  test("rejects an explicit subscription model that left the live snapshot", () => {
+    const provider = createProviderInstance({
+      apiKey: "",
+      customModels: [{ default: true, id: "gpt-live" }],
+      id: "chatgpt-1",
+      label: "ChatGPT",
+      type: "chatgpt",
+    });
+
+    expect(() =>
+      resolveProfileProviderSelection({
+        defaultProviderId: provider.id,
+        profileModel: `${provider.id}::gpt-retired`,
+        providers: [provider],
+      })
+    ).toThrow(
+      'Model "gpt-retired" is no longer available for the ChatGPT subscription.'
+    );
+  });
+
   test("falls back to the provider that actually supports a raw stored model id", () => {
     const providers: ProviderInstance[] = [
       createProviderInstance({
@@ -128,6 +166,74 @@ describe("resolveProfileProviderSelection", () => {
     });
 
     expect(resolved?.instance.id).toBe("openai-1");
+    expect(resolved?.model).toBe("gpt-5.4");
+  });
+
+  test("routes shared legacy subscription model ids to their priced API owners", () => {
+    const cases = [
+      {
+        apiProvider: createProviderInstance({
+          id: "anthropic-1",
+          label: "Anthropic",
+          type: "anthropic",
+        }),
+        model: "claude-sonnet-4-6",
+        subscriptionProvider: createProviderInstance({
+          apiKey: "",
+          id: "claude-1",
+          label: "Claude",
+          type: "claude",
+        }),
+      },
+      {
+        apiProvider: createProviderInstance({
+          id: "openai-1",
+          label: "OpenAI",
+          type: "openai",
+        }),
+        model: "gpt-5.4",
+        subscriptionProvider: createProviderInstance({
+          apiKey: "",
+          id: "chatgpt-1",
+          label: "ChatGPT",
+          type: "chatgpt",
+        }),
+      },
+    ] as const;
+
+    for (const { apiProvider, model, subscriptionProvider } of cases) {
+      const resolved = resolveProfileProviderSelection({
+        defaultProviderId: subscriptionProvider.id,
+        profileModel: model,
+        providers: [subscriptionProvider, apiProvider],
+      });
+
+      expect(resolved?.instance.id).toBe(apiProvider.id);
+      expect(resolved?.model).toBe(model);
+    }
+  });
+
+  test("prefers the active credential among duplicate legacy catalog owners", () => {
+    const providers = [
+      createProviderInstance({
+        id: "openai-first",
+        label: "OpenAI first",
+        type: "openai",
+      }),
+      createProviderInstance({
+        id: "openai-active",
+        label: "OpenAI active",
+        type: "openai",
+      }),
+    ];
+
+    const resolved = resolveProfileProviderSelection({
+      defaultProviderId: "openai-active",
+      profileModel: "gpt-5.4",
+      providers,
+    });
+
+    expect(resolved?.instance.id).toBe("openai-active");
     expect(resolved?.model).toBe("gpt-5.4");
   });
 
@@ -273,6 +379,60 @@ describe("environment-backed provider visibility", () => {
 });
 
 describe("applyProviderInstanceUpdate", () => {
+  test("rejects API keys and clears legacy secrets for subscription providers", () => {
+    const instance = createProviderInstance({
+      apiKey: "legacy-secret",
+      id: "chatgpt-1",
+      label: "ChatGPT",
+      type: "chatgpt",
+    });
+
+    try {
+      applyProviderInstanceUpdate(instance, { apiKey: "new-secret" });
+      throw new Error("expected a rejection");
+    } catch (error) {
+      expect(error).toBeInstanceOf(AtlasApiError);
+      expect((error as AtlasApiError).status).toBe(400);
+      expect((error as AtlasApiError).message).toContain(
+        "does not accept an API key"
+      );
+    }
+    expect(
+      applyProviderInstanceUpdate(instance, { label: "ChatGPT Plus" })
+    ).toMatchObject({ apiKey: "", label: "ChatGPT Plus" });
+  });
+
+  test("rejects client-managed subscription model snapshots", () => {
+    const instance = createProviderInstance({
+      apiKey: "",
+      id: "chatgpt-1",
+      label: "ChatGPT",
+      type: "chatgpt",
+    });
+
+    expect(() =>
+      applyProviderInstanceUpdate(instance, {
+        customModels: [{ id: "untrusted-model" }],
+      })
+    ).toThrow("managed by the authenticated runtime");
+  });
+
+  test("rejects unsupported subscription connection fields on create", () => {
+    for (const fields of [
+      { baseUrl: "https://user:secret@example.com" },
+      { customModels: [{ id: "untrusted-model" }] },
+      { hostMode: "cloud" as const },
+      { wireApi: "responses" as const },
+    ]) {
+      expect(() =>
+        buildProviderInstanceFromCreateRequest(
+          { ...fields, skipValidation: true, type: "chatgpt" },
+          []
+        )
+      ).toThrow("managed by the authenticated runtime");
+    }
+  });
+
   test("persists admin capability evidence with fail-closed unknown semantics", () => {
     const instance = createProviderInstance({
       capabilityOverrides: {
@@ -524,6 +684,24 @@ describe("applyProviderInstanceUpdate", () => {
 });
 
 describe("buildProviderInstanceFromCreateRequest", () => {
+  test("rejects API keys for subscription providers", () => {
+    for (const type of ["chatgpt", "claude"] as const) {
+      try {
+        buildProviderInstanceFromCreateRequest(
+          { apiKey: "should-not-be-stored", type },
+          []
+        );
+        throw new Error("expected a rejection");
+      } catch (error) {
+        expect(error).toBeInstanceOf(AtlasApiError);
+        expect((error as AtlasApiError).status).toBe(400);
+        expect((error as AtlasApiError).message).toContain(
+          "does not accept an API key"
+        );
+      }
+    }
+  });
+
   test("keeps custom models for a provider that opts in through catalog metadata", () => {
     const instance = buildProviderInstanceFromCreateRequest(
       {
@@ -537,6 +715,53 @@ describe("buildProviderInstanceFromCreateRequest", () => {
     expect(instance.customModels).toEqual([
       { default: true, id: "gpt-future" },
     ]);
+  });
+
+  test("rejects duplicate singleton providers", () => {
+    const existing = createProviderInstance({
+      id: "openai-existing",
+      label: "OpenAI",
+      type: "openai",
+    });
+
+    try {
+      buildProviderInstanceFromCreateRequest(
+        { apiKey: "sk-second", type: "openai" },
+        [existing]
+      );
+      throw new Error("expected a rejection");
+    } catch (error) {
+      expect(error).toBeInstanceOf(AtlasApiError);
+      expect((error as AtlasApiError).status).toBe(409);
+    }
+  });
+
+  test("allows duplicate instances for providers that opt in", () => {
+    const existing = createProviderInstance({
+      apiKey: "",
+      baseUrl: "http://localhost:11434/v1",
+      customModels: [{ default: true, id: "local-first" }],
+      id: "compatible-existing",
+      label: "Compatible first",
+      type: "openai_compatible",
+    });
+
+    const created = buildProviderInstanceFromCreateRequest(
+      {
+        apiKey: "",
+        baseUrl: "http://localhost:1234/v1",
+        customModels: [{ default: true, id: "local-second" }],
+        label: "Compatible second",
+        type: "openai_compatible",
+      },
+      [existing]
+    );
+
+    expect(created).toMatchObject({
+      baseUrl: "http://localhost:1234/v1",
+      label: "Compatible second",
+      type: "openai_compatible",
+    });
   });
 
   test("applies declarative custom-model id validation", () => {

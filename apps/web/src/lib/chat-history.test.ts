@@ -96,16 +96,17 @@ describe("chatMessagesToListItems", () => {
     });
   });
 
-  test("renders described images as attachments and keeps vision-native images inline", () => {
+  test("renders described image refs as attachments and keeps vision-native images inline", () => {
     const messages: ChatMessage[] = [
       {
         content: [
           { text: "What is this?", type: "text" },
           {
-            data: tinyPngBase64,
+            attachmentId: "attachment-1",
             description: "A red square.",
             mediaType: "image/png",
-            type: "image",
+            size: 70,
+            type: "image_ref",
           },
         ],
         role: "user",
@@ -131,7 +132,6 @@ describe("chatMessagesToListItems", () => {
         {
           description: "A red square.",
           mediaType: "image/png",
-          url: `data:image/png;base64,${tinyPngBase64}`,
         },
       ],
     });

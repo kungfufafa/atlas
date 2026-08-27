@@ -10,6 +10,7 @@ import type {
 } from "@atlas/core";
 import { estimateUserContentTokens } from "@atlas/core";
 import type { LlmUsageTracker } from "../services/llm-usage-tracker";
+import type { PricingContext } from "./pricing";
 
 function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
@@ -205,7 +206,8 @@ function estimateChatOutputTokens(result: ChatCompletionResult): number {
 export function wrapProviderWithUsageTracking(
   provider: ProviderClient,
   tracker: LlmUsageTracker,
-  modelId: string
+  modelId: string,
+  pricingContext: PricingContext = {}
 ): ProviderClient {
   function withRecordedUsage(
     input: GenerateChatInput,
@@ -216,7 +218,7 @@ export function wrapProviderWithUsageTracking(
       result.usage?.inputTokens ?? estimateChatInputTokens(input);
     const outputTokens =
       result.usage?.outputTokens ?? estimateChatOutputTokens(result);
-    tracker.record(modelId, inputTokens, outputTokens);
+    tracker.record(modelId, inputTokens, outputTokens, pricingContext);
 
     return {
       ...result,
@@ -243,7 +245,7 @@ export function wrapProviderWithUsageTracking(
         result.usage?.inputTokens ?? estimateTextInputTokens(input);
       const outputTokens =
         result.usage?.outputTokens ?? estimateTokens(result.content);
-      tracker.record(modelId, inputTokens, outputTokens);
+      tracker.record(modelId, inputTokens, outputTokens, pricingContext);
       return result;
     },
     async streamChat(

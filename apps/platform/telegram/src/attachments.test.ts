@@ -7,6 +7,7 @@ import {
   OVERSIZED_FILE_REPLY,
   UNSUPPORTED_DOCUMENT_TYPES_REPLY,
 } from "./attachments";
+import { downloadTelegramImage } from "./images";
 
 function createDocumentContext(options: {
   fileId?: string;
@@ -69,6 +70,28 @@ describe("buildTelegramDocumentInput", () => {
         message: "Summarize this",
       },
       kind: "input",
+    });
+  });
+
+  test("canonicalizes an image content-type alias", async () => {
+    const jpegBytes = Buffer.from(
+      "/9j/4AAQSkZJRgABAgAAAQABAAD//gAQTGF2YzYyLjI4LjEwMQD/2wBDAAgEBAQEBAUFBQUFBQYGBgYGBgYGBgYGBgYHBwcICAgHBwcGBgcHCAgICAkJCQgICAgJCQoKCgwMCwsODg4RERT/xABLAAEBAAAAAAAAAAAAAAAAAAAABwEBAAAAAAAAAAAAAAAAAAAAABABAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/AABEIAAIAAgMBIgACEQADEQD/2gAMAwEAAhEDEQA/AL+AD//Z",
+      "base64"
+    );
+    fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(jpegBytes, {
+        headers: { "content-type": "IMAGE/JPG; charset=binary" },
+      })
+    );
+
+    const image = await downloadTelegramImage(
+      createDocumentContext({ fileName: "photo.jpg" }),
+      "file-1"
+    );
+
+    expect(image).toEqual({
+      data: jpegBytes.toString("base64"),
+      mediaType: "image/jpeg",
     });
   });
 

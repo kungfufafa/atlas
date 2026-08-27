@@ -132,6 +132,7 @@ interface ChatComposerFullProps extends ChatComposerBaseProps {
   renderModelLabel: (selection: string | null) => string | null;
   showOfflineHint?: boolean;
   showTips?: boolean;
+  thinkingDefaultEffort?: string;
   thinkingEffort?: ThinkingEffort;
   thinkingEffortDisabled?: boolean;
   thinkingEffortValues?: string[];
@@ -628,6 +629,7 @@ function ChatComposerFullFooter({
         props.thinkingEffort &&
         props.onThinkingEffortChange ? (
           <ChatThinkingEffortControl
+            defaultEffort={props.thinkingDefaultEffort}
             disabled={props.thinkingEffortDisabled}
             effort={props.thinkingEffort}
             effortValues={props.thinkingEffortValues}

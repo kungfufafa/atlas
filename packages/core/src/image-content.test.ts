@@ -65,6 +65,30 @@ describe("replaceImagePartsWithDescriptions", () => {
       },
     ]);
   });
+
+  test("annotates persisted image refs without restoring inline bytes", () => {
+    const result = replaceImagePartsWithDescriptions(
+      [
+        {
+          attachmentId: "attachment-1",
+          mediaType: "image/png",
+          size: 123,
+          type: "image_ref",
+        },
+      ],
+      ["A persisted chart."]
+    );
+
+    expect(result).toEqual([
+      {
+        attachmentId: "attachment-1",
+        description: "A persisted chart.",
+        mediaType: "image/png",
+        size: 123,
+        type: "image_ref",
+      },
+    ]);
+  });
 });
 
 describe("image description text helpers", () => {
@@ -102,6 +126,20 @@ describe("resolveUserContentForNonVisionProvider", () => {
     expect(resolveUserContentForNonVisionProvider([imagePart])).toEqual([
       imagePart,
     ]);
+  });
+
+  test("converts described image refs to text for non-vision models", () => {
+    expect(
+      resolveUserContentForNonVisionProvider([
+        {
+          attachmentId: "attachment-1",
+          description: "A chart with three bars.",
+          mediaType: "image/png",
+          size: 123,
+          type: "image_ref",
+        },
+      ])
+    ).toBe("[Image]\nA chart with three bars.");
   });
 });
 

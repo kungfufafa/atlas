@@ -7,6 +7,7 @@ import {
   isSpreadsheetDocumentMediaType,
   isSupportedDocumentMediaType,
   isSupportedImageMediaType,
+  normalizeImageMediaType,
   normalizeUserContent,
   parseDataUrl,
   stripImagesForCompaction,
@@ -17,6 +18,28 @@ import {
 
 const tinyPngBase64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
+describe("browser-compatible attachment validation", () => {
+  test("loads and validates an image without the Node Buffer global", async () => {
+    const moduleUrl = new URL("./message-content.ts", import.meta.url).href;
+    const script = [
+      "globalThis.Buffer = undefined;",
+      `const module = await import(${JSON.stringify(moduleUrl)});`,
+      `module.validateImageAttachments([{ data: ${JSON.stringify(tinyPngBase64)}, mediaType: "image/png" }]);`,
+    ].join("\n");
+    const child = Bun.spawn([process.execPath, "-e", script], {
+      stderr: "pipe",
+      stdout: "pipe",
+    });
+    const [exitCode, stderr] = await Promise.all([
+      child.exited,
+      new Response(child.stderr).text(),
+    ]);
+
+    expect(stderr).toBe("");
+    expect(exitCode).toBe(0);
+  });
+});
 
 describe("shared attachment allowlist", () => {
   test("accepts web document types including xlsx", () => {
@@ -52,7 +75,11 @@ describe("shared attachment allowlist", () => {
   test("accepts jpeg png gif webp images", () => {
     expect(isSupportedImageMediaType("image/jpeg")).toBe(true);
     expect(isSupportedImageMediaType("image/jpg")).toBe(true);
+    expect(isSupportedImageMediaType(" IMAGE/PNG; charset=binary ")).toBe(true);
     expect(isSupportedImageMediaType("image/heic")).toBe(false);
+    expect(normalizeImageMediaType(" IMAGE/JPG; charset=binary ")).toBe(
+      "image/jpeg"
+    );
   });
 });
 
@@ -76,6 +103,21 @@ describe("normalizeUserContent", () => {
 
     expect(result).toEqual([
       { data: tinyPngBase64, mediaType: "image/png", type: "image" },
+    ]);
+  });
+
+  test("canonicalizes image media types before storing content", () => {
+    const jpegBase64 =
+      "/9j/4AAQSkZJRgABAgAAAQABAAD//gAQTGF2YzYyLjI4LjEwMQD/2wBDAAgEBAQEBAUFBQUFBQYGBgYGBgYGBgYGBgYHBwcICAgHBwcGBgcHCAgICAkJCQgICAgJCQoKCgwMCwsODg4RERT/xABLAAEBAAAAAAAAAAAAAAAAAAAABwEBAAAAAAAAAAAAAAAAAAAAABABAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/AABEIAAIAAgMBIgACEQADEQD/2gAMAwEAAhEDEQA/AL+AD//Z";
+    const result = normalizeUserContent("", [
+      {
+        data: jpegBase64,
+        mediaType: " IMAGE/JPG; charset=binary ",
+      },
+    ]);
+
+    expect(result).toEqual([
+      { data: jpegBase64, mediaType: "image/jpeg", type: "image" },
     ]);
   });
 
@@ -120,6 +162,26 @@ describe("normalizeUserContent", () => {
 });
 
 describe("validateImageAttachments", () => {
+  test("accepts structurally valid png, jpeg, gif, and webp images", () => {
+    const images = [
+      { data: tinyPngBase64, mediaType: "image/png" },
+      {
+        data: "/9j/4AAQSkZJRgABAgAAAQABAAD//gAQTGF2YzYyLjI4LjEwMQD/2wBDAAgEBAQEBAUFBQUFBQYGBgYGBgYGBgYGBgYHBwcICAgHBwcGBgcHCAgICAkJCQgICAgJCQoKCgwMCwsODg4RERT/xABLAAEBAAAAAAAAAAAAAAAAAAAABwEBAAAAAAAAAAAAAAAAAAAAABABAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/AABEIAAIAAgMBIgACEQADEQD/2gAMAwEAAhEDEQA/AL+AD//Z",
+        mediaType: "image/jpeg",
+      },
+      {
+        data: "R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==",
+        mediaType: "image/gif",
+      },
+      {
+        data: "UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA",
+        mediaType: "image/webp",
+      },
+    ];
+
+    expect(() => validateImageAttachments(images)).not.toThrow();
+  });
+
   test("rejects unsupported media type", () => {
     expect(() =>
       validateImageAttachments([
@@ -134,6 +196,51 @@ describe("validateImageAttachments", () => {
       validateImageAttachments([{ data: huge, mediaType: "image/png" }])
     ).toThrow(AtlasApiError);
   });
+
+  test("rejects malformed base64 before decoding", () => {
+    expect(() =>
+      validateImageAttachments([
+        { data: "not-base64!", mediaType: "image/png" },
+      ])
+    ).toThrow("valid base64");
+  });
+
+  test("rejects image bytes that do not match the declared media type", () => {
+    expect(() =>
+      validateImageAttachments([
+        {
+          data: Buffer.from("not a png").toString("base64"),
+          mediaType: "image/png",
+        },
+      ])
+    ).toThrow("structurally valid");
+  });
+
+  test("rejects a signature-only image", () => {
+    expect(() =>
+      validateImageAttachments([
+        {
+          data: Buffer.from([0xff, 0xd8, 0xff, 0xd9]).toString("base64"),
+          mediaType: "image/jpeg",
+        },
+      ])
+    ).toThrow("structurally valid");
+  });
+
+  test("rejects compressed images with unsafe pixel dimensions", () => {
+    const oversizedDimensions = Buffer.from(tinyPngBase64, "base64");
+    oversizedDimensions.writeUInt32BE(10_000, 16);
+    oversizedDimensions.writeUInt32BE(10_000, 20);
+
+    expect(() =>
+      validateImageAttachments([
+        {
+          data: oversizedDimensions.toString("base64"),
+          mediaType: "image/png",
+        },
+      ])
+    ).toThrow("dimensions are too large");
+  });
 });
 
 describe("validateDocumentAttachments", () => {
@@ -147,6 +254,30 @@ describe("validateDocumentAttachments", () => {
         },
       ])
     ).toThrow(AtlasApiError);
+  });
+
+  test("rejects an empty data-url payload", () => {
+    expect(() =>
+      validateDocumentAttachments([
+        {
+          data: "data:text/plain;base64,",
+          filename: "empty.txt",
+          mediaType: "text/plain",
+        },
+      ])
+    ).toThrow("must not be empty");
+  });
+
+  test("rejects base64 with non-canonical padding bits", () => {
+    expect(() =>
+      validateDocumentAttachments([
+        {
+          data: "Zh==",
+          filename: "notes.txt",
+          mediaType: "text/plain",
+        },
+      ])
+    ).toThrow("canonical base64");
   });
 
   test("accepts markdown attachments", () => {
@@ -264,6 +395,12 @@ describe("parseDataUrl", () => {
       data: tinyPngBase64,
       mediaType: "image/png",
     });
+  });
+
+  test("canonicalizes the parsed image media type", () => {
+    expect(
+      parseDataUrl(`data:IMAGE/JPG;base64,${tinyPngBase64}`)?.mediaType
+    ).toBe("image/jpeg");
   });
 
   test("returns null for invalid url", () => {

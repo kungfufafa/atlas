@@ -88,6 +88,15 @@ Orgs isolate profiles, sessions, automations, tasks, tools, MCP, skills, usage (
 | Client `X-Org-Id` | `packages/client/src/client.ts` |
 | Web auth / switcher | `apps/web/src/context/auth-context.tsx`, `OrgSwitcher.tsx` |
 
+## Subscription providers (ChatGPT / Claude)
+
+API-key providers (`openai`, `anthropic`) stay unchanged. Subscription access is separate catalog types:
+
+- `chatgpt` — Bundled `@openai/codex` app-server owns ChatGPT OAuth, account/plan, models, and thread/turn execution in the isolated `~/.atlas/subscription-auth/chatgpt` Codex home. Atlas never copies `~/.codex` tokens or loads host Codex tools/MCP/settings.
+- `claude` — Bundled `@anthropic-ai/claude-agent-sdk` native CLI + Agent SDK. Atlas never copies `~/.claude` tokens and unsets `ANTHROPIC_API_KEY` for this path so API billing cannot silently replace the subscription.
+
+Routes: `/v1/subscription/{chatgpt|claude}` (status, login, logout, models). Adapters: `apps/server/src/providers/subscription/`. Atlas session id maps to the runtime session in `~/.atlas/subscription-sessions.json`.
+
 ## System prompt
 
 Merged in `agent-service` `resolveProfileSystemPrompt` → `generateReply` (`provider.generateChat` / `streamChat`):

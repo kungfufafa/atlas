@@ -3,7 +3,8 @@ import path from "node:path";
 import {
   AtlasApiError,
   getProfileSoulDir,
-  MAX_IMAGE_BYTES,
+  MAX_GENERATED_IMAGE_BYTES,
+  type ProviderInstance,
   pathExists,
   type ToolContext,
   type ToolDefinition,
@@ -57,7 +58,8 @@ export interface GenerateImageToolDeps {
   recordUsage?: (
     modelId: string,
     inputTokens: number,
-    outputTokens: number
+    outputTokens: number,
+    instance: ProviderInstance
   ) => void;
 }
 
@@ -155,9 +157,9 @@ export async function runGenerateImageTool(
     return { error: "Image generation returned empty image data." };
   }
 
-  if (result.data.byteLength > MAX_IMAGE_BYTES) {
+  if (result.data.byteLength > MAX_GENERATED_IMAGE_BYTES) {
     return {
-      error: `Generated image exceeds the ${MAX_IMAGE_BYTES / (1024 * 1024)} MB size limit.`,
+      error: `Generated image exceeds the ${MAX_GENERATED_IMAGE_BYTES / (1024 * 1024)} MB size limit.`,
     };
   }
 
@@ -231,7 +233,8 @@ export async function runGenerateImageTool(
     deps.recordUsage(
       result.model,
       result.usage.inputTokens,
-      result.usage.outputTokens
+      result.usage.outputTokens,
+      selection.instance
     );
   }
 

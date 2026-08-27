@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   buildAutoEnableThinkingPayload,
   buildThinkingEffortOptions,
+  resolveEffortForOptions,
   shouldAutoEnableThinking,
   shouldBlockThinkingEffortChange,
   shouldShowThinkingBlocks,
@@ -99,5 +100,11 @@ describe("thinking-settings helpers", () => {
       { label: "Medium", value: "medium" },
       { label: "Extra High", value: "xhigh" },
     ]);
+  });
+
+  test("uses the runtime default when the saved effort is unsupported", () => {
+    expect(
+      resolveEffortForOptions("ultra", ["low", "medium", "high"], "low")
+    ).toBe("low");
   });
 });

@@ -3,8 +3,14 @@ import type { AtlasClient } from "@atlas/client";
 import {
   DEFAULT_SETUP_WORKSPACE_NAME,
   getUserConfigPath,
+  isSubscriptionProvider,
+  type ProviderInstance,
   type ProviderModelOption,
   promptForProviderConfig,
+  type SubscriptionAuthState,
+  type SubscriptionLoginStartResponse,
+  type SubscriptionLoginStatusResponse,
+  type SubscriptionProviderKind,
   slugifySetupWorkspaceName,
   type UserProviderName,
   validateSetupEmail,
@@ -12,7 +18,10 @@ import {
   validateSetupPassword,
   validateSetupWorkspaceName,
 } from "@atlas/core";
-import type { SetupAuthRequest } from "@atlas/core/contract";
+import type {
+  ConfigureProviderRequest,
+  SetupAuthRequest,
+} from "@atlas/core/contract";
 
 function readPassword(prompt: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -184,7 +193,8 @@ export async function ensureUserConfiguredViaCli(
 }
 
 export async function ensureProviderConfiguredViaCli(
-  client: AtlasClient
+  client: AtlasClient,
+  signal?: AbortSignal
 ): Promise<boolean> {
   if (!(process.stdin.isTTY && process.stdout.isTTY)) {
     return false;
@@ -209,23 +219,15 @@ export async function ensureProviderConfiguredViaCli(
     });
 
     const instance = config.providers[0]!;
-    const model =
-      instance.customModels?.find((entry) => entry.default)?.id ??
-      instance.customModels?.[0]?.id ??
-      modelHelpers.getDefaultModel(instance.type);
-
-    const result = await client.configureProvider({
-      apiKey: instance.apiKey,
-      baseUrl: instance.baseUrl,
-      customModels: instance.customModels,
-      displayName:
-        instance.type === "openai_compatible" ? instance.label : undefined,
-      hostMode: instance.hostMode,
-      model,
-      provider: instance.type,
-      wireApi:
-        instance.type === "openai_compatible" ? instance.wireApi : undefined,
-    });
+    if (isSubscriptionProvider(instance.type)) {
+      await ensureCliSubscriptionAuthenticated(client, instance.type, {
+        signal,
+        writeLine: (line) => console.log(line),
+      });
+    }
+    const result = await client.configureProvider(
+      buildCliConfigureProviderRequest(instance, modelHelpers.getDefaultModel)
+    );
 
     console.log(
       `\nProvider configured (${result.provider}, ${result.currentModel}).`
@@ -236,6 +238,190 @@ export async function ensureProviderConfiguredViaCli(
   } finally {
     rl.close();
   }
+}
+
+const CLI_SUBSCRIPTION_LOGIN_TIMEOUT_MS = 15 * 60 * 1000;
+const CLI_SUBSCRIPTION_LOGIN_POLL_MS = 2000;
+
+interface CliSubscriptionClient {
+  cancelSubscriptionLogin(
+    kind: SubscriptionProviderKind,
+    loginId: string
+  ): Promise<{ ok: true }>;
+  getSubscriptionAuth(
+    kind: SubscriptionProviderKind
+  ): Promise<SubscriptionAuthState>;
+  getSubscriptionLoginStatus(
+    kind: SubscriptionProviderKind,
+    loginId: string
+  ): Promise<SubscriptionLoginStatusResponse>;
+  startSubscriptionLogin(
+    kind: SubscriptionProviderKind,
+    request?: { method?: "browser" | "device" }
+  ): Promise<SubscriptionLoginStartResponse>;
+}
+
+interface CliSubscriptionLoginOptions {
+  now?: () => number;
+  pollIntervalMs?: number;
+  signal?: AbortSignal;
+  sleep?: (delayMs: number) => Promise<void>;
+  timeoutMs?: number;
+  writeLine?: (line: string) => void;
+}
+
+export async function ensureCliSubscriptionAuthenticated(
+  client: CliSubscriptionClient,
+  kind: SubscriptionProviderKind,
+  options: CliSubscriptionLoginOptions = {}
+): Promise<void> {
+  const writeLine = options.writeLine ?? ((line: string) => console.log(line));
+  throwIfCliLoginAborted(options.signal);
+  const auth = await client.getSubscriptionAuth(kind);
+  throwIfCliLoginAborted(options.signal);
+  if (auth.authenticated) {
+    return;
+  }
+
+  const started = await client.startSubscriptionLogin(
+    kind,
+    kind === "chatgpt" ? { method: "device" } : {}
+  );
+
+  try {
+    throwIfCliLoginAborted(options.signal);
+    writeSubscriptionLoginInstructions(started, writeLine);
+
+    const now = options.now ?? Date.now;
+    const deadline =
+      now() + (options.timeoutMs ?? CLI_SUBSCRIPTION_LOGIN_TIMEOUT_MS);
+    const sleep =
+      options.sleep ??
+      ((delayMs: number) =>
+        new Promise<void>((resolve) => {
+          setTimeout(resolve, delayMs);
+        }));
+    const pollIntervalMs =
+      options.pollIntervalMs ?? CLI_SUBSCRIPTION_LOGIN_POLL_MS;
+
+    let status = await client.getSubscriptionLoginStatus(kind, started.loginId);
+    throwIfCliLoginAborted(options.signal);
+    while (status.status === "pending" && now() < deadline) {
+      await waitForCliLoginPoll(pollIntervalMs, sleep, options.signal);
+      status = await client.getSubscriptionLoginStatus(kind, started.loginId);
+      throwIfCliLoginAborted(options.signal);
+    }
+
+    if (status.status === "completed" && status.account?.authenticated) {
+      writeLine(`${kind === "chatgpt" ? "ChatGPT" : "Claude"} connected.`);
+      return;
+    }
+
+    if (status.status === "pending") {
+      throw new Error(
+        "Subscription login timed out. Start setup again to retry."
+      );
+    }
+
+    throw new Error(
+      status.error ??
+        `Subscription login was ${status.status}. Start setup again to retry.`
+    );
+  } catch (error) {
+    try {
+      await client.cancelSubscriptionLogin(kind, started.loginId);
+    } catch {
+      // The server may be unreachable or the login may already be terminal.
+    }
+    throw error;
+  }
+}
+
+function throwIfCliLoginAborted(signal: AbortSignal | undefined): void {
+  if (!signal?.aborted) {
+    return;
+  }
+  const error = new Error("Subscription login cancelled.");
+  error.name = "AbortError";
+  throw error;
+}
+
+async function waitForCliLoginPoll(
+  delayMs: number,
+  sleep: (delayMs: number) => Promise<void>,
+  signal: AbortSignal | undefined
+): Promise<void> {
+  if (!signal) {
+    await sleep(delayMs);
+    return;
+  }
+  throwIfCliLoginAborted(signal);
+  await new Promise<void>((resolve, reject) => {
+    const onAbort = () => {
+      const error = new Error("Subscription login cancelled.");
+      error.name = "AbortError";
+      reject(error);
+    };
+    signal.addEventListener("abort", onAbort, { once: true });
+    void sleep(delayMs).then(
+      () => {
+        signal.removeEventListener("abort", onAbort);
+        resolve();
+      },
+      (error: unknown) => {
+        signal.removeEventListener("abort", onAbort);
+        reject(error);
+      }
+    );
+  });
+}
+
+function writeSubscriptionLoginInstructions(
+  started: SubscriptionLoginStartResponse,
+  writeLine: (line: string) => void
+): void {
+  writeLine("");
+  writeLine(started.instructions);
+  if (started.loginCommand) {
+    writeLine(`Run on the Atlas host: ${started.loginCommand}`);
+  }
+  if (started.verificationUrl) {
+    writeLine(`Verification URL: ${started.verificationUrl}`);
+  }
+  if (started.userCode) {
+    writeLine(`Device code: ${started.userCode}`);
+  }
+  if (started.authUrl) {
+    writeLine(`Login URL: ${started.authUrl}`);
+  }
+  writeLine("Waiting for sign-in...");
+}
+
+export function buildCliConfigureProviderRequest(
+  instance: ProviderInstance,
+  getDefaultModel: (provider: UserProviderName) => string
+): ConfigureProviderRequest {
+  if (isSubscriptionProvider(instance.type)) {
+    return { provider: instance.type };
+  }
+
+  const model =
+    instance.customModels?.find((entry) => entry.default)?.id ??
+    instance.customModels?.[0]?.id ??
+    getDefaultModel(instance.type);
+
+  return {
+    apiKey: instance.apiKey,
+    baseUrl: instance.baseUrl,
+    customModels: instance.customModels,
+    displayName:
+      instance.type === "openai_compatible" ? instance.label : undefined,
+    hostMode: instance.hostMode,
+    model,
+    provider: instance.type,
+    wireApi:
+      instance.type === "openai_compatible" ? instance.wireApi : undefined,
+  };
 }
 
 function createModelHelpers(models: ProviderModelOption[]) {

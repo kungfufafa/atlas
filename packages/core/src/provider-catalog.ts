@@ -27,6 +27,8 @@ export interface ProviderSetupMetadata {
   displayName?: true;
   hostMode?: "ollama";
   modelSelection?: "catalog" | "specialized";
+  /** Provider authenticates through an official subscription runtime, not an API key. */
+  subscriptionAuth?: true;
   wireApi?: true;
 }
 
@@ -76,6 +78,19 @@ export const BUILTIN_PROVIDER_DEFINITIONS = [
     setup: { customModels: true, modelSelection: "catalog" },
   },
   {
+    apiKey: { placeholder: "ChatGPT login", requirement: "optional" },
+    apiKeyEnvVar: null,
+    displayName: "ChatGPT",
+    fallbackModelId: "gpt-5.4",
+    id: "chatgpt",
+    modelIdPolicy: "passthrough",
+    setup: {
+      customModels: true,
+      modelSelection: "catalog",
+      subscriptionAuth: true,
+    },
+  },
+  {
     apiKey: { placeholder: "sk-ant-…", requirement: "required" },
     apiKeyEnvVar: "ANTHROPIC_API_KEY",
     displayName: "Anthropic",
@@ -83,6 +98,19 @@ export const BUILTIN_PROVIDER_DEFINITIONS = [
     id: "anthropic",
     modelIdPolicy: "passthrough",
     setup: { customModels: true, modelSelection: "catalog" },
+  },
+  {
+    apiKey: { placeholder: "Claude login", requirement: "optional" },
+    apiKeyEnvVar: null,
+    displayName: "Claude",
+    fallbackModelId: "claude-sonnet-4-6",
+    id: "claude",
+    modelIdPolicy: "passthrough",
+    setup: {
+      customModels: true,
+      modelSelection: "catalog",
+      subscriptionAuth: true,
+    },
   },
   {
     apiKey: { placeholder: "sk-or-v1-…", requirement: "required" },
@@ -325,6 +353,14 @@ export function providerSetupHasFeature(
   feature: keyof ProviderSetupMetadata
 ): boolean {
   return Boolean(definition?.setup?.[feature]);
+}
+
+export function isSubscriptionProvider(
+  providerId: string
+): providerId is "chatgpt" | "claude" {
+  return (
+    getBuiltinProviderDefinition(providerId)?.setup?.subscriptionAuth === true
+  );
 }
 
 export function providerUsesGenericCustomModelSetup(

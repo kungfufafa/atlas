@@ -1,10 +1,14 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
+import { AtlasApiError } from "@atlas/core/api-error";
+import { setChatgptRuntimeForTests } from "../providers/subscription";
+import type { ChatgptSubscriptionRuntime } from "../providers/subscription/chatgpt/runtime";
 import { validateProviderConnection } from "./provider-validation-service";
 
 const originalFetch = globalThis.fetch;
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
+  setChatgptRuntimeForTests(null);
 });
 
 function requestUrl(input: RequestInfo | URL): URL {
@@ -12,6 +16,164 @@ function requestUrl(input: RequestInfo | URL): URL {
 }
 
 describe("validateProviderConnection", () => {
+  test("rejects API keys on subscription validation without inspecting auth", async () => {
+    let inspectedAuth = false;
+    setChatgptRuntimeForTests({
+      getAuthState: async () => {
+        inspectedAuth = true;
+        return {
+          authenticated: true,
+          provider: "chatgpt",
+          status: "authenticated",
+        };
+      },
+    } as unknown as ChatgptSubscriptionRuntime);
+
+    try {
+      await validateProviderConnection({
+        apiKey: "sk-must-not-be-used",
+        type: "chatgpt",
+      });
+      throw new Error("expected a rejection");
+    } catch (error) {
+      expect(error).toBeInstanceOf(AtlasApiError);
+      expect((error as AtlasApiError).status).toBe(400);
+    }
+    expect(inspectedAuth).toBe(false);
+  });
+
+  test("validates a selected subscription model against runtime models", async () => {
+    let listModelsCalls = 0;
+    setChatgptRuntimeForTests({
+      getAuthState: async () => ({
+        authenticated: true,
+        provider: "chatgpt",
+        status: "authenticated",
+      }),
+      listModels: async () => {
+        listModelsCalls += 1;
+        return [
+          {
+            id: "gpt-5-codex",
+            name: "GPT-5 Codex",
+            provider: "chatgpt",
+          },
+        ];
+      },
+    } as unknown as ChatgptSubscriptionRuntime);
+
+    const models = await validateProviderConnection({
+      apiKey: "   ",
+      model: " gpt-5-codex ",
+      type: "chatgpt",
+    });
+
+    expect(listModelsCalls).toBe(1);
+    expect(models).toEqual([
+      {
+        default: true,
+        id: "gpt-5-codex",
+        name: "GPT-5 Codex",
+      },
+    ]);
+  });
+
+  test("normalizes runtime model metadata to one server-owned default", async () => {
+    setChatgptRuntimeForTests({
+      getAuthState: async () => ({
+        authenticated: true,
+        provider: "chatgpt",
+        status: "authenticated",
+      }),
+      listModels: async () => [
+        {
+          default: true,
+          id: "gpt-new",
+          name: "GPT New",
+          provider: "chatgpt",
+          reasoningEffortValues: ["low", "high"],
+        },
+        {
+          default: true,
+          id: "gpt-other",
+          name: "GPT Other",
+          provider: "chatgpt",
+        },
+      ],
+    } as unknown as ChatgptSubscriptionRuntime);
+
+    await expect(
+      validateProviderConnection({ model: "gpt-other", type: "chatgpt" })
+    ).resolves.toEqual([
+      {
+        id: "gpt-new",
+        name: "GPT New",
+        reasoningEffortValues: ["low", "high"],
+      },
+      { default: true, id: "gpt-other", name: "GPT Other" },
+    ]);
+  });
+
+  test("rejects an unavailable subscription model", async () => {
+    setChatgptRuntimeForTests({
+      getAuthState: async () => ({
+        authenticated: true,
+        provider: "chatgpt",
+        status: "authenticated",
+      }),
+      listModels: async () => [
+        {
+          id: "gpt-5-codex",
+          name: "GPT-5 Codex",
+          provider: "chatgpt",
+        },
+      ],
+    } as unknown as ChatgptSubscriptionRuntime);
+
+    try {
+      await validateProviderConnection({
+        model: "retired-model",
+        type: "chatgpt",
+      });
+      throw new Error("expected a rejection");
+    } catch (error) {
+      expect(error).toBeInstanceOf(AtlasApiError);
+      expect((error as AtlasApiError).status).toBe(400);
+      expect((error as AtlasApiError).message).toContain("not available");
+    }
+  });
+
+  test("maps unavailable and disconnected subscription runtimes", async () => {
+    const states = [
+      {
+        authenticated: false,
+        expectedStatus: 503,
+        provider: "chatgpt" as const,
+        status: "not_installed" as const,
+      },
+      {
+        authenticated: false,
+        expectedStatus: 409,
+        provider: "chatgpt" as const,
+        status: "not_authenticated" as const,
+      },
+    ];
+
+    for (const { expectedStatus, ...state } of states) {
+      setChatgptRuntimeForTests({
+        getAuthState: async () => state,
+      } as unknown as ChatgptSubscriptionRuntime);
+
+      try {
+        await validateProviderConnection({ type: "chatgpt" });
+        throw new Error("expected a rejection");
+      } catch (error) {
+        expect(error).toBeInstanceOf(AtlasApiError);
+        expect((error as AtlasApiError).status).toBe(expectedStatus);
+      }
+    }
+  });
+
   test("throws error when API key is missing for key-required providers", async () => {
     await expect(
       validateProviderConnection({

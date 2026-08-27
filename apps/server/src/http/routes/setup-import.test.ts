@@ -5,6 +5,7 @@ import { getUserConfigDir } from "@atlas/core";
 import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import {
   createAtlasDataExport,
+  MAX_ATLAS_IMPORT_REQUEST_BYTES,
   previewAtlasDataImport,
 } from "../../services/data-portability";
 import { setupTestConfigDir } from "../../test-config-dir";
@@ -237,6 +238,139 @@ describe("setup import routes", () => {
     await expect(
       readFile(join(getUserConfigDir(), "config.ini"), "utf8")
     ).resolves.toBe("keep");
+  });
+
+  test("rejects an oversized setup import before reading its body", async () => {
+    const { app } = createApp();
+    const response = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/setup/import/preview", {
+        body: "{}",
+        headers: {
+          "Content-Length": String(MAX_ATLAS_IMPORT_REQUEST_BYTES + 1),
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      })
+    );
+
+    expect(response.status).toBe(413);
+    await expect(response.json()).resolves.toEqual({
+      error: "Request body is too large.",
+    });
+  });
+
+  test("times out stalled bodies and releases the setup import slot", async () => {
+    let cancelled = false;
+    const { app } = createMinimalHonoApp({
+      agent: {
+        listProfiles: async () => ({ profiles: [{ id: "default" }] }),
+        providerConfigured: true,
+      },
+      dataImportBodyReadTimeoutMs: 10,
+    });
+    const stalledBody = new ReadableStream<Uint8Array>({
+      cancel: () => {
+        cancelled = true;
+        return new Promise<void>(() => undefined);
+      },
+      start: (controller) => {
+        controller.enqueue(new TextEncoder().encode('{"data":"'));
+      },
+    });
+
+    const timedOutResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/setup/import/preview", {
+        body: stalledBody,
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      })
+    );
+    expect(timedOutResponse.status).toBe(408);
+    expect(cancelled).toBe(true);
+
+    await writeFile(join(getUserConfigDir(), "config.ini"), "safe");
+    const archive = (
+      await createAtlasDataExport({ rootDir: getUserConfigDir() })
+    ).data;
+    const nextResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/setup/import/preview", {
+        body: JSON.stringify({ data: archive.toString("base64") }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      })
+    );
+
+    expect(nextResponse.status).toBe(200);
+  });
+
+  test("serializes first-admin setup behind restore and reload", async () => {
+    let releaseReload = () => undefined;
+    const reloadGate = new Promise<void>((resolveReload) => {
+      releaseReload = resolveReload;
+    });
+    let markReloadStarted = () => undefined;
+    const reloadStarted = new Promise<void>((resolveStarted) => {
+      markReloadStarted = resolveStarted;
+    });
+    const { app, databaseAdapter } = createMinimalHonoApp({
+      agent: {
+        listProfiles: async () => ({ profiles: [{ id: "default" }] }),
+        providerConfigured: true,
+      },
+      onDataRestored: async () => {
+        markReloadStarted();
+        await reloadGate;
+      },
+    });
+    await writeFile(join(getUserConfigDir(), "config.ini"), "restored");
+    const archive = (
+      await createAtlasDataExport({ rootDir: getUserConfigDir() })
+    ).data;
+
+    const restorePromise = app.fetch(
+      new Request("http://localhost:4310/v1/auth/setup/import/restore", {
+        body: JSON.stringify({
+          confirm: true,
+          data: archive.toString("base64"),
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      })
+    );
+    await reloadStarted;
+
+    let setupSettled = false;
+    const setupPromise = app
+      .fetch(
+        new Request("http://localhost:4310/v1/auth/setup", {
+          body: JSON.stringify({
+            admin: {
+              email: "admin@example.com",
+              name: "Admin",
+              password: "password123",
+            },
+            organization: { name: "Atlas", slug: "atlas" },
+          }),
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+        })
+      )
+      .finally(() => {
+        setupSettled = true;
+      });
+    await Bun.sleep(50);
+
+    expect(setupSettled).toBe(false);
+    expect(await databaseAdapter.countHumanUsers()).toBe(0);
+    releaseReload();
+
+    const [restoreResponse, setupResponse] = await Promise.all([
+      restorePromise,
+      setupPromise,
+    ]);
+    expect(restoreResponse.status).toBe(200);
+    expect(setupResponse.status).toBe(201);
+    expect(await databaseAdapter.countHumanUsers()).toBe(1);
   });
 
   test("setup import preview accepts valid archives", async () => {

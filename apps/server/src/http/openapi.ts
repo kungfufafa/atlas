@@ -8,6 +8,7 @@ import { registerModelRoutes } from "./routes/models";
 import { registerProfileRoutes } from "./routes/profiles";
 import { registerSessionRoutes } from "./routes/sessions";
 import { registerSkillRoutes } from "./routes/skills";
+import { registerSubscriptionRoutes } from "./routes/subscription";
 import { registerSystemRoutes } from "./routes/system";
 import { registerTaskRoutes } from "./routes/tasks";
 import { registerToolRoutes } from "./routes/tools";
@@ -22,6 +23,7 @@ function buildNativeOpenApiApp(): HonoApp {
   registerAuthRoutes(app, options);
   registerWorkerRoutes(app, options);
   registerModelRoutes(app, options);
+  registerSubscriptionRoutes(app, options);
   registerUserContextRoutes(app, options);
   registerSessionRoutes(app, options);
   registerProfileRoutes(app, options);
@@ -54,6 +56,7 @@ export function buildHttpOpenApiSpec(app?: HonoApp, serverUrl?: string) {
       { name: "Workers" },
       { name: "Chat" },
       { name: "Models" },
+      { name: "Subscriptions" },
       { name: "User" },
       { name: "Profiles" },
       { name: "Soul" },

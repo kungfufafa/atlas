@@ -30,6 +30,11 @@ const SESSION_COOKIE_NAME = "atlas_session";
 const CSRF_COOKIE_NAME = "atlas_csrf";
 const CSRF_HEADER_NAME = "x-csrf-token";
 const SESSION_COOKIE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
+const DEFAULT_JSON_BODY_READ_TIMEOUT_MS = 30_000;
+
+export interface ReadJsonWithLimitOptions {
+  timeoutMs?: number;
+}
 
 function parseCookies(header: string | null): Record<string, string> {
   if (!header) {
@@ -370,6 +375,68 @@ export async function readJson<T>(request: Request): Promise<T> {
       throw new AtlasApiError("Invalid JSON in request body.", 400);
     }
     throw err;
+  }
+}
+
+export async function readJsonWithLimit<T>(
+  request: Request,
+  maxBytes: number,
+  options: ReadJsonWithLimitOptions = {}
+): Promise<T> {
+  const declaredLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {
+    throw new AtlasApiError("Request body is too large.", 413);
+  }
+
+  if (!request.body) {
+    throw new AtlasApiError("Invalid JSON in request body.", 400);
+  }
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const readDeadline = new Promise<never>((_resolve, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new AtlasApiError("Request body read timed out.", 408));
+    }, options.timeoutMs ?? DEFAULT_JSON_BODY_READ_TIMEOUT_MS);
+  });
+
+  try {
+    while (true) {
+      const { done, value } = await Promise.race([reader.read(), readDeadline]);
+      if (done) {
+        break;
+      }
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBytes) {
+        throw new AtlasApiError("Request body is too large.", 413);
+      }
+      chunks.push(value);
+    }
+  } catch (error) {
+    void reader.cancel().catch(() => undefined);
+    throw error;
+  } finally {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+    }
+    try {
+      reader.releaseLock();
+    } catch {
+      // A timed-out read may still be settling after cancellation.
+    }
+  }
+
+  try {
+    return JSON.parse(
+      new TextDecoder().decode(Buffer.concat(chunks, totalBytes))
+    ) as T;
+  } catch (error) {
+    if (error instanceof AtlasApiError) {
+      throw error;
+    }
+    throw new AtlasApiError("Invalid JSON in request body.", 400);
   }
 }
 

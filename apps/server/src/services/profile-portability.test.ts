@@ -1244,6 +1244,29 @@ describe("profile pack portability", () => {
     ).toBe(false);
   });
 
+  test("rolls back an imported profile with corrupt avatar pixels", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    await seedOrganization(db, "org_destination");
+    const corruptAvatar = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVSH2mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      "base64"
+    );
+    const archive = zipSync({
+      "avatar.png": corruptAvatar,
+      [PROFILE_PACK_MANIFEST_FILENAME]: Buffer.from(
+        JSON.stringify(createManifest())
+      ),
+    });
+
+    await expect(
+      importProfilePack(db, "org_destination", archive, { confirm: true })
+    ).rejects.toMatchObject({ status: 400 });
+    expect(await db.getProfile("imported")).toBeNull();
+    expect(
+      await pathExists(getProfileSoulDir("org_destination", "imported"))
+    ).toBe(false);
+  });
+
   test("keeps staged JavaScript inactive when a later database step fails", async () => {
     const db = createInMemoryDatabaseAdapter();
     await seedOrganization(db, "org_destination");

@@ -25,8 +25,10 @@ Atlas supports these built-in provider types:
 
 | Provider | Notes |
 |---|---|
-| OpenAI | GPT and specialist media models |
-| Anthropic | Claude models |
+| OpenAI | GPT and specialist media models, billed with an API key |
+| ChatGPT | ChatGPT Plus / Pro through the official Codex runtime. No OpenAI API key. |
+| Anthropic | Claude models, billed with an API key |
+| Claude | Claude Pro / Max through Claude Code. No Anthropic API key. |
 | OpenRouter | Route to many models through one API key |
 | Gemini | Google Gemini models |
 | DeepSeek | DeepSeek models |
@@ -45,6 +47,44 @@ Most built-in types allow one configured instance each. **Ollama** and **Custom 
 For a custom endpoint, pick a preset such as LM Studio, vLLM, LiteLLM, llama.cpp, Groq, Together, or TokenRouter — or enter your own name and base URL — then browse models from that endpoint. API keys are optional for local servers that do not require auth. Choose **Chat completions** or **Responses** in the **API** field to match the endpoint you are connecting. If the provider only documents a `/responses` route, choose **Responses**.
 
 When you change a saved provider's base URL, enter the API key for the new endpoint in the same edit dialog. Atlas never forwards a saved credential to a different URL.
+
+## Connect a ChatGPT or Claude subscription
+
+API keys and subscriptions are different billing paths. Choose **ChatGPT** or **Claude** in the provider list when you want Atlas to use an existing Plus / Pro / Max plan.
+
+The subscription connection belongs to the Atlas host, not one workspace. A **Superadmin** connects or logs out the host account. Workspace admins can add the connected provider to their workspace and choose its available models, but they cannot see the account email or plan. Every workspace that adds the provider uses the same host subscription and its shared limits.
+
+### ChatGPT
+
+Codex is bundled with Atlas. You do not install it separately.
+
+1. As a Superadmin, open **Settings → LLM providers** and choose **ChatGPT**
+2. Select **Connect**. Atlas starts Codex ChatGPT login (browser on the host, or a device code you complete elsewhere)
+3. Codex reports the ChatGPT account and plan
+4. Pick a model Codex lists for that account and save
+
+Codex stores and refreshes the ChatGPT session in an Atlas-owned, isolated credential directory. Atlas does not copy OAuth tokens or load the host user's Codex tools, MCP servers, plugins, or settings. Logging out disconnects ChatGPT for every workspace on that Atlas host without changing a separate Codex CLI login.
+
+ChatGPT requests run as Codex threads. Atlas keeps its own session id and maps it to the Codex thread for resume.
+
+Atlas reads the available ChatGPT models, default model, reasoning levels, and input modalities from the connected Codex runtime. The reasoning menu therefore follows the selected model instead of using a fixed three-level list. Models that advertise image input receive images directly at high detail; other models can use the separately configured **Image parsing** capability. Native ChatGPT image generation uses Codex's automatic canvas and reports the underlying image generator in the result.
+
+The bundled Codex runtime does not currently advertise a stable subscription-backed audio transcription executor, so Atlas does not claim that capability or fall back to an OpenAI API key. Configure **Audio transcription** with a provider that explicitly supports it when you need voice-message transcription.
+
+### Claude
+
+The Claude runtime is bundled with Atlas. You do not install Claude Code separately.
+
+1. As a Superadmin, open **Settings → LLM providers** and choose **Claude**
+2. Select **Connect**, then finish `claude auth login` if Atlas asks for it
+3. Atlas reuses the authenticated Claude session
+4. Pick a supported model and save
+
+Claude Code owns `~/.claude` credentials. Atlas does not read those files or convert the subscription into `ANTHROPIC_API_KEY`. If a Claude API key is present in the environment, Atlas unsets it for this provider so subscription usage is not silently billed as API usage.
+
+Atlas does not fall back from a subscription limit to an API key. If the plan is rate limited or exhausted, that error is shown until the subscription can run again.
+
+Whole-install exports exclude Codex and Claude credential directories. Restoring on the same host preserves its current subscription login; restoring on another host requires a Superadmin to connect again.
 
 TokenRouter and similar gateways only expose the models your key can use, so Atlas tests the connection against a discovered model instead of a generic OpenAI id.
 

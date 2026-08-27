@@ -7,7 +7,11 @@ import {
   removeFile,
   writePrivateBytesFile,
 } from "./fs";
-import { validateImageAttachments } from "./message-content";
+import {
+  decodeBase64AttachmentData,
+  normalizeImageMediaType,
+  validateImageAttachments,
+} from "./message-content";
 import { getProfileSoulDir } from "./soul/resolve";
 
 const AVATAR_BASENAME = "avatar";
@@ -43,7 +47,7 @@ export function getProfileAvatarPath(
     return join(directory, AVATAR_BASENAME);
   }
 
-  const extension = MEDIA_TYPE_TO_EXTENSION[mediaType];
+  const extension = MEDIA_TYPE_TO_EXTENSION[normalizeImageMediaType(mediaType)];
 
   if (!extension) {
     throw new Error(`Unsupported avatar media type: ${mediaType}`);
@@ -70,11 +74,11 @@ export async function saveProfileAvatar(
   await ensureDir(directory);
   await deleteProfileAvatar(orgId, profileId);
 
-  const base64 = attachment.data.includes(",")
-    ? (attachment.data.split(",")[1] ?? "")
-    : attachment.data;
-  const bytes = Buffer.from(base64, "base64");
-  const filePath = getProfileAvatarPath(orgId, profileId, attachment.mediaType);
+  const bytes = Buffer.from(
+    decodeBase64AttachmentData(attachment.data, "image")
+  );
+  const mediaType = normalizeImageMediaType(attachment.mediaType);
+  const filePath = getProfileAvatarPath(orgId, profileId, mediaType);
 
   await writePrivateBytesFile(filePath, bytes);
 }

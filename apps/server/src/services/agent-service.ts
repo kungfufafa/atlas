@@ -138,6 +138,7 @@ import {
   isEmailConfigComplete,
   isProviderConfigured,
   isServiceAccountUserId,
+  isSubscriptionProvider,
   isValidTimezone,
   isWritableSoulFileKey,
   listArtifacts,
@@ -223,6 +224,7 @@ import {
   estimateUsageCostUsd,
   type PricingContext,
 } from "../providers/pricing";
+import { deleteSubscriptionConversation } from "../providers/subscription";
 import { wrapProviderWithUsageTracking } from "../providers/usage-tracking";
 import { createAskUserQuestionTools } from "../tools/ask-user-question-tool";
 import { createDeepResearchServerTool } from "../tools/deep-research-server";
@@ -305,14 +307,17 @@ import {
   buildProviderInstanceFromCreateRequest,
   countModelsForInstance,
   decodeStoredModelSelection,
+  isProviderInstanceUsable,
   mergeModelsForConfig,
-  mergeModelsForConfigAsync,
   resolveDefaultModelForInstance,
   resolveInitialModel,
   resolveProfileProviderSelection,
   toProviderInstanceSummary,
 } from "./provider-instance-helpers";
-import { validateProviderConnection } from "./provider-validation-service";
+import {
+  canonicalSubscriptionModelSnapshot,
+  validateProviderConnection,
+} from "./provider-validation-service";
 import {
   loadSessionHistory,
   replaceSessionHistory,
@@ -868,7 +873,8 @@ export class AgentService {
   async getOrgCapabilityOptions(
     orgId: string
   ): Promise<CapabilityOptionsResponse> {
-    const config = await this.getOrgUserConfig(orgId);
+    let config = await this.getOrgUserConfig(orgId);
+    config = await this.refreshSubscriptionModelSnapshots(orgId, config);
     const providers = config?.providers ?? [];
     const capabilityConfig = migrateCapabilityTargetProviderIds(
       migrateLegacyCapabilityConfig(
@@ -1441,7 +1447,11 @@ export class AgentService {
     this.llmUsageTracker?.record(
       result.model,
       usage.inputTokens,
-      usage.outputTokens
+      usage.outputTokens,
+      {
+        provider: selection.instance.type,
+        providerInstance: selection.instance,
+      }
     );
 
     return {
@@ -2154,7 +2164,9 @@ export class AgentService {
             userId: input.userId,
           })
         ),
-        sessionId: input.sessionId,
+        sessionId: input.executionId
+          ? `subagent:${input.orgId}:${input.executionId}`
+          : input.sessionId,
         userId: input.userId,
       }),
       tools,
@@ -2746,6 +2758,7 @@ export class AgentService {
     }
 
     sessionTurnRegistry.cancelTurn(sessionId);
+    await deleteSubscriptionConversation(sessionId);
     this.sessions.delete(sessionId);
     this.superAgentSessionState.clearSession(sessionId);
     this.agentTodoState.clearSession(sessionId);
@@ -2912,6 +2925,7 @@ export class AgentService {
     }
 
     sessionTurnRegistry.cancelTurn(sessionId);
+    await deleteSubscriptionConversation(sessionId);
 
     const stored = this.sessions.get(sessionId);
 
@@ -2949,15 +2963,13 @@ export class AgentService {
     if (!(await this.getSessionRecordForOrg(orgId, sessionId))) {
       return false;
     }
-    const deleted = this.sessions.delete(sessionId);
-
-    if (deleted) {
-      this.agentTodoState.clearSession(sessionId);
-      this.agentQuestionnaireState.clearSession(sessionId);
-      await this.db.deleteSession(sessionId);
-    }
-
-    return deleted;
+    sessionTurnRegistry.cancelTurn(sessionId);
+    await deleteSubscriptionConversation(sessionId);
+    this.sessions.delete(sessionId);
+    this.agentTodoState.clearSession(sessionId);
+    this.agentQuestionnaireState.clearSession(sessionId);
+    await this.db.deleteSession(sessionId);
+    return true;
   }
 
   private async getSessionRecordForOrg(
@@ -3178,26 +3190,28 @@ export class AgentService {
     request: CreateProviderRequest
   ): Promise<CreateProviderResponse> {
     const userConfig = await this.getOrgUserConfig(orgId);
+    const existing = userConfig?.providers ?? [];
+    let instance = buildProviderInstanceFromCreateRequest(request, existing);
     const shouldSkipValidation =
-      request.skipValidation === true ||
-      process.env.ATLAS_SKIP_PROVIDER_VALIDATION === "true" ||
-      process.env.NODE_ENV === "test";
+      !isSubscriptionProvider(instance.type) &&
+      (request.skipValidation === true ||
+        process.env.ATLAS_SKIP_PROVIDER_VALIDATION === "true" ||
+        process.env.NODE_ENV === "test");
 
     if (!shouldSkipValidation) {
-      await validateProviderConnection({
-        apiKey: request.apiKey,
-        baseUrl: request.baseUrl,
-        customModels: request.customModels,
-        hostMode: request.hostMode,
-        model: request.model,
-        type: request.type,
-        wireApi: request.wireApi,
-      });
+      const validatedSubscriptionModels = await validateProviderConnection(
+        providerValidationRequest(instance, request.model)
+      );
+      if (isSubscriptionProvider(instance.type)) {
+        instance = {
+          ...instance,
+          customModels: validatedSubscriptionModels,
+        };
+      }
     }
 
-    const existing = userConfig?.providers ?? [];
-    const instance = buildProviderInstanceFromCreateRequest(request, existing);
     const model = resolveInitialModel(instance, request.model);
+
     const providers = [...existing, instance];
     const isFirst = providers.length === 1;
     const thinking = await this.resolveThinkingSettings();
@@ -3283,15 +3297,9 @@ export class AgentService {
       request.wireApi !== undefined;
 
     if (!shouldSkipValidation && connectionSemanticsChanged) {
-      await validateProviderConnection({
-        apiKey: updated.apiKey,
-        baseUrl: updated.baseUrl,
-        customModels: updated.customModels,
-        hostMode: updated.hostMode,
-        model: resolveInitialModel(updated),
-        type: updated.type,
-        wireApi: updated.wireApi,
-      });
+      await validateProviderConnection(
+        providerValidationRequest(updated, resolveInitialModel(updated))
+      );
     }
 
     const providers = userConfig.providers.map((instance) =>
@@ -3431,15 +3439,160 @@ export class AgentService {
       });
     }
 
-    const models = await mergeModelsForConfigAsync(userConfig?.providers ?? []);
+    const models = await this.mergeConfiguredProviderModels(
+      orgId,
+      userConfig?.providers ?? [],
+      true
+    );
+    const liveUserConfig = orgId
+      ? await this.getOrgUserConfig(orgId)
+      : userConfig;
+    const liveConfiguredProviders = liveUserConfig?.providers ?? [];
+    const liveActive = getActiveProviderInstance(liveUserConfig);
+    const liveModelCountByProvider = new Map<string, number>(
+      liveConfiguredProviders.map((instance) => [instance.id, 0])
+    );
+    for (const model of models) {
+      if (model.providerId) {
+        liveModelCountByProvider.set(
+          model.providerId,
+          (liveModelCountByProvider.get(model.providerId) ?? 0) + 1
+        );
+      }
+    }
+    const liveProviders = liveConfiguredProviders.map((instance) =>
+      toProviderInstanceSummary(
+        instance,
+        liveModelCountByProvider.get(instance.id) ??
+          countModelsForInstance(instance)
+      )
+    );
 
     return this.buildModelsResponse({
-      active,
+      active: liveActive,
       catalog,
       currentProviderId,
-      models: this.withEffectiveCapabilityClaims(models, userConfig),
-      providers,
+      models: this.withEffectiveCapabilityClaims(models, liveUserConfig),
+      providers: liveProviders,
     });
+  }
+
+  private async mergeConfiguredProviderModels(
+    orgId: string | undefined,
+    providers: ProviderInstance[],
+    tolerateUnavailableSubscriptions = false
+  ): Promise<ModelsResponse["models"]> {
+    const models: ModelsResponse["models"] = [];
+
+    for (const instance of providers) {
+      if (!isProviderInstanceUsable(instance)) {
+        continue;
+      }
+      let providerModels: ModelsResponse["models"];
+      try {
+        providerModels =
+          await this.providerAdapterRegistry.listModelsForInstance(
+            instance,
+            () => getModelsForProviderInstance(instance)
+          );
+      } catch (error) {
+        const unavailableSubscription =
+          tolerateUnavailableSubscriptions &&
+          isSubscriptionProvider(instance.type) &&
+          error instanceof AtlasApiError &&
+          (error.status === 409 || error.status === 503);
+        if (unavailableSubscription) {
+          continue;
+        }
+        throw error;
+      }
+      models.push(...providerModels);
+
+      if (orgId && isSubscriptionProvider(instance.type)) {
+        const preferredModelId = instance.customModels?.find(
+          (model) => model.default
+        )?.id;
+        await this.persistSubscriptionModelSnapshot(
+          orgId,
+          instance.id,
+          canonicalSubscriptionModelSnapshot(providerModels, preferredModelId)
+        );
+      }
+    }
+
+    return models;
+  }
+
+  private async persistSubscriptionModelSnapshot(
+    orgId: string,
+    providerId: string,
+    snapshot: NonNullable<ProviderInstance["customModels"]>
+  ): Promise<void> {
+    await this.runSerializedOrgConfigMutation(orgId, async () => {
+      const config = await this.getOrgUserConfig(orgId);
+      const current = config?.providers.find(
+        (instance) => instance.id === providerId
+      );
+      if (!(config && current && isSubscriptionProvider(current.type))) {
+        return;
+      }
+      if (JSON.stringify(current.customModels) === JSON.stringify(snapshot)) {
+        return;
+      }
+
+      await this.saveOrgUserConfig(orgId, {
+        ...config,
+        providers: config.providers.map((instance) =>
+          instance.id === providerId
+            ? { ...instance, customModels: snapshot }
+            : instance
+        ),
+      });
+    });
+  }
+
+  private async refreshSubscriptionModelSnapshots(
+    orgId: string,
+    config: UserConfig | null,
+    providerIds?: ReadonlySet<string>
+  ): Promise<UserConfig | null> {
+    const subscriptionProviders = (config?.providers ?? []).filter(
+      (instance) =>
+        isSubscriptionProvider(instance.type) &&
+        (providerIds === undefined || providerIds.has(instance.id))
+    );
+    if (subscriptionProviders.length === 0) {
+      return config;
+    }
+
+    for (const instance of subscriptionProviders) {
+      const liveModels =
+        await this.providerAdapterRegistry.listModelsForInstance(
+          instance,
+          () => {
+            throw new AtlasApiError(
+              `The ${instance.label} subscription adapter cannot load live models.`,
+              503
+            );
+          }
+        );
+      if (liveModels.length === 0) {
+        throw new AtlasApiError(
+          `No live models are available for the ${instance.label} subscription on this Atlas host.`,
+          503
+        );
+      }
+      const preferredModelId = instance.customModels?.find(
+        (model) => model.default
+      )?.id;
+      await this.persistSubscriptionModelSnapshot(
+        orgId,
+        instance.id,
+        canonicalSubscriptionModelSnapshot(liveModels, preferredModelId)
+      );
+    }
+
+    return await this.getOrgUserConfig(orgId);
   }
 
   private withEffectiveCapabilityClaims(
@@ -3533,16 +3686,21 @@ export class AgentService {
     orgId: string,
     request: ConfigureProviderRequest
   ): Promise<ConfigureProviderResponse> {
-    const result = await this.createProvider(orgId, {
-      apiKey: request.apiKey,
-      baseUrl: request.baseUrl,
-      customModels: request.customModels,
-      hostMode: request.hostMode,
-      label: request.displayName,
-      model: request.model,
-      type: request.provider,
-      wireApi: request.wireApi,
-    });
+    const createRequest: CreateProviderRequest = isSubscriptionProvider(
+      request.provider
+    )
+      ? { model: request.model, type: request.provider }
+      : {
+          apiKey: request.apiKey ?? "",
+          baseUrl: request.baseUrl,
+          customModels: request.customModels,
+          hostMode: request.hostMode,
+          label: request.displayName,
+          model: request.model,
+          type: request.provider,
+          wireApi: request.wireApi,
+        };
+    const result = await this.createProvider(orgId, createRequest);
 
     const instance = findProviderInstance(
       await this.getOrgUserConfig(orgId),
@@ -3718,7 +3876,11 @@ export class AgentService {
     this.llmUsageTracker?.record(
       result.model,
       usage.inputTokens,
-      usage.outputTokens
+      usage.outputTokens,
+      {
+        provider: selection.instance.type,
+        providerInstance: selection.instance,
+      }
     );
     if (orgId) {
       const estimatedCostUsd = estimateUsageCostUsd(
@@ -4510,14 +4672,16 @@ export class AgentService {
   }): AgentHarness {
     const providerInstance = options.providerInstance ?? null;
 
-    this.syncUsagePricingContext(providerInstance);
-
     const trackedProvider =
       options.provider && this.llmUsageTracker && options.modelId
         ? wrapProviderWithUsageTracking(
             options.provider,
             this.llmUsageTracker,
-            options.modelId
+            options.modelId,
+            {
+              provider: providerInstance?.type ?? null,
+              providerInstance,
+            }
           )
         : options.provider;
 
@@ -4528,15 +4692,6 @@ export class AgentService {
         options.thinking
       ),
       provider: trackedProvider ?? undefined,
-    });
-  }
-
-  private syncUsagePricingContext(
-    active: ReturnType<typeof getActiveProviderInstance>
-  ): void {
-    this.llmUsageTracker?.setPricingContext({
-      provider: active?.type ?? null,
-      providerInstance: active,
     });
   }
 
@@ -4889,10 +5044,23 @@ export class AgentService {
     orgRole?: OrgRole | null,
     isPlatformAdmin?: boolean
   ): Promise<AgentChatSession> {
-    const userConfig = await this.getOrgUserConfig(orgId);
+    let userConfig = await this.getOrgUserConfig(orgId);
+    const profile = await this.requireProfile(orgId, profileId);
+    const selectedModel = modelOverride ?? profile.model;
+    const decodedSelection = decodeStoredModelSelection(selectedModel);
+    const selectedProviderId =
+      decodedSelection && decodedSelection.providerId !== "__unknown__"
+        ? decodedSelection.providerId
+        : selectedModel?.trim()
+          ? undefined
+          : userConfig?.defaultProviderId;
+    userConfig = await this.refreshSubscriptionModelSnapshots(
+      orgId,
+      userConfig,
+      new Set(selectedProviderId ? [selectedProviderId] : [])
+    );
     const toolConfigurationVersion =
       this.sessionInvalidationVersions.get(orgId) ?? 0;
-    const profile = await this.requireProfile(orgId, profileId);
     const includeSkillManageTools = channel === "web" || channel === "cli";
     let tools = await this.resolveProfileTools(
       profile,
@@ -4933,7 +5101,6 @@ export class AgentService {
     const initialHistory = await loadSessionHistory(this.db, sessionId);
     const userTimezone = userConfig?.timezone ?? DEFAULT_TIMEZONE;
     const userContext = await this.loadUserContextForUser(orgId, userId);
-    const selectedModel = modelOverride ?? profile.model;
     const compaction = this.resolveCompactionConfig(
       profile,
       userConfig,
@@ -4954,6 +5121,27 @@ export class AgentService {
       orgId,
       profileId,
     });
+    const primarySupportsVision = resolvePrimaryModelVisionSupport(
+      userConfig,
+      selectedModel,
+      this.providerAdapterRegistry
+    );
+    const describeForNonVisionPrimary = async (
+      images: ReturnType<typeof extractImageParts>
+    ): Promise<string[]> =>
+      describeImagesWithConfiguredVisionModel(userConfig, images, {
+        recordUsage: (model, usage, instance) =>
+          this.llmUsageTracker?.record(
+            model,
+            usage.inputTokens,
+            usage.outputTokens,
+            {
+              provider: instance.type,
+              providerInstance: instance,
+            }
+          ),
+        registry: this.providerAdapterRegistry,
+      });
     const forbidProfileSkillMarkdownWrites =
       await this.shouldForbidProfileSkillMarkdownWrites(profile.id);
     const expandLearnCommand = shouldExpandLearnCommand(channel, tools);
@@ -4964,6 +5152,29 @@ export class AgentService {
       compaction,
       enableToolLoop: true,
       initialHistory,
+      preprocessHistoryForTurn: async (messages) => {
+        if (primarySupportsVision !== false) {
+          return messages;
+        }
+
+        const rehydrated = await rehydrateAttachmentMessages(
+          messages,
+          loadAttachment
+        );
+        const missingImages = rehydrated.flatMap((message) =>
+          message.role === "user"
+            ? extractImageParts(message.content).filter(
+                (image) => !image.description?.trim()
+              )
+            : []
+        );
+        if (missingImages.length === 0) {
+          return messages;
+        }
+
+        const descriptions = await describeForNonVisionPrimary(missingImages);
+        return addMissingImageDescriptionsToHistory(messages, descriptions);
+      },
       preprocessUserContent: async (content) => {
         const commandText =
           typeof content === "string"
@@ -4988,31 +5199,15 @@ export class AgentService {
           loadAttachment
         );
 
-        const primarySupportsVision = resolvePrimaryModelVisionSupport(
-          userConfig,
-          selectedModel,
-          this.providerAdapterRegistry
-        );
-
         if (primarySupportsVision !== false) {
           return content;
         }
 
-        const descriptions = await describeImagesWithConfiguredVisionModel(
-          userConfig,
-          extractImageParts(forVision),
-          {
-            recordUsage: (model, usage) =>
-              this.llmUsageTracker?.record(
-                model,
-                usage.inputTokens,
-                usage.outputTokens
-              ),
-            registry: this.providerAdapterRegistry,
-          }
+        const descriptions = await describeForNonVisionPrimary(
+          extractImageParts(forVision)
         );
 
-        return replaceImagePartsWithDescriptions(forVision, descriptions);
+        return replaceImagePartsWithDescriptions(content, descriptions);
       },
       rehydrateMessagesForProvider: async (messages) => {
         const rehydrated = await rehydrateAttachmentMessages(
@@ -5388,7 +5583,8 @@ export class AgentService {
     if (
       resolved &&
       explicitModelId &&
-      explicit?.providerId === resolved.instance.id
+      explicit?.providerId === resolved.instance.id &&
+      !isSubscriptionProvider(resolved.instance.type)
     ) {
       return { ...resolved, model: explicitModelId };
     }
@@ -5527,9 +5723,9 @@ export class AgentService {
       );
     }
 
-    const modelIsApproved = getModelsForProviderInstance(provider).some(
-      (entry) => entry.id === modelId
-    );
+    const modelIsApproved = (
+      await this.mergeConfiguredProviderModels(orgId, [provider])
+    ).some((entry) => entry.id === modelId);
     if (!modelIsApproved) {
       throw new AtlasApiError(
         "Select a model approved for this provider in the workspace.",
@@ -5559,7 +5755,7 @@ export class AgentService {
     const isStillApproved = Boolean(
       provider &&
         modelId &&
-        getModelsForProviderInstance(provider).some(
+        (await this.mergeConfiguredProviderModels(orgId, [provider])).some(
           (entry) => entry.id === modelId
         )
     );
@@ -5788,6 +5984,67 @@ function parseStoredUserConfig(value: unknown): UserConfig | null {
     defaultProviderId: defaultProviderId ?? null,
     providers: candidate.providers,
   };
+}
+
+function providerValidationRequest(
+  instance: ProviderInstance,
+  model?: string
+): TestProviderRequest {
+  if (isSubscriptionProvider(instance.type)) {
+    return { model, type: instance.type };
+  }
+
+  return {
+    apiKey: instance.apiKey,
+    baseUrl: instance.baseUrl,
+    customModels: instance.customModels,
+    hostMode: instance.hostMode,
+    model,
+    type: instance.type,
+    wireApi: instance.wireApi,
+  };
+}
+
+function addMissingImageDescriptionsToHistory(
+  messages: readonly ChatMessage[],
+  descriptions: readonly string[]
+): readonly ChatMessage[] {
+  let descriptionIndex = 0;
+  let changed = false;
+  const updated = messages.map((message) => {
+    if (message.role !== "user" || typeof message.content === "string") {
+      return message;
+    }
+
+    let contentChanged = false;
+    const content = message.content.map((part) => {
+      const needsDescription =
+        (part.type === "image" || part.type === "image_ref") &&
+        !part.description?.trim();
+      if (!needsDescription) {
+        return part;
+      }
+
+      const description = descriptions[descriptionIndex]?.trim();
+      descriptionIndex += 1;
+      if (!description) {
+        throw new Error("Missing image description for historical image.");
+      }
+      changed = true;
+      contentChanged = true;
+      return { ...part, description };
+    });
+
+    return contentChanged ? { ...message, content } : message;
+  });
+
+  if (descriptionIndex !== descriptions.length) {
+    throw new Error(
+      "Historical image description count does not match image parts."
+    );
+  }
+
+  return changed ? updated : messages;
 }
 
 function parseAgentChannel(value: string): AgentChannel | null {

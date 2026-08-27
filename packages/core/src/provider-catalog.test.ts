@@ -1,7 +1,13 @@
 import { describe, expect, test } from "bun:test";
+import type {
+  ConfigureProviderRequest,
+  CreateProviderRequest,
+  TestProviderRequest,
+} from "./contract";
 import {
   BUILTIN_PROVIDER_DEFINITIONS,
   type BuiltinProviderDefinition,
+  isSubscriptionProvider,
   type ProviderApiKeyPolicy,
   type ProviderSetupMetadata,
   providerApiKeyIsRequired,
@@ -71,4 +77,75 @@ describe("provider API-key policy", () => {
       'Invalid OpenRouter model id "model-only". Use vendor/model format.'
     );
   });
+
+  test("marks ChatGPT and Claude as subscription auth, not API-key providers", () => {
+    expect(isSubscriptionProvider("chatgpt")).toBe(true);
+    expect(isSubscriptionProvider("claude")).toBe(true);
+    expect(isSubscriptionProvider("openai")).toBe(false);
+    expect(isSubscriptionProvider("anthropic")).toBe(false);
+    expect(providerApiKeyIsRequired(getChatgpt().apiKey)).toBe(false);
+    expect(providerApiKeyIsRequired(getClaude().apiKey)).toBe(false);
+    expect(getChatgpt().apiKeyEnvVar).toBeNull();
+    expect(getClaude().apiKeyEnvVar).toBeNull();
+  });
+
+  test("keeps subscription connection fields runtime-owned in public types", () => {
+    const createRequest: CreateProviderRequest = { type: "chatgpt" };
+    const testRequest: TestProviderRequest = { type: "claude" };
+    const configureRequest: ConfigureProviderRequest = {
+      provider: "chatgpt",
+    };
+
+    // @ts-expect-error subscription create requests cannot inject model metadata
+    const invalidCreate: CreateProviderRequest = {
+      customModels: [{ id: "untrusted" }],
+      type: "chatgpt",
+    };
+    // @ts-expect-error subscription tests cannot inject API connection fields
+    const invalidTest: TestProviderRequest = {
+      baseUrl: "https://untrusted.example",
+      type: "claude",
+    };
+    // @ts-expect-error legacy configure requests cannot bypass runtime ownership
+    const invalidConfigure: ConfigureProviderRequest = {
+      apiKey: "untrusted",
+      provider: "chatgpt",
+    };
+
+    expect([
+      createRequest.type,
+      testRequest.type,
+      configureRequest.provider,
+      invalidCreate.type,
+      invalidTest.type,
+      invalidConfigure.provider,
+    ]).toEqual([
+      "chatgpt",
+      "claude",
+      "chatgpt",
+      "chatgpt",
+      "claude",
+      "chatgpt",
+    ]);
+  });
 });
+
+function getChatgpt(): BuiltinProviderDefinition {
+  const definition = BUILTIN_PROVIDER_DEFINITIONS.find(
+    (entry) => entry.id === "chatgpt"
+  );
+  if (!definition) {
+    throw new Error("chatgpt provider is missing from the catalog.");
+  }
+  return definition;
+}
+
+function getClaude(): BuiltinProviderDefinition {
+  const definition = BUILTIN_PROVIDER_DEFINITIONS.find(
+    (entry) => entry.id === "claude"
+  );
+  if (!definition) {
+    throw new Error("claude provider is missing from the catalog.");
+  }
+  return definition;
+}

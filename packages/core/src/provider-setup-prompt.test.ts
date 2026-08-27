@@ -69,6 +69,17 @@ describe("promptForProviderConfig", () => {
     });
   });
 
+  test("creates a ChatGPT subscription provider without an API key", async () => {
+    const config = await promptForProviderConfig(
+      promptOptions(["chatgpt", ""])
+    );
+
+    expect(config.providers[0]).toMatchObject({
+      apiKey: "",
+      type: "chatgpt",
+    });
+  });
+
   test("uses the regional xAI endpoint and saves entered models", async () => {
     const config = await promptForProviderConfig(
       promptOptions(["xai", "xai-key", "", "grok-4, grok-4-fast"])

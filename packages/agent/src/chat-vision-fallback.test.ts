@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  type ChatMessage,
   type ProviderClient,
   replaceImagePartsWithDescriptions,
   resolveMessagesForNonVisionProvider,
@@ -91,6 +92,76 @@ describe("preprocessUserContent vision fallback", () => {
         mediaType: "image/png",
         type: "image",
       },
+    ]);
+  });
+
+  test("upgrades legacy history before a turn and marks it for persistence", async () => {
+    const providerInputs: ChatMessage[][] = [];
+    const provider: ProviderClient = {
+      async generateChat(input) {
+        providerInputs.push(input.messages);
+        return {
+          assistantMessage: { content: "Done.", role: "assistant" },
+          content: "Done.",
+          toolCalls: [],
+        };
+      },
+      async generateText() {
+        return { content: "unused" };
+      },
+      name: "openai_compatible",
+      async streamChat(input, handlers) {
+        const result = await this.generateChat(input);
+        handlers.onChunk(result.content);
+        return result;
+      },
+    };
+    const legacyMessage: ChatMessage = {
+      content: [
+        { text: "Earlier upload", type: "text" },
+        {
+          attachmentId: "attachment-1",
+          mediaType: "image/png",
+          size: 68,
+          type: "image_ref",
+        },
+      ],
+      role: "user",
+    };
+    const session = createAgentHarness({ provider }).createChatSession({
+      initialHistory: [legacyMessage],
+      preprocessHistoryForTurn: async (messages) =>
+        messages.map((message) =>
+          message === legacyMessage
+            ? {
+                ...message,
+                content: replaceImagePartsWithDescriptions(message.content, [
+                  "A legacy chart.",
+                ]),
+              }
+            : message
+        ),
+      rehydrateMessagesForProvider: async (messages) =>
+        resolveMessagesForNonVisionProvider(messages),
+    });
+    const revisionBefore = session.getHistoryRevision();
+
+    await session.send("Continue.");
+
+    expect(session.getHistoryRevision()).toBe(revisionBefore + 1);
+    expect(session.getHistory()[0]?.content).toEqual([
+      { text: "Earlier upload", type: "text" },
+      {
+        attachmentId: "attachment-1",
+        description: "A legacy chart.",
+        mediaType: "image/png",
+        size: 68,
+        type: "image_ref",
+      },
+    ]);
+    expect(providerInputs[0]?.[0]?.content).toEqual([
+      { text: "Earlier upload", type: "text" },
+      { text: "[Image]\nA legacy chart.", type: "text" },
     ]);
   });
 });

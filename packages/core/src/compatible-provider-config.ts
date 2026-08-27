@@ -146,6 +146,21 @@ export function validateCustomModels(entries: unknown): CustomModelEntry[] {
             .map((v) => v.trim())
             .filter(Boolean)
         : undefined;
+    const defaultReasoningEffort =
+      typeof record.defaultReasoningEffort === "string" &&
+      record.defaultReasoningEffort.trim()
+        ? record.defaultReasoningEffort.trim()
+        : undefined;
+
+    if (
+      defaultReasoningEffort &&
+      reasoningEffortValues?.length &&
+      !reasoningEffortValues.includes(defaultReasoningEffort)
+    ) {
+      throw new Error(
+        `Model "${id}" has a default reasoning effort that is not in reasoningEffortValues.`
+      );
+    }
 
     if (
       (inputPerMillionUsd !== undefined && outputPerMillionUsd === undefined) ||
@@ -161,6 +176,7 @@ export function validateCustomModels(entries: unknown): CustomModelEntry[] {
       ...(capabilities ? { capabilities } : {}),
       ...(name ? { name } : {}),
       ...(isDefault ? { default: true } : {}),
+      ...(defaultReasoningEffort ? { defaultReasoningEffort } : {}),
       ...(supportsThinking === undefined ? {} : { supportsThinking }),
       ...(supportsVision === undefined ? {} : { supportsVision }),
       ...(reasoningEffortValues?.length ? { reasoningEffortValues } : {}),

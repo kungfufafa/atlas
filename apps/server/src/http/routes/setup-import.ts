@@ -9,12 +9,17 @@ import type { DatabaseAdapter } from "@atlas/db";
 import { createRoute, z } from "@hono/zod-openapi";
 import {
   decodeArchiveRequestData,
+  MAX_ATLAS_IMPORT_REQUEST_BYTES,
   previewAtlasDataImport,
   restoreAtlasDataImport,
 } from "../../services/data-portability";
+import { runSerializedBootstrapMutation } from "../bootstrap-mutation-lock";
 import type { ServerOptions } from "../context";
-import { errorResponse, json, readJson } from "../shared";
+import { errorResponse, json, readJsonWithLimit } from "../shared";
 import type { HonoApp } from "../types";
+
+const MAX_CONCURRENT_SETUP_IMPORTS = 1;
+let activeSetupImports = 0;
 
 export function registerSetupImportRoutes(
   app: HonoApp,
@@ -64,9 +69,21 @@ export function registerSetupImportRoutes(
           content: { "application/json": { schema: errorSchema } },
           description: "Error",
         },
+        408: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Import request timed out",
+        },
         409: {
           content: { "application/json": { schema: errorSchema } },
           description: "Error",
+        },
+        413: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Import request too large",
+        },
+        429: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Import already in progress",
         },
         500: {
           content: { "application/json": { schema: errorSchema } },
@@ -98,9 +115,21 @@ export function registerSetupImportRoutes(
           content: { "application/json": { schema: errorSchema } },
           description: "Error",
         },
+        408: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Import request timed out",
+        },
         409: {
           content: { "application/json": { schema: errorSchema } },
           description: "Error",
+        },
+        413: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Import request too large",
+        },
+        429: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Import already in progress",
         },
         500: {
           content: { "application/json": { schema: errorSchema } },
@@ -123,15 +152,21 @@ export function registerSetupImportRoutes(
       return setupImportErrorResponse(error);
     }
 
-    const body = await readJson<PreviewDataImportRequest>(c.req.raw);
-
+    const releaseImportSlot = acquireSetupImportSlot();
     try {
+      const body = await readJsonWithLimit<PreviewDataImportRequest>(
+        c.req.raw,
+        MAX_ATLAS_IMPORT_REQUEST_BYTES,
+        { timeoutMs: options.dataImportBodyReadTimeoutMs }
+      );
       const preview = await previewAtlasDataImport(
         decodeArchiveRequestData(body.data)
       );
       return json<DataImportPreviewResponse>(preview);
     } catch (error) {
-      return errorResponse(formatImportError(error), 400);
+      return setupImportErrorResponse(error);
+    } finally {
+      releaseImportSlot();
     }
   });
 
@@ -146,45 +181,63 @@ export function registerSetupImportRoutes(
       return setupImportErrorResponse(error);
     }
 
-    const body = await readJson<RestoreDataImportRequest>(c.req.raw);
-
-    let archive;
+    const releaseImportSlot = acquireSetupImportSlot();
     try {
-      archive = decodeArchiveRequestData(body.data);
-    } catch (error) {
-      return errorResponse(formatImportError(error), 400);
-    }
+      const body = await readJsonWithLimit<RestoreDataImportRequest>(
+        c.req.raw,
+        MAX_ATLAS_IMPORT_REQUEST_BYTES,
+        { timeoutMs: options.dataImportBodyReadTimeoutMs }
+      );
 
-    try {
-      await assertSetupImportAllowed(databaseAdapter);
+      const archive = decodeArchiveRequestData(body.data);
+      const result = await runSerializedBootstrapMutation(
+        databaseAdapter,
+        async () => {
+          await assertSetupImportAllowed(databaseAdapter);
+          let requiresRestart = !options.onDataRestored;
+          const restore = await restoreAtlasDataImport(archive, {
+            afterRestore: options.onDataRestored
+              ? async () => {
+                  try {
+                    await options.onDataRestored?.();
+                    requiresRestart = false;
+                  } catch {
+                    requiresRestart = true;
+                  }
+                }
+              : undefined,
+            confirm: body.confirm,
+          });
+
+          return { ...restore, requiresRestart };
+        }
+      );
+
+      return json<SetupRestoreDataImportResponse>(result);
     } catch (error) {
       return setupImportErrorResponse(error);
+    } finally {
+      releaseImportSlot();
     }
-
-    let restore;
-    try {
-      restore = await restoreAtlasDataImport(archive, {
-        confirm: body.confirm,
-      });
-    } catch (error) {
-      return errorResponse(formatImportError(error), 400);
-    }
-
-    let requiresRestart = !options.onDataRestored;
-    if (options.onDataRestored) {
-      try {
-        await options.onDataRestored();
-        requiresRestart = false;
-      } catch {
-        requiresRestart = true;
-      }
-    }
-
-    return json<SetupRestoreDataImportResponse>({
-      ...restore,
-      requiresRestart,
-    });
   });
+}
+
+function acquireSetupImportSlot(): () => void {
+  if (activeSetupImports >= MAX_CONCURRENT_SETUP_IMPORTS) {
+    throw new AtlasApiError(
+      "Another setup import is already in progress.",
+      429
+    );
+  }
+  activeSetupImports += 1;
+  let released = false;
+  return () => {
+    if (released) {
+      return;
+    }
+    released = true;
+    activeSetupImports -= 1;
+  };
 }
 
 async function assertSetupImportAllowed(
@@ -204,9 +257,5 @@ function setupImportErrorResponse(error: unknown): Response {
     return errorResponse(error.message, error.status);
   }
 
-  return errorResponse(formatImportError(error), 500);
-}
-
-function formatImportError(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+  return errorResponse("Setup data import failed.", 500);
 }

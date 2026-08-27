@@ -14,6 +14,8 @@ const originalConfigDir = process.env.ATLAS_CONFIG_DIR;
 
 const tinyPngBase64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+const corruptPngBase64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVSH2mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 
 const ORG_ID = "org_test";
 
@@ -177,6 +179,27 @@ describe("profile service avatar", () => {
 
     const afterDelete = await service.getProfile(ORG_ID, profileId);
     expect(afterDelete.profile.hasAvatar).toBe(false);
+  });
+
+  test("rejects corrupt avatar pixels without writing an avatar", async () => {
+    tempConfigDir = await mkdtemp(
+      path.join(os.tmpdir(), "atlas-profile-avatar-corrupt-")
+    );
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
+
+    const service = new ProfileService(createInMemoryDatabaseAdapter());
+    const created = await service.createProfile(ORG_ID, { name: "Avatar Bot" });
+    const profileId = created.profile.id;
+
+    await expect(
+      service.uploadProfileAvatar(ORG_ID, profileId, {
+        data: corruptPngBase64,
+        mediaType: "image/png",
+      })
+    ).rejects.toMatchObject({ status: 400 });
+
+    const unchanged = await service.getProfile(ORG_ID, profileId);
+    expect(unchanged.profile.hasAvatar).toBe(false);
   });
 });
 

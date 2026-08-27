@@ -36,7 +36,7 @@ export const IMAGE_GENERATION_SIZES = [
 
 export type ImageGenerationSize = (typeof IMAGE_GENERATION_SIZES)[number];
 
-export const DEFAULT_IMAGE_GENERATION_SIZE: ImageGenerationSize = "1024x1024";
+export const DEFAULT_IMAGE_GENERATION_SIZE: ImageGenerationSize = "auto";
 
 export interface ImageGenerationInput {
   prompt: string;
@@ -246,10 +246,7 @@ export const geminiImageGenerationExecutor: ProviderCapabilityExecutor = async (
 ) => {
   const execution = normalizeExecutionContext(context);
   const normalized = normalizeImageGenerationInput(input);
-  if (
-    normalized.size !== DEFAULT_IMAGE_GENERATION_SIZE &&
-    normalized.size !== "auto"
-  ) {
+  if (normalized.size !== "1024x1024" && normalized.size !== "auto") {
     throw new AtlasApiError(
       `Gemini image generation does not support Atlas size "${normalized.size}". Use "1024x1024" or "auto".`,
       400
@@ -280,7 +277,7 @@ export const geminiImageGenerationExecutor: ProviderCapabilityExecutor = async (
       );
     }
 
-    const size = DEFAULT_IMAGE_GENERATION_SIZE;
+    const size = "1024x1024";
     return normalizeImageGenerationOutput({
       data: decodeBase64Image(generatedImage.data),
       mediaType: generatedImage.mediaType,

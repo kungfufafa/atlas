@@ -6,6 +6,7 @@ import {
   defaultOllamaLabel,
   findProviderInstance,
   getBuiltinProviderDefinition,
+  isSubscriptionProvider,
   isValidBaseUrl,
   normalizeBaseUrl,
   normalizeProviderInstanceLabel,
@@ -30,6 +31,7 @@ import type {
 import {
   getDefaultModel,
   getModelById,
+  getModelByIdForProvider,
   getModelsForProviderInstance,
   resolveModel,
 } from "../providers";
@@ -162,6 +164,9 @@ export function buildProviderInstanceFromCreateRequest(
   }
 
   const apiKey = request.apiKey?.trim() ?? "";
+  assertSubscriptionApiKeyIsEmpty(type, apiKey);
+  assertSubscriptionRuntimeManagedFields(type, request);
+  assertProviderMultiplicity(type, existing);
   const credentialProbe: ProviderInstance = {
     apiKey,
     ...(request.baseUrl ? { baseUrl: request.baseUrl } : {}),
@@ -183,7 +188,20 @@ export function buildProviderInstanceFromCreateRequest(
     );
   }
 
-  const fields = buildProviderFieldsFromRequest({ ...request, apiKey, type });
+  const normalizedRequest: CreateProviderRequest = isSubscriptionProvider(type)
+    ? { label: request.label, model: request.model, type }
+    : {
+        apiKey,
+        baseUrl: request.baseUrl,
+        customModels: request.customModels,
+        hostMode: request.hostMode,
+        label: request.label,
+        model: request.model,
+        skipValidation: request.skipValidation,
+        type,
+        wireApi: request.wireApi,
+      };
+  const fields = buildProviderFieldsFromRequest(normalizedRequest);
   const rawLabel = request.label?.trim()
     ? validateProviderInstanceLabel(request.label, type)
     : fields.label;
@@ -211,14 +229,21 @@ export function applyProviderInstanceUpdate(
   request: UpdateProviderRequest,
   env: Record<string, string | undefined> = process.env
 ): ProviderInstance {
-  const next: ProviderInstance = { ...instance };
+  const subscriptionProvider = isSubscriptionProvider(instance.type);
+  const requestedApiKey = request.apiKey?.trim() ?? "";
+  assertSubscriptionApiKeyIsEmpty(instance.type, requestedApiKey);
+  assertSubscriptionRuntimeManagedFields(instance.type, request);
+  const next: ProviderInstance = {
+    ...instance,
+    ...(subscriptionProvider ? { apiKey: "" } : {}),
+  };
 
   if (request.label !== undefined) {
     next.label = validateProviderInstanceLabel(request.label, instance.type);
   }
 
-  if (request.apiKey !== undefined && request.apiKey.trim()) {
-    next.apiKey = request.apiKey.trim();
+  if (!subscriptionProvider && requestedApiKey) {
+    next.apiKey = requestedApiKey;
   }
 
   if (request.baseUrl !== undefined) {
@@ -283,6 +308,32 @@ export function applyProviderInstanceUpdate(
   }
 
   return next;
+}
+
+function assertSubscriptionRuntimeManagedFields(
+  type: ProviderInstance["type"],
+  request: {
+    baseUrl?: unknown;
+    customModels?: unknown;
+    hostMode?: unknown;
+    wireApi?: unknown;
+  }
+): void {
+  if (!isSubscriptionProvider(type)) {
+    return;
+  }
+
+  if (
+    request.baseUrl !== undefined ||
+    request.customModels !== undefined ||
+    request.hostMode !== undefined ||
+    request.wireApi !== undefined
+  ) {
+    throw new AtlasApiError(
+      "Subscription connection settings and models are managed by the authenticated runtime.",
+      400
+    );
+  }
 }
 
 export function applyAdminCapabilityOverridePatch(
@@ -390,6 +441,36 @@ function providerBaseUrlError(displayName: string | undefined): string {
     : "A valid http(s) base URL is required.";
 }
 
+function assertSubscriptionApiKeyIsEmpty(
+  type: CreateProviderRequest["type"],
+  apiKey: string
+): void {
+  if (isSubscriptionProvider(type) && apiKey) {
+    throw new AtlasApiError(
+      `${type} subscription authentication does not accept an API key.`,
+      400
+    );
+  }
+}
+
+function assertProviderMultiplicity(
+  type: CreateProviderRequest["type"],
+  existing: ProviderInstance[]
+): void {
+  const definition = getBuiltinProviderDefinition(type);
+  if (
+    definition?.allowMultipleInstances === true ||
+    !existing.some((instance) => instance.type === type)
+  ) {
+    return;
+  }
+
+  throw new AtlasApiError(
+    `${definition?.displayName ?? type} is already configured.`,
+    409
+  );
+}
+
 function requestedCustomModels(
   request: CreateProviderRequest,
   seedSelectedModel: boolean
@@ -407,7 +488,8 @@ function requestedCustomModels(
     return [];
   }
 
-  const catalogModel = getModelById(modelId);
+  const catalogModel =
+    getModelByIdForProvider(modelId, request.type) ?? getModelById(modelId);
   return [
     {
       default: true,
@@ -553,13 +635,21 @@ export function resolveProfileProviderSelection(options: {
     // providers accept model ids newer than Atlas' static catalog, so do not
     // reroute that selection merely because the catalog has not caught up yet.
     if (explicit) {
+      const explicitModelId = decoded.modelId.trim();
+      if (
+        isSubscriptionProvider(explicit.type) &&
+        !explicit.customModels?.some((model) => model.id === explicitModelId)
+      ) {
+        throw new AtlasApiError(
+          `Model "${explicitModelId}" is no longer available for the ${explicit.label} subscription. Select an available model.`,
+          409
+        );
+      }
       return {
         instance: explicit,
-        model: resolveModel(
-          explicit.type,
-          decoded.modelId,
-          explicit.customModels
-        ),
+        model: isSubscriptionProvider(explicit.type)
+          ? explicitModelId
+          : resolveModel(explicit.type, explicitModelId, explicit.customModels),
       };
     }
   }
@@ -572,11 +662,13 @@ export function resolveProfileProviderSelection(options: {
     );
 
     const catalogProvider = getModelById(selectedModel)?.provider;
+    const activeMatch = active
+      ? matchingProviders.find((instance) => instance.id === active.id)
+      : undefined;
     const preferred =
+      (activeMatch?.type === catalogProvider ? activeMatch : undefined) ??
       matchingProviders.find((instance) => instance.type === catalogProvider) ??
-      (active && matchingProviders.some((instance) => instance.id === active.id)
-        ? active
-        : undefined) ??
+      activeMatch ??
       matchingProviders[0];
 
     if (preferred) {

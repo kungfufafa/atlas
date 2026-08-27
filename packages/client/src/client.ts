@@ -152,6 +152,12 @@ import type {
   SoulStatusResponse,
   StoredAutomation,
   StoredTask,
+  SubscriptionAuthState,
+  SubscriptionLoginStartRequest,
+  SubscriptionLoginStartResponse,
+  SubscriptionLoginStatusResponse,
+  SubscriptionModelListResponse,
+  SubscriptionProviderKind,
   SuggestToolParamsRequest,
   SuggestToolParamsResponse,
   SyncSkillsResponse,
@@ -660,6 +666,73 @@ export class AtlasClient {
       body: JSON.stringify(request),
       method: "PUT",
     });
+  }
+
+  async getSubscriptionAuth(
+    kind: SubscriptionProviderKind
+  ): Promise<SubscriptionAuthState> {
+    return this.request<SubscriptionAuthState>(
+      `/v1/subscription/${encodeURIComponent(kind)}`
+    );
+  }
+
+  async startSubscriptionLogin(
+    kind: SubscriptionProviderKind,
+    request: SubscriptionLoginStartRequest = {}
+  ): Promise<SubscriptionLoginStartResponse> {
+    return this.request<SubscriptionLoginStartResponse>(
+      `/v1/subscription/${encodeURIComponent(kind)}/login`,
+      {
+        body: JSON.stringify(request),
+        method: "POST",
+      }
+    );
+  }
+
+  async getSubscriptionLoginStatus(
+    kind: SubscriptionProviderKind,
+    loginId: string
+  ): Promise<SubscriptionLoginStatusResponse> {
+    return this.request<SubscriptionLoginStatusResponse>(
+      `/v1/subscription/${encodeURIComponent(kind)}/login/${encodeURIComponent(loginId)}`
+    );
+  }
+
+  async waitForSubscriptionLogin(
+    kind: SubscriptionProviderKind,
+    loginId: string
+  ): Promise<SubscriptionLoginStatusResponse> {
+    return this.request<SubscriptionLoginStatusResponse>(
+      `/v1/subscription/${encodeURIComponent(kind)}/login/${encodeURIComponent(loginId)}/wait`,
+      { method: "POST" }
+    );
+  }
+
+  async cancelSubscriptionLogin(
+    kind: SubscriptionProviderKind,
+    loginId: string
+  ): Promise<{ ok: true }> {
+    return this.request<{ ok: true }>(
+      `/v1/subscription/${encodeURIComponent(kind)}/login/${encodeURIComponent(loginId)}/cancel`,
+      { method: "POST" }
+    );
+  }
+
+  async logoutSubscription(
+    kind: SubscriptionProviderKind
+  ): Promise<SubscriptionAuthState> {
+    return this.request<SubscriptionAuthState>(
+      `/v1/subscription/${encodeURIComponent(kind)}/logout`,
+      { method: "POST" }
+    );
+  }
+
+  async listSubscriptionModels(
+    kind: SubscriptionProviderKind
+  ): Promise<SubscriptionModelListResponse> {
+    return this.request<SubscriptionModelListResponse>(
+      `/v1/subscription/${encodeURIComponent(kind)}/models`
+    );
   }
 
   async createSession(

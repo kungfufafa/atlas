@@ -16,6 +16,7 @@ import {
   type GenerateImageRequest,
   type GenerateImageResponse,
   type ImageGenerationSettingsResponse,
+  isSubscriptionProvider,
   type ListProvidersResponse,
   type ListTimezonesResponse,
   type ModelsResponse,
@@ -48,6 +49,7 @@ import {
   type WhatsAppSettingsResponse,
 } from "@atlas/core";
 import { createRoute, z } from "@hono/zod-openapi";
+import { toPublicSubscriptionApiError } from "../../providers/subscription";
 import { installAgentBrowser } from "../../services/agent-browser-service";
 import {
   getExternalModelCatalog,
@@ -1339,13 +1341,16 @@ export function registerModelRoutes(
   });
 
   app.post("/v1/providers/test", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
     const body = await readJson<TestProviderRequest>(c.req.raw);
 
     try {
       const result = await agent.testProvider(body);
       return json<TestProviderResponse>(result);
     } catch (error) {
+      if (isSubscriptionProvider(body.type) && !auth.isPlatformAdmin) {
+        throw toPublicSubscriptionApiError(body.type, error);
+      }
       if (error instanceof AtlasApiError) {
         return errorResponse(error.message, error.status);
       }
@@ -1355,12 +1360,19 @@ export function registerModelRoutes(
   });
 
   app.post("/v1/providers", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<CreateProviderRequest>(c.req.raw);
-    return json<CreateProviderResponse>(
-      await agent.createProvider(orgId, body)
-    );
+    try {
+      return json<CreateProviderResponse>(
+        await agent.createProvider(orgId, body)
+      );
+    } catch (error) {
+      if (isSubscriptionProvider(body.type) && !auth.isPlatformAdmin) {
+        throw toPublicSubscriptionApiError(body.type, error);
+      }
+      throw error;
+    }
   });
 
   app.patch("/v1/providers/:providerId", async (c) => {
@@ -1388,11 +1400,18 @@ export function registerModelRoutes(
   });
 
   app.put("/v1/settings/provider", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<ConfigureProviderRequest>(c.req.raw);
-    const result = await agent.configureProvider(orgId, body);
-    return json<ConfigureProviderResponse>(result);
+    try {
+      const result = await agent.configureProvider(orgId, body);
+      return json<ConfigureProviderResponse>(result);
+    } catch (error) {
+      if (isSubscriptionProvider(body.provider) && !auth.isPlatformAdmin) {
+        throw toPublicSubscriptionApiError(body.provider, error);
+      }
+      throw error;
+    }
   });
 
   app.get("/v1/timezones", async (c) => {

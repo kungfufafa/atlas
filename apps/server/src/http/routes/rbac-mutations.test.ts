@@ -208,6 +208,13 @@ const PROVIDER_MANAGEMENT_ROUTES: Array<{
     method: "PUT",
     path: "/v1/settings/provider",
   },
+  { method: "GET", path: "/v1/subscription/chatgpt" },
+  { method: "POST", path: "/v1/subscription/chatgpt/login" },
+  { method: "GET", path: "/v1/subscription/chatgpt/login/login_1" },
+  { method: "POST", path: "/v1/subscription/chatgpt/login/login_1/wait" },
+  { method: "POST", path: "/v1/subscription/chatgpt/login/login_1/cancel" },
+  { method: "POST", path: "/v1/subscription/chatgpt/logout" },
+  { method: "GET", path: "/v1/subscription/chatgpt/models" },
 ];
 
 const WORKSPACE_ADMIN_SETTINGS_ROUTES = [
@@ -220,6 +227,20 @@ const WORKSPACE_ADMIN_SETTINGS_ROUTES = [
 const HOST_SETTINGS_ROUTES = [
   "/v1/system/web-public-url",
   "/v1/settings/composio",
+] as const;
+
+const HOST_SUBSCRIPTION_MANAGEMENT_ROUTES = [
+  { method: "POST", path: "/v1/subscription/chatgpt/login" },
+  { method: "GET", path: "/v1/subscription/chatgpt/login/login_1" },
+  {
+    method: "POST",
+    path: "/v1/subscription/chatgpt/login/login_1/wait",
+  },
+  {
+    method: "POST",
+    path: "/v1/subscription/chatgpt/login/login_1/cancel",
+  },
+  { method: "POST", path: "/v1/subscription/chatgpt/logout" },
 ] as const;
 
 const WORKSPACE_CHANNEL_ROUTES = [
@@ -523,6 +544,39 @@ describe("RBAC: host settings remain Superadmin", () => {
     });
     expect(calls).toEqual([]);
   });
+});
+
+describe("RBAC: subscription authentication remains Superadmin", () => {
+  for (const route of HOST_SUBSCRIPTION_MANAGEMENT_ROUTES) {
+    test(`${route.method} ${route.path} -> 403 for Workspace Admin`, async () => {
+      const { app, databaseAdapter, authService, calls } = createApp();
+      await seedUser(
+        databaseAdapter,
+        authService,
+        "workspace-admin@example.com",
+        "admin"
+      );
+      const admin = await loginUserSession(
+        app,
+        "workspace-admin@example.com",
+        PASSWORD,
+        ORG_ID
+      );
+
+      const response = await app.fetch(
+        new Request(`http://localhost:4310${route.path}`, {
+          headers: admin.headers({ "X-CSRF-Token": admin.csrfToken }),
+          method: route.method,
+        })
+      );
+
+      expect(response.status).toBe(403);
+      await expect(response.json()).resolves.toEqual({
+        error: "Superadmin access required",
+      });
+      expect(calls).toEqual([]);
+    });
+  }
 });
 
 describe("RBAC: channel settings belong to the workspace", () => {

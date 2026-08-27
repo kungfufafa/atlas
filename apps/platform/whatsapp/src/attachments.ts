@@ -8,6 +8,7 @@ import {
   MAX_DOCUMENT_INGEST_BYTES,
   MAX_IMAGE_BYTES,
   normalizeDocumentMediaType,
+  normalizeImageMediaType,
   SUPPORTED_DOCUMENT_TYPE_LABEL,
   validateDocumentAttachments,
   validateImageAttachments,
@@ -394,11 +395,7 @@ export async function downloadWhatsAppMedia(
 }
 
 function inferImageMediaType(mimetype: string, filename: string): string {
-  const trimmed = mimetype.split(";")[0]?.trim().toLowerCase() ?? "";
-
-  if (trimmed === "image/jpg") {
-    return "image/jpeg";
-  }
+  const trimmed = normalizeImageMediaType(mimetype);
 
   if (isSupportedImageMediaType(trimmed)) {
     return trimmed;

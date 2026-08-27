@@ -13,15 +13,40 @@ import { useSaveUserTimezone, useUserTimezone } from "@/hooks/use-timezones";
 import { formatError } from "@/lib/client";
 import { getBrowserTimezone } from "@/lib/timezones";
 
+export function canManageWorkspaceSettings({
+  isOrgAdmin,
+  isPlatformAdmin,
+}: {
+  isOrgAdmin: boolean;
+  isPlatformAdmin: boolean;
+}): boolean {
+  return isPlatformAdmin || isOrgAdmin;
+}
+
+export function providerSettingsScopeKey(activeOrgId: string | null): string {
+  return activeOrgId ?? "no-workspace";
+}
+
 export function SettingsPage() {
   const { user, activeOrg } = useAuth();
   const isPlatformAdmin = user?.isPlatformAdmin === true;
   const isOrgAdmin = activeOrg?.role === "admin";
-  const [formError, setFormError] = useState<string | null>(null);
+  const canManageWorkspace = canManageWorkspaceSettings({
+    isOrgAdmin,
+    isPlatformAdmin,
+  });
+  const [providerError, setProviderError] = useState<string | null>(null);
+  const [timezoneError, setTimezoneError] = useState<string | null>(null);
   const [timezone, setTimezone] = useState(() => getBrowserTimezone());
   const [timezoneHint, setTimezoneHint] = useState<string | null>(null);
   const { data: savedTimezone } = useUserTimezone();
   const saveTimezoneMutation = useSaveUserTimezone();
+
+  useEffect(() => {
+    setProviderError(null);
+    setTimezoneError(null);
+    setTimezoneHint(null);
+  }, [activeOrg?.id]);
 
   useEffect(() => {
     if (savedTimezone) {
@@ -30,12 +55,12 @@ export function SettingsPage() {
   }, [savedTimezone]);
 
   const handleSaveTimezone = useCallback(() => {
-    setFormError(null);
+    setTimezoneError(null);
     setTimezoneHint(null);
 
     saveTimezoneMutation.mutate(timezone.trim(), {
       onError: (err) => {
-        setFormError(formatError(err));
+        setTimezoneError(formatError(err));
       },
       onSuccess: (saved) => {
         setTimezone(saved);
@@ -58,58 +83,66 @@ export function SettingsPage() {
             <ThemeToggle />
           </div>
 
-          {isOrgAdmin ? (
+          {canManageWorkspace ? (
             <>
-              <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-                <div className="min-w-0 space-y-0.5">
-                  <p className="font-medium text-foreground text-sm">
-                    Timezone
-                  </p>
-                  {timezoneHint ? (
-                    <p
-                      className="text-emerald-700 text-xs dark:text-emerald-300"
-                      role="status"
-                    >
-                      {timezoneHint}
+              <div className="space-y-2 px-4 py-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0 space-y-0.5">
+                    <p className="font-medium text-foreground text-sm">
+                      Timezone
                     </p>
-                  ) : (
-                    <p className="text-pretty text-muted-foreground text-xs">
-                      For scheduled automations
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <TimezoneSelect
-                    className="w-44 min-w-0 sm:w-52"
-                    disabled={saveTimezoneMutation.isPending}
-                    emptyLabel="Select timezone"
-                    id="timezone"
-                    onValueChange={(nextTimezone) => {
-                      if (nextTimezone) {
-                        setTimezone(nextTimezone);
-                        setTimezoneHint(null);
-                      }
-                    }}
-                    value={timezone}
-                  />
-                  <Button
-                    disabled={
-                      saveTimezoneMutation.isPending || !timezone.trim()
-                    }
-                    onClick={handleSaveTimezone}
-                    size="sm"
-                    type="button"
-                  >
-                    {saveTimezoneMutation.isPending ? (
-                      <>
-                        <Spinner className="mr-2" />
-                        Saving…
-                      </>
+                    {timezoneHint ? (
+                      <p
+                        className="text-emerald-700 text-xs dark:text-emerald-300"
+                        role="status"
+                      >
+                        {timezoneHint}
+                      </p>
                     ) : (
-                      "Save"
+                      <p className="text-pretty text-muted-foreground text-xs">
+                        For scheduled automations
+                      </p>
                     )}
-                  </Button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <TimezoneSelect
+                      className="w-44 min-w-0 sm:w-52"
+                      disabled={saveTimezoneMutation.isPending}
+                      emptyLabel="Select timezone"
+                      id="timezone"
+                      onValueChange={(nextTimezone) => {
+                        if (nextTimezone) {
+                          setTimezone(nextTimezone);
+                          setTimezoneHint(null);
+                          setTimezoneError(null);
+                        }
+                      }}
+                      value={timezone}
+                    />
+                    <Button
+                      disabled={
+                        saveTimezoneMutation.isPending || !timezone.trim()
+                      }
+                      onClick={handleSaveTimezone}
+                      size="sm"
+                      type="button"
+                    >
+                      {saveTimezoneMutation.isPending ? (
+                        <>
+                          <Spinner className="mr-2" />
+                          Saving…
+                        </>
+                      ) : (
+                        "Save"
+                      )}
+                    </Button>
+                  </div>
                 </div>
+                {timezoneError ? (
+                  <p className="text-destructive text-sm" role="alert">
+                    {timezoneError}
+                  </p>
+                ) : null}
               </div>
 
               {isPlatformAdmin ? <WebPublicUrlSettingsRow /> : null}
@@ -118,20 +151,15 @@ export function SettingsPage() {
         </CardContent>
       </Card>
 
-      {isOrgAdmin ? (
+      {canManageWorkspace ? (
         <>
           <ProviderSettingsCard
-            formError={formError}
-            onFormError={setFormError}
+            formError={providerError}
+            key={providerSettingsScopeKey(activeOrg?.id ?? null)}
+            onFormError={setProviderError}
           />
 
           <CapabilityRoutingCard />
-
-          {formError ? (
-            <p className="text-destructive text-sm" role="alert">
-              {formError}
-            </p>
-          ) : null}
         </>
       ) : null}
 

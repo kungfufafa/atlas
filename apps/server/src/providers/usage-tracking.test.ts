@@ -8,6 +8,69 @@ import {
 } from "./usage-tracking";
 
 describe("usage tracking", () => {
+  test("binds pricing to overlapping provider turns", async () => {
+    const tracker = await LlmUsageTracker.create(
+      createInMemoryDatabaseAdapter()
+    );
+    let releaseSubscriptionTurn: (() => void) | undefined;
+    const subscriptionGate = new Promise<void>((resolve) => {
+      releaseSubscriptionTurn = resolve;
+    });
+    const result = {
+      assistantMessage: { content: "done", role: "assistant" as const },
+      content: "done",
+      toolCalls: [],
+      usage: {
+        inputTokens: 1_000_000,
+        outputTokens: 1_000_000,
+        totalTokens: 2_000_000,
+      },
+    };
+    const createProvider = (wait: boolean): ProviderClient => ({
+      async generateChat() {
+        if (wait) {
+          await subscriptionGate;
+        }
+        return result;
+      },
+      async generateText() {
+        return { content: "unused" };
+      },
+      name: "test",
+      async streamChat() {
+        return result;
+      },
+    });
+    const subscription = wrapProviderWithUsageTracking(
+      createProvider(true),
+      tracker,
+      "gpt-5.4",
+      { provider: "chatgpt" }
+    );
+    const api = wrapProviderWithUsageTracking(
+      createProvider(false),
+      tracker,
+      "gpt-5.4",
+      { provider: "openai" }
+    );
+
+    const subscriptionTurn = subscription.generateChat({
+      messages: [{ content: "subscription", role: "user" }],
+      system: "system",
+    });
+    await api.generateChat({
+      messages: [{ content: "api", role: "user" }],
+      system: "system",
+    });
+    releaseSubscriptionTurn?.();
+    await subscriptionTurn;
+
+    expect(tracker.getStats()).toMatchObject({
+      estimatedCostUsd: 10,
+      requestCount: 2,
+    });
+  });
+
   test("prefers provider-reported usage for chat calls", async () => {
     const tracker = await LlmUsageTracker.create(
       createInMemoryDatabaseAdapter()

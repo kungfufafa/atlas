@@ -40,7 +40,8 @@ export function thinkingEffortShortLabel(effort: ThinkingEffort): string {
 
 export function resolveEffortForOptions(
   effort: ThinkingEffort | undefined,
-  validValues: readonly string[] | string[]
+  validValues: readonly string[] | string[],
+  runtimeDefault?: string
 ): string {
   const trimmed = effort?.trim();
   if (trimmed) {
@@ -68,6 +69,13 @@ export function resolveEffortForOptions(
     ) {
       return "max";
     }
+  }
+  const normalizedRuntimeDefault = runtimeDefault?.trim();
+  if (
+    normalizedRuntimeDefault &&
+    validValues.includes(normalizedRuntimeDefault)
+  ) {
+    return normalizedRuntimeDefault;
   }
   return (
     validValues[Math.floor(validValues.length / 2)] ??

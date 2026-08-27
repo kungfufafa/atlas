@@ -37,7 +37,6 @@ import {
   parseSkillMarkdown,
   pathExists,
   slugifyProfileName,
-  validateImageAttachments,
   writePrivateBytesFile,
 } from "@atlas/core";
 import type {
@@ -49,6 +48,7 @@ import type {
   StoredToolRecord,
 } from "@atlas/db";
 import { zipSync } from "fflate";
+import { validateDecodedImageAttachments } from "./image-decoder-validation";
 import { resolveJavascriptModulePath } from "./javascript-tool-loader";
 
 export const PROFILE_PACK_KIND = "atlas-profile-export" as const;
@@ -1358,7 +1358,7 @@ async function writePackedAvatar(
   if (!mediaType) {
     return;
   }
-  validateImageAttachments([
+  await validateDecodedImageAttachments([
     {
       data: entry.data.toString("base64"),
       mediaType,

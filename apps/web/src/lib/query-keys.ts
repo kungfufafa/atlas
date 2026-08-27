@@ -1,3 +1,7 @@
+import type { SubscriptionProviderKind } from "@atlas/core/contract";
+
+type SubscriptionQueryKind = SubscriptionProviderKind | "none";
+
 export const queryKeys = {
   agentBrowser: {
     settings: ["agentBrowser", "settings"] as const,
@@ -84,6 +88,14 @@ export const queryKeys = {
   },
   soul: {
     profile: (profileId: string) => ["soul", "profile", profileId] as const,
+  },
+  subscription: {
+    auth: (kind: SubscriptionQueryKind) =>
+      ["subscription", kind, "auth"] as const,
+    login: (kind: SubscriptionQueryKind, loginId: string) =>
+      ["subscription", kind, "login", loginId] as const,
+    models: (kind: SubscriptionQueryKind) =>
+      ["subscription", kind, "models"] as const,
   },
   systemStatus: ["systemStatus"] as const,
   tasks: {

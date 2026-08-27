@@ -3,6 +3,10 @@ import type {
   ChatMessage,
   MessageContentPart,
 } from "../contract";
+import {
+  decodeBase64AttachmentData,
+  normalizeImageMediaType,
+} from "../message-content";
 
 export interface SavedInlineAttachment {
   attachmentId: string;
@@ -107,16 +111,18 @@ export async function persistInlineAttachmentsInContent(
 
   for (const part of content) {
     if (part.type === "image") {
-      const bytes = Buffer.from(part.data, "base64");
+      const bytes = Buffer.from(decodeBase64AttachmentData(part.data, "image"));
+      const mediaType = normalizeImageMediaType(part.mediaType);
       const saved = await save({
         bytes,
         kind: "image",
-        mediaType: part.mediaType,
+        mediaType,
       });
 
       result.push({
         attachmentId: saved.attachmentId,
-        mediaType: part.mediaType,
+        ...(part.description ? { description: part.description } : {}),
+        mediaType,
         size: saved.size,
         type: "image_ref",
       });
@@ -124,7 +130,9 @@ export async function persistInlineAttachmentsInContent(
     }
 
     if (part.type === "document") {
-      const bytes = Buffer.from(part.data, "base64");
+      const bytes = Buffer.from(
+        decodeBase64AttachmentData(part.data, "document")
+      );
       const saved = await save({
         bytes,
         filename: part.filename,
@@ -176,7 +184,8 @@ export async function rehydrateAttachmentRefsInContent(
 
       result.push({
         data: loaded.bytes.toString("base64"),
-        mediaType: loaded.mediaType,
+        ...(part.description ? { description: part.description } : {}),
+        mediaType: normalizeImageMediaType(loaded.mediaType),
         type: "image",
       });
       continue;

@@ -8,6 +8,7 @@ export interface SubAgentRunInput {
   agentDepth: number;
   clientOrigin?: string;
   context?: string;
+  executionId?: string;
   isPlatformAdmin?: boolean;
   onActivity?: (label: string) => void;
   orgId: string;

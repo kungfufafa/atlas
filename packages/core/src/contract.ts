@@ -1013,7 +1013,13 @@ export type MessageContentPart =
   | { type: "text"; text: string }
   | { type: "image"; mediaType: string; data: string; description?: string }
   | { type: "document"; filename: string; mediaType: string; data: string }
-  | { type: "image_ref"; attachmentId: string; mediaType: string; size: number }
+  | {
+      type: "image_ref";
+      attachmentId: string;
+      mediaType: string;
+      size: number;
+      description?: string;
+    }
   | {
       type: "document_ref";
       attachmentId: string;
@@ -1750,6 +1756,8 @@ export interface ApiErrorResponse {
 export interface CustomModelEntry {
   capabilities?: ProviderCapabilityClaims;
   default?: boolean;
+  /** Runtime-advertised default reasoning effort for this model. */
+  defaultReasoningEffort?: string;
   id: string;
   inputPerMillionUsd?: number;
   name?: string;
@@ -1772,6 +1780,8 @@ export interface ProviderModelOption {
   capabilities?: ProviderCapabilityClaims;
   contextWindow?: number;
   default?: boolean;
+  /** Runtime-advertised default reasoning effort for this model. */
+  defaultReasoningEffort?: string;
   id: string;
   inputPerMillionUsd?: number;
   maxOutputTokens?: number;
@@ -1805,32 +1815,109 @@ export interface ListProvidersResponse {
   providers: ProviderInstanceSummary[];
 }
 
-export interface TestProviderRequest {
-  apiKey?: string;
-  baseUrl?: string;
-  customModels?: CustomModelEntry[];
-  hostMode?: OllamaHostMode;
-  model?: string;
-  type: ProviderName;
-  wireApi?: WireApi;
-}
-
 export interface TestProviderResponse {
   message: string;
   ok: true;
 }
 
-export interface CreateProviderRequest {
-  apiKey: string;
+export type SubscriptionProviderKind = "chatgpt" | "claude";
+
+export type SubscriptionAuthStatus =
+  | "not_installed"
+  | "not_authenticated"
+  | "login_pending"
+  | "authenticated"
+  | "expired"
+  | "error";
+
+export type SubscriptionErrorCode =
+  | "subscription_limit_reached"
+  | "rate_limited"
+  | "authentication_expired"
+  | "model_unavailable"
+  | "provider_unavailable"
+  | "runtime_error";
+
+export type SubscriptionLoginMethod = "browser" | "device" | "cli";
+
+export interface SubscriptionAuthState {
+  authenticated: boolean;
+  canManage?: boolean;
+  email?: string;
+  installHint?: string;
+  loginCommand?: string;
+  message?: string;
+  plan?: string;
+  provider: SubscriptionProviderKind;
+  runtimeVersion?: string | null;
+  status: SubscriptionAuthStatus;
+}
+
+export interface SubscriptionLoginStartRequest {
+  method?: Exclude<SubscriptionLoginMethod, "cli">;
+}
+
+export interface SubscriptionLoginStartResponse {
+  authUrl?: string;
+  instructions: string;
+  loginCommand?: string;
+  loginId: string;
+  method: SubscriptionLoginMethod;
+  userCode?: string;
+  verificationUrl?: string;
+}
+
+export interface SubscriptionLoginStatusResponse {
+  account?: SubscriptionAuthState;
+  error?: string;
+  loginId: string;
+  status: "pending" | "completed" | "failed" | "cancelled";
+}
+
+export interface SubscriptionModelListResponse {
+  models: ProviderModelOption[];
+}
+
+interface RuntimeOwnedSubscriptionFields {
+  apiKey?: never;
+  baseUrl?: never;
+  customModels?: never;
+  hostMode?: never;
+  skipValidation?: never;
+  wireApi?: never;
+}
+
+interface ConfigurableProviderFields {
+  apiKey?: string;
   baseUrl?: string;
   customModels?: CustomModelEntry[];
   hostMode?: OllamaHostMode;
-  label?: string;
-  model?: string;
   skipValidation?: boolean;
-  type: ProviderName;
   wireApi?: WireApi;
 }
+
+export type TestProviderRequest =
+  | (RuntimeOwnedSubscriptionFields & {
+      model?: string;
+      type: SubscriptionProviderKind;
+    })
+  | (ConfigurableProviderFields & {
+      model?: string;
+      type: Exclude<ProviderName, SubscriptionProviderKind>;
+    });
+
+export type CreateProviderRequest =
+  | (RuntimeOwnedSubscriptionFields & {
+      label?: string;
+      model?: string;
+      type: SubscriptionProviderKind;
+    })
+  | (ConfigurableProviderFields & {
+      apiKey: string;
+      label?: string;
+      model?: string;
+      type: Exclude<ProviderName, SubscriptionProviderKind>;
+    });
 
 export interface CreateProviderResponse {
   defaultProviderId: string;
@@ -1887,16 +1974,17 @@ export interface DiscoverModelsRequest {
   providerId?: string;
 }
 
-export interface ConfigureProviderRequest {
-  apiKey: string;
-  baseUrl?: string;
-  customModels?: CustomModelEntry[];
-  displayName?: string;
-  hostMode?: OllamaHostMode;
-  model?: string;
-  provider: ProviderName;
-  wireApi?: WireApi;
-}
+export type ConfigureProviderRequest =
+  | (RuntimeOwnedSubscriptionFields & {
+      displayName?: never;
+      model?: string;
+      provider: SubscriptionProviderKind;
+    })
+  | (ConfigurableProviderFields & {
+      displayName?: string;
+      model?: string;
+      provider: Exclude<ProviderName, SubscriptionProviderKind>;
+    });
 
 export interface ConfigureProviderResponse {
   currentModel: string;
@@ -2495,6 +2583,11 @@ export interface ProviderChatOptions {
 }
 
 export interface GenerateChatInput {
+  /**
+   * Atlas session id. Subscription runtimes use this to resume the provider-side
+   * thread/session without replacing the Atlas session identifier.
+   */
+  conversationId?: string;
   messages: ChatMessage[];
   providerOptions?: ProviderChatOptions;
   /**

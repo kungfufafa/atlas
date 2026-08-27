@@ -5,6 +5,7 @@ import {
   PROVIDER_CAPABILITY_IDS,
   type ProviderCapabilityClaim,
   type ProviderClient,
+  type ProviderInstance,
   type UserConfig,
 } from "@atlas/core";
 import {
@@ -33,7 +34,8 @@ export interface VisionCapabilityRuntimeOptions {
   env?: Record<string, string | undefined>;
   recordUsage?: (
     model: string,
-    usage: { inputTokens: number; outputTokens: number }
+    usage: { inputTokens: number; outputTokens: number },
+    instance: ProviderInstance
   ) => void;
   registry?: ProviderAdapterRegistry;
 }
@@ -148,7 +150,11 @@ export async function describeImagesWithConfiguredVisionModel(
     registry: options.registry ?? builtinProviderAdapterRegistry,
   });
   if (result.output.usage) {
-    options.recordUsage?.(result.selection.model, result.output.usage);
+    options.recordUsage?.(
+      result.selection.model,
+      result.output.usage,
+      result.selection.instance
+    );
   }
   return result.output.descriptions;
 }

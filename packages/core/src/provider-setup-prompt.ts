@@ -96,6 +96,26 @@ export async function promptForProviderConfig(
       return buildUserConfigFromInstance(instance);
     }
 
+    if (definition.setup?.subscriptionAuth) {
+      writeLine(
+        `\n${definition.displayName} uses a subscription runtime, not an API key.`
+      );
+      writeLine(
+        provider === "chatgpt"
+          ? "Codex is bundled with Atlas. Atlas will start device sign-in next."
+          : "Claude is bundled with Atlas. Atlas will show the host login command next."
+      );
+      await question("Start sign-in: ");
+      const instance: ProviderInstance = {
+        apiKey: "",
+        createdAt: new Date().toISOString(),
+        id: createProviderInstanceId(),
+        label: defaultProviderLabel(provider, []),
+        type: provider,
+      };
+      return buildUserConfigFromInstance(instance);
+    }
+
     const apiKeyRequired = providerApiKeyIsRequired(definition.apiKey);
     const apiKey = (
       await question(apiKeyRequired ? "API key: " : "API key (optional): ")

@@ -7,6 +7,9 @@ import {
   type CreateSessionRequest,
   type CreateSessionResponse,
   type ListSessionsResponse,
+  MAX_ATTACHMENTS_PER_MESSAGE,
+  MAX_DOCUMENT_BYTES,
+  MAX_IMAGE_BYTES,
   PrincipalRequiredError,
   type SendMessageRequest,
   type SendMessageResponse,
@@ -16,6 +19,7 @@ import {
 } from "@atlas/core";
 import { createRoute, z } from "@hono/zod-openapi";
 import { resolveRequestClientOrigin } from "../../services/composio-callback-url";
+import { validateDecodedImageAttachments } from "../../services/image-decoder-validation";
 import { sessionTurnRegistry } from "../../services/session-turn-registry";
 import type { ServerOptions } from "../context";
 import {
@@ -28,10 +32,20 @@ import {
   json,
   parseChannel,
   readJson,
+  readJsonWithLimit,
   streamMessage,
   streamTurnSubscribe,
 } from "../shared";
 import type { HonoApp } from "../types";
+
+const ATTACHMENT_JSON_OVERHEAD_BYTES = 1024 * 1024;
+const MAX_SESSION_MESSAGE_BODY_BYTES =
+  Math.ceil(
+    (MAX_ATTACHMENTS_PER_MESSAGE *
+      Math.max(MAX_IMAGE_BYTES, MAX_DOCUMENT_BYTES) *
+      4) /
+      3
+  ) + ATTACHMENT_JSON_OVERHEAD_BYTES;
 
 export function registerSessionRoutes(
   app: HonoApp,
@@ -673,6 +687,21 @@ export function registerSessionRoutes(
     const orgId = requireActiveOrgIdFromContext(c);
     const auth = getRequestAuth(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
+    let body: SendMessageRequest;
+    try {
+      body = await readJsonWithLimit<SendMessageRequest>(
+        c.req.raw,
+        MAX_SESSION_MESSAGE_BODY_BYTES
+      );
+      if (body.images?.length) {
+        await validateDecodedImageAttachments(body.images);
+      }
+    } catch (error) {
+      if (error instanceof AtlasApiError) {
+        return errorResponse(error.message, error.status);
+      }
+      throw error;
+    }
     const turnStarted = await agent.beginSessionTurn(orgId, sessionId);
     if (turnStarted === null) {
       return errorResponse("Session not found", 404);
@@ -685,7 +714,6 @@ export function registerSessionRoutes(
     }
 
     let session: Awaited<ReturnType<typeof agent.resolveSession>>;
-    let body: SendMessageRequest;
     try {
       session = await agent.resolveSession(orgId, sessionId, {
         isPlatformAdmin: auth.isPlatformAdmin,
@@ -696,7 +724,6 @@ export function registerSessionRoutes(
         sessionTurnRegistry.cancelTurn(sessionId);
         return errorResponse("Session not found", 404);
       }
-      body = await readJson<SendMessageRequest>(c.req.raw);
     } catch (error) {
       sessionTurnRegistry.cancelTurn(sessionId);
       if (error instanceof AtlasApiError) {

@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 const THINKING_TOOLTIP = "Reasoning depth for the next replies.";
 
 export interface ChatThinkingEffortControlProps {
+  defaultEffort?: string;
   disabled?: boolean;
   effort: ThinkingEffort;
   effortValues?: string[];
@@ -33,6 +34,7 @@ export interface ChatThinkingEffortControlProps {
 
 export function ChatThinkingEffortControl({
   visible,
+  defaultEffort,
   effort,
   effortValues,
   disabled = false,
@@ -44,7 +46,11 @@ export function ChatThinkingEffortControl({
 
   const options = buildThinkingEffortOptions(effortValues);
   const validValues = options.map((opt) => opt.value);
-  const resolvedEffort = resolveEffortForOptions(effort, validValues);
+  const resolvedEffort = resolveEffortForOptions(
+    effort,
+    validValues,
+    defaultEffort
+  );
   const fullLabel = thinkingEffortLabel(resolvedEffort);
   const shortLabel = thinkingEffortShortLabel(resolvedEffort);
 

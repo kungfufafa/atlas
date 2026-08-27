@@ -320,7 +320,7 @@ describe("image-generation capability routing", () => {
 
 describe("image-generation normalized contract", () => {
   test("defaults size and rejects unknown sizes", () => {
-    expect(normalizeImageGenerationSize(undefined)).toBe("1024x1024");
+    expect(normalizeImageGenerationSize(undefined)).toBe("auto");
     expect(() => normalizeImageGenerationSize("512x512")).toThrow(
       AtlasApiError
     );

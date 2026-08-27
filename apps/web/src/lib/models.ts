@@ -14,6 +14,7 @@ import {
   BUILTIN_PROVIDER_DEFINITIONS,
   type BuiltinProviderDefinition,
   getBuiltinProviderDefinition,
+  isSubscriptionProvider,
   providerApiKeyIsRequired,
   providerUsesGenericCustomModelSetup,
 } from "@atlas/core/provider-catalog";
@@ -562,10 +563,15 @@ export function buildCreateProviderRequest(options: {
   wireApi?: WireApi;
 }): CreateProviderRequest {
   const request = buildConfigureProviderRequest(options);
+  if (isSubscriptionProvider(request.provider)) {
+    return {
+      ...(request.model ? { model: request.model } : {}),
+      type: request.provider,
+    };
+  }
   const setup = getBuiltinProviderDefinition(options.provider)?.setup;
 
-  return {
-    apiKey: request.apiKey,
+  const fields = {
     type: request.provider,
     ...(request.model ? { model: request.model } : {}),
     ...(setup?.displayName && options.displayName?.trim()
@@ -577,6 +583,11 @@ export function buildCreateProviderRequest(options: {
       : {}),
     ...(request.customModels ? { customModels: request.customModels } : {}),
     ...(request.wireApi ? { wireApi: request.wireApi } : {}),
+  };
+  return {
+    ...fields,
+    apiKey: request.apiKey ?? "",
+    type: request.provider,
   };
 }
 
@@ -590,6 +601,12 @@ export function buildConfigureProviderRequest(options: {
   customModels?: ConfigureProviderRequest["customModels"];
   wireApi?: WireApi;
 }): ConfigureProviderRequest {
+  if (isSubscriptionProvider(options.provider)) {
+    return {
+      ...(options.model ? { model: options.model } : {}),
+      provider: options.provider,
+    };
+  }
   const setup = getBuiltinProviderDefinition(options.provider)?.setup;
   const request: ConfigureProviderRequest = {
     apiKey: options.apiKey,
@@ -865,6 +882,41 @@ export function resolveModelReasoningEffortValues(
 
   const model = findModel();
   return model?.reasoningEffortValues;
+}
+
+export function resolveModelDefaultReasoningEffort(
+  selection: string | null | undefined,
+  groups: ReturnType<typeof groupModelsByProvider>
+): string | undefined {
+  const effectiveSelection =
+    selection ||
+    (groups[0]?.models[0]
+      ? encodeModelSelection(groups[0].providerId, groups[0].models[0].id)
+      : undefined);
+
+  if (!effectiveSelection) {
+    return;
+  }
+
+  const decoded = decodeModelSelection(effectiveSelection);
+  const resolvedModelId = decoded?.modelId ?? effectiveSelection;
+
+  if (decoded && decoded.providerId !== "__unknown__") {
+    const group = groups.find(
+      (entry) => entry.providerId === decoded.providerId
+    );
+    const match = group?.models.find((model) => model.id === resolvedModelId);
+    if (match) {
+      return match.defaultReasoningEffort;
+    }
+  }
+
+  for (const group of groups) {
+    const match = group.models.find((model) => model.id === resolvedModelId);
+    if (match) {
+      return match.defaultReasoningEffort;
+    }
+  }
 }
 
 export function resolveModelVisionSupport(

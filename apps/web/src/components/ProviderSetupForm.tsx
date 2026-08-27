@@ -1,7 +1,8 @@
 import type { CreateProviderResponse } from "@atlas/core/contract";
 import { isDiscoveryModelProvider } from "@atlas/core/discovery-providers";
+import { isSubscriptionProvider } from "@atlas/core/provider-catalog";
 import { ViewIcon, ViewOffIcon } from "hugeicons-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { BrowsableModelFields } from "@/components/BrowsableModelFields";
 import { CustomProviderFields } from "@/components/CustomProviderFields";
 import { ModelListEditor } from "@/components/ModelListEditor";
@@ -16,6 +17,7 @@ import {
 } from "@/components/RemoteModelsBrowseList";
 import { remoteModelRowToCustomModelEntry } from "@/components/remote-models-browse.shared";
 import { ShortlistBrowseProviderModelFields } from "@/components/ShortlistBrowseProviderModelFields";
+import { SubscriptionAuthPanel } from "@/components/SubscriptionAuthPanel";
 import { isShortlistBrowseProvider } from "@/components/shortlist-browse-providers.shared";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
@@ -49,6 +51,51 @@ interface ProviderSetupFormProps {
   onSuccess?: (result: CreateProviderResponse) => void;
   showHeading?: boolean;
   submitLabel?: string;
+}
+
+export function subscriptionModelErrorDescriptionId({
+  formError,
+  formErrorId,
+  subscriptionModelError,
+  testError,
+  testErrorId,
+}: {
+  formError: string | null;
+  formErrorId: string;
+  subscriptionModelError: string | null;
+  testError: string | null;
+  testErrorId: string;
+}): string | undefined {
+  if (!subscriptionModelError) {
+    return;
+  }
+  if (testError === subscriptionModelError) {
+    return testErrorId;
+  }
+  if (formError === subscriptionModelError) {
+    return formErrorId;
+  }
+}
+
+export function providerSetupActionsDisabled({
+  busy,
+  credentialReady,
+  subscriptionBlocked,
+  testingConnection,
+}: {
+  busy: boolean;
+  credentialReady: boolean;
+  subscriptionBlocked: boolean;
+  testingConnection: boolean;
+}): boolean {
+  return busy || testingConnection || !credentialReady || subscriptionBlocked;
+}
+
+export function providerSetupVisibleFormError(
+  formError: string | null,
+  catalogError: string | null
+): string | null {
+  return formError ?? catalogError;
 }
 
 function ProviderApiKeyField({
@@ -133,11 +180,17 @@ function ProviderApiKeyField({
 function ProviderSetupFieldGroups({
   controlsDisabled,
   density,
+  formErrorId,
   form,
+  subscriptionModelIssueId,
+  testErrorId,
 }: {
   controlsDisabled: boolean;
   density: "default" | "compact";
+  formErrorId: string;
   form: ReturnType<typeof useProviderSetupForm>;
+  subscriptionModelIssueId: string;
+  testErrorId: string;
 }) {
   const directDiscoveryProvider =
     form.selectedProvider !== "openai_compatible" &&
@@ -145,6 +198,18 @@ function ProviderSetupFieldGroups({
       ? form.selectedProvider
       : null;
   const isDirectDiscoveryProvider = directDiscoveryProvider !== null;
+  const directlyRenderedSubscriptionIssue =
+    form.subscriptionModelSelectionIssue === "load-failed" ||
+    form.subscriptionModelSelectionIssue === "no-models";
+  const subscriptionModelErrorId = directlyRenderedSubscriptionIssue
+    ? subscriptionModelIssueId
+    : subscriptionModelErrorDescriptionId({
+        formError: form.formError,
+        formErrorId,
+        subscriptionModelError: form.subscriptionModelError,
+        testError: form.testError,
+        testErrorId,
+      });
 
   return (
     <>
@@ -304,15 +369,53 @@ function ProviderSetupFieldGroups({
       form.selectedProvider !== "openai_compatible" &&
       !form.usesGenericCustomModelEditor &&
       !isDirectDiscoveryProvider ? (
-        <FormField density={density} id="model" label="Model">
+        <FormField
+          density={density}
+          footer={
+            directlyRenderedSubscriptionIssue ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <p
+                  className="text-destructive text-sm"
+                  id={subscriptionModelIssueId}
+                  role="alert"
+                >
+                  {form.subscriptionModelError}
+                </p>
+                {form.subscriptionModelSelectionIssue === "load-failed" ? (
+                  <Button
+                    disabled={controlsDisabled}
+                    onClick={form.retrySubscriptionModels}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                  >
+                    Retry models
+                  </Button>
+                ) : null}
+              </div>
+            ) : null
+          }
+          id="model"
+          label="Model"
+        >
           <Select
-            disabled={controlsDisabled || form.filteredModels.length === 0}
+            disabled={
+              controlsDisabled ||
+              form.subscriptionModelsFailed ||
+              form.subscriptionModelsRefreshing ||
+              form.filteredModels.length === 0
+            }
             onValueChange={(value) =>
               form.setSelectedModel(value == null ? "" : String(value))
             }
             value={form.selectedModel}
           >
-            <SelectTrigger className="w-full" id="model">
+            <SelectTrigger
+              aria-describedby={subscriptionModelErrorId}
+              aria-invalid={subscriptionModelErrorId ? true : undefined}
+              className="w-full"
+              id="model"
+            >
               <SelectValue placeholder="Select a model" />
             </SelectTrigger>
             <SelectContent>
@@ -336,6 +439,9 @@ export function ProviderSetupForm({
   density = "default",
   onSuccess,
 }: ProviderSetupFormProps) {
+  const formErrorId = useId();
+  const subscriptionModelIssueId = useId();
+  const testErrorId = useId();
   const form = useProviderSetupForm({ onSuccess });
   const [isBrowsing, setIsBrowsing] = useState(false);
   const apiKeyOptional = !isApiKeyRequiredForProvider(form.selectedProvider, {
@@ -346,6 +452,29 @@ export function ProviderSetupForm({
     testingConnection: form.testingConnection,
   });
   const controlsDisabled = providerSelectionDisabled;
+  const actionsDisabled = providerSetupActionsDisabled({
+    busy: form.busy,
+    credentialReady: apiKeyOptional || Boolean(form.apiKey.trim()),
+    subscriptionBlocked: form.subscriptionSetupBlocked,
+    testingConnection: form.testingConnection,
+  });
+  const directlyRenderedSubscriptionError =
+    form.subscriptionModelSelectionIssue === "load-failed" ||
+    form.subscriptionModelSelectionIssue === "no-models"
+      ? form.subscriptionModelError
+      : null;
+  const visibleTestError =
+    form.testError === directlyRenderedSubscriptionError
+      ? null
+      : form.testError;
+  const localFormError =
+    form.formError === directlyRenderedSubscriptionError
+      ? null
+      : form.formError;
+  const visibleFormError = providerSetupVisibleFormError(
+    localFormError,
+    form.catalogError
+  );
 
   const formSpacing = density === "compact" ? "space-y-4" : "space-y-5";
 
@@ -436,6 +565,13 @@ export function ProviderSetupForm({
               onWireApiChange={form.setWireApi}
               wireApi={form.wireApi}
             />
+          ) : isSubscriptionProvider(form.selectedProvider) ? (
+            <SubscriptionAuthPanel
+              density={density}
+              disabled={controlsDisabled}
+              onAuthenticatedChange={form.setSubscriptionReady}
+              provider={form.selectedProvider}
+            />
           ) : (
             <ProviderApiKeyField
               apiKey={form.apiKey}
@@ -457,6 +593,9 @@ export function ProviderSetupForm({
             controlsDisabled={controlsDisabled}
             density={density}
             form={form}
+            formErrorId={formErrorId}
+            subscriptionModelIssueId={subscriptionModelIssueId}
+            testErrorId={testErrorId}
           />
 
           {form.testSuccess ? (
@@ -468,27 +607,28 @@ export function ProviderSetupForm({
             </p>
           ) : null}
 
-          {form.testError ? (
-            <p className="text-destructive text-sm" role="alert">
-              {form.testError}
+          {visibleTestError ? (
+            <p
+              className="text-destructive text-sm"
+              id={testErrorId}
+              role="alert"
+            >
+              {visibleTestError}
             </p>
           ) : null}
 
-          {form.formError ? (
-            <p className="text-destructive text-sm" role="alert">
-              {form.formError}
+          {visibleFormError ? (
+            <p
+              className="text-destructive text-sm"
+              id={formErrorId}
+              role="alert"
+            >
+              {visibleFormError}
             </p>
           ) : null}
 
           <div className="flex flex-wrap gap-2 pt-1">
-            <Button
-              disabled={
-                form.busy ||
-                form.testingConnection ||
-                !(apiKeyOptional || form.apiKey.trim())
-              }
-              type="submit"
-            >
+            <Button disabled={actionsDisabled} type="submit">
               {form.busy ? (
                 <>
                   <Spinner className="mr-2" />
@@ -499,11 +639,7 @@ export function ProviderSetupForm({
               )}
             </Button>
             <Button
-              disabled={
-                form.busy ||
-                form.testingConnection ||
-                !(apiKeyOptional || form.apiKey.trim())
-              }
+              disabled={actionsDisabled}
               onClick={() => void form.handleTestConnection()}
               type="button"
               variant="outline"

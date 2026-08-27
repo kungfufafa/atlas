@@ -1,15 +1,22 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 import {
   PROVIDER_CAPABILITY_IDS,
   type ProviderCapabilityManifestV1,
   type UserConfig,
 } from "@atlas/core";
+import { BUILTIN_PROVIDER_DEFINITIONS } from "@atlas/core/provider-catalog";
 import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { ProviderAdapterRegistry } from "../providers";
+import { setChatgptRuntimeForTests } from "../providers/subscription";
+import type { ChatgptSubscriptionRuntime } from "../providers/subscription/chatgpt/runtime";
 import { setupTestConfigDir } from "../test-config-dir";
 import { AgentService } from "./agent-service";
 
 setupTestConfigDir("atlas-agent-capabilities-");
+
+afterEach(() => {
+  setChatgptRuntimeForTests(null);
+});
 
 const createdAt = "2026-08-27T00:00:00.000Z";
 
@@ -336,7 +343,7 @@ describe("AgentService capability configuration", () => {
     const catalog = service.getCapabilityCatalog();
 
     expect(catalog.schemaVersion).toBe(1);
-    expect(catalog.providers).toHaveLength(16);
+    expect(catalog.providers).toHaveLength(BUILTIN_PROVIDER_DEFINITIONS.length);
     expect(catalog.capabilities.map((capability) => capability.id)).toContain(
       PROVIDER_CAPABILITY_IDS.audioTranscription
     );
@@ -467,6 +474,112 @@ describe("AgentService capability configuration", () => {
           option.modelId === "whisper-1"
       )
     ).toBe(false);
+  });
+
+  test("refreshes live subscription capabilities before building routing options", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    await db.upsertOrgAiConfig({
+      config: {
+        defaultProviderId: "chatgpt-live",
+        providers: [
+          {
+            apiKey: "",
+            createdAt,
+            customModels: [{ default: true, id: "stale-model" }],
+            id: "chatgpt-live",
+            label: "ChatGPT",
+            type: "chatgpt",
+          },
+        ],
+      },
+      orgId: "org-chatgpt-live",
+      updatedAt: createdAt,
+    });
+    setChatgptRuntimeForTests({
+      listModels: async () => [
+        {
+          capabilities: {
+            [PROVIDER_CAPABILITY_IDS.imageGeneration]: {
+              source: "runtime-probe",
+              status: "supported",
+              verified: true,
+            },
+          },
+          default: true,
+          id: "live-model",
+          name: "Live model",
+          provider: "chatgpt" as const,
+        },
+      ],
+    } as unknown as ChatgptSubscriptionRuntime);
+    const service = new AgentService(null, null, db);
+
+    const response = await service.getOrgCapabilityOptions("org-chatgpt-live");
+
+    expect(response.options).toContainEqual(
+      expect.objectContaining({
+        capabilityId: PROVIDER_CAPABILITY_IDS.imageGeneration,
+        effective: expect.objectContaining({ selectable: true }),
+        modelId: "live-model",
+        providerId: "chatgpt-live",
+      })
+    );
+    expect(
+      response.options.some((option) => option.modelId === "stale-model")
+    ).toBe(false);
+    expect(
+      (await db.getOrgAiConfig("org-chatgpt-live"))?.config.providers[0]
+        ?.customModels
+    ).toEqual([
+      {
+        capabilities: {
+          [PROVIDER_CAPABILITY_IDS.imageGeneration]: {
+            source: "runtime-probe",
+            status: "supported",
+            verified: true,
+          },
+        },
+        default: true,
+        id: "live-model",
+        name: "Live model",
+      },
+    ]);
+  });
+
+  test("fails closed when live subscription capabilities cannot be refreshed", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    await db.upsertOrgAiConfig({
+      config: {
+        defaultProviderId: "chatgpt-stale",
+        providers: [
+          {
+            apiKey: "",
+            createdAt,
+            customModels: [{ default: true, id: "stale-model" }],
+            id: "chatgpt-stale",
+            label: "ChatGPT",
+            type: "chatgpt",
+          },
+        ],
+      },
+      orgId: "org-chatgpt-stale",
+      updatedAt: createdAt,
+    });
+    const failure = new Error("runtime model metadata failed");
+    setChatgptRuntimeForTests({
+      listModels: async () => {
+        throw failure;
+      },
+    } as unknown as ChatgptSubscriptionRuntime);
+    const service = new AgentService(null, null, db);
+
+    await expect(
+      service.getOrgCapabilityOptions("org-chatgpt-stale")
+    ).rejects.toBe(failure);
+    expect(
+      (await db.getOrgAiConfig("org-chatgpt-stale"))?.config.providers[0]
+        ?.customModels
+    ).toEqual([{ default: true, id: "stale-model" }]);
   });
 
   test("uses provider-agnostic legacy vision evidence for routing options", async () => {

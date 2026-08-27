@@ -14,6 +14,7 @@ import {
   isProviderTypeAlreadyConfigured,
   modelsFromShortlistRows,
   profileModelSelectionValue,
+  resolveModelDefaultReasoningEffort,
   resolveModelReasoningEffortValues,
   resolveModelThinkingSupport,
   resolveModelVisionSupport,
@@ -50,6 +51,7 @@ function group(
     | "fireworks"
     | "xai",
   flags?: {
+    defaultReasoningEffort?: string;
     reasoningCapability?: "supported" | "unsupported" | "unknown";
     reasoningEffortValues?: string[];
     supportsThinking?: boolean;
@@ -101,6 +103,9 @@ function group(
           ...(flags?.contextWindow === undefined
             ? {}
             : { contextWindow: flags.contextWindow }),
+          ...(flags?.defaultReasoningEffort === undefined
+            ? {}
+            : { defaultReasoningEffort: flags.defaultReasoningEffort }),
           providerId,
           providerLabel: flags?.providerLabel,
           reasoningEffortValues: flags?.reasoningEffortValues,
@@ -238,6 +243,22 @@ describe("resolveModelReasoningEffortValues", () => {
   });
 });
 
+describe("resolveModelDefaultReasoningEffort", () => {
+  test("returns the selected model runtime default", () => {
+    expect(
+      resolveModelDefaultReasoningEffort(
+        encodeModelSelection("openai-1", "gpt-runtime"),
+        group(
+          "openai-1",
+          "openai",
+          { defaultReasoningEffort: "high" },
+          "gpt-runtime"
+        )
+      )
+    ).toBe("high");
+  });
+});
+
 describe("resolveModelVisionSupport", () => {
   test("uses capability claims without provider-specific branches", () => {
     expect(
@@ -282,6 +303,16 @@ describe("resolveModelVisionSupport", () => {
 });
 
 describe("provider request builders", () => {
+  test("omits API-key fields from subscription create requests", () => {
+    expect(
+      buildCreateProviderRequest({
+        apiKey: "",
+        model: "gpt-5-codex",
+        provider: "chatgpt",
+      })
+    ).toEqual({ model: "gpt-5-codex", type: "chatgpt" });
+  });
+
   test("persists the selected wire API for compatible endpoints", () => {
     expect(
       buildCreateProviderRequest({
@@ -409,13 +440,15 @@ describe("firstAvailableProviderOption", () => {
 
   test("falls through to the next free builtin, then custom", () => {
     expect(firstAvailableProviderOption(new Set(["openai"]), "openai")).toBe(
-      "anthropic"
+      "chatgpt"
     );
     expect(
       firstAvailableProviderOption(
         new Set([
           "openai",
+          "chatgpt",
           "anthropic",
+          "claude",
           "openrouter",
           "gemini",
           "deepseek",

@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 import { PROVIDER_CAPABILITY_IDS } from "@atlas/core";
 import { createInMemoryDatabaseAdapter } from "@atlas/db";
+import {
+  SubscriptionRuntimeError,
+  setChatgptRuntimeForTests,
+} from "../providers/subscription";
+import type { ChatgptSubscriptionRuntime } from "../providers/subscription/chatgpt/runtime";
 import { setupTestConfigDir } from "../test-config-dir";
 import { AgentService } from "./agent-service";
 import { sessionTurnRegistry } from "./session-turn-registry";
@@ -15,6 +20,7 @@ const ORG_ID = "org_session_models";
 const PROFILE_ID = "profile_shared";
 
 afterEach(() => {
+  setChatgptRuntimeForTests(null);
   globalThis.fetch = originalFetch;
   if (originalOpenAiApiKey === undefined) {
     delete process.env.OPENAI_API_KEY;
@@ -108,7 +114,281 @@ async function createScenario() {
   return { db, service: new AgentService(null, null, db) };
 }
 
+async function createSubscriptionScenario() {
+  const db = createInMemoryDatabaseAdapter();
+  const now = new Date().toISOString();
+  await db.upsertOrganization({
+    createdAt: now,
+    id: ORG_ID,
+    name: "Subscription Models",
+    slug: "subscription-models",
+    updatedAt: now,
+  });
+  await db.createUser({
+    createdAt: now,
+    email: "owner@example.com",
+    id: "user_owner",
+    passwordHash: "unused",
+    updatedAt: now,
+  });
+  await db.upsertOrgMember({
+    createdAt: now,
+    orgId: ORG_ID,
+    role: "member",
+    userId: "user_owner",
+  });
+  await db.upsertProfile({
+    createdAt: now,
+    id: PROFILE_ID,
+    isDefault: true,
+    isSuper: false,
+    model: "chatgpt-1::model-a",
+    name: "Shared",
+    orgId: ORG_ID,
+    systemPrompt: "Be concise.",
+    updatedAt: now,
+  });
+  await db.upsertOrgAiConfig({
+    config: {
+      defaultProviderId: "chatgpt-1",
+      providers: [
+        {
+          apiKey: "",
+          createdAt: now,
+          customModels: [{ default: true, id: "model-a" }],
+          id: "chatgpt-1",
+          label: "ChatGPT",
+          type: "chatgpt",
+        },
+      ],
+    },
+    orgId: ORG_ID,
+    updatedAt: now,
+  });
+
+  return { db, service: new AgentService(null, null, db) };
+}
+
 describe("AgentService session model overrides", () => {
+  test("uses the live subscription catalog for persistence and session approval", async () => {
+    const { db, service } = await createSubscriptionScenario();
+    let models = [
+      {
+        default: true,
+        id: "model-a",
+        name: "Model A",
+        provider: "chatgpt" as const,
+      },
+      {
+        id: "model-b",
+        name: "Model B",
+        provider: "chatgpt" as const,
+      },
+    ];
+    let runtimeError: Error | null = null;
+    setChatgptRuntimeForTests({
+      async listModels() {
+        if (runtimeError) {
+          throw runtimeError;
+        }
+        return models;
+      },
+    } as ChatgptSubscriptionRuntime);
+
+    const catalog = await service.getModels(ORG_ID);
+    expect(catalog.models.map((model) => model.id)).toEqual([
+      "model-a",
+      "model-b",
+    ]);
+    expect(catalog.providers[0]?.customModels).toEqual([
+      { default: true, id: "model-a", name: "Model A" },
+      { id: "model-b", name: "Model B" },
+    ]);
+    expect(
+      (await db.getOrgAiConfig(ORG_ID))?.config.providers[0]?.customModels
+    ).toEqual([
+      { default: true, id: "model-a", name: "Model A" },
+      { id: "model-b", name: "Model B" },
+    ]);
+
+    const sessionId = await service.createSession(
+      ORG_ID,
+      "web",
+      PROFILE_ID,
+      "user_owner",
+      { model: "chatgpt-1::model-b", orgRole: "member" }
+    );
+    expect((await db.getSession(sessionId))?.modelOverride).toBe(
+      "chatgpt-1::model-b"
+    );
+
+    models = [
+      {
+        default: true,
+        id: "model-a",
+        name: "Model A",
+        provider: "chatgpt" as const,
+      },
+    ];
+    await expect(
+      service.createSession(ORG_ID, "web", PROFILE_ID, "user_owner", {
+        model: "chatgpt-1::model-b",
+        orgRole: "member",
+      })
+    ).rejects.toMatchObject({ status: 400 });
+    expect((await service.getSessionMessages(ORG_ID, sessionId))?.model).toBe(
+      null
+    );
+    expect((await db.getSession(sessionId))?.modelOverride).toBeNull();
+
+    runtimeError = new SubscriptionRuntimeError(
+      "chatgpt",
+      "authentication_expired",
+      "secret runtime detail /private/credentials"
+    );
+    const unavailableCatalog = await service.getModels(ORG_ID);
+    expect(unavailableCatalog.models).toEqual([]);
+    expect(unavailableCatalog.providers[0]?.modelCount).toBe(0);
+    await expect(
+      service.createSession(ORG_ID, "web", PROFILE_ID, "user_owner", {
+        model: "chatgpt-1::model-a",
+        orgRole: "member",
+      })
+    ).rejects.toMatchObject({
+      message:
+        "ChatGPT is not connected on this Atlas host. Ask a Superadmin to reconnect it.",
+      status: 409,
+    });
+    expect(
+      (await db.getOrgAiConfig(ORG_ID))?.config.providers[0]?.customModels
+    ).toEqual([{ default: true, id: "model-a", name: "Model A" }]);
+  });
+
+  test("rejects a profile subscription model that leaves the live catalog", async () => {
+    const { db, service } = await createSubscriptionScenario();
+    const invokedModels: string[] = [];
+    const result = {
+      assistantMessage: { content: "ok", role: "assistant" as const },
+      content: "ok",
+      toolCalls: [],
+    };
+    setChatgptRuntimeForTests({
+      generateChat: async (_input: unknown, model?: string) => {
+        invokedModels.push(model ?? "");
+        return result;
+      },
+      listModels: async () => [
+        {
+          default: true,
+          id: "model-a",
+          name: "Model A",
+          provider: "chatgpt" as const,
+        },
+      ],
+      streamChat: async (
+        _input: unknown,
+        _handlers: unknown,
+        model?: string
+      ) => {
+        invokedModels.push(model ?? "");
+        return result;
+      },
+    } as unknown as ChatgptSubscriptionRuntime);
+    const profile = await db.getProfile(PROFILE_ID);
+    await db.upsertProfile({
+      ...profile!,
+      model: "chatgpt-1::model-b",
+      updatedAt: new Date().toISOString(),
+    });
+
+    await expect(
+      service.createSession(ORG_ID, "web", PROFILE_ID, "user_owner", {
+        orgRole: "member",
+      })
+    ).rejects.toMatchObject({
+      message:
+        'Model "model-b" is no longer available for the ChatGPT subscription. Select an available model.',
+      status: 409,
+    });
+    expect(invokedModels).toEqual([]);
+    expect(
+      (await db.getOrgAiConfig(ORG_ID))?.config.providers[0]?.customModels
+    ).toEqual([{ default: true, id: "model-a", name: "Model A" }]);
+  });
+
+  test("refreshes the live subscription snapshot while building a chat session", async () => {
+    const { db, service } = await createSubscriptionScenario();
+    setChatgptRuntimeForTests({
+      listModels: async () => [
+        {
+          default: true,
+          id: "model-b",
+          name: "Model B",
+          provider: "chatgpt" as const,
+        },
+      ],
+    } as unknown as ChatgptSubscriptionRuntime);
+    const profile = await db.getProfile(PROFILE_ID);
+    await db.upsertProfile({
+      ...profile!,
+      model: "chatgpt-1::model-b",
+      updatedAt: new Date().toISOString(),
+    });
+
+    await service.createSession(ORG_ID, "web", PROFILE_ID, "user_owner", {
+      orgRole: "member",
+    });
+
+    expect(
+      (await db.getOrgAiConfig(ORG_ID))?.config.providers[0]?.customModels
+    ).toEqual([{ default: true, id: "model-b", name: "Model B" }]);
+  });
+
+  test("keeps healthy providers available when subscription auth expires", async () => {
+    const { db } = await createSubscriptionScenario();
+    const stored = await db.getOrgAiConfig(ORG_ID);
+    await db.upsertOrgAiConfig({
+      config: {
+        ...stored!.config,
+        providers: [
+          ...stored!.config.providers,
+          {
+            apiKey: "openai-key",
+            createdAt: "2026-08-27T00:00:00.000Z",
+            customModels: [{ default: true, id: "api-model" }],
+            id: "openai-1",
+            label: "OpenAI",
+            type: "openai",
+          },
+        ],
+      },
+      orgId: ORG_ID,
+      updatedAt: new Date().toISOString(),
+    });
+    setChatgptRuntimeForTests({
+      listModels: async () => {
+        throw new SubscriptionRuntimeError(
+          "chatgpt",
+          "authentication_expired",
+          "private runtime detail"
+        );
+      },
+    } as unknown as ChatgptSubscriptionRuntime);
+
+    const response = await new AgentService(null, null, db).getModels(ORG_ID);
+    expect(response.models.map((model) => model.id)).toEqual(["api-model"]);
+    expect(
+      response.providers.map((provider) => ({
+        id: provider.id,
+        modelCount: provider.modelCount,
+      }))
+    ).toEqual([
+      { id: "chatgpt-1", modelCount: 0 },
+      { id: "openai-1", modelCount: 1 },
+    ]);
+    expect(response.models.some((model) => model.id === "model-a")).toBe(false);
+  });
+
   test("uses env credentials for stored OpenAI and compatible remote discovery", async () => {
     const { db, service } = await createScenario();
     const authorizations: string[] = [];

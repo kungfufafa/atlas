@@ -15,6 +15,8 @@ const ORG_ID = "org_test";
 
 const tinyPngBase64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+const tinyJpegBase64 =
+  "/9j/4AAQSkZJRgABAgAAAQABAAD//gAQTGF2YzYyLjI4LjEwMQD/2wBDAAgEBAQEBAUFBQUFBQYGBgYGBgYGBgYGBgYHBwcICAgHBwcGBgcHCAgICAkJCQgICAgJCQoKCgwMCwsODg4RERT/xABLAAEBAAAAAAAAAAAAAAAAAAAABwEBAAAAAAAAAAAAAAAAAAAAABABAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/AABEIAAIAAgMBIgACEQADEQD/2gAMAwEAAhEDEQA/AL+AD//Z";
 
 describe("profile avatar", () => {
   let tempConfigDir = "";
@@ -68,8 +70,8 @@ describe("profile avatar", () => {
     });
 
     await saveProfileAvatar(ORG_ID, profileId, {
-      data: tinyPngBase64,
-      mediaType: "image/jpeg",
+      data: tinyJpegBase64,
+      mediaType: " IMAGE/JPG; charset=binary ",
     });
 
     expect(await hasProfileAvatar(ORG_ID, profileId)).toBe(true);

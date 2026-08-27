@@ -6,6 +6,9 @@ import type {
 } from "@atlas/core";
 import { createAgentHarness } from "./index";
 
+const TINY_PNG_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
 function createCapturingProvider(
   response: ChatCompletionResult
 ): ProviderClient & { lastInput?: GenerateChatInput } {
@@ -57,7 +60,7 @@ describe("thinking provider options", () => {
     expect(events).toEqual(["thinking:trace ", "chunk:Answer"]);
   });
 
-  test("disables thinking for multimodal turns", async () => {
+  test("preserves thinking for image turns and later text turns", async () => {
     const provider = createCapturingProvider({
       assistantMessage: { content: "Seen", role: "assistant" },
       content: "Seen",
@@ -71,10 +74,18 @@ describe("thinking provider options", () => {
     const session = harness.createChatSession({ enableToolLoop: false });
 
     await session.send({
-      images: [{ data: "aGVsbG8=", mediaType: "image/png" }],
+      images: [{ data: TINY_PNG_BASE64, mediaType: "image/png" }],
       message: "describe",
     });
 
-    expect(provider.lastInput?.providerOptions).toBeUndefined();
+    expect(provider.lastInput?.providerOptions).toEqual({
+      thinking: { effort: "medium", enabled: true },
+    });
+
+    await session.send("now reason about the previous image");
+
+    expect(provider.lastInput?.providerOptions).toEqual({
+      thinking: { effort: "medium", enabled: true },
+    });
   });
 });

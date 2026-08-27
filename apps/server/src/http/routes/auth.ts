@@ -18,6 +18,7 @@ import {
   persistWebPublicUrl,
   resolveRequestClientOrigin,
 } from "../../services/composio-callback-url";
+import { runSerializedBootstrapMutation } from "../bootstrap-mutation-lock";
 import type { ServerOptions } from "../context";
 import {
   requirePlatformAdmin,
@@ -409,53 +410,46 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
     tags: ["Auth"],
   });
 
-  let setupLock: Promise<unknown> = Promise.resolve();
-  const runSerializedSetup = <T>(fn: () => Promise<T>): Promise<T> => {
-    const next = setupLock.then(fn, fn);
-    setupLock = next.then(
-      () => undefined,
-      () => undefined
-    );
-    return next;
-  };
-
   app.openAPIRegistry.registerPath(setupRoute);
-  app.post("/v1/auth/setup", async (c) =>
-    runSerializedSetup(async () => {
-      if (!(authService && databaseAdapter && orgService)) {
-        return errorResponse("Authentication not configured", 500);
-      }
+  app.post("/v1/auth/setup", async (c) => {
+    if (!(authService && databaseAdapter && orgService)) {
+      return errorResponse("Authentication not configured", 500);
+    }
 
-      const humanUserCount = await databaseAdapter.countHumanUsers();
-      if (humanUserCount > 0) {
+    const humanUserCount = await databaseAdapter.countHumanUsers();
+    if (humanUserCount > 0) {
+      return errorResponse("Admin user already exists", 409);
+    }
+
+    const body = await readJson<SetupAuthRequest>(c.req.raw);
+    const password = body.admin?.password?.trim() ?? "";
+    if (
+      !(
+        body.organization?.name?.trim() &&
+        body.organization?.slug?.trim() &&
+        body.admin?.name?.trim() &&
+        body.admin?.email?.trim() &&
+        password
+      )
+    ) {
+      return errorResponse("Organization and admin details are required.", 400);
+    }
+
+    if (password.length < 8) {
+      return errorResponse("Password must be at least 8 characters.", 400);
+    }
+
+    const webPublicUrl = resolveRequestClientOrigin(
+      c.req.raw,
+      body.webPublicUrl
+    );
+    const passwordHash = await authService.hashPassword(password);
+
+    return runSerializedBootstrapMutation(databaseAdapter, async () => {
+      if ((await databaseAdapter.countHumanUsers()) > 0) {
         return errorResponse("Admin user already exists", 409);
       }
 
-      const body = await readJson<SetupAuthRequest>(c.req.raw);
-      const password = body.admin?.password?.trim() ?? "";
-      if (
-        !(
-          body.organization?.name?.trim() &&
-          body.organization?.slug?.trim() &&
-          body.admin?.name?.trim() &&
-          body.admin?.email?.trim() &&
-          password
-        )
-      ) {
-        return errorResponse(
-          "Organization and admin details are required.",
-          400
-        );
-      }
-
-      if (password.length < 8) {
-        return errorResponse("Password must be at least 8 characters.", 400);
-      }
-
-      const webPublicUrl = resolveRequestClientOrigin(
-        c.req.raw,
-        body.webPublicUrl
-      );
       if (webPublicUrl) {
         try {
           await persistWebPublicUrl(webPublicUrl);
@@ -471,7 +465,7 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
         admin: {
           email: body.admin.email,
           name: body.admin.name,
-          passwordHash: await authService.hashPassword(password),
+          passwordHash,
           phone: body.admin.phone ?? "",
         },
         organization: {
@@ -496,8 +490,8 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
       );
 
       return json<AuthUserResponse>(authBody, 201, response.headers);
-    })
-  );
+    });
+  });
 
   app.openAPIRegistry.registerPath(loginRoute);
   app.post("/v1/auth/login", async (c) => {

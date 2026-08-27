@@ -30,6 +30,31 @@ interface ProviderSettingsCardProps {
   onFormError: (error: string | null) => void;
 }
 
+export function resolveProviderSettingsLoadingState({
+  catalogLoading,
+  providersLoading,
+}: {
+  catalogLoading: boolean;
+  providersLoading: boolean;
+}): { catalogActionsDisabled: boolean; showSkeleton: boolean } {
+  return {
+    catalogActionsDisabled: catalogLoading,
+    showSkeleton: providersLoading,
+  };
+}
+
+export function resolveProviderSettingsError({
+  catalogError,
+  formError,
+  setupFormVisible,
+}: {
+  catalogError: string | null;
+  formError: string | null;
+  setupFormVisible: boolean;
+}): string | null {
+  return formError ?? (setupFormVisible ? null : catalogError);
+}
+
 export function ProviderSettingsCard({
   formError,
   onFormError,
@@ -53,9 +78,18 @@ export function ProviderSettingsCard({
   const catalogError = catalogQueryError
     ? formatError(catalogQueryError)
     : null;
-  const displayError = formError ?? catalogError;
+  const displayError = resolveProviderSettingsError({
+    catalogError,
+    formError,
+    setupFormVisible: addOpen || !isConfigured,
+  });
+  const { catalogActionsDisabled, showSkeleton } =
+    resolveProviderSettingsLoadingState({
+      catalogLoading,
+      providersLoading,
+    });
 
-  if (providersLoading || catalogLoading) {
+  if (showSkeleton) {
     return <ProviderSettingsSkeleton />;
   }
 
@@ -103,6 +137,9 @@ export function ProviderSettingsCard({
                   {providers.map((instance) => (
                     <ProviderInstanceCard
                       catalog={catalog}
+                      catalogActionsDisabled={
+                        catalogActionsDisabled || catalogError !== null
+                      }
                       instance={instance}
                       key={instance.id}
                       onDelete={async (providerId) => {

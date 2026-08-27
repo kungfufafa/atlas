@@ -17,7 +17,11 @@ import type {
   UploadKnowledgeBaseRequest,
   UploadKnowledgeBaseResponse,
 } from "@atlas/core";
-import { readEditableArtifact, writeEditableArtifact } from "@atlas/core";
+import {
+  MAX_IMAGE_BYTES,
+  readEditableArtifact,
+  writeEditableArtifact,
+} from "@atlas/core";
 import { filterProfilesForChatAccess } from "@atlas/core/profiles";
 import { createRoute, z } from "@hono/zod-openapi";
 import type { ServerOptions } from "../context";
@@ -26,12 +30,16 @@ import {
   requireOrgAdminOrPlatformAdminFromContext,
   requirePlatformAdmin,
 } from "../org-guards";
-import { getRequestAuth, json, readJson } from "../shared";
+import { getRequestAuth, json, readJson, readJsonWithLimit } from "../shared";
 import type { HonoApp } from "../types";
 import {
   parseArtifactEditRequest,
   readArtifactEditJsonBody,
 } from "./artifact-editing-body";
+
+const AVATAR_JSON_OVERHEAD_BYTES = 64 * 1024;
+const MAX_AVATAR_BODY_BYTES =
+  Math.ceil((MAX_IMAGE_BYTES * 4) / 3) + AVATAR_JSON_OVERHEAD_BYTES;
 
 export function registerProfileRoutes(
   app: HonoApp,
@@ -908,7 +916,10 @@ export function registerProfileRoutes(
     requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
-    const body = await readJson<ImageAttachment>(c.req.raw);
+    const body = await readJsonWithLimit<ImageAttachment>(
+      c.req.raw,
+      MAX_AVATAR_BODY_BYTES
+    );
     return json<ProfileResponse>(
       await agent.uploadProfileAvatar(orgId, profileId, body)
     );

@@ -1,3 +1,4 @@
+import type { SubscriptionProviderKind } from "@atlas/core";
 import {
   defaultOllamaBaseUrl,
   ollamaRequiresApiKey,
@@ -15,6 +16,7 @@ import {
   fetchOpenCodeGoGatewayModels,
   withLiveOpenCodeGoCatalog,
 } from "../opencode-go/catalog";
+import { getSubscriptionRuntime } from "../subscription";
 import type {
   ProviderModelDiscoveryContext,
   ProviderModelDiscoveryHandler,
@@ -206,3 +208,18 @@ export const discoverOllamaModels: ProviderModelDiscoveryHandler = async (
     models: getModelsForProviderInstance(remoteInstance),
   };
 };
+
+export function createSubscriptionModelDiscovery(
+  kind: SubscriptionProviderKind
+): ProviderModelDiscoveryHandler {
+  return async (context) => {
+    const runtime = getSubscriptionRuntime(kind);
+    const models = await runtime.listModels();
+    const catalog = AVAILABLE_MODELS.filter((model) => model.provider === kind);
+    return {
+      catalog: catalog.length > 0 ? catalog : models,
+      displayName: configuredDisplayName(context),
+      models,
+    };
+  };
+}

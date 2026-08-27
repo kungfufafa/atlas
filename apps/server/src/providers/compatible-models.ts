@@ -172,6 +172,9 @@ export function catalogCustomModelsToCatalog(
     if (entry.default) {
       model.default = true;
     }
+    if (entry.defaultReasoningEffort !== undefined) {
+      model.defaultReasoningEffort = entry.defaultReasoningEffort;
+    }
     if (entry.supportsVision !== undefined) {
       model.supportsVision = entry.supportsVision;
     }
@@ -285,6 +288,9 @@ export function customModelsToCatalog(
 
     if (entry.default) {
       model.default = true;
+    }
+    if (entry.defaultReasoningEffort !== undefined) {
+      model.defaultReasoningEffort = entry.defaultReasoningEffort;
     }
     if (inferred.supportsThinking !== undefined) {
       model.supportsThinking = inferred.supportsThinking;

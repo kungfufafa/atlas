@@ -1,4 +1,5 @@
 import {
+  AtlasApiError,
   defaultDiscoveryBaseUrl,
   getBuiltinProviderDefinition,
   PROVIDER_CAPABILITY_CONTRACT_VERSION,
@@ -33,6 +34,13 @@ import { createOpenCodeGoProvider } from "../opencode-go";
 import { getModelsForOpenCodeGoInstance } from "../opencode-go/catalog";
 import { createOpenRouterProvider } from "../openrouter";
 import {
+  createChatgptProvider,
+  createClaudeProvider,
+  getChatgptRuntime,
+  getSubscriptionRuntime,
+  SubscriptionRuntimeError,
+} from "../subscription";
+import {
   cloudflareAudioTranscriptionExecutor,
   fireworksAudioTranscriptionExecutor,
   geminiAudioTranscriptionExecutor,
@@ -49,6 +57,8 @@ import {
   geminiImageGenerationExecutor,
   IMAGE_GENERATION_SIZES,
   minimaxImageGenerationExecutor,
+  normalizeImageGenerationInput,
+  normalizeImageGenerationOutput,
   ollamaImageGenerationExecutor,
   openAIImageGenerationExecutor,
   openRouterImageGenerationExecutor,
@@ -59,6 +69,7 @@ import {
 import { createVisionUnderstandingExecutor } from "./executors/vision-understanding";
 import {
   createOpenAICompatibleModelDiscovery,
+  createSubscriptionModelDiscovery,
   discoverFireworksModels,
   discoverOllamaModels,
   discoverOpenAIModels,
@@ -127,6 +138,11 @@ const TEXT_ONLY_CHAT_CAPABILITIES = [
   CHAT_STREAMING,
   CHAT_STRUCTURED_OUTPUT,
   CHAT_TOOL_USE,
+] as const;
+
+const CHATGPT_CHAT_CAPABILITIES = [
+  ...TEXT_ONLY_CHAT_CAPABILITIES,
+  CHAT_INPUT_IMAGE,
 ] as const;
 
 const CHAT_NATIVE_DEFAULTS = {
@@ -366,8 +382,122 @@ const SQUARE_OR_AUTO_IMAGE_SIZES: ProviderCapabilityConstraints = {
   supportedValues: { size: ["1024x1024", "auto"] },
 };
 
+const CHATGPT_NATIVE_IMAGE_SIZES: ProviderCapabilityConstraints = {
+  supportedValues: { size: ["auto"] },
+};
+
+const chatgptImageGenerationExecutor: ProviderCapabilityExecutor = async (
+  context,
+  input
+) => {
+  const normalized = normalizeImageGenerationInput(input);
+  if (normalized.size !== "auto") {
+    throw new AtlasApiError(
+      'ChatGPT subscription image generation supports native size "auto" only.',
+      400
+    );
+  }
+  const image = await getChatgptRuntime().generateImage(
+    normalized,
+    context.model
+  );
+  if (!(image.data && image.mediaType && image.width && image.height)) {
+    throw new AtlasApiError(
+      "ChatGPT returned an incomplete image-generation result.",
+      502
+    );
+  }
+  return normalizeImageGenerationOutput({
+    data: image.data,
+    mediaType: image.mediaType,
+    model: image.model ?? "gpt-image-2",
+    revisedPrompt: image.revisedPrompt,
+    size: `${image.width}x${image.height}`,
+  });
+};
+
+function listSubscriptionModels(
+  kind: "chatgpt" | "claude"
+): NonNullable<ProviderAdapterRegistration["listConfiguredModels"]> {
+  return async (instance) => {
+    try {
+      const models = await getSubscriptionRuntime(kind).listModels();
+      if (models.length === 0) {
+        throw new AtlasApiError(
+          `No models are available for the ${kind === "chatgpt" ? "ChatGPT" : "Claude"} subscription on this Atlas host.`,
+          503
+        );
+      }
+      const storedDefault = instance.customModels?.find(
+        (model) => model.default
+      )?.id;
+      const liveHasStoredDefault = models.some(
+        (model) => model.id === storedDefault
+      );
+      return models.map((model) => ({
+        ...model,
+        ...(liveHasStoredDefault
+          ? { default: model.id === storedDefault }
+          : {}),
+        providerId: instance.id,
+        providerLabel: instance.label,
+      }));
+    } catch (error) {
+      if (
+        error instanceof AtlasApiError &&
+        (error.status === 409 || error.status === 503)
+      ) {
+        throw error;
+      }
+      if (
+        error instanceof SubscriptionRuntimeError &&
+        (error.code === "authentication_expired" ||
+          error.code === "provider_unavailable")
+      ) {
+        const label = kind === "chatgpt" ? "ChatGPT" : "Claude";
+        throw new AtlasApiError(
+          error.code === "authentication_expired"
+            ? `${label} is not connected on this Atlas host. Ask a Superadmin to reconnect it.`
+            : `${label} runtime is not available on this Atlas host. Ask a Superadmin to check it.`,
+          error.code === "authentication_expired" ? 409 : 503
+        );
+      }
+      throw error;
+    }
+  };
+}
+
 export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
   [
+    registration({
+      chatCapabilities: CHATGPT_CHAT_CAPABILITIES,
+      createChatClient: (context) =>
+        createChatgptProvider({
+          model: context.model,
+        }),
+      discoverModels: createSubscriptionModelDiscovery("chatgpt"),
+      displayName: "ChatGPT",
+      executors: {
+        [PROVIDER_CAPABILITY_IDS.imageGeneration]:
+          chatgptImageGenerationExecutor,
+      },
+      listConfiguredModels: listSubscriptionModels("chatgpt"),
+      missingCredentialMessage: () =>
+        "ChatGPT is not authenticated. Connect ChatGPT through Codex and try again.",
+      modelConstraints: {
+        [PROVIDER_CAPABILITY_IDS.imageGeneration]: CHATGPT_NATIVE_IMAGE_SIZES,
+      },
+      modelDefaults: {
+        [CHAT_STREAMING]: "supported",
+        [CHAT_TOOL_USE]: "supported",
+      },
+      native: {
+        [CHAT_REASONING]: "supported",
+        [CHAT_STREAMING]: "supported",
+        [CHAT_TOOL_USE]: "supported",
+      },
+      providerId: "chatgpt",
+    }),
     registration({
       chatCapabilities: NATIVE_WEB_SEARCH_CHAT_CAPABILITIES,
       createChatClient: (context) =>
@@ -395,6 +525,29 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
         [CHAT_TOOL_USE]: "supported",
       },
       providerId: "anthropic",
+    }),
+    registration({
+      chatCapabilities: TEXT_ONLY_CHAT_CAPABILITIES,
+      createChatClient: (context) =>
+        createClaudeProvider({
+          model: context.model,
+        }),
+      discoverModels: createSubscriptionModelDiscovery("claude"),
+      displayName: "Claude",
+      listConfiguredModels: listSubscriptionModels("claude"),
+      missingCredentialMessage: () =>
+        "Claude is not authenticated. Run `claude auth login` and try again.",
+      modelDefaults: {
+        [CHAT_REASONING]: "supported",
+        [CHAT_STREAMING]: "supported",
+        [CHAT_TOOL_USE]: "supported",
+      },
+      native: {
+        [CHAT_REASONING]: "supported",
+        [CHAT_STREAMING]: "supported",
+        [CHAT_TOOL_USE]: "supported",
+      },
+      providerId: "claude",
     }),
     registration({
       createChatClient: (context) =>

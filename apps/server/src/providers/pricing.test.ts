@@ -38,6 +38,22 @@ const fireworksInstance = {
   type: "fireworks" as const,
 };
 
+const openAiInstance = {
+  apiKey: "sk-test",
+  createdAt: "2026-08-27T10:00:00.000Z",
+  id: "openai-1",
+  label: "OpenAI",
+  type: "openai" as const,
+};
+
+const anthropicInstance = {
+  apiKey: "sk-ant-test",
+  createdAt: "2026-08-27T10:00:00.000Z",
+  id: "anthropic-1",
+  label: "Anthropic",
+  type: "anthropic" as const,
+};
+
 describe("estimateUsageCostUsd", () => {
   test("computes cost from catalog pricing", () => {
     const cost = estimateUsageCostUsd(
@@ -46,6 +62,67 @@ describe("estimateUsageCostUsd", () => {
       1_000_000
     );
     expect(cost).toBe(18);
+  });
+
+  test("uses provider-scoped pricing for shared model ids", () => {
+    expect(
+      getModelPricing("claude-sonnet-4-6", { provider: "anthropic" })
+    ).toEqual({
+      inputPerMillionUsd: 3,
+      outputPerMillionUsd: 15,
+    });
+    expect(getModelPricing("gpt-5.4", { provider: "openai" })).toEqual({
+      inputPerMillionUsd: 2,
+      outputPerMillionUsd: 8,
+    });
+  });
+
+  test("uses saved pricing for native provider custom models", () => {
+    expect(
+      getModelPricing("gpt-private", {
+        provider: "openai",
+        providerInstance: {
+          ...openAiInstance,
+          customModels: [
+            {
+              id: "gpt-private",
+              inputPerMillionUsd: 7,
+              outputPerMillionUsd: 21,
+            },
+          ],
+        },
+      })
+    ).toEqual({ inputPerMillionUsd: 7, outputPerMillionUsd: 21 });
+
+    expect(
+      getModelPricing("claude-private", {
+        provider: "anthropic",
+        providerInstance: {
+          ...anthropicInstance,
+          customModels: [
+            {
+              id: "claude-private",
+              inputPerMillionUsd: 5,
+              outputPerMillionUsd: 25,
+            },
+          ],
+        },
+      })
+    ).toEqual({ inputPerMillionUsd: 5, outputPerMillionUsd: 25 });
+  });
+
+  test("does not assign API token pricing to subscription usage", () => {
+    for (const [provider, model] of [
+      ["claude", "claude-sonnet-4-6"],
+      ["chatgpt", "gpt-5.4"],
+      ["chatgpt", "unknown-subscription-model"],
+    ] as const) {
+      expect(getModelPricing(model, { provider })).toBeNull();
+      expect(
+        estimateUsageCostUsd(model, 1_000_000, 1_000_000, { provider })
+      ).toBe(0);
+      expect(hasCatalogPricing(model, { provider })).toBe(false);
+    }
   });
 
   test("uses fallback pricing for unknown models", () => {

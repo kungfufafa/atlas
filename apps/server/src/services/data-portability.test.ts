@@ -1,17 +1,22 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
   lstat,
+  mkdir,
   mkdtemp,
   readdir,
   readFile,
   rm,
+  symlink,
   writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { AtlasApiError } from "@atlas/core";
+import { zipSync } from "fflate";
 import {
   ATLAS_EXPORT_MANIFEST,
   createAtlasDataExport,
+  decodeArchiveRequestData,
   previewAtlasDataImport,
   restoreAtlasDataImport,
 } from "./data-portability";
@@ -80,6 +85,48 @@ describe("Atlas data portability", () => {
     }
   });
 
+  test("excludes subscription credential directories from exports", async () => {
+    await mkdir(join(rootDir, ".codex"), { recursive: true });
+    await mkdir(join(rootDir, ".claude"), { recursive: true });
+    await mkdir(join(rootDir, "subscription-auth", "chatgpt"), {
+      recursive: true,
+    });
+    await writeFile(join(rootDir, ".codex", "auth.json"), "codex-secret");
+    await writeFile(
+      join(rootDir, ".claude", ".credentials.json"),
+      "claude-secret"
+    );
+    await writeFile(
+      join(rootDir, "subscription-auth", "chatgpt", "auth.json"),
+      "atlas-codex-secret"
+    );
+    await writeFile(join(rootDir, "config.ini"), "safe");
+
+    const result = await createAtlasDataExport({ rootDir });
+    const preview = await previewAtlasDataImport(result.data, { rootDir });
+
+    expect(result.manifest.skipped).toEqual([
+      {
+        path: ".claude",
+        reason:
+          "Subscription authentication credentials are excluded from exports.",
+      },
+      {
+        path: ".codex",
+        reason:
+          "Subscription authentication credentials are excluded from exports.",
+      },
+      {
+        path: "subscription-auth",
+        reason:
+          "Subscription authentication credentials are excluded from exports.",
+      },
+    ]);
+    expect(result.manifest.topLevelPaths).toEqual(["config.ini"]);
+    expect(preview.topLevelPaths).toEqual(["config.ini"]);
+    expect(preview.archiveFileCount).toBe(1);
+  });
+
   test("preview does not mutate existing data and restore replaces it after confirmation", async () => {
     await writeFile(join(rootDir, "config.ini"), "original");
     const exportResult = await createAtlasDataExport({ rootDir });
@@ -135,6 +182,206 @@ describe("Atlas data portability", () => {
     expect(leftovers).toEqual([]);
   });
 
+  test("restore preserves existing subscription credential directories", async () => {
+    await mkdir(join(rootDir, ".codex"), { recursive: true });
+    await mkdir(join(rootDir, ".claude"), { recursive: true });
+    await mkdir(join(rootDir, "subscription-auth", "chatgpt"), {
+      recursive: true,
+    });
+    await writeFile(join(rootDir, ".codex", "auth.json"), "codex-before");
+    await writeFile(
+      join(rootDir, ".claude", ".credentials.json"),
+      "claude-before"
+    );
+    await writeFile(
+      join(rootDir, "subscription-auth", "chatgpt", "auth.json"),
+      "atlas-codex-before"
+    );
+    await writeFile(join(rootDir, "config.ini"), "exported");
+    const exportResult = await createAtlasDataExport({ rootDir });
+
+    await writeFile(join(rootDir, ".codex", "auth.json"), "codex-live");
+    await writeFile(
+      join(rootDir, ".claude", ".credentials.json"),
+      "claude-live"
+    );
+    await writeFile(
+      join(rootDir, "subscription-auth", "chatgpt", "auth.json"),
+      "atlas-codex-live"
+    );
+    await writeFile(join(rootDir, "config.ini"), "changed");
+
+    await restoreAtlasDataImport(exportResult.data, {
+      confirm: true,
+      rootDir,
+    });
+
+    expect(await readFile(join(rootDir, ".codex", "auth.json"), "utf8")).toBe(
+      "codex-live"
+    );
+    expect(
+      await readFile(join(rootDir, ".claude", ".credentials.json"), "utf8")
+    ).toBe("claude-live");
+    expect(
+      await readFile(
+        join(rootDir, "subscription-auth", "chatgpt", "auth.json"),
+        "utf8"
+      )
+    ).toBe("atlas-codex-live");
+    expect(await readFile(join(rootDir, "config.ini"), "utf8")).toBe(
+      "exported"
+    );
+  });
+
+  test("protects a configured Claude credential home inside the Atlas root", async () => {
+    const previousClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR;
+    const credentialDirectory = join(rootDir, "custom-claude-auth");
+    process.env.CLAUDE_CONFIG_DIR = credentialDirectory;
+    try {
+      await mkdir(credentialDirectory, { recursive: true });
+      await writeFile(
+        join(credentialDirectory, ".credentials.json"),
+        "secret-before"
+      );
+      await writeFile(join(rootDir, "config.ini"), "exported");
+
+      const exportResult = await createAtlasDataExport({ rootDir });
+      expect(exportResult.manifest.skipped).toContainEqual({
+        path: "custom-claude-auth",
+        reason:
+          "Subscription authentication credentials are excluded from exports.",
+      });
+
+      await writeFile(
+        join(credentialDirectory, ".credentials.json"),
+        "secret-live"
+      );
+      await writeFile(join(rootDir, "config.ini"), "changed");
+      await restoreAtlasDataImport(exportResult.data, {
+        confirm: true,
+        rootDir,
+      });
+
+      expect(
+        await readFile(join(credentialDirectory, ".credentials.json"), "utf8")
+      ).toBe("secret-live");
+      await expect(
+        previewAtlasDataImport(
+          buildZipWithEntry(
+            "custom-claude-auth/.credentials.json",
+            "malicious"
+          ),
+          { rootDir }
+        )
+      ).rejects.toThrow(
+        "Archive entry uses a protected subscription credential path"
+      );
+    } finally {
+      if (previousClaudeConfigDir === undefined) {
+        delete process.env.CLAUDE_CONFIG_DIR;
+      } else {
+        process.env.CLAUDE_CONFIG_DIR = previousClaudeConfigDir;
+      }
+    }
+  });
+
+  test("protects canonical credential paths when the Atlas root is a symlink", async () => {
+    const previousClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR;
+    const aliasParent = await mkdtemp(join(tmpdir(), "atlas-root-alias-test-"));
+    const rootAlias = join(aliasParent, "atlas-data");
+    const credentialDirectory = join(rootDir, "custom-claude-auth");
+    process.env.CLAUDE_CONFIG_DIR = credentialDirectory;
+
+    try {
+      await symlink(rootDir, rootAlias, "dir");
+      await mkdir(credentialDirectory, { recursive: true });
+      await writeFile(
+        join(credentialDirectory, ".credentials.json"),
+        "secret-before"
+      );
+      await writeFile(join(rootDir, "config.ini"), "exported");
+
+      const exportResult = await createAtlasDataExport({ rootDir: rootAlias });
+      expect(exportResult.manifest.skipped).toContainEqual({
+        path: "custom-claude-auth",
+        reason:
+          "Subscription authentication credentials are excluded from exports.",
+      });
+
+      await writeFile(
+        join(credentialDirectory, ".credentials.json"),
+        "secret-live"
+      );
+      await restoreAtlasDataImport(exportResult.data, {
+        confirm: true,
+        rootDir: rootAlias,
+      });
+      expect(
+        await readFile(join(credentialDirectory, ".credentials.json"), "utf8")
+      ).toBe("secret-live");
+      await expect(
+        previewAtlasDataImport(
+          buildZipWithEntry(
+            "custom-claude-auth/.credentials.json",
+            "malicious"
+          ),
+          { rootDir: rootAlias }
+        )
+      ).rejects.toThrow(
+        "Archive entry uses a protected subscription credential path"
+      );
+    } finally {
+      if (previousClaudeConfigDir === undefined) {
+        delete process.env.CLAUDE_CONFIG_DIR;
+      } else {
+        process.env.CLAUDE_CONFIG_DIR = previousClaudeConfigDir;
+      }
+      await rm(aliasParent, { force: true, recursive: true });
+    }
+  });
+
+  test("preserves a credential directory symlinked to a configured external home", async () => {
+    const previousClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR;
+    const credentialDirectory = await mkdtemp(
+      join(tmpdir(), "atlas-claude-home-test-")
+    );
+    const credentialAlias = join(rootDir, "custom-claude-auth");
+    process.env.CLAUDE_CONFIG_DIR = credentialDirectory;
+
+    try {
+      await writeFile(
+        join(credentialDirectory, ".credentials.json"),
+        "secret-live"
+      );
+      await symlink(credentialDirectory, credentialAlias, "dir");
+      await writeFile(join(rootDir, "config.ini"), "exported");
+
+      const exportResult = await createAtlasDataExport({ rootDir });
+      expect(exportResult.manifest.skipped).toContainEqual({
+        path: "custom-claude-auth",
+        reason:
+          "Subscription authentication credentials are excluded from exports.",
+      });
+
+      await writeFile(join(rootDir, "config.ini"), "changed");
+      await restoreAtlasDataImport(exportResult.data, {
+        confirm: true,
+        rootDir,
+      });
+      expect((await lstat(credentialAlias)).isSymbolicLink()).toBe(true);
+      expect(
+        await readFile(join(credentialAlias, ".credentials.json"), "utf8")
+      ).toBe("secret-live");
+    } finally {
+      if (previousClaudeConfigDir === undefined) {
+        delete process.env.CLAUDE_CONFIG_DIR;
+      } else {
+        process.env.CLAUDE_CONFIG_DIR = previousClaudeConfigDir;
+      }
+      await rm(credentialDirectory, { force: true, recursive: true });
+    }
+  });
+
   test("restore requires explicit confirmation", async () => {
     await writeFile(join(rootDir, "config.ini"), "original");
     const exportResult = await createAtlasDataExport({ rootDir });
@@ -158,6 +405,126 @@ describe("Atlas data portability", () => {
     await expect(previewAtlasDataImport(reserved, { rootDir })).rejects.toThrow(
       "Archive entry uses a reserved restore path"
     );
+
+    for (const credentialPath of [
+      ".codex/auth.json",
+      ".claude/.credentials.json",
+      "subscription-auth/chatgpt/auth.json",
+    ]) {
+      const credentials = buildZipWithEntry(credentialPath, "secret");
+      await expect(
+        previewAtlasDataImport(credentials, { rootDir })
+      ).rejects.toThrow(
+        "Archive entry uses a protected subscription credential path"
+      );
+      await expect(
+        restoreAtlasDataImport(credentials, { confirm: true, rootDir })
+      ).rejects.toThrow(
+        "Archive entry uses a protected subscription credential path"
+      );
+    }
+
+    expect(() => decodeArchiveRequestData("not-base64!")).toThrow(
+      "Import archive data is invalid or too large."
+    );
+
+    const oversizedEntry = buildZipWithEntry(
+      "oversized.bin",
+      "small",
+      128 * 1024 * 1024 + 1
+    );
+    await expect(
+      previewAtlasDataImport(oversizedEntry, { rootDir })
+    ).rejects.toThrow("Import archive entry exceeds the 128 MiB limit");
+  });
+
+  test("counts ZIP directory records toward the archive entry limit", async () => {
+    const zipEntries: Record<string, Uint8Array> = {
+      [ATLAS_EXPORT_MANIFEST]: Buffer.from(
+        JSON.stringify({ kind: "atlas-export", version: 1 })
+      ),
+    };
+    for (let index = 0; index < 10_000; index += 1) {
+      zipEntries[`directories/${index}/`] = new Uint8Array();
+    }
+
+    try {
+      await previewAtlasDataImport(Buffer.from(zipSync(zipEntries)), {
+        rootDir,
+      });
+      throw new Error("Expected the oversized archive to be rejected.");
+    } catch (error) {
+      expect(error).toBeInstanceOf(AtlasApiError);
+      expect((error as AtlasApiError).status).toBe(413);
+      expect((error as Error).message).toContain("10000-entry limit");
+    }
+  });
+
+  test("serializes restores and reload callbacks by canonical root", async () => {
+    const sourceA = await mkdtemp(join(tmpdir(), "atlas-restore-a-test-"));
+    const sourceB = await mkdtemp(join(tmpdir(), "atlas-restore-b-test-"));
+    const aliasParent = await mkdtemp(join(tmpdir(), "atlas-restore-alias-"));
+    const rootAlias = join(aliasParent, "root");
+    await symlink(rootDir, rootAlias, "dir");
+
+    try {
+      await writeFile(join(sourceA, "marker.txt"), "a");
+      await writeFile(join(sourceA, "only-a.txt"), "a");
+      await writeFile(join(sourceB, "marker.txt"), "b");
+      await writeFile(join(sourceB, "only-b.txt"), "b");
+      const archiveA = (await createAtlasDataExport({ rootDir: sourceA })).data;
+      const archiveB = (await createAtlasDataExport({ rootDir: sourceB })).data;
+
+      let releaseFirstCallback = () => undefined;
+      const firstCallbackGate = new Promise<void>((resolveGate) => {
+        releaseFirstCallback = resolveGate;
+      });
+      let markFirstCallbackStarted = () => undefined;
+      const firstCallbackStarted = new Promise<void>((resolveStarted) => {
+        markFirstCallbackStarted = resolveStarted;
+      });
+      const events: string[] = [];
+
+      const firstRestore = restoreAtlasDataImport(archiveA, {
+        afterRestore: async () => {
+          events.push("first-start");
+          markFirstCallbackStarted();
+          await firstCallbackGate;
+          events.push("first-end");
+        },
+        confirm: true,
+        rootDir: rootAlias,
+      });
+      await firstCallbackStarted;
+
+      let secondSettled = false;
+      const secondRestore = restoreAtlasDataImport(archiveB, {
+        afterRestore: async () => {
+          events.push("second-callback");
+        },
+        confirm: true,
+        rootDir,
+      }).finally(() => {
+        secondSettled = true;
+      });
+      await Bun.sleep(20);
+
+      expect(secondSettled).toBe(false);
+      expect(await readFile(join(rootDir, "marker.txt"), "utf8")).toBe("a");
+      releaseFirstCallback();
+      await Promise.all([firstRestore, secondRestore]);
+
+      expect(events).toEqual(["first-start", "first-end", "second-callback"]);
+      expect(await readFile(join(rootDir, "marker.txt"), "utf8")).toBe("b");
+      await expect(
+        readFile(join(rootDir, "only-a.txt"), "utf8")
+      ).rejects.toThrow();
+      expect(await readFile(join(rootDir, "only-b.txt"), "utf8")).toBe("b");
+    } finally {
+      await rm(sourceA, { force: true, recursive: true });
+      await rm(sourceB, { force: true, recursive: true });
+      await rm(dirname(rootAlias), { force: true, recursive: true });
+    }
   });
 
   test("partial backup failure does not delete unbacked siblings", async () => {
@@ -197,7 +564,11 @@ describe("Atlas data portability", () => {
   });
 });
 
-function buildZipWithEntry(name: string, content: string): Buffer {
+function buildZipWithEntry(
+  name: string,
+  content: string,
+  originalSize = Buffer.byteLength(content)
+): Buffer {
   const safe = Buffer.from(content, "utf8");
   const localHeader = Buffer.alloc(30);
   localHeader.writeUInt32LE(0x04_03_4b_50, 0);
@@ -205,7 +576,7 @@ function buildZipWithEntry(name: string, content: string): Buffer {
   localHeader.writeUInt16LE(0x08_00, 6);
   localHeader.writeUInt16LE(0, 8);
   localHeader.writeUInt32LE(safe.length, 18);
-  localHeader.writeUInt32LE(safe.length, 22);
+  localHeader.writeUInt32LE(originalSize, 22);
   localHeader.writeUInt16LE(Buffer.byteLength(name), 26);
 
   const centralHeader = Buffer.alloc(46);
@@ -215,7 +586,7 @@ function buildZipWithEntry(name: string, content: string): Buffer {
   centralHeader.writeUInt16LE(0x08_00, 8);
   centralHeader.writeUInt16LE(0, 10);
   centralHeader.writeUInt32LE(safe.length, 20);
-  centralHeader.writeUInt32LE(safe.length, 24);
+  centralHeader.writeUInt32LE(originalSize, 24);
   centralHeader.writeUInt16LE(Buffer.byteLength(name), 28);
 
   const centralOffset =

@@ -6,6 +6,7 @@ import {
   MAX_DOCUMENT_BYTES,
   MAX_IMAGE_BYTES,
   normalizeDocumentMediaType,
+  normalizeImageMediaType,
   SUPPORTED_DOCUMENT_TYPE_LABEL,
   validateCombinedAttachmentCount,
   validateDocumentAttachments,
@@ -186,6 +187,7 @@ function classifyDiscordAttachment(
   | { kind: "reject"; message: string } {
   const filename = attachment.name?.trim() || "document";
   const rawType = attachment.contentType?.split(";")[0]?.trim() ?? "";
+  const normalizedImageType = normalizeImageMediaType(rawType);
   const size = attachment.size;
   const looksLikeAudio =
     rawType.startsWith("audio/") ||
@@ -212,15 +214,13 @@ function classifyDiscordAttachment(
   }
 
   const looksLikeImage =
-    rawType.startsWith("image/") ||
-    isSupportedImageMediaType(rawType) ||
+    normalizedImageType.startsWith("image/") ||
+    isSupportedImageMediaType(normalizedImageType) ||
     isImageFilename(filename);
 
   if (looksLikeImage) {
-    const mediaType = isSupportedImageMediaType(rawType)
-      ? rawType === "image/jpg"
-        ? "image/jpeg"
-        : rawType
+    const mediaType = isSupportedImageMediaType(normalizedImageType)
+      ? normalizedImageType
       : inferImageMediaTypeFromName(filename);
 
     if (!isSupportedImageMediaType(mediaType)) {

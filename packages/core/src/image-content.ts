@@ -52,7 +52,7 @@ export function replaceImagePartsWithDescriptions(
   let descriptionIndex = 0;
 
   for (const part of content) {
-    if (part.type === "image") {
+    if (part.type === "image" || part.type === "image_ref") {
       const description = descriptions[descriptionIndex]?.trim();
 
       if (!description) {
@@ -87,7 +87,10 @@ export function resolveUserContentForNonVisionProvider(
   const parts: MessageContentPart[] = [];
 
   for (const part of content) {
-    if (part.type === "image" && part.description?.trim()) {
+    if (
+      (part.type === "image" || part.type === "image_ref") &&
+      part.description?.trim()
+    ) {
       parts.push({
         text: formatImageDescriptionText(part.description),
         type: "text",

@@ -1,10 +1,11 @@
 import {
   findCustomModel,
   isDiscoveryModelProvider,
+  isSubscriptionProvider,
   type ProviderInstance,
   type ProviderName,
 } from "@atlas/core";
-import { getModelById } from "./models";
+import { getModelById, getModelByIdForProvider } from "./models";
 
 export interface ModelPricing {
   /** USD per 1M input tokens */
@@ -61,12 +62,21 @@ export function getModelPricing(
   modelId: string,
   context: PricingContext = {}
 ): ModelPricing | null {
+  const provider = context.provider ?? context.providerInstance?.type ?? null;
+
+  if (provider !== null && isSubscriptionProvider(provider)) {
+    return null;
+  }
+
   const imagePricing = IMAGE_GENERATION_PRICING[modelId];
   if (imagePricing) {
     return imagePricing;
   }
 
-  const provider = context.provider ?? context.providerInstance?.type ?? null;
+  const customPricing = getCustomModelPricing(modelId, context);
+  if (customPricing) {
+    return customPricing;
+  }
 
   if (
     (provider !== null && isDiscoveryModelProvider(provider)) ||
@@ -75,10 +85,12 @@ export function getModelPricing(
     provider === "fireworks" ||
     provider === "ollama"
   ) {
-    return getCustomModelPricing(modelId, context);
+    return null;
   }
 
-  const catalog = getModelById(modelId);
+  const catalog = provider
+    ? getModelByIdForProvider(modelId, provider)
+    : getModelById(modelId);
 
   if (
     catalog?.inputPerMillionUsd != null &&

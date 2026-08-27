@@ -284,6 +284,41 @@ describe("user config multi-provider", () => {
     );
   });
 
+  test("round-trips server-owned subscription model snapshots", async () => {
+    configDir = await mkdtemp(join(tmpdir(), "atlas-config-"));
+    process.env.ATLAS_CONFIG_DIR = configDir;
+
+    const providerId = createProviderInstanceId();
+    await saveUserConfig({
+      defaultProviderId: providerId,
+      providers: [
+        {
+          apiKey: "",
+          createdAt: "2026-08-27T00:00:00.000Z",
+          customModels: [
+            {
+              default: true,
+              id: "gpt-runtime-only",
+              name: "GPT Runtime Only",
+            },
+          ],
+          id: providerId,
+          label: "ChatGPT",
+          type: "chatgpt",
+        },
+      ],
+    });
+
+    const loaded = await loadUserConfig();
+    expect(loaded?.providers[0]?.customModels).toEqual([
+      {
+        default: true,
+        id: "gpt-runtime-only",
+        name: "GPT Runtime Only",
+      },
+    ]);
+  });
+
   test("round-trips fireworks models_json with capability flags", async () => {
     configDir = await mkdtemp(join(tmpdir(), "atlas-config-"));
     process.env.ATLAS_CONFIG_DIR = configDir;

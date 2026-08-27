@@ -18,6 +18,8 @@ import {
 } from "./setup";
 import { detectTheme, setTheme, type Theme } from "./styled-text";
 
+const FORCE_EXIT_TIMEOUT_MS = 5000;
+
 if (isRotateTokenCommand()) {
   try {
     await runRotateToken();
@@ -70,10 +72,14 @@ async function resolveTheme(): Promise<Theme> {
 let spawnedChild: Bun.Subprocess | null = null;
 const abortController = new AbortController();
 
-registerCleanupHandlers(() => {
-  abortController.abort();
-  stopSpawnedServer(spawnedChild);
-});
+registerCleanupHandlers(
+  () => {
+    abortController.abort();
+  },
+  () => {
+    stopSpawnedServer(spawnedChild);
+  }
+);
 
 const cliTheme = await resolveTheme();
 setTheme(cliTheme);
@@ -101,7 +107,10 @@ try {
   }
 
   if (!health.providerConfigured) {
-    const configured = await ensureProviderConfiguredViaCli(client);
+    const configured = await ensureProviderConfiguredViaCli(
+      client,
+      abortController.signal
+    );
 
     if (configured) {
       health = await client.health();
@@ -118,27 +127,41 @@ try {
     signal: abortController.signal,
   });
 } catch (error) {
-  const message = error instanceof Error ? error.message : String(error);
-  console.error(message);
+  if (!abortController.signal.aborted) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(message);
 
-  if (message === "Not found") {
-    console.error(
-      "\nThe server looks outdated. Restart it to pick up the latest API:\n  bun run dev:server\n"
-    );
+    if (message === "Not found") {
+      console.error(
+        "\nThe server looks outdated. Restart it to pick up the latest API:\n  bun run dev:server\n"
+      );
+    }
+
+    process.exitCode = 1;
   }
-
-  process.exit(1);
 } finally {
   stopSpawnedServer(spawnedChild);
 }
 
-process.exit(0);
+process.exit(process.exitCode ?? 0);
 
-function registerCleanupHandlers(cleanup: () => void): void {
+function registerCleanupHandlers(
+  cleanup: () => void,
+  forceCleanup: () => void
+): void {
+  let stopping = false;
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
     process.on(signal, () => {
+      if (stopping) {
+        forceCleanup();
+        process.exit(0);
+      }
+      stopping = true;
       cleanup();
-      process.exit(0);
+      setTimeout(() => {
+        forceCleanup();
+        process.exit(0);
+      }, FORCE_EXIT_TIMEOUT_MS);
     });
   }
 }

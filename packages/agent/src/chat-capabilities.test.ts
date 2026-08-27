@@ -21,6 +21,9 @@ interface CapturingProvider extends ProviderClient {
   textCalls: number;
 }
 
+const TINY_PNG_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
 const response: ChatCompletionResult = {
   assistantMessage: {
     content: "Answer",
@@ -191,7 +194,7 @@ describe("chat capability policy", () => {
 
     await expect(
       session.send({
-        images: [{ data: "aGVsbG8=", mediaType: "image/png" }],
+        images: [{ data: TINY_PNG_BASE64, mediaType: "image/png" }],
         message: "Describe this image",
       })
     ).rejects.toMatchObject({
@@ -219,7 +222,11 @@ describe("chat capability policy", () => {
         messages: [
           {
             content: [
-              { data: "aGVsbG8=", mediaType: "image/png", type: "image" },
+              {
+                data: TINY_PNG_BASE64,
+                mediaType: "image/png",
+                type: "image",
+              },
             ],
             role: "user",
           },
@@ -251,7 +258,7 @@ describe("chat capability policy", () => {
 
     await expect(
       session.send({
-        images: [{ data: "aGVsbG8=", mediaType: "image/png" }],
+        images: [{ data: TINY_PNG_BASE64, mediaType: "image/png" }],
         message: "Describe this image",
       })
     ).resolves.toBe("Answer");
@@ -263,7 +270,7 @@ describe("chat capability policy", () => {
     expect(session.getHistory()[0]?.content).toEqual([
       { text: "Describe this image", type: "text" },
       {
-        data: "aGVsbG8=",
+        data: TINY_PNG_BASE64,
         description: "A small red square.",
         mediaType: "image/png",
         type: "image",
@@ -343,6 +350,35 @@ describe("chat capability policy", () => {
       provider,
     }).createChatSession({ enableToolLoop: false });
     await expect(plainSession.send("do not think")).resolves.toBe("Answer");
+  });
+
+  test("fails closed when reasoning explicitly disallows image input", async () => {
+    const provider = createCapturingProvider();
+    const session = createAgentHarness({
+      chatCapabilityPolicy: supportedPolicy({
+        [PROVIDER_CAPABILITY_IDS.chatReasoning]: {
+          constraints: {
+            supportedValues: { "request.multimodal": [false] },
+          },
+          selectable: true,
+          status: "supported",
+        },
+      }),
+      chatOptions: { thinking: { effort: "high", enabled: true } },
+      provider,
+    }).createChatSession({ enableToolLoop: false });
+
+    await expect(
+      session.send({
+        images: [{ data: TINY_PNG_BASE64, mediaType: "image/png" }],
+        message: "Think about this image.",
+      })
+    ).rejects.toMatchObject({
+      capabilityId: PROVIDER_CAPABILITY_IDS.chatReasoning,
+      code: "CHAT_CAPABILITY_UNSUPPORTED",
+      reasons: expect.arrayContaining(["request-constraints-unsupported"]),
+    });
+    expect(provider.generateCalls + provider.streamCalls).toBe(0);
   });
 
   test("degrades unsupported streaming to generateChat and emits handlers", async () => {

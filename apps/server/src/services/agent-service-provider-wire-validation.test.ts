@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
+import type { CreateProviderRequest } from "@atlas/core";
+import { AtlasApiError } from "@atlas/core/api-error";
 import { createInMemoryDatabaseAdapter } from "@atlas/db";
+import { setChatgptRuntimeForTests } from "../providers/subscription";
+import type { ChatgptSubscriptionRuntime } from "../providers/subscription/chatgpt/runtime";
 import { setupTestConfigDir } from "../test-config-dir";
 import { AgentService } from "./agent-service";
 
@@ -19,6 +23,7 @@ beforeEach(() => {
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
+  setChatgptRuntimeForTests(null);
   process.env.NODE_ENV = originalNodeEnv;
   if (originalSkipValidation === undefined) {
     delete process.env.ATLAS_SKIP_PROVIDER_VALIDATION;
@@ -62,6 +67,121 @@ function stubResponsesOnlyEndpoint(paths: string[]): string {
 }
 
 describe("AgentService compatible provider validation wire", () => {
+  test("rejects subscription API keys with a client error during create", async () => {
+    const service = new AgentService(
+      null,
+      null,
+      createInMemoryDatabaseAdapter()
+    );
+
+    try {
+      await service.createProvider(ORG_ID, {
+        apiKey: "must-not-be-stored",
+        type: "chatgpt",
+      } as unknown as CreateProviderRequest);
+      throw new Error("expected a rejection");
+    } catch (error) {
+      expect(error).toBeInstanceOf(AtlasApiError);
+      expect((error as AtlasApiError).status).toBe(400);
+    }
+  });
+
+  test("rejects duplicate singleton providers before connection validation", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await db.upsertOrgAiConfig({
+      config: {
+        defaultProviderId: "openai-existing",
+        providers: [
+          {
+            apiKey: "existing-key",
+            createdAt: now,
+            id: "openai-existing",
+            label: "OpenAI",
+            type: "openai",
+          },
+        ],
+      },
+      orgId: ORG_ID,
+      updatedAt: now,
+    });
+    let validationRequests = 0;
+    globalThis.fetch = mock(async () => {
+      validationRequests += 1;
+      return Response.json({});
+    }) as unknown as typeof fetch;
+    const service = new AgentService(null, null, db);
+
+    try {
+      await service.createProvider(ORG_ID, {
+        apiKey: "second-key",
+        type: "openai",
+      });
+      throw new Error("expected a rejection");
+    } catch (error) {
+      expect(error).toBeInstanceOf(AtlasApiError);
+      expect((error as AtlasApiError).status).toBe(409);
+    }
+    expect(validationRequests).toBe(0);
+  });
+
+  test("persists the runtime catalog but fails closed when live listing later fails", async () => {
+    let failModelListing = false;
+    setChatgptRuntimeForTests({
+      getAuthState: async () => ({
+        authenticated: true,
+        provider: "chatgpt",
+        status: "authenticated",
+      }),
+      listModels: async () => {
+        if (failModelListing) {
+          throw new Error("temporary runtime failure");
+        }
+        return [
+          {
+            default: true,
+            id: "gpt-runtime-default",
+            name: "GPT Runtime Default",
+            provider: "chatgpt",
+          },
+          {
+            id: "gpt-runtime-only",
+            name: "GPT Runtime Only",
+            provider: "chatgpt",
+          },
+        ];
+      },
+    } as unknown as ChatgptSubscriptionRuntime);
+    const service = new AgentService(
+      null,
+      null,
+      createInMemoryDatabaseAdapter()
+    );
+
+    const created = await service.createProvider(ORG_ID, {
+      model: "gpt-runtime-only",
+      skipValidation: true,
+      type: "chatgpt",
+    });
+    failModelListing = true;
+
+    expect(created.initialModel).toBe("gpt-runtime-only");
+    expect(created.provider.customModels).toEqual([
+      {
+        id: "gpt-runtime-default",
+        name: "GPT Runtime Default",
+      },
+      {
+        default: true,
+        id: "gpt-runtime-only",
+        name: "GPT Runtime Only",
+      },
+    ]);
+    await expect(service.getModels(ORG_ID)).rejects.toThrow(
+      "temporary runtime failure"
+    );
+  });
+
   test("keeps model discovery available for local LM Studio", async () => {
     const requested: string[] = [];
     globalThis.fetch = mock(async (input: RequestInfo | URL) => {

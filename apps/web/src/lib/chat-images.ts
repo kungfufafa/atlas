@@ -9,6 +9,7 @@ import {
 } from "@atlas/core/image-content";
 import {
   normalizeDocumentMediaType,
+  normalizeImageMediaType,
   parseDataUrl,
   parseDocumentDataUrl,
 } from "@atlas/core/message-content";
@@ -38,7 +39,7 @@ const DOCUMENT_MEDIA_TYPES = new Set([
 ]);
 
 export function isImageFilePart(file: FileUIPart): boolean {
-  return Boolean(file.mediaType?.startsWith("image/"));
+  return normalizeImageMediaType(file.mediaType ?? "").startsWith("image/");
 }
 
 export function isDocumentFilePart(file: FileUIPart): boolean {
@@ -138,6 +139,14 @@ export function userContentToDisplayImageAttachments(
         description: part.description.trim(),
         mediaType: part.mediaType,
         url: `data:${part.mediaType};base64,${part.data}`,
+      });
+      continue;
+    }
+
+    if (part.type === "image_ref" && part.description?.trim()) {
+      attachments.push({
+        description: part.description.trim(),
+        mediaType: part.mediaType,
       });
       continue;
     }

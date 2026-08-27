@@ -88,6 +88,10 @@ describe("coding-agent provider routing", () => {
       false
     );
     expect(isProviderCompatibleWithHarness("openai", "codex")).toBe(true);
+    expect(isProviderCompatibleWithHarness("chatgpt", "codex")).toBe(false);
+    expect(isProviderCompatibleWithHarness("claude", "claude_code")).toBe(
+      false
+    );
     expect(isProviderCompatibleWithHarness("gemini", "codex")).toBe(false);
     expect(isProviderCompatibleWithHarness("openrouter", "opencode")).toBe(
       true

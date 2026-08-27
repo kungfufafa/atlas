@@ -13,6 +13,8 @@ const ORG_ID = "org_sessions";
 const OTHER_ORG_ID = "org_other_sessions";
 const PASSWORD = "password123";
 const PROFILE_ID = "profile_sessions";
+const CORRUPT_PNG_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVSH2mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 
 async function seedUser(
   db: ReturnType<typeof createInMemoryDatabaseAdapter>,
@@ -160,6 +162,75 @@ async function readModelAccess(
 }
 
 describe("session model route", () => {
+  test("rejects corrupt image pixels before starting a session turn", async () => {
+    const { app } = await createScenario();
+    const owner = await loginUserSession(
+      app,
+      "owner@example.com",
+      PASSWORD,
+      ORG_ID
+    );
+    const createResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/sessions", {
+        body: JSON.stringify({ channel: "web", profileId: PROFILE_ID }),
+        headers: owner.headers({ "X-CSRF-Token": owner.csrfToken }),
+        method: "POST",
+      })
+    );
+    const { sessionId } = (await createResponse.json()) as {
+      sessionId: string;
+    };
+
+    const response = await app.fetch(
+      new Request(`http://localhost:4310/v1/sessions/${sessionId}/messages`, {
+        body: JSON.stringify({
+          images: [{ data: CORRUPT_PNG_BASE64, mediaType: "image/png" }],
+          message: "Inspect this image",
+        }),
+        headers: owner.headers({ "X-CSRF-Token": owner.csrfToken }),
+        method: "POST",
+      })
+    );
+
+    expect(response.status).toBe(400);
+  });
+
+  test("rejects an oversized message body before starting a turn", async () => {
+    const { app } = await createScenario();
+    const owner = await loginUserSession(
+      app,
+      "owner@example.com",
+      PASSWORD,
+      ORG_ID
+    );
+    const createResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/sessions", {
+        body: JSON.stringify({ channel: "web", profileId: PROFILE_ID }),
+        headers: owner.headers({ "X-CSRF-Token": owner.csrfToken }),
+        method: "POST",
+      })
+    );
+    const { sessionId } = (await createResponse.json()) as {
+      sessionId: string;
+    };
+
+    const response = await app.fetch(
+      new Request(`http://localhost:4310/v1/sessions/${sessionId}/messages`, {
+        body: "{}",
+        headers: owner.headers({
+          "Content-Length": "40000000",
+          "X-CSRF-Token": owner.csrfToken,
+        }),
+        method: "POST",
+      })
+    );
+
+    expect(response.status).toBe(413);
+    expect(await response.json()).toEqual({
+      error: "Request body is too large.",
+    });
+  });
+
   test("persists a draft override, isolates sessions, reloads it, and resets", async () => {
     const { app, db } = await createScenario();
     const owner = await loginUserSession(
