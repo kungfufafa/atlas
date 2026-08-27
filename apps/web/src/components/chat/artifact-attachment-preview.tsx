@@ -154,7 +154,14 @@ function ArtifactAttachmentPreviewPanelBody({
   );
 }
 
-export function ArtifactAttachmentPreview({
+export function ArtifactAttachmentPreview(
+  props: ArtifactAttachmentPreviewProps
+) {
+  const triggerProps = useArtifactAttachmentPreviewController(props);
+  return <ArtifactAttachmentPreviewTrigger {...triggerProps} />;
+}
+
+function useArtifactAttachmentPreviewController({
   profileId,
   id,
   artifact,
@@ -306,116 +313,38 @@ export function ArtifactAttachmentPreview({
   }, [copied]);
 
   function buildPanelBody(loadingOverride?: boolean) {
-    if (isRichDoc) {
-      return (
-        <ArtifactAttachmentPanelBody
-          artifact={artifact}
-          canPreview={true}
-          downloadUrl={downloadUrl}
-          error={richError}
-          kind="rich"
-          loading={loadingOverride ?? richLoading}
-          onSelectSheet={(sheetName, sheetIndex) => {
-            setSheetOptions({ sheet: sheetName, sheetIndex });
-          }}
-          preview={richPreview}
-        />
-      );
-    }
-
-    if (showingSource) {
-      return (
-        <ArtifactAttachmentPanelBody
-          artifact={artifact}
-          canPreview={canPreview}
-          content={content}
-          error={error}
-          format="plain"
-          kind="text"
-          language={sourceLanguage}
-          loading={loadingOverride ?? loading}
-        />
-      );
-    }
-
-    if (isImage) {
-      return (
-        <ArtifactAttachmentPreviewPanelBody
-          artifact={artifact}
-          canPreview={canPreview}
-          content={content}
-          error={error}
-          imagePreviewUrl={imagePreviewUrl}
-          kind="image"
-          language={language}
-          loading={loadingOverride ?? loading}
-          textFormat="plain"
-          videoPreviewUrl={videoPreviewUrl}
-        />
-      );
-    }
-
-    if (isVideo) {
-      return (
-        <ArtifactAttachmentPreviewPanelBody
-          artifact={artifact}
-          canPreview={canPreview}
-          content={content}
-          error={error}
-          imagePreviewUrl={imagePreviewUrl}
-          kind="video"
-          language={language}
-          loading={loadingOverride ?? loading}
-          textFormat="plain"
-          videoPreviewUrl={videoPreviewUrl}
-        />
-      );
-    }
-
-    if (isHtml) {
-      return (
-        <ArtifactAttachmentPreviewPanelBody
-          artifact={artifact}
-          canPreview={canPreview}
-          content={content}
-          error={error}
-          imagePreviewUrl={imagePreviewUrl}
-          kind="html"
-          language={language}
-          loading={loadingOverride ?? loading}
-          textFormat="plain"
-          videoPreviewUrl={videoPreviewUrl}
-        />
-      );
-    }
-
-    if (isSvg) {
-      return (
-        <ArtifactAttachmentPreviewPanelBody
-          artifact={artifact}
-          canPreview={canPreview}
-          content={content}
-          error={error}
-          imagePreviewUrl={imagePreviewUrl}
-          kind="svg"
-          language={language}
-          loading={loadingOverride ?? loading}
-          textFormat="plain"
-          videoPreviewUrl={videoPreviewUrl}
-        />
-      );
-    }
-
+    const canvasKind = isRichDoc
+      ? "rich"
+      : showingSource
+        ? "source"
+        : isImage
+          ? "image"
+          : isVideo
+            ? "video"
+            : isHtml
+              ? "html"
+              : isSvg
+                ? "svg"
+                : "text";
     return (
-      <ArtifactAttachmentPreviewPanelBody
+      <ArtifactAttachmentPreviewCanvas
         artifact={artifact}
         canPreview={canPreview}
+        canvasKind={canvasKind}
         content={content}
+        downloadUrl={downloadUrl}
         error={error}
         imagePreviewUrl={imagePreviewUrl}
-        kind="text"
         language={language}
-        loading={loadingOverride ?? loading}
+        loading={loading}
+        loadingOverride={loadingOverride}
+        onSelectSheet={(sheetName, sheetIndex) => {
+          setSheetOptions({ sheet: sheetName, sheetIndex });
+        }}
+        richError={richError}
+        richLoading={richLoading}
+        richPreview={richPreview}
+        sourceLanguage={sourceLanguage}
         textFormat={isMermaid ? "mermaid" : isMarkdown ? "markdown" : "plain"}
         videoPreviewUrl={videoPreviewUrl}
       />
@@ -530,9 +459,7 @@ export function ArtifactAttachmentPreview({
     }
   }
 
-  function openPanel() {
-    setFullscreen(false);
-    setCopied(false);
+  function presentPanel() {
     show({
       ...buildPanelConfig(),
       content: buildPanelBody(
@@ -556,14 +483,59 @@ export function ArtifactAttachmentPreview({
     });
   }
 
+  const presentPanelRef = useRef(presentPanel);
+  useEffect(() => {
+    presentPanelRef.current = presentPanel;
+  });
+
+  function openPanel() {
+    setFullscreen(false);
+    setCopied(false);
+    presentPanel();
+  }
+
   useEffect(() => {
     if (!autoOpen || autoOpenedRef.current || open || isDismissed(id)) {
       return;
     }
     autoOpenedRef.current = true;
-    openPanel();
+    presentPanelRef.current();
   }, [autoOpen, id, isDismissed, open]);
 
+  return {
+    className,
+    filename: artifact.filename,
+    imagePreviewUrl,
+    isImage,
+    isVideo,
+    mimeType,
+    onOpen: openPanel,
+    selected: open,
+    variant,
+  };
+}
+
+function ArtifactAttachmentPreviewTrigger({
+  className,
+  filename,
+  imagePreviewUrl,
+  isImage,
+  isVideo,
+  mimeType,
+  onOpen,
+  selected,
+  variant,
+}: {
+  className?: string;
+  filename: string;
+  imagePreviewUrl: string | null;
+  isImage: boolean;
+  isVideo: boolean;
+  mimeType: string;
+  onOpen: () => void;
+  selected: boolean;
+  variant: ArtifactAttachmentPreviewProps["variant"];
+}) {
   if (variant === "icon") {
     return (
       <Tooltip>
@@ -572,7 +544,7 @@ export function ArtifactAttachmentPreview({
             <Button
               aria-label="View"
               className={className}
-              onClick={openPanel}
+              onClick={onOpen}
               size="icon-sm"
               title="View"
               type="button"
@@ -589,8 +561,7 @@ export function ArtifactAttachmentPreview({
     );
   }
 
-  const typeLabel = artifactCanvasTypeLabel(artifact.filename, mimeType);
-  const selected = open;
+  const typeLabel = artifactCanvasTypeLabel(filename, mimeType);
 
   if (isImage) {
     return (
@@ -601,7 +572,7 @@ export function ArtifactAttachmentPreview({
           selected ? "border-border bg-muted/60" : "border-border",
           className
         )}
-        onClick={openPanel}
+        onClick={onOpen}
         type="button"
       >
         {imagePreviewUrl ? (
@@ -617,7 +588,7 @@ export function ArtifactAttachmentPreview({
         )}
         <div className="min-w-0 px-0.5 pb-0.5">
           <p className="truncate font-medium text-foreground text-xs">
-            {artifact.filename}
+            {filename}
           </p>
           <p className="text-2xs text-muted-foreground">{typeLabel}</p>
         </div>
@@ -633,7 +604,7 @@ export function ArtifactAttachmentPreview({
         selected ? "border-border bg-muted/60" : "border-border",
         className
       )}
-      onClick={openPanel}
+      onClick={onOpen}
       type="button"
     >
       <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
@@ -645,10 +616,93 @@ export function ArtifactAttachmentPreview({
       </div>
       <div className="min-w-0 max-w-[14rem]">
         <p className="truncate font-medium text-foreground text-sm">
-          {artifact.filename}
+          {filename}
         </p>
         <p className="text-muted-foreground text-xs">{typeLabel}</p>
       </div>
     </button>
+  );
+}
+
+function ArtifactAttachmentPreviewCanvas({
+  artifact,
+  canPreview,
+  canvasKind,
+  content,
+  downloadUrl,
+  error,
+  imagePreviewUrl,
+  language,
+  loading,
+  loadingOverride,
+  onSelectSheet,
+  richError,
+  richLoading,
+  richPreview,
+  sourceLanguage,
+  textFormat,
+  videoPreviewUrl,
+}: {
+  artifact: ChatArtifactRef;
+  canPreview: boolean;
+  canvasKind: "rich" | "source" | "image" | "video" | "html" | "svg" | "text";
+  content: string | null;
+  downloadUrl: string;
+  error: string | null;
+  imagePreviewUrl: string | null;
+  language: string | undefined;
+  loading: boolean;
+  loadingOverride?: boolean;
+  onSelectSheet: (sheetName: string, sheetIndex: number) => void;
+  richError: string | null;
+  richLoading: boolean;
+  richPreview: ArtifactPreview | null;
+  sourceLanguage: string | undefined;
+  textFormat: "mermaid" | "markdown" | "plain";
+  videoPreviewUrl: string | null;
+}) {
+  if (canvasKind === "rich") {
+    return (
+      <ArtifactAttachmentPanelBody
+        artifact={artifact}
+        canPreview={true}
+        downloadUrl={downloadUrl}
+        error={richError}
+        kind="rich"
+        loading={loadingOverride ?? richLoading}
+        onSelectSheet={onSelectSheet}
+        preview={richPreview}
+      />
+    );
+  }
+
+  if (canvasKind === "source") {
+    return (
+      <ArtifactAttachmentPanelBody
+        artifact={artifact}
+        canPreview={canPreview}
+        content={content}
+        error={error}
+        format="plain"
+        kind="text"
+        language={sourceLanguage}
+        loading={loadingOverride ?? loading}
+      />
+    );
+  }
+
+  return (
+    <ArtifactAttachmentPreviewPanelBody
+      artifact={artifact}
+      canPreview={canPreview}
+      content={content}
+      error={error}
+      imagePreviewUrl={imagePreviewUrl}
+      kind={canvasKind}
+      language={language}
+      loading={loadingOverride ?? loading}
+      textFormat={canvasKind === "text" ? textFormat : "plain"}
+      videoPreviewUrl={videoPreviewUrl}
+    />
   );
 }

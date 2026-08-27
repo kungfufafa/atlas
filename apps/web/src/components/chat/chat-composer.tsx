@@ -39,6 +39,7 @@ import {
   ChatMessageQueuePanel,
   type QueuedComposerMessage,
 } from "@/components/chat/ChatMessageQueuePanel";
+import { composerActions } from "@/components/chat/chat-composer.actions";
 import { ChatContextUsageRing } from "@/components/chat/chat-context-usage";
 import { ChatSkillPicker } from "@/components/chat/chat-skill-picker";
 import { ChatSkillTokenOverlay } from "@/components/chat/chat-skill-token-overlay";
@@ -366,17 +367,18 @@ function ChatComposerTextarea({
   const [slashRange, setSlashRange] = useState<SkillSlashRange | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
+  const composerText = controller.textInput.value;
   const suggestions = useMemo(
     () =>
       slashRange
         ? filterComposerSlashSuggestions(availableSkills, slashRange.query, {
             includeReservedCommands: isLeadingComposerSlashRange(
-              controller.textInput.value,
+              composerText,
               slashRange
             ),
           })
         : [],
-    [availableSkills, slashRange]
+    [availableSkills, composerText, slashRange]
   );
   const pickerOpen = Boolean(slashRange && suggestions.length > 0 && !disabled);
   const safeActiveIndex =
@@ -658,18 +660,6 @@ function ChatComposerFullFooter({
 
 const composerSubmitButtonClassName =
   "size-7 shrink-0 rounded-full bg-primary text-primary-foreground shadow-none transition-colors hover:bg-primary/90 disabled:opacity-50";
-
-/**
- * Stop must stay reachable while a turn is running. It used to be hidden as soon
- * as the composer had text, so typing the next message swapped Stop for Queue and
- * left no way to cancel: the turn kept the session and every send came back 409.
- */
-export function composerActions(state: {
-  canStop: boolean;
-  hasContent: boolean;
-}): { showStop: boolean; showSubmit: boolean } {
-  return { showStop: state.canStop, showSubmit: state.hasContent };
-}
 
 function ChatComposerSubmitButton({
   chatStatus,

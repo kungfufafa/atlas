@@ -2,6 +2,7 @@ import path from "node:path";
 import {
   type AgentChatSession,
   type AgentHarness,
+  type ChatCapabilityPolicy,
   type CompactionConfig,
   createAgentHarness,
   draftTaskPromptFromFields,
@@ -20,6 +21,9 @@ import type {
   AssignToolRequest,
   BranchSessionResponse,
   CanonicalPrincipal,
+  CapabilityCatalogResponse,
+  CapabilityMappingsResponse,
+  CapabilityOptionsResponse,
   ChatContextUsage,
   ChatMessage,
   CloneProfileRequest,
@@ -84,6 +88,8 @@ import type {
   TranscribeAudioResponse,
   TranscriptionSettings,
   TranscriptionSettingsResponse,
+  UpdateCapabilityMappingRequest,
+  UpdateCapabilityMappingResponse,
   UpdateComposioSettingsRequest,
   UpdateDiscordSettingsRequest,
   UpdateEmailSettingsRequest,
@@ -107,7 +113,6 @@ import type {
 } from "@atlas/core";
 import {
   AtlasApiError,
-  apiKeyEnvVarForProvider,
   appendOrgMemorySection,
   assignedSkillsForbidMarkdownWrites,
   buildThinkingProviderOptions,
@@ -121,8 +126,6 @@ import {
   DEFAULT_THINKING_ENABLED,
   DEFAULT_TIMEZONE,
   DISCORD_BOT_TOKEN_IN_USE_MESSAGE,
-  defaultDiscoveryBaseUrl,
-  defaultOllamaBaseUrl,
   deleteArtifactFile,
   discordBotTokenUsedByAnotherWorkspace,
   emailConfigToMailboxConfig,
@@ -132,7 +135,6 @@ import {
   getProfileSoulDir,
   getResolvedSoulStatus,
   initSoulDirectory,
-  isDiscoveryModelProvider,
   isEmailConfigComplete,
   isProviderConfigured,
   isServiceAccountUserId,
@@ -153,25 +155,25 @@ import {
   loadWhatsAppSettingsPublic,
   mapArtifactReadError,
   messageContentHasImages,
+  migrateCapabilityTargetProviderIds,
+  migrateLegacyCapabilityConfig,
   migrateLegacyChannelToWorkspace,
   nanoid,
   normalizeBaseUrl,
   normalizeUserContextContent,
   type OrgRole,
-  ollamaRequiresApiKey,
+  PROVIDER_CAPABILITY_IDS,
   PrincipalRequiredError,
   persistInlineAttachmentsInContent,
   previewService,
   readArtifactFile,
   readBundledSkillBody,
-  readEnvValue,
   regenerateDiscordHandshake,
   regenerateTelegramHandshake,
   regenerateWhatsAppPairingCode,
   rehydrateMessagesForProvider as rehydrateAttachmentMessages,
   rehydrateAttachmentRefsInContent,
   replaceImagePartsWithDescriptions,
-  resolveOllamaHostMode,
   resolveSoulStackForProfile,
   runAsPrincipal,
   saveComposioConfig,
@@ -184,6 +186,7 @@ import {
   TELEGRAM_BOT_TOKEN_IN_USE_MESSAGE,
   telegramBotTokenUsedByAnotherWorkspace,
   USER_CONTEXT_TEMPLATE,
+  validateCapabilityConfig,
   WHATSAPP_PHONE_IN_USE_MESSAGE,
   whatsAppPhoneUsedByAnotherWorkspace,
   withProfileSoulMutationLock,
@@ -203,21 +206,18 @@ import {
 } from "@atlas/db";
 import {
   AVAILABLE_MODELS,
-  catalogCustomModelsToCatalog,
+  builtinProviderAdapterRegistry,
   createProviderForInstance,
   createProviderFromActiveConfig,
-  createProviderFromSources,
-  fetchFireworksGatewayModels,
-  fetchOllamaModels,
-  fetchOpenCodeGoGatewayModels,
-  fetchRemoteOpenAIModels,
+  evaluateCapabilityTarget,
   getModelById,
   getModelsForProviderInstance,
   isCostEstimated,
+  type ProviderAdapterRegistry,
   readApiKeyForInstance,
+  resolveConfiguredCapability,
   withLiveOpenCodeGoCatalog,
 } from "../providers";
-import { isAllowedImageGenerationSelection } from "../providers/models";
 import { wrapProviderForNonVision } from "../providers/non-vision-wrap";
 import {
   estimateUsageCostUsd,
@@ -256,6 +256,10 @@ import {
 } from "./audio-transcription";
 import type { AutomationRunner } from "./automation-runner";
 import {
+  createChatCapabilityAwareProvider,
+  resolveChatCapabilityPolicy,
+} from "./chat-capability-policy";
+import {
   buildCodingAgentCommandTemplate,
   formatCodingAgentCommandContext,
   getBackendSkillName,
@@ -279,11 +283,8 @@ import {
   resolveImageGenerationSelection,
 } from "./image-generation";
 import {
-  createVisionFallbackProvider,
-  describeImagesWithVisionModel,
+  describeImagesWithConfiguredVisionModel,
   resolvePrimaryModelVisionSupport,
-  resolveVisionProviderSelection,
-  VISION_MODEL_REQUIRED_MESSAGE,
 } from "./image-vision-fallback";
 import {
   loadJavascriptTool,
@@ -429,7 +430,8 @@ export class AgentService {
     userConfig: UserConfig | null,
     provider: ProviderClient | null,
     db: DatabaseAdapter,
-    private readonly llmUsageTracker?: LlmUsageTracker
+    private readonly llmUsageTracker?: LlmUsageTracker,
+    private readonly providerAdapterRegistry: ProviderAdapterRegistry = builtinProviderAdapterRegistry
   ) {
     this.userConfig = userConfig;
     this.db = db;
@@ -439,12 +441,18 @@ export class AgentService {
     this.learningPlane = new LearningPlaneService(db);
     this.subagents = new SubagentService(this, this.executionPlane, db);
     this.profileService = new ProfileService(db);
-    this.sessionTitleService = new SessionTitleService(db, (orgId) =>
-      this.getOrgUserConfig(orgId)
+    this.sessionTitleService = new SessionTitleService(
+      db,
+      (orgId) => this.getOrgUserConfig(orgId),
+      (instance, modelId, config) =>
+        this.createCapabilityAwareProvider(instance, modelId, config)
     );
     this.skillPostTurnReviewService = new SkillPostTurnReviewService(
       db,
-      (orgId) => this.getOrgUserConfig(orgId)
+      (orgId) => this.getOrgUserConfig(orgId),
+      undefined,
+      (instance, modelId, config) =>
+        this.createCapabilityAwareProvider(instance, modelId, config)
     );
     this.agentTodoState = new AgentTodoState(db);
     this.agentQuestionnaireState = new AgentQuestionnaireState(db);
@@ -814,10 +822,231 @@ export class AgentService {
     });
   }
 
+  getCapabilityCatalog(): CapabilityCatalogResponse {
+    return {
+      capabilities: this.providerAdapterRegistry
+        .listCapabilityDefinitions()
+        .map((definition) => ({
+          description: definition.description,
+          id: definition.id,
+          label: definition.label,
+          routable: definition.routable,
+        })),
+      providers: this.providerAdapterRegistry.list().map((adapter) => ({
+        capabilities: Object.entries(adapter.manifest.capabilities).map(
+          ([capabilityId, entry]) => ({
+            capabilityId,
+            implementationAvailable:
+              entry.implementation.status === "available",
+            nativeStatus: entry.native.status,
+          })
+        ),
+        displayName: adapter.manifest.provider.displayName,
+        id: adapter.manifest.provider.id,
+        models: adapter.manifest.models ?? [],
+      })),
+      schemaVersion: 1,
+    };
+  }
+
+  async getOrgCapabilityMappings(
+    orgId: string
+  ): Promise<CapabilityMappingsResponse> {
+    const config = await this.getOrgUserConfig(orgId);
+    return {
+      config: migrateLegacyCapabilityConfig(
+        {
+          imageModel: config?.imageModel,
+          transcriptionModel: config?.transcriptionModel,
+          visionModel: config?.visionModel,
+        },
+        config?.capabilityConfig
+      ),
+    };
+  }
+
+  async getOrgCapabilityOptions(
+    orgId: string
+  ): Promise<CapabilityOptionsResponse> {
+    const config = await this.getOrgUserConfig(orgId);
+    const providers = config?.providers ?? [];
+    const capabilityConfig = migrateCapabilityTargetProviderIds(
+      migrateLegacyCapabilityConfig(
+        {
+          imageModel: config?.imageModel,
+          transcriptionModel: config?.transcriptionModel,
+          visionModel: config?.visionModel,
+        },
+        config?.capabilityConfig
+      ),
+      providers,
+      config?.defaultProviderId
+    );
+    const options: CapabilityOptionsResponse["options"] = [];
+
+    for (const definition of this.providerAdapterRegistry.listCapabilityDefinitions()) {
+      if (!definition.routable) {
+        continue;
+      }
+      const binding = capabilityConfig.bindings[definition.id];
+      const configuredTargets = binding
+        ? [...(binding.primary ? [binding.primary] : []), ...binding.fallbacks]
+        : [];
+
+      for (const instance of providers) {
+        const adapter = this.providerAdapterRegistry.get(instance.type);
+        if (!adapter) {
+          continue;
+        }
+        const manifestEntry = adapter.manifest.capabilities[definition.id];
+        const modelNames = new Map<string, string>();
+        const providerModels = getModelsForProviderInstance(instance);
+        const providerModelsById = new Map(
+          providerModels.map((model) => [model.id, model])
+        );
+
+        if (
+          manifestEntry?.modelDefault.status === "supported" ||
+          instance.capabilityOverrides?.[definition.id]?.status === "supported"
+        ) {
+          for (const model of providerModels) {
+            modelNames.set(model.id, model.name);
+          }
+        }
+
+        for (const model of providerModels) {
+          if (model.capabilities?.[definition.id]) {
+            modelNames.set(model.id, model.name);
+          }
+        }
+
+        for (const model of adapter.manifest.models ?? []) {
+          if (model.capabilities[definition.id]) {
+            modelNames.set(model.id, model.name ?? model.id);
+          }
+        }
+
+        for (const model of instance.customModels ?? []) {
+          if (model.capabilities?.[definition.id]) {
+            modelNames.set(model.id, model.name ?? model.id);
+          }
+        }
+
+        for (const target of configuredTargets) {
+          if (target.providerId === instance.id) {
+            modelNames.set(target.modelId, target.modelId);
+          }
+        }
+
+        for (const [modelId, modelName] of modelNames) {
+          const modelClaim =
+            providerModelsById.get(modelId)?.capabilities?.[definition.id];
+          const effective = evaluateCapabilityTarget(
+            {
+              capabilityId: definition.id,
+              config,
+              readApiKey: (provider) =>
+                readApiKeyForInstance(provider, process.env),
+              registry: this.providerAdapterRegistry,
+            },
+            { modelId, providerId: instance.id },
+            modelClaim ? [modelClaim] : []
+          );
+          options.push({
+            capabilityId: definition.id,
+            effective: {
+              availability: effective.availability,
+              capabilityId: definition.id,
+              ...(effective.claim.constraints
+                ? { constraints: effective.claim.constraints }
+                : {}),
+              reasons: effective.reasons,
+              selectable: effective.selectable,
+              source: effective.claim.source,
+              status: effective.claim.status,
+              verified: effective.claim.verified === true,
+            },
+            modelId,
+            modelName,
+            providerId: instance.id,
+            providerLabel: instance.label,
+            providerType: instance.type,
+          });
+        }
+      }
+    }
+
+    return { options, schemaVersion: 1 };
+  }
+
+  async setOrgCapabilityMapping(
+    orgId: string,
+    capabilityId: string,
+    input: UpdateCapabilityMappingRequest
+  ): Promise<UpdateCapabilityMappingResponse> {
+    const normalizedCapabilityId = capabilityId.trim();
+    const definition = this.providerAdapterRegistry.getCapabilityDefinition(
+      normalizedCapabilityId
+    );
+    if (!definition?.routable) {
+      throw new AtlasApiError(
+        `Capability "${normalizedCapabilityId}" is not configurable.`,
+        400
+      );
+    }
+
+    return this.runSerializedOrgConfigMutation(orgId, async () => {
+      const config = await this.getOrgConfigForUpdate(orgId);
+      const existing = migrateLegacyCapabilityConfig(
+        {
+          imageModel: config.imageModel,
+          transcriptionModel: config.transcriptionModel,
+          visionModel: config.visionModel,
+        },
+        config.capabilityConfig
+      );
+      const capabilityConfig = migrateCapabilityTargetProviderIds(
+        validateCapabilityConfig({
+          bindings: {
+            ...existing.bindings,
+            [normalizedCapabilityId]: input.binding,
+          },
+          schemaVersion: 1,
+        }),
+        config.providers,
+        config.defaultProviderId
+      );
+
+      if (input.binding.enabled) {
+        resolveConfiguredCapability({
+          capabilityId: normalizedCapabilityId,
+          config: { ...config, capabilityConfig },
+          readApiKey: (instance) =>
+            readApiKeyForInstance(instance, process.env),
+          registry: this.providerAdapterRegistry,
+        });
+      }
+
+      await this.saveOrgUserConfig(orgId, {
+        ...config,
+        ...legacyCapabilitySelectionPatch(
+          normalizedCapabilityId,
+          capabilityConfig.bindings[normalizedCapabilityId]?.primary ?? null
+        ),
+        capabilityConfig,
+      });
+      return { capabilityId: normalizedCapabilityId, config: capabilityConfig };
+    });
+  }
+
   async getOrgVisionSettings(orgId: string): Promise<VisionSettingsResponse> {
+    const config = await this.getOrgUserConfig(orgId);
     return {
       vision: {
-        model: (await this.getOrgUserConfig(orgId))?.visionModel ?? null,
+        model: capabilitySelectionForLegacyApi(
+          config,
+          PROVIDER_CAPABILITY_IDS.imageUnderstanding
+        ),
       },
     };
   }
@@ -827,28 +1056,24 @@ export class AgentService {
     input: UpdateVisionRequest
   ): Promise<VisionSettingsResponse> {
     const model = input.model?.trim() || null;
-    return this.runSerializedOrgConfigMutation(orgId, async () => {
-      const config = await this.getOrgConfigForUpdate(orgId);
-      if (
-        model &&
-        !resolveVisionProviderSelection({ ...config, visionModel: model })
-      ) {
-        throw new AtlasApiError(
-          "Selected image parsing model is unavailable. Choose a vision-capable model.",
-          400
-        );
-      }
-      await this.saveOrgUserConfig(orgId, { ...config, visionModel: model });
-      return { vision: { model } };
-    });
+    await this.setOrgCapabilityMapping(
+      orgId,
+      PROVIDER_CAPABILITY_IDS.imageUnderstanding,
+      capabilityMappingRequestFromLegacySelection(model)
+    );
+    return { vision: { model } };
   }
 
   async getOrgTranscriptionSettings(
     orgId: string
   ): Promise<TranscriptionSettingsResponse> {
+    const config = await this.getOrgUserConfig(orgId);
     return {
       transcription: {
-        model: (await this.getOrgUserConfig(orgId))?.transcriptionModel ?? null,
+        model: capabilitySelectionForLegacyApi(
+          config,
+          PROVIDER_CAPABILITY_IDS.audioTranscription
+        ),
       },
     };
   }
@@ -858,34 +1083,24 @@ export class AgentService {
     input: UpdateTranscriptionRequest
   ): Promise<TranscriptionSettingsResponse> {
     const model = input.model?.trim() || null;
-    return this.runSerializedOrgConfigMutation(orgId, async () => {
-      const config = await this.getOrgConfigForUpdate(orgId);
-      if (
-        model &&
-        !resolveTranscriptionProviderSelection({
-          ...config,
-          transcriptionModel: model,
-        })
-      ) {
-        throw new AtlasApiError(
-          "Selected audio transcription model is unavailable. Choose an OpenAI Whisper model.",
-          400
-        );
-      }
-      await this.saveOrgUserConfig(orgId, {
-        ...config,
-        transcriptionModel: model,
-      });
-      return { transcription: { model } };
-    });
+    await this.setOrgCapabilityMapping(
+      orgId,
+      PROVIDER_CAPABILITY_IDS.audioTranscription,
+      capabilityMappingRequestFromLegacySelection(model)
+    );
+    return { transcription: { model } };
   }
 
   async getOrgImageGenerationSettings(
     orgId: string
   ): Promise<ImageGenerationSettingsResponse> {
+    const config = await this.getOrgUserConfig(orgId);
     return {
       imageGeneration: {
-        model: (await this.getOrgUserConfig(orgId))?.imageModel ?? null,
+        model: capabilitySelectionForLegacyApi(
+          config,
+          PROVIDER_CAPABILITY_IDS.imageGeneration
+        ),
       },
     };
   }
@@ -895,17 +1110,12 @@ export class AgentService {
     input: UpdateImageGenerationRequest
   ): Promise<ImageGenerationSettingsResponse> {
     const model = input.model?.trim() || null;
-    if (model && !isAllowedImageGenerationSelection(model)) {
-      throw new AtlasApiError(
-        "Only openai::gpt-image-2 is supported for image generation.",
-        400
-      );
-    }
-    return this.runSerializedOrgConfigMutation(orgId, async () => {
-      const config = await this.getOrgConfigForUpdate(orgId);
-      await this.saveOrgUserConfig(orgId, { ...config, imageModel: model });
-      return { imageGeneration: { model } };
-    });
+    await this.setOrgCapabilityMapping(
+      orgId,
+      PROVIDER_CAPABILITY_IDS.imageGeneration,
+      capabilityMappingRequestFromLegacySelection(model)
+    );
+    return { imageGeneration: { model } };
   }
 
   async transcribeAudioForOrg(
@@ -975,21 +1185,18 @@ export class AgentService {
   ): Promise<VisionSettingsResponse> {
     await this.ensureVisionSettingsLoaded();
     const model = input.model?.trim() || null;
-
+    const nextConfig = withLegacyCapabilitySelection(
+      this.userConfig,
+      PROVIDER_CAPABILITY_IDS.imageUnderstanding,
+      model
+    );
     if (model) {
-      const resolved = resolveVisionProviderSelection({
-        ...this.userConfig,
-        defaultProviderId: this.userConfig?.defaultProviderId ?? null,
-        providers: this.userConfig?.providers ?? [],
-        visionModel: model,
+      resolveConfiguredCapability({
+        capabilityId: PROVIDER_CAPABILITY_IDS.imageUnderstanding,
+        config: nextConfig,
+        readApiKey: (instance) => readApiKeyForInstance(instance, process.env),
+        registry: this.providerAdapterRegistry,
       });
-
-      if (!resolved) {
-        throw new AtlasApiError(
-          "Selected image parsing model is unavailable. Choose a vision-capable model.",
-          400
-        );
-      }
     }
 
     const vision: VisionSettings = { model };
@@ -1007,12 +1214,7 @@ export class AgentService {
       })
     );
 
-    if (this.userConfig) {
-      this.userConfig = {
-        ...this.userConfig,
-        visionModel: model,
-      };
-    }
+    this.userConfig = nextConfig;
 
     this.sessions.clear();
 
@@ -1030,21 +1232,18 @@ export class AgentService {
   ): Promise<TranscriptionSettingsResponse> {
     await this.ensureTranscriptionSettingsLoaded();
     const model = input.model?.trim() || null;
-
+    const nextConfig = withLegacyCapabilitySelection(
+      this.userConfig,
+      PROVIDER_CAPABILITY_IDS.audioTranscription,
+      model
+    );
     if (model) {
-      const resolved = resolveTranscriptionProviderSelection({
-        ...this.userConfig,
-        defaultProviderId: this.userConfig?.defaultProviderId ?? null,
-        providers: this.userConfig?.providers ?? [],
-        transcriptionModel: model,
+      resolveConfiguredCapability({
+        capabilityId: PROVIDER_CAPABILITY_IDS.audioTranscription,
+        config: nextConfig,
+        readApiKey: (instance) => readApiKeyForInstance(instance, process.env),
+        registry: this.providerAdapterRegistry,
       });
-
-      if (!resolved) {
-        throw new AtlasApiError(
-          "Selected audio transcription model is unavailable. Choose an OpenAI Whisper model.",
-          400
-        );
-      }
     }
 
     const transcription: TranscriptionSettings = { model };
@@ -1060,12 +1259,7 @@ export class AgentService {
       })
     );
 
-    if (this.userConfig) {
-      this.userConfig = {
-        ...this.userConfig,
-        transcriptionModel: model,
-      };
-    }
+    this.userConfig = nextConfig;
 
     return { transcription };
   }
@@ -1094,17 +1288,27 @@ export class AgentService {
       throw new AtlasApiError("Audio data is empty.", 400);
     }
 
-    const selection = resolveTranscriptionProviderSelection(this.userConfig);
+    const selection = resolveTranscriptionProviderSelection(
+      this.userConfig,
+      process.env,
+      this.providerAdapterRegistry
+    );
 
     if (!selection) {
       throw new AtlasApiError(TRANSCRIPTION_MODEL_REQUIRED_MESSAGE, 400);
     }
 
-    const text = await transcribeAudio(selection.instance, selection.model, {
-      bytes,
-      filename: input.filename?.trim() || "audio.ogg",
-      mediaType,
-    });
+    const text = await transcribeAudio(
+      selection.instance,
+      selection.model,
+      {
+        bytes,
+        filename: input.filename?.trim() || "audio.ogg",
+        mediaType,
+      },
+      process.env,
+      this.providerAdapterRegistry
+    );
 
     return { text };
   }
@@ -1168,12 +1372,18 @@ export class AgentService {
   ): Promise<ImageGenerationSettingsResponse> {
     await this.ensureImageGenerationSettingsLoaded();
     const model = input.model?.trim() || null;
-
-    if (model && !isAllowedImageGenerationSelection(model)) {
-      throw new AtlasApiError(
-        "Only openai::gpt-image-2 is supported for image generation.",
-        400
-      );
+    const nextConfig = withLegacyCapabilitySelection(
+      this.userConfig,
+      PROVIDER_CAPABILITY_IDS.imageGeneration,
+      model
+    );
+    if (model) {
+      resolveConfiguredCapability({
+        capabilityId: PROVIDER_CAPABILITY_IDS.imageGeneration,
+        config: nextConfig,
+        readApiKey: (instance) => readApiKeyForInstance(instance, process.env),
+        registry: this.providerAdapterRegistry,
+      });
     }
 
     const imageGeneration: ImageGenerationSettings = { model };
@@ -1192,12 +1402,7 @@ export class AgentService {
       })
     );
 
-    if (this.userConfig) {
-      this.userConfig = {
-        ...this.userConfig,
-        imageModel: model,
-      };
-    }
+    this.userConfig = nextConfig;
 
     return { imageGeneration };
   }
@@ -1212,16 +1417,22 @@ export class AgentService {
       throw new AtlasApiError("Image prompt is required.", 400);
     }
 
-    const selection = resolveImageGenerationSelection(this.userConfig);
+    const selection = resolveImageGenerationSelection(this.userConfig, {
+      registry: this.providerAdapterRegistry,
+    });
 
     if (!selection) {
       throw new AtlasApiError(IMAGE_MODEL_REQUIRED_MESSAGE, 400);
     }
 
-    const result = await generateImage(selection, {
-      prompt,
-      size: input.size,
-    });
+    const result = await generateImage(
+      selection,
+      {
+        prompt,
+        size: input.size,
+      },
+      this.providerAdapterRegistry
+    );
 
     const usage = result.usage ?? {
       inputTokens: 0,
@@ -2769,14 +2980,29 @@ export class AgentService {
 
   async draftAutomation(orgId: string, prompt: string, channel: AgentChannel) {
     const userConfig = await this.getOrgUserConfig(orgId);
-    const provider = createProviderFromActiveConfig(userConfig);
     const active = getActiveProviderInstance(userConfig);
-    if (!(isProviderConfigured(userConfig) && provider)) {
+    const modelId = active ? resolveDefaultModelForInstance(active) : null;
+    const provider =
+      active && modelId
+        ? createProviderForInstance(
+            active,
+            modelId,
+            process.env,
+            this.providerAdapterRegistry
+          )
+        : null;
+    if (!(isProviderConfigured(userConfig) && active && modelId && provider)) {
       throw new Error("Provider is not configured.");
     }
 
+    const chatCapabilityPolicy = this.resolveChatCapabilityPolicyForTarget(
+      userConfig,
+      active,
+      modelId
+    );
     const harness = this.createHarness({
-      modelId: active ? resolveDefaultModelForInstance(active) : null,
+      chatCapabilityPolicy,
+      modelId,
       provider,
       providerInstance: active,
       thinking: this.resolveWorkspaceThinkingDefaults(userConfig),
@@ -2789,10 +3015,13 @@ export class AgentService {
     title: string,
     description?: string
   ): Promise<string> {
-    const provider = createProviderFromSources(
-      process.env,
-      await this.getOrgUserConfig(orgId)
-    );
+    const userConfig = await this.getOrgUserConfig(orgId);
+    const active = getActiveProviderInstance(userConfig);
+    const modelId = active ? resolveDefaultModelForInstance(active) : null;
+    const provider =
+      active && modelId
+        ? this.createCapabilityAwareProvider(active, modelId, userConfig)
+        : null;
 
     return draftTaskPromptFromFields(
       { description, title },
@@ -2819,123 +3048,26 @@ export class AgentService {
         options
       );
     }
-
-    if (request.provider === "fireworks") {
-      const apiKey = request.apiKey?.trim() ?? "";
-
-      if (!apiKey) {
-        throw new Error("API key is required to discover Fireworks models.");
-      }
-
-      const entries = await fetchFireworksGatewayModels(apiKey, options);
-      const staticModels = AVAILABLE_MODELS.filter(
-        (model) => model.provider === "fireworks"
-      );
-      const models = catalogCustomModelsToCatalog(
-        entries,
-        staticModels,
-        "fireworks"
-      );
-      const probeInstance = {
-        apiKey,
-        createdAt: new Date(0).toISOString(),
-        customModels: entries,
-        id: "discover",
-        label: "Fireworks",
-        type: "fireworks" as const,
-      };
-
-      return {
-        catalog: AVAILABLE_MODELS,
-        currentProviderId: null,
-        customModels: entries,
-        displayName: null,
-        models: models.length
-          ? models
-          : getModelsForProviderInstance(probeInstance),
-        provider: "fireworks",
-        providers: [],
-      };
-    }
-
-    if (request.provider === "opencode_go") {
-      const entries = await fetchOpenCodeGoGatewayModels(options);
-      const staticModels = AVAILABLE_MODELS.filter(
-        (model) => model.provider === "opencode_go"
-      );
-      const models = catalogCustomModelsToCatalog(
-        entries,
-        staticModels,
-        "opencode_go"
-      );
-
-      return {
-        catalog: await withLiveOpenCodeGoCatalog(AVAILABLE_MODELS),
-        currentProviderId: null,
-        customModels: entries,
-        displayName: null,
-        models,
-        provider: "opencode_go",
-        providers: [],
-      };
-    }
-
-    const requestedDiscoveryProvider =
-      request.provider && isDiscoveryModelProvider(request.provider)
-        ? request.provider
-        : "openai_compatible";
-    const baseUrl =
-      request.baseUrl?.trim() ||
-      defaultDiscoveryBaseUrl(requestedDiscoveryProvider) ||
-      undefined;
-    if (!baseUrl) {
-      throw new Error("baseUrl or providerId is required.");
-    }
-
-    const ollamaHostMode =
-      request.provider === "ollama"
-        ? resolveOllamaHostMode({
-            baseUrl,
-            hostMode: request.hostMode,
-          })
-        : null;
-    const entries =
-      request.provider === "ollama"
-        ? await fetchOllamaModels(baseUrl, request.apiKey ?? "", {
-            hostMode: ollamaHostMode ?? "local",
-            signal: options.signal,
-          })
-        : await fetchRemoteOpenAIModels(baseUrl, request.apiKey ?? "", {
-            localAccess:
-              requestedDiscoveryProvider === "openai_compatible"
-                ? { kind: "openai-compatible-local" }
-                : undefined,
-            signal: options.signal,
-          });
-
-    const probeType =
-      request.provider === "ollama" ? "ollama" : requestedDiscoveryProvider;
+    const probeType = request.provider ?? "openai_compatible";
     const probeInstance: ProviderInstance = {
       apiKey: request.apiKey ?? "",
-      baseUrl,
-      id: "discover",
-      label: probeType === "ollama" ? "Ollama" : "Discover",
-      type: probeType,
-      ...(request.hostMode ? { hostMode: request.hostMode } : {}),
+      ...(request.baseUrl?.trim() ? { baseUrl: request.baseUrl.trim() } : {}),
       createdAt: new Date(0).toISOString(),
-      customModels: entries,
+      ...(request.hostMode ? { hostMode: request.hostMode } : {}),
+      id: "discover",
+      label: "Discover",
+      type: probeType,
     };
-    const models = getModelsForProviderInstance(probeInstance);
-
-    return {
-      catalog: AVAILABLE_MODELS,
-      currentProviderId: null,
-      customModels: entries,
-      displayName: null,
-      models,
-      provider: probeType,
-      providers: [],
-    };
+    return this.runProviderModelDiscovery(
+      probeInstance,
+      {
+        apiKey: request.apiKey,
+        baseUrl: request.baseUrl,
+        hostMode: request.hostMode,
+      },
+      null,
+      options
+    );
   }
 
   async discoverModelsForProvider(
@@ -2957,140 +3089,55 @@ export class AgentService {
       throw new Error("Provider not found.");
     }
 
-    if (instance.type === "ollama" || isDiscoveryModelProvider(instance.type)) {
-      const hostMode =
-        instance.type === "ollama"
-          ? (overrides?.hostMode ?? resolveOllamaHostMode(instance))
-          : undefined;
-      // Prefer an explicit baseUrl (e.g. unsaved Edit provider field) over the stored one.
-      const baseUrl =
-        overrides?.baseUrl ||
-        instance.baseUrl?.trim() ||
-        (instance.type === "ollama"
-          ? defaultOllamaBaseUrl(hostMode!)
-          : defaultDiscoveryBaseUrl(instance.type) || "");
-
-      if (!baseUrl) {
-        throw new Error("A base URL is required to discover models.");
-      }
-
-      requireCredentialForProviderEndpointChange(
-        instance,
-        overrides?.baseUrl,
-        overrides?.apiKey
-      );
-      const apiKey =
-        overrides?.apiKey?.trim() ||
-        readApiKeyForInstance(instance, process.env)?.trim() ||
-        "";
-
-      if (
-        instance.type === "ollama" &&
-        ollamaRequiresApiKey(hostMode ?? "local") &&
-        !apiKey
-      ) {
-        throw new Error(
-          "Add an API key before discovering Ollama Cloud models."
-        );
-      }
-
-      const entries =
-        instance.type === "ollama"
-          ? await fetchOllamaModels(baseUrl, apiKey, {
-              hostMode: hostMode ?? "local",
-              signal: options.signal,
-            })
-          : await fetchRemoteOpenAIModels(baseUrl, apiKey, {
-              localAccess:
-                instance.type === "openai_compatible"
-                  ? { kind: "openai-compatible-local" }
-                  : undefined,
-              signal: options.signal,
-            });
-      const remoteInstance = { ...instance, baseUrl, customModels: entries };
-      const models = getModelsForProviderInstance(remoteInstance);
-
-      return {
-        baseUrl,
-        catalog: AVAILABLE_MODELS,
-        currentProviderId: providerId,
-        customModels: entries,
-        displayName: instance.label,
-        models,
-        provider: instance.type,
-        providers: [],
-      };
-    }
-
-    if (instance.type === "fireworks") {
-      const apiKey =
-        instance.apiKey.trim() ||
-        readEnvValue(process.env, apiKeyEnvVarForProvider("fireworks") ?? "") ||
-        "";
-
-      if (!apiKey.trim()) {
-        throw new Error("Add an API key before discovering Fireworks models.");
-      }
-
-      const entries = await fetchFireworksGatewayModels(apiKey, options);
-      const remoteInstance = { ...instance, customModels: entries };
-      const models = getModelsForProviderInstance(remoteInstance);
-
-      return {
-        catalog: AVAILABLE_MODELS,
-        currentProviderId: providerId,
-        customModels: entries,
-        displayName: instance.label,
-        models,
-        provider: "fireworks",
-        providers: [],
-      };
-    }
-
-    if (instance.type === "opencode_go") {
-      const entries = await fetchOpenCodeGoGatewayModels(options);
-      const remoteInstance = { ...instance, customModels: entries };
-      const models = getModelsForProviderInstance(remoteInstance);
-
-      return {
-        catalog: await withLiveOpenCodeGoCatalog(AVAILABLE_MODELS),
-        currentProviderId: providerId,
-        customModels: entries,
-        displayName: instance.label,
-        models,
-        provider: "opencode_go",
-        providers: [],
-      };
-    }
-
-    if (instance.type !== "openai") {
-      throw new Error(
-        `Remote model discovery is not supported for ${instance.type}.`
-      );
-    }
-
-    const apiKey = readApiKeyForInstance(instance, process.env)?.trim() ?? "";
-    if (!apiKey) {
-      throw new Error("Add an API key before discovering models.");
-    }
-
-    const baseUrl = instance.baseUrl?.trim() || "https://api.openai.com/v1";
-    const entries = await fetchRemoteOpenAIModels(baseUrl, apiKey, options);
-    const staticModels = AVAILABLE_MODELS.filter(
-      (model) => model.provider === "openai"
+    return this.runProviderModelDiscovery(
+      instance,
+      overrides,
+      providerId,
+      options
     );
-    const models = catalogCustomModelsToCatalog(
-      entries,
-      staticModels,
-      "openai"
+  }
+
+  private async runProviderModelDiscovery(
+    instance: ProviderInstance,
+    overrides:
+      | {
+          apiKey?: string;
+          baseUrl?: string;
+          hostMode?: DiscoverModelsRequest["hostMode"];
+        }
+      | undefined,
+    currentProviderId: string | null,
+    options: { signal?: AbortSignal }
+  ): Promise<ModelsResponse> {
+    const requestedBaseUrl = overrides?.baseUrl?.trim() || undefined;
+    requireCredentialForProviderEndpointChange(
+      instance,
+      requestedBaseUrl,
+      overrides?.apiKey
+    );
+    const apiKey =
+      overrides?.apiKey?.trim() ||
+      readApiKeyForInstance(instance, process.env)?.trim() ||
+      "";
+    const hostMode = overrides?.hostMode ?? instance.hostMode;
+    const discovered = await this.providerAdapterRegistry.discoverModels(
+      instance.type,
+      {
+        apiKey,
+        ...(requestedBaseUrl || instance.baseUrl?.trim()
+          ? { baseUrl: requestedBaseUrl || instance.baseUrl?.trim() }
+          : {}),
+        configured: currentProviderId !== null,
+        ...(hostMode ? { hostMode } : {}),
+        instance,
+        ...(options.signal ? { signal: options.signal } : {}),
+      }
     );
 
     return {
-      catalog: AVAILABLE_MODELS,
-      currentProviderId: providerId,
-      displayName: null,
-      models,
-      provider: "openai",
+      ...discovered,
+      currentProviderId,
+      provider: instance.type,
       providers: [],
     };
   }
@@ -3216,6 +3263,11 @@ export class AgentService {
       current,
       request.baseUrl,
       request.apiKey
+    );
+    validateAdminCapabilityOverridePatch(
+      this.providerAdapterRegistry,
+      current,
+      request.capabilityOverrides
     );
     const updated = applyProviderInstanceUpdate(current, request);
 
@@ -3344,29 +3396,37 @@ export class AgentService {
       });
     }
 
+    const activeAdapter = active
+      ? this.providerAdapterRegistry.get(active.type)
+      : undefined;
     if (
       options.source === "remote" &&
-      active?.type === "openai_compatible" &&
-      active.baseUrl
+      active?.baseUrl &&
+      activeAdapter?.modelDiscoveryOnCatalogRefresh
     ) {
-      const remote = await fetchRemoteOpenAIModels(
-        active.baseUrl,
-        readApiKeyForInstance(active, process.env) ?? "",
-        { localAccess: { kind: "openai-compatible-local" } }
+      const discovered = await this.runProviderModelDiscovery(
+        active,
+        undefined,
+        active.id,
+        {}
       );
+      const remote = discovered.customModels ?? [];
       const remoteInstance = { ...active, customModels: remote };
-      const models = mergeModelsForConfig(
-        (userConfig?.providers ?? []).map((instance) =>
-          instance.id === active.id ? remoteInstance : instance
-        )
+      const effectiveProviders = (userConfig?.providers ?? []).map(
+        (instance) => (instance.id === active.id ? remoteInstance : instance)
       );
+      const models = mergeModelsForConfig(effectiveProviders);
 
       return this.buildModelsResponse({
         active,
-        catalog,
+        catalog: discovered.catalog,
         currentProviderId,
         customModels: remote,
-        models,
+        models: this.withEffectiveCapabilityClaims(models, {
+          ...userConfig,
+          defaultProviderId: userConfig?.defaultProviderId ?? null,
+          providers: effectiveProviders,
+        }),
         providers,
       });
     }
@@ -3377,8 +3437,43 @@ export class AgentService {
       active,
       catalog,
       currentProviderId,
-      models,
+      models: this.withEffectiveCapabilityClaims(models, userConfig),
       providers,
+    });
+  }
+
+  private withEffectiveCapabilityClaims(
+    models: ModelsResponse["models"],
+    config: UserConfig | null | undefined
+  ): ModelsResponse["models"] {
+    return models.map((model) => {
+      if (!model.providerId) {
+        return model;
+      }
+      const instance = findProviderInstance(config, model.providerId);
+      const adapter = instance
+        ? this.providerAdapterRegistry.get(instance.type)
+        : undefined;
+      if (!(instance && adapter)) {
+        return model;
+      }
+      const capabilities = { ...model.capabilities };
+
+      for (const capabilityId of Object.keys(adapter.manifest.capabilities)) {
+        const effective = evaluateCapabilityTarget(
+          {
+            capabilityId,
+            config,
+            readApiKey: (provider) =>
+              readApiKeyForInstance(provider, process.env),
+            registry: this.providerAdapterRegistry,
+          },
+          { modelId: model.id, providerId: instance.id }
+        );
+        capabilities[capabilityId] = effective.claim;
+      }
+
+      return { ...model, capabilities };
     });
   }
 
@@ -3465,7 +3560,11 @@ export class AgentService {
   }
 
   private refreshHarness(): void {
-    const provider = createProviderFromActiveConfig(this.userConfig);
+    const provider = createProviderFromActiveConfig(
+      this.userConfig,
+      process.env,
+      this.providerAdapterRegistry
+    );
     this._providerConfigured =
       isProviderConfigured(this.userConfig) && provider !== null;
     this.sessions.clear();
@@ -3509,6 +3608,10 @@ export class AgentService {
 
     if (bootstrapOrg?.id === orgId && this.userConfig) {
       const migratedConfig: UserConfig = {
+        capabilityConfig: migrateLegacyCapabilityConfig(
+          this.userConfig,
+          this.userConfig.capabilityConfig
+        ),
         defaultProviderId: this.userConfig.defaultProviderId,
         imageModel: this.userConfig.imageModel,
         providers: this.userConfig.providers,
@@ -3566,15 +3669,25 @@ export class AgentService {
     if (bytes.length === 0) {
       throw new AtlasApiError("Audio data is empty.", 400);
     }
-    const selection = resolveTranscriptionProviderSelection(config);
+    const selection = resolveTranscriptionProviderSelection(
+      config,
+      process.env,
+      this.providerAdapterRegistry
+    );
     if (!selection) {
       throw new AtlasApiError(TRANSCRIPTION_MODEL_REQUIRED_MESSAGE, 400);
     }
-    const text = await transcribeAudio(selection.instance, selection.model, {
-      bytes,
-      filename: input.filename?.trim() || "audio.ogg",
-      mediaType,
-    });
+    const text = await transcribeAudio(
+      selection.instance,
+      selection.model,
+      {
+        bytes,
+        filename: input.filename?.trim() || "audio.ogg",
+        mediaType,
+      },
+      process.env,
+      this.providerAdapterRegistry
+    );
     return { text };
   }
 
@@ -3587,14 +3700,20 @@ export class AgentService {
     if (!prompt) {
       throw new AtlasApiError("Image prompt is required.", 400);
     }
-    const selection = resolveImageGenerationSelection(config);
+    const selection = resolveImageGenerationSelection(config, {
+      registry: this.providerAdapterRegistry,
+    });
     if (!selection) {
       throw new AtlasApiError(IMAGE_MODEL_REQUIRED_MESSAGE, 400);
     }
-    const result = await generateImage(selection, {
-      prompt,
-      size: input.size,
-    });
+    const result = await generateImage(
+      selection,
+      {
+        prompt,
+        size: input.size,
+      },
+      this.providerAdapterRegistry
+    );
     const usage = result.usage ?? { inputTokens: 0, outputTokens: 0 };
     this.llmUsageTracker?.record(
       result.model,
@@ -3823,10 +3942,13 @@ export class AgentService {
     }
 
     const loaded = await loadJavascriptTool(record);
-    const provider = createProviderFromSources(
-      process.env,
-      await this.getOrgUserConfig(orgId)
-    );
+    const userConfig = await this.getOrgUserConfig(orgId);
+    const active = getActiveProviderInstance(userConfig);
+    const modelId = active ? resolveDefaultModelForInstance(active) : null;
+    const provider =
+      active && modelId
+        ? this.createCapabilityAwareProvider(active, modelId, userConfig)
+        : null;
     const parameters = await suggestToolParamsFromPrompt(
       {
         description: tool.description,
@@ -4380,6 +4502,7 @@ export class AgentService {
   }
 
   private createHarness(options: {
+    chatCapabilityPolicy?: ChatCapabilityPolicy;
     provider: ProviderClient | null;
     providerInstance?: ReturnType<typeof getActiveProviderInstance>;
     modelId?: string | null;
@@ -4399,6 +4522,7 @@ export class AgentService {
         : options.provider;
 
     return createAgentHarness({
+      chatCapabilityPolicy: options.chatCapabilityPolicy,
       chatOptions: this.resolveChatProviderOptions(
         providerInstance,
         options.thinking
@@ -4866,32 +4990,26 @@ export class AgentService {
 
         const primarySupportsVision = resolvePrimaryModelVisionSupport(
           userConfig,
-          selectedModel
+          selectedModel,
+          this.providerAdapterRegistry
         );
 
         if (primarySupportsVision !== false) {
           return content;
         }
 
-        const visionSelection = resolveVisionProviderSelection(userConfig);
-
-        if (!visionSelection) {
-          throw new AtlasApiError(VISION_MODEL_REQUIRED_MESSAGE, 400);
-        }
-
-        let visionProvider = createVisionFallbackProvider(visionSelection);
-
-        if (this.llmUsageTracker) {
-          visionProvider = wrapProviderWithUsageTracking(
-            visionProvider,
-            this.llmUsageTracker,
-            visionSelection.model
-          );
-        }
-
-        const descriptions = await describeImagesWithVisionModel(
-          visionProvider,
-          extractImageParts(forVision)
+        const descriptions = await describeImagesWithConfiguredVisionModel(
+          userConfig,
+          extractImageParts(forVision),
+          {
+            recordUsage: (model, usage) =>
+              this.llmUsageTracker?.record(
+                model,
+                usage.inputTokens,
+                usage.outputTokens
+              ),
+            registry: this.providerAdapterRegistry,
+          }
         );
 
         return replaceImagePartsWithDescriptions(forVision, descriptions);
@@ -5291,7 +5409,43 @@ export class AgentService {
       return null;
     }
 
-    return createProviderForInstance(resolved.instance, resolved.model);
+    return this.createCapabilityAwareProvider(
+      resolved.instance,
+      resolved.model,
+      userConfig
+    );
+  }
+
+  private createCapabilityAwareProvider(
+    instance: ProviderInstance,
+    modelId: string,
+    userConfig: UserConfig | null
+  ): ProviderClient | null {
+    return createChatCapabilityAwareProvider({
+      config: userConfig,
+      env: process.env,
+      instance,
+      modelId,
+      registry: this.providerAdapterRegistry,
+    });
+  }
+
+  private resolveChatCapabilityPolicyForTarget(
+    userConfig: UserConfig | null,
+    instance: ProviderInstance,
+    modelId: string
+  ): ChatCapabilityPolicy {
+    const modelEvidence = getModelsForProviderInstance(instance).find(
+      (model) => model.id === modelId
+    );
+    return resolveChatCapabilityPolicy({
+      config: userConfig,
+      instance,
+      model: modelEvidence,
+      modelId,
+      readApiKey: (provider) => readApiKeyForInstance(provider, process.env),
+      registry: this.providerAdapterRegistry,
+    });
   }
 
   private createHarnessForProfile(
@@ -5315,18 +5469,27 @@ export class AgentService {
 
     const provider = createProviderForInstance(
       resolved.instance,
-      resolved.model
+      resolved.model,
+      process.env,
+      this.providerAdapterRegistry
     );
     const primarySupportsVision = resolvePrimaryModelVisionSupport(
       userConfig,
-      modelSelection
+      modelSelection,
+      this.providerAdapterRegistry
     );
     const resolvedProvider =
       primarySupportsVision === false && provider
         ? wrapProviderForNonVision(provider)
         : provider;
+    const chatCapabilityPolicy = this.resolveChatCapabilityPolicyForTarget(
+      userConfig,
+      resolved.instance,
+      resolved.model
+    );
 
     return this.createHarness({
+      chatCapabilityPolicy,
       modelId: resolved.model,
       provider: resolvedProvider,
       providerInstance: resolved.instance,
@@ -5469,6 +5632,131 @@ export class AgentService {
   }
 }
 
+const LEGACY_CAPABILITY_SELECTION_FIELDS: Readonly<
+  Partial<Record<string, "imageModel" | "transcriptionModel" | "visionModel">>
+> = {
+  [PROVIDER_CAPABILITY_IDS.audioTranscription]: "transcriptionModel",
+  [PROVIDER_CAPABILITY_IDS.imageGeneration]: "imageModel",
+  [PROVIDER_CAPABILITY_IDS.imageUnderstanding]: "visionModel",
+};
+
+function validateAdminCapabilityOverridePatch(
+  registry: ProviderAdapterRegistry,
+  instance: ProviderInstance,
+  patch: UpdateProviderRequest["capabilityOverrides"]
+): void {
+  if (!patch) {
+    return;
+  }
+
+  const manifest = registry.get(instance.type)?.manifest;
+  for (const [rawCapabilityId, status] of Object.entries(patch)) {
+    if (status === null) {
+      continue;
+    }
+
+    const capabilityId = rawCapabilityId.trim();
+    const definition = registry.getCapabilityDefinition(capabilityId);
+    const isOverridable =
+      Boolean(manifest?.capabilities[capabilityId]) &&
+      definition?.routable === false;
+    if (!isOverridable) {
+      throw new AtlasApiError(
+        `Capability "${capabilityId}" cannot be overridden for this provider.`,
+        400
+      );
+    }
+  }
+}
+
+function capabilityMappingRequestFromLegacySelection(
+  selection: string | null
+): UpdateCapabilityMappingRequest {
+  const target = decodeStoredModelSelection(selection);
+  if (
+    selection &&
+    (!(target?.providerId && target.modelId) ||
+      target.providerId === "__unknown__")
+  ) {
+    throw new AtlasApiError(
+      "Model selection must identify a configured provider instance and model.",
+      400
+    );
+  }
+  return {
+    binding: {
+      contractVersion: 1,
+      enabled: target !== null,
+      fallbacks: [],
+      mode: "manual",
+      ...(target ? { primary: target } : {}),
+    },
+  };
+}
+
+function capabilitySelectionForLegacyApi(
+  config: UserConfig | null,
+  capabilityId: string
+): string | null {
+  const migrated = migrateLegacyCapabilityConfig(
+    {
+      imageModel: config?.imageModel,
+      transcriptionModel: config?.transcriptionModel,
+      visionModel: config?.visionModel,
+    },
+    config?.capabilityConfig
+  );
+  const binding = migrated.bindings[capabilityId];
+  if (!(binding?.enabled && binding.primary)) {
+    return null;
+  }
+  return `${binding.primary.providerId}::${binding.primary.modelId}`;
+}
+
+function withLegacyCapabilitySelection(
+  config: UserConfig | null,
+  capabilityId: string,
+  selection: string | null
+): UserConfig {
+  const base: UserConfig = config ?? {
+    defaultProviderId: null,
+    providers: [],
+  };
+  const request = capabilityMappingRequestFromLegacySelection(selection);
+  const existing = migrateLegacyCapabilityConfig(base, base.capabilityConfig);
+  return {
+    ...base,
+    ...legacyCapabilitySelectionPatch(
+      capabilityId,
+      request.binding.primary ?? null
+    ),
+    capabilityConfig: migrateCapabilityTargetProviderIds(
+      validateCapabilityConfig({
+        bindings: {
+          ...existing.bindings,
+          [capabilityId]: request.binding,
+        },
+        schemaVersion: 1,
+      }),
+      base.providers,
+      base.defaultProviderId
+    ),
+  };
+}
+
+function legacyCapabilitySelectionPatch(
+  capabilityId: string,
+  target: { modelId: string; providerId: string } | null
+): Partial<UserConfig> {
+  const field = LEGACY_CAPABILITY_SELECTION_FIELDS[capabilityId];
+  if (!field) {
+    return {};
+  }
+  return {
+    [field]: target ? `${target.providerId}::${target.modelId}` : null,
+  };
+}
+
 function parseStoredUserConfig(value: unknown): UserConfig | null {
   if (!(value && typeof value === "object")) {
     return null;
@@ -5488,8 +5776,15 @@ function parseStoredUserConfig(value: unknown): UserConfig | null {
     return null;
   }
 
+  const capabilityConfig = migrateCapabilityTargetProviderIds(
+    migrateLegacyCapabilityConfig(candidate, candidate.capabilityConfig),
+    candidate.providers,
+    defaultProviderId ?? null
+  );
+
   return {
     ...candidate,
+    capabilityConfig,
     defaultProviderId: defaultProviderId ?? null,
     providers: candidate.providers,
   };

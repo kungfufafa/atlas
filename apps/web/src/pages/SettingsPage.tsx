@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { CapabilityRoutingCard } from "@/components/settings/CapabilityRoutingCard";
 import { DataPortabilityPanel } from "@/components/settings/DataPortabilityPanel";
-import { ImageGenerationSettingsCard } from "@/components/settings/ImageGenerationSettingsCard";
 import { ProviderSettingsCard } from "@/components/settings/ProviderSettingsCard";
-import { TranscriptionSettingsCard } from "@/components/settings/TranscriptionSettingsCard";
-import { VisionSettingsCard } from "@/components/settings/VisionSettingsCard";
 import { WebPublicUrlSettingsRow } from "@/components/settings/WebPublicUrlSettingsRow";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TimezoneSelect } from "@/components/TimezoneSelect";
@@ -127,13 +125,7 @@ export function SettingsPage() {
             onFormError={setFormError}
           />
 
-          <Card className="w-full shadow-none">
-            <CardContent className="divide-y divide-border p-0">
-              <VisionSettingsCard />
-              <TranscriptionSettingsCard />
-              <ImageGenerationSettingsCard />
-            </CardContent>
-          </Card>
+          <CapabilityRoutingCard />
 
           {formError ? (
             <p className="text-destructive text-sm" role="alert">

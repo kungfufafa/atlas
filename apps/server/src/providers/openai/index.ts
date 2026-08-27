@@ -38,6 +38,16 @@ import {
 
 const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1";
 
+export function openAIEndpointSupportsNativeWebSearch(
+  baseUrl?: string
+): boolean {
+  const configured = baseUrl?.trim();
+  return (
+    normalizeBaseUrl(configured || DEFAULT_OPENAI_BASE_URL) ===
+    DEFAULT_OPENAI_BASE_URL
+  );
+}
+
 export interface OpenAIProviderOptions {
   apiKey: string;
   baseUrl?: string;
@@ -70,7 +80,7 @@ export function createOpenAIProvider(
   };
   const useResponsesApi =
     client.providerName === "openai" &&
-    client.baseUrl === DEFAULT_OPENAI_BASE_URL;
+    openAIEndpointSupportsNativeWebSearch(client.baseUrl);
   const customModels = options.customModels;
   const reasoningEffortValues = customModels?.find(
     (entry) => entry.id === model

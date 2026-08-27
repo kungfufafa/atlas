@@ -3,6 +3,8 @@ import { Add01Icon, Search01Icon } from "hugeicons-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 
+const EMPTY_SPREADSHEET_ROWS: string[][] = [];
+
 function columnNumberToLetter(colIndex: number): string {
   let temp = colIndex;
   let letter = "";
@@ -36,7 +38,7 @@ export function SpreadsheetViewer({
   };
 }) {
   const activeSheet = preview.activeSheet;
-  const data = editor?.rows ?? activeSheet?.data ?? [];
+  const data = editor?.rows ?? activeSheet?.data ?? EMPTY_SPREADSHEET_ROWS;
   const [selectedCell, setSelectedCell] = useState<{
     col: number;
     row: number;
@@ -95,11 +97,12 @@ export function SpreadsheetViewer({
         <div className="relative">
           <Search01Icon className="absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
+            aria-label="Search cells"
             className="h-7 w-36 rounded-md border border-border bg-background pr-2 pl-7 text-foreground text-xs placeholder:text-muted-foreground focus:outline-hidden focus:ring-1 focus:ring-ring"
             disabled={Boolean(editor)}
             onChange={(e) => setFilterQuery(e.target.value)}
             placeholder="Search"
-            type="text"
+            type="search"
             value={filterQuery}
           />
         </div>
@@ -201,7 +204,7 @@ export function SpreadsheetViewer({
 
                       return (
                         <td
-                          className={`min-w-28 cursor-pointer border-border/60 border-r px-3 py-1.5 tabular-nums transition-all ${alignClass} ${
+                          className={`min-w-28 border-border/60 border-r px-3 py-1.5 tabular-nums transition-colors ${alignClass} ${
                             format?.bold
                               ? "font-bold text-foreground"
                               : "text-foreground/90"
@@ -211,9 +214,6 @@ export function SpreadsheetViewer({
                               : ""
                           }`}
                           key={`cell-${rIdx}-${cIdx}`}
-                          onClick={() =>
-                            setSelectedCell({ col: cIdx, row: rIdx })
-                          }
                         >
                           {editor ? (
                             <input
@@ -233,7 +233,15 @@ export function SpreadsheetViewer({
                               value={displayVal}
                             />
                           ) : (
-                            <span className="block truncate">{displayVal}</span>
+                            <button
+                              className="block h-full min-h-7 w-full truncate text-left"
+                              onClick={() =>
+                                setSelectedCell({ col: cIdx, row: rIdx })
+                              }
+                              type="button"
+                            >
+                              {displayVal}
+                            </button>
                           )}
                         </td>
                       );

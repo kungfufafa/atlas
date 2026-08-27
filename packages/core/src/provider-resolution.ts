@@ -1,27 +1,17 @@
 import { readEnvValue } from "./config";
 
 import type { ProviderName } from "./contract";
+import {
+  BUILTIN_PROVIDER_DEFINITIONS,
+  getBuiltinProviderDefinition,
+} from "./provider-catalog";
 
 export type UserProviderName = ProviderName;
 
-export const USER_PROVIDER_NAMES: readonly UserProviderName[] = [
-  "openai",
-  "anthropic",
-  "openrouter",
-  "gemini",
-  "deepseek",
-  "cerebras",
-  "fireworks",
-  "ollama",
-  "openai_compatible",
-  "opencode_go",
-  "cloudflare",
-  "minimax",
-  "minimax_cn",
-  "xai",
-  "zhipu",
-  "zhipu_cn",
-] as const;
+export const USER_PROVIDER_NAMES: readonly UserProviderName[] =
+  BUILTIN_PROVIDER_DEFINITIONS.map((definition) => definition.id);
+
+const USER_PROVIDER_NAME_SET = new Set<string>(USER_PROVIDER_NAMES);
 
 export {
   DISCOVERY_MODEL_PROVIDERS,
@@ -34,67 +24,15 @@ export function parseProviderName(
 ): UserProviderName | null {
   const normalized = value?.trim().toLowerCase();
 
-  if (
-    normalized === "openai" ||
-    normalized === "anthropic" ||
-    normalized === "openrouter" ||
-    normalized === "gemini" ||
-    normalized === "deepseek" ||
-    normalized === "cerebras" ||
-    normalized === "fireworks" ||
-    normalized === "ollama" ||
-    normalized === "openai_compatible" ||
-    normalized === "opencode_go" ||
-    normalized === "cloudflare" ||
-    normalized === "minimax" ||
-    normalized === "minimax_cn" ||
-    normalized === "xai" ||
-    normalized === "zhipu" ||
-    normalized === "zhipu_cn"
-  ) {
-    return normalized;
-  }
-
-  return null;
+  return normalized && USER_PROVIDER_NAME_SET.has(normalized)
+    ? (normalized as UserProviderName)
+    : null;
 }
 
 export function apiKeyEnvVarForProvider(
   provider: UserProviderName
 ): string | null {
-  switch (provider) {
-    case "openai":
-      return "OPENAI_API_KEY";
-    case "anthropic":
-      return "ANTHROPIC_API_KEY";
-    case "gemini":
-      return "GEMINI_API_KEY";
-    case "deepseek":
-      return null;
-    case "cerebras":
-      return "CEREBRAS_API_KEY";
-    case "fireworks":
-      return "FIREWORKS_API_KEY";
-    case "ollama":
-      return "OLLAMA_API_KEY";
-    case "openrouter":
-      return "OPENROUTER_API_KEY";
-    case "openai_compatible":
-      return "OPENAI_COMPATIBLE_API_KEY";
-    case "opencode_go":
-      return "OPENCODE_GO_API_KEY";
-    case "cloudflare":
-      return "CLOUDFLARE_API_KEY";
-    case "minimax":
-      return "MINIMAX_API_KEY";
-    case "minimax_cn":
-      return "MINIMAX_CN_API_KEY";
-    case "xai":
-      return "XAI_API_KEY";
-    case "zhipu":
-      return "ZHIPU_API_KEY";
-    case "zhipu_cn":
-      return "ZHIPU_CN_API_KEY";
-  }
+  return getBuiltinProviderDefinition(provider)?.apiKeyEnvVar ?? null;
 }
 
 export interface ResolveProviderOptions {

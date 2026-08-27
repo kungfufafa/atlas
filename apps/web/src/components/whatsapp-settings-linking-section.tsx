@@ -1,4 +1,3 @@
-import type { ChannelAccessMode } from "@atlas/core/contract";
 import {
   CheckmarkCircle01Icon,
   Copy01Icon,
@@ -9,22 +8,8 @@ import { QRCodeSVG } from "qrcode.react";
 import { SettingsRow } from "@/components/integration-settings.shared";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { formatWhatsAppDevicePairingCode } from "@/components/whatsapp-settings-linking.shared";
 import { cn } from "@/lib/utils";
-
-export function formatWhatsAppDevicePairingCode(code: string): string {
-  const compactCode = code.replace(/[\s-]/g, "").toUpperCase();
-  if (compactCode.length === 8) {
-    return `${compactCode.slice(0, 4)}-${compactCode.slice(4)}`;
-  }
-
-  return code.trim().toUpperCase();
-}
-
-export function shouldShowWhatsAppChatAccessSection(
-  accessMode: ChannelAccessMode
-): boolean {
-  return accessMode === "pairing";
-}
 
 export function WhatsAppSettingsChatAccessSection({
   paired,

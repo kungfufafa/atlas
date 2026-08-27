@@ -605,29 +605,15 @@ export function FilesPreviewPanel({
   const editor = useArtifactEditor({
     artifactPath: path,
     onSaved: handleArtifactSaved,
+    onSavingChange,
     profileId,
   });
-
-  useEffect(() => {
-    onSavingChange?.(editor.saving);
-  }, [editor.saving, onSavingChange]);
-
-  useEffect(
-    () => () => {
-      onSavingChange?.(false);
-    },
-    [onSavingChange]
-  );
   const canOfferEditing =
     (activeOrg?.role === "admin" || user?.isPlatformAdmin === true) &&
     isEditableArtifactFilename(artifact.filename);
   const editDisabledReason =
     knownArtifactEditLimitReason(artifact.sizeBytes) ??
     editor.unavailableReason;
-
-  useEffect(() => {
-    setPreviewMode("preview");
-  }, [path]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {

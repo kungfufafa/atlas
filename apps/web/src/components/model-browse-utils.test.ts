@@ -17,6 +17,24 @@ describe("capabilityBrowseRowToModelListRow", () => {
       supportsVision: true,
     });
   });
+
+  test("preserves generic discovered capability evidence", () => {
+    const capabilities = {
+      "vendor.image-operation": {
+        source: "provider-discovery" as const,
+        status: "supported" as const,
+        verified: true,
+      },
+    };
+
+    expect(
+      capabilityBrowseRowToModelListRow({
+        capabilities,
+        id: "vendor/model",
+        name: "Vendor model",
+      }).capabilities
+    ).toBe(capabilities);
+  });
 });
 
 describe("FIREWORKS_FALLBACK_ROWS", () => {

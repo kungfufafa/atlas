@@ -1,10 +1,11 @@
 import type {
   ProfileSummary,
+  SkillSummary,
   StoredTask,
   ThinkingEffort,
 } from "@atlas/core/contract";
 import { useQueryClient } from "@tanstack/react-query";
-import type { FileUIPart } from "ai";
+import type { ChatStatus, FileUIPart } from "ai";
 import { Cancel01Icon } from "hugeicons-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -60,6 +61,181 @@ interface TaskRunHistoryPanelProps {
   onClose: () => void;
   profile?: ProfileSummary | null;
   task: StoredTask;
+}
+
+function TaskRunHistoryView({
+  activeModelSupportsVision,
+  availableSkills,
+  busy,
+  canStop,
+  chatStatus,
+  chatUnavailable,
+  currentModelSelection,
+  displayError,
+  emptyHistory,
+  messages,
+  onClose,
+  onModelChange,
+  onNavigateSetup,
+  onSendMessage,
+  onStop,
+  onThinkingEffortChange,
+  profileLabel,
+  profileModelId,
+  providerConfigured,
+  providerModelGroups,
+  renderModelLabel,
+  sessionId,
+  showOfflineHint,
+  statusBadge,
+  task,
+  thinkingEffort,
+  thinkingEffortDisabled,
+  thinkingEffortVisible,
+  waitingForMessages,
+}: {
+  activeModelSupportsVision: boolean | undefined;
+  availableSkills: SkillSummary[];
+  busy: boolean;
+  canStop: boolean;
+  chatStatus: ChatStatus;
+  chatUnavailable: boolean;
+  currentModelSelection: string | null;
+  displayError: string | null;
+  emptyHistory: boolean;
+  messages: ChatListItem[];
+  onClose: () => void;
+  onModelChange: (selection: string | null) => void;
+  onNavigateSetup: () => void;
+  onSendMessage: (text: string, files: FileUIPart[]) => void;
+  onStop: () => void;
+  onThinkingEffortChange: (effort: ThinkingEffort) => void;
+  profileLabel: string;
+  profileModelId: string | null;
+  providerConfigured: boolean | undefined;
+  providerModelGroups: ReturnType<typeof groupModelsByProvider>;
+  renderModelLabel: (selection: string | null) => string;
+  sessionId: string | null;
+  showOfflineHint: boolean;
+  statusBadge: (typeof TASK_STATUS_BADGE)[keyof typeof TASK_STATUS_BADGE];
+  task: StoredTask;
+  thinkingEffort: ThinkingEffort;
+  thinkingEffortDisabled: boolean;
+  thinkingEffortVisible: boolean;
+  waitingForMessages: boolean;
+}) {
+  return (
+    <aside
+      aria-label={`Run chat for ${task.title}`}
+      className={cn(
+        "flex min-h-[24rem] shrink-0 flex-col bg-background",
+        "border-border/50 border-t",
+        "lg:h-full lg:min-h-0 lg:w-[24rem] lg:border-border/30 lg:border-t-0 lg:border-l",
+        "xl:w-[26rem]"
+      )}
+    >
+      <header className="flex items-start justify-between gap-3 border-border/50 border-b bg-muted/20 px-4 py-3 sm:px-5">
+        <div className="min-w-0 space-y-1.5">
+          <div className="flex items-center gap-2">
+            <ChatNavIcon
+              aria-hidden
+              className="sidebar-nav-icon text-muted-foreground"
+              strokeWidth={2}
+            />
+            <p className="type-label">Run chat</p>
+          </div>
+          <h2 className="type-section-title truncate">{task.title}</h2>
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 font-medium text-2xs",
+                statusBadge.className
+              )}
+            >
+              {statusBadge.label}
+            </span>
+            <span className="truncate text-muted-foreground text-xs">
+              {profileLabel}
+            </span>
+          </div>
+        </div>
+        <Button
+          aria-label="Close task chat"
+          className="relative shrink-0 after:absolute after:top-1/2 after:left-1/2 after:size-10 after:-translate-x-1/2 after:-translate-y-1/2"
+          onClick={onClose}
+          size="icon-sm"
+          type="button"
+          variant="ghost"
+        >
+          <Cancel01Icon aria-hidden className="size-4" strokeWidth={2} />
+        </Button>
+      </header>
+
+      <div className="relative min-h-0 flex-1">
+        {waitingForMessages ? (
+          <div className="flex h-full min-h-48 items-center justify-center">
+            <Spinner className="size-5" />
+          </div>
+        ) : (
+          <ChatMessageList
+            className="absolute inset-0 bg-background"
+            contentClassName="px-4 sm:px-5"
+            emptyMessage={
+              emptyHistory
+                ? "No run output yet. Open task details or run the agent again."
+                : undefined
+            }
+            messages={messages}
+          />
+        )}
+      </div>
+
+      {displayError ? (
+        <div className="shrink-0 border-border/50 border-t px-4 py-3 sm:px-5">
+          <p className="text-pretty text-red-700 text-sm dark:text-red-300">
+            {displayError}
+          </p>
+        </div>
+      ) : null}
+
+      {chatUnavailable ? (
+        <div className="shrink-0 border-border/50 border-t px-4 py-3 sm:px-5">
+          <p className="text-pretty text-muted-foreground text-sm">
+            Run history is shown above. Restart the Atlas server to enable
+            follow-up chat.
+          </p>
+        </div>
+      ) : (
+        <PromptInputProvider>
+          <ChatComposer
+            availableSkills={availableSkills}
+            busy={busy}
+            canStop={canStop}
+            chatStatus={chatStatus}
+            className="border-border/50 border-t px-4 py-4 sm:px-5"
+            currentModelSelection={currentModelSelection}
+            disabled={!sessionId || waitingForMessages}
+            error={displayError}
+            onModelChange={onModelChange}
+            onNavigateSetup={onNavigateSetup}
+            onStop={onStop}
+            onSubmit={onSendMessage}
+            onThinkingEffortChange={onThinkingEffortChange}
+            placeholder="Follow up on this task…"
+            primarySupportsVision={activeModelSupportsVision}
+            profileModelId={profileModelId}
+            providerConfigured={providerConfigured}
+            providerModelGroups={providerModelGroups}
+            renderModelLabel={renderModelLabel}
+            showOfflineHint={showOfflineHint}
+            thinkingEffort={thinkingEffort}
+            thinkingEffortDisabled={thinkingEffortDisabled}
+            thinkingEffortVisible={thinkingEffortVisible}
+          />
+        </PromptInputProvider>
+      )}
+    </aside>
+  );
 }
 
 export function TaskRunHistoryPanel({
@@ -305,115 +481,36 @@ export function TaskRunHistoryPanel({
   const showOfflineHint = health?.providerConfigured === false;
 
   return (
-    <aside
-      aria-label={`Run chat for ${task.title}`}
-      className={cn(
-        "flex min-h-[24rem] shrink-0 flex-col bg-background",
-        "border-border/50 border-t",
-        "lg:h-full lg:min-h-0 lg:w-[24rem] lg:border-border/30 lg:border-t-0 lg:border-l",
-        "xl:w-[26rem]"
-      )}
-    >
-      <header className="flex items-start justify-between gap-3 border-border/50 border-b bg-muted/20 px-4 py-3 sm:px-5">
-        <div className="min-w-0 space-y-1.5">
-          <div className="flex items-center gap-2">
-            <ChatNavIcon
-              aria-hidden
-              className="sidebar-nav-icon text-muted-foreground"
-              strokeWidth={2}
-            />
-            <p className="type-label">Run chat</p>
-          </div>
-          <h2 className="type-section-title truncate">{task.title}</h2>
-          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 font-medium text-2xs",
-                statusBadge.className
-              )}
-            >
-              {statusBadge.label}
-            </span>
-            <span className="truncate text-muted-foreground text-xs">
-              {profileLabel}
-            </span>
-          </div>
-        </div>
-        <Button
-          aria-label="Close task chat"
-          className="relative shrink-0 after:absolute after:top-1/2 after:left-1/2 after:size-10 after:-translate-x-1/2 after:-translate-y-1/2"
-          onClick={onClose}
-          size="icon-sm"
-          type="button"
-          variant="ghost"
-        >
-          <Cancel01Icon aria-hidden className="size-4" strokeWidth={2} />
-        </Button>
-      </header>
-
-      <div className="relative min-h-0 flex-1">
-        {waitingForMessages ? (
-          <div className="flex h-full min-h-48 items-center justify-center">
-            <Spinner className="size-5" />
-          </div>
-        ) : (
-          <ChatMessageList
-            className="absolute inset-0 bg-background"
-            contentClassName="px-4 sm:px-5"
-            emptyMessage={
-              emptyHistory
-                ? "No run output yet. Open task details or run the agent again."
-                : undefined
-            }
-            messages={messages}
-          />
-        )}
-      </div>
-
-      {displayError ? (
-        <div className="shrink-0 border-border/50 border-t px-4 py-3 sm:px-5">
-          <p className="text-pretty text-red-700 text-sm dark:text-red-300">
-            {displayError}
-          </p>
-        </div>
-      ) : null}
-
-      {chatUnavailable ? (
-        <div className="shrink-0 border-border/50 border-t px-4 py-3 sm:px-5">
-          <p className="text-pretty text-muted-foreground text-sm">
-            Run history is shown above. Restart the Atlas server to enable
-            follow-up chat.
-          </p>
-        </div>
-      ) : (
-        <PromptInputProvider>
-          <ChatComposer
-            availableSkills={availableSkills}
-            busy={busy}
-            canStop={canStop}
-            chatStatus={chatStatus}
-            className="border-border/50 border-t px-4 py-4 sm:px-5"
-            currentModelSelection={currentModelSelection}
-            disabled={!sessionId || waitingForMessages}
-            error={displayError}
-            onModelChange={handleModelChange}
-            onNavigateSetup={() => navigate(SETUP_PATH)}
-            onStop={stopStreaming}
-            onSubmit={(text, files) => void sendMessage(text, files)}
-            onThinkingEffortChange={handleThinkingEffortChange}
-            placeholder="Follow up on this task…"
-            primarySupportsVision={activeModelSupportsVision}
-            profileModelId={extractModelId(profile?.model)}
-            providerConfigured={health?.providerConfigured}
-            providerModelGroups={providerModelGroups}
-            renderModelLabel={renderModelLabel}
-            showOfflineHint={showOfflineHint}
-            thinkingEffort={thinkingEffort}
-            thinkingEffortDisabled={thinkingEffortDisabled}
-            thinkingEffortVisible={thinkingEffortVisible}
-          />
-        </PromptInputProvider>
-      )}
-    </aside>
+    <TaskRunHistoryView
+      activeModelSupportsVision={activeModelSupportsVision}
+      availableSkills={availableSkills}
+      busy={busy}
+      canStop={canStop}
+      chatStatus={chatStatus}
+      chatUnavailable={chatUnavailable}
+      currentModelSelection={currentModelSelection}
+      displayError={displayError}
+      emptyHistory={emptyHistory}
+      messages={messages}
+      onClose={onClose}
+      onModelChange={handleModelChange}
+      onNavigateSetup={() => navigate(SETUP_PATH)}
+      onSendMessage={(text, files) => void sendMessage(text, files)}
+      onStop={stopStreaming}
+      onThinkingEffortChange={handleThinkingEffortChange}
+      profileLabel={profileLabel}
+      profileModelId={extractModelId(profile?.model)}
+      providerConfigured={health?.providerConfigured}
+      providerModelGroups={providerModelGroups}
+      renderModelLabel={renderModelLabel}
+      sessionId={sessionId}
+      showOfflineHint={showOfflineHint}
+      statusBadge={statusBadge}
+      task={task}
+      thinkingEffort={thinkingEffort}
+      thinkingEffortDisabled={thinkingEffortDisabled}
+      thinkingEffortVisible={thinkingEffortVisible}
+      waitingForMessages={waitingForMessages}
+    />
   );
 }

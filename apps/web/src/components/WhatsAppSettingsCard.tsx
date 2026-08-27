@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { SETTINGS_CARD_LOADING_SKELETON } from "@/components/integration-settings.shared";
 import { WhatsAppSettingsCardContent } from "@/components/whatsapp-settings-card-content";
-import { formatWhatsAppDevicePairingCode } from "@/components/whatsapp-settings-linking-section";
+import { formatWhatsAppDevicePairingCode } from "@/components/whatsapp-settings-linking.shared";
 import { useProfilesQuery } from "@/hooks/use-app-queries";
 import { useSystemStatusQuery } from "@/hooks/use-system-status";
 import {
@@ -24,7 +24,11 @@ interface WhatsAppSettingsCardProps {
   submitLabel?: string;
 }
 
-export function WhatsAppSettingsCard({
+export function WhatsAppSettingsCard(props: WhatsAppSettingsCardProps) {
+  return useWhatsAppSettingsCard(props);
+}
+
+function useWhatsAppSettingsCard({
   embedded = false,
   submitLabel,
   onSaveSuccess,
@@ -79,11 +83,12 @@ export function WhatsAppSettingsCard({
       setBlockedNumbers(settingsBlockedNumbers);
     }
   }, [
+    profiles,
     saveMutation.isPending,
-    settingsProfileId,
     settingsAccessMode,
     settingsAllowedNumbers,
     settingsBlockedNumbers,
+    settingsProfileId,
   ]);
 
   const configured = settings?.configured === true;

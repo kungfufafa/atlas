@@ -1,82 +1,86 @@
 import {
   AtlasApiError,
-  findProviderInstance,
-  IMAGE_VISION_SYSTEM_PROMPT,
   type MessageContentPart,
+  migrateLegacyCapabilityConfig,
+  PROVIDER_CAPABILITY_IDS,
+  type ProviderCapabilityClaim,
   type ProviderClient,
   type UserConfig,
 } from "@atlas/core";
-import { createProviderForInstance } from "../providers/create";
-import { modelSupportsVision } from "../providers/models";
 import {
-  decodeStoredModelSelection,
+  builtinProviderAdapterRegistry,
+  type ProviderAdapterRegistry,
+} from "../providers/capabilities";
+import {
+  describeImagesWithProvider,
+  type VisionUnderstandingOutput,
+} from "../providers/capabilities/executors/vision-understanding";
+import {
+  executeConfiguredCapability,
+  resolveConfiguredCapability,
+} from "../providers/capabilities/runtime";
+import { getModelsForProviderInstance } from "../providers/compatible-models";
+import {
+  createProviderForInstance,
+  readApiKeyForInstance,
+} from "../providers/create";
+import {
   type ResolvedProfileProviderSelection,
   resolveProfileProviderSelection,
 } from "./provider-instance-helpers";
 
-export function resolveVisionProviderSelection(
-  userConfig: UserConfig | null | undefined
-): ResolvedProfileProviderSelection | null {
-  const visionModel = userConfig?.visionModel?.trim();
+export interface VisionCapabilityRuntimeOptions {
+  env?: Record<string, string | undefined>;
+  recordUsage?: (
+    model: string,
+    usage: { inputTokens: number; outputTokens: number }
+  ) => void;
+  registry?: ProviderAdapterRegistry;
+}
 
-  if (!visionModel) {
+export function resolveVisionProviderSelection(
+  userConfig: UserConfig | null | undefined,
+  options: VisionCapabilityRuntimeOptions = {}
+): ResolvedProfileProviderSelection | null {
+  const capabilityConfig = migrateLegacyCapabilityConfig(
+    {
+      imageModel: userConfig?.imageModel,
+      transcriptionModel: userConfig?.transcriptionModel,
+      visionModel: userConfig?.visionModel,
+    },
+    userConfig?.capabilityConfig
+  );
+  if (!capabilityConfig.bindings[PROVIDER_CAPABILITY_IDS.imageUnderstanding]) {
+    if (!userConfig?.capabilityConfig && userConfig?.visionModel?.trim()) {
+      throw new AtlasApiError(
+        "Configured image parsing model is invalid. Update it in Settings → Capability mappings.",
+        400
+      );
+    }
     return null;
   }
 
-  const decoded = decodeStoredModelSelection(visionModel);
-
-  if (!decoded || decoded.providerId === "__unknown__") {
-    throw new AtlasApiError(
-      "Configured image parsing model is invalid. Update it in Settings.",
-      400
-    );
-  }
-
-  const instance = findProviderInstance(
-    { providers: userConfig?.providers ?? [] },
-    decoded.providerId
-  );
-
-  if (!instance) {
-    throw new AtlasApiError(
-      "Configured image parsing provider is missing. Update it in Settings.",
-      400
-    );
-  }
-
-  const resolved = resolveProfileProviderSelection({
-    defaultProviderId: userConfig?.defaultProviderId,
-    profileModel: visionModel,
+  const normalizedConfig: UserConfig = {
+    ...userConfig,
+    capabilityConfig,
+    defaultProviderId: userConfig?.defaultProviderId ?? null,
     providers: userConfig?.providers ?? [],
+  };
+  const selection = resolveConfiguredCapability({
+    capabilityId: PROVIDER_CAPABILITY_IDS.imageUnderstanding,
+    config: normalizedConfig,
+    readApiKey: (instance) =>
+      readApiKeyForInstance(instance, options.env ?? process.env),
+    registry: options.registry ?? builtinProviderAdapterRegistry,
   });
-
-  if (!resolved) {
-    throw new AtlasApiError(
-      "Configured image parsing model is unavailable. Update it in Settings.",
-      400
-    );
-  }
-
-  const supportsVision = modelSupportsVision(
-    resolved.model,
-    resolved.instance.type,
-    resolved.instance.customModels
-  );
-
-  if (supportsVision !== true) {
-    throw new AtlasApiError(
-      `Configured image parsing model "${resolved.model}" does not support vision.`,
-      400
-    );
-  }
-
-  return resolved;
+  return { instance: selection.instance, model: selection.model };
 }
 
 export function resolvePrimaryModelVisionSupport(
   userConfig: UserConfig | null | undefined,
-  profileModel: string | null | undefined
-): boolean | undefined {
+  profileModel: string | null | undefined,
+  registry: ProviderAdapterRegistry = builtinProviderAdapterRegistry
+): boolean {
   const resolved = resolveProfileProviderSelection({
     defaultProviderId: userConfig?.defaultProviderId,
     profileModel,
@@ -84,14 +88,30 @@ export function resolvePrimaryModelVisionSupport(
   });
 
   if (!resolved) {
-    return;
+    return false;
   }
 
-  return modelSupportsVision(
-    resolved.model,
-    resolved.instance.type,
-    resolved.instance.customModels
+  const capabilityId = PROVIDER_CAPABILITY_IDS.chatInputImage;
+  const model = getModelsForProviderInstance(resolved.instance).find(
+    (candidate) => candidate.id === resolved.model
   );
+  const legacyModelClaim =
+    model?.supportsVision === undefined
+      ? undefined
+      : legacyVisionClaim(model.supportsVision);
+  const modelClaim = model?.capabilities?.[capabilityId] ?? legacyModelClaim;
+  const providerClaim = resolved.instance.capabilityOverrides?.[capabilityId];
+  const effective = registry.resolveModelCapability({
+    additionalClaims: [modelClaim, providerClaim].filter(
+      (claim): claim is ProviderCapabilityClaim => claim !== undefined
+    ),
+    capabilityId,
+    credentialsAvailable: true,
+    modelId: resolved.model,
+    providerType: resolved.instance.type,
+  });
+
+  return effective.claim.status === "supported";
 }
 
 export function createVisionFallbackProvider(
@@ -111,19 +131,35 @@ export async function describeImagesWithVisionModel(
   provider: ProviderClient,
   images: Extract<MessageContentPart, { type: "image" }>[]
 ): Promise<string[]> {
-  const descriptions: string[] = [];
+  return (await describeImagesWithProvider(provider, { images })).descriptions;
+}
 
-  for (const image of images) {
-    const result = await provider.generateChat({
-      messages: [{ content: [image], role: "user" }],
-      system: IMAGE_VISION_SYSTEM_PROMPT,
-    });
-
-    descriptions.push(result.content.trim());
+export async function describeImagesWithConfiguredVisionModel(
+  userConfig: UserConfig | null | undefined,
+  images: Extract<MessageContentPart, { type: "image" }>[],
+  options: VisionCapabilityRuntimeOptions = {}
+): Promise<string[]> {
+  const result = await executeConfiguredCapability<VisionUnderstandingOutput>({
+    capabilityId: PROVIDER_CAPABILITY_IDS.imageUnderstanding,
+    config: userConfig,
+    input: { images },
+    readApiKey: (instance) =>
+      readApiKeyForInstance(instance, options.env ?? process.env),
+    registry: options.registry ?? builtinProviderAdapterRegistry,
+  });
+  if (result.output.usage) {
+    options.recordUsage?.(result.selection.model, result.output.usage);
   }
-
-  return descriptions;
+  return result.output.descriptions;
 }
 
 export const VISION_MODEL_REQUIRED_MESSAGE =
   "This model cannot see images. Configure an image parsing model in Settings before sending images.";
+
+function legacyVisionClaim(supportsVision: boolean): ProviderCapabilityClaim {
+  return {
+    source: "legacy-migration",
+    status: supportsVision ? "supported" : "unsupported",
+    verified: false,
+  };
+}

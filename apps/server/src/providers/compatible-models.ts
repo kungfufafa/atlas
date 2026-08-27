@@ -6,6 +6,7 @@ import {
   isDiscoveryModelProvider,
   LLM_FETCH_TIMEOUT_MS,
   normalizeBaseUrl,
+  PROVIDER_CAPABILITY_IDS,
   parseRemoteOpenAIModelEntry,
   resolveCompatibleModelCapabilities,
   withDisabledFetchIdle,
@@ -26,6 +27,27 @@ import { DEFAULT_USER_AGENT } from "./shared";
 const DEFAULT_CONTEXT_WINDOW = 128_000;
 const DEFAULT_MAX_OUTPUT = 8192;
 
+function withLegacyModelCapabilityClaims(
+  model: ProviderModelOption
+): ProviderModelOption {
+  if (model.supportsVision === undefined) {
+    return model;
+  }
+
+  const capabilities = { ...model.capabilities };
+  const visionClaim = {
+    source: "legacy-migration" as const,
+    status: model.supportsVision
+      ? ("supported" as const)
+      : ("unsupported" as const),
+    verified: false,
+  };
+  capabilities[PROVIDER_CAPABILITY_IDS.chatInputImage] ??= visionClaim;
+  capabilities[PROVIDER_CAPABILITY_IDS.imageUnderstanding] ??= visionClaim;
+
+  return { ...model, capabilities };
+}
+
 function resolveOpenRouterCatalogThinking(entry: CustomModelEntry): boolean {
   if (entry.supportsThinking !== undefined) {
     return entry.supportsThinking;
@@ -38,6 +60,7 @@ export function openRouterCustomModelsToCatalog(
   entries: CustomModelEntry[]
 ): ProviderModelOption[] {
   return entries.map((entry) => ({
+    ...(entry.capabilities ? { capabilities: entry.capabilities } : {}),
     contextWindow: DEFAULT_CONTEXT_WINDOW,
     id: entry.id,
     maxOutputTokens: DEFAULT_MAX_OUTPUT,
@@ -69,6 +92,7 @@ export function cerebrasCustomModelsToCatalog(
   entries: CustomModelEntry[]
 ): ProviderModelOption[] {
   return entries.map((entry) => ({
+    ...(entry.capabilities ? { capabilities: entry.capabilities } : {}),
     contextWindow: DEFAULT_CONTEXT_WINDOW,
     id: entry.id,
     maxOutputTokens: DEFAULT_MAX_OUTPUT,
@@ -140,6 +164,10 @@ export function catalogCustomModelsToCatalog(
       provider,
     };
 
+    if (entry.capabilities) {
+      model.capabilities = entry.capabilities;
+    }
+
     if (entry.default) {
       model.default = true;
     }
@@ -181,6 +209,7 @@ export function mergeOpenRouterCatalog(
   for (const entry of customEntries) {
     const existing = byId.get(entry.id);
     byId.set(entry.id, {
+      ...(entry.capabilities ? { capabilities: entry.capabilities } : {}),
       ...(existing ?? {
         contextWindow: DEFAULT_CONTEXT_WINDOW,
         id: entry.id,
@@ -249,6 +278,10 @@ export function customModelsToCatalog(
       provider,
     };
 
+    if (entry.capabilities) {
+      model.capabilities = entry.capabilities;
+    }
+
     if (entry.default) {
       model.default = true;
     }
@@ -303,11 +336,14 @@ export function getModelsForProviderInstance(
   currentModel?: string | null
 ): ProviderModelOption[] {
   const annotate = (models: ProviderModelOption[]): ProviderModelOption[] =>
-    models.map((model) => ({
-      ...model,
-      providerId: instance.id,
-      providerLabel: instance.label,
-    }));
+    models.map((model) => {
+      const normalized = withLegacyModelCapabilityClaims(model);
+      return {
+        ...normalized,
+        providerId: instance.id,
+        providerLabel: instance.label,
+      };
+    });
 
   if (isDiscoveryModelProvider(instance.type)) {
     const entries = instance.customModels ?? [];
@@ -370,27 +406,18 @@ export function getModelsForProviderInstance(
     );
   }
 
-  if (
-    instance.type === "openai" ||
-    instance.type === "anthropic" ||
-    instance.type === "gemini" ||
-    instance.type === "deepseek" ||
-    instance.type === "opencode_go" ||
-    instance.type === "cloudflare"
-  ) {
-    const entries = instance.customModels ?? [];
-    if (entries.length) {
-      const staticModels = AVAILABLE_MODELS.filter(
-        (model) => model.provider === instance.type
-      );
-      return annotate(
-        ensureCurrentModelInCatalog(
-          catalogCustomModelsToCatalog(entries, staticModels, instance.type),
-          currentModel,
-          instance.type
-        )
-      );
-    }
+  const entries = instance.customModels ?? [];
+  if (entries.length) {
+    const staticModels = AVAILABLE_MODELS.filter(
+      (model) => model.provider === instance.type
+    );
+    return annotate(
+      ensureCurrentModelInCatalog(
+        catalogCustomModelsToCatalog(entries, staticModels, instance.type),
+        currentModel,
+        instance.type
+      )
+    );
   }
 
   return annotate(
@@ -641,6 +668,7 @@ function isAbortOrTimeoutError(error: unknown): boolean {
 
 function toDiscoveredCustomModel(
   parsed: {
+    capabilities?: CustomModelEntry["capabilities"];
     id: string;
     name?: string;
     reasoningEffortValues?: string[];
@@ -659,6 +687,7 @@ function toDiscoveredCustomModel(
   );
 
   return {
+    ...(parsed.capabilities ? { capabilities: parsed.capabilities } : {}),
     id: parsed.id,
     name: parsed.name?.trim() || parsed.id,
     ...capabilities,

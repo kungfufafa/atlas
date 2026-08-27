@@ -1,41 +1,18 @@
-import type { ProviderName } from "@atlas/core";
 import {
   type CustomModelEntry,
   findCustomModel,
-  isDiscoveryModelProvider,
+  getBuiltinProviderDefinition,
+  type ProviderName,
   validateCustomModels,
 } from "@atlas/core";
 import type { ProviderModelOption as ContractProviderModelOption } from "@atlas/core/contract";
-import {
-  resolveCerebrasDefaultModel,
-  resolveCompatibleDefaultModel,
-  resolveFireworksDefaultModel,
-  resolveOllamaDefaultModel,
-  resolveOpenRouterDefaultModel,
-} from "./compatible-models";
 
 export type ProviderModelOption = ContractProviderModelOption & {
   contextWindow: number;
   maxOutputTokens: number;
 };
 
-function withVisionDefaults(
-  models: ProviderModelOption[]
-): ProviderModelOption[] {
-  return models.map((model) => ({
-    ...model,
-    supportsVision:
-      model.provider === "opencode_go" || model.provider === "deepseek"
-        ? false
-        : model.provider === "openai" ||
-            model.provider === "anthropic" ||
-            model.provider === "gemini"
-          ? true
-          : model.supportsVision,
-  }));
-}
-
-export const AVAILABLE_MODELS: ProviderModelOption[] = withVisionDefaults([
+export const AVAILABLE_MODELS: ProviderModelOption[] = [
   {
     contextWindow: 200_000,
     default: true,
@@ -437,7 +414,7 @@ export const AVAILABLE_MODELS: ProviderModelOption[] = withVisionDefaults([
     supportsThinking: false,
     supportsVision: false,
   },
-]);
+];
 
 const OPENROUTER_MODEL_SLUG_PATTERN = /^[\w.-]+\/[\w.:-]+$/;
 
@@ -558,58 +535,19 @@ export function getDefaultModel(
   provider: ProviderName,
   customModels?: CustomModelEntry[]
 ): string {
-  if (isDiscoveryModelProvider(provider)) {
-    return resolveCompatibleDefaultModel(customModels);
-  }
-
-  if (provider === "openrouter" && customModels?.length) {
-    return resolveOpenRouterDefaultModel(customModels);
-  }
-
-  if (provider === "cerebras" && customModels?.length) {
-    return resolveCerebrasDefaultModel(customModels);
-  }
-
-  if (provider === "fireworks" && customModels?.length) {
-    return resolveFireworksDefaultModel(customModels);
-  }
-
-  if (provider === "ollama" && customModels?.length) {
-    return resolveOllamaDefaultModel(customModels);
-  }
-
-  if (
-    (provider === "openai" ||
-      provider === "anthropic" ||
-      provider === "gemini" ||
-      provider === "deepseek" ||
-      provider === "opencode_go" ||
-      provider === "cloudflare") &&
-    customModels?.length
-  ) {
-    return resolveCompatibleDefaultModel(customModels, undefined);
+  const customDefault = preferredCustomModel(customModels);
+  if (customDefault) {
+    return customDefault;
   }
 
   const models = getModelsForProvider(provider);
-  const fallback =
-    provider === "openrouter"
-      ? "anthropic/claude-sonnet-4-6"
-      : provider === "anthropic"
-        ? "claude-sonnet-4-6"
-        : provider === "gemini"
-          ? "gemini-3-flash-preview"
-          : provider === "deepseek"
-            ? "deepseek-v4-flash"
-            : provider === "cerebras"
-              ? "gpt-oss-120b"
-              : provider === "fireworks"
-                ? "accounts/fireworks/models/kimi-k2p6"
-                : provider === "opencode_go"
-                  ? "opencode-go/kimi-k2.7-code"
-                  : provider === "cloudflare"
-                    ? "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
-                    : "gpt-5.4";
-  return models.find((model) => model.default)?.id ?? models[0]?.id ?? fallback;
+  const definition = getBuiltinProviderDefinition(provider);
+  return (
+    models.find((model) => model.default)?.id ??
+    models[0]?.id ??
+    definition?.fallbackModelId ??
+    "custom-model"
+  );
 }
 
 export function isValidModel(model: string): boolean {
@@ -622,82 +560,28 @@ export function resolveModel(
   customModels?: CustomModelEntry[]
 ): string {
   const trimmed = model?.trim();
+  const definition = getBuiltinProviderDefinition(provider);
+  const aliased = trimmed
+    ? definition?.deprecatedModelAliases?.[trimmed]
+    : undefined;
 
-  if (
-    provider === "gemini" &&
-    trimmed &&
-    (trimmed === "gemini-2.0-flash" ||
-      trimmed === "gemini-2.0-flash-lite" ||
-      trimmed === "gemini-1.5-flash" ||
-      trimmed === "gemini-1.5-pro" ||
-      trimmed === "gemini-2.0-pro-exp-02-05" ||
-      trimmed === "gemini-2.5-flash" ||
-      trimmed === "gemini-2.5-flash-lite" ||
-      trimmed === "gemini-2.5-pro")
-  ) {
-    return "gemini-3-flash-preview";
+  if (aliased) {
+    return aliased;
   }
 
-  if (trimmed && provider === "openrouter" && isOpenRouterModelSlug(trimmed)) {
+  if (
+    trimmed &&
+    definition?.modelIdPolicy === "provider-qualified" &&
+    isOpenRouterModelSlug(trimmed)
+  ) {
     return trimmed;
   }
 
-  if (trimmed && provider === "cerebras" && customModels?.length) {
+  if (trimmed && customModels?.length) {
     if (findCustomModel(customModels, trimmed)) {
       return trimmed;
     }
-
-    return resolveCerebrasDefaultModel(customModels, trimmed);
-  }
-
-  if (trimmed && provider === "fireworks" && customModels?.length) {
-    if (findCustomModel(customModels, trimmed)) {
-      return trimmed;
-    }
-
-    return resolveFireworksDefaultModel(customModels, trimmed);
-  }
-
-  if (trimmed && provider === "ollama" && customModels?.length) {
-    if (findCustomModel(customModels, trimmed)) {
-      return trimmed;
-    }
-
-    return resolveOllamaDefaultModel(customModels, trimmed);
-  }
-
-  if (trimmed && provider === "cloudflare" && customModels?.length) {
-    if (findCustomModel(customModels, trimmed)) {
-      return trimmed;
-    }
-
-    return resolveCompatibleDefaultModel(customModels, trimmed);
-  }
-
-  if (trimmed && isDiscoveryModelProvider(provider)) {
-    if (findCustomModel(customModels, trimmed)) {
-      return trimmed;
-    }
-
-    return resolveCompatibleDefaultModel(customModels, trimmed);
-  }
-
-  if (
-    trimmed &&
-    (provider === "openai" ||
-      provider === "anthropic" ||
-      provider === "gemini" ||
-      provider === "deepseek" ||
-      provider === "cerebras" ||
-      provider === "fireworks" ||
-      provider === "opencode_go") &&
-    customModels?.length
-  ) {
-    if (findCustomModel(customModels, trimmed)) {
-      return trimmed;
-    }
-
-    return resolveCompatibleDefaultModel(customModels, trimmed);
+    return getDefaultModel(provider, customModels);
   }
 
   if (
@@ -707,154 +591,17 @@ export function resolveModel(
     return trimmed;
   }
 
-  if (
-    trimmed &&
-    (provider === "openai" ||
-      provider === "anthropic" ||
-      provider === "gemini" ||
-      provider === "opencode_go")
-  ) {
+  if (trimmed && definition?.modelIdPolicy === "passthrough") {
     return trimmed;
   }
 
   return getDefaultModel(provider, customModels);
 }
 
-export function modelSupportsVision(
-  modelId: string,
-  provider: ProviderName,
-  customModels?: CustomModelEntry[]
-): boolean | undefined {
-  const custom = findCustomModel(customModels, modelId);
-
-  if (custom?.supportsVision !== undefined) {
-    return custom.supportsVision;
-  }
-
-  if (
-    isDiscoveryModelProvider(provider) ||
-    provider === "opencode_go" ||
-    provider === "deepseek"
-  ) {
-    return false;
-  }
-
-  if (
-    provider === "cerebras" ||
-    provider === "fireworks" ||
-    provider === "ollama"
-  ) {
-    if (custom?.supportsVision !== undefined) {
-      return custom.supportsVision;
-    }
-
-    const catalog = getModelById(modelId);
-    return catalog?.supportsVision ?? false;
-  }
-
-  const catalog = getModelById(modelId);
-
-  if (catalog?.supportsVision !== undefined) {
-    return catalog.supportsVision;
-  }
-
-  if (
-    provider === "openai" ||
-    provider === "anthropic" ||
-    provider === "gemini"
-  ) {
-    return true;
-  }
-}
-
-export const TRANSCRIPTION_MODEL_IDS = new Set([
-  "whisper-1",
-  "gpt-4o-transcribe",
-  "gpt-4o-mini-transcribe",
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
-  "gemini-1.5-pro",
-]);
-
-export function modelSupportsTranscription(
-  modelId: string,
-  provider: ProviderName
-): boolean {
-  const trimmed = modelId.trim();
-  if (provider === "openai") {
-    return (
-      TRANSCRIPTION_MODEL_IDS.has(trimmed) ||
-      trimmed.startsWith("whisper") ||
-      trimmed.includes("transcribe")
-    );
-  }
-
-  if (provider === "gemini") {
-    return TRANSCRIPTION_MODEL_IDS.has(trimmed) || trimmed.startsWith("gemini");
-  }
-
-  if (
-    provider === "openai_compatible" ||
-    provider === "openrouter" ||
-    provider === "ollama" ||
-    provider === "fireworks" ||
-    provider === "cerebras"
-  ) {
-    return Boolean(trimmed);
-  }
-
-  return false;
-}
-
-export const IMAGE_GENERATION_MODEL_ID = "gpt-image-2";
-export const IMAGE_GENERATION_SELECTION = `openai::${IMAGE_GENERATION_MODEL_ID}`;
-
-export const IMAGE_GENERATION_MODEL_IDS = new Set([
-  "gpt-image-2",
-  "dall-e-3",
-  "dall-e-2",
-  "imagen-3.0-generate-002",
-  "imagen-3",
-]);
-
-export function modelSupportsImageGeneration(
-  modelId: string,
-  provider: ProviderName
-): boolean {
-  const trimmed = modelId.trim();
-  if (provider === "openai") {
-    return (
-      IMAGE_GENERATION_MODEL_IDS.has(trimmed) ||
-      trimmed.startsWith("dall-e") ||
-      trimmed.startsWith("gpt-image")
-    );
-  }
-
-  if (provider === "gemini") {
-    return (
-      IMAGE_GENERATION_MODEL_IDS.has(trimmed) || trimmed.startsWith("imagen")
-    );
-  }
-
-  if (
-    provider === "openai_compatible" ||
-    provider === "openrouter" ||
-    provider === "fireworks" ||
-    provider === "ollama"
-  ) {
-    return Boolean(trimmed);
-  }
-
-  return false;
-}
-
-export function isAllowedImageGenerationSelection(
-  value: string | null | undefined
-): boolean {
-  const trimmed = value?.trim();
-  if (!trimmed) {
-    return false;
-  }
-
-  return trimmed === IMAGE_GENERATION_SELECTION;
+function preferredCustomModel(
+  customModels: CustomModelEntry[] | undefined
+): string | undefined {
+  return (
+    customModels?.find((entry) => entry.default)?.id ?? customModels?.[0]?.id
+  );
 }

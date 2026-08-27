@@ -115,6 +115,51 @@ test("clients send org context on authenticated requests", async () => {
   expect(headers.get("X-Org-Id")).toBe("org_test");
 });
 
+test("capability mapping helpers use the generic workspace endpoints", async () => {
+  const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
+    [];
+  const client = createClient({
+    authToken: "local-auth-token",
+    baseUrl: "http://localhost:4310",
+    fetch: async (input, init) => {
+      fetchCalls.push({ init, input });
+      return Response.json({
+        capabilityId: "image.generation",
+        config: { bindings: {}, schemaVersion: 1 },
+      });
+    },
+    orgId: "org_test",
+  });
+  const request = {
+    binding: {
+      contractVersion: 1,
+      enabled: true,
+      fallbacks: [],
+      mode: "manual" as const,
+      primary: { modelId: "image-model", providerId: "provider one" },
+    },
+  };
+
+  await client.getCapabilityCatalog();
+  await client.getCapabilityMappings();
+  await client.getCapabilityOptions();
+  await client.setCapabilityMapping("image.generation", request);
+
+  expect(fetchCalls.slice(0, 3).map((call) => String(call.input))).toEqual([
+    "http://localhost:4310/v1/capabilities/catalog",
+    "http://localhost:4310/v1/capabilities/mappings",
+    "http://localhost:4310/v1/capabilities/options",
+  ]);
+  expect(String(fetchCalls[3]?.input)).toBe(
+    "http://localhost:4310/v1/capabilities/mappings/image.generation"
+  );
+  expect(fetchCalls[3]?.init?.method).toBe("PUT");
+  expect(fetchCalls[3]?.init?.body).toBe(JSON.stringify(request));
+  expect(new Headers(fetchCalls[3]?.init?.headers).get("X-Org-Id")).toBe(
+    "org_test"
+  );
+});
+
 test("coding harness mode requests stay scoped to the active organization", async () => {
   const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
     [];

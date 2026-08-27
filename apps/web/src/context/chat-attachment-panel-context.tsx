@@ -52,14 +52,21 @@ export function ChatAttachmentPanelProvider({
   }, [openId, presentation]);
 
   const hide = useCallback((id?: string) => {
-    setConfig((current) => {
-      if (!current) {
+    const current = configRef.current;
+    if (!current) {
+      return;
+    }
+    if (id && current.id !== id) {
+      return;
+    }
+    dismissedRef.current.add(current.id);
+    setConfig((active) => {
+      if (!active) {
         return null;
       }
-      if (id && current.id !== id) {
-        return current;
+      if (id && active.id !== id) {
+        return active;
       }
-      dismissedRef.current.add(current.id);
       return null;
     });
   }, []);

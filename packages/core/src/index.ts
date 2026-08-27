@@ -115,6 +115,8 @@ export * from "./omni-install";
 export * from "./presentation-engine";
 export * from "./profile-avatar";
 export * from "./profiles";
+export * from "./provider-capabilities";
+export * from "./provider-catalog";
 export * from "./provider-label";
 export * from "./provider-setup-prompt";
 export * from "./redaction-boundary";

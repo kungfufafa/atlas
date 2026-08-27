@@ -1,10 +1,13 @@
 import type {
   AgentChannel,
   AutomationDefinition,
+  CapabilitySupportStatus,
   ChatContextUsage,
   ChatMessage,
   CompactionResponse,
   MessageContentPart,
+  ProviderCapabilityConstraints,
+  ProviderCapabilityId,
   ProviderChatOptions,
   ProviderClient,
   SendMessageInput,
@@ -19,9 +22,60 @@ export interface AgentRequest {
 }
 
 export interface AgentDependencies {
+  chatCapabilityPolicy?: ChatCapabilityPolicy;
   chatOptions?: ProviderChatOptions;
   provider?: ProviderClient;
   tools?: ToolDefinition[];
+}
+
+export interface ChatCapabilityPolicyEntry {
+  constraints?: ProviderCapabilityConstraints;
+  reasons?: readonly string[];
+  selectable: boolean;
+  status: CapabilitySupportStatus;
+}
+
+export interface ChatCapabilityPolicy {
+  capabilities: Partial<
+    Record<ProviderCapabilityId, ChatCapabilityPolicyEntry>
+  >;
+}
+
+export type ChatCapabilityErrorCode =
+  | "CHAT_CAPABILITY_UNAVAILABLE"
+  | "CHAT_CAPABILITY_UNKNOWN"
+  | "CHAT_CAPABILITY_UNSUPPORTED";
+
+export class ChatCapabilityError extends Error {
+  readonly capabilityId: ProviderCapabilityId;
+  readonly code: ChatCapabilityErrorCode;
+  readonly reasons: readonly string[];
+  readonly status: CapabilitySupportStatus;
+
+  constructor(
+    capabilityId: ProviderCapabilityId,
+    entry: ChatCapabilityPolicyEntry | undefined
+  ) {
+    const status = entry?.status ?? "unknown";
+    const code =
+      status === "unknown"
+        ? "CHAT_CAPABILITY_UNKNOWN"
+        : status === "unsupported"
+          ? "CHAT_CAPABILITY_UNSUPPORTED"
+          : "CHAT_CAPABILITY_UNAVAILABLE";
+    const message =
+      status === "unknown"
+        ? `Atlas cannot verify required capability "${capabilityId}" for the selected model.`
+        : status === "unsupported"
+          ? `The selected model does not support required capability "${capabilityId}".`
+          : `Required capability "${capabilityId}" is unavailable for the selected model.`;
+    super(message);
+    this.name = "ChatCapabilityError";
+    this.capabilityId = capabilityId;
+    this.code = code;
+    this.reasons = entry?.reasons ?? [];
+    this.status = status;
+  }
 }
 
 import {
@@ -31,7 +85,10 @@ import {
   messagesIncludeUserDocuments,
   messagesIncludeUserImages,
   normalizeUserContent,
+  PROVIDER_CAPABILITY_IDS,
   partitionTools,
+  resolveMessagesForNonVisionProvider,
+  resolveUserContentForNonVisionProvider,
   sourceItemsFromSearchToolResult,
   toLlmToolDefinitions,
   WEB_SEARCH_TOOL_NAME,
@@ -421,7 +478,6 @@ async function sendMessage(
     options.handlers.onPolicyResolved?.(resolvedPolicy);
   }
 
-  history.push({ content: userContent, role: "user" });
   const multimodalTurn =
     messageContentHasImages(userContent) ||
     messageContentHasDocuments(userContent) ||
@@ -439,26 +495,53 @@ async function sendMessage(
       options.handlers.onChunk(reply);
     }
 
+    history.push({ content: userContent, role: "user" });
     history.push({ content: reply, role: "assistant" });
     return reply;
   }
 
-  const { localTools, hasWebSearch } = partitionTools(tools);
+  const partitionedTools = partitionTools(tools);
+  const hasWebSearch = partitionedTools.hasWebSearch;
   const enableTools =
-    options.enableToolLoop && (localTools.length > 0 || hasWebSearch);
+    options.enableToolLoop &&
+    (partitionedTools.localTools.length > 0 || hasWebSearch);
+  const nativeWebSearch =
+    enableTools &&
+    hasWebSearch &&
+    chatCapabilitySupportsRequest(
+      dependencies.chatCapabilityPolicy,
+      PROVIDER_CAPABILITY_IDS.chatNativeWebSearch,
+      {
+        "request.local-tools": partitionedTools.localTools.length > 0,
+        "request.multimodal": multimodalTurn,
+      }
+    );
+  const localTools =
+    enableTools && hasWebSearch && !nativeWebSearch
+      ? tools
+      : partitionedTools.localTools;
   const llmTools =
     enableTools && localTools.length > 0
       ? toLlmToolDefinitions(localTools)
       : undefined;
   const providerOptions = buildProviderOptions(dependencies, {
     multimodalTurn,
-    webSearch:
-      enableTools &&
-      hasWebSearch &&
-      dependencies.provider.name !== "openrouter" &&
-      !(dependencies.provider.name === "gemini" && localTools.length > 0) &&
-      !multimodalTurn,
+    webSearch: nativeWebSearch,
   });
+  const chatCapabilityRequest = resolveChatCapabilityRequest(
+    dependencies.chatCapabilityPolicy,
+    {
+      requestsReasoning: providerOptions?.thinking?.enabled === true,
+      sendsTools: Boolean(llmTools?.length),
+      usesImageInput:
+        messageContentHasImages(
+          resolveUserContentForNonVisionProvider(userContent)
+        ) ||
+        messagesIncludeUserImages(resolveMessagesForNonVisionProvider(history)),
+      usesNativeWebSearch: providerOptions?.webSearch === true,
+    }
+  );
+  history.push({ content: userContent, role: "user" });
 
   if (options.runCompaction) {
     await options.runCompaction(false);
@@ -506,6 +589,7 @@ async function sendMessage(
       enableTools,
       llmTools,
       providerOptions,
+      chatCapabilityRequest.streamingAvailable,
       options.handlers,
       effectiveToolContext,
       options.rehydrateMessagesForProvider,
@@ -594,6 +678,7 @@ async function runConversation(
   enableToolLoop: boolean,
   llmTools: ReturnType<typeof toLlmToolDefinitions> | undefined,
   providerOptions: ProviderChatOptions | undefined,
+  streamingAvailable: boolean,
   handlers?: StreamHandlers,
   toolContext?: ToolContext,
   rehydrateMessagesForProvider?: (
@@ -622,6 +707,7 @@ async function runConversation(
         llmTools,
         providerOptions,
         mode,
+        streamingAvailable,
         handlers,
         rehydrateMessagesForProvider,
         signal,
@@ -1141,6 +1227,7 @@ async function generateReply(
   tools: ReturnType<typeof toLlmToolDefinitions> | undefined,
   providerOptions: ProviderChatOptions | undefined,
   mode: "send" | "stream",
+  streamingAvailable: boolean,
   handlers?: StreamHandlers,
   rehydrateMessagesForProvider?: (
     messages: readonly ChatMessage[]
@@ -1175,7 +1262,7 @@ async function generateReply(
     tools,
   };
 
-  if (mode === "stream" && handlers) {
+  if (mode === "stream" && handlers && streamingAvailable) {
     return provider.streamChat(input, {
       onChunk: handlers.onChunk,
       onThinking: handlers.onThinking,
@@ -1185,7 +1272,89 @@ async function generateReply(
     });
   }
 
-  return provider.generateChat(input);
+  const result = await provider.generateChat(input);
+  if (mode === "stream" && handlers) {
+    const thinking = result.assistantMessage.thinking;
+    if (thinking) {
+      handlers.onThinking?.(thinking);
+    }
+    const content = result.content || result.assistantMessage.content;
+    if (content) {
+      handlers.onChunk(content);
+    }
+  }
+  return result;
+}
+
+export function resolveChatCapabilityRequest(
+  policy: ChatCapabilityPolicy | undefined,
+  request: {
+    requestsReasoning: boolean;
+    sendsTools: boolean;
+    usesImageInput?: boolean;
+    usesNativeWebSearch?: boolean;
+  }
+): { streamingAvailable: boolean } {
+  if (!policy) {
+    return { streamingAvailable: true };
+  }
+
+  requireChatCapability(policy, PROVIDER_CAPABILITY_IDS.chatCompletion);
+  if (request.sendsTools) {
+    requireChatCapability(policy, PROVIDER_CAPABILITY_IDS.chatToolUse);
+  }
+  if (request.requestsReasoning) {
+    requireChatCapability(policy, PROVIDER_CAPABILITY_IDS.chatReasoning);
+  }
+  if (request.usesImageInput) {
+    requireChatCapability(policy, PROVIDER_CAPABILITY_IDS.chatInputImage);
+  }
+  if (request.usesNativeWebSearch) {
+    requireChatCapability(policy, PROVIDER_CAPABILITY_IDS.chatNativeWebSearch);
+  }
+
+  return {
+    streamingAvailable: isChatCapabilityAvailable(
+      policy.capabilities[PROVIDER_CAPABILITY_IDS.chatStreaming]
+    ),
+  };
+}
+
+export function requireChatCapability(
+  policy: ChatCapabilityPolicy,
+  capabilityId: ProviderCapabilityId
+): void {
+  const entry = policy.capabilities[capabilityId];
+  if (!isChatCapabilityAvailable(entry)) {
+    throw new ChatCapabilityError(capabilityId, entry);
+  }
+}
+
+function isChatCapabilityAvailable(
+  entry: ChatCapabilityPolicyEntry | undefined
+): boolean {
+  return entry?.status === "supported" && entry.selectable;
+}
+
+function chatCapabilitySupportsRequest(
+  policy: ChatCapabilityPolicy | undefined,
+  capabilityId: ProviderCapabilityId,
+  requestValues: Readonly<Record<string, boolean | number | string>>
+): boolean {
+  const entry = policy?.capabilities[capabilityId];
+  if (!isChatCapabilityAvailable(entry)) {
+    return false;
+  }
+
+  const supportedValues = entry?.constraints?.supportedValues;
+  if (!supportedValues) {
+    return true;
+  }
+
+  return Object.entries(requestValues).every(([key, value]) => {
+    const allowed = supportedValues[key];
+    return !allowed || allowed.includes(value);
+  });
 }
 
 function buildProviderOptions(

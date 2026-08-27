@@ -1,4 +1,5 @@
 export * from "./anthropic";
+export * from "./capabilities";
 export * from "./cerebras";
 export * from "./cloudflare";
 export * from "./compatible-models";

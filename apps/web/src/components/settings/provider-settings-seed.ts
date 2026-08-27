@@ -10,6 +10,7 @@ export function seedManageModelRows(
 ): ModelListRow[] {
   if (customModels?.length) {
     return customModels.map((model) => ({
+      ...(model.capabilities ? { capabilities: model.capabilities } : {}),
       default: model.default,
       id: model.id,
       inputPerMillionUsd: model.inputPerMillionUsd,
@@ -17,10 +18,12 @@ export function seedManageModelRows(
       outputPerMillionUsd: model.outputPerMillionUsd,
       reasoningEffortValues: model.reasoningEffortValues,
       supportsThinking: model.supportsThinking,
+      supportsVision: model.supportsVision,
     }));
   }
 
   return configuredModels.map((model) => ({
+    ...(model.capabilities ? { capabilities: model.capabilities } : {}),
     default: model.default,
     id: model.id,
     inputPerMillionUsd: model.inputPerMillionUsd,
@@ -28,6 +31,7 @@ export function seedManageModelRows(
     outputPerMillionUsd: model.outputPerMillionUsd,
     reasoningEffortValues: model.reasoningEffortValues,
     supportsThinking: model.supportsThinking,
+    supportsVision: model.supportsVision,
   }));
 }
 
@@ -39,6 +43,7 @@ export function seedShortlistManageModelRows(
 ): ModelListRow[] {
   if (customModels?.length) {
     return customModels.map((model) => ({
+      ...(model.capabilities ? { capabilities: model.capabilities } : {}),
       default: model.default,
       id: model.id,
       inputPerMillionUsd: model.inputPerMillionUsd,

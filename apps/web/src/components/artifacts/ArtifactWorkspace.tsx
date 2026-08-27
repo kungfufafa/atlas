@@ -1,3 +1,4 @@
+import type { ArtifactPreview } from "@atlas/core";
 import {
   ARTIFACT_EDIT_MAX_COLUMNS,
   ARTIFACT_EDIT_MAX_ROWS,
@@ -11,7 +12,13 @@ import {
   Minimize01Icon,
   PencilEdit01Icon,
 } from "hugeicons-react";
-import { useCallback, useEffect, useState } from "react";
+import {
+  type RefObject,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   type ArtifactPreviewMode,
   ArtifactPreviewModeToggle,
@@ -47,7 +54,10 @@ import { queryClient } from "@/lib/query-client";
 import { queryKeys } from "@/lib/query-keys";
 import { toast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
-import { useArtifactWorkspace } from "./ArtifactWorkspaceContext";
+import {
+  useArtifactWorkspace,
+  type WorkspaceArtifactTarget,
+} from "./ArtifactWorkspaceContext";
 import { useArtifactEditor } from "./use-artifact-editor";
 import { CodeViewer } from "./viewers/CodeViewer";
 import { DocumentViewer } from "./viewers/DocumentViewer";
@@ -61,8 +71,20 @@ import { PresentationViewer } from "./viewers/PresentationViewer";
 import { SpreadsheetViewer } from "./viewers/SpreadsheetViewer";
 
 export function ArtifactWorkspace() {
+  const { isOpen, activeArtifact } = useArtifactWorkspace();
+  if (!(isOpen && activeArtifact)) {
+    return null;
+  }
+
+  return (
+    <ArtifactWorkspaceSession
+      key={`${activeArtifact.profileId}\u0000${activeArtifact.path}`}
+    />
+  );
+}
+
+function ArtifactWorkspaceSession() {
   const {
-    isOpen,
     activeArtifact,
     activePreview,
     loading,
@@ -73,6 +95,7 @@ export function ArtifactWorkspace() {
     setSheet,
   } = useArtifactWorkspace();
   const { activeOrg, user } = useAuth();
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [previewMode, setPreviewMode] =
@@ -98,31 +121,9 @@ export function ArtifactWorkspace() {
     onSaved: handleArtifactSaved,
     profileId: artifactProfileId,
   });
+  useShowModal(dialogRef);
 
-  useEffect(() => {
-    setPreviewMode("preview");
-    setCopied(false);
-  }, [activeArtifact?.path, activeArtifact?.artifactId]);
-
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && isOpen) {
-        if (editor.saving) {
-          e.preventDefault();
-          return;
-        }
-        if (editor.draft) {
-          editor.cancel();
-        } else {
-          closeArtifact();
-        }
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [closeArtifact, editor.cancel, editor.draft, editor.saving, isOpen]);
-
-  if (!(isOpen && activeArtifact)) {
+  if (!activeArtifact) {
     return null;
   }
 
@@ -149,28 +150,10 @@ export function ArtifactWorkspace() {
   const editDisabledReason =
     knownEditLimitReason ?? editor.unavailableReason ?? null;
 
+  const canCopy = artifactPreviewCanCopy(activePreview);
+
   async function handleCopy() {
-    if (!activePreview) {
-      return;
-    }
-    let text: string | null = null;
-    if (artifactPreviewUsesFetchedSource(activePreview)) {
-      try {
-        const response = await fetch(downloadUrl, { credentials: "include" });
-        if (response.ok) {
-          text = await response.text();
-        }
-      } catch {
-        text = null;
-      }
-      if (!text && "safeHtml" in activePreview) {
-        text = activePreview.safeHtml;
-      }
-    } else if ("content" in activePreview) {
-      text = activePreview.content;
-    } else if ("formatted" in activePreview) {
-      text = activePreview.formatted;
-    }
+    const text = await readWorkspacePreviewText(activePreview, downloadUrl);
     if (!text) {
       return;
     }
@@ -179,191 +162,22 @@ export function ArtifactWorkspace() {
     window.setTimeout(() => setCopied(false), 2000);
   }
 
-  const canCopy = artifactPreviewCanCopy(activePreview);
-
-  function renderViewer() {
-    if (loading) {
-      return (
-        <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-          <Spinner className="size-5" />
-        </div>
-      );
-    }
-
-    if (error || !activePreview || activePreview.status === "failed") {
-      return (
-        <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-6 text-center">
-          <p className="max-w-md text-muted-foreground text-sm">
-            {activePreview?.error ||
-              error ||
-              "This file couldn't be previewed."}
-          </p>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => void refreshPreview()}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              Try again
-            </Button>
-            <a
-              className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
-              download={activeArtifact?.filename}
-              href={downloadUrl}
-            >
-              Download
-            </a>
-          </div>
-        </div>
-      );
-    }
-
-    switch (activePreview.type) {
-      case "pdf":
-        return <PdfViewer downloadUrl={downloadUrl} preview={activePreview} />;
-      case "spreadsheet":
-        return (
-          <SpreadsheetViewer
-            downloadUrl={downloadUrl}
-            editor={
-              editor.draft?.source.kind === "delimited"
-                ? {
-                    canAddColumn:
-                      Math.max(
-                        0,
-                        ...editor.draft.rows.map((row) => row.length)
-                      ) < ARTIFACT_EDIT_MAX_COLUMNS,
-                    canAddRow:
-                      editor.draft.rows.length < ARTIFACT_EDIT_MAX_ROWS,
-                    disabled: editor.saving,
-                    onAddColumn: () =>
-                      editor.setRows(addEditableColumn(editor.draft!.rows)),
-                    onAddRow: () =>
-                      editor.setRows(addEditableRow(editor.draft!.rows)),
-                    onChangeCell: (rowIndex, columnIndex, value) =>
-                      editor.setRows(
-                        updateEditableCell(
-                          editor.draft!.rows,
-                          rowIndex,
-                          columnIndex,
-                          value
-                        )
-                      ),
-                    rows: editor.draft.rows,
-                  }
-                : undefined
-            }
-            onSelectSheet={(sheetName, sheetIndex) =>
-              setSheet(sheetName, sheetIndex)
-            }
-            preview={activePreview}
-          />
-        );
-      case "presentation":
-        return (
-          <PresentationViewer
-            downloadUrl={downloadUrl}
-            preview={activePreview}
-          />
-        );
-      case "document":
-        return (
-          <DocumentViewer downloadUrl={downloadUrl} preview={activePreview} />
-        );
-      case "markdown":
-        return (
-          <MarkdownViewer
-            downloadUrl={downloadUrl}
-            editor={
-              editor.draft?.source.kind === "markdown"
-                ? {
-                    content: editor.draft.content,
-                    disabled: editor.saving,
-                    onChange: editor.setContent,
-                  }
-                : undefined
-            }
-            preview={activePreview}
-          />
-        );
-      case "code":
-      case "text": {
-        if (isMermaidArtifactFilename(artifact.filename)) {
-          const source = activePreview.content;
-          if (previewMode === "code") {
-            return (
-              <CodeViewer
-                downloadUrl={downloadUrl}
-                preview={{
-                  ...activePreview,
-                  language: "mermaid",
-                  type: "code",
-                }}
-              />
-            );
-          }
-          const mermaidError = mermaidPreviewError(source);
-          return (
-            <MarkdownViewer
-              downloadUrl={downloadUrl}
-              preview={{
-                ...activePreview,
-                content: mermaidError
-                  ? mermaidError
-                  : markdownForMermaidSource(source),
-                type: "markdown",
-                wordCount: source.trim().split(/\s+/).filter(Boolean).length,
-              }}
-            />
-          );
-        }
-        if (activePreview.type === "code") {
-          return (
-            <CodeViewer downloadUrl={downloadUrl} preview={activePreview} />
-          );
-        }
-        return (
-          <CodeViewer
-            downloadUrl={downloadUrl}
-            preview={{
-              ...activePreview,
-              language: "text",
-              type: "code",
-            }}
-          />
-        );
-      }
-      case "json":
-        return <JsonViewer downloadUrl={downloadUrl} preview={activePreview} />;
-      case "image":
-        return (
-          <ImageViewer
-            downloadUrl={downloadUrl}
-            mode={previewMode}
-            preview={activePreview}
-          />
-        );
-      case "html":
-        return (
-          <HtmlViewer
-            downloadUrl={downloadUrl}
-            mode={previewMode}
-            preview={activePreview}
-          />
-        );
-      default:
-        return (
-          <GenericViewer downloadUrl={downloadUrl} preview={activePreview} />
-        );
-    }
-  }
-
   return (
-    <div
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-0 sm:p-4"
-      role="dialog"
+    <dialog
+      aria-labelledby="artifact-workspace-title"
+      className="fixed inset-0 z-50 m-0 flex h-dvh max-h-none w-dvw max-w-none items-center justify-center border-0 bg-transparent p-0 backdrop:bg-black/50 open:flex sm:p-4"
+      onCancel={(event) => {
+        event.preventDefault();
+        if (editor.saving) {
+          return;
+        }
+        if (editor.draft) {
+          editor.cancel();
+        } else {
+          closeArtifact();
+        }
+      }}
+      ref={dialogRef}
     >
       <div
         className={cn(
@@ -375,7 +189,10 @@ export function ArtifactWorkspace() {
       >
         <header className="flex h-11 shrink-0 items-center gap-2 border-border border-b px-2.5">
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <h3 className="truncate font-medium text-sm">
+            <h3
+              className="truncate font-medium text-sm"
+              id="artifact-workspace-title"
+            >
               {activeArtifact.filename}
             </h3>
             {activeArtifact.revision && activeArtifact.revision > 1 ? (
@@ -545,9 +362,245 @@ export function ArtifactWorkspace() {
               {editor.error ?? editor.unavailableReason}
             </div>
           ) : null}
-          {renderViewer()}
+          <ArtifactWorkspaceViewer
+            activeArtifact={artifact}
+            activePreview={activePreview}
+            downloadUrl={downloadUrl}
+            editor={editor}
+            error={error}
+            loading={loading}
+            onRetry={() => void refreshPreview()}
+            onSelectSheet={setSheet}
+            previewMode={previewMode}
+          />
         </div>
       </div>
-    </div>
+    </dialog>
   );
+}
+
+function useShowModal(dialogRef: RefObject<HTMLDialogElement | null>) {
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) {
+      return;
+    }
+    if (!dialog.open) {
+      dialog.showModal();
+    }
+    return () => {
+      if (dialog.open) {
+        dialog.close();
+      }
+    };
+  }, [dialogRef]);
+}
+
+async function readWorkspacePreviewText(
+  activePreview: ArtifactPreview | null,
+  downloadUrl: string
+): Promise<string | null> {
+  if (!activePreview) {
+    return null;
+  }
+  let text: string | null = null;
+  if (artifactPreviewUsesFetchedSource(activePreview)) {
+    try {
+      const response = await fetch(downloadUrl, { credentials: "include" });
+      if (response.ok) {
+        text = await response.text();
+      }
+    } catch {
+      text = null;
+    }
+    if (!text && "safeHtml" in activePreview) {
+      text = activePreview.safeHtml;
+    }
+  } else if ("content" in activePreview) {
+    text = activePreview.content;
+  } else if ("formatted" in activePreview) {
+    text = activePreview.formatted;
+  }
+  return text;
+}
+
+function ArtifactWorkspaceViewer({
+  activeArtifact,
+  activePreview,
+  downloadUrl,
+  editor,
+  error,
+  loading,
+  onRetry,
+  onSelectSheet,
+  previewMode,
+}: {
+  activeArtifact: WorkspaceArtifactTarget;
+  activePreview: ArtifactPreview | null;
+  downloadUrl: string;
+  editor: ReturnType<typeof useArtifactEditor>;
+  error: string | null;
+  loading: boolean;
+  onRetry: () => void;
+  onSelectSheet: (sheetName: string, sheetIndex?: number) => void;
+  previewMode: ArtifactPreviewMode;
+}) {
+  if (loading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+        <Spinner className="size-5" />
+      </div>
+    );
+  }
+
+  if (error || !activePreview || activePreview.status === "failed") {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-3 p-6 text-center">
+        <p className="max-w-md text-muted-foreground text-sm">
+          {activePreview?.error || error || "This file couldn't be previewed."}
+        </p>
+        <div className="flex items-center gap-2">
+          <Button onClick={onRetry} size="sm" type="button" variant="outline">
+            Try again
+          </Button>
+          <a
+            className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
+            download={activeArtifact.filename}
+            href={downloadUrl}
+          >
+            Download
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  switch (activePreview.type) {
+    case "pdf":
+      return <PdfViewer downloadUrl={downloadUrl} preview={activePreview} />;
+    case "spreadsheet":
+      return (
+        <SpreadsheetViewer
+          downloadUrl={downloadUrl}
+          editor={
+            editor.draft?.source.kind === "delimited"
+              ? {
+                  canAddColumn:
+                    Math.max(0, ...editor.draft.rows.map((row) => row.length)) <
+                    ARTIFACT_EDIT_MAX_COLUMNS,
+                  canAddRow: editor.draft.rows.length < ARTIFACT_EDIT_MAX_ROWS,
+                  disabled: editor.saving,
+                  onAddColumn: () =>
+                    editor.setRows(addEditableColumn(editor.draft.rows)),
+                  onAddRow: () =>
+                    editor.setRows(addEditableRow(editor.draft.rows)),
+                  onChangeCell: (rowIndex, columnIndex, value) =>
+                    editor.setRows(
+                      updateEditableCell(
+                        editor.draft.rows,
+                        rowIndex,
+                        columnIndex,
+                        value
+                      )
+                    ),
+                  rows: editor.draft.rows,
+                }
+              : undefined
+          }
+          onSelectSheet={onSelectSheet}
+          preview={activePreview}
+        />
+      );
+    case "presentation":
+      return (
+        <PresentationViewer downloadUrl={downloadUrl} preview={activePreview} />
+      );
+    case "document":
+      return (
+        <DocumentViewer downloadUrl={downloadUrl} preview={activePreview} />
+      );
+    case "markdown":
+      return (
+        <MarkdownViewer
+          downloadUrl={downloadUrl}
+          editor={
+            editor.draft?.source.kind === "markdown"
+              ? {
+                  content: editor.draft.content,
+                  disabled: editor.saving,
+                  onChange: editor.setContent,
+                }
+              : undefined
+          }
+          preview={activePreview}
+        />
+      );
+    case "code":
+    case "text": {
+      if (isMermaidArtifactFilename(activeArtifact.filename)) {
+        const source = activePreview.content;
+        if (previewMode === "code") {
+          return (
+            <CodeViewer
+              downloadUrl={downloadUrl}
+              preview={{
+                ...activePreview,
+                language: "mermaid",
+                type: "code",
+              }}
+            />
+          );
+        }
+        const mermaidError = mermaidPreviewError(source);
+        return (
+          <MarkdownViewer
+            downloadUrl={downloadUrl}
+            preview={{
+              ...activePreview,
+              content: mermaidError
+                ? mermaidError
+                : markdownForMermaidSource(source),
+              type: "markdown",
+              wordCount: source.trim().split(/\s+/).filter(Boolean).length,
+            }}
+          />
+        );
+      }
+      if (activePreview.type === "code") {
+        return <CodeViewer downloadUrl={downloadUrl} preview={activePreview} />;
+      }
+      return (
+        <CodeViewer
+          downloadUrl={downloadUrl}
+          preview={{
+            ...activePreview,
+            language: "text",
+            type: "code",
+          }}
+        />
+      );
+    }
+    case "json":
+      return <JsonViewer downloadUrl={downloadUrl} preview={activePreview} />;
+    case "image":
+      return (
+        <ImageViewer
+          downloadUrl={downloadUrl}
+          mode={previewMode}
+          preview={activePreview}
+        />
+      );
+    case "html":
+      return (
+        <HtmlViewer
+          downloadUrl={downloadUrl}
+          mode={previewMode}
+          preview={activePreview}
+        />
+      );
+    default:
+      return (
+        <GenericViewer downloadUrl={downloadUrl} preview={activePreview} />
+      );
+  }
 }

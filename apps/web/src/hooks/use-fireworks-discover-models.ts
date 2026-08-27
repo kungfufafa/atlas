@@ -57,6 +57,7 @@ function fireworksEntryToCapabilityRow(
   const fallback = FIREWORKS_FALLBACK_ROWS.find((row) => row.id === entry.id);
 
   return {
+    ...(entry.capabilities ? { capabilities: entry.capabilities } : {}),
     contextLength: fallback?.contextLength,
     description: fallback?.description,
     id: entry.id,

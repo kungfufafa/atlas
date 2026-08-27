@@ -5,12 +5,18 @@ import type {
   ProviderModelOption,
   WireApi,
 } from "@atlas/core/contract";
-import { isDiscoveryModelProvider } from "@atlas/core/discovery-providers";
 import {
   OLLAMA_CLOUD_DEFAULT_BASE_URL,
   OLLAMA_LOCAL_DEFAULT_BASE_URL,
-  ollamaRequiresApiKey,
 } from "@atlas/core/ollama-provider-config";
+import { PROVIDER_CAPABILITY_IDS } from "@atlas/core/provider-capabilities";
+import {
+  BUILTIN_PROVIDER_DEFINITIONS,
+  type BuiltinProviderDefinition,
+  getBuiltinProviderDefinition,
+  providerApiKeyIsRequired,
+  providerUsesGenericCustomModelSetup,
+} from "@atlas/core/provider-catalog";
 import { formatConfiguredProviderLabel } from "@atlas/core/provider-label";
 import type { UserProviderName } from "@atlas/core/provider-resolution";
 
@@ -49,55 +55,37 @@ export function formatProviderLabel(
   provider: string | null | undefined,
   displayName?: string | null
 ): string {
-  if (
-    provider === "openai" ||
-    provider === "anthropic" ||
-    provider === "openrouter" ||
-    provider === "gemini" ||
-    provider === "deepseek" ||
-    provider === "cerebras" ||
-    provider === "cloudflare" ||
-    provider === "fireworks" ||
-    provider === "ollama" ||
-    provider === "openai_compatible" ||
-    provider === "opencode_go" ||
-    provider === "minimax" ||
-    provider === "minimax_cn" ||
-    provider === "xai" ||
-    provider === "zhipu" ||
-    provider === "zhipu_cn"
-  ) {
-    return formatConfiguredProviderLabel(provider, displayName);
+  if (provider && getBuiltinProviderDefinition(provider)) {
+    return formatConfiguredProviderLabel(
+      provider as SelectedProvider,
+      displayName
+    );
   }
 
   return provider ?? "Provider";
 }
 
 export const PROVIDER_OPTIONS: Array<{ id: SelectedProvider; label: string }> =
-  [
-    { id: "openai", label: "OpenAI" },
-    { id: "anthropic", label: "Anthropic" },
-    { id: "openrouter", label: "OpenRouter" },
-    { id: "gemini", label: "Gemini" },
-    { id: "deepseek", label: "DeepSeek" },
-    { id: "cerebras", label: "Cerebras" },
-    { id: "cloudflare", label: "Cloudflare Workers AI" },
-    { id: "fireworks", label: "Fireworks" },
-    { id: "ollama", label: "Ollama" },
-    { id: "opencode_go", label: "OpenCode Go" },
-    { id: "minimax", label: "MiniMax" },
-    { id: "xai", label: "xAI Grok" },
-    { id: "minimax_cn", label: "MiniMax (CN)" },
-    { id: "zhipu", label: "GLM (Z.ai)" },
-    { id: "zhipu_cn", label: "GLM (CN)" },
-    { id: "openai_compatible", label: "Custom (OpenAI-compatible)" },
-  ];
+  BUILTIN_PROVIDER_DEFINITIONS.map((definition) => ({
+    id: definition.id,
+    label: definition.displayName,
+  }));
+
+export function shouldRenderGenericCustomModelEditor(
+  definition:
+    | Pick<BuiltinProviderDefinition, "discoveryModels" | "setup">
+    | undefined
+): boolean {
+  return providerUsesGenericCustomModelSetup(definition);
+}
 
 /** Custom OpenAI-compatible endpoints can be added more than once; builtins are one instance each. */
 export function allowsMultipleProviderInstances(
   provider: SelectedProvider
 ): boolean {
-  return provider === "openai_compatible" || provider === "ollama";
+  return (
+    getBuiltinProviderDefinition(provider)?.allowMultipleInstances === true
+  );
 }
 
 export function isProviderTypeAlreadyConfigured(
@@ -173,54 +161,31 @@ export function hasOpenCodeZenProvider(
 }
 
 export function apiKeyPlaceholder(provider: SelectedProvider): string {
-  if (provider === "anthropic") {
-    return "sk-ant-…";
-  }
+  return getBuiltinProviderDefinition(provider)?.apiKey.placeholder ?? "sk-…";
+}
 
-  if (provider === "openrouter") {
-    return "sk-or-v1-…";
-  }
+export function isApiKeyRequiredForProvider(
+  provider: SelectedProvider,
+  setupValues: Readonly<Record<string, string | undefined>> = {}
+): boolean {
+  const policy = getBuiltinProviderDefinition(provider)?.apiKey;
+  return policy ? providerApiKeyIsRequired(policy, setupValues) : true;
+}
 
-  if (provider === "cerebras") {
-    return "csk-…";
-  }
-
-  if (provider === "fireworks") {
-    return "fw_…";
-  }
-
-  if (provider === "ollama") {
-    return "Optional for local Ollama";
-  }
-
-  if (provider === "gemini") {
-    return "AIza…";
-  }
-
-  if (provider === "openai_compatible") {
-    return "Optional for local endpoints";
-  }
-
-  if (provider === "opencode_go") {
-    return "oc-…";
-  }
-
-  return "sk-…";
+export function shouldShowApiKeyDashboardHint(
+  provider: SelectedProvider
+): boolean {
+  return (
+    getBuiltinProviderDefinition(provider)?.apiKey.requirement === "required"
+  );
 }
 
 export function validateApiKeyForProvider(
   apiKey: string,
   provider: SelectedProvider,
-  options?: { ollamaHostMode?: OllamaHostMode }
+  setupValues: Readonly<Record<string, string | undefined>> = {}
 ): string | null {
-  if (provider === "openai_compatible") {
-    return null;
-  }
-
-  if (
-    provider === "ollama" &&
-    !ollamaRequiresApiKey(options?.ollamaHostMode ?? "local")
-  ) {
+  if (!isApiKeyRequiredForProvider(provider, setupValues)) {
     return null;
   }
 
@@ -384,6 +349,7 @@ export function isShortlistCapabilityProvider(
 }
 
 type ShortlistModelRow = {
+  capabilities?: ProviderModelOption["capabilities"];
   id: string;
   name?: string;
   default?: boolean;
@@ -406,6 +372,7 @@ export function modelsFromShortlistRows(
     }
 
     models.push({
+      ...(row.capabilities ? { capabilities: row.capabilities } : {}),
       id,
       name: row.name?.trim() || id,
       provider,
@@ -595,20 +562,21 @@ export function buildCreateProviderRequest(options: {
   wireApi?: WireApi;
 }): CreateProviderRequest {
   const request = buildConfigureProviderRequest(options);
+  const setup = getBuiltinProviderDefinition(options.provider)?.setup;
 
   return {
     apiKey: request.apiKey,
     type: request.provider,
     ...(request.model ? { model: request.model } : {}),
-    ...(options.displayName?.trim()
+    ...(setup?.displayName && options.displayName?.trim()
       ? { label: options.displayName.trim() }
       : {}),
     ...(options.baseUrl?.trim() ? { baseUrl: options.baseUrl.trim() } : {}),
-    ...(options.hostMode ? { hostMode: options.hostMode } : {}),
-    ...(request.customModels ? { customModels: request.customModels } : {}),
-    ...(options.provider === "openai_compatible" && options.wireApi
-      ? { wireApi: options.wireApi }
+    ...(setup?.hostMode && options.hostMode
+      ? { hostMode: options.hostMode }
       : {}),
+    ...(request.customModels ? { customModels: request.customModels } : {}),
+    ...(request.wireApi ? { wireApi: request.wireApi } : {}),
   };
 }
 
@@ -622,78 +590,25 @@ export function buildConfigureProviderRequest(options: {
   customModels?: ConfigureProviderRequest["customModels"];
   wireApi?: WireApi;
 }): ConfigureProviderRequest {
+  const setup = getBuiltinProviderDefinition(options.provider)?.setup;
   const request: ConfigureProviderRequest = {
     apiKey: options.apiKey,
     provider: options.provider,
     ...(options.model ? { model: options.model } : {}),
+    ...(setup?.configureBaseUrl !== "omit" && options.baseUrl?.trim()
+      ? { baseUrl: options.baseUrl.trim() }
+      : {}),
+    ...(setup?.customModels && options.customModels?.length
+      ? { customModels: options.customModels }
+      : {}),
+    ...(setup?.displayName && options.displayName?.trim()
+      ? { displayName: options.displayName.trim() }
+      : {}),
+    ...(setup?.hostMode && options.hostMode
+      ? { hostMode: options.hostMode }
+      : {}),
+    ...(setup?.wireApi && options.wireApi ? { wireApi: options.wireApi } : {}),
   };
-
-  if (options.provider === "openai_compatible") {
-    return {
-      ...request,
-      baseUrl: options.baseUrl?.trim(),
-      customModels: options.customModels,
-      displayName: options.displayName?.trim(),
-      ...(options.wireApi ? { wireApi: options.wireApi } : {}),
-    };
-  }
-
-  if (
-    isDiscoveryModelProvider(options.provider) &&
-    options.customModels?.length
-  ) {
-    return {
-      ...request,
-      baseUrl: options.baseUrl?.trim(),
-      customModels: options.customModels,
-    };
-  }
-
-  if (options.provider === "openrouter" && options.customModels?.length) {
-    return {
-      ...request,
-      customModels: options.customModels,
-    };
-  }
-
-  if (options.provider === "cerebras" && options.customModels?.length) {
-    return {
-      ...request,
-      customModels: options.customModels,
-    };
-  }
-
-  if (options.provider === "fireworks" && options.customModels?.length) {
-    return {
-      ...request,
-      customModels: options.customModels,
-    };
-  }
-
-  if (options.provider === "ollama" && options.customModels?.length) {
-    return {
-      ...request,
-      baseUrl: options.baseUrl?.trim(),
-      customModels: options.customModels,
-    };
-  }
-
-  if (options.provider === "opencode_go" && options.customModels?.length) {
-    return {
-      ...request,
-      customModels: options.customModels,
-    };
-  }
-
-  if (options.provider === "opencode_go") {
-    return request;
-  }
-
-  const baseUrl = options.baseUrl?.trim();
-  if (baseUrl) {
-    return { ...request, baseUrl };
-  }
-
   return request;
 }
 
@@ -893,18 +808,23 @@ export function resolveModelThinkingSupport(
     return;
   }
 
-  if (
-    model.provider === "openai_compatible" ||
-    model.provider === "openrouter" ||
-    model.provider === "deepseek" ||
-    model.provider === "cerebras" ||
-    model.provider === "fireworks" ||
-    model.provider === "ollama"
-  ) {
-    return model.supportsThinking === true;
+  const capability =
+    model.capabilities?.[PROVIDER_CAPABILITY_IDS.chatReasoning];
+  if (capability?.status === "supported") {
+    return true;
+  }
+  if (capability?.status === "unsupported") {
+    return false;
+  }
+  if (capability?.status === "unknown") {
+    return;
   }
 
-  return model.supportsThinking !== false;
+  if (model.supportsThinking !== undefined) {
+    return model.supportsThinking;
+  }
+
+  return model.reasoningEffortValues?.length ? true : undefined;
 }
 
 export function resolveModelReasoningEffortValues(
@@ -981,56 +901,20 @@ export function resolveModelVisionSupport(
   if (!model) {
     return;
   }
-
-  if (
-    isDiscoveryModelProvider(model.provider) ||
-    model.provider === "opencode_go" ||
-    model.provider === "deepseek" ||
-    model.provider === "cerebras" ||
-    model.provider === "fireworks" ||
-    model.provider === "ollama" ||
-    model.provider === "cloudflare"
-  ) {
-    return model.supportsVision === true;
+  const capability =
+    model.capabilities?.[PROVIDER_CAPABILITY_IDS.chatInputImage];
+  if (capability?.status === "supported") {
+    return true;
+  }
+  if (capability?.status === "unsupported") {
+    return false;
+  }
+  if (capability?.status === "unknown") {
+    return;
   }
 
-  return model.supportsVision !== false;
+  return model.supportsVision;
 }
-
-export const OPENAI_TRANSCRIPTION_MODEL_OPTIONS = [
-  { id: "whisper-1", name: "Whisper" },
-  { id: "gpt-4o-transcribe", name: "GPT-4o Transcribe" },
-  { id: "gpt-4o-mini-transcribe", name: "GPT-4o mini Transcribe" },
-] as const;
-
-export const GEMINI_TRANSCRIPTION_MODEL_OPTIONS = [
-  { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash (Audio)" },
-  { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash (Audio)" },
-  { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro (Audio)" },
-] as const;
-
-export const TRANSCRIPTION_MODEL_OPTIONS = [
-  ...OPENAI_TRANSCRIPTION_MODEL_OPTIONS,
-  ...GEMINI_TRANSCRIPTION_MODEL_OPTIONS,
-] as const;
-
-export const OPENAI_IMAGE_GENERATION_MODEL_OPTIONS = [
-  { id: "gpt-image-2", name: "GPT Image 2" },
-  { id: "dall-e-3", name: "DALL-E 3" },
-] as const;
-
-export const GEMINI_IMAGE_GENERATION_MODEL_OPTIONS = [
-  { id: "imagen-3.0-generate-002", name: "Google Imagen 3" },
-] as const;
-
-export const IMAGE_GENERATION_MODEL_OPTIONS = [
-  ...OPENAI_IMAGE_GENERATION_MODEL_OPTIONS,
-  ...GEMINI_IMAGE_GENERATION_MODEL_OPTIONS,
-] as const;
-
-/** Workspace selection string accepted by `/v1/settings/image-generation`. */
-export const IMAGE_GENERATION_SELECTION =
-  `openai::${OPENAI_IMAGE_GENERATION_MODEL_OPTIONS[0].id}` as const;
 
 export function modelsFromCustomRows(
   rows: Array<{

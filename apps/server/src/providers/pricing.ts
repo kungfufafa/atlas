@@ -4,7 +4,7 @@ import {
   type ProviderInstance,
   type ProviderName,
 } from "@atlas/core";
-import { getModelById, IMAGE_GENERATION_MODEL_ID } from "./models";
+import { getModelById } from "./models";
 
 export interface ModelPricing {
   /** USD per 1M input tokens */
@@ -24,7 +24,7 @@ const DEFAULT_PRICING: ModelPricing = {
  * Image-input rates are unused for v1 generate-only calls.
  */
 const IMAGE_GENERATION_PRICING: Record<string, ModelPricing> = {
-  [IMAGE_GENERATION_MODEL_ID]: {
+  "gpt-image-2": {
     inputPerMillionUsd: 5,
     outputPerMillionUsd: 30,
   },

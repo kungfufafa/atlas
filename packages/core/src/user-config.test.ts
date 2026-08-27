@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { AtlasApiError } from "./api-error";
 import { pathExists } from "./fs";
+import { BUILTIN_PROVIDER_DEFINITIONS } from "./provider-catalog";
 import {
   createProviderInstanceId,
   ensureUserConfigDir,
@@ -141,6 +142,105 @@ describe("user config multi-provider", () => {
       true
     );
     expect(loaded?.providers[1]?.wireApi).toBe("responses");
+  });
+
+  test("persists custom models for every provider that opts in via setup metadata", async () => {
+    configDir = await mkdtemp(join(tmpdir(), "atlas-config-"));
+    process.env.ATLAS_CONFIG_DIR = configDir;
+    const definitions = BUILTIN_PROVIDER_DEFINITIONS.filter(
+      (definition) => definition.setup?.customModels === true
+    );
+    const providers = definitions.map((definition, index) => ({
+      apiKey: `key-${definition.id}`,
+      createdAt: new Date(index).toISOString(),
+      customModels: [
+        { default: true, id: `model-${definition.id}`, name: "Custom model" },
+      ],
+      id: `provider-${definition.id}`,
+      label: definition.displayName,
+      type: definition.id,
+    }));
+
+    await saveUserConfig({
+      defaultProviderId: providers[0]?.id ?? null,
+      providers,
+    });
+
+    const loaded = await loadUserConfig();
+    expect(loaded?.providers).toHaveLength(definitions.length);
+    for (const provider of loaded?.providers ?? []) {
+      expect(provider.customModels).toEqual([
+        {
+          default: true,
+          id: `model-${provider.type}`,
+          name: "Custom model",
+        },
+      ]);
+    }
+  });
+
+  test("round-trips capability mappings and provider overrides", async () => {
+    configDir = await mkdtemp(join(tmpdir(), "atlas-config-"));
+    process.env.ATLAS_CONFIG_DIR = configDir;
+    const providerId = createProviderInstanceId();
+
+    await saveUserConfig({
+      capabilityConfig: {
+        bindings: {
+          "audio.transcription": {
+            contractVersion: 1,
+            enabled: true,
+            fallbacks: [],
+            mode: "manual",
+            primary: { modelId: "custom-asr", providerId },
+          },
+        },
+        schemaVersion: 1,
+      },
+      defaultProviderId: providerId,
+      providers: [
+        {
+          apiKey: "test-key",
+          capabilityOverrides: {
+            "audio.transcription": {
+              source: "admin-override",
+              status: "supported",
+              verified: false,
+            },
+          },
+          createdAt: "2026-08-27T00:00:00.000Z",
+          id: providerId,
+          label: "Custom ASR",
+          type: "openai",
+        },
+      ],
+    });
+
+    const loaded = await loadUserConfig();
+    expect(
+      loaded?.capabilityConfig?.bindings["audio.transcription"]?.primary
+    ).toEqual({ modelId: "custom-asr", providerId });
+    expect(
+      loaded?.providers[0]?.capabilityOverrides?.["audio.transcription"]
+    ).toEqual({
+      source: "admin-override",
+      status: "supported",
+      verified: false,
+    });
+  });
+
+  test("rejects a future capability config version on load", async () => {
+    configDir = await mkdtemp(join(tmpdir(), "atlas-config-"));
+    process.env.ATLAS_CONFIG_DIR = configDir;
+    await writeFile(
+      getUserConfigPath(),
+      'capability_config={"schemaVersion":2,"bindings":{}}\n',
+      "utf8"
+    );
+
+    await expect(loadUserConfig()).rejects.toThrow(
+      "capability config schema version 2 is not supported."
+    );
   });
 
   test("round-trips cerebras models_json with capability flags", async () => {

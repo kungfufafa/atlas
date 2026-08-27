@@ -18,7 +18,6 @@ import {
   seedDatabase,
   seedOrgSuperAgentProfile,
 } from "@atlas/db";
-import { IMAGE_GENERATION_SELECTION } from "../providers/models";
 import { IMAGE_MODEL_REQUIRED_MESSAGE } from "../services/image-generation";
 import {
   registerGenerateImageTool,
@@ -38,6 +37,8 @@ const PNG_BYTES = Uint8Array.from([
   0x01, 0x00, 0x05, 0xfe, 0xd4, 0xef, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e,
   0x44, 0xae, 0x42, 0x60, 0x82,
 ]);
+
+const IMAGE_GENERATION_SELECTION = "p-openai::gpt-image-2";
 
 const openaiConfig = (overrides?: Partial<UserConfig>): UserConfig => ({
   defaultProviderId: "p-openai",
@@ -384,7 +385,7 @@ describe("generate_image tool persistence (U4)", () => {
     expect(attachmentInserts).toBe(0);
   });
 
-  test("OpenAI failure writes no partial sidecar or attachment", async () => {
+  test("provider failure writes no partial sidecar or attachment", async () => {
     await setupWorkspace();
     const db = createInMemoryDatabaseAdapter();
     let attachmentInserts = 0;

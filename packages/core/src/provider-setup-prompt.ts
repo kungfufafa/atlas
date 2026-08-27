@@ -17,9 +17,17 @@ import {
   ollamaRequiresApiKey,
 } from "./ollama-provider-config";
 import {
+  BUILTIN_PROVIDER_DEFINITIONS,
+  type BuiltinProviderDefinition,
+  getBuiltinProviderDefinition,
+  providerApiKeyIsRequired,
+  validateProviderCustomModelId,
+} from "./provider-catalog";
+import {
   createProviderInstanceId,
   defaultProviderLabel,
   type ProviderInstance,
+  parseProviderName,
   type UserConfig,
   type UserProviderName,
 } from "./user-config";
@@ -32,24 +40,11 @@ export interface ProviderSetupPromptOptions {
   writeLine: (line: string) => void;
 }
 
-const PROVIDER_CHOICES: Array<{ id: UserProviderName; label: string }> = [
-  { id: "openai", label: "OpenAI" },
-  { id: "anthropic", label: "Anthropic" },
-  { id: "openrouter", label: "OpenRouter" },
-  { id: "gemini", label: "Gemini" },
-  { id: "deepseek", label: "DeepSeek" },
-  { id: "cerebras", label: "Cerebras" },
-  { id: "cloudflare", label: "Cloudflare Workers AI" },
-  { id: "fireworks", label: "Fireworks" },
-  { id: "ollama", label: "Ollama" },
-  { id: "opencode_go", label: "OpenCode Go" },
-  { id: "minimax", label: "MiniMax" },
-  { id: "minimax_cn", label: "MiniMax (CN)" },
-  { id: "xai", label: "xAI Grok" },
-  { id: "zhipu", label: "GLM (Z.ai)" },
-  { id: "zhipu_cn", label: "GLM (CN)" },
-  { id: "openai_compatible", label: "Custom (OpenAI-compatible)" },
-];
+const PROVIDER_CHOICES: Array<{ id: UserProviderName; label: string }> =
+  BUILTIN_PROVIDER_DEFINITIONS.map((definition) => ({
+    id: definition.id,
+    label: definition.displayName,
+  }));
 
 export async function promptForProviderConfig(
   options: ProviderSetupPromptOptions
@@ -76,30 +71,42 @@ export async function promptForProviderConfig(
       continue;
     }
 
-    if (provider === "openai_compatible") {
-      const instance = await promptForCompatibleProviderInstance(
+    const definition = getBuiltinProviderDefinition(provider);
+    if (!definition) {
+      writeLine("Provider metadata is unavailable.\n");
+      continue;
+    }
+
+    if (definition.setup?.displayName) {
+      const instance = await promptForEndpointProviderInstance(
+        provider,
+        definition,
         question,
         writeLine
       );
       return buildUserConfigFromInstance(instance);
     }
 
-    if (provider === "ollama") {
+    if (definition.setup?.hostMode === "ollama") {
       const instance = await promptForOllamaProviderInstance(
+        provider,
         question,
         writeLine
       );
       return buildUserConfigFromInstance(instance);
     }
 
-    const apiKey = (await question("API key: ")).trim();
+    const apiKeyRequired = providerApiKeyIsRequired(definition.apiKey);
+    const apiKey = (
+      await question(apiKeyRequired ? "API key: " : "API key (optional): ")
+    ).trim();
 
-    if (!apiKey) {
+    if (apiKeyRequired && !apiKey) {
       writeLine("API key is required.\n");
       continue;
     }
 
-    if (isDiscoveryModelProvider(provider)) {
+    if (definition.discoveryModels && isDiscoveryModelProvider(provider)) {
       const instance = await promptForDiscoveryProviderInstance(
         provider,
         apiKey,
@@ -112,13 +119,16 @@ export async function promptForProviderConfig(
       continue;
     }
 
-    const cloudflareBaseUrl =
-      provider === "cloudflare"
+    const configuredBaseUrl =
+      definition.setup?.baseUrlInput === "cloudflare-account"
         ? resolveCloudflareAccountInput(
             await question("Cloudflare account ID or Workers AI URL: ")
           )
         : null;
-    if (provider === "cloudflare" && !cloudflareBaseUrl) {
+    if (
+      definition.setup?.baseUrlInput === "cloudflare-account" &&
+      !configuredBaseUrl
+    ) {
       writeLine("Enter a valid Cloudflare account ID or Workers AI URL.\n");
       continue;
     }
@@ -140,22 +150,28 @@ export async function promptForProviderConfig(
     });
 
     const catalogModel = getModelById(selectedModel);
+    const modelIdError = validateProviderCustomModelId(provider, selectedModel);
+    if (modelIdError) {
+      writeLine(`${modelIdError}\n`);
+      continue;
+    }
     const customModels =
-      (provider === "fireworks" || provider === "cerebras") && catalogModel
+      definition.setup?.customModels &&
+      (!catalogModel || definition.setup.catalogSelectionAsCustomModel)
         ? [
             {
               default: true,
               id: selectedModel,
-              ...(catalogModel.supportsThinking === undefined
+              ...(catalogModel?.supportsThinking === undefined
                 ? {}
                 : { supportsThinking: catalogModel.supportsThinking }),
-              ...(catalogModel.supportsVision === undefined
+              ...(catalogModel?.supportsVision === undefined
                 ? {}
                 : { supportsVision: catalogModel.supportsVision }),
-              ...(catalogModel.inputPerMillionUsd === undefined
+              ...(catalogModel?.inputPerMillionUsd === undefined
                 ? {}
                 : { inputPerMillionUsd: catalogModel.inputPerMillionUsd }),
-              ...(catalogModel.outputPerMillionUsd === undefined
+              ...(catalogModel?.outputPerMillionUsd === undefined
                 ? {}
                 : { outputPerMillionUsd: catalogModel.outputPerMillionUsd }),
             },
@@ -168,7 +184,7 @@ export async function promptForProviderConfig(
       id: createProviderInstanceId(),
       label: defaultProviderLabel(provider, []),
       type: getModelById(selectedModel)?.provider ?? provider,
-      ...(cloudflareBaseUrl ? { baseUrl: cloudflareBaseUrl } : {}),
+      ...(configuredBaseUrl ? { baseUrl: configuredBaseUrl } : {}),
       ...(customModels ? { customModels } : {}),
     };
 
@@ -185,26 +201,9 @@ function buildUserConfigFromInstance(instance: ProviderInstance): UserConfig {
 
 function resolveProviderChoice(input: string): UserProviderName | null {
   const normalized = input.trim().toLowerCase();
-
-  if (
-    normalized === "openai" ||
-    normalized === "anthropic" ||
-    normalized === "openrouter" ||
-    normalized === "gemini" ||
-    normalized === "deepseek" ||
-    normalized === "cerebras" ||
-    normalized === "cloudflare" ||
-    normalized === "fireworks" ||
-    normalized === "ollama" ||
-    normalized === "openai_compatible" ||
-    normalized === "opencode_go" ||
-    normalized === "minimax" ||
-    normalized === "minimax_cn" ||
-    normalized === "xai" ||
-    normalized === "zhipu" ||
-    normalized === "zhipu_cn"
-  ) {
-    return normalized;
+  const namedProvider = parseProviderName(normalized);
+  if (namedProvider) {
+    return namedProvider;
   }
 
   const numeric = Number(input);
@@ -238,10 +237,6 @@ function resolveModelChoice(
     return match.id;
   }
 
-  if (provider === "openrouter" && /^[\w.-]+\/[\w.:-]+$/.test(input)) {
-    return input;
-  }
-
   const numeric = Number(input);
   const models = options.getModelsForProvider(provider);
 
@@ -249,10 +244,20 @@ function resolveModelChoice(
     return models[numeric - 1]!.id;
   }
 
+  const definition = getBuiltinProviderDefinition(provider);
+  if (
+    definition?.setup?.customModels ||
+    definition?.modelIdPolicy === "passthrough" ||
+    definition?.modelIdPolicy === "provider-qualified"
+  ) {
+    return input;
+  }
+
   return options.getDefaultModel(provider);
 }
 
 async function promptForOllamaProviderInstance(
+  provider: UserProviderName,
   question: (prompt: string) => Promise<string>,
   writeLine: (line: string) => void
 ): Promise<ProviderInstance> {
@@ -306,17 +311,21 @@ async function promptForOllamaProviderInstance(
       hostMode,
       id: createProviderInstanceId(),
       label: defaultOllamaLabel(hostMode),
-      type: "ollama",
+      type: provider,
     };
   }
 }
 
-async function promptForCompatibleProviderInstance(
+async function promptForEndpointProviderInstance(
+  provider: UserProviderName,
+  definition: BuiltinProviderDefinition,
   question: (prompt: string) => Promise<string>,
   writeLine: (line: string) => void
 ): Promise<ProviderInstance> {
   while (true) {
-    const displayName = validateDisplayName(await question("Provider name: "));
+    const displayName = definition.setup?.displayName
+      ? validateDisplayName(await question("Provider name: "))
+      : definition.displayName;
     const baseUrlInput = (await question("Base URL: ")).trim();
 
     if (!isValidBaseUrl(baseUrlInput)) {
@@ -325,10 +334,18 @@ async function promptForCompatibleProviderInstance(
     }
 
     const baseUrl = normalizeBaseUrl(baseUrlInput);
-    const apiKey = (await question("API key (optional): ")).trim();
-    const wireInput = (await question("API [chat/responses] (chat): "))
-      .trim()
-      .toLowerCase();
+    const apiKeyRequired = providerApiKeyIsRequired(definition.apiKey);
+    const apiKey = (
+      await question(apiKeyRequired ? "API key: " : "API key (optional): ")
+    ).trim();
+    if (apiKeyRequired && !apiKey) {
+      writeLine("API key is required.\n");
+      continue;
+    }
+
+    const wireInput = definition.setup?.wireApi
+      ? (await question("API [chat/responses] (chat): ")).trim().toLowerCase()
+      : "chat";
     const wireApi: WireApi = wireInput === "responses" ? "responses" : "chat";
     const modelIds = (await question("Model IDs (comma-separated): "))
       .split(",")
@@ -354,8 +371,8 @@ async function promptForCompatibleProviderInstance(
       customModels,
       id: createProviderInstanceId(),
       label: displayName,
-      type: "openai_compatible",
-      wireApi,
+      type: provider,
+      ...(definition.setup?.wireApi ? { wireApi } : {}),
     };
   }
 }

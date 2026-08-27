@@ -3,6 +3,8 @@ import { useState } from "react";
 import {
   CHANNEL_ACCESS_MODE_OPTIONS,
   channelAccessModeLabel,
+} from "@/components/channel-access-mode";
+import {
   IntegrationSettingsFooter,
   IntegrationStatusHeader,
   SettingsRow,
@@ -19,12 +21,112 @@ import {
 } from "@/components/ui/select";
 import { WhatsAppNumbersDialog } from "@/components/WhatsAppNumbersDialog";
 import { WorkerActionBar } from "@/components/WorkerActionBar";
+import { shouldShowWhatsAppChatAccessSection } from "@/components/whatsapp-settings-linking.shared";
 import {
-  shouldShowWhatsAppChatAccessSection,
   WhatsAppSettingsChatAccessSection,
   WhatsAppSettingsDeviceLinkSection,
 } from "@/components/whatsapp-settings-linking-section";
 import { cn } from "@/lib/utils";
+
+function WhatsAppAccessModeSection({
+  accessMode,
+  allowedNumbers,
+  blockedNumbers,
+  onAccessModeChange,
+  onAllowedNumbersChange,
+  onBlockedNumbersChange,
+  paneItemClass,
+}: {
+  accessMode: ChannelAccessMode;
+  allowedNumbers: string[];
+  blockedNumbers: string[];
+  onAccessModeChange: (mode: ChannelAccessMode) => void;
+  onAllowedNumbersChange: (numbers: string[]) => void;
+  onBlockedNumbersChange: (numbers: string[]) => void;
+  paneItemClass: string | undefined;
+}) {
+  const [allowlistOpen, setAllowlistOpen] = useState(false);
+  const [denylistOpen, setDenylistOpen] = useState(false);
+
+  return (
+    <>
+      <SettingsRow
+        className={paneItemClass}
+        description="Controls who is permitted to chat with the assistant"
+        label="Access mode"
+      >
+        <div className="flex items-center gap-2">
+          <Select
+            onValueChange={(value) => {
+              if (value) {
+                onAccessModeChange(value as ChannelAccessMode);
+              }
+            }}
+            value={accessMode}
+          >
+            <SelectTrigger
+              className="w-[11rem] sm:w-[13rem]"
+              id="whatsapp-access-mode"
+            >
+              <SelectValue placeholder="Access mode">
+                {channelAccessModeLabel(accessMode)}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent align="end">
+              {CHANNEL_ACCESS_MODE_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {accessMode === "allowlist" ? (
+            <Button
+              onClick={() => setAllowlistOpen(true)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              {allowedNumbers.length === 0
+                ? "Configure allowed list"
+                : `${allowedNumbers.length} allowed`}
+            </Button>
+          ) : null}
+
+          {accessMode === "denylist" ? (
+            <Button
+              onClick={() => setDenylistOpen(true)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              {blockedNumbers.length === 0
+                ? "Configure blocked list"
+                : `${blockedNumbers.length} blocked`}
+            </Button>
+          ) : null}
+        </div>
+      </SettingsRow>
+
+      <WhatsAppNumbersDialog
+        numbers={allowedNumbers}
+        onNumbersChange={onAllowedNumbersChange}
+        onOpenChange={setAllowlistOpen}
+        open={allowlistOpen}
+        title="Allowed Phone Numbers"
+      />
+
+      <WhatsAppNumbersDialog
+        numbers={blockedNumbers}
+        onNumbersChange={onBlockedNumbersChange}
+        onOpenChange={setDenylistOpen}
+        open={denylistOpen}
+        title="Blocked Phone Numbers"
+      />
+    </>
+  );
+}
 
 export function WhatsAppSettingsCardContent({
   embedded,
@@ -116,8 +218,6 @@ export function WhatsAppSettingsCardContent({
   worker: { process?: { managed?: boolean } } | null | undefined;
 }) {
   const paneItemClass = embedded ? undefined : "px-0 py-0";
-  const [allowlistOpen, setAllowlistOpen] = useState(false);
-  const [denylistOpen, setDenylistOpen] = useState(false);
 
   return (
     <div className={cn(!embedded && "space-y-4 py-4")}>
@@ -220,79 +320,14 @@ export function WhatsAppSettingsCardContent({
         />
       ) : null}
 
-      <SettingsRow
-        className={paneItemClass}
-        description="Controls who is permitted to chat with the assistant"
-        label="Access mode"
-      >
-        <div className="flex items-center gap-2">
-          <Select
-            onValueChange={(value) => {
-              if (value) {
-                onAccessModeChange(value as ChannelAccessMode);
-              }
-            }}
-            value={accessMode}
-          >
-            <SelectTrigger
-              className="w-[11rem] sm:w-[13rem]"
-              id="whatsapp-access-mode"
-            >
-              <SelectValue placeholder="Access mode">
-                {channelAccessModeLabel(accessMode)}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent align="end">
-              {CHANNEL_ACCESS_MODE_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {accessMode === "allowlist" ? (
-            <Button
-              onClick={() => setAllowlistOpen(true)}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              {allowedNumbers.length === 0
-                ? "Configure allowed list"
-                : `${allowedNumbers.length} allowed`}
-            </Button>
-          ) : null}
-
-          {accessMode === "denylist" ? (
-            <Button
-              onClick={() => setDenylistOpen(true)}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              {blockedNumbers.length === 0
-                ? "Configure blocked list"
-                : `${blockedNumbers.length} blocked`}
-            </Button>
-          ) : null}
-        </div>
-      </SettingsRow>
-
-      <WhatsAppNumbersDialog
-        numbers={allowedNumbers}
-        onNumbersChange={onAllowedNumbersChange}
-        onOpenChange={setAllowlistOpen}
-        open={allowlistOpen}
-        title="Allowed Phone Numbers"
-      />
-
-      <WhatsAppNumbersDialog
-        numbers={blockedNumbers}
-        onNumbersChange={onBlockedNumbersChange}
-        onOpenChange={setDenylistOpen}
-        open={denylistOpen}
-        title="Blocked Phone Numbers"
+      <WhatsAppAccessModeSection
+        accessMode={accessMode}
+        allowedNumbers={allowedNumbers}
+        blockedNumbers={blockedNumbers}
+        onAccessModeChange={onAccessModeChange}
+        onAllowedNumbersChange={onAllowedNumbersChange}
+        onBlockedNumbersChange={onBlockedNumbersChange}
+        paneItemClass={paneItemClass}
       />
 
       {configured && shouldShowWhatsAppChatAccessSection(accessMode) ? (

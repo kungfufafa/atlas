@@ -29,7 +29,7 @@ export function PdfViewer({
   const [zoom, setZoom] = useState(100);
   const [showThumbnails, setShowThumbnails] = useState(false);
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
-  const [pageCount, setPageCount] = useState(
+  const [pageCount, setPageCount] = useState(() =>
     Math.max(1, preview.pageCount || 1)
   );
   const [loadingPdf, setLoadingPdf] = useState(true);
@@ -202,7 +202,11 @@ export function PdfViewer({
               max={pageCount}
               min={1}
               onChange={(e) => {
-                const val = Number.parseInt(e.target.value, 10);
+                const raw = e.target.value;
+                if (raw.trim() === "") {
+                  return;
+                }
+                const val = Number.parseInt(raw, 10);
                 if (!Number.isNaN(val) && val >= 1 && val <= pageCount) {
                   setCurrentPage(val);
                 }

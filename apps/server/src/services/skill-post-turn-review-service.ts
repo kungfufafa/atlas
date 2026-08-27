@@ -5,6 +5,8 @@ import {
 import {
   type ChatMessage,
   extractLatestTurnMessages,
+  type ProviderClient,
+  type ProviderInstance,
   resolveSkillPostTurnReviewEnabled,
   type UserConfig,
 } from "@atlas/core";
@@ -57,6 +59,12 @@ export type PostTurnReviewPersistencePlanner = (
   context: PostTurnReviewRunnerContext,
   outcome: Exclude<SkillPostTurnReviewOutcome, { action: "noop" }>
 ) => Promise<PostTurnReviewPersistence | void>;
+
+type PostTurnReviewProviderFactory = (
+  instance: ProviderInstance,
+  model: string,
+  userConfig: UserConfig
+) => ProviderClient | null;
 
 export function countToolCallsInTurn(turnMessages: ChatMessage[]): number {
   let count = 0;
@@ -153,7 +161,11 @@ export class SkillPostTurnReviewService {
     private readonly getUserConfig: (
       orgId: string
     ) => UserConfig | null | Promise<UserConfig | null>,
-    runner?: PostTurnReviewRunner
+    runner?: PostTurnReviewRunner,
+    private readonly providerFactory: PostTurnReviewProviderFactory = (
+      instance,
+      model
+    ) => createProviderForInstance(instance, model)
   ) {
     this.runner = runner ?? ((context) => this.reviewTurnWithLlm(context));
   }
@@ -333,7 +345,11 @@ export class SkillPostTurnReviewService {
       return null;
     }
 
-    return createProviderForInstance(selection.instance, selection.model);
+    return this.providerFactory(
+      selection.instance,
+      selection.model,
+      userConfig
+    );
   }
 
   private async recheckActiveContext(

@@ -27,6 +27,21 @@ import {
   parseOllamaHostMode,
   resolveOllamaHostMode,
 } from "./ollama-provider-config";
+import type {
+  CapabilityConfigV1,
+  ProviderCapabilityClaims,
+} from "./provider-capabilities";
+import {
+  migrateCapabilityTargetProviderIds,
+  migrateLegacyCapabilityConfig,
+  validateCapabilityConfig,
+  validateProviderCapabilityClaims,
+} from "./provider-capabilities";
+import {
+  getBuiltinProviderDefinition,
+  providerApiKeyIsRequired,
+  providerSetupHasFeature,
+} from "./provider-catalog";
 import {
   apiKeyEnvVarForProvider,
   parseProviderName,
@@ -43,6 +58,7 @@ export {
 export interface ProviderInstance {
   apiKey: string;
   baseUrl?: string;
+  capabilityOverrides?: ProviderCapabilityClaims;
   createdAt: string;
   customModels?: CustomModelEntry[];
   hostMode?: import("./contract").OllamaHostMode;
@@ -54,6 +70,7 @@ export interface ProviderInstance {
 }
 
 export interface UserConfig {
+  capabilityConfig?: CapabilityConfigV1;
   defaultProviderId: string | null;
   imageModel?: string | null;
   localAuthToken?: string;
@@ -72,25 +89,6 @@ export const DEFAULT_THINKING_EFFORT: ThinkingEffort = "medium";
 
 const PROVIDER_SECTION_PREFIX = "provider.";
 
-const PROVIDER_TYPE_LABELS: Record<UserProviderName, string> = {
-  anthropic: "Anthropic",
-  cerebras: "Cerebras",
-  cloudflare: "Cloudflare Workers AI",
-  deepseek: "DeepSeek",
-  fireworks: "Fireworks",
-  gemini: "Gemini",
-  minimax: "MiniMax",
-  minimax_cn: "MiniMax (CN)",
-  ollama: "Ollama",
-  openai: "OpenAI",
-  openai_compatible: "Custom",
-  opencode_go: "OpenCode Go",
-  openrouter: "OpenRouter",
-  xai: "xAI Grok",
-  zhipu: "GLM (Z.ai)",
-  zhipu_cn: "GLM (CN)",
-};
-
 export function createProviderInstanceId(): string {
   return crypto.randomUUID();
 }
@@ -100,12 +98,14 @@ export function defaultProviderLabel(
   existing: ProviderInstance[],
   options?: { hostMode?: import("./contract").OllamaHostMode }
 ): string {
-  if (type === "ollama" && options?.hostMode) {
+  if (
+    getBuiltinProviderDefinition(type)?.setup?.hostMode === "ollama" &&
+    options?.hostMode
+  ) {
     const base = defaultOllamaLabel(options.hostMode);
     const sameMode = existing.filter(
       (entry) =>
-        entry.type === "ollama" &&
-        resolveOllamaHostMode(entry) === options.hostMode
+        entry.type === type && resolveOllamaHostMode(entry) === options.hostMode
     );
 
     if (sameMode.length === 0) {
@@ -115,7 +115,8 @@ export function defaultProviderLabel(
     return `${base} (${sameMode.length + 1})`;
   }
 
-  const base = PROVIDER_TYPE_LABELS[type] ?? type.replace(/_/g, " ");
+  const base =
+    getBuiltinProviderDefinition(type)?.displayName ?? type.replace(/_/g, " ");
   const sameType = existing.filter((entry) => entry.type === type);
 
   if (sameType.length === 0) {
@@ -167,11 +168,20 @@ export function isProviderConfigured(
     return false;
   }
 
-  if (active.type === "openai_compatible") {
-    return Boolean(active.baseUrl?.trim() && active.label.trim());
+  const definition = getBuiltinProviderDefinition(active.type);
+  const setup = definition?.setup;
+  if (setup?.baseUrlRequired && setup.hostMode !== "ollama") {
+    const baseUrl =
+      active.baseUrl?.trim() || definition?.discoveryBaseUrl?.trim();
+    if (!baseUrl) {
+      return false;
+    }
+  }
+  if (setup?.displayName && !active.label.trim()) {
+    return false;
   }
 
-  if (active.type === "ollama") {
+  if (setup?.hostMode === "ollama") {
     const hostMode = resolveOllamaHostMode(active);
     const baseUrl = active.baseUrl?.trim() || defaultOllamaBaseUrl(hostMode);
 
@@ -191,12 +201,29 @@ export function isProviderConfigured(
     return true;
   }
 
+  const apiKeyRequired = definition
+    ? providerApiKeyIsRequired(definition.apiKey, providerSetupValues(active))
+    : true;
+  if (!apiKeyRequired) {
+    return true;
+  }
+
   if (active.apiKey.trim()) {
     return true;
   }
 
   const envVar = apiKeyEnvVarForProvider(active.type);
   return Boolean(envVar && env[envVar]?.trim());
+}
+
+function providerSetupValues(
+  instance: ProviderInstance
+): Record<string, string | undefined> {
+  return {
+    baseUrl: instance.baseUrl,
+    hostMode: instance.hostMode,
+    wireApi: instance.wireApi,
+  };
 }
 
 export function isValidTimezone(timezone: string): boolean {
@@ -272,16 +299,31 @@ export async function loadUserConfig(): Promise<UserConfig | null> {
   const thinking = readThinkingSettings(parsed.global);
   const timezone = readTimezone(parsed.global);
   const providers = loadProvidersFromSections(parsed.sections);
+  const imageModel = readImageModel(parsed.global);
+  const transcriptionModel = readTranscriptionModel(parsed.global);
+  const visionModel = readVisionModel(parsed.global);
+  const capabilityConfig = readCapabilityConfig(parsed.global, {
+    imageModel,
+    transcriptionModel,
+    visionModel,
+  });
+  const defaultProviderId = parsed.global.default_provider_id?.trim() || null;
+  const normalizedCapabilityConfig = migrateCapabilityTargetProviderIds(
+    capabilityConfig,
+    providers,
+    defaultProviderId
+  );
 
   return {
-    defaultProviderId: parsed.global.default_provider_id?.trim() || null,
+    capabilityConfig: normalizedCapabilityConfig,
+    defaultProviderId,
     providers,
     ...(timezone ? { timezone } : {}),
-    imageModel: readImageModel(parsed.global),
+    imageModel,
     thinkingEffort: thinking.effort,
     thinkingEnabled: thinking.enabled,
-    transcriptionModel: readTranscriptionModel(parsed.global),
-    visionModel: readVisionModel(parsed.global),
+    transcriptionModel,
+    visionModel,
     ...(parsed.global.local_auth_token_hash?.trim()
       ? { localAuthTokenHash: parsed.global.local_auth_token_hash.trim() }
       : {}),
@@ -289,6 +331,30 @@ export async function loadUserConfig(): Promise<UserConfig | null> {
       ? { localAuthToken: parsed.global.local_auth_token.trim() }
       : {}),
   };
+}
+
+function readCapabilityConfig(
+  global: Record<string, string>,
+  legacy: {
+    imageModel: string | null;
+    transcriptionModel: string | null;
+    visionModel: string | null;
+  }
+): CapabilityConfigV1 {
+  const raw = global.capability_config?.trim();
+  if (!raw) {
+    return migrateLegacyCapabilityConfig(legacy);
+  }
+
+  try {
+    return migrateLegacyCapabilityConfig(
+      legacy,
+      validateCapabilityConfig(JSON.parse(raw))
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Invalid capability_config in config: ${message}`);
+  }
 }
 
 export async function loadUserTimezone(): Promise<string> {
@@ -526,6 +592,13 @@ export async function saveUserConfig(config: UserConfig): Promise<void> {
 
   const global: Record<string, string | undefined> = {
     ...existingParsed.global,
+    capability_config: JSON.stringify(
+      migrateCapabilityTargetProviderIds(
+        migrateLegacyCapabilityConfig(config, config.capabilityConfig),
+        config.providers,
+        config.defaultProviderId
+      )
+    ),
     default_provider_id: config.defaultProviderId ?? "",
     image_model: config.imageModel ?? "",
     local_auth_token_hash: config.localAuthTokenHash,
@@ -637,29 +710,22 @@ function loadProvidersFromSections(
     const baseUrl = values.base_url?.trim()
       ? normalizeBaseUrl(values.base_url)
       : undefined;
-    const customModels =
-      type === "openai_compatible" ||
-      type === "openrouter" ||
-      type === "cerebras" ||
-      type === "fireworks" ||
-      type === "ollama" ||
-      type === "opencode_go" ||
-      type === "cloudflare" ||
-      type === "minimax" ||
-      type === "minimax_cn" ||
-      type === "xai" ||
-      type === "zhipu" ||
-      type === "zhipu_cn"
-        ? parseCustomModelsJson(values.models_json)
-        : undefined;
+    const definition = getBuiltinProviderDefinition(type);
+    const customModels = providerSetupHasFeature(definition, "customModels")
+      ? parseCustomModelsJson(values.models_json)
+      : undefined;
     const hostMode =
-      type === "ollama"
+      definition?.setup?.hostMode === "ollama"
         ? (parseOllamaHostMode(values.host_mode) ?? undefined)
         : undefined;
-    const wireApi =
-      type === "openai_compatible" ? parseWireApi(values.wire_api) : undefined;
+    const wireApi = definition?.setup?.wireApi
+      ? parseWireApi(values.wire_api)
+      : undefined;
     const createdAt = values.created_at?.trim() || new Date(0).toISOString();
     const replayRevision = values.replay_revision?.trim() || undefined;
+    const capabilityOverrides = values.capabilities_json?.trim()
+      ? parseCapabilityClaimsJson(values.capabilities_json)
+      : undefined;
 
     providers.push({
       apiKey,
@@ -671,6 +737,7 @@ function loadProvidersFromSections(
       ...(wireApi ? { wireApi } : {}),
       ...(replayRevision ? { replayRevision } : {}),
       ...(customModels ? { customModels } : {}),
+      ...(capabilityOverrides ? { capabilityOverrides } : {}),
       createdAt,
     });
   }
@@ -698,19 +765,36 @@ function buildProviderSectionValues(
     values.replay_revision = provider.replayRevision.trim();
   }
 
-  if (provider.type === "ollama" && provider.hostMode) {
+  const setup = getBuiltinProviderDefinition(provider.type)?.setup;
+
+  if (setup?.hostMode === "ollama" && provider.hostMode) {
     values.host_mode = provider.hostMode;
   }
 
-  if (provider.type === "openai_compatible" && provider.wireApi) {
+  if (setup?.wireApi && provider.wireApi) {
     values.wire_api = provider.wireApi;
   }
 
-  if (provider.customModels?.length) {
+  if (setup?.customModels && provider.customModels?.length) {
     values.models_json = serializeCustomModels(provider.customModels);
   }
 
+  if (provider.capabilityOverrides) {
+    values.capabilities_json = JSON.stringify(
+      validateProviderCapabilityClaims(provider.capabilityOverrides)
+    );
+  }
+
   return values;
+}
+
+function parseCapabilityClaimsJson(raw: string): ProviderCapabilityClaims {
+  try {
+    return validateProviderCapabilityClaims(JSON.parse(raw));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Invalid capabilities_json in config: ${message}`);
+  }
 }
 
 function buildConfigIniLines(
@@ -729,6 +813,24 @@ function buildConfigIniLines(
 
   if (mergedGlobal.timezone?.trim()) {
     lines.push(`timezone=${mergedGlobal.timezone.trim()}`);
+  }
+
+  if (mergedGlobal.capability_config?.trim()) {
+    lines.push(`capability_config=${mergedGlobal.capability_config.trim()}`);
+  }
+
+  if (mergedGlobal.vision_model !== undefined) {
+    lines.push(`vision_model=${mergedGlobal.vision_model.trim()}`);
+  }
+
+  if (mergedGlobal.transcription_model !== undefined) {
+    lines.push(
+      `transcription_model=${mergedGlobal.transcription_model.trim()}`
+    );
+  }
+
+  if (mergedGlobal.image_model !== undefined) {
+    lines.push(`image_model=${mergedGlobal.image_model.trim()}`);
   }
 
   if (mergedGlobal.web_public_url?.trim()) {
@@ -809,15 +911,18 @@ export function validateProviderInstanceLabel(
 ): string {
   const trimmed = label.trim();
 
+  const customDisplayName =
+    getBuiltinProviderDefinition(type)?.setup?.displayName === true;
+
   if (!trimmed) {
-    if (type === "openai_compatible") {
+    if (customDisplayName) {
       throw new Error("Provider name is required.");
     }
 
     throw new Error("Provider label is required.");
   }
 
-  if (type === "openai_compatible") {
+  if (customDisplayName) {
     return validateDisplayName(trimmed);
   }
 

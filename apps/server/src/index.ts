@@ -21,6 +21,7 @@ import {
   DEFAULT_SERVER_PORT,
   ensureBundledSkillFiles,
   flushPendingErrorReports,
+  getActiveProviderInstance,
   getUserConfigDir,
   installErrorHandlers,
   installErrorTrackingSink,
@@ -38,7 +39,6 @@ import {
 } from "@atlas/db";
 import { createHonoApp } from "./http/app";
 import { disableBunIdleTimeoutForSse } from "./http/sse-idle-timeout";
-import { createProviderForInstance } from "./providers/create";
 import { runFirstBootSeed } from "./seed";
 import { AgentService } from "./services/agent-service";
 import { AuthService } from "./services/auth-service";
@@ -46,6 +46,7 @@ import { AutomationDeliveryService } from "./services/automation-delivery-servic
 import { AutomationRunner } from "./services/automation-runner";
 import { AutomationService } from "./services/automation-service";
 import { browserSessionService } from "./services/browser-session-service";
+import { createChatCapabilityAwareProvider } from "./services/chat-capability-policy";
 import { ComposioService } from "./services/composio-service";
 import { LlmUsageTracker } from "./services/llm-usage-tracker";
 import { McpClientManager } from "./services/mcp-client-manager";
@@ -56,7 +57,10 @@ import {
 import { McpService } from "./services/mcp-service";
 import { OrgMemoryService } from "./services/org-memory-service";
 import { OrgService } from "./services/org-service";
-import { resolveProfileProviderSelection } from "./services/provider-instance-helpers";
+import {
+  resolveDefaultModelForInstance,
+  resolveProfileProviderSelection,
+} from "./services/provider-instance-helpers";
 import { SkillCuratorService } from "./services/skill-curator-service";
 import { SkillProposalService } from "./services/skill-proposal-service";
 import { SkillSuggestionService } from "./services/skill-suggestion-service";
@@ -113,6 +117,18 @@ const agent = new AgentService(
   database.adapter,
   llmUsageTracker
 );
+const bootstrapInstance = getActiveProviderInstance(userConfig);
+const bootstrapModelId = bootstrapInstance
+  ? resolveDefaultModelForInstance(bootstrapInstance)
+  : "";
+const bootstrapCapabilityProvider =
+  bootstrapInstance && bootstrapModelId
+    ? createChatCapabilityAwareProvider({
+        config: userConfig,
+        instance: bootstrapInstance,
+        modelId: bootstrapModelId,
+      })
+    : null;
 registerBrowserHandler((input, context) =>
   browserSessionService.executeBrowserAction(input, {
     orgId: context.orgId,
@@ -191,7 +207,7 @@ const orgMemoryService = new OrgMemoryService(database.adapter, {
       return mergeOrgMemoryWithApprovedBullet(content, bullet, {
         dateUtc: options.dateUtc,
         pin: options.pin,
-        provider: provider ?? undefined,
+        provider: bootstrapCapabilityProvider ?? undefined,
       });
     },
   },
@@ -221,10 +237,11 @@ const skillCuratorService = new SkillCuratorService(
     if (!selection) {
       return null;
     }
-    const selectedProvider = createProviderForInstance(
-      selection.instance,
-      selection.model
-    );
+    const selectedProvider = createChatCapabilityAwareProvider({
+      config: profileConfig,
+      instance: selection.instance,
+      modelId: selection.model,
+    });
     if (!selectedProvider) {
       return null;
     }

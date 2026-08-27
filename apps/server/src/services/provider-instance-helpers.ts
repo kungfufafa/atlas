@@ -2,24 +2,23 @@ import {
   AtlasApiError,
   apiKeyEnvVarForProvider,
   createProviderInstanceId,
-  defaultDiscoveryBaseUrl,
   defaultOllamaBaseUrl,
   defaultOllamaLabel,
-  findCustomModel,
   findProviderInstance,
-  isDiscoveryModelProvider,
-  isOllamaCloudInstance,
+  getBuiltinProviderDefinition,
   isValidBaseUrl,
   normalizeBaseUrl,
   normalizeProviderInstanceLabel,
   type OllamaHostMode,
-  ollamaRequiresApiKey,
+  type ProviderCapabilityClaims,
+  type ProviderCapabilityOverridePatch,
   type ProviderInstance,
   parseWireApi,
   readEnvValue,
   resolveOllamaHostMode,
   validateCustomModels,
   validateDisplayName,
+  validateProviderCustomModelId,
   validateProviderInstanceLabel,
 } from "@atlas/core";
 import type {
@@ -32,17 +31,9 @@ import {
   getDefaultModel,
   getModelById,
   getModelsForProviderInstance,
-  isCompatibleModelId,
-  isOpenRouterModelSlug,
   resolveModel,
-  validateCerebrasCustomModels,
-  validateCloudflareCustomModels,
-  validateFireworksCustomModels,
-  validateOllamaCustomModels,
-  validateOpenCodeGoCustomModels,
-  validateOpenRouterCustomModels,
 } from "../providers";
-import { getModelsForOpenCodeGoInstance } from "../providers/opencode-go/catalog";
+import { builtinProviderAdapterRegistry } from "../providers/capabilities/builtin-adapters";
 
 export function toProviderInstanceSummary(
   instance: ProviderInstance,
@@ -51,12 +42,17 @@ export function toProviderInstanceSummary(
 ): ProviderInstanceSummary {
   return {
     baseUrl: instance.baseUrl ?? null,
-    hasApiKey:
-      hasResolvedProviderApiKey(instance, env) ||
-      instance.type === "openai_compatible" ||
-      (instance.type === "ollama" && !isOllamaCloudInstance(instance)),
+    ...(instance.capabilityOverrides
+      ? { capabilityOverrides: instance.capabilityOverrides }
+      : {}),
+    hasApiKey: builtinProviderAdapterRegistry.credentialsAreAvailable(
+      instance,
+      resolveProviderApiKey(instance, env)
+    ),
     hostMode:
-      instance.type === "ollama" ? resolveOllamaHostMode(instance) : null,
+      getBuiltinProviderDefinition(instance.type)?.setup?.hostMode === "ollama"
+        ? resolveOllamaHostMode(instance)
+        : null,
     id: instance.id,
     label: normalizeProviderInstanceLabel(instance.type, instance.label, []),
     type: instance.type,
@@ -69,26 +65,25 @@ export function toProviderInstanceSummary(
   };
 }
 
-function hasResolvedProviderApiKey(
+function resolveProviderApiKey(
   instance: ProviderInstance,
   env: Record<string, string | undefined>
-): boolean {
+): string | undefined {
   if (instance.apiKey.trim()) {
-    return true;
+    return instance.apiKey;
   }
 
   const envVar = apiKeyEnvVarForProvider(instance.type);
-  return Boolean(envVar && readEnvValue(env, envVar)?.trim());
+  return envVar ? readEnvValue(env, envVar)?.trim() : undefined;
 }
 
 export function isProviderInstanceUsable(
   instance: ProviderInstance,
   env: Record<string, string | undefined> = process.env
 ): boolean {
-  return (
-    hasResolvedProviderApiKey(instance, env) ||
-    instance.type === "openai_compatible" ||
-    (instance.type === "ollama" && !isOllamaCloudInstance(instance))
+  return builtinProviderAdapterRegistry.credentialsAreAvailable(
+    instance,
+    resolveProviderApiKey(instance, env)
   );
 }
 
@@ -130,58 +125,18 @@ export function modelExistsOnInstance(
     return true;
   }
 
-  if (instance.type === "openrouter" && isOpenRouterModelSlug(trimmed)) {
-    return true;
-  }
-
-  if (instance.type === "cerebras") {
-    if (instance.customModels?.length) {
-      return findCustomModel(instance.customModels, trimmed) !== undefined;
-    }
-
-    return Boolean(getModelById(trimmed)?.provider === "cerebras");
-  }
-
-  if (instance.type === "fireworks") {
-    if (instance.customModels?.length) {
-      return findCustomModel(instance.customModels, trimmed) !== undefined;
-    }
-
-    return Boolean(getModelById(trimmed)?.provider === "fireworks");
-  }
-
-  if (instance.type === "ollama") {
-    if (instance.customModels?.length) {
-      return findCustomModel(instance.customModels, trimmed) !== undefined;
-    }
-
-    return false;
-  }
-
-  if (isDiscoveryModelProvider(instance.type)) {
-    return isCompatibleModelId(trimmed, instance.customModels);
-  }
-
-  if (instance.type === "opencode_go" && trimmed.startsWith("opencode-go/")) {
-    if (instance.customModels?.length) {
-      return findCustomModel(instance.customModels, trimmed) !== undefined;
-    }
-    return true;
-  }
-
+  const definition = getBuiltinProviderDefinition(instance.type);
   if (
-    instance.type === "openai" ||
-    instance.type === "anthropic" ||
-    instance.type === "gemini" ||
-    instance.type === "deepseek"
+    definition?.modelIdPolicy === "provider-qualified" &&
+    validateProviderCustomModelId(instance.type, trimmed) === null
   ) {
-    if (instance.customModels?.length) {
-      return findCustomModel(instance.customModels, trimmed) !== undefined;
-    }
-    return Boolean(getModelById(trimmed)?.provider === instance.type);
+    return true;
   }
 
-  return Boolean(getModelById(trimmed)?.provider === instance.type);
+  return (
+    definition?.modelIdPolicy === "passthrough" &&
+    !instance.customModels?.length
+  );
 }
 
 export function resolveDefaultModelForInstance(
@@ -207,20 +162,25 @@ export function buildProviderInstanceFromCreateRequest(
   }
 
   const apiKey = request.apiKey?.trim() ?? "";
-
-  if (!apiKey && type !== "openai_compatible" && type !== "ollama") {
-    throw new AtlasApiError("API key is required.", 400);
-  }
-
-  if (type === "ollama") {
-    const hostMode = resolveOllamaHostMode({
-      baseUrl: request.baseUrl,
-      hostMode: request.hostMode,
-    });
-
-    if (ollamaRequiresApiKey(hostMode) && !apiKey) {
-      throw new AtlasApiError("API key is required for Ollama Cloud.", 400);
-    }
+  const credentialProbe: ProviderInstance = {
+    apiKey,
+    ...(request.baseUrl ? { baseUrl: request.baseUrl } : {}),
+    createdAt: "",
+    ...(request.hostMode ? { hostMode: request.hostMode } : {}),
+    id: "credential-probe",
+    label: "Credential probe",
+    type,
+  };
+  if (
+    !builtinProviderAdapterRegistry.credentialsAreAvailable(
+      credentialProbe,
+      apiKey
+    )
+  ) {
+    throw new AtlasApiError(
+      builtinProviderAdapterRegistry.missingCredentialMessage(credentialProbe),
+      400
+    );
   }
 
   const fields = buildProviderFieldsFromRequest({ ...request, apiKey, type });
@@ -228,7 +188,8 @@ export function buildProviderInstanceFromCreateRequest(
     ? validateProviderInstanceLabel(request.label, type)
     : fields.label;
   const label =
-    type === "ollama" && fields.hostMode
+    getBuiltinProviderDefinition(type)?.setup?.hostMode === "ollama" &&
+    fields.hostMode
       ? normalizeProviderInstanceLabel(type, rawLabel, existing, {
           hostMode: fields.hostMode,
         })
@@ -247,7 +208,8 @@ export function buildProviderInstanceFromCreateRequest(
 
 export function applyProviderInstanceUpdate(
   instance: ProviderInstance,
-  request: UpdateProviderRequest
+  request: UpdateProviderRequest,
+  env: Record<string, string | undefined> = process.env
 ): ProviderInstance {
   const next: ProviderInstance = { ...instance };
 
@@ -276,50 +238,39 @@ export function applyProviderInstanceUpdate(
     next.baseUrl = normalized;
   }
 
-  if (request.hostMode !== undefined && instance.type === "ollama") {
+  const setup = getBuiltinProviderDefinition(instance.type)?.setup;
+
+  if (request.hostMode !== undefined && setup?.hostMode === "ollama") {
     next.hostMode = request.hostMode;
   }
 
-  if (request.wireApi !== undefined && instance.type === "openai_compatible") {
+  if (request.wireApi !== undefined && setup?.wireApi) {
     next.wireApi = parseWireApi(request.wireApi);
   }
 
   if (request.customModels !== undefined) {
-    if (isDiscoveryModelProvider(instance.type)) {
-      next.customModels = validateCustomModels(request.customModels);
-      if (!next.customModels.length) {
-        throw new Error("At least one model is required.");
-      }
-    } else if (instance.type === "openrouter") {
-      next.customModels = validateOpenRouterCustomModels(request.customModels);
-    } else if (instance.type === "cerebras") {
-      next.customModels = validateCerebrasCustomModels(request.customModels);
-    } else if (instance.type === "fireworks") {
-      next.customModels = validateFireworksCustomModels(request.customModels);
-    } else if (instance.type === "ollama") {
-      next.customModels = validateOllamaCustomModels(request.customModels);
-    } else if (instance.type === "cloudflare") {
-      next.customModels = validateCloudflareCustomModels(request.customModels);
-    } else if (instance.type === "opencode_go") {
-      next.customModels = request.customModels.length
-        ? validateOpenCodeGoCustomModels(request.customModels)
-        : undefined;
-    } else if (
-      instance.type === "openai" ||
-      instance.type === "anthropic" ||
-      instance.type === "gemini" ||
-      instance.type === "deepseek"
-    ) {
-      next.customModels = validateCustomModels(request.customModels);
-    }
+    next.customModels = validateProviderCustomModels(
+      instance.type,
+      request.customModels
+    );
   }
 
-  if (next.type === "ollama") {
-    const hostMode = resolveOllamaHostMode(next);
+  if (request.capabilityOverrides !== undefined) {
+    next.capabilityOverrides = applyAdminCapabilityOverridePatch(
+      instance.capabilityOverrides,
+      request.capabilityOverrides
+    );
+  }
 
-    if (ollamaRequiresApiKey(hostMode) && !next.apiKey.trim()) {
-      throw new Error("API key is required for Ollama Cloud.");
-    }
+  if (
+    !builtinProviderAdapterRegistry.credentialsAreAvailable(
+      next,
+      resolveProviderApiKey(next, env)
+    )
+  ) {
+    throw new Error(
+      builtinProviderAdapterRegistry.missingCredentialMessage(next)
+    );
   }
 
   const connectionSemanticsChanged =
@@ -334,6 +285,45 @@ export function applyProviderInstanceUpdate(
   return next;
 }
 
+export function applyAdminCapabilityOverridePatch(
+  existing: ProviderCapabilityClaims | undefined,
+  patch: ProviderCapabilityOverridePatch,
+  verifiedAt = new Date().toISOString()
+): ProviderCapabilityClaims | undefined {
+  const next: ProviderCapabilityClaims = { ...existing };
+
+  for (const [rawCapabilityId, status] of Object.entries(patch)) {
+    const capabilityId = rawCapabilityId.trim();
+    if (!capabilityId) {
+      throw new Error("Capability overrides cannot contain an empty id.");
+    }
+
+    if (status === null) {
+      delete next[capabilityId];
+      continue;
+    }
+
+    if (
+      status !== "supported" &&
+      status !== "unsupported" &&
+      status !== "unknown"
+    ) {
+      throw new Error(
+        `Capability override "${capabilityId}" has an invalid status.`
+      );
+    }
+
+    next[capabilityId] = {
+      source: "admin-override",
+      status,
+      verified: status !== "unknown",
+      ...(status === "unknown" ? {} : { verifiedAt }),
+    };
+  }
+
+  return Object.keys(next).length ? next : undefined;
+}
+
 function buildProviderFieldsFromRequest(request: CreateProviderRequest): Pick<
   ProviderInstance,
   "baseUrl" | "customModels" | "hostMode" | "wireApi"
@@ -341,170 +331,126 @@ function buildProviderFieldsFromRequest(request: CreateProviderRequest): Pick<
   label?: string;
 } {
   const type = request.type;
+  const definition = getBuiltinProviderDefinition(type);
+  const setup = definition?.setup;
+  const fields: ProviderSetupFields = {};
 
-  if (type === "ollama") {
-    const resolvedHostMode: OllamaHostMode =
+  if (setup?.hostMode === "ollama") {
+    const hostMode: OllamaHostMode =
       request.hostMode ??
       (request.baseUrl?.includes("ollama.com") ? "cloud" : "local");
-    const baseUrl = normalizeBaseUrl(
-      request.baseUrl?.trim() || defaultOllamaBaseUrl(resolvedHostMode)
+    fields.hostMode = hostMode;
+    fields.label = defaultOllamaLabel(hostMode);
+  }
+
+  if (setup?.displayName) {
+    fields.label = validateDisplayName(request.label ?? "");
+  }
+
+  if (setup?.configureBaseUrl !== "omit") {
+    const defaultBaseUrl =
+      setup?.hostMode === "ollama" && fields.hostMode
+        ? defaultOllamaBaseUrl(fields.hostMode)
+        : definition?.discoveryBaseUrl;
+    const rawBaseUrl = request.baseUrl?.trim() || defaultBaseUrl || "";
+    if (rawBaseUrl) {
+      const baseUrl = normalizeBaseUrl(rawBaseUrl);
+      if (!isValidBaseUrl(baseUrl)) {
+        throw new Error(providerBaseUrlError(definition?.displayName));
+      }
+      fields.baseUrl = baseUrl;
+    } else if (setup?.baseUrlRequired) {
+      throw new Error(providerBaseUrlError(definition?.displayName));
+    }
+  }
+
+  if (setup?.customModels) {
+    const entries = requestedCustomModels(
+      request,
+      setup.customModelsRequired === true
     );
-
-    if (!isValidBaseUrl(baseUrl)) {
-      throw new Error("A valid http(s) base URL is required.");
-    }
-
-    const customModels = request.customModels?.length
-      ? validateOllamaCustomModels(request.customModels)
-      : request.model?.trim()
-        ? validateOllamaCustomModels([
-            { default: true, id: request.model.trim() },
-          ])
-        : undefined;
-
-    if (!customModels?.length) {
-      throw new Error("At least one Ollama model is required.");
-    }
-
-    return {
-      baseUrl,
-      customModels,
-      hostMode: resolvedHostMode,
-      label: defaultOllamaLabel(resolvedHostMode),
-    };
+    fields.customModels = validateProviderCustomModels(type, entries);
   }
 
-  if (type === "opencode_go") {
-    const customModels = request.customModels?.length
-      ? validateOpenCodeGoCustomModels(request.customModels)
-      : undefined;
-
-    return { ...(customModels ? { customModels } : {}) };
+  if (setup?.wireApi) {
+    fields.wireApi = parseWireApi(request.wireApi);
   }
 
-  if (type === "openai_compatible") {
-    const label = validateDisplayName(request.label ?? "");
-    const baseUrl = normalizeBaseUrl(request.baseUrl ?? "");
-    if (!isValidBaseUrl(baseUrl)) {
-      throw new Error("A valid http(s) base URL is required.");
-    }
+  return fields;
+}
 
-    let customModels = request.customModels?.length
-      ? validateCustomModels(request.customModels)
-      : undefined;
+type ProviderSetupFields = Pick<
+  ProviderInstance,
+  "baseUrl" | "customModels" | "hostMode" | "wireApi"
+> & { label?: string };
 
-    if (!customModels?.length && request.model?.trim()) {
-      customModels = validateCustomModels([
-        { default: true, id: request.model.trim() },
-      ]);
-    }
+function providerBaseUrlError(displayName: string | undefined): string {
+  return displayName
+    ? `A valid ${displayName} base URL is required.`
+    : "A valid http(s) base URL is required.";
+}
 
-    if (!customModels?.length) {
-      throw new Error("At least one model is required.");
-    }
-
-    return {
-      baseUrl,
-      customModels,
-      label,
-      wireApi: parseWireApi(request.wireApi),
-    };
+function requestedCustomModels(
+  request: CreateProviderRequest,
+  seedSelectedModel: boolean
+): CreateProviderRequest["customModels"] {
+  if (request.customModels?.length) {
+    return request.customModels;
   }
 
-  if (isDiscoveryModelProvider(type)) {
-    const baseUrl = normalizeBaseUrl(
-      request.baseUrl?.trim() || defaultDiscoveryBaseUrl(type) || ""
-    );
-    if (!isValidBaseUrl(baseUrl)) {
-      throw new Error("A valid http(s) base URL is required.");
+  if (!seedSelectedModel) {
+    return [];
+  }
+
+  const modelId = request.model?.trim();
+  if (!modelId) {
+    return [];
+  }
+
+  const catalogModel = getModelById(modelId);
+  return [
+    {
+      default: true,
+      id: modelId,
+      ...(catalogModel?.supportsThinking === undefined
+        ? {}
+        : { supportsThinking: catalogModel.supportsThinking }),
+      ...(catalogModel?.supportsVision === undefined
+        ? {}
+        : { supportsVision: catalogModel.supportsVision }),
+      ...(catalogModel?.inputPerMillionUsd === undefined
+        ? {}
+        : { inputPerMillionUsd: catalogModel.inputPerMillionUsd }),
+      ...(catalogModel?.outputPerMillionUsd === undefined
+        ? {}
+        : { outputPerMillionUsd: catalogModel.outputPerMillionUsd }),
+    },
+  ];
+}
+
+function validateProviderCustomModels(
+  type: ProviderInstance["type"],
+  entries: unknown
+): ProviderInstance["customModels"] {
+  const definition = getBuiltinProviderDefinition(type);
+  if (!Array.isArray(entries) || entries.length === 0) {
+    if (definition?.setup?.customModelsRequired) {
+      throw new Error(
+        `At least one ${definition.displayName} model is required.`
+      );
     }
+    return;
+  }
 
-    let customModels = request.customModels?.length
-      ? validateCustomModels(request.customModels)
-      : undefined;
-    if (!customModels?.length && request.model?.trim()) {
-      customModels = validateCustomModels([
-        { default: true, id: request.model.trim() },
-      ]);
+  const models = validateCustomModels(entries);
+  for (const model of models) {
+    const error = validateProviderCustomModelId(type, model.id);
+    if (error) {
+      throw new Error(error);
     }
-    if (!customModels?.length) {
-      throw new Error("At least one discovered model is required.");
-    }
-
-    return { baseUrl, customModels };
   }
 
-  if (type === "openrouter") {
-    const customModels = request.customModels?.length
-      ? validateOpenRouterCustomModels(request.customModels)
-      : undefined;
-    return { ...(customModels ? { customModels } : {}) };
-  }
-
-  if (type === "cerebras") {
-    const customModels = request.customModels?.length
-      ? validateCerebrasCustomModels(request.customModels)
-      : undefined;
-    return { ...(customModels ? { customModels } : {}) };
-  }
-
-  if (type === "fireworks") {
-    let customModels = request.customModels?.length
-      ? validateFireworksCustomModels(request.customModels)
-      : undefined;
-
-    if (!customModels?.length && request.model?.trim()) {
-      const catalogModel = getModelById(request.model.trim());
-      customModels = validateFireworksCustomModels([
-        {
-          default: true,
-          id: request.model.trim(),
-          ...(catalogModel?.supportsThinking === undefined
-            ? {}
-            : { supportsThinking: catalogModel.supportsThinking }),
-          ...(catalogModel?.supportsVision === undefined
-            ? {}
-            : { supportsVision: catalogModel.supportsVision }),
-          ...(catalogModel?.inputPerMillionUsd === undefined
-            ? {}
-            : { inputPerMillionUsd: catalogModel.inputPerMillionUsd }),
-          ...(catalogModel?.outputPerMillionUsd === undefined
-            ? {}
-            : { outputPerMillionUsd: catalogModel.outputPerMillionUsd }),
-        },
-      ]);
-    }
-
-    if (!customModels?.length) {
-      throw new Error("At least one Fireworks model is required.");
-    }
-
-    return { customModels };
-  }
-
-  if (type === "cloudflare") {
-    const baseUrl = normalizeBaseUrl(request.baseUrl ?? "");
-    if (!isValidBaseUrl(baseUrl)) {
-      throw new Error("A valid Cloudflare Workers AI base URL is required.");
-    }
-
-    const customModels = request.customModels?.length
-      ? validateCloudflareCustomModels(request.customModels)
-      : undefined;
-    return { baseUrl, ...(customModels ? { customModels } : {}) };
-  }
-
-  const rawBaseUrl = request.baseUrl?.trim();
-  if (!rawBaseUrl) {
-    return {};
-  }
-
-  const baseUrl = normalizeBaseUrl(rawBaseUrl);
-  if (!isValidBaseUrl(baseUrl)) {
-    throw new Error("A valid http(s) base URL is required.");
-  }
-
-  return { baseUrl };
+  return models;
 }
 
 export function mergeModelsForConfig(
@@ -534,12 +480,12 @@ export async function mergeModelsForConfigAsync(
       continue;
     }
 
-    if (instance.type === "opencode_go") {
-      models.push(...(await getModelsForOpenCodeGoInstance(instance)));
-      continue;
-    }
-
-    models.push(...getModelsForProviderInstance(instance));
+    models.push(
+      ...(await builtinProviderAdapterRegistry.listModelsForInstance(
+        instance,
+        () => getModelsForProviderInstance(instance)
+      ))
+    );
   }
 
   return models;

@@ -1,4 +1,14 @@
 import type { LoadAttachmentBytes } from "./attachments/content";
+import type {
+  CapabilityBindingV1,
+  CapabilityClaimSource,
+  CapabilityConfigV1,
+  CapabilityRuntimeAvailability,
+  CapabilitySupportStatus,
+  ProviderCapabilityClaims,
+  ProviderCapabilityConstraints,
+  ProviderCapabilityOverridePatch,
+} from "./provider-capabilities";
 import type { RetryPolicy } from "./tools/execution-contract";
 
 export type AutomationTrigger =
@@ -1366,6 +1376,77 @@ export interface UpdateThinkingRequest {
   enabled: boolean;
 }
 
+export interface CapabilityCatalogEntry {
+  description: string;
+  id: string;
+  label: string;
+  routable: boolean;
+}
+
+export interface PublicProviderCapability {
+  capabilityId: string;
+  implementationAvailable: boolean;
+  nativeStatus: CapabilitySupportStatus;
+}
+
+export interface PublicProviderModel {
+  capabilities: ProviderCapabilityClaims;
+  id: string;
+  name?: string;
+}
+
+export interface PublicProviderType {
+  capabilities: PublicProviderCapability[];
+  displayName: string;
+  id: string;
+  models: PublicProviderModel[];
+}
+
+export interface CapabilityCatalogResponse {
+  capabilities: CapabilityCatalogEntry[];
+  providers: PublicProviderType[];
+  schemaVersion: number;
+}
+
+export interface CapabilityMappingsResponse {
+  config: CapabilityConfigV1;
+}
+
+export interface CapabilityTargetOption {
+  capabilityId: string;
+  effective: EffectiveCapabilitySummary;
+  modelId: string;
+  modelName: string;
+  providerId: string;
+  providerLabel: string;
+  providerType: ProviderName;
+}
+
+export interface CapabilityOptionsResponse {
+  options: CapabilityTargetOption[];
+  schemaVersion: number;
+}
+
+export interface UpdateCapabilityMappingRequest {
+  binding: CapabilityBindingV1;
+}
+
+export interface UpdateCapabilityMappingResponse {
+  capabilityId: string;
+  config: CapabilityConfigV1;
+}
+
+export interface EffectiveCapabilitySummary {
+  availability: CapabilityRuntimeAvailability;
+  capabilityId: string;
+  constraints?: ProviderCapabilityConstraints;
+  reasons: string[];
+  selectable: boolean;
+  source: CapabilityClaimSource;
+  status: CapabilitySupportStatus;
+  verified: boolean;
+}
+
 export interface VisionSettings {
   model: string | null;
 }
@@ -1667,6 +1748,7 @@ export interface ApiErrorResponse {
 }
 
 export interface CustomModelEntry {
+  capabilities?: ProviderCapabilityClaims;
   default?: boolean;
   id: string;
   inputPerMillionUsd?: number;
@@ -1687,6 +1769,7 @@ export interface CustomModelEntry {
 }
 
 export interface ProviderModelOption {
+  capabilities?: ProviderCapabilityClaims;
   contextWindow?: number;
   default?: boolean;
   id: string;
@@ -1705,6 +1788,7 @@ export interface ProviderModelOption {
 
 export interface ProviderInstanceSummary {
   baseUrl?: string | null;
+  capabilityOverrides?: ProviderCapabilityClaims;
   createdAt: string;
   customModels?: CustomModelEntry[];
   hasApiKey: boolean;
@@ -1757,6 +1841,7 @@ export interface CreateProviderResponse {
 export interface UpdateProviderRequest {
   apiKey?: string;
   baseUrl?: string;
+  capabilityOverrides?: ProviderCapabilityOverridePatch;
   customModels?: CustomModelEntry[];
   hostMode?: OllamaHostMode;
   label?: string;
@@ -2293,23 +2378,7 @@ export interface InitUserContextResponse {
   created: boolean;
 }
 
-export type ProviderName =
-  | "openai"
-  | "anthropic"
-  | "openrouter"
-  | "gemini"
-  | "deepseek"
-  | "cerebras"
-  | "fireworks"
-  | "ollama"
-  | "openai_compatible"
-  | "opencode_go"
-  | "cloudflare"
-  | "minimax"
-  | "minimax_cn"
-  | "xai"
-  | "zhipu"
-  | "zhipu_cn";
+export type ProviderName = import("./provider-catalog").BuiltinProviderName;
 
 export type OllamaHostMode = "local" | "cloud";
 

@@ -37,9 +37,15 @@ function createApp() {
         installed: false,
         ready: false,
       }),
+      getCapabilityCatalog: () => {
+        calls.push("agent.getCapabilityCatalog");
+        return { capabilities: [], providers: [], schemaVersion: 1 };
+      },
       getComposioSettings: async () => ({ configured: false }),
       getDiscordSettings: record("agent.getDiscordSettings"),
       getEmailSettings: async () => ({ configured: false }),
+      getOrgCapabilityMappings: record("agent.getOrgCapabilityMappings"),
+      getOrgCapabilityOptions: record("agent.getOrgCapabilityOptions"),
       getTelegramSettings: record("agent.getTelegramSettings"),
       getWhatsAppSettings: record("agent.getWhatsAppSettings"),
       listProfiles: async () => ({ profiles: [{ id: "default" }] }),
@@ -55,6 +61,7 @@ function createApp() {
         return { skipped: false };
       },
       setComposioSettings: record("agent.setComposioSettings"),
+      setOrgCapabilityMapping: record("agent.setOrgCapabilityMapping"),
       testProvider: record("agent.testProvider"),
       updateProvider: record("agent.updateProvider"),
     },
@@ -146,6 +153,21 @@ const PROVIDER_MANAGEMENT_ROUTES: Array<{
   body?: unknown;
 }> = [
   { method: "GET", path: "/v1/providers" },
+  { method: "GET", path: "/v1/capabilities/catalog" },
+  { method: "GET", path: "/v1/capabilities/mappings" },
+  { method: "GET", path: "/v1/capabilities/options" },
+  {
+    body: {
+      binding: {
+        contractVersion: 1,
+        enabled: false,
+        fallbacks: [],
+        mode: "manual",
+      },
+    },
+    method: "PUT",
+    path: "/v1/capabilities/mappings/audio.transcription",
+  },
   {
     body: { baseUrl: "https://example.com/v1", provider: "openai_compatible" },
     method: "POST",
@@ -171,7 +193,12 @@ const PROVIDER_MANAGEMENT_ROUTES: Array<{
     path: "/v1/providers",
   },
   {
-    body: { label: "Renamed" },
+    body: {
+      capabilityOverrides: {
+        "chat.reasoning": "supported",
+        "chat.tool-use": "unknown",
+      },
+    },
     method: "PATCH",
     path: "/v1/providers/provider_1",
   },
@@ -315,6 +342,38 @@ describe("RBAC: provider management requires an admin", () => {
 
     expect(response.status).not.toBe(403);
     expect(calls).toContain("agent.createProvider");
+  });
+
+  test("Workspace Admin can update provider capability evidence", async () => {
+    const { app, authService, callArgs, databaseAdapter } = createApp();
+    await seedUser(databaseAdapter, authService, "admin@example.com", "admin");
+    const admin = await loginUserSession(
+      app,
+      "admin@example.com",
+      PASSWORD,
+      ORG_ID
+    );
+    const body = {
+      capabilityOverrides: {
+        "chat.reasoning": "supported",
+        "chat.tool-use": "unknown",
+      },
+    };
+
+    const response = await app.fetch(
+      new Request("http://localhost:4310/v1/providers/provider_1", {
+        body: JSON.stringify(body),
+        headers: admin.headers({ "X-CSRF-Token": admin.csrfToken }),
+        method: "PATCH",
+      })
+    );
+
+    expect(response.status).not.toBe(403);
+    expect(callArgs.get("agent.updateProvider")?.[0]).toEqual([
+      ORG_ID,
+      "provider_1",
+      body,
+    ]);
   });
 
   test("model discovery forwards the request abort signal", async () => {

@@ -31,6 +31,7 @@ export function catalogModelToModelListRow(
   model: ProviderModelOption
 ): ModelListRow {
   return {
+    ...(model.capabilities ? { capabilities: model.capabilities } : {}),
     id: model.id,
     name: model.name,
     ...(model.default ? { default: true } : {}),

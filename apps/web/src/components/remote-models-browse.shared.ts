@@ -1,9 +1,61 @@
-import type { DiscoverModelsRequest } from "@atlas/core/contract";
+import type {
+  CustomModelEntry,
+  DiscoverModelsRequest,
+} from "@atlas/core/contract";
+
+export interface RemoteModelRow {
+  capabilities?: CustomModelEntry["capabilities"];
+  id: string;
+  name: string;
+  reasoningEffortValues?: string[];
+  supportsThinking?: boolean;
+  supportsVision?: boolean;
+}
 
 export type RemoteModelBrowseProvider = Exclude<
   DiscoverModelsRequest["provider"],
   "fireworks" | "opencode_go" | undefined
 >;
+
+export function remoteModelEntryToRow(entry: CustomModelEntry): RemoteModelRow {
+  return {
+    id: entry.id,
+    name: entry.name?.trim() || entry.id,
+    ...(entry.capabilities === undefined
+      ? {}
+      : { capabilities: entry.capabilities }),
+    ...(entry.supportsThinking === undefined
+      ? {}
+      : { supportsThinking: entry.supportsThinking }),
+    ...(entry.reasoningEffortValues?.length
+      ? { reasoningEffortValues: entry.reasoningEffortValues }
+      : {}),
+    ...(entry.supportsVision === undefined
+      ? {}
+      : { supportsVision: entry.supportsVision }),
+  };
+}
+
+export function remoteModelRowToCustomModelEntry(
+  row: RemoteModelRow
+): CustomModelEntry {
+  return {
+    id: row.id,
+    name: row.name,
+    ...(row.capabilities === undefined
+      ? {}
+      : { capabilities: row.capabilities }),
+    ...(row.supportsThinking === undefined
+      ? {}
+      : { supportsThinking: row.supportsThinking }),
+    ...(row.reasoningEffortValues?.length
+      ? { reasoningEffortValues: row.reasoningEffortValues }
+      : {}),
+    ...(row.supportsVision === undefined
+      ? {}
+      : { supportsVision: row.supportsVision }),
+  };
+}
 
 export function advanceCredentialRevision(options: {
   currentCredential: string;

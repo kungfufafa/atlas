@@ -5,6 +5,7 @@ import {
   parseRemoteOpenAIModelEntry,
   resolveCompatibleModelCapabilities,
 } from "./compatible-model-capabilities";
+import { PROVIDER_CAPABILITY_IDS } from "./provider-capabilities";
 
 describe("inferCompatibleModelThinking", () => {
   test("detects advertised reasoning slugs and known families", () => {
@@ -60,6 +61,13 @@ describe("parseRemoteOpenAIModelEntry", () => {
         },
       })
     ).toEqual({
+      capabilities: {
+        [PROVIDER_CAPABILITY_IDS.chatReasoning]: {
+          source: "provider-discovery",
+          status: "supported",
+          verified: true,
+        },
+      },
       id: "qwen/qwen3.8-max-free",
       name: "Qwen 3.8 Max Free",
       reasoningEffortValues: ["low", "medium", "xhigh"],
@@ -75,6 +83,23 @@ describe("parseRemoteOpenAIModelEntry", () => {
         reasoning: { supported_efforts: ["low", "medium", "high"] },
       })
     ).toEqual({
+      capabilities: {
+        [PROVIDER_CAPABILITY_IDS.chatInputImage]: {
+          source: "provider-discovery",
+          status: "supported",
+          verified: true,
+        },
+        [PROVIDER_CAPABILITY_IDS.chatReasoning]: {
+          source: "provider-discovery",
+          status: "supported",
+          verified: true,
+        },
+        [PROVIDER_CAPABILITY_IDS.imageUnderstanding]: {
+          source: "provider-discovery",
+          status: "supported",
+          verified: true,
+        },
+      },
       id: "google/gemini-3-flash",
       reasoningEffortValues: ["low", "medium", "high"],
       supportsThinking: true,
@@ -104,8 +129,49 @@ describe("parseRemoteOpenAIModelEntry", () => {
         supports_reasoning: false,
       })
     ).toEqual({
+      capabilities: {
+        [PROVIDER_CAPABILITY_IDS.chatReasoning]: {
+          source: "provider-discovery",
+          status: "unsupported",
+          verified: true,
+        },
+      },
       id: "qwen/qwen3.8-max-free",
       supportsThinking: false,
+    });
+  });
+
+  test("normalizes advertised audio and image modalities", () => {
+    const parsed = parseRemoteOpenAIModelEntry({
+      architecture: {
+        input_modalities: ["audio", "text"],
+        output_modalities: ["image", "text"],
+      },
+      id: "multimodal-model",
+      supported_parameters: ["tools", "response_format"],
+    });
+
+    expect(parsed?.capabilities).toMatchObject({
+      [PROVIDER_CAPABILITY_IDS.audioTranscription]: {
+        source: "provider-discovery",
+        status: "supported",
+      },
+      [PROVIDER_CAPABILITY_IDS.chatInputAudio]: {
+        source: "provider-discovery",
+        status: "supported",
+      },
+      [PROVIDER_CAPABILITY_IDS.chatStructuredOutput]: {
+        source: "provider-discovery",
+        status: "supported",
+      },
+      [PROVIDER_CAPABILITY_IDS.chatToolUse]: {
+        source: "provider-discovery",
+        status: "supported",
+      },
+      [PROVIDER_CAPABILITY_IDS.imageGeneration]: {
+        source: "provider-discovery",
+        status: "supported",
+      },
     });
   });
 });

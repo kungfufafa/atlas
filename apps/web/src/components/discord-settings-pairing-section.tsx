@@ -5,13 +5,13 @@ import {
   RefreshIcon,
 } from "hugeicons-react";
 import {
+  CHANNEL_ACCESS_MODE_OPTIONS,
+  channelAccessModeLabel,
+} from "@/components/channel-access-mode";
+import {
   DiscordPairingGuide,
   SettingsRow,
 } from "@/components/discord-settings-card.shared";
-import {
-  CHANNEL_ACCESS_MODE_OPTIONS,
-  channelAccessModeLabel,
-} from "@/components/integration-settings.shared";
 import { ProfileAvatar } from "@/components/ProfileAvatar";
 import { Button } from "@/components/ui/button";
 import {

@@ -654,13 +654,17 @@ export function useChatPage() {
 
         setError(formatError(err));
       } finally {
-        if (!isSupersededChatTurn(streamGenerationRef.current, generation)) {
+        const superseded = isSupersededChatTurn(
+          streamGenerationRef.current,
+          generation
+        );
+        if (!superseded) {
           streamAbortRef.current = null;
           isSendingRef.current = false;
-          setCanStop(false);
-          setBusy(false);
-          setTurnStartedAt(null);
         }
+        setCanStop((current) => (superseded ? current : false));
+        setBusy((current) => (superseded ? current : false));
+        setTurnStartedAt((current) => (superseded ? current : null));
       }
     },
     [profileId, supersedeInFlightTurn, syncChatUrl]
@@ -1013,11 +1017,15 @@ export function useChatPage() {
           current.filter((message) => !message.streaming)
         );
       } finally {
-        if (!isSupersededChatTurn(streamGenerationRef.current, generation)) {
+        const superseded = isSupersededChatTurn(
+          streamGenerationRef.current,
+          generation
+        );
+        setCanStop((current) => (superseded ? current : false));
+        setBusy((current) => (superseded ? current : false));
+        setTurnStartedAt((current) => (superseded ? current : null));
+        if (!superseded) {
           streamAbortRef.current = null;
-          setCanStop(false);
-          setBusy(false);
-          setTurnStartedAt(null);
 
           const next = shouldDrainQueue
             ? messageQueueRef.current.shift()

@@ -6,11 +6,14 @@ import {
   type AgentRequest,
   createAgentChatSession,
 } from "./chat";
+import { enforceChatCapabilityPolicy } from "./chat-capability-provider";
 import { parseAutomationResponse } from "./parse";
 import {
   buildAutomationSystemPrompt,
   buildAutomationUserPrompt,
 } from "./prompt";
+
+export { enforceChatCapabilityPolicy } from "./chat-capability-provider";
 
 export interface AgentHarness {
   createAutomationFromPrompt(
@@ -23,16 +26,28 @@ export interface AgentHarness {
 export function createAgentHarness(
   dependencies: AgentDependencies = {}
 ): AgentHarness {
-  const defaultTools = dependencies.tools ?? [];
+  const guardedDependencies: AgentDependencies = {
+    ...dependencies,
+    ...(dependencies.provider && dependencies.chatCapabilityPolicy
+      ? {
+          provider: enforceChatCapabilityPolicy(
+            dependencies.provider,
+            dependencies.chatCapabilityPolicy
+          ),
+        }
+      : {}),
+  };
+  const defaultTools = guardedDependencies.tools ?? [];
   const harness: AgentHarness = {
     async createAutomationFromPrompt(request, options) {
       const tools = options?.tools ?? defaultTools;
 
-      if (!dependencies.provider) {
+      if (!guardedDependencies.provider) {
         throw new Error("Provider is not configured.");
       }
 
-      const result = await dependencies.provider.generateText({
+      const result = await guardedDependencies.provider.generateText({
+        format: "json",
         prompt: buildAutomationUserPrompt(request.prompt, request.channel),
         system: buildAutomationSystemPrompt(tools),
       });
@@ -43,7 +58,7 @@ export function createAgentHarness(
       });
     },
     createChatSession(options) {
-      return createAgentChatSession(dependencies, harness, options);
+      return createAgentChatSession(guardedDependencies, harness, options);
     },
   };
 
@@ -55,8 +70,12 @@ export type {
   AgentChatSessionOptions,
   AgentDependencies,
   AgentRequest,
+  ChatCapabilityErrorCode,
+  ChatCapabilityPolicy,
+  ChatCapabilityPolicyEntry,
   ResolvePromptContextInput,
 } from "./chat";
+export { ChatCapabilityError } from "./chat";
 export type { CompactionConfig } from "./history-compaction";
 export { usableContextTokens } from "./history-compaction";
 export {

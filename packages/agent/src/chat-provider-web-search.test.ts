@@ -1,12 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import type {
-  ChatCompletionResult,
-  GenerateChatInput,
-  ProviderClient,
-  ToolDefinition,
+import {
+  type ChatCompletionResult,
+  type GenerateChatInput,
+  PROVIDER_CAPABILITY_IDS,
+  type ProviderCapabilityConstraints,
+  type ProviderClient,
+  type ToolDefinition,
+  webSearchTool,
 } from "@atlas/core";
-import { webSearchTool } from "@atlas/core";
-import { createAgentHarness } from "./index";
+import { type ChatCapabilityPolicy, createAgentHarness } from "./index";
 
 function createCapturingProvider(
   response: ChatCompletionResult,
@@ -33,6 +35,28 @@ function createCapturingProvider(
   return provider;
 }
 
+function policy(options?: {
+  nativeSearch?: "supported" | "unknown" | "unsupported";
+  nativeSearchConstraints?: ProviderCapabilityConstraints;
+}): ChatCapabilityPolicy {
+  const supported = { selectable: true, status: "supported" } as const;
+  const nativeSearchStatus = options?.nativeSearch ?? "supported";
+  return {
+    capabilities: {
+      [PROVIDER_CAPABILITY_IDS.chatCompletion]: supported,
+      [PROVIDER_CAPABILITY_IDS.chatNativeWebSearch]: {
+        ...(options?.nativeSearchConstraints
+          ? { constraints: options.nativeSearchConstraints }
+          : {}),
+        selectable: nativeSearchStatus === "supported",
+        status: nativeSearchStatus,
+      },
+      [PROVIDER_CAPABILITY_IDS.chatStreaming]: supported,
+      [PROVIDER_CAPABILITY_IDS.chatToolUse]: supported,
+    },
+  };
+}
+
 describe("provider-native web search", () => {
   test("passes webSearch provider option when web_search is assigned", async () => {
     const provider = createCapturingProvider({
@@ -44,7 +68,11 @@ describe("provider-native web search", () => {
       toolCalls: [],
     });
 
-    const harness = createAgentHarness({ provider, tools: [webSearchTool] });
+    const harness = createAgentHarness({
+      chatCapabilityPolicy: policy(),
+      provider,
+      tools: [webSearchTool],
+    });
     const session = harness.createChatSession({ tools: [webSearchTool] });
     const reply = await session.send("What's new in AI?");
 
@@ -72,6 +100,7 @@ describe("provider-native web search", () => {
     });
 
     const harness = createAgentHarness({
+      chatCapabilityPolicy: policy(),
       provider,
       tools: [localTool, webSearchTool],
     });
@@ -86,7 +115,7 @@ describe("provider-native web search", () => {
     ]);
   });
 
-  test("enables provider web search on Gemini when web_search is the only tool", async () => {
+  test("uses capability evidence rather than the provider name", async () => {
     const provider = createCapturingProvider(
       {
         assistantMessage: {
@@ -96,10 +125,14 @@ describe("provider-native web search", () => {
         content: "Latest news summary.",
         toolCalls: [],
       },
-      "gemini"
+      "openrouter"
     );
 
-    const harness = createAgentHarness({ provider, tools: [webSearchTool] });
+    const harness = createAgentHarness({
+      chatCapabilityPolicy: policy(),
+      provider,
+      tools: [webSearchTool],
+    });
     const session = harness.createChatSession({ tools: [webSearchTool] });
     await session.send("What's new in AI?");
 
@@ -107,7 +140,7 @@ describe("provider-native web search", () => {
     expect(provider.lastInput?.tools).toBeUndefined();
   });
 
-  test("skips provider web search on Gemini when local tools are also assigned", async () => {
+  test("falls back to local search when request constraints reject native search", async () => {
     const localTool: ToolDefinition = {
       description: "Sample tool",
       name: "sample",
@@ -116,19 +149,21 @@ describe("provider-native web search", () => {
       },
     };
 
-    const provider = createCapturingProvider(
-      {
-        assistantMessage: {
-          content: "Done",
-          role: "assistant",
-        },
+    const provider = createCapturingProvider({
+      assistantMessage: {
         content: "Done",
-        toolCalls: [],
+        role: "assistant",
       },
-      "gemini"
-    );
+      content: "Done",
+      toolCalls: [],
+    });
 
     const harness = createAgentHarness({
+      chatCapabilityPolicy: policy({
+        nativeSearchConstraints: {
+          supportedValues: { "request.local-tools": [false] },
+        },
+      }),
       provider,
       tools: [localTool, webSearchTool],
     });
@@ -140,6 +175,51 @@ describe("provider-native web search", () => {
     expect(provider.lastInput?.providerOptions).toBeUndefined();
     expect(provider.lastInput?.tools?.map((tool) => tool.name)).toEqual([
       "sample",
+      "web_search",
+    ]);
+  });
+
+  test("falls back to local search when native support is unknown", async () => {
+    const provider = createCapturingProvider({
+      assistantMessage: { content: "Searched locally", role: "assistant" },
+      content: "Searched locally",
+      toolCalls: [],
+    });
+    const harness = createAgentHarness({
+      chatCapabilityPolicy: policy({ nativeSearch: "unknown" }),
+      provider,
+      tools: [webSearchTool],
+    });
+
+    await harness
+      .createChatSession({ tools: [webSearchTool] })
+      .send("Search safely");
+
+    expect(provider.lastInput?.providerOptions).toBeUndefined();
+    expect(provider.lastInput?.tools?.map((tool) => tool.name)).toEqual([
+      "web_search",
+    ]);
+  });
+
+  test("preserves local search when native support is unsupported", async () => {
+    const provider = createCapturingProvider({
+      assistantMessage: { content: "Searched locally", role: "assistant" },
+      content: "Searched locally",
+      toolCalls: [],
+    });
+    const harness = createAgentHarness({
+      chatCapabilityPolicy: policy({ nativeSearch: "unsupported" }),
+      provider,
+      tools: [webSearchTool],
+    });
+
+    await harness
+      .createChatSession({ tools: [webSearchTool] })
+      .send("Search safely");
+
+    expect(provider.lastInput?.providerOptions).toBeUndefined();
+    expect(provider.lastInput?.tools?.map((tool) => tool.name)).toEqual([
+      "web_search",
     ]);
   });
 });

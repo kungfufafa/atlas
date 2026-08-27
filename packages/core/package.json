@@ -29,6 +29,8 @@
     "./ollama-provider-config": "./src/ollama-provider-config.ts",
     "./provider-inference": "./src/provider-inference.ts",
     "./provider-label": "./src/provider-label.ts",
+    "./provider-capabilities": "./src/provider-capabilities.ts",
+    "./provider-catalog": "./src/provider-catalog.ts",
     "./provider-resolution": "./src/provider-resolution.ts",
     "./runtime": "./src/runtime.ts",
     "./ensure-server": "./src/ensure-server.ts",

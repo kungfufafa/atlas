@@ -1,21 +1,41 @@
 import { describe, expect, test } from "bun:test";
+import { PROVIDER_CAPABILITY_IDS } from "@atlas/core/provider-capabilities";
+import type { BuiltinProviderDefinition } from "@atlas/core/provider-catalog";
 import {
+  apiKeyPlaceholder,
   buildConfigureProviderRequest,
   buildCreateProviderRequest,
   effectiveProfileModelSelection,
   encodeModelSelection,
   firstAvailableProviderOption,
   hasOpenCodeZenProvider,
-  IMAGE_GENERATION_MODEL_OPTIONS,
-  IMAGE_GENERATION_SELECTION,
+  isApiKeyRequiredForProvider,
   isOpenCodeZenBaseUrl,
   isProviderTypeAlreadyConfigured,
+  modelsFromShortlistRows,
   profileModelSelectionValue,
   resolveModelReasoningEffortValues,
   resolveModelThinkingSupport,
   resolveModelVisionSupport,
+  shouldRenderGenericCustomModelEditor,
+  validateApiKeyForProvider,
   validateCustomModelsInput,
 } from "./models";
+
+test("modelsFromShortlistRows preserves generic capability evidence", () => {
+  const capabilities = {
+    "vendor.custom-operation": {
+      source: "provider-discovery" as const,
+      status: "supported" as const,
+    },
+  };
+
+  expect(
+    modelsFromShortlistRows("fireworks", [
+      { capabilities, id: "vendor/model" },
+    ])[0]?.capabilities
+  ).toBe(capabilities);
+});
 
 function group(
   providerId: string,
@@ -30,9 +50,11 @@ function group(
     | "fireworks"
     | "xai",
   flags?: {
+    reasoningCapability?: "supported" | "unsupported" | "unknown";
     reasoningEffortValues?: string[];
     supportsThinking?: boolean;
     supportsVision?: boolean;
+    visionCapability?: "supported" | "unsupported" | "unknown";
     providerLabel?: string;
     contextWindow?: number;
   },
@@ -45,6 +67,31 @@ function group(
           id: modelId,
           name: modelId,
           provider,
+          ...(flags?.visionCapability === undefined &&
+          flags?.reasoningCapability === undefined
+            ? {}
+            : {
+                capabilities: {
+                  ...(flags?.visionCapability === undefined
+                    ? {}
+                    : {
+                        [PROVIDER_CAPABILITY_IDS.chatInputImage]: {
+                          source: "static-manifest" as const,
+                          status: flags.visionCapability,
+                          verified: flags.visionCapability !== "unknown",
+                        },
+                      }),
+                  ...(flags?.reasoningCapability === undefined
+                    ? {}
+                    : {
+                        [PROVIDER_CAPABILITY_IDS.chatReasoning]: {
+                          source: "static-manifest" as const,
+                          status: flags.reasoningCapability,
+                          verified: flags.reasoningCapability !== "unknown",
+                        },
+                      }),
+                },
+              }),
           ...(flags?.supportsThinking === undefined
             ? {}
             : { supportsThinking: flags.supportsThinking }),
@@ -65,6 +112,45 @@ function group(
   ];
 }
 
+describe("declarative provider API-key setup", () => {
+  test("reads placeholders from provider metadata", () => {
+    expect(apiKeyPlaceholder("anthropic")).toBe("sk-ant-…");
+    expect(apiKeyPlaceholder("openai_compatible")).toBe(
+      "Optional for local endpoints"
+    );
+  });
+
+  test("evaluates required, optional, and conditional policies generically", () => {
+    expect(isApiKeyRequiredForProvider("openai")).toBe(true);
+    expect(isApiKeyRequiredForProvider("openai_compatible")).toBe(false);
+    expect(isApiKeyRequiredForProvider("ollama", { hostMode: "local" })).toBe(
+      false
+    );
+    expect(isApiKeyRequiredForProvider("ollama", { hostMode: "cloud" })).toBe(
+      true
+    );
+    expect(validateApiKeyForProvider("", "ollama", { hostMode: "local" })).toBe(
+      null
+    );
+    expect(validateApiKeyForProvider("", "ollama", { hostMode: "cloud" })).toBe(
+      "API key is required."
+    );
+  });
+
+  test("shows the generic custom-model editor for a synthetic catalog entry", () => {
+    const synthetic = {
+      apiKey: { placeholder: "Token", requirement: "required" },
+      apiKeyEnvVar: "SYNTHETIC_API_KEY",
+      displayName: "Synthetic",
+      fallbackModelId: "synthetic-model",
+      id: "synthetic",
+      setup: { customModels: true },
+    } satisfies BuiltinProviderDefinition;
+
+    expect(shouldRenderGenericCustomModelEditor(synthetic)).toBe(true);
+  });
+});
+
 describe("validateCustomModelsInput", () => {
   test("rejects ids that collide after trimming", () => {
     expect(validateCustomModelsInput([{ id: "same" }, { id: " same " }])).toBe(
@@ -74,13 +160,40 @@ describe("validateCustomModelsInput", () => {
 });
 
 describe("resolveModelThinkingSupport", () => {
-  test("treats openai-compatible models as opt-in only", () => {
+  test("uses reasoning capability claims without provider-specific rules", () => {
     expect(
       resolveModelThinkingSupport(
         encodeModelSelection("compat-1", "model-1"),
-        group("compat-1", "openai_compatible")
+        group("compat-1", "openai_compatible", {
+          reasoningCapability: "supported",
+        })
+      )
+    ).toBe(true);
+
+    expect(
+      resolveModelThinkingSupport(
+        encodeModelSelection("openai-1", "model-1"),
+        group("openai-1", "openai", {
+          reasoningCapability: "unsupported",
+        })
       )
     ).toBe(false);
+
+    expect(
+      resolveModelThinkingSupport(
+        encodeModelSelection("fw-1", "model-1"),
+        group("fw-1", "fireworks", { reasoningCapability: "unknown" })
+      )
+    ).toBeUndefined();
+  });
+
+  test("uses declarative legacy model metadata only when no claim exists", () => {
+    expect(
+      resolveModelThinkingSupport(
+        encodeModelSelection("openai-1", "model-1"),
+        group("openai-1", "openai")
+      )
+    ).toBeUndefined();
 
     expect(
       resolveModelThinkingSupport(
@@ -88,84 +201,11 @@ describe("resolveModelThinkingSupport", () => {
         group("compat-1", "openai_compatible", { supportsThinking: true })
       )
     ).toBe(true);
-  });
-
-  test("preserves existing non-compatible behavior", () => {
-    expect(
-      resolveModelThinkingSupport(
-        encodeModelSelection("openai-1", "model-1"),
-        group("openai-1", "openai")
-      )
-    ).toBe(true);
-
-    expect(
-      resolveModelThinkingSupport(
-        encodeModelSelection("openai-1", "model-1"),
-        group("openai-1", "openai", { supportsThinking: false })
-      )
-    ).toBe(false);
-  });
-
-  test("treats openrouter models as opt-in only", () => {
-    expect(
-      resolveModelThinkingSupport(
-        encodeModelSelection("or-1", "model-1"),
-        group("or-1", "openrouter")
-      )
-    ).toBe(false);
-
-    expect(
-      resolveModelThinkingSupport(
-        encodeModelSelection("or-1", "model-1"),
-        group("or-1", "openrouter", { supportsThinking: true })
-      )
-    ).toBe(true);
-  });
-
-  test("treats deepseek models as opt-in only", () => {
-    expect(
-      resolveModelThinkingSupport(
-        encodeModelSelection("ds-1", "model-1"),
-        group("ds-1", "deepseek")
-      )
-    ).toBe(false);
 
     expect(
       resolveModelThinkingSupport(
         encodeModelSelection("ds-1", "model-1"),
-        group("ds-1", "deepseek", { supportsThinking: true })
-      )
-    ).toBe(true);
-  });
-
-  test("treats cerebras models as opt-in only", () => {
-    expect(
-      resolveModelThinkingSupport(
-        encodeModelSelection("cb-1", "model-1"),
-        group("cb-1", "cerebras")
-      )
-    ).toBe(false);
-
-    expect(
-      resolveModelThinkingSupport(
-        encodeModelSelection("cb-1", "model-1"),
-        group("cb-1", "cerebras", { supportsThinking: true })
-      )
-    ).toBe(true);
-  });
-
-  test("treats fireworks models as opt-in only", () => {
-    expect(
-      resolveModelThinkingSupport(
-        encodeModelSelection("fw-1", "model-1"),
-        group("fw-1", "fireworks")
-      )
-    ).toBe(false);
-
-    expect(
-      resolveModelThinkingSupport(
-        encodeModelSelection("fw-1", "model-1"),
-        group("fw-1", "fireworks", { supportsThinking: true })
+        group("ds-1", "deepseek", { reasoningEffortValues: ["high"] })
       )
     ).toBe(true);
   });
@@ -199,20 +239,38 @@ describe("resolveModelReasoningEffortValues", () => {
 });
 
 describe("resolveModelVisionSupport", () => {
-  test("treats openai-compatible and opencode_go models as opt-in only", () => {
+  test("uses capability claims without provider-specific branches", () => {
     expect(
       resolveModelVisionSupport(
         encodeModelSelection("compat-1", "model-1"),
-        group("compat-1", "openai_compatible")
+        group("compat-1", "openai_compatible", {
+          visionCapability: "supported",
+        })
+      )
+    ).toBe(true);
+
+    expect(
+      resolveModelVisionSupport(
+        encodeModelSelection("openai-1", "model-1"),
+        group("openai-1", "openai", { visionCapability: "unsupported" })
       )
     ).toBe(false);
 
     expect(
       resolveModelVisionSupport(
-        encodeModelSelection("go-1", "model-1"),
-        group("go-1", "opencode_go")
+        encodeModelSelection("xai-1", "model-1"),
+        group("xai-1", "xai", { visionCapability: "unknown" })
       )
-    ).toBe(false);
+    ).toBeUndefined();
+  });
+
+  test("uses declarative legacy metadata only when no claim is present", () => {
+    expect(
+      resolveModelVisionSupport(
+        encodeModelSelection("openai-1", "model-1"),
+        group("openai-1", "openai")
+      )
+    ).toBeUndefined();
 
     expect(
       resolveModelVisionSupport(
@@ -220,75 +278,6 @@ describe("resolveModelVisionSupport", () => {
         group("compat-1", "openai_compatible", { supportsVision: true })
       )
     ).toBe(true);
-  });
-
-  test("defaults first-party models to vision-capable", () => {
-    expect(
-      resolveModelVisionSupport(
-        encodeModelSelection("openai-1", "model-1"),
-        group("openai-1", "openai")
-      )
-    ).toBe(true);
-
-    expect(
-      resolveModelVisionSupport(
-        encodeModelSelection("openai-1", "model-1"),
-        group("openai-1", "openai", { supportsVision: false })
-      )
-    ).toBe(false);
-  });
-
-  test("treats cerebras models as opt-in only for vision", () => {
-    expect(
-      resolveModelVisionSupport(
-        encodeModelSelection("cb-1", "model-1"),
-        group("cb-1", "cerebras")
-      )
-    ).toBe(false);
-
-    expect(
-      resolveModelVisionSupport(
-        encodeModelSelection("cb-1", "model-1"),
-        group("cb-1", "cerebras", { supportsVision: true })
-      )
-    ).toBe(true);
-  });
-
-  test("treats fireworks models as opt-in only for vision", () => {
-    expect(
-      resolveModelVisionSupport(
-        encodeModelSelection("fw-1", "model-1"),
-        group("fw-1", "fireworks")
-      )
-    ).toBe(false);
-
-    expect(
-      resolveModelVisionSupport(
-        encodeModelSelection("fw-1", "model-1"),
-        group("fw-1", "fireworks", { supportsVision: true })
-      )
-    ).toBe(true);
-  });
-
-  test("keeps direct discovery and Cloudflare models opt-in for vision", () => {
-    expect(
-      resolveModelVisionSupport(
-        encodeModelSelection("xai-1", "grok-4"),
-        group("xai-1", "xai", {}, "grok-4")
-      )
-    ).toBe(false);
-    expect(
-      resolveModelVisionSupport(
-        encodeModelSelection("xai-1", "grok-4-vision"),
-        group("xai-1", "xai", { supportsVision: true }, "grok-4-vision")
-      )
-    ).toBe(true);
-    expect(
-      resolveModelVisionSupport(
-        encodeModelSelection("cf-1", "@cf/meta/llama"),
-        group("cf-1", "cloudflare", {}, "@cf/meta/llama")
-      )
-    ).toBe(false);
   });
 });
 
@@ -326,6 +315,21 @@ describe("provider request builders", () => {
       baseUrl: "https://api.x.ai/v1",
       customModels: [{ id: "grok-4-vision", supportsVision: true }],
       provider: "xai",
+    });
+  });
+
+  test("uses setup metadata for provider-specific request fields", () => {
+    expect(
+      buildConfigureProviderRequest({
+        apiKey: "oc-test",
+        baseUrl: "https://ignored.example/v1",
+        customModels: [{ id: "opencode-go/kimi-k2.7-code" }],
+        provider: "opencode_go",
+      })
+    ).toEqual({
+      apiKey: "oc-test",
+      customModels: [{ id: "opencode-go/kimi-k2.7-code" }],
+      provider: "opencode_go",
     });
   });
 });
@@ -468,16 +472,5 @@ describe("hasOpenCodeZenProvider", () => {
         { baseUrl: "https://opencode.ai/zen/go/v1", type: "opencode_go" },
       ])
     ).toBe(false);
-  });
-});
-
-describe("IMAGE_GENERATION_MODEL_OPTIONS", () => {
-  test("exposes image generation models including default openai::gpt-image-2", () => {
-    expect(IMAGE_GENERATION_MODEL_OPTIONS.length).toBeGreaterThanOrEqual(1);
-    expect(IMAGE_GENERATION_MODEL_OPTIONS[0]?.id).toBe("gpt-image-2");
-    expect(IMAGE_GENERATION_SELECTION).toBe("openai::gpt-image-2");
-    expect(
-      encodeModelSelection("openai", IMAGE_GENERATION_MODEL_OPTIONS[0]!.id)
-    ).toBe(IMAGE_GENERATION_SELECTION);
   });
 });

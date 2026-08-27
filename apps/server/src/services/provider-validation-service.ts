@@ -6,8 +6,9 @@ import {
   defaultDiscoveryBaseUrl,
   isDiscoveryModelProvider,
 } from "@atlas/core/discovery-providers";
-import { ollamaRequiresApiKey } from "@atlas/core/ollama-provider-config";
+import { getBuiltinProviderDefinition } from "@atlas/core/provider-catalog";
 import type { ProviderInstance } from "@atlas/core/user-config";
+import { builtinProviderAdapterRegistry } from "../providers/capabilities/builtin-adapters";
 import { fetchRemoteOpenAIModels } from "../providers/compatible-models";
 import { createProviderForInstance } from "../providers/create";
 import { resolveInitialModel } from "./provider-instance-helpers";
@@ -22,17 +23,29 @@ export async function validateProviderConnection(
   const baseUrl =
     request.baseUrl?.trim() || defaultDiscoveryBaseUrl(type) || undefined;
   const hostMode = request.hostMode;
+  const setup = getBuiltinProviderDefinition(type)?.setup;
 
-  if (!apiKey && type !== "openai_compatible" && type !== "ollama") {
-    throw new Error("API key is required.");
-  }
-
+  const credentialProbe: ProviderInstance = {
+    apiKey,
+    ...(baseUrl ? { baseUrl } : {}),
+    createdAt: new Date(0).toISOString(),
+    ...(hostMode ? { hostMode } : {}),
+    id: "probe-credential-validation",
+    label: "Probe",
+    type,
+  };
   if (
-    type === "ollama" &&
-    ollamaRequiresApiKey(hostMode ?? "local") &&
-    !apiKey
+    !builtinProviderAdapterRegistry.credentialsAreAvailable(
+      credentialProbe,
+      apiKey
+    )
   ) {
-    throw new Error("API key is required for Ollama Cloud mode.");
+    throw new Error(
+      builtinProviderAdapterRegistry.missingCredentialMessage(
+        credentialProbe,
+        "connection-validation"
+      )
+    );
   }
 
   let customModels = request.customModels;
@@ -44,10 +57,9 @@ export async function validateProviderConnection(
 
   if (shouldDiscoverCompatibleModels && baseUrl) {
     customModels = await fetchRemoteOpenAIModels(baseUrl, apiKey, {
-      localAccess:
-        type === "openai_compatible"
-          ? { kind: "openai-compatible-local" }
-          : undefined,
+      localAccess: setup?.allowLocalDiscovery
+        ? { kind: "openai-compatible-local" }
+        : undefined,
     });
   }
 
@@ -60,9 +72,7 @@ export async function validateProviderConnection(
     type,
     ...(baseUrl ? { baseUrl } : {}),
     ...(hostMode ? { hostMode } : {}),
-    ...(type === "openai_compatible" && request.wireApi
-      ? { wireApi: request.wireApi }
-      : {}),
+    ...(setup?.wireApi && request.wireApi ? { wireApi: request.wireApi } : {}),
   };
 
   const modelsToProbe = probeModels(probeInstance, request.model, customModels);

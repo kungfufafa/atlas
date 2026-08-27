@@ -8,6 +8,8 @@ import {
 import {
   CHANNEL_ACCESS_MODE_OPTIONS,
   channelAccessModeLabel,
+} from "@/components/channel-access-mode";
+import {
   IntegrationSettingsFooter,
   IntegrationStatusHeader,
   PairingStepTile,
@@ -113,6 +115,332 @@ export type TelegramSettingsCardView = {
   canSave: boolean;
   workerFailed: boolean;
 };
+
+function TelegramAccessModeSection({
+  accessMode,
+  onAccessModeChange,
+  paneItemClass,
+  savePending,
+}: {
+  accessMode: ChannelAccessMode;
+  onAccessModeChange: (mode: ChannelAccessMode) => void;
+  paneItemClass: string | undefined;
+  savePending: boolean;
+}) {
+  return (
+    <SettingsRow
+      className={paneItemClass}
+      description="Controls who is permitted to chat with the assistant"
+      label="Access mode"
+    >
+      <Select
+        disabled={savePending}
+        onValueChange={(value) => {
+          if (value) {
+            onAccessModeChange(value as ChannelAccessMode);
+          }
+        }}
+        value={accessMode}
+      >
+        <SelectTrigger
+          className="w-[11rem] sm:w-[13rem]"
+          id="telegram-access-mode"
+        >
+          <SelectValue placeholder="Access mode">
+            {channelAccessModeLabel(accessMode)}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent align="end">
+          {CHANNEL_ACCESS_MODE_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </SettingsRow>
+  );
+}
+
+function TelegramAccessModeLists({
+  accessMode,
+  allowedUserSummary,
+  blockedUserSummary,
+  configured,
+  onManageAllowedUsers,
+  onManageBlockedUsers,
+  paneItemClass,
+  savePending,
+}: {
+  accessMode: ChannelAccessMode;
+  allowedUserSummary: string;
+  blockedUserSummary: string;
+  configured: boolean;
+  onManageAllowedUsers: () => void;
+  onManageBlockedUsers: () => void;
+  paneItemClass: string | undefined;
+  savePending: boolean;
+}) {
+  return (
+    <>
+      {configured && accessMode === "allowlist" ? (
+        <SettingsRow
+          className={paneItemClass}
+          description="Telegram user IDs that can use this bot"
+          label="Allowed users"
+        >
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <span className="text-muted-foreground text-xs">
+              {allowedUserSummary}
+            </span>
+            <Button
+              disabled={savePending}
+              onClick={onManageAllowedUsers}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Manage
+            </Button>
+          </div>
+        </SettingsRow>
+      ) : null}
+
+      {configured && accessMode === "denylist" ? (
+        <SettingsRow
+          className={paneItemClass}
+          description="Telegram user IDs blocked from chatting"
+          label="Blocked users"
+        >
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <span className="text-muted-foreground text-xs">
+              {blockedUserSummary}
+            </span>
+            <Button
+              disabled={savePending}
+              onClick={onManageBlockedUsers}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Manage
+            </Button>
+          </div>
+        </SettingsRow>
+      ) : null}
+    </>
+  );
+}
+
+function TelegramPairingSection({
+  accessMode,
+  configured,
+  isPaired,
+  onCopyHandshakeCode,
+  onRegenerateHandshake,
+  pairingCode,
+  paneItemClass,
+  regeneratePending,
+  savePending,
+}: {
+  accessMode: ChannelAccessMode;
+  configured: boolean;
+  isPaired: boolean;
+  onCopyHandshakeCode: () => void;
+  onRegenerateHandshake: () => void;
+  pairingCode: string | null;
+  paneItemClass: string | undefined;
+  regeneratePending: boolean;
+  savePending: boolean;
+}) {
+  if (!(configured && accessMode === "pairing")) {
+    return null;
+  }
+
+  return (
+    <div className={cn("space-y-4", !isPaired && "bg-muted/20")}>
+      <SettingsRow
+        className={paneItemClass}
+        description={
+          pairingCode
+            ? isPaired
+              ? "Message this code to your bot to link another account."
+              : "Message this code to your bot to finish linking."
+            : isPaired
+              ? "Linked. Generate a new code to add another account."
+              : "Generate a code, then message it to your bot once."
+        }
+        label="Chat access code"
+      >
+        {pairingCode ? (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <code className="rounded-md border border-border bg-background px-2.5 py-1 text-sm tracking-widest">
+              {pairingCode}
+            </code>
+            <Button
+              onClick={onCopyHandshakeCode}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <Copy01Icon className="size-4" />
+              Copy
+            </Button>
+            <Button
+              disabled={regeneratePending || savePending}
+              onClick={onRegenerateHandshake}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              {regeneratePending ? (
+                <Spinner />
+              ) : (
+                <>
+                  <RefreshIcon aria-hidden="true" className="size-3.5" />
+                  New code
+                </>
+              )}
+            </Button>
+          </div>
+        ) : isPaired ? (
+          <Button
+            disabled={regeneratePending || savePending}
+            onClick={onRegenerateHandshake}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            {regeneratePending ? (
+              <Spinner />
+            ) : (
+              <>
+                <RefreshIcon aria-hidden="true" className="size-3.5" />
+                New code
+              </>
+            )}
+          </Button>
+        ) : (
+          <Button
+            disabled={regeneratePending || savePending}
+            onClick={onRegenerateHandshake}
+            size="sm"
+            type="button"
+          >
+            {regeneratePending ? (
+              <>
+                <Spinner className="size-3" />
+                Generating…
+              </>
+            ) : (
+              "Generate access code"
+            )}
+          </Button>
+        )}
+      </SettingsRow>
+
+      {pairingCode ? <TelegramPairingGuide /> : null}
+    </div>
+  );
+}
+
+function TelegramSettingsCardFooter({
+  canSave,
+  configured,
+  formError,
+  loadError,
+  onProfileChange,
+  onSave,
+  paneItemClass,
+  profileId,
+  profiles,
+  running,
+  savePending,
+  statusLine,
+  submitLabel,
+  worker,
+}: {
+  canSave: boolean;
+  configured: boolean;
+  formError: string | null;
+  loadError: unknown;
+  onProfileChange: (profileId: string) => void;
+  onSave: () => void;
+  paneItemClass: string | undefined;
+  profileId: string;
+  profiles: ProfileSummary[];
+  running: boolean;
+  savePending: boolean;
+  statusLine: string | null;
+  submitLabel: string;
+  worker: { ok?: boolean; process?: { managed?: boolean } } | null | undefined;
+}) {
+  return (
+    <>
+      {configured ? (
+        <SettingsRow
+          className={paneItemClass}
+          description="Which agent answers on Telegram"
+          label="Reply as"
+        >
+          <Select
+            disabled={savePending || profiles.length === 0}
+            onValueChange={(value) => {
+              if (value) {
+                onProfileChange(String(value));
+              }
+            }}
+            value={profileId}
+          >
+            <SelectTrigger
+              className="w-[11rem] sm:w-[13rem]"
+              id="telegram-profile"
+            >
+              <SelectValue placeholder="Profile">
+                {profiles.find((profile) => profile.id === profileId)?.name}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent align="end">
+              {profiles.map((profile) => (
+                <SelectItem key={profile.id} value={profile.id}>
+                  <span className="flex items-center gap-2">
+                    <ProfileAvatar profile={profile} size="sm" />
+                    <span>{profile.name}</span>
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </SettingsRow>
+      ) : null}
+
+      {configured ? (
+        <SettingsRow
+          className={paneItemClass}
+          description={running ? "Running" : "Stopped"}
+          label="Bridge worker"
+        >
+          <WorkerActionBar
+            pm2Managed={worker?.process?.managed ?? false}
+            running={running}
+            workerName="telegram"
+          />
+        </SettingsRow>
+      ) : null}
+
+      <IntegrationSettingsFooter
+        canSave={canSave}
+        className={paneItemClass}
+        formError={formError}
+        loadError={loadError}
+        onSave={onSave}
+        savePending={savePending}
+        statusLine={statusLine}
+        submitLabel={submitLabel}
+      />
+    </>
+  );
+}
 
 export function TelegramSettingsCardContent({
   view,
@@ -243,230 +571,51 @@ export function TelegramSettingsCardContent({
         </InputGroup>
       </SettingsRow>
 
-      <SettingsRow
-        className={paneItemClass}
-        description="Controls who is permitted to chat with the assistant"
-        label="Access mode"
-      >
-        <Select
-          disabled={savePending}
-          onValueChange={(value) => {
-            if (value) {
-              onAccessModeChange(value as ChannelAccessMode);
-            }
-          }}
-          value={accessMode}
-        >
-          <SelectTrigger
-            className="w-[11rem] sm:w-[13rem]"
-            id="telegram-access-mode"
-          >
-            <SelectValue placeholder="Access mode">
-              {channelAccessModeLabel(accessMode)}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent align="end">
-            {CHANNEL_ACCESS_MODE_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </SettingsRow>
+      <TelegramAccessModeSection
+        accessMode={accessMode}
+        onAccessModeChange={onAccessModeChange}
+        paneItemClass={paneItemClass}
+        savePending={savePending}
+      />
 
-      {configured && accessMode === "pairing" ? (
-        <div className={cn("space-y-4", !isPaired && "bg-muted/20")}>
-          <SettingsRow
-            className={paneItemClass}
-            description={
-              pairingCode
-                ? isPaired
-                  ? "Message this code to your bot to link another account."
-                  : "Message this code to your bot to finish linking."
-                : isPaired
-                  ? "Linked. Generate a new code to add another account."
-                  : "Generate a code, then message it to your bot once."
-            }
-            label="Chat access code"
-          >
-            {pairingCode ? (
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <code className="rounded-md border border-border bg-background px-2.5 py-1 text-sm tracking-widest">
-                  {pairingCode}
-                </code>
-                <Button
-                  onClick={onCopyHandshakeCode}
-                  size="sm"
-                  type="button"
-                  variant="outline"
-                >
-                  <Copy01Icon className="size-4" />
-                  Copy
-                </Button>
-                <Button
-                  disabled={regeneratePending || savePending}
-                  onClick={onRegenerateHandshake}
-                  size="sm"
-                  type="button"
-                  variant="outline"
-                >
-                  {regeneratePending ? (
-                    <Spinner />
-                  ) : (
-                    <>
-                      <RefreshIcon aria-hidden="true" className="size-3.5" />
-                      New code
-                    </>
-                  )}
-                </Button>
-              </div>
-            ) : isPaired ? (
-              <Button
-                disabled={regeneratePending || savePending}
-                onClick={onRegenerateHandshake}
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                {regeneratePending ? (
-                  <Spinner />
-                ) : (
-                  <>
-                    <RefreshIcon aria-hidden="true" className="size-3.5" />
-                    New code
-                  </>
-                )}
-              </Button>
-            ) : (
-              <Button
-                disabled={regeneratePending || savePending}
-                onClick={onRegenerateHandshake}
-                size="sm"
-                type="button"
-              >
-                {regeneratePending ? (
-                  <>
-                    <Spinner className="size-3" />
-                    Generating…
-                  </>
-                ) : (
-                  "Generate access code"
-                )}
-              </Button>
-            )}
-          </SettingsRow>
+      <TelegramPairingSection
+        accessMode={accessMode}
+        configured={configured}
+        isPaired={isPaired}
+        onCopyHandshakeCode={onCopyHandshakeCode}
+        onRegenerateHandshake={onRegenerateHandshake}
+        pairingCode={pairingCode}
+        paneItemClass={paneItemClass}
+        regeneratePending={regeneratePending}
+        savePending={savePending}
+      />
 
-          {pairingCode ? <TelegramPairingGuide /> : null}
-        </div>
-      ) : null}
+      <TelegramAccessModeLists
+        accessMode={accessMode}
+        allowedUserSummary={allowedUserSummary}
+        blockedUserSummary={blockedUserSummary}
+        configured={configured}
+        onManageAllowedUsers={onManageAllowedUsers}
+        onManageBlockedUsers={onManageBlockedUsers}
+        paneItemClass={paneItemClass}
+        savePending={savePending}
+      />
 
-      {configured && accessMode === "allowlist" ? (
-        <SettingsRow
-          className={paneItemClass}
-          description="Telegram user IDs that can use this bot"
-          label="Allowed users"
-        >
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <span className="text-muted-foreground text-xs">
-              {allowedUserSummary}
-            </span>
-            <Button
-              disabled={savePending}
-              onClick={onManageAllowedUsers}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              Manage
-            </Button>
-          </div>
-        </SettingsRow>
-      ) : null}
-
-      {configured && accessMode === "denylist" ? (
-        <SettingsRow
-          className={paneItemClass}
-          description="Telegram user IDs blocked from chatting"
-          label="Blocked users"
-        >
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <span className="text-muted-foreground text-xs">
-              {blockedUserSummary}
-            </span>
-            <Button
-              disabled={savePending}
-              onClick={onManageBlockedUsers}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              Manage
-            </Button>
-          </div>
-        </SettingsRow>
-      ) : null}
-
-      {configured ? (
-        <SettingsRow
-          className={paneItemClass}
-          description="Which agent answers on Telegram"
-          label="Reply as"
-        >
-          <Select
-            disabled={savePending || profiles.length === 0}
-            onValueChange={(value) => {
-              if (value) {
-                onProfileChange(String(value));
-              }
-            }}
-            value={profileId}
-          >
-            <SelectTrigger
-              className="w-[11rem] sm:w-[13rem]"
-              id="telegram-profile"
-            >
-              <SelectValue placeholder="Profile">
-                {profiles.find((profile) => profile.id === profileId)?.name}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent align="end">
-              {profiles.map((profile) => (
-                <SelectItem key={profile.id} value={profile.id}>
-                  <span className="flex items-center gap-2">
-                    <ProfileAvatar profile={profile} size="sm" />
-                    <span>{profile.name}</span>
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </SettingsRow>
-      ) : null}
-
-      {configured ? (
-        <SettingsRow
-          className={paneItemClass}
-          description={running ? "Running" : "Stopped"}
-          label="Bridge worker"
-        >
-          <WorkerActionBar
-            pm2Managed={worker?.process?.managed ?? false}
-            running={running}
-            workerName="telegram"
-          />
-        </SettingsRow>
-      ) : null}
-
-      <IntegrationSettingsFooter
+      <TelegramSettingsCardFooter
         canSave={canSave}
-        className={paneItemClass}
+        configured={configured}
         formError={formError}
         loadError={loadError}
+        onProfileChange={onProfileChange}
         onSave={onSave}
+        paneItemClass={paneItemClass}
+        profileId={profileId}
+        profiles={profiles}
+        running={running}
         savePending={savePending}
         statusLine={statusLine}
         submitLabel={submitLabel}
+        worker={worker}
       />
     </div>
   );

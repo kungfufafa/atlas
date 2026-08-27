@@ -42,6 +42,12 @@ describe("mergeCatalogModelsIntoRows", () => {
             supportsVision: true,
           },
           {
+            capabilities: {
+              "vendor.custom-operation": {
+                source: "provider-discovery",
+                status: "supported",
+              },
+            },
             id: "catalog/model",
             inputPerMillionUsd: 1,
             name: "Catalog model",
@@ -60,6 +66,12 @@ describe("mergeCatalogModelsIntoRows", () => {
         supportsVision: false,
       },
       {
+        capabilities: {
+          "vendor.custom-operation": {
+            source: "provider-discovery",
+            status: "supported",
+          },
+        },
         id: "catalog/model",
         inputPerMillionUsd: 1,
         name: "Catalog model",

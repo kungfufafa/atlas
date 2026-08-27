@@ -1,5 +1,5 @@
 import type { ArtifactFile } from "@atlas/core/contract";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   ARTIFACT_TYPE_FILTER_LABELS,
@@ -24,6 +24,7 @@ import {
 } from "@/lib/files-page.shared";
 import { ArtifactFolderBreadcrumb } from "@/pages/files/files-artifact-folder-breadcrumb";
 import {
+  type ArtifactFolderEntry,
   filterArtifactFolderMetadata,
   listArtifactsInFolder,
   normalizeArtifactFolderPrefix,
@@ -35,6 +36,7 @@ import { FilesSearchRow } from "@/pages/files/files-search-row";
 import { FilesToolbar } from "@/pages/files/files-toolbar";
 
 const EMPTY_ARTIFACTS: ArtifactFile[] = [];
+const EMPTY_FOLDERS: ArtifactFolderEntry[] = [];
 
 export function FilesPage() {
   const { profileId: activeProfileId } = useActiveChatProfile();
@@ -50,7 +52,7 @@ export function FilesPage() {
   const [deleteTarget, setDeleteTarget] = useState<ArtifactFile | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [previewTarget, setPreviewTarget] = useState<ArtifactFile | null>(null);
-  const [previewSaving, setPreviewSaving] = useState(false);
+  const previewSavingRef = useRef(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<ArtifactTypeFilter>("all");
   const [viewMode, setViewMode] = useState<FilesViewMode>(() =>
@@ -77,7 +79,7 @@ export function FilesPage() {
     [data]
   );
   const totalCount = data?.pages[0]?.total ?? 0;
-  const folderMetadata = data?.pages[0]?.folders ?? [];
+  const folderMetadata = data?.pages[0]?.folders ?? EMPTY_FOLDERS;
   const hasArtifacts = totalCount > 0 || folderMetadata.length > 0;
   const remainingCount = Math.max(totalCount - artifacts.length, 0);
   const typeOptions = useMemo(
@@ -126,7 +128,7 @@ export function FilesPage() {
   ]);
   const handleFolderChange = useCallback(
     (prefix: string) => {
-      if (previewSaving) {
+      if (previewSavingRef.current) {
         return;
       }
       setSearchParams((current) => {
@@ -140,7 +142,7 @@ export function FilesPage() {
         return next;
       });
     },
-    [previewSaving, setSearchParams]
+    [setSearchParams]
   );
 
   function handleViewModeChange(mode: FilesViewMode) {
@@ -241,12 +243,10 @@ export function FilesPage() {
                   emptyFilterMessage={emptyFilterMessage}
                   error={error}
                   folders={listing.folders}
-                  hasMore={hasNextPage ?? false}
                   isLoading={isLoading}
-                  isLoadingMore={isFetchingNextPage}
                   listingFiles={listing.files}
                   onDelete={(artifact) => {
-                    if (previewSaving) {
+                    if (previewSavingRef.current) {
                       return;
                     }
                     setDeleteError(null);
@@ -254,13 +254,17 @@ export function FilesPage() {
                   }}
                   onOpenFolder={handleFolderChange}
                   onPreview={(artifact) => {
-                    if (!previewSaving) {
+                    if (!previewSavingRef.current) {
                       setPreviewTarget(artifact);
                     }
                   }}
                   onShowMore={() => void fetchNextPage()}
+                  pagination={{
+                    hasMore: hasNextPage ?? false,
+                    isLoadingMore: isFetchingNextPage,
+                    remainingCount,
+                  }}
                   profileId={profileId}
-                  remainingCount={remainingCount}
                   showFullPath={isSearching}
                   viewMode={viewMode}
                 />
@@ -280,12 +284,15 @@ export function FilesPage() {
           <FilesPreviewPanel
             artifact={previewTarget}
             artifacts={artifacts}
+            key={previewTarget.path || previewTarget.filename}
             onClose={() => {
-              if (!previewSaving) {
+              if (!previewSavingRef.current) {
                 setPreviewTarget(null);
               }
             }}
-            onSavingChange={setPreviewSaving}
+            onSavingChange={(saving) => {
+              previewSavingRef.current = saving;
+            }}
             profileId={profileId}
           />
         ) : null}

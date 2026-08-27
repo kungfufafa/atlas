@@ -75,7 +75,7 @@ export function PresentationViewer({
                     ? "border-foreground/20 bg-muted"
                     : "border-transparent hover:bg-muted/60"
                 )}
-                key={`${slide.slideIndex ?? idx}-${slide.title ?? "slide"}`}
+                key={`${slide.slideIndex}-${slide.title ?? "slide"}`}
                 onClick={() => setCurrentSlideIndex(idx)}
                 type="button"
               >

@@ -2,6 +2,7 @@ import type { EditableArtifactResponse } from "@atlas/core";
 import { AtlasApiError } from "@atlas/core/api-error";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  type ArtifactEditOperationGate,
   cloneEditableRows,
   createArtifactEditOperationGate,
 } from "@/lib/artifact-editing";
@@ -17,15 +18,14 @@ export function useArtifactEditor(input: {
   artifactPath: string;
   profileId: string;
   onSaved: () => Promise<void>;
+  onSavingChange?: (saving: boolean) => void;
 }) {
-  const { artifactPath, onSaved, profileId } = input;
-  const operationGate = useRef(createArtifactEditOperationGate());
-  const artifactKey = `${profileId}\u0000${artifactPath}`;
-  const artifactKeyRef = useRef(artifactKey);
-  if (artifactKeyRef.current !== artifactKey) {
-    artifactKeyRef.current = artifactKey;
-    operationGate.current.invalidate();
+  const { artifactPath, onSaved, profileId, onSavingChange } = input;
+  const operationGateRef = useRef<ArtifactEditOperationGate | null>(null);
+  if (operationGateRef.current === null) {
+    operationGateRef.current = createArtifactEditOperationGate();
   }
+  const operationGate = operationGateRef.current;
   const [draft, setDraft] = useState<ArtifactEditDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -36,21 +36,13 @@ export function useArtifactEditor(input: {
 
   useEffect(
     () => () => {
-      operationGate.current.invalidate();
+      operationGate.invalidate();
     },
-    []
+    [operationGate]
   );
 
-  useEffect(() => {
-    setDraft(null);
-    setError(null);
-    setLoading(false);
-    setSaving(false);
-    setUnavailableReason(null);
-  }, [artifactPath, profileId]);
-
   const start = useCallback(async () => {
-    const currentOperation = operationGate.current.begin();
+    const currentOperation = operationGate.begin();
     setLoading(true);
     setError(null);
     try {
@@ -58,7 +50,7 @@ export function useArtifactEditor(input: {
         profileId,
         artifactPath
       );
-      if (!operationGate.current.isCurrent(currentOperation)) {
+      if (!operationGate.isCurrent(currentOperation)) {
         return;
       }
       if (!source.editable || source.truncated) {
@@ -74,32 +66,33 @@ export function useArtifactEditor(input: {
         source,
       });
     } catch (loadError) {
-      if (operationGate.current.isCurrent(currentOperation)) {
+      if (operationGate.isCurrent(currentOperation)) {
         setError(formatError(loadError));
       }
     } finally {
-      if (operationGate.current.isCurrent(currentOperation)) {
-        setLoading(false);
-      }
+      setLoading((current) =>
+        operationGate.isCurrent(currentOperation) ? false : current
+      );
     }
-  }, [artifactPath, profileId]);
+  }, [artifactPath, operationGate, profileId]);
 
   const cancel = useCallback(() => {
     if (saving) {
       return;
     }
-    operationGate.current.invalidate();
+    operationGate.invalidate();
     setDraft(null);
     setError(null);
-  }, [saving]);
+  }, [operationGate, saving]);
 
   const save = useCallback(async () => {
     if (!draft) {
       return;
     }
-    const saveOperation = operationGate.current.current();
+    const saveOperation = operationGate.current();
     const savedDraft = draft;
     setSaving(true);
+    onSavingChange?.(true);
     setError(null);
     try {
       await client.updateEditableProfileArtifact(
@@ -115,13 +108,13 @@ export function useArtifactEditor(input: {
               rows: draft.rows,
             }
       );
-      if (!operationGate.current.isCurrent(saveOperation)) {
+      if (!operationGate.isCurrent(saveOperation)) {
         return;
       }
       setDraft((current) => (current === savedDraft ? null : current));
       await onSaved();
     } catch (saveError) {
-      if (operationGate.current.isCurrent(saveOperation)) {
+      if (operationGate.isCurrent(saveOperation)) {
         setError(
           saveError instanceof AtlasApiError && saveError.status === 409
             ? "This artifact changed after you opened it. Your draft is still here; cancel and reopen before saving again."
@@ -129,11 +122,13 @@ export function useArtifactEditor(input: {
         );
       }
     } finally {
-      if (operationGate.current.isCurrent(saveOperation)) {
-        setSaving(false);
+      const isCurrent = operationGate.isCurrent(saveOperation);
+      setSaving((current) => (isCurrent ? false : current));
+      if (isCurrent) {
+        onSavingChange?.(false);
       }
     }
-  }, [artifactPath, draft, onSaved, profileId]);
+  }, [artifactPath, draft, onSaved, onSavingChange, operationGate, profileId]);
 
   const setContent = useCallback((content: string) => {
     setError(null);

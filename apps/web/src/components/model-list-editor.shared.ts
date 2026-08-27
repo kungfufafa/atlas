@@ -57,6 +57,20 @@ export function toggleModelListRow(
   return [...existing, next];
 }
 
+function trimNonEmptyStrings(values: readonly unknown[]): string[] {
+  const result: string[] = [];
+  for (const value of values) {
+    if (typeof value !== "string") {
+      continue;
+    }
+    const trimmed = value.trim();
+    if (trimmed.length > 0) {
+      result.push(trimmed);
+    }
+  }
+  return result;
+}
+
 export function normalizeModelListRows(
   models: ModelListRow[]
 ): CustomModelEntry[] {
@@ -67,14 +81,9 @@ export function normalizeModelListRows(
     }
 
     const reasoningEffortValues = Array.isArray(row.reasoningEffortValues)
-      ? row.reasoningEffortValues
-          .map((v) => (typeof v === "string" ? v.trim() : ""))
-          .filter(Boolean)
+      ? trimNonEmptyStrings(row.reasoningEffortValues)
       : typeof row.reasoningEffortValues === "string"
-        ? (row.reasoningEffortValues as string)
-            .split(",")
-            .map((v) => v.trim())
-            .filter(Boolean)
+        ? trimNonEmptyStrings((row.reasoningEffortValues as string).split(","))
         : undefined;
 
     return [
@@ -82,6 +91,9 @@ export function normalizeModelListRows(
         id,
         ...(row.name?.trim() ? { name: row.name.trim() } : {}),
         ...(row.default ? { default: true } : {}),
+        ...(row.capabilities === undefined
+          ? {}
+          : { capabilities: row.capabilities }),
         ...(row.supportsThinking === undefined
           ? {}
           : { supportsThinking: row.supportsThinking }),

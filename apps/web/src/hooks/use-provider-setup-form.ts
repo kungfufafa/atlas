@@ -9,6 +9,7 @@ import {
   defaultDiscoveryBaseUrl,
   isDiscoveryModelProvider,
 } from "@atlas/core/discovery-providers";
+import { getBuiltinProviderDefinition } from "@atlas/core/provider-catalog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ModelListRow } from "@/components/ModelListEditor";
@@ -36,6 +37,7 @@ import {
   modelsFromShortlistRows,
   resolveOpenRouterSetupModel,
   type SelectedProvider,
+  shouldRenderGenericCustomModelEditor,
   validateApiKeyForProvider,
   validateBaseUrlInput,
   validateCustomModelsInput,
@@ -78,7 +80,7 @@ export function useProviderSetupForm(
     [providersResponse?.providers]
   );
 
-  const [selectedProvider, setSelectedProvider] =
+  const [providerSelection, setSelectedProvider] =
     useState<SelectedProvider>("openai");
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
@@ -149,22 +151,31 @@ export function useProviderSetupForm(
     }
   }, [catalogQueryError]);
 
+  const selectedProvider = isProviderTypeAlreadyConfigured(
+    providerSelection,
+    configuredTypes
+  )
+    ? firstAvailableProviderOption(configuredTypes, providerSelection)
+    : providerSelection;
+  const selectedProviderDefinition =
+    getBuiltinProviderDefinition(selectedProvider);
+  const usesGenericCustomModelEditor = shouldRenderGenericCustomModelEditor(
+    selectedProviderDefinition
+  );
+  const usesEditableCustomModels =
+    isDiscoveryModelProvider(selectedProvider) ||
+    selectedProviderDefinition?.setup?.hostMode === "ollama" ||
+    usesGenericCustomModelEditor;
+
   useEffect(() => {
-    if (!isProviderTypeAlreadyConfigured(selectedProvider, configuredTypes)) {
+    if (selectedProvider === providerSelection) {
       return;
     }
-
     resetProviderSensitiveState();
-    setSelectedProvider(
-      firstAvailableProviderOption(configuredTypes, selectedProvider)
-    );
-  }, [configuredTypes, resetProviderSensitiveState, selectedProvider]);
+  }, [providerSelection, resetProviderSensitiveState, selectedProvider]);
 
   const filteredModels = useMemo(() => {
-    if (
-      isDiscoveryModelProvider(selectedProvider) ||
-      selectedProvider === "ollama"
-    ) {
+    if (usesEditableCustomModels) {
       return modelsFromCustomRows(customModels).map((model) => ({
         ...model,
         provider: selectedProvider,
@@ -193,10 +204,11 @@ export function useProviderSetupForm(
     openRouterModels,
     shortlistModels,
     extraModels,
+    usesEditableCustomModels,
   ]);
 
-  const ollamaApiKeyOptions = useMemo(
-    () => ({ ollamaHostMode }),
+  const providerApiKeySetupValues = useMemo(
+    () => ({ hostMode: ollamaHostMode }),
     [ollamaHostMode]
   );
 
@@ -217,9 +229,13 @@ export function useProviderSetupForm(
   const handleApiKeyBlur = useCallback(() => {
     setApiKeyTouched(true);
     setApiKeyError(
-      validateApiKeyForProvider(apiKey, selectedProvider, ollamaApiKeyOptions)
+      validateApiKeyForProvider(
+        apiKey,
+        selectedProvider,
+        providerApiKeySetupValues
+      )
     );
-  }, [apiKey, selectedProvider, ollamaApiKeyOptions]);
+  }, [apiKey, selectedProvider, providerApiKeySetupValues]);
 
   const handleApiKeyChange = useCallback(
     (value: string) => {
@@ -240,7 +256,7 @@ export function useProviderSetupForm(
           validateApiKeyForProvider(
             value,
             selectedProvider,
-            ollamaApiKeyOptions
+            providerApiKeySetupValues
           )
         );
       } else if (apiKeyError) {
@@ -252,7 +268,7 @@ export function useProviderSetupForm(
       apiKeyError,
       formError,
       selectedProvider,
-      ollamaApiKeyOptions,
+      providerApiKeySetupValues,
       invalidateConnectionTest,
       testError,
       testSuccess,
@@ -268,6 +284,9 @@ export function useProviderSetupForm(
       resetProviderSensitiveState();
       setSelectedProvider(provider);
       setWireApi("chat");
+      const definition = getBuiltinProviderDefinition(provider);
+      const usesGenericEditor =
+        shouldRenderGenericCustomModelEditor(definition);
 
       if (provider === "openrouter" && openRouterModels.length === 0) {
         setOpenRouterModels([{ id: "", name: "" }]);
@@ -280,14 +299,18 @@ export function useProviderSetupForm(
         setShortlistModels([{ id: "", name: "" }]);
       }
 
-      if (provider === "ollama") {
+      if (definition?.setup?.hostMode === "ollama") {
         setOllamaHostMode("local");
         setBaseUrl(defaultOllamaSetupBaseUrl("local"));
         setCustomModels([{ id: "", name: "" }]);
       }
 
+      if (usesGenericEditor) {
+        setCustomModels([{ id: "", name: "" }]);
+      }
+
       if (
-        provider !== "openai_compatible" &&
+        !definition?.setup?.displayName &&
         isDiscoveryModelProvider(provider)
       ) {
         setBaseUrl(defaultDiscoveryBaseUrl(provider) ?? "");
@@ -306,9 +329,12 @@ export function useProviderSetupForm(
       }
 
       if (
-        provider !== "openai_compatible" &&
-        provider !== "ollama" &&
-        !isDiscoveryModelProvider(provider)
+        !(
+          definition?.setup?.displayName ||
+          definition?.setup?.hostMode ||
+          usesGenericEditor ||
+          isDiscoveryModelProvider(provider)
+        )
       ) {
         setBaseUrl("");
         setDisplayName("");
@@ -318,7 +344,7 @@ export function useProviderSetupForm(
         setModelsError(null);
       }
 
-      if (provider === "openai_compatible") {
+      if (definition?.setup?.displayName) {
         setBaseUrl("");
         setDisplayName("");
         setCustomModels([]);
@@ -460,7 +486,7 @@ export function useProviderSetupForm(
       if (apiKeyTouched) {
         setApiKeyError(
           validateApiKeyForProvider(apiKey, "ollama", {
-            ollamaHostMode: hostMode,
+            hostMode,
           })
         );
       } else {
@@ -522,14 +548,15 @@ export function useProviderSetupForm(
   const handleTestConnection = useCallback(async () => {
     const trimmedKey = apiKey.trim();
     const isDiscoveryProvider = isDiscoveryModelProvider(selectedProvider);
+    const setup = selectedProviderDefinition?.setup;
     const resolvedCloudflareBaseUrl =
-      selectedProvider === "cloudflare"
+      setup?.baseUrlInput === "cloudflare-account"
         ? resolveCloudflareAccountInput(baseUrl)
         : null;
     const nextApiKeyError = validateApiKeyForProvider(
       trimmedKey,
       selectedProvider,
-      ollamaApiKeyOptions
+      providerApiKeySetupValues
     );
     const nextOpenRouterModelsError =
       selectedProvider === "openrouter"
@@ -540,20 +567,19 @@ export function useProviderSetupForm(
     )
       ? validateShortlistCapabilityModelsInput(shortlistModels)
       : null;
-    const nextDisplayNameError =
-      selectedProvider === "openai_compatible"
-        ? validateDisplayNameInput(displayName)
-        : null;
+    const nextDisplayNameError = setup?.displayName
+      ? validateDisplayNameInput(displayName)
+      : null;
     const nextBaseUrlError =
-      isDiscoveryProvider || selectedProvider === "ollama"
+      isDiscoveryProvider || setup?.hostMode === "ollama"
         ? validateBaseUrlInput(baseUrl)
-        : selectedProvider === "cloudflare" && !resolvedCloudflareBaseUrl
+        : setup?.baseUrlInput === "cloudflare-account" &&
+            !resolvedCloudflareBaseUrl
           ? "Enter a Cloudflare account ID or Workers AI URL."
           : null;
-    const nextModelsError =
-      isDiscoveryProvider || selectedProvider === "ollama"
-        ? validateCustomModelsInput(customModels)
-        : null;
+    const nextModelsError = usesEditableCustomModels
+      ? validateCustomModelsInput(customModels)
+      : null;
 
     setApiKeyTouched(true);
     setApiKeyError(nextApiKeyError);
@@ -579,7 +605,7 @@ export function useProviderSetupForm(
         ? resolveOpenRouterSetupModel(openRouterModels, selectedModel)
         : isShortlistCapabilityProvider(selectedProvider)
           ? resolveOpenRouterSetupModel(shortlistModels, selectedModel)
-          : isDiscoveryProvider || selectedProvider === "ollama"
+          : usesEditableCustomModels
             ? resolveOpenRouterSetupModel(customModels, selectedModel)
             : selectedModel;
 
@@ -592,18 +618,17 @@ export function useProviderSetupForm(
       const res = await client.testProvider({
         apiKey: trimmedKey,
         baseUrl: resolvedCloudflareBaseUrl ?? baseUrl,
-        customModels:
-          isDiscoveryProvider || selectedProvider === "ollama"
-            ? normalizeModelListRows(customModels)
-            : selectedProvider === "openrouter"
-              ? normalizeModelListRows(openRouterModels)
-              : isShortlistCapabilityProvider(selectedProvider)
-                ? normalizeModelListRows(shortlistModels)
-                : undefined,
-        hostMode: selectedProvider === "ollama" ? ollamaHostMode : undefined,
+        customModels: usesEditableCustomModels
+          ? normalizeModelListRows(customModels)
+          : selectedProvider === "openrouter"
+            ? normalizeModelListRows(openRouterModels)
+            : isShortlistCapabilityProvider(selectedProvider)
+              ? normalizeModelListRows(shortlistModels)
+              : undefined,
+        hostMode: setup?.hostMode === "ollama" ? ollamaHostMode : undefined,
         model: modelToSave || undefined,
         type: selectedProvider,
-        wireApi: selectedProvider === "openai_compatible" ? wireApi : undefined,
+        wireApi: setup?.wireApi ? wireApi : undefined,
       });
       if (
         isCurrentProviderOperation(
@@ -635,7 +660,7 @@ export function useProviderSetupForm(
   }, [
     apiKey,
     selectedProvider,
-    ollamaApiKeyOptions,
+    providerApiKeySetupValues,
     openRouterModels,
     shortlistModels,
     displayName,
@@ -643,6 +668,8 @@ export function useProviderSetupForm(
     customModels,
     selectedModel,
     ollamaHostMode,
+    selectedProviderDefinition,
+    usesEditableCustomModels,
     wireApi,
   ]);
 
@@ -652,14 +679,15 @@ export function useProviderSetupForm(
 
       const trimmedKey = apiKey.trim();
       const isDiscoveryProvider = isDiscoveryModelProvider(selectedProvider);
+      const setup = selectedProviderDefinition?.setup;
       const resolvedCloudflareBaseUrl =
-        selectedProvider === "cloudflare"
+        setup?.baseUrlInput === "cloudflare-account"
           ? resolveCloudflareAccountInput(baseUrl)
           : null;
       const nextApiKeyError = validateApiKeyForProvider(
         trimmedKey,
         selectedProvider,
-        ollamaApiKeyOptions
+        providerApiKeySetupValues
       );
       const nextOpenRouterModelsError =
         selectedProvider === "openrouter"
@@ -670,20 +698,19 @@ export function useProviderSetupForm(
       )
         ? validateShortlistCapabilityModelsInput(shortlistModels)
         : null;
-      const nextDisplayNameError =
-        selectedProvider === "openai_compatible"
-          ? validateDisplayNameInput(displayName)
-          : null;
+      const nextDisplayNameError = setup?.displayName
+        ? validateDisplayNameInput(displayName)
+        : null;
       const nextBaseUrlError =
-        isDiscoveryProvider || selectedProvider === "ollama"
+        isDiscoveryProvider || setup?.hostMode === "ollama"
           ? validateBaseUrlInput(baseUrl)
-          : selectedProvider === "cloudflare" && !resolvedCloudflareBaseUrl
+          : setup?.baseUrlInput === "cloudflare-account" &&
+              !resolvedCloudflareBaseUrl
             ? "Enter a Cloudflare account ID or Workers AI URL."
             : null;
-      const nextModelsError =
-        isDiscoveryProvider || selectedProvider === "ollama"
-          ? validateCustomModelsInput(customModels)
-          : null;
+      const nextModelsError = usesEditableCustomModels
+        ? validateCustomModelsInput(customModels)
+        : null;
 
       setApiKeyTouched(true);
       setApiKeyError(nextApiKeyError);
@@ -714,9 +741,9 @@ export function useProviderSetupForm(
       if (nextBaseUrlError) {
         document
           .getElementById(
-            selectedProvider === "ollama"
+            setup?.hostMode === "ollama"
               ? "ollama-base-url"
-              : selectedProvider === "cloudflare"
+              : setup?.baseUrlInput === "cloudflare-account"
                 ? "cloudflare-account-id"
                 : "provider-base-url"
           )
@@ -738,7 +765,7 @@ export function useProviderSetupForm(
           ? resolveOpenRouterSetupModel(openRouterModels, selectedModel)
           : isShortlistCapabilityProvider(selectedProvider)
             ? resolveOpenRouterSetupModel(shortlistModels, selectedModel)
-            : isDiscoveryProvider || selectedProvider === "ollama"
+            : usesEditableCustomModels
               ? resolveOpenRouterSetupModel(customModels, selectedModel)
               : selectedModel;
 
@@ -752,20 +779,15 @@ export function useProviderSetupForm(
           buildCreateProviderRequest({
             apiKey: trimmedKey,
             baseUrl: resolvedCloudflareBaseUrl ?? baseUrl,
-            customModels:
-              isDiscoveryProvider || selectedProvider === "ollama"
-                ? normalizeModelListRows(customModels)
-                : selectedProvider === "openrouter"
-                  ? normalizeModelListRows(openRouterModels)
-                  : isShortlistCapabilityProvider(selectedProvider)
-                    ? normalizeModelListRows(shortlistModels)
-                    : undefined,
-            displayName:
-              selectedProvider === "openai_compatible"
-                ? displayName
-                : undefined,
-            hostMode:
-              selectedProvider === "ollama" ? ollamaHostMode : undefined,
+            customModels: usesEditableCustomModels
+              ? normalizeModelListRows(customModels)
+              : selectedProvider === "openrouter"
+                ? normalizeModelListRows(openRouterModels)
+                : isShortlistCapabilityProvider(selectedProvider)
+                  ? normalizeModelListRows(shortlistModels)
+                  : undefined,
+            displayName: setup?.displayName ? displayName : undefined,
+            hostMode: setup?.hostMode === "ollama" ? ollamaHostMode : undefined,
             model: modelToSave || undefined,
             provider: selectedProvider,
             wireApi,
@@ -791,15 +813,16 @@ export function useProviderSetupForm(
       openRouterModels,
       shortlistModels,
       ollamaHostMode,
-      ollamaApiKeyOptions,
+      providerApiKeySetupValues,
       customModels,
       displayName,
       selectedModel,
       selectedProvider,
+      selectedProviderDefinition,
       configuredTypes,
       createProvider,
       onSuccess,
-      filteredModels,
+      usesEditableCustomModels,
       wireApi,
     ]
   );
@@ -848,6 +871,7 @@ export function useProviderSetupForm(
     testError,
     testingConnection,
     testSuccess,
+    usesGenericCustomModelEditor,
     wireApi,
   };
 }

@@ -230,6 +230,7 @@ export async function invalidateProviderQueries(queryClient: QueryClient) {
   await queryClient.cancelQueries({ queryKey: ["remoteModelDiscovery"] });
   queryClient.removeQueries({ queryKey: ["remoteModelDiscovery"] });
   await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["capabilityRouting"] }),
     queryClient.invalidateQueries({ queryKey: queryKeys.health }),
     queryClient.invalidateQueries({ queryKey: queryKeys.models }),
     queryClient.invalidateQueries({ queryKey: queryKeys.providers }),

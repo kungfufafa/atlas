@@ -1,4 +1,5 @@
 import type { CustomModelEntry, ProviderName, WireApi } from "./contract";
+import { validateProviderCapabilityClaims } from "./provider-capabilities";
 
 export const DISPLAY_NAME_MAX_LENGTH = 64;
 
@@ -118,6 +119,13 @@ export function validateCustomModels(entries: unknown): CustomModelEntry[] {
                   `Model "${id}" has invalid supportsVision flag.`
                 );
               })();
+    const capabilities =
+      record.capabilities === undefined
+        ? undefined
+        : validateProviderCapabilityClaims(
+            record.capabilities,
+            `Model "${id}" capabilities`
+          );
 
     if (isDefault) {
       defaultCount += 1;
@@ -150,6 +158,7 @@ export function validateCustomModels(entries: unknown): CustomModelEntry[] {
 
     result.push({
       id,
+      ...(capabilities ? { capabilities } : {}),
       ...(name ? { name } : {}),
       ...(isDefault ? { default: true } : {}),
       ...(supportsThinking === undefined ? {} : { supportsThinking }),

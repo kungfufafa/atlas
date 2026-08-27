@@ -23,6 +23,9 @@ import type {
   AutomationSchedule,
   BranchSessionRequest,
   BranchSessionResponse,
+  CapabilityCatalogResponse,
+  CapabilityMappingsResponse,
+  CapabilityOptionsResponse,
   ChangePasswordRequest,
   CloneProfileRequest,
   CloneProfileResponse,
@@ -173,6 +176,8 @@ import type {
   UnpinOrgMemoryRequest,
   UpdateAuthProfileRequest,
   UpdateAutomationRequest,
+  UpdateCapabilityMappingRequest,
+  UpdateCapabilityMappingResponse,
   UpdateComposioSettingsRequest,
   UpdateDiscordSettingsRequest,
   UpdateEditableArtifactRequest,
@@ -581,6 +586,33 @@ export class AtlasClient {
 
   async listProviders(): Promise<ListProvidersResponse> {
     return this.request<ListProvidersResponse>("/v1/providers");
+  }
+
+  async getCapabilityCatalog(): Promise<CapabilityCatalogResponse> {
+    return this.request<CapabilityCatalogResponse>("/v1/capabilities/catalog");
+  }
+
+  async getCapabilityMappings(): Promise<CapabilityMappingsResponse> {
+    return this.request<CapabilityMappingsResponse>(
+      "/v1/capabilities/mappings"
+    );
+  }
+
+  async getCapabilityOptions(): Promise<CapabilityOptionsResponse> {
+    return this.request<CapabilityOptionsResponse>("/v1/capabilities/options");
+  }
+
+  async setCapabilityMapping(
+    capabilityId: string,
+    request: UpdateCapabilityMappingRequest
+  ): Promise<UpdateCapabilityMappingResponse> {
+    return this.request<UpdateCapabilityMappingResponse>(
+      `/v1/capabilities/mappings/${encodeURIComponent(capabilityId)}`,
+      {
+        body: JSON.stringify(request),
+        method: "PUT",
+      }
+    );
   }
 
   async testProvider(

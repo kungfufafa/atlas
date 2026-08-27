@@ -1,13 +1,13 @@
 ---
 title: "Providers"
-description: "Configure LLM providers, API keys, and models in Atlas Settings."
+description: "Configure AI providers, models, and capability routing in Atlas Settings."
 ---
 
 ## Configure a provider
 
 1. Open **Settings** in the Atlas dashboard
 2. Go to **LLM providers**
-3. Add a provider and paste your API key
+3. Add a provider and enter credentials if that provider requires them
 4. Browse or enter models for that provider
 5. Assign a model to each profile that should use it
 
@@ -25,7 +25,7 @@ Atlas supports these built-in provider types:
 
 | Provider | Notes |
 |---|---|
-| OpenAI | GPT models; required for OpenAI audio transcription (Telegram voice notes) |
+| OpenAI | GPT and specialist media models |
 | Anthropic | Claude models |
 | OpenRouter | Route to many models through one API key |
 | Gemini | Google Gemini models |
@@ -69,12 +69,55 @@ MiniMax and GLM offer separate global and mainland China endpoints. Choose the e
 
 After entering the API key, browse the live model list and add the models your account can access. **xAI Grok** uses the same browse-and-add flow without a regional choice.
 
-## Provider-specific features
+## Confirm chat capability evidence
 
-Some capabilities depend on the active provider:
+When Atlas cannot verify a provider's chat features automatically, a Workspace Admin can record the provider's documented behavior:
 
-- **Web search** (`web_search` tool) — OpenAI or Anthropic with a valid API key; not available on OpenRouter
-- **Audio transcription** (Telegram voice notes) — requires an OpenAI provider and a transcription model in **Settings → Audio transcription model**
+1. Go to **Settings → LLM providers**
+2. In the provider row, choose **Capability evidence**
+3. Set each feature to **Supported**, **Unsupported**, or **Unknown**
+4. Select **Save**
+
+Capability evidence is a provider-level override: it applies to every configured model for that provider. Choose **Supported** only after verifying that every configured model supports the feature. **Unsupported** and **Unknown** are both fail-closed, so Atlas blocks requests that need the feature; use **Unknown** when support has not been verified. Use **Provider default** to remove an override and return to Atlas's adapter and model evidence.
+
+Evidence cannot add missing Atlas support. If a feature says its adapter is unavailable, **Supported** is disabled until an adapter implementation is installed.
+
+## Route provider capabilities
+
+Profiles often need more than text chat. **Capability routing** lets a Workspace Admin choose which configured model handles each specialist task without changing code or changing every profile's chat model.
+
+1. Configure the providers and models you want to use under **Settings → LLM providers**
+2. Go to **Settings → Capability routing**
+3. Under **Image parsing**, **Audio transcription**, or **Image generation**, choose the route you want to configure
+4. Choose the **Primary model**
+5. Optionally add fallback models in the order Atlas should consider them
+6. Select **Save** for that capability
+
+Only models that declare support for the capability and are ready to use in Atlas can be selected. A saved model that is no longer eligible remains visible as **support not verified** until you replace it, so the problem is not hidden. The routing is saved for the active workspace, so another workspace can use different providers and models.
+
+Choose **Disabled** when the workspace should not use a capability. Atlas reports that the capability is unavailable instead of silently sending the request to an unrelated model.
+
+### How ordered fallback works
+
+Atlas checks the primary model first, then each fallback in the displayed order. A fallback is selected only when Atlas can tell **before sending the request** that an earlier target cannot run, for example because it is no longer configured or no longer supports that capability.
+
+Atlas does not silently retry a request on another provider after the request has been sent. This avoids duplicate work or charges and keeps provider errors visible to the operator.
+
+### Check the setup
+
+After saving, test the feature from the same workspace:
+
+| Capability | Quick check |
+|---|---|
+| Image parsing | Attach an image in chat and ask Atlas what it contains |
+| Audio transcription | Send a voice message through a connected channel |
+| Image generation | Ask a profile with image generation enabled to create an image |
+
+If **No eligible models** appears, return to **Settings → LLM providers** and confirm that a suitable model is configured and its provider credentials are valid. If a provider rejects a request after it was sent, Atlas shows the error; correct the provider or model settings before trying again.
+
+Other provider-dependent features remain separate from capability routing:
+
+- **Web search** (`web_search` tool) — availability depends on the configured provider and tool assignment
 - **Coding agent provider passthrough** — spawn-time credentials for Claude Code / Codex / OpenCode; see [Coding agent](/coding-agent)
 
 ## Per-profile models

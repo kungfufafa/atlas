@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   formatWhatsAppDevicePairingCode,
   shouldShowWhatsAppChatAccessSection,
-} from "./whatsapp-settings-linking-section";
+} from "./whatsapp-settings-linking.shared";
 
 describe("formatWhatsAppDevicePairingCode", () => {
   test("inserts a dash in an 8-character code", () => {

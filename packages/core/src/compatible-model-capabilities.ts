@@ -1,4 +1,8 @@
 import type { CustomModelEntry, ProviderName } from "./contract";
+import {
+  PROVIDER_CAPABILITY_IDS,
+  type ProviderCapabilityClaims,
+} from "./provider-capabilities";
 
 const REASONING_PARAM_NAMES = new Set([
   "include_reasoning",
@@ -50,6 +54,7 @@ export interface CompatibleModelCapabilityContext {
 }
 
 export interface ParsedRemoteOpenAIModel {
+  capabilities?: ProviderCapabilityClaims;
   id: string;
   name?: string;
   reasoningEffortValues?: string[];
@@ -138,7 +143,7 @@ export function parseRemoteOpenAIModelEntry(
     ...(readStringArray(record.supported_params) ?? []),
   ];
   const reasoning = asRecord(record.reasoning);
-  const capabilities = asRecord(record.capabilities);
+  const advertisedCapabilities = asRecord(record.capabilities);
   const details = asRecord(record.supported_params_details);
 
   let supportsThinking: boolean | undefined;
@@ -148,8 +153,8 @@ export function parseRemoteOpenAIModelEntry(
     record.supportsReasoning === true ||
     record.supportsThinking === true ||
     record.reasoning === true ||
-    capabilities?.reasoning === true ||
-    capabilities?.thinking === true
+    advertisedCapabilities?.reasoning === true ||
+    advertisedCapabilities?.thinking === true
   ) {
     supportsThinking = true;
   } else if (
@@ -158,7 +163,7 @@ export function parseRemoteOpenAIModelEntry(
     record.supportsReasoning === false ||
     record.supportsThinking === false ||
     record.reasoning === false ||
-    capabilities?.reasoning === false
+    advertisedCapabilities?.reasoning === false
   ) {
     supportsThinking = false;
   } else if (
@@ -181,14 +186,142 @@ export function parseRemoteOpenAIModelEntry(
     supportsThinking = true;
   }
 
-  const supportsVision = detectRemoteVision(record, capabilities);
+  const supportsVision = detectRemoteVision(record, advertisedCapabilities);
+  const normalizedCapabilities = detectNormalizedCapabilities({
+    advertisedCapabilities,
+    record,
+    supportedParams,
+    supportsThinking,
+    supportsVision,
+  });
 
   return {
+    ...(Object.keys(normalizedCapabilities).length
+      ? { capabilities: normalizedCapabilities }
+      : {}),
     id,
     ...(name ? { name } : {}),
     ...(supportsThinking === undefined ? {} : { supportsThinking }),
     ...(reasoningEffortValues ? { reasoningEffortValues } : {}),
     ...(supportsVision === undefined ? {} : { supportsVision }),
+  };
+}
+
+function detectNormalizedCapabilities(input: {
+  advertisedCapabilities: Record<string, unknown> | null;
+  record: Record<string, unknown>;
+  supportedParams: string[];
+  supportsThinking: boolean | undefined;
+  supportsVision: boolean | undefined;
+}): ProviderCapabilityClaims {
+  const result: ProviderCapabilityClaims = {};
+  const architecture = asRecord(input.record.architecture);
+  const inputModalities =
+    readStringArray(architecture?.input_modalities) ??
+    readStringArray(input.record.input_modalities) ??
+    [];
+  const outputModalities =
+    readStringArray(architecture?.output_modalities) ??
+    readStringArray(input.record.output_modalities) ??
+    [];
+  const normalizedParams = new Set(
+    input.supportedParams.map((parameter) => parameter.toLowerCase())
+  );
+
+  if (input.supportsVision !== undefined) {
+    addDiscoveredClaim(
+      result,
+      PROVIDER_CAPABILITY_IDS.chatInputImage,
+      input.supportsVision
+    );
+    addDiscoveredClaim(
+      result,
+      PROVIDER_CAPABILITY_IDS.imageUnderstanding,
+      input.supportsVision
+    );
+  }
+  if (inputModalities.includes("audio")) {
+    addDiscoveredClaim(result, PROVIDER_CAPABILITY_IDS.chatInputAudio, true);
+    if (outputModalities.includes("text")) {
+      addDiscoveredClaim(
+        result,
+        PROVIDER_CAPABILITY_IDS.audioTranscription,
+        true
+      );
+    }
+  }
+  if (outputModalities.includes("image")) {
+    addDiscoveredClaim(result, PROVIDER_CAPABILITY_IDS.imageGeneration, true);
+  }
+
+  addExplicitCapabilityClaim(
+    result,
+    PROVIDER_CAPABILITY_IDS.audioTranscription,
+    [
+      input.record.supports_audio_transcription,
+      input.advertisedCapabilities?.audio_transcription,
+      input.advertisedCapabilities?.speech_to_text,
+    ]
+  );
+  addExplicitCapabilityClaim(result, PROVIDER_CAPABILITY_IDS.imageGeneration, [
+    input.record.supports_image_generation,
+    input.advertisedCapabilities?.image_generation,
+    input.advertisedCapabilities?.text_to_image,
+  ]);
+
+  const supportsTools =
+    normalizedParams.has("tools") ||
+    normalizedParams.has("tool_choice") ||
+    normalizedParams.has("functions") ||
+    input.advertisedCapabilities?.tools === true ||
+    input.advertisedCapabilities?.function_calling === true;
+  if (supportsTools) {
+    addDiscoveredClaim(result, PROVIDER_CAPABILITY_IDS.chatToolUse, true);
+  }
+  const supportsStructured =
+    normalizedParams.has("response_format") ||
+    normalizedParams.has("json_schema") ||
+    input.advertisedCapabilities?.structured_outputs === true;
+  if (supportsStructured) {
+    addDiscoveredClaim(
+      result,
+      PROVIDER_CAPABILITY_IDS.chatStructuredOutput,
+      true
+    );
+  }
+  if (input.supportsThinking !== undefined) {
+    addDiscoveredClaim(
+      result,
+      PROVIDER_CAPABILITY_IDS.chatReasoning,
+      input.supportsThinking
+    );
+  }
+
+  return result;
+}
+
+function addExplicitCapabilityClaim(
+  claims: ProviderCapabilityClaims,
+  capabilityId: string,
+  values: unknown[]
+): void {
+  const explicit = values.find(
+    (value): value is boolean => typeof value === "boolean"
+  );
+  if (explicit !== undefined) {
+    addDiscoveredClaim(claims, capabilityId, explicit);
+  }
+}
+
+function addDiscoveredClaim(
+  claims: ProviderCapabilityClaims,
+  capabilityId: string,
+  supported: boolean
+): void {
+  claims[capabilityId] = {
+    source: "provider-discovery",
+    status: supported ? "supported" : "unsupported",
+    verified: true,
   };
 }
 

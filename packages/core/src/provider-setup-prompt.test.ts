@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { ProviderModelOption } from "./contract";
+import { BUILTIN_PROVIDER_DEFINITIONS } from "./provider-catalog";
 import { promptForProviderConfig } from "./provider-setup-prompt";
 
 const CLOUDFLARE_MODEL: ProviderModelOption = {
@@ -22,6 +23,31 @@ function promptOptions(answers: string[]) {
 }
 
 describe("promptForProviderConfig", () => {
+  test("renders provider choices from the catalog", async () => {
+    const lines: string[] = [];
+    await promptForProviderConfig({
+      ...promptOptions(["cloudflare", "cf-key", "account-123", ""]),
+      writeLine: (line) => lines.push(line),
+    });
+
+    for (const definition of BUILTIN_PROVIDER_DEFINITIONS) {
+      expect(lines.some((line) => line.includes(definition.displayName))).toBe(
+        true
+      );
+    }
+  });
+
+  test("accepts a free-form model for a catalog-declared custom-model provider", async () => {
+    const config = await promptForProviderConfig(
+      promptOptions(["openrouter", "router-key", "vendor/new-model"])
+    );
+
+    expect(config.providers[0]).toMatchObject({
+      customModels: [{ default: true, id: "vendor/new-model" }],
+      type: "openrouter",
+    });
+  });
+
   test("persists Responses mode for a custom endpoint", async () => {
     const config = await promptForProviderConfig(
       promptOptions([

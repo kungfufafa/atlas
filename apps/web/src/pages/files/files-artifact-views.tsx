@@ -49,7 +49,6 @@ function ShowMoreArtifactsButton({
 export function FilesArtifactViews({
   viewMode,
   isLoading,
-  isLoadingMore,
   error,
   artifacts,
   folders,
@@ -58,8 +57,7 @@ export function FilesArtifactViews({
   showFullPath,
   profileId,
   deletePending,
-  hasMore,
-  remainingCount,
+  pagination,
   onDelete,
   onOpenFolder,
   onPreview,
@@ -67,7 +65,6 @@ export function FilesArtifactViews({
 }: {
   viewMode: FilesViewMode;
   isLoading: boolean;
-  isLoadingMore: boolean;
   error: unknown;
   artifacts: ArtifactFile[];
   folders: ArtifactFolderEntry[];
@@ -76,8 +73,11 @@ export function FilesArtifactViews({
   showFullPath: boolean;
   profileId: string;
   deletePending: boolean;
-  hasMore: boolean;
-  remainingCount: number;
+  pagination: {
+    hasMore: boolean;
+    isLoadingMore: boolean;
+    remainingCount: number;
+  };
   onDelete: (artifact: ArtifactFile) => void;
   onOpenFolder: (prefix: string) => void;
   onPreview: (artifact: ArtifactFile) => void;
@@ -132,10 +132,10 @@ export function FilesArtifactViews({
       )}
       {isLoading || error || artifacts.length === 0 ? null : (
         <ShowMoreArtifactsButton
-          hasMore={hasMore}
-          isLoadingMore={isLoadingMore}
+          hasMore={pagination.hasMore}
+          isLoadingMore={pagination.isLoadingMore}
           onShowMore={onShowMore}
-          remainingCount={remainingCount}
+          remainingCount={pagination.remainingCount}
         />
       )}
     </div>

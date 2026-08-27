@@ -89,11 +89,6 @@ export function buildThinkingEffortOptions(
   }));
 }
 
-export const THINKING_EFFORT_OPTIONS: Array<{
-  value: ThinkingEffort;
-  label: string;
-}> = buildThinkingEffortOptions();
-
 export function shouldShowThinkingEffort(
   activeModelSupportsThinking: boolean | undefined
 ): boolean {

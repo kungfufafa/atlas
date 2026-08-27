@@ -68,9 +68,13 @@ export function BrowsableModelFields<T>({
       return;
     }
 
-    const existingIds = new Set(
-      customModels.map((model) => model.id.trim()).filter(Boolean)
-    );
+    const existingIds = new Set<string>();
+    for (const model of customModels) {
+      const id = model.id.trim();
+      if (id) {
+        existingIds.add(id);
+      }
+    }
     const nextModels: ModelListRow[] = [];
 
     for (const row of rows) {

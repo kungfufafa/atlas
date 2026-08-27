@@ -1,21 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
-import { useRef } from "react";
+import { useState } from "react";
 import { CatalogModelsBrowseList } from "@/components/CatalogModelsBrowseList";
 import {
   advanceCredentialRevision,
   type RemoteModelBrowseProvider,
+  type RemoteModelRow,
+  remoteModelEntryToRow,
   resolveRemoteModelBrowseReadiness,
 } from "@/components/remote-models-browse.shared";
 import { client } from "@/lib/client";
 import { queryKeys } from "@/lib/query-keys";
 
-export interface RemoteModelRow {
-  id: string;
-  name: string;
-  reasoningEffortValues?: string[];
-  supportsThinking?: boolean;
-  supportsVision?: boolean;
-}
+export type { RemoteModelRow } from "@/components/remote-models-browse.shared";
 
 export type RemoteBrowseSelectHandler = (row: RemoteModelRow) => void;
 
@@ -52,18 +48,22 @@ export function RemoteModelsBrowseList({
   credentialRevision: credentialRevisionOverride,
   disabled = false,
 }: RemoteModelsBrowseListProps) {
-  const credentialStateRef = useRef({ credential: apiKey, revision: 0 });
-  const localCredentialRevision = advanceCredentialRevision({
-    currentCredential: credentialStateRef.current.credential,
-    nextCredential: apiKey,
-    revision: credentialStateRef.current.revision,
-  });
-  credentialStateRef.current = {
+  const [credentialState, setCredentialState] = useState({
     credential: apiKey,
-    revision: localCredentialRevision,
-  };
+    revision: 0,
+  });
+  if (credentialState.credential !== apiKey) {
+    setCredentialState({
+      credential: apiKey,
+      revision: advanceCredentialRevision({
+        currentCredential: credentialState.credential,
+        nextCredential: apiKey,
+        revision: credentialState.revision,
+      }),
+    });
+  }
   const credentialRevision =
-    credentialRevisionOverride ?? localCredentialRevision;
+    credentialRevisionOverride ?? credentialState.revision;
   const trimmedBaseUrl = baseUrl?.trim() ?? "";
   const { canFetch, idleMessage } = resolveRemoteModelBrowseReadiness({
     apiKey,
@@ -95,19 +95,9 @@ export function RemoteModelsBrowseList({
         { signal }
       );
 
-      return (response.customModels ?? response.models ?? []).map((entry) => ({
-        id: entry.id,
-        name: entry.name?.trim() || entry.id,
-        ...(entry.supportsThinking === undefined
-          ? {}
-          : { supportsThinking: entry.supportsThinking }),
-        ...(entry.reasoningEffortValues?.length
-          ? { reasoningEffortValues: entry.reasoningEffortValues }
-          : {}),
-        ...(entry.supportsVision === undefined
-          ? {}
-          : { supportsVision: entry.supportsVision }),
-      }));
+      return (response.customModels ?? response.models ?? []).map(
+        remoteModelEntryToRow
+      );
     },
     queryKey: queryKeys.remoteModelDiscovery({
       baseUrl: trimmedBaseUrl,

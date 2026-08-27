@@ -95,6 +95,7 @@ type = openai_compatible
 label = Mock CI Provider
 base_url = ${mockBaseUrl}
 api_key = sk-ci-mock-key
+capabilities_json = {"chat.reasoning":{"source":"admin-override","status":"supported","verified":true},"chat.tool-use":{"source":"admin-override","status":"supported","verified":true}}
 created_at = ${new Date().toISOString()}
 custom_models = [{"id":"mock-model","name":"Mock CI Model","contextLength":128000,"supportsThinking":true}]
 `;

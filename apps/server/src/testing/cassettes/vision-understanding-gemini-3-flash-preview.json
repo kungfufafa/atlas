@@ -1,0 +1,75 @@
+{
+  "name": "vision-understanding-gemini-3-flash-preview",
+  "recordedAt": "2026-08-27T00:44:24.951Z",
+  "request": {
+    "body": {
+      "contents": [
+        {
+          "parts": [
+            {
+              "inlineData": {
+                "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+                "mimeType": "image/png"
+              }
+            }
+          ],
+          "role": "user"
+        }
+      ],
+      "systemInstruction": {
+        "parts": [
+          {
+            "text": "Describe the image in detail for another AI that cannot see it. Include visible text, UI elements, diagrams, colors, layout, and any other relevant context. Be concise but complete."
+          }
+        ],
+        "role": "user"
+      },
+      "generationConfig": {
+        "thinkingConfig": {
+          "thinkingBudget": 0
+        }
+      }
+    },
+    "method": "POST",
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
+  },
+  "response": {
+    "body": {
+      "candidates": [
+        {
+          "content": {
+            "parts": [
+              {
+                "text": "This is a simple, digital image consisting of a solid, uniform square of color. There are no patterns, textures, gradients, UI elements, text, or shapes present.\n\n**Visual details:**\n*   **Color:** A warm, vibrant shade of coral or salmon pink.\n*   **Hex Code (approximate):** #FF827E\n*   **Composition:** A flat, monochromatic fill covering the entire frame.",
+                "thoughtSignature": "EmUKYwERTTIPhxgSzGc96/Y+brLg2IPlLYXKaF7YRf3sPm221CCuC3PtehT7T0345nVHGG04IbIMY7P7bi+ZgRe9sj8M7gZ+Qhg9FyzkcqNboxrRF1q81vOlADgWXEuzIoKBCl4AvQ=="
+              }
+            ],
+            "role": "model"
+          },
+          "finishReason": "STOP",
+          "index": 0
+        }
+      ],
+      "usageMetadata": {
+        "promptTokenCount": 1128,
+        "candidatesTokenCount": 90,
+        "totalTokenCount": 1218,
+        "promptTokensDetails": [
+          {
+            "modality": "IMAGE",
+            "tokenCount": 1089
+          },
+          {
+            "modality": "TEXT",
+            "tokenCount": 39
+          }
+        ],
+        "serviceTier": "standard"
+      },
+      "modelVersion": "gemini-3-flash-preview",
+      "responseId": "XYiPaviZJZnQg8UP3ImOiQE"
+    },
+    "status": 200
+  },
+  "version": 1
+}

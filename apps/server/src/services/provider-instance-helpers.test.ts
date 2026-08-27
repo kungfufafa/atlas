@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { AtlasApiError, type ProviderInstance } from "@atlas/core";
 import {
+  applyAdminCapabilityOverridePatch,
   applyProviderInstanceUpdate,
   buildProviderInstanceFromCreateRequest,
   countModelsForInstance,
@@ -232,9 +233,109 @@ describe("environment-backed provider visibility", () => {
       JSON.stringify(toProviderInstanceSummary(instance, 2, env))
     ).not.toContain("environment-secret");
   });
+
+  test("derives credential-optional usability from the provider adapter", () => {
+    const localOllama = createProviderInstance({
+      apiKey: "",
+      baseUrl: "http://localhost:11434/v1",
+      hostMode: "local",
+      id: "ollama-local",
+      label: "Ollama",
+      type: "ollama",
+    });
+    const compatible = createProviderInstance({
+      apiKey: "",
+      baseUrl: "http://localhost:8080/v1",
+      id: "compatible-local",
+      label: "Local endpoint",
+      type: "openai_compatible",
+    });
+
+    for (const instance of [localOllama, compatible]) {
+      expect(isProviderInstanceUsable(instance, {})).toBe(true);
+      expect(toProviderInstanceSummary(instance, 1, {}).hasApiKey).toBe(true);
+    }
+  });
+
+  test("marks conditional cloud credentials missing without an API key", () => {
+    const instance = createProviderInstance({
+      apiKey: "",
+      baseUrl: "https://ollama.com/v1",
+      hostMode: "cloud",
+      id: "ollama-cloud",
+      label: "Ollama Cloud",
+      type: "ollama",
+    });
+
+    expect(isProviderInstanceUsable(instance, {})).toBe(false);
+    expect(toProviderInstanceSummary(instance, 0, {}).hasApiKey).toBe(false);
+  });
 });
 
 describe("applyProviderInstanceUpdate", () => {
+  test("persists admin capability evidence with fail-closed unknown semantics", () => {
+    const instance = createProviderInstance({
+      capabilityOverrides: {
+        "chat.streaming": {
+          source: "static-manifest",
+          status: "supported",
+          verified: true,
+        },
+      },
+      id: "openai-capabilities",
+      label: "OpenAI",
+      type: "openai",
+    });
+
+    const updated = applyProviderInstanceUpdate(instance, {
+      capabilityOverrides: {
+        "chat.reasoning": "supported",
+        "chat.streaming": null,
+        "chat.tool-use": "unknown",
+      },
+    });
+
+    expect(updated.capabilityOverrides).toEqual({
+      "chat.reasoning": {
+        source: "admin-override",
+        status: "supported",
+        verified: true,
+        verifiedAt: expect.any(String),
+      },
+      "chat.tool-use": {
+        source: "admin-override",
+        status: "unknown",
+        verified: false,
+      },
+    });
+    expect(toProviderInstanceSummary(updated, 1).capabilityOverrides).toEqual(
+      updated.capabilityOverrides
+    );
+  });
+
+  test("validates runtime capability override statuses", () => {
+    expect(() =>
+      applyAdminCapabilityOverridePatch(undefined, {
+        "chat.tool-use": "guessed" as never,
+      })
+    ).toThrow("invalid status");
+  });
+
+  test("uses the adapter-owned error for a missing conditional credential", () => {
+    const instance = createProviderInstance({
+      apiKey: "",
+      baseUrl: "http://localhost:11434/v1",
+      hostMode: "local",
+      id: "ollama-local",
+      label: "Ollama",
+      type: "ollama",
+    });
+
+    expect(() =>
+      applyProviderInstanceUpdate(instance, { hostMode: "cloud" }, {})
+    ).toThrow("API key is required for Ollama Cloud.");
+  });
+
   test("does not forward a stored credential to a changed base URL", () => {
     const instance = createProviderInstance({
       baseUrl: "https://trusted.example/v1",
@@ -423,6 +524,71 @@ describe("applyProviderInstanceUpdate", () => {
 });
 
 describe("buildProviderInstanceFromCreateRequest", () => {
+  test("keeps custom models for a provider that opts in through catalog metadata", () => {
+    const instance = buildProviderInstanceFromCreateRequest(
+      {
+        apiKey: "sk-test",
+        customModels: [{ default: true, id: "gpt-future" }],
+        type: "openai",
+      },
+      []
+    );
+
+    expect(instance.customModels).toEqual([
+      { default: true, id: "gpt-future" },
+    ]);
+  });
+
+  test("applies declarative custom-model id validation", () => {
+    expect(() =>
+      buildProviderInstanceFromCreateRequest(
+        {
+          apiKey: "router-key",
+          customModels: [{ default: true, id: "missing-vendor" }],
+          type: "openrouter",
+        },
+        []
+      )
+    ).toThrow(
+      'Invalid OpenRouter model id "missing-vendor". Use vendor/model format.'
+    );
+  });
+
+  test("accepts a credential-optional provider through adapter policy", () => {
+    const instance = buildProviderInstanceFromCreateRequest(
+      {
+        apiKey: "",
+        baseUrl: "http://localhost:8080/v1",
+        customModels: [{ default: true, id: "local-model" }],
+        label: "Local endpoint",
+        type: "openai_compatible",
+      },
+      []
+    );
+
+    expect(instance).toMatchObject({
+      apiKey: "",
+      type: "openai_compatible",
+    });
+  });
+
+  test("uses the adapter-owned message for conditional credentials", () => {
+    for (const hostMode of ["cloud", undefined] as const) {
+      expect(() =>
+        buildProviderInstanceFromCreateRequest(
+          {
+            apiKey: "",
+            baseUrl: "https://ollama.com/v1",
+            customModels: [{ default: true, id: "gpt-oss:120b" }],
+            ...(hostMode ? { hostMode } : {}),
+            type: "ollama",
+          },
+          []
+        )
+      ).toThrow("API key is required for Ollama Cloud.");
+    }
+  });
+
   test("uses native discovery defaults without losing custom capabilities", () => {
     const instance = buildProviderInstanceFromCreateRequest(
       {

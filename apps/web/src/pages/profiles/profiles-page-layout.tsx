@@ -35,6 +35,141 @@ import {
 } from "@/pages/profiles/profiles-ui";
 import type { ProfilesPageState } from "@/pages/profiles/use-profiles-page";
 
+function ProfilesPageHeaderTablist({
+  detail,
+  detailTab,
+  isOrgAdmin,
+  pageHeaderActions,
+  pendingSkillProposals,
+  selectedId,
+  setDetailTab,
+}: {
+  detail: ProfilesPageState["detail"];
+  detailTab: ProfilesPageState["detailTab"];
+  isOrgAdmin: boolean;
+  pageHeaderActions: HTMLElement | null;
+  pendingSkillProposals: number;
+  selectedId: string | null;
+  setDetailTab: ProfilesPageState["setDetailTab"];
+}) {
+  if (!(pageHeaderActions && selectedId && detail)) {
+    return null;
+  }
+
+  return createPortal(
+    <div
+      aria-label="Profile settings"
+      className="no-scrollbar flex h-full min-w-0 items-stretch overflow-x-auto"
+      role="tablist"
+    >
+      <ProfileDetailTabButton
+        active={detailTab === "profile"}
+        controls="profile-detail-panel-profile"
+        id="profile-detail-tab-profile"
+        onSelect={() => setDetailTab("profile")}
+      >
+        Config
+      </ProfileDetailTabButton>
+      <ProfileDetailTabButton
+        active={detailTab === "prompt"}
+        controls="profile-detail-panel-prompt"
+        id="profile-detail-tab-prompt"
+        onSelect={() => setDetailTab("prompt")}
+      >
+        Prompt
+      </ProfileDetailTabButton>
+      {isOrgAdmin ? (
+        <ProfileDetailTabButton
+          active={detailTab === "proposals"}
+          controls="profile-detail-panel-proposals"
+          id="profile-detail-tab-proposals"
+          onSelect={() => setDetailTab("proposals")}
+        >
+          Proposals
+          {pendingSkillProposals > 0 ? (
+            <span className="text-amber-600 text-xs tabular-nums dark:text-amber-400">
+              ({pendingSkillProposals > 99 ? "99+" : pendingSkillProposals})
+            </span>
+          ) : null}
+        </ProfileDetailTabButton>
+      ) : null}
+    </div>,
+    pageHeaderActions
+  );
+}
+
+function ProfilesPageDetailPanel({
+  activeOrgId,
+  busy,
+  canCreateProfile,
+  detail,
+  detailLoading,
+  detailTab,
+  isOrgAdmin,
+  onAskSuperAgent,
+  onCreate,
+  profilesLength,
+  selectedId,
+  state,
+}: {
+  activeOrgId: string | null;
+  busy: boolean;
+  canCreateProfile: boolean;
+  detail: ProfilesPageState["detail"];
+  detailLoading: boolean;
+  detailTab: ProfilesPageState["detailTab"];
+  isOrgAdmin: boolean;
+  onAskSuperAgent: (() => void) | undefined;
+  onCreate: () => void;
+  profilesLength: number;
+  selectedId: string | null;
+  state: ProfilesPageState;
+}) {
+  return profilesLength === 0 ? (
+    <div className="p-4">
+      <ProfilesEmptyState
+        canCreate={canCreateProfile}
+        disabled={busy}
+        onAskSuperAgent={onAskSuperAgent}
+        onCreate={onCreate}
+        variant="full"
+      />
+    </div>
+  ) : detailLoading && !detail ? (
+    <div className="p-4">
+      <PageState embedded message="Loading profile…" />
+    </div>
+  ) : selectedId && detail ? (
+    detailTab === "profile" ? (
+      <div className="no-scrollbar p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+        <ProfileConfigTab state={state} />
+      </div>
+    ) : detailTab === "proposals" && isOrgAdmin && activeOrgId && selectedId ? (
+      <div
+        aria-labelledby="profile-detail-tab-proposals"
+        className="no-scrollbar p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
+        id="profile-detail-panel-proposals"
+        role="tabpanel"
+      >
+        <SkillProposalsPanel orgId={activeOrgId} profileId={selectedId} />
+      </div>
+    ) : detailTab === "prompt" ? (
+      <div
+        aria-labelledby="profile-detail-tab-prompt"
+        className="no-scrollbar p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
+        id="profile-detail-panel-prompt"
+        role="tabpanel"
+      >
+        <SoulTab profileId={selectedId} />
+      </div>
+    ) : null
+  ) : (
+    <div className="flex min-h-48 items-center justify-center p-4 text-muted-foreground text-sm">
+      Select a profile to edit.
+    </div>
+  );
+}
+
 export function ProfilesPageLayout(state: ProfilesPageState) {
   const {
     profiles,
@@ -76,52 +211,15 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
 
   return (
     <div className="space-y-4">
-      {pageHeaderActions && selectedId && detail
-        ? createPortal(
-            <div
-              aria-label="Profile settings"
-              className="no-scrollbar flex h-full min-w-0 items-stretch overflow-x-auto"
-              role="tablist"
-            >
-              <ProfileDetailTabButton
-                active={detailTab === "profile"}
-                controls="profile-detail-panel-profile"
-                id="profile-detail-tab-profile"
-                onSelect={() => setDetailTab("profile")}
-              >
-                Config
-              </ProfileDetailTabButton>
-              <ProfileDetailTabButton
-                active={detailTab === "prompt"}
-                controls="profile-detail-panel-prompt"
-                id="profile-detail-tab-prompt"
-                onSelect={() => setDetailTab("prompt")}
-              >
-                Prompt
-              </ProfileDetailTabButton>
-              {isOrgAdmin ? (
-                <ProfileDetailTabButton
-                  active={detailTab === "proposals"}
-                  controls="profile-detail-panel-proposals"
-                  id="profile-detail-tab-proposals"
-                  onSelect={() => setDetailTab("proposals")}
-                >
-                  Proposals
-                  {pendingSkillProposals > 0 ? (
-                    <span className="text-amber-600 text-xs tabular-nums dark:text-amber-400">
-                      (
-                      {pendingSkillProposals > 99
-                        ? "99+"
-                        : pendingSkillProposals}
-                      )
-                    </span>
-                  ) : null}
-                </ProfileDetailTabButton>
-              ) : null}
-            </div>,
-            pageHeaderActions
-          )
-        : null}
+      <ProfilesPageHeaderTablist
+        detail={detail}
+        detailTab={detailTab}
+        isOrgAdmin={isOrgAdmin}
+        pageHeaderActions={pageHeaderActions}
+        pendingSkillProposals={pendingSkillProposals}
+        selectedId={selectedId}
+        setDetailTab={setDetailTab}
+      />
       {pageHeaderActions &&
       selectedId &&
       detail &&
@@ -320,55 +418,20 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
           </aside>
 
           <div className="flex min-w-0 flex-col lg:min-h-0 lg:flex-1 lg:overflow-hidden">
-            {profiles.length === 0 ? (
-              <div className="p-4">
-                <ProfilesEmptyState
-                  canCreate={canCreateProfile}
-                  disabled={busy}
-                  onAskSuperAgent={onAskSuperAgent}
-                  onCreate={() => setCreateOpen(true)}
-                  variant="full"
-                />
-              </div>
-            ) : detailLoading && !detail ? (
-              <div className="p-4">
-                <PageState embedded message="Loading profile…" />
-              </div>
-            ) : selectedId && detail ? (
-              detailTab === "profile" ? (
-                <div className="no-scrollbar p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-                  <ProfileConfigTab state={state} />
-                </div>
-              ) : detailTab === "proposals" &&
-                isOrgAdmin &&
-                activeOrg &&
-                selectedId ? (
-                <div
-                  aria-labelledby="profile-detail-tab-proposals"
-                  className="no-scrollbar p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
-                  id="profile-detail-panel-proposals"
-                  role="tabpanel"
-                >
-                  <SkillProposalsPanel
-                    orgId={activeOrg.id}
-                    profileId={selectedId}
-                  />
-                </div>
-              ) : detailTab === "prompt" ? (
-                <div
-                  aria-labelledby="profile-detail-tab-prompt"
-                  className="no-scrollbar p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
-                  id="profile-detail-panel-prompt"
-                  role="tabpanel"
-                >
-                  <SoulTab profileId={selectedId} />
-                </div>
-              ) : null
-            ) : (
-              <div className="flex min-h-48 items-center justify-center p-4 text-muted-foreground text-sm">
-                Select a profile to edit.
-              </div>
-            )}
+            <ProfilesPageDetailPanel
+              activeOrgId={activeOrg?.id ?? null}
+              busy={busy}
+              canCreateProfile={canCreateProfile}
+              detail={detail}
+              detailLoading={detailLoading}
+              detailTab={detailTab}
+              isOrgAdmin={isOrgAdmin}
+              onAskSuperAgent={onAskSuperAgent}
+              onCreate={() => setCreateOpen(true)}
+              profilesLength={profiles.length}
+              selectedId={selectedId}
+              state={state}
+            />
           </div>
         </div>
       </section>

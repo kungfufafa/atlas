@@ -1,8 +1,46 @@
 import { describe, expect, test } from "bun:test";
 import {
   advanceCredentialRevision,
+  remoteModelEntryToRow,
+  remoteModelRowToCustomModelEntry,
   resolveRemoteModelBrowseReadiness,
 } from "./remote-models-browse.shared";
+
+describe("remote model capability round-trip", () => {
+  test("preserves generic capability claims through browse selection", () => {
+    const capabilities = {
+      "audio.transcription": {
+        source: "provider-discovery" as const,
+        status: "supported" as const,
+        verified: true,
+      },
+      "vendor.custom-operation": {
+        source: "provider-discovery" as const,
+        status: "supported" as const,
+      },
+    };
+
+    const browseRow = remoteModelEntryToRow({
+      capabilities,
+      id: "provider/model-with-generic-capabilities",
+      name: "  Generic Model  ",
+      supportsThinking: true,
+    });
+
+    expect(browseRow).toEqual({
+      capabilities,
+      id: "provider/model-with-generic-capabilities",
+      name: "Generic Model",
+      supportsThinking: true,
+    });
+    expect(remoteModelRowToCustomModelEntry(browseRow)).toEqual({
+      capabilities,
+      id: "provider/model-with-generic-capabilities",
+      name: "Generic Model",
+      supportsThinking: true,
+    });
+  });
+});
 
 describe("remote discovery credential identity", () => {
   test("changes the non-secret revision whenever a credential changes", () => {

@@ -14,6 +14,7 @@ import {
   type RemoteModelRow,
   RemoteModelsBrowseList,
 } from "@/components/RemoteModelsBrowseList";
+import { remoteModelRowToCustomModelEntry } from "@/components/remote-models-browse.shared";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { InputGroup, InputGroupInput } from "@/components/ui/input-group";
@@ -100,15 +101,16 @@ export function CustomProviderFields({
   const resolvedBrowseLabel =
     browseLabel ?? (remoteProvider === "ollama" ? "Ollama" : "this endpoint");
   const selectedPresetId = matchCustomProviderPreset(baseUrl);
-  const selectedModelIds = useMemo(
-    () =>
-      new Set(
-        customModels
-          .map((model) => model.id.trim())
-          .filter((modelId) => modelId.length > 0)
-      ),
-    [customModels]
-  );
+  const selectedModelIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const model of customModels) {
+      const id = model.id.trim();
+      if (id.length > 0) {
+        ids.add(id);
+      }
+    }
+    return ids;
+  }, [customModels]);
   const selectedModels = useMemo(
     () => customModels.filter((model) => model.id.trim().length > 0),
     [customModels]
@@ -153,22 +155,10 @@ export function CustomProviderFields({
     );
   };
 
-  const remoteRowToModel = (row: RemoteModelRow): ModelListRow => ({
-    id: row.id,
-    name: row.name,
-    ...(row.supportsThinking === undefined
-      ? {}
-      : { supportsThinking: row.supportsThinking }),
-    ...(row.reasoningEffortValues?.length
-      ? { reasoningEffortValues: row.reasoningEffortValues }
-      : {}),
-    ...(row.supportsVision === undefined
-      ? {}
-      : { supportsVision: row.supportsVision }),
-  });
-
   const handleRemoteSelect = (row: RemoteModelRow) => {
-    handleModelsChange(toggleModelListRow(customModels, remoteRowToModel(row)));
+    handleModelsChange(
+      toggleModelListRow(customModels, remoteModelRowToCustomModelEntry(row))
+    );
   };
 
   const handleRemoteAddMany = (rows: RemoteModelRow[]) => {
@@ -179,7 +169,7 @@ export function CustomProviderFields({
         continue;
       }
       existingIds.add(row.id);
-      additions.push(remoteRowToModel(row));
+      additions.push(remoteModelRowToCustomModelEntry(row));
     }
 
     if (additions.length > 0) {
@@ -305,120 +295,205 @@ export function CustomProviderFields({
       ) : null}
 
       {showModelsEditor ? (
-        <FormField
+        <CustomProviderModelsField
+          apiKey={apiKey}
+          baseUrl={baseUrl}
+          browseSource={browseSource}
+          canBrowse={canBrowse}
+          credentialRevision={credentialRevision}
+          customModels={customModels}
           density={density}
-          footer={
-            modelsError ? (
-              <p className="text-destructive text-sm" role="alert">
-                {modelsError}
-              </p>
-            ) : null
+          disabled={disabled}
+          hostMode={hostMode}
+          isBrowsing={isBrowsing}
+          modelsError={modelsError}
+          onAddMany={handleRemoteAddMany}
+          onAddModelId={() =>
+            onCustomModelsChange([...customModels, { id: "", name: "" }])
           }
-          id="provider-models"
-          label="Models"
-        >
-          {isBrowsing ? (
-            <div className="space-y-2">
-              {selectedModels.length > 0 ? (
-                <ul className="flex flex-wrap gap-1.5">
-                  {selectedModels.map((model) => {
-                    const modelId = model.id.trim();
-                    return (
-                      <li key={modelId}>
-                        <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-0.5 text-xs">
-                          <span className="max-w-48 truncate">
-                            {model.name?.trim() || modelId}
-                          </span>
-                          <button
-                            aria-label={`Remove ${modelId}`}
-                            className="text-muted-foreground hover:text-foreground"
-                            disabled={disabled}
-                            onClick={() => handleRemoveSelected(modelId)}
-                            type="button"
-                          >
-                            <Cancel01Icon className="size-3" />
-                          </button>
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : null}
-              {browseSource === "remote" ? (
-                <RemoteModelsBrowseList
-                  apiKey={apiKey}
-                  baseUrl={baseUrl}
-                  browseLabel={resolvedBrowseLabel}
-                  className="h-72 rounded-md border border-border"
-                  credentialRevision={credentialRevision}
-                  disabled={disabled}
-                  hostMode={hostMode}
-                  multiSelect
-                  onAddMany={handleRemoteAddMany}
-                  onSelect={handleRemoteSelect}
-                  provider={remoteProvider}
-                  providerId={providerInstanceId}
-                  selectedIds={selectedModelIds}
-                />
-              ) : (
-                <ModelsBrowseList
-                  className="h-72 rounded-md border border-border"
-                  onSelect={handleModelsDevSelect}
-                />
-              )}
-              <div className="flex justify-end">
-                <Button
-                  disabled={disabled}
-                  onClick={() => setIsBrowsing(false)}
-                  size="sm"
-                  type="button"
-                  variant="outline"
-                >
-                  Done
-                </Button>
-              </div>
-            </div>
-          ) : selectedModels.length > 0 ||
-            customModels.some((model) => model.id.trim().length === 0) ? (
-            <ModelListEditor
-              allowEmpty
-              browseLabel={
-                browseSource === "remote"
-                  ? `Browse ${resolvedBrowseLabel}`
-                  : "Browse models.dev"
-              }
-              disabled={disabled}
-              models={customModels}
-              onBrowse={() => setIsBrowsing(true)}
-              onChange={handleModelsChange}
-              showPricing={false}
-              showThinking
-            />
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              <Button
-                disabled={disabled || !canBrowse}
-                onClick={() => setIsBrowsing(true)}
-                size="sm"
-                type="button"
-              >
-                Browse {resolvedBrowseLabel}
-              </Button>
-              <Button
-                disabled={disabled}
-                onClick={() =>
-                  onCustomModelsChange([...customModels, { id: "", name: "" }])
-                }
-                size="sm"
-                type="button"
-                variant="outline"
-              >
-                Add model ID
-              </Button>
-            </div>
-          )}
-        </FormField>
+          onBrowse={() => setIsBrowsing(true)}
+          onDoneBrowsing={() => setIsBrowsing(false)}
+          onModelsChange={handleModelsChange}
+          onModelsDevSelect={handleModelsDevSelect}
+          onRemoteSelect={handleRemoteSelect}
+          onRemoveSelected={handleRemoveSelected}
+          providerInstanceId={providerInstanceId}
+          remoteProvider={remoteProvider}
+          resolvedBrowseLabel={resolvedBrowseLabel}
+          selectedModelIds={selectedModelIds}
+          selectedModels={selectedModels}
+        />
       ) : null}
     </div>
+  );
+}
+
+function CustomProviderModelsField({
+  apiKey,
+  baseUrl,
+  browseSource = "models.dev",
+  canBrowse,
+  credentialRevision,
+  customModels,
+  density,
+  disabled,
+  hostMode,
+  isBrowsing,
+  modelsError,
+  onAddMany,
+  onAddModelId,
+  onBrowse,
+  onDoneBrowsing,
+  onModelsChange,
+  onModelsDevSelect,
+  onRemoveSelected,
+  onRemoteSelect,
+  providerInstanceId,
+  remoteProvider,
+  resolvedBrowseLabel,
+  selectedModelIds,
+  selectedModels,
+}: {
+  apiKey: string;
+  baseUrl: string;
+  browseSource?: "remote" | "models.dev";
+  canBrowse: boolean;
+  credentialRevision?: number;
+  customModels: ModelListRow[];
+  density?: "default" | "compact";
+  disabled?: boolean;
+  hostMode?: "local" | "cloud";
+  isBrowsing: boolean;
+  modelsError?: string | null;
+  onAddMany: (rows: RemoteModelRow[]) => void;
+  onAddModelId: () => void;
+  onBrowse: () => void;
+  onDoneBrowsing: () => void;
+  onModelsChange: (models: ModelListRow[]) => void;
+  onModelsDevSelect: (
+    provider: string,
+    modelId: string,
+    row: ModelsDevRow
+  ) => void;
+  onRemoveSelected: (modelId: string) => void;
+  onRemoteSelect: (row: RemoteModelRow) => void;
+  providerInstanceId?: string;
+  remoteProvider?: CustomProviderFieldsProps["remoteProvider"];
+  resolvedBrowseLabel: string;
+  selectedModelIds: Set<string>;
+  selectedModels: ModelListRow[];
+}) {
+  return (
+    <FormField
+      density={density}
+      footer={
+        modelsError ? (
+          <p className="text-destructive text-sm" role="alert">
+            {modelsError}
+          </p>
+        ) : null
+      }
+      id="provider-models"
+      label="Models"
+    >
+      {isBrowsing ? (
+        <div className="space-y-2">
+          {selectedModels.length > 0 ? (
+            <ul className="flex flex-wrap gap-1.5">
+              {selectedModels.map((model) => {
+                const modelId = model.id.trim();
+                return (
+                  <li key={modelId}>
+                    <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-0.5 text-xs">
+                      <span className="max-w-48 truncate">
+                        {model.name?.trim() || modelId}
+                      </span>
+                      <button
+                        aria-label={`Remove ${modelId}`}
+                        className="text-muted-foreground hover:text-foreground"
+                        disabled={disabled}
+                        onClick={() => onRemoveSelected(modelId)}
+                        type="button"
+                      >
+                        <Cancel01Icon className="size-3" />
+                      </button>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+          {browseSource === "remote" ? (
+            <RemoteModelsBrowseList
+              apiKey={apiKey}
+              baseUrl={baseUrl}
+              browseLabel={resolvedBrowseLabel}
+              className="h-72 rounded-md border border-border"
+              credentialRevision={credentialRevision}
+              disabled={disabled}
+              hostMode={hostMode}
+              multiSelect
+              onAddMany={onAddMany}
+              onSelect={onRemoteSelect}
+              provider={remoteProvider}
+              providerId={providerInstanceId}
+              selectedIds={selectedModelIds}
+            />
+          ) : (
+            <ModelsBrowseList
+              className="h-72 rounded-md border border-border"
+              onSelect={onModelsDevSelect}
+            />
+          )}
+          <div className="flex justify-end">
+            <Button
+              disabled={disabled}
+              onClick={onDoneBrowsing}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Done
+            </Button>
+          </div>
+        </div>
+      ) : selectedModels.length > 0 ||
+        customModels.some((model) => model.id.trim().length === 0) ? (
+        <ModelListEditor
+          allowEmpty
+          browseLabel={
+            browseSource === "remote"
+              ? `Browse ${resolvedBrowseLabel}`
+              : "Browse models.dev"
+          }
+          disabled={disabled}
+          models={customModels}
+          onBrowse={onBrowse}
+          onChange={onModelsChange}
+          showPricing={false}
+          showThinking
+        />
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            disabled={disabled || !canBrowse}
+            onClick={onBrowse}
+            size="sm"
+            type="button"
+          >
+            Browse {resolvedBrowseLabel}
+          </Button>
+          <Button
+            disabled={disabled}
+            onClick={onAddModelId}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            Add model ID
+          </Button>
+        </div>
+      )}
+    </FormField>
   );
 }

@@ -1,5 +1,5 @@
 import type { OrgMemberSummary, OrgRole } from "@atlas/core/contract";
-import { useReducer } from "react";
+import { type Dispatch, useReducer } from "react";
 import {
   type OrgMemberAddCredentials,
   OrgMemberAddDialog,
@@ -124,6 +124,108 @@ function orgMembersReducer(
     default:
       return state;
   }
+}
+
+function OrgMembersDialogs({
+  addPending,
+  dispatch,
+  onAddSubmit,
+  onCopyCredential,
+  onEditSubmit,
+  onRemoveConfirm,
+  orgName,
+  removePending,
+  state,
+  updatePending,
+}: {
+  addPending: boolean;
+  dispatch: Dispatch<OrgMembersAction>;
+  onAddSubmit: (event: React.FormEvent) => void;
+  onCopyCredential: (value: string) => void;
+  onEditSubmit: (event: React.FormEvent) => void;
+  onRemoveConfirm: () => void;
+  orgName: string;
+  removePending: boolean;
+  state: OrgMembersState;
+  updatePending: boolean;
+}) {
+  return (
+    <>
+      <OrgMemberAddDialog
+        addEmail={state.addEmail}
+        addName={state.addName}
+        addPhone={state.addPhone}
+        addRole={state.addRole}
+        copyHint={state.addCopyHint}
+        credentials={state.addCredentials}
+        formError={state.formError}
+        onAddEmailChange={(value) =>
+          dispatch({ type: "patch", values: { addEmail: value } })
+        }
+        onAddNameChange={(value) =>
+          dispatch({ type: "patch", values: { addName: value } })
+        }
+        onAddPhoneChange={(value) =>
+          dispatch({ type: "patch", values: { addPhone: value } })
+        }
+        onAddRoleChange={(value) =>
+          dispatch({ type: "patch", values: { addRole: value } })
+        }
+        onCopyCredential={onCopyCredential}
+        onOpenChange={(open) => {
+          dispatch({ type: "patch", values: { addOpen: open } });
+          if (!open) {
+            dispatch({ type: "reset-add" });
+          }
+        }}
+        onSubmit={onAddSubmit}
+        open={state.addOpen}
+        pending={addPending}
+      />
+
+      <OrgMemberEditDialog
+        editingMember={state.editingMember}
+        editName={state.editName}
+        editPhone={state.editPhone}
+        editRole={state.editRole}
+        formError={state.formError}
+        onEditNameChange={(value) =>
+          dispatch({ type: "patch", values: { editName: value } })
+        }
+        onEditPhoneChange={(value) =>
+          dispatch({ type: "patch", values: { editPhone: value } })
+        }
+        onEditRoleChange={(value) =>
+          dispatch({ type: "patch", values: { editRole: value } })
+        }
+        onOpenChange={(open) => {
+          dispatch({ type: "patch", values: { editOpen: open } });
+          if (!open) {
+            dispatch({ type: "reset-edit" });
+          }
+        }}
+        onSubmit={onEditSubmit}
+        open={state.editOpen}
+        pending={updatePending}
+      />
+
+      <OrgMemberRemoveDialog
+        formError={state.removingMember ? state.formError : null}
+        member={state.removingMember}
+        onConfirm={onRemoveConfirm}
+        onOpenChange={(open) => {
+          if (!open) {
+            dispatch({
+              type: "patch",
+              values: { formError: null, removingMember: null },
+            });
+          }
+        }}
+        orgName={orgName}
+        pending={removePending}
+      />
+    </>
+  );
 }
 
 export function OrgMembersCard() {
@@ -386,78 +488,17 @@ export function OrgMembersCard() {
         </CardContent>
       </Card>
 
-      <OrgMemberAddDialog
-        addEmail={state.addEmail}
-        addName={state.addName}
-        addPhone={state.addPhone}
-        addRole={state.addRole}
-        copyHint={state.addCopyHint}
-        credentials={state.addCredentials}
-        formError={state.formError}
-        onAddEmailChange={(value) =>
-          dispatch({ type: "patch", values: { addEmail: value } })
-        }
-        onAddNameChange={(value) =>
-          dispatch({ type: "patch", values: { addName: value } })
-        }
-        onAddPhoneChange={(value) =>
-          dispatch({ type: "patch", values: { addPhone: value } })
-        }
-        onAddRoleChange={(value) =>
-          dispatch({ type: "patch", values: { addRole: value } })
-        }
+      <OrgMembersDialogs
+        addPending={addMutation.isPending}
+        dispatch={dispatch}
+        onAddSubmit={handleAddSubmit}
         onCopyCredential={(value) => void copyAddCredential(value)}
-        onOpenChange={(open) => {
-          dispatch({ type: "patch", values: { addOpen: open } });
-          if (!open) {
-            dispatch({ type: "reset-add" });
-          }
-        }}
-        onSubmit={handleAddSubmit}
-        open={state.addOpen}
-        pending={addMutation.isPending}
-      />
-
-      <OrgMemberEditDialog
-        editingMember={state.editingMember}
-        editName={state.editName}
-        editPhone={state.editPhone}
-        editRole={state.editRole}
-        formError={state.formError}
-        onEditNameChange={(value) =>
-          dispatch({ type: "patch", values: { editName: value } })
-        }
-        onEditPhoneChange={(value) =>
-          dispatch({ type: "patch", values: { editPhone: value } })
-        }
-        onEditRoleChange={(value) =>
-          dispatch({ type: "patch", values: { editRole: value } })
-        }
-        onOpenChange={(open) => {
-          dispatch({ type: "patch", values: { editOpen: open } });
-          if (!open) {
-            dispatch({ type: "reset-edit" });
-          }
-        }}
-        onSubmit={handleEditSubmit}
-        open={state.editOpen}
-        pending={updateMemberMutation.isPending}
-      />
-
-      <OrgMemberRemoveDialog
-        formError={state.removingMember ? state.formError : null}
-        member={state.removingMember}
-        onConfirm={handleRemoveConfirm}
-        onOpenChange={(open) => {
-          if (!open) {
-            dispatch({
-              type: "patch",
-              values: { formError: null, removingMember: null },
-            });
-          }
-        }}
+        onEditSubmit={handleEditSubmit}
+        onRemoveConfirm={handleRemoveConfirm}
         orgName={activeOrg.name}
-        pending={removeMutation.isPending}
+        removePending={removeMutation.isPending}
+        state={state}
+        updatePending={updateMemberMutation.isPending}
       />
     </>
   );

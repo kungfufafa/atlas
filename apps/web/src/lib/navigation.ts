@@ -332,10 +332,6 @@ export function agentWorkTabFromSearchParams(
   return searchParams.get("tab") === "tasks" ? "tasks" : "automations";
 }
 
-export function agentWorkTabPath(tab: AgentWorkTab): string {
-  return `${PAGE_PATHS.automations}?tab=${tab}`;
-}
-
 export function pathForPage(pageId: PageId): string {
   return PAGE_PATHS[pageId];
 }

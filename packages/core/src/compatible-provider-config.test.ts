@@ -13,6 +13,27 @@ describe("parseWireApi", () => {
 });
 
 describe("validateCustomModels", () => {
+  test("preserves versioned capability claims", () => {
+    const models = validateCustomModels([
+      {
+        capabilities: {
+          "audio.transcription": {
+            source: "admin-override",
+            status: "supported",
+            verified: false,
+          },
+        },
+        id: "custom-asr",
+      },
+    ]);
+
+    expect(models[0]?.capabilities?.["audio.transcription"]).toEqual({
+      source: "admin-override",
+      status: "supported",
+      verified: false,
+    });
+  });
+
   test("accepts supportsThinking when it is boolean", () => {
     const models = validateCustomModels([
       {

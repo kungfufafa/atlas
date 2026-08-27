@@ -1,10 +1,21 @@
 import { generateSessionTitleFromMessages } from "@atlas/agent";
-import type { ChatMessage, UserConfig } from "@atlas/core";
+import type {
+  ChatMessage,
+  ProviderClient,
+  ProviderInstance,
+  UserConfig,
+} from "@atlas/core";
 import type { DatabaseAdapter, StoredProfileRecord } from "@atlas/db";
 import { createProviderForInstance } from "../providers/create";
 import { resolveProfileProviderSelection } from "./provider-instance-helpers";
 
 export const SESSION_TITLE_FALLBACK = "Untitled";
+
+type SessionTitleProviderFactory = (
+  instance: ProviderInstance,
+  model: string,
+  userConfig: UserConfig
+) => ProviderClient | null;
 
 export class SessionTitleService {
   private readonly inFlight = new Set<string>();
@@ -14,7 +25,10 @@ export class SessionTitleService {
     private readonly getUserConfig: (
       orgId: string
     ) => UserConfig | null | Promise<UserConfig | null>,
-    private readonly providerFactory: typeof createProviderForInstance = createProviderForInstance
+    private readonly providerFactory: SessionTitleProviderFactory = (
+      instance,
+      model
+    ) => createProviderForInstance(instance, model)
   ) {}
 
   scheduleSessionTitleGeneration(sessionId: string): void {
@@ -150,7 +164,7 @@ export class SessionTitleService {
     return this.providerFactory(
       selection.instance,
       selection.model,
-      process.env
+      userConfig
     );
   }
 }

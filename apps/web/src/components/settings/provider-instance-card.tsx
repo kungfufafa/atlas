@@ -8,6 +8,7 @@ import {
   Edit03Icon,
   Key01Icon,
   ListViewIcon,
+  Settings01Icon,
 } from "hugeicons-react";
 import type { ReactNode } from "react";
 import { CatalogProviderModelFields } from "@/components/CatalogProviderModelFields";
@@ -15,6 +16,7 @@ import { CustomProviderFields } from "@/components/CustomProviderFields";
 import type { CatalogShortlistProvider } from "@/components/catalog-provider-model-fields.shared";
 import { OpenRouterProviderModelFields } from "@/components/OpenRouterProviderModelFields";
 import { ShortlistBrowseProviderModelFields } from "@/components/ShortlistBrowseProviderModelFields";
+import { CapabilityEvidenceEditor } from "@/components/settings/CapabilityEvidenceEditor";
 import {
   ProviderCompatibleEditDialog,
   ProviderManageModelsDialog,
@@ -141,6 +143,12 @@ export function ProviderInstanceCard({
               </ProviderActionButton>
             ) : null}
             <ProviderActionButton
+              label="Capability evidence"
+              onClick={card.openCapabilityEvidence}
+            >
+              <Settings01Icon className="size-3.5" />
+            </ProviderActionButton>
+            <ProviderActionButton
               label={instance.hasApiKey ? "Update key" : "Add key"}
               onClick={() => card.setReplaceKeyOpen(true)}
             >
@@ -170,6 +178,15 @@ export function ProviderInstanceCard({
         open={card.replaceKeyOpen}
         providerType={card.providerType}
         showApiKey={card.showApiKey}
+      />
+
+      <CapabilityEvidenceEditor
+        busy={card.busy}
+        dialogError={card.dialogError}
+        instance={instance}
+        onOpenChange={card.setCapabilityEvidenceOpen}
+        onSave={card.saveCapabilityEvidence}
+        open={card.capabilityEvidenceOpen}
       />
 
       {card.isCompatibleLike ? (

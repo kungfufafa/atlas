@@ -76,6 +76,35 @@ describe("modelListRowVisionEnabled", () => {
 });
 
 describe("normalizeModelListRows", () => {
+  test("preserves generic provider capability claims for saving", () => {
+    const capabilities = {
+      "audio.transcription": {
+        source: "provider-discovery" as const,
+        status: "supported" as const,
+        verified: true,
+      },
+      "vendor.custom-operation": {
+        source: "provider-discovery" as const,
+        status: "unknown" as const,
+      },
+    };
+    const normalized = normalizeModelListRows([
+      {
+        capabilities,
+        id: "  provider/generic-model  ",
+        name: "  Generic Model  ",
+      },
+    ]);
+
+    expect(normalized).toEqual([
+      {
+        capabilities,
+        id: "provider/generic-model",
+        name: "Generic Model",
+      },
+    ]);
+  });
+
   test("preserves reasoningEffortValues array and cleans empty items", () => {
     const normalized = normalizeModelListRows([
       {
@@ -155,5 +184,26 @@ describe("provider-settings-seed", () => {
     ]);
 
     expect(seeded[0].reasoningEffortValues).toEqual(["low", "medium", "high"]);
+  });
+
+  test("preserves generic capability evidence while editing providers", () => {
+    const capabilities = {
+      "vendor.custom-operation": {
+        source: "provider-discovery" as const,
+        status: "supported" as const,
+      },
+    };
+    const model = {
+      capabilities,
+      id: "vendor/model",
+      supportsVision: true,
+    };
+
+    expect(seedManageModelRows([model], [])[0]).toEqual(
+      expect.objectContaining({ capabilities, supportsVision: true })
+    );
+    expect(seedShortlistManageModelRows([model])[0]).toEqual(
+      expect.objectContaining({ capabilities, supportsVision: true })
+    );
   });
 });

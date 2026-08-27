@@ -1,12 +1,5 @@
 import { clampAttachmentPanelWidth } from "@/components/chat/attachment-panel-width";
-import {
-  isDocxFile,
-  isHtmlArtifactMimeType,
-  isImageArtifactMimeType,
-  isLegacyDocFile,
-  isMarkdownArtifactMimeType,
-  isVideoArtifactMimeType,
-} from "@/lib/chat-artifacts";
+import { isVideoArtifactMimeType } from "@/lib/chat-artifacts";
 
 /** Split-view canvas width — close to Claude/Grok, still leaves the thread readable. */
 const CANVAS_PANEL_WIDTH = 720;
@@ -66,32 +59,4 @@ export function artifactPanelSubtitle({
   }
 
   return null;
-}
-
-export function downloadActionLabel(mimeType: string): string {
-  if (isHtmlArtifactMimeType(mimeType)) {
-    return "Download as HTML";
-  }
-
-  if (isDocxFile("", mimeType) || isLegacyDocFile("", mimeType)) {
-    return "Download as Word";
-  }
-
-  if (isMarkdownArtifactMimeType(mimeType)) {
-    return "Download as Markdown";
-  }
-
-  if (isImageArtifactMimeType(mimeType)) {
-    return "Download image";
-  }
-
-  if (isVideoArtifactMimeType(mimeType)) {
-    return "Download video";
-  }
-
-  if (mimeType === "application/json") {
-    return "Download as JSON";
-  }
-
-  return "Download";
 }

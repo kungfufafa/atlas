@@ -1,16 +1,20 @@
 import type { CreateProviderResponse } from "@atlas/core/contract";
 import { isDiscoveryModelProvider } from "@atlas/core/discovery-providers";
-import { ollamaRequiresApiKey } from "@atlas/core/ollama-provider-config";
 import { ViewIcon, ViewOffIcon } from "hugeicons-react";
 import { useState } from "react";
 import { BrowsableModelFields } from "@/components/BrowsableModelFields";
 import { CustomProviderFields } from "@/components/CustomProviderFields";
+import { ModelListEditor } from "@/components/ModelListEditor";
 import { ModelsBrowseList } from "@/components/ModelsBrowseList";
 import { OllamaProviderSetupFields } from "@/components/OllamaProviderSetupFields";
 import { OpenRouterProviderModelFields } from "@/components/OpenRouterProviderModelFields";
 import { ProviderSelect } from "@/components/ProviderSelect";
 import { isProviderSelectionDisabled } from "@/components/provider-setup-form.shared";
-import { RemoteModelsBrowseList } from "@/components/RemoteModelsBrowseList";
+import {
+  type RemoteModelRow,
+  RemoteModelsBrowseList,
+} from "@/components/RemoteModelsBrowseList";
+import { remoteModelRowToCustomModelEntry } from "@/components/remote-models-browse.shared";
 import { ShortlistBrowseProviderModelFields } from "@/components/ShortlistBrowseProviderModelFields";
 import { isShortlistBrowseProvider } from "@/components/shortlist-browse-providers.shared";
 import { Button } from "@/components/ui/button";
@@ -35,7 +39,9 @@ import { useProviderSetupForm } from "@/hooks/use-provider-setup-form";
 import {
   apiKeyPlaceholder,
   formatProviderLabel,
+  isApiKeyRequiredForProvider,
   type SelectedProvider,
+  shouldShowApiKeyDashboardHint,
 } from "@/lib/models";
 
 interface ProviderSetupFormProps {
@@ -68,8 +74,7 @@ function ProviderApiKeyField({
   selectedProvider: SelectedProvider;
   showApiKey: boolean;
 }) {
-  const showDashboardHint =
-    selectedProvider !== "openai_compatible" && selectedProvider !== "ollama";
+  const showDashboardHint = shouldShowApiKeyDashboardHint(selectedProvider);
 
   return (
     <FormField
@@ -125,6 +130,206 @@ function ProviderApiKeyField({
   );
 }
 
+function ProviderSetupFieldGroups({
+  controlsDisabled,
+  density,
+  form,
+}: {
+  controlsDisabled: boolean;
+  density: "default" | "compact";
+  form: ReturnType<typeof useProviderSetupForm>;
+}) {
+  const directDiscoveryProvider =
+    form.selectedProvider !== "openai_compatible" &&
+    isDiscoveryModelProvider(form.selectedProvider)
+      ? form.selectedProvider
+      : null;
+  const isDirectDiscoveryProvider = directDiscoveryProvider !== null;
+
+  return (
+    <>
+      {form.selectedProvider === "cloudflare" ? (
+        <FormField
+          density={density}
+          footer={
+            form.baseUrlError ? (
+              <p
+                className="text-destructive text-sm"
+                id="cloudflare-account-id-error"
+                role="alert"
+              >
+                {form.baseUrlError}
+              </p>
+            ) : null
+          }
+          id="cloudflare-account-id"
+          label="Account ID"
+        >
+          <Input
+            aria-describedby={
+              form.baseUrlError ? "cloudflare-account-id-error" : undefined
+            }
+            aria-invalid={form.baseUrlError != null}
+            autoComplete="off"
+            disabled={controlsDisabled}
+            id="cloudflare-account-id"
+            onChange={(event) => form.setBaseUrl(event.target.value)}
+            value={form.baseUrl}
+          />
+        </FormField>
+      ) : null}
+
+      {directDiscoveryProvider ? (
+        <CustomProviderFields
+          apiKey={form.apiKey}
+          baseUrl={form.baseUrl}
+          baseUrlError={form.baseUrlError}
+          browseLabel={formatProviderLabel(directDiscoveryProvider)}
+          credentialRevision={form.remoteCredentialRevision}
+          customModels={form.customModels}
+          density={density}
+          disabled={controlsDisabled}
+          displayName={formatProviderLabel(directDiscoveryProvider)}
+          displayNameError={null}
+          identityReadOnly
+          key={directDiscoveryProvider}
+          modelsError={form.modelsError}
+          onBaseUrlChange={form.setBaseUrl}
+          onCustomModelsChange={form.setCustomModels}
+          onDisplayNameChange={form.setDisplayName}
+          remoteProvider={directDiscoveryProvider}
+        />
+      ) : null}
+
+      {form.selectedProvider === "openrouter" ? (
+        <OpenRouterProviderModelFields
+          customModels={form.openRouterModels}
+          density={density}
+          disabled={controlsDisabled}
+          modelsError={form.openRouterModelsError}
+          onCustomModelsChange={form.handleOpenRouterModelsChange}
+        />
+      ) : null}
+
+      {form.selectedProvider === "ollama" ? (
+        <>
+          <OllamaProviderSetupFields
+            baseUrl={form.baseUrl}
+            baseUrlError={form.baseUrlError}
+            density={density}
+            disabled={controlsDisabled}
+            hostMode={form.ollamaHostMode}
+            onBaseUrlChange={form.setBaseUrl}
+            onHostModeChange={form.handleOllamaHostModeChange}
+          />
+          <BrowsableModelFields
+            browseLabel="Browse Ollama"
+            customModels={form.customModels}
+            density={density}
+            disabled={controlsDisabled}
+            fieldId="ollama-models"
+            footerHint={
+              <>
+                Add models by ID or browse live models from your Ollama host
+                (for example <span className="font-mono">llama3.2</span>).
+              </>
+            }
+            modelsError={form.modelsError}
+            onCustomModelsChange={form.setCustomModels}
+            renderBrowse={({ multiSelect, onAddMany, onSelect }) => (
+              <RemoteModelsBrowseList
+                apiKey={form.apiKey}
+                baseUrl={form.baseUrl}
+                browseLabel="Ollama"
+                className="h-72 rounded-md border border-border"
+                credentialRevision={form.remoteCredentialRevision}
+                disabled={controlsDisabled}
+                hostMode={form.ollamaHostMode}
+                multiSelect={multiSelect}
+                onAddMany={onAddMany}
+                onSelect={onSelect}
+                provider="ollama"
+              />
+            )}
+            showPricing={false}
+            showThinking
+            showVision
+            toModelRow={(row: RemoteModelRow) =>
+              remoteModelRowToCustomModelEntry(row)
+            }
+          />
+        </>
+      ) : null}
+
+      {isShortlistBrowseProvider(form.selectedProvider) ? (
+        <ShortlistBrowseProviderModelFields
+          apiKey={
+            form.selectedProvider === "fireworks" ? form.apiKey : undefined
+          }
+          customModels={form.shortlistModels}
+          density={density}
+          disabled={controlsDisabled}
+          modelsError={form.shortlistModelsError}
+          onCustomModelsChange={form.handleShortlistModelsChange}
+          provider={form.selectedProvider}
+        />
+      ) : null}
+
+      {form.usesGenericCustomModelEditor ? (
+        <FormField
+          density={density}
+          footer={
+            form.modelsError ? (
+              <p className="text-destructive text-sm" role="alert">
+                {form.modelsError}
+              </p>
+            ) : null
+          }
+          id="provider-models"
+          label="Models"
+        >
+          <ModelListEditor
+            disabled={controlsDisabled}
+            models={form.customModels}
+            onChange={form.setCustomModels}
+            showThinking
+            showVision
+          />
+        </FormField>
+      ) : null}
+
+      {form.selectedProvider !== "openrouter" &&
+      !isShortlistBrowseProvider(form.selectedProvider) &&
+      form.selectedProvider !== "ollama" &&
+      form.selectedProvider !== "openai_compatible" &&
+      !form.usesGenericCustomModelEditor &&
+      !isDirectDiscoveryProvider ? (
+        <FormField density={density} id="model" label="Model">
+          <Select
+            disabled={controlsDisabled || form.filteredModels.length === 0}
+            onValueChange={(value) =>
+              form.setSelectedModel(value == null ? "" : String(value))
+            }
+            value={form.selectedModel}
+          >
+            <SelectTrigger className="w-full" id="model">
+              <SelectValue placeholder="Select a model" />
+            </SelectTrigger>
+            <SelectContent>
+              {form.filteredModels.map((model) => (
+                <SelectItem key={model.id} value={model.id}>
+                  {model.name}
+                  {model.default ? " (default)" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+      ) : null}
+    </>
+  );
+}
+
 export function ProviderSetupForm({
   submitLabel = "Save & continue",
   showHeading = true,
@@ -133,16 +338,9 @@ export function ProviderSetupForm({
 }: ProviderSetupFormProps) {
   const form = useProviderSetupForm({ onSuccess });
   const [isBrowsing, setIsBrowsing] = useState(false);
-  const ollamaKeyRequired = ollamaRequiresApiKey(form.ollamaHostMode);
-  const apiKeyOptional =
-    form.selectedProvider === "openai_compatible" ||
-    (form.selectedProvider === "ollama" && !ollamaKeyRequired);
-  const directDiscoveryProvider =
-    form.selectedProvider !== "openai_compatible" &&
-    isDiscoveryModelProvider(form.selectedProvider)
-      ? form.selectedProvider
-      : null;
-  const isDirectDiscoveryProvider = directDiscoveryProvider !== null;
+  const apiKeyOptional = !isApiKeyRequiredForProvider(form.selectedProvider, {
+    hostMode: form.ollamaHostMode,
+  });
   const providerSelectionDisabled = isProviderSelectionDisabled({
     saving: form.busy,
     testingConnection: form.testingConnection,
@@ -171,7 +369,8 @@ export function ProviderSetupForm({
             Connect a provider
           </h3>
           <p className="mt-1 text-muted-foreground text-xs">
-            Choose a provider, paste your API key, and pick a default model.
+            Choose a provider, enter credentials if required, and pick a default
+            model.
           </p>
         </div>
       )}
@@ -254,176 +453,11 @@ export function ProviderSetupForm({
             />
           )}
 
-          {form.selectedProvider === "cloudflare" ? (
-            <FormField
-              density={density}
-              footer={
-                form.baseUrlError ? (
-                  <p
-                    className="text-destructive text-sm"
-                    id="cloudflare-account-id-error"
-                    role="alert"
-                  >
-                    {form.baseUrlError}
-                  </p>
-                ) : null
-              }
-              id="cloudflare-account-id"
-              label="Account ID"
-            >
-              <Input
-                aria-describedby={
-                  form.baseUrlError ? "cloudflare-account-id-error" : undefined
-                }
-                aria-invalid={form.baseUrlError != null}
-                autoComplete="off"
-                disabled={controlsDisabled}
-                id="cloudflare-account-id"
-                onChange={(event) => form.setBaseUrl(event.target.value)}
-                value={form.baseUrl}
-              />
-            </FormField>
-          ) : null}
-
-          {directDiscoveryProvider ? (
-            <CustomProviderFields
-              apiKey={form.apiKey}
-              baseUrl={form.baseUrl}
-              baseUrlError={form.baseUrlError}
-              browseLabel={formatProviderLabel(directDiscoveryProvider)}
-              credentialRevision={form.remoteCredentialRevision}
-              customModels={form.customModels}
-              density={density}
-              disabled={controlsDisabled}
-              displayName={formatProviderLabel(directDiscoveryProvider)}
-              displayNameError={null}
-              identityReadOnly
-              key={directDiscoveryProvider}
-              modelsError={form.modelsError}
-              onBaseUrlChange={form.setBaseUrl}
-              onCustomModelsChange={form.setCustomModels}
-              onDisplayNameChange={form.setDisplayName}
-              remoteProvider={directDiscoveryProvider}
-            />
-          ) : null}
-
-          {form.selectedProvider === "openrouter" ? (
-            <OpenRouterProviderModelFields
-              customModels={form.openRouterModels}
-              density={density}
-              disabled={controlsDisabled}
-              modelsError={form.openRouterModelsError}
-              onCustomModelsChange={form.handleOpenRouterModelsChange}
-            />
-          ) : null}
-
-          {form.selectedProvider === "ollama" ? (
-            <>
-              <OllamaProviderSetupFields
-                baseUrl={form.baseUrl}
-                baseUrlError={form.baseUrlError}
-                density={density}
-                disabled={controlsDisabled}
-                hostMode={form.ollamaHostMode}
-                onBaseUrlChange={form.setBaseUrl}
-                onHostModeChange={form.handleOllamaHostModeChange}
-              />
-              <BrowsableModelFields
-                browseLabel="Browse Ollama"
-                customModels={form.customModels}
-                density={density}
-                disabled={controlsDisabled}
-                fieldId="ollama-models"
-                footerHint={
-                  <>
-                    Add models by ID or browse live models from your Ollama host
-                    (for example <span className="font-mono">llama3.2</span>).
-                  </>
-                }
-                modelsError={form.modelsError}
-                onCustomModelsChange={form.setCustomModels}
-                renderBrowse={({ multiSelect, onAddMany, onSelect }) => (
-                  <RemoteModelsBrowseList
-                    apiKey={form.apiKey}
-                    baseUrl={form.baseUrl}
-                    browseLabel="Ollama"
-                    className="h-72 rounded-md border border-border"
-                    credentialRevision={form.remoteCredentialRevision}
-                    disabled={controlsDisabled}
-                    hostMode={form.ollamaHostMode}
-                    multiSelect={multiSelect}
-                    onAddMany={onAddMany}
-                    onSelect={onSelect}
-                    provider="ollama"
-                  />
-                )}
-                showPricing={false}
-                showThinking
-                showVision
-                toModelRow={(row: {
-                  id: string;
-                  name: string;
-                  reasoningEffortValues?: string[];
-                  supportsThinking?: boolean;
-                  supportsVision?: boolean;
-                }) => ({
-                  id: row.id,
-                  name: row.name,
-                  ...(row.supportsThinking === undefined
-                    ? {}
-                    : { supportsThinking: row.supportsThinking }),
-                  ...(row.reasoningEffortValues?.length
-                    ? { reasoningEffortValues: row.reasoningEffortValues }
-                    : {}),
-                  ...(row.supportsVision === undefined
-                    ? {}
-                    : { supportsVision: row.supportsVision }),
-                })}
-              />
-            </>
-          ) : null}
-
-          {isShortlistBrowseProvider(form.selectedProvider) ? (
-            <ShortlistBrowseProviderModelFields
-              apiKey={
-                form.selectedProvider === "fireworks" ? form.apiKey : undefined
-              }
-              customModels={form.shortlistModels}
-              density={density}
-              disabled={controlsDisabled}
-              modelsError={form.shortlistModelsError}
-              onCustomModelsChange={form.handleShortlistModelsChange}
-              provider={form.selectedProvider}
-            />
-          ) : null}
-
-          {form.selectedProvider !== "openrouter" &&
-          !isShortlistBrowseProvider(form.selectedProvider) &&
-          form.selectedProvider !== "ollama" &&
-          form.selectedProvider !== "openai_compatible" &&
-          !isDirectDiscoveryProvider ? (
-            <FormField density={density} id="model" label="Model">
-              <Select
-                disabled={controlsDisabled || form.filteredModels.length === 0}
-                onValueChange={(value) =>
-                  form.setSelectedModel(value == null ? "" : String(value))
-                }
-                value={form.selectedModel}
-              >
-                <SelectTrigger className="w-full" id="model">
-                  <SelectValue placeholder="Select a model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {form.filteredModels.map((model) => (
-                    <SelectItem key={model.id} value={model.id}>
-                      {model.name}
-                      {model.default ? " (default)" : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormField>
-          ) : null}
+          <ProviderSetupFieldGroups
+            controlsDisabled={controlsDisabled}
+            density={density}
+            form={form}
+          />
 
           {form.testSuccess ? (
             <p

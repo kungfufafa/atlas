@@ -46,8 +46,6 @@ export interface CerebrasModelRow {
   vision: boolean;
 }
 
-export const CEREBRAS_MODELS_URL = "https://api.cerebras.ai/public/v1/models";
-
 export const CEREBRAS_FALLBACK_MODELS: CerebrasModelRow[] = [
   {
     contextLength: 131_072,

@@ -1,4 +1,5 @@
 import { describe, expect, spyOn, test } from "bun:test";
+import { PROVIDER_CAPABILITY_IDS } from "@atlas/core";
 import {
   compatibleModelSupportsThinking,
   fetchRemoteOpenAIModels,
@@ -408,6 +409,13 @@ describe("fetchRemoteOpenAIModels capabilities", () => {
         name: "meta-llama/llama-3.3-70b",
       },
       {
+        capabilities: {
+          [PROVIDER_CAPABILITY_IDS.chatReasoning]: {
+            source: "provider-discovery",
+            status: "supported",
+            verified: true,
+          },
+        },
         id: "qwen/qwen3.8-max-free",
         name: "Qwen 3.8 Max Free",
         reasoningEffortValues: ["low", "medium", "xhigh"],

@@ -52,15 +52,12 @@ Telegram voice notes and audio files are turned into text before they are sent t
 
 To enable that:
 
-1. Open **Settings** in the Atlas web app
-2. Add an **OpenAI** provider in **LLM providers** if you have not added one yet
-3. In **Audio transcription model**, choose an OpenAI model such as Whisper
-4. Wait for the `Saved` confirmation
+1. Open **Settings → LLM providers** and configure a provider model that supports audio transcription
+2. Go to **Settings → Capability routing**
+3. Under **Audio transcription**, choose the primary model
+4. Optionally add fallback models, then select **Save**
 
-If no OpenAI provider is connected, the audio transcription setting stays unavailable.
-Without this setting, text chat still works, but Telegram audio messages will not be transcribed for the agent.
-
-![Choose an OpenAI audio transcription model under Settings](/screenshots/telegram-audio-transcription.png)
+If no eligible model appears, confirm that the provider and transcription model are configured for the active workspace. Without this setting, text chat still works, but Telegram audio messages will not be transcribed for the agent. See [Providers — Route provider capabilities](/providers#route-provider-capabilities) for fallback behavior and troubleshooting.
 
 ## Step 4: Pair your Telegram account
 

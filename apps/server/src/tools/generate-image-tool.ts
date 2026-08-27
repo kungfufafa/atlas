@@ -12,7 +12,7 @@ import {
 import type { DatabaseAdapter } from "@atlas/db";
 import { createAttachmentSaver } from "../services/attachment-service";
 import {
-  generateImageWithOpenAI,
+  generateImage,
   IMAGE_GENERATION_SIZES,
   IMAGE_MODEL_REQUIRED_MESSAGE,
   normalizeImageGenerationSize,
@@ -49,8 +49,8 @@ export type GenerateImageToolOutput =
 export interface GenerateImageToolDeps {
   db: DatabaseAdapter;
   ensureSettingsLoaded: () => Promise<void>;
-  /** Test seam — defaults to live OpenAI Images call. */
-  generateImage?: typeof generateImageWithOpenAI;
+  /** Test seam — defaults to the selected capability adapter. */
+  generateImage?: typeof generateImage;
   getUserConfig: (
     orgId: string
   ) => UserConfig | null | undefined | Promise<UserConfig | null | undefined>;
@@ -66,7 +66,7 @@ export function createGenerateImageTool(
 ): ToolDefinition {
   return {
     description:
-      "Generate an image from a text prompt using the workspace image model (OpenAI gpt-image-2). Saves a PNG under artifacts/ with a metadata sidecar and session attachment when available. Model is configured in Settings — do not pass a model name.",
+      "Generate an image from a text prompt using the workspace image-generation capability. Saves the image under artifacts/ with a metadata sidecar and session attachment when available. The model is configured in Settings — do not pass a model name.",
     name: GENERATE_IMAGE_TOOL_NAME,
     parallelSafe: false,
     parameters: {
@@ -143,15 +143,10 @@ export async function runGenerateImageTool(
     return { error: IMAGE_MODEL_REQUIRED_MESSAGE };
   }
 
-  const generate = deps.generateImage ?? generateImageWithOpenAI;
+  const executeImageGeneration = deps.generateImage ?? generateImage;
   let result;
   try {
-    result = await generate({
-      apiKey: selection.apiKey,
-      model: selection.model,
-      prompt,
-      size,
-    });
+    result = await executeImageGeneration(selection, { prompt, size });
   } catch (error) {
     return { error: errorMessage(error) };
   }

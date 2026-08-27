@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
+import { PROVIDER_CAPABILITY_IDS } from "@atlas/core";
 import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { setupTestConfigDir } from "../test-config-dir";
 import { AgentService } from "./agent-service";
@@ -73,6 +74,13 @@ async function createScenario() {
         {
           apiKey: "",
           baseUrl: "https://8.8.8.8/v1",
+          capabilityOverrides: {
+            [PROVIDER_CAPABILITY_IDS.chatToolUse]: {
+              source: "admin-override",
+              status: "supported",
+              verified: true,
+            },
+          },
           createdAt: now,
           customModels: [
             { default: true, id: "profile-default" },
@@ -91,6 +99,7 @@ async function createScenario() {
           type: "openrouter",
         },
       ],
+      thinkingEnabled: false,
     },
     orgId: ORG_ID,
     updatedAt: now,

@@ -1,4 +1,7 @@
+import type { ProviderCapabilityClaims } from "@atlas/core/provider-capabilities";
+
 export interface CapabilityBrowseRow {
+  capabilities?: ProviderCapabilityClaims;
   contextLength?: number;
   deprecated?: boolean;
   description?: string;
@@ -31,6 +34,7 @@ export function formatBrowseCapabilities(row: {
 }
 
 export function capabilityBrowseRowToModelListRow(row: CapabilityBrowseRow): {
+  capabilities?: ProviderCapabilityClaims;
   id: string;
   name: string;
   supportsThinking: boolean;
@@ -39,6 +43,7 @@ export function capabilityBrowseRowToModelListRow(row: CapabilityBrowseRow): {
   outputPerMillionUsd?: number;
 } {
   return {
+    ...(row.capabilities ? { capabilities: row.capabilities } : {}),
     id: row.id,
     name: row.name,
     supportsThinking: row.reasoning === true,

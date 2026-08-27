@@ -50,6 +50,7 @@ export function useProviderInstanceCard({
   const [replaceKeyOpen, setReplaceKeyOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
+  const [capabilityEvidenceOpen, setCapabilityEvidenceOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [dialogError, setDialogError] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState("");
@@ -128,6 +129,11 @@ export function useProviderInstanceCard({
     setEditOpen(true);
   };
 
+  const openCapabilityEvidence = () => {
+    setDialogError(null);
+    setCapabilityEvidenceOpen(true);
+  };
+
   const runUpdate = async (
     request: Parameters<typeof onUpdate>[1],
     close?: () => void
@@ -150,7 +156,7 @@ export function useProviderInstanceCard({
 
   const handleReplaceKey = async () => {
     const nextError = validateApiKeyForProvider(apiKey, providerType, {
-      ollamaHostMode: instance.hostMode ?? undefined,
+      hostMode: instance.hostMode ?? undefined,
     });
 
     if (nextError) {
@@ -243,6 +249,16 @@ export function useProviderInstanceCard({
     );
   };
 
+  const saveCapabilityEvidence = async (
+    capabilityOverrides: NonNullable<
+      UpdateProviderRequest["capabilityOverrides"]
+    >
+  ) => {
+    await runUpdate({ capabilityOverrides }, () =>
+      setCapabilityEvidenceOpen(false)
+    );
+  };
+
   const handleManageModelsChange = (rows: ModelListRow[]) => {
     setManageModels(rows);
     if (dialogError) {
@@ -257,6 +273,7 @@ export function useProviderInstanceCard({
   return {
     apiKey,
     busy,
+    capabilityEvidenceOpen,
     catalogModelsForType,
     dialogError,
     editBaseUrl,
@@ -275,14 +292,17 @@ export function useProviderInstanceCard({
     isShortlistBrowse,
     manageModels,
     manageOpen,
+    openCapabilityEvidence,
     openEdit,
     openManage,
     providerType,
     remoteProvider,
     replaceKeyOpen,
+    saveCapabilityEvidence,
     saveCompatible,
     saveManageModels,
     setApiKey,
+    setCapabilityEvidenceOpen,
     setEditBaseUrl,
     setEditLabel,
     setEditOpen,

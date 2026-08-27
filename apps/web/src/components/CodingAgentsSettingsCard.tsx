@@ -1,5 +1,5 @@
 import type { CodingHarnessSettingsResponse } from "@atlas/core/contract";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { client, formatError } from "@/lib/client";
@@ -9,14 +9,9 @@ export function CodingAgentsSettingsCard({ orgId }: { orgId: string }) {
     useState<CodingHarnessSettingsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const currentOrgId = useRef(orgId);
-  currentOrgId.current = orgId;
 
   useEffect(() => {
     let cancelled = false;
-    setSettings(null);
-    setError(null);
-    setSaving(false);
     void client
       .getCodingHarnessSettings(orgId)
       .then((response) => {
@@ -35,25 +30,15 @@ export function CodingAgentsSettingsCard({ orgId }: { orgId: string }) {
   }, [orgId]);
 
   const toggleProviderPassthrough = async (enabled: boolean) => {
-    const requestedOrgId = orgId;
     setSaving(true);
     setError(null);
     try {
-      const response = await client.setCodingHarnessSettings(
-        enabled,
-        requestedOrgId
-      );
-      if (currentOrgId.current === requestedOrgId) {
-        setSettings(response);
-      }
+      const response = await client.setCodingHarnessSettings(enabled, orgId);
+      setSettings(response);
     } catch (cause) {
-      if (currentOrgId.current === requestedOrgId) {
-        setError(formatError(cause));
-      }
+      setError(formatError(cause));
     } finally {
-      if (currentOrgId.current === requestedOrgId) {
-        setSaving(false);
-      }
+      setSaving(false);
     }
   };
 

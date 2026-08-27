@@ -1,6 +1,9 @@
 import {
   type AgentBrowserStatusResponse,
   AtlasApiError,
+  type CapabilityCatalogResponse,
+  type CapabilityMappingsResponse,
+  type CapabilityOptionsResponse,
   type ComposioSettingsResponse,
   type ConfigureProviderRequest,
   type ConfigureProviderResponse,
@@ -27,6 +30,8 @@ import {
   type TranscribeAudioRequest,
   type TranscribeAudioResponse,
   type TranscriptionSettingsResponse,
+  type UpdateCapabilityMappingRequest,
+  type UpdateCapabilityMappingResponse,
   type UpdateComposioSettingsRequest,
   type UpdateDiscordSettingsRequest,
   type UpdateEmailSettingsRequest,
@@ -73,6 +78,11 @@ export function registerModelRoutes(
       .string()
       .openapi({ param: { in: "path", name: "providerId" } }),
   });
+  const capabilityIdParam = z.object({
+    capabilityId: z
+      .string()
+      .openapi({ param: { in: "path", name: "capabilityId" } }),
+  });
   const modelsResponseSchema = z
     .object({ models: z.array(z.object({}).passthrough()) })
     .passthrough()
@@ -81,6 +91,26 @@ export function registerModelRoutes(
     .object({ providers: z.array(z.object({}).passthrough()) })
     .passthrough()
     .openapi("ListProvidersResponse");
+  const capabilityCatalogResponseSchema = z
+    .object({})
+    .passthrough()
+    .openapi("CapabilityCatalogResponse");
+  const capabilityMappingsResponseSchema = z
+    .object({})
+    .passthrough()
+    .openapi("CapabilityMappingsResponse");
+  const capabilityOptionsResponseSchema = z
+    .object({})
+    .passthrough()
+    .openapi("CapabilityOptionsResponse");
+  const updateCapabilityMappingRequestSchema = z
+    .object({})
+    .passthrough()
+    .openapi("UpdateCapabilityMappingRequest");
+  const updateCapabilityMappingResponseSchema = z
+    .object({})
+    .passthrough()
+    .openapi("UpdateCapabilityMappingResponse");
   const createProviderResponseSchema = z
     .object({})
     .passthrough()
@@ -314,6 +344,91 @@ export function registerModelRoutes(
         },
       },
       summary: "List configured provider instances",
+      tags: ["Models"],
+    })
+  );
+  app.openAPIRegistry.registerPath(
+    createRoute({
+      method: "get",
+      operationId: "getCapabilityCatalog",
+      path: "/v1/capabilities/catalog",
+      responses: {
+        200: {
+          content: {
+            "application/json": { schema: capabilityCatalogResponseSchema },
+          },
+          description: "Provider capability catalog",
+        },
+      },
+      summary: "List provider capabilities exposed by installed adapters",
+      tags: ["Models"],
+    })
+  );
+  app.openAPIRegistry.registerPath(
+    createRoute({
+      method: "get",
+      operationId: "getCapabilityMappings",
+      path: "/v1/capabilities/mappings",
+      responses: {
+        200: {
+          content: {
+            "application/json": { schema: capabilityMappingsResponseSchema },
+          },
+          description: "Workspace capability mappings",
+        },
+      },
+      summary: "Get provider mappings for the active workspace",
+      tags: ["Models"],
+    })
+  );
+  app.openAPIRegistry.registerPath(
+    createRoute({
+      method: "get",
+      operationId: "getCapabilityOptions",
+      path: "/v1/capabilities/options",
+      responses: {
+        200: {
+          content: {
+            "application/json": { schema: capabilityOptionsResponseSchema },
+          },
+          description: "Eligible capability targets for configured providers",
+        },
+      },
+      summary: "List provider models available for capability routing",
+      tags: ["Models"],
+    })
+  );
+  app.openAPIRegistry.registerPath(
+    createRoute({
+      method: "put",
+      operationId: "setCapabilityMapping",
+      path: "/v1/capabilities/mappings/{capabilityId}",
+      request: {
+        body: {
+          content: {
+            "application/json": {
+              schema: updateCapabilityMappingRequestSchema,
+            },
+          },
+          required: true,
+        },
+        params: capabilityIdParam,
+      },
+      responses: {
+        200: {
+          content: {
+            "application/json": {
+              schema: updateCapabilityMappingResponseSchema,
+            },
+          },
+          description: "Updated workspace capability mapping",
+        },
+        400: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Validation error",
+        },
+      },
+      summary: "Configure a provider mapping for the active workspace",
       tags: ["Models"],
     })
   );
@@ -761,7 +876,7 @@ export function registerModelRoutes(
           description: "Upstream error",
         },
       },
-      summary: "Generate an image with configured gpt-image-2 model",
+      summary: "Generate an image with the configured provider capability",
       tags: ["Models"],
     })
   );
@@ -1181,6 +1296,46 @@ export function registerModelRoutes(
     requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     return json<ListProvidersResponse>(await agent.listProviders(orgId));
+  });
+
+  app.get("/v1/capabilities/catalog", (c) => {
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    return json<CapabilityCatalogResponse>(agent.getCapabilityCatalog());
+  });
+
+  app.get("/v1/capabilities/mappings", async (c) => {
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    return json<CapabilityMappingsResponse>(
+      await agent.getOrgCapabilityMappings(orgId)
+    );
+  });
+
+  app.get("/v1/capabilities/options", async (c) => {
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    return json<CapabilityOptionsResponse>(
+      await agent.getOrgCapabilityOptions(orgId)
+    );
+  });
+
+  app.put("/v1/capabilities/mappings/:capabilityId", async (c) => {
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    const capabilityId = decodeURIComponent(c.req.param("capabilityId"));
+    const body = await readJson<UpdateCapabilityMappingRequest>(c.req.raw);
+
+    try {
+      return json<UpdateCapabilityMappingResponse>(
+        await agent.setOrgCapabilityMapping(orgId, capabilityId, body)
+      );
+    } catch (error) {
+      if (error instanceof AtlasApiError) {
+        return errorResponse(error.message, error.status);
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      return errorResponse(message, 400);
+    }
   });
 
   app.post("/v1/providers/test", async (c) => {

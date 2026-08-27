@@ -1,26 +1,8 @@
-import type { ChannelAccessMode } from "@atlas/core/contract";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
-
-export const CHANNEL_ACCESS_MODE_OPTIONS = [
-  { label: "Open", value: "open" },
-  { label: "Allowed list only", value: "allowlist" },
-  { label: "Blocked list filter", value: "denylist" },
-  { label: "Chat access code", value: "pairing" },
-] as const satisfies ReadonlyArray<{
-  label: string;
-  value: ChannelAccessMode;
-}>;
-
-export function channelAccessModeLabel(mode: ChannelAccessMode): string {
-  return (
-    CHANNEL_ACCESS_MODE_OPTIONS.find((option) => option.value === mode)
-      ?.label ?? mode
-  );
-}
 
 export function IntegrationCardShell({
   embedded,

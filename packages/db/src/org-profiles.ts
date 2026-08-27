@@ -202,7 +202,7 @@ export async function ensureGenerateImageToolDefinition(
   await db.upsertTool({
     createdAt: existing?.createdAt ?? now,
     description:
-      "Generate an image from a text prompt using the workspace image model (OpenAI gpt-image-2). Saves under artifacts/ with a metadata sidecar.",
+      "Generate an image from a text prompt using the workspace image-generation capability. Saves under artifacts/ with a metadata sidecar.",
     handlerConfig: {},
     handlerType: "generate_image",
     id: GENERATE_IMAGE_TOOL_ID,
