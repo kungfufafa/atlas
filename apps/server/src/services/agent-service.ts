@@ -667,6 +667,33 @@ export class AgentService {
     return user?.isPlatformAdmin === true;
   }
 
+  /**
+   * Channel workers authenticate as the local-client service account, which is
+   * an org admin so it can create sessions. Tool execution and Super Agent
+   * gates must follow the mapped session owner, not that service account.
+   */
+  private async resolveActingPrincipal(
+    orgId: string,
+    recordUserId: string | null | undefined,
+    actor?: SessionActor
+  ): Promise<{
+    isPlatformAdmin: boolean;
+    orgRole: OrgRole | null;
+    userId: string | null;
+  }> {
+    const actorUserId = actor?.userId?.trim() || null;
+    const sessionUserId = recordUserId?.trim() || null;
+    const userId =
+      actorUserId && !isServiceAccountUserId(actorUserId)
+        ? actorUserId
+        : sessionUserId;
+    const [orgRole, isPlatformAdmin] = await Promise.all([
+      this.resolveOrgRole(orgId, userId),
+      this.resolveIsPlatformAdmin(userId),
+    ]);
+    return { isPlatformAdmin, orgRole, userId };
+  }
+
   private async canActorUpdateSessionModel(
     orgId: string,
     record: StoredSessionRecord,
@@ -2502,6 +2529,8 @@ export class AgentService {
       access?.model
     );
     let principalUserId = userId ?? null;
+    let sessionOrgRole = access?.orgRole ?? null;
+    let sessionIsPlatformAdmin = access?.isPlatformAdmin === true;
     if (
       channel === "telegram" ||
       channel === "whatsapp" ||
@@ -2516,6 +2545,8 @@ export class AgentService {
         orgRole: access?.orgRole ?? "member",
       });
       principalUserId = principal.userId;
+      sessionOrgRole = principal.orgRole;
+      sessionIsPlatformAdmin = principal.isPlatformAdmin;
     } else if (
       principalUserId &&
       isServiceAccountUserId(principalUserId) &&
@@ -2548,16 +2579,16 @@ export class AgentService {
       sessionId,
       modelOverride,
       principalUserId,
-      access?.orgRole,
-      access?.isPlatformAdmin
+      sessionOrgRole,
+      sessionIsPlatformAdmin
     );
 
     this.sessions.set(sessionId, {
       channel,
-      isPlatformAdmin: access?.isPlatformAdmin === true,
+      isPlatformAdmin: sessionIsPlatformAdmin,
       modelOverride,
       orgId,
-      orgRole: access?.orgRole ?? null,
+      orgRole: sessionOrgRole,
       profileId: resolvedProfileId,
       session,
     });
@@ -2687,11 +2718,11 @@ export class AgentService {
       throw new Error("messageIndex must be a non-negative integer.");
     }
 
-    const branchUserId = actor?.userId.trim() || record.userId || null;
-    const [branchOrgRole, branchIsPlatformAdmin] = await Promise.all([
-      this.resolveOrgRole(orgId, branchUserId),
-      this.resolveIsPlatformAdmin(branchUserId),
-    ]);
+    const {
+      isPlatformAdmin: branchIsPlatformAdmin,
+      orgRole: branchOrgRole,
+      userId: branchUserId,
+    } = await this.resolveActingPrincipal(orgId, record.userId, actor);
     if (
       actor &&
       !(
@@ -2837,9 +2868,11 @@ export class AgentService {
       record
     );
 
-    const actorUserId = actor?.userId?.trim() || record.userId || null;
-    const orgRole = await this.resolveOrgRole(orgId, actorUserId);
-    const isPlatformAdmin = await this.resolveIsPlatformAdmin(actorUserId);
+    const {
+      isPlatformAdmin,
+      orgRole,
+      userId: actorUserId,
+    } = await this.resolveActingPrincipal(orgId, record.userId, actor);
     const profile = await this.db.getProfileForOrg(record.profileId, orgId);
     if (
       profile?.isSuper &&
