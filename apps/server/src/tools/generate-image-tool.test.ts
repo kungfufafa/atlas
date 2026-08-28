@@ -233,7 +233,12 @@ describe("generate_image tool persistence (U4)", () => {
   test("prompt produces PNG path + sidecar + attachmentId", async () => {
     await setupWorkspace();
     const db = createInMemoryDatabaseAdapter();
-    const usage: Array<{ model: string; input: number; output: number }> = [];
+    const usage: Array<{
+      model: string;
+      input: number;
+      output: number;
+      attribution: { orgId: string; profileId: string; userId?: string };
+    }> = [];
 
     const result = await runGenerateImageTool(
       { filename: "cat.png", prompt: "a cat" },
@@ -242,6 +247,7 @@ describe("generate_image tool persistence (U4)", () => {
         orgId: "org_1",
         profileId: "profile_1",
         sessionId: "session_1",
+        userId: "user_1",
         workspaceRoot,
       },
       {
@@ -256,8 +262,8 @@ describe("generate_image tool persistence (U4)", () => {
         }),
         getUserConfig: () =>
           openaiConfig({ imageModel: IMAGE_GENERATION_SELECTION }),
-        recordUsage: (model, input, output) => {
-          usage.push({ input, model, output });
+        recordUsage: (model, input, output, _instance, attribution) => {
+          usage.push({ attribution, input, model, output });
         },
       }
     );
@@ -298,7 +304,65 @@ describe("generate_image tool persistence (U4)", () => {
       sessionId: "session_1",
       sizeBytes: PNG_BYTES.byteLength,
     });
-    expect(usage).toEqual([{ input: 8, model: "gpt-image-2", output: 200 }]);
+    expect(usage).toEqual([
+      {
+        attribution: {
+          orgId: "org_1",
+          profileId: "profile_1",
+          userId: "user_1",
+        },
+        input: 8,
+        model: "gpt-image-2",
+        output: 200,
+      },
+    ]);
+  });
+
+  test("records the request with zero tokens when the model reports no usage", async () => {
+    await setupWorkspace();
+    const db = createInMemoryDatabaseAdapter();
+    const usage: Array<{
+      model: string;
+      input: number;
+      output: number;
+      attribution: { orgId: string; profileId: string; userId?: string };
+    }> = [];
+
+    const result = await runGenerateImageTool(
+      { filename: "dog.png", prompt: "a dog" },
+      {
+        channel: "web",
+        orgId: "org_1",
+        profileId: "profile_1",
+        sessionId: "session_1",
+        workspaceRoot,
+      },
+      {
+        db,
+        ensureSettingsLoaded: async () => {},
+        generateImage: async () => ({
+          data: PNG_BYTES,
+          mediaType: "image/png",
+          model: "flux-1-schnell",
+          size: "1024x1024",
+        }),
+        getUserConfig: () =>
+          openaiConfig({ imageModel: IMAGE_GENERATION_SELECTION }),
+        recordUsage: (model, input, output, _instance, attribution) => {
+          usage.push({ attribution, input, model, output });
+        },
+      }
+    );
+
+    expect("error" in result).toBe(false);
+    expect(usage).toEqual([
+      {
+        attribution: { orgId: "org_1", profileId: "profile_1" },
+        input: 0,
+        model: "flux-1-schnell",
+        output: 0,
+      },
+    ]);
   });
 
   test("filename collision gets unique suffix and remapped sidecar pairs on disk", async () => {

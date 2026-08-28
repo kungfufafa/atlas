@@ -201,6 +201,6 @@ export function usageBreakdownGroups(
   canManageBudget: boolean
 ): LlmUsageReportGroupBy[] {
   return canManageBudget
-    ? ["user", "provider", "model", "credential"]
-    : ["user", "provider", "model"];
+    ? ["user", "provider", "model", "capability", "credential"]
+    : ["user", "provider", "model", "capability"];
 }

@@ -202,6 +202,7 @@ describe("SystemStatusService", () => {
 
     await db.incrementLlmUsageDaily(
       {
+        capability: "chat.completion",
         modelId: "gpt-workspace-a",
         orgId: "org_a",
         profileId: "p_a",
@@ -218,6 +219,7 @@ describe("SystemStatusService", () => {
     );
     await db.incrementLlmUsageDaily(
       {
+        capability: "chat.completion",
         modelId: "claude-workspace-b",
         orgId: "org_b",
         profileId: "p_b",

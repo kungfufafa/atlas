@@ -916,6 +916,103 @@ describe("organization schema migration", () => {
   });
 });
 
+describe("llm_usage_daily capability rebuild", () => {
+  test("preserves pre-capability rows as chat usage and keeps indexes", () => {
+    const db = new Database(":memory:");
+
+    try {
+      // Old shape: no capability column, capability-less primary key.
+      db.exec(`
+        CREATE TABLE llm_usage_daily (
+          day TEXT NOT NULL,
+          org_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          profile_id TEXT NOT NULL,
+          provider_type TEXT NOT NULL,
+          provider_credential_id TEXT NOT NULL,
+          model_id TEXT NOT NULL,
+          request_count INTEGER NOT NULL DEFAULT 0,
+          input_tokens INTEGER NOT NULL DEFAULT 0,
+          output_tokens INTEGER NOT NULL DEFAULT 0,
+          estimated_cost_usd REAL NOT NULL DEFAULT 0,
+          updated_at TEXT NOT NULL,
+          PRIMARY KEY (
+            day, org_id, user_id, profile_id,
+            provider_type, provider_credential_id, model_id
+          )
+        );
+        CREATE INDEX llm_usage_daily_org_day ON llm_usage_daily (org_id, day);
+        CREATE INDEX llm_usage_daily_day ON llm_usage_daily (day);
+
+        INSERT INTO llm_usage_daily VALUES
+          ('2026-08-01', 'org_a', 'user_1', 'p1', 'openai', 'cred_1', 'gpt-x',
+           3, 300, 60, 0.5, '2026-08-01T00:00:00.000Z'),
+          ('2026-08-02', 'org_b', 'user_2', 'p2', 'chatgpt', 'cred_2', 'gpt-y',
+           1, 100, 20, 0, '2026-08-02T00:00:00.000Z');
+      `);
+
+      migrateDatabase(db);
+
+      const rows = db
+        .prepare(
+          `SELECT org_id, capability, request_count
+           FROM llm_usage_daily ORDER BY day ASC`
+        )
+        .all() as Array<{
+        org_id: string;
+        capability: string;
+        request_count: number;
+      }>;
+      expect(rows).toEqual([
+        { capability: "chat.completion", org_id: "org_a", request_count: 3 },
+        { capability: "chat.completion", org_id: "org_b", request_count: 1 },
+      ]);
+
+      const legacyTable = db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE name = 'llm_usage_daily_legacy'"
+        )
+        .get();
+      expect(legacyTable).toBeNull();
+
+      const indexes = db
+        .prepare(
+          `SELECT name FROM sqlite_master
+           WHERE type = 'index' AND tbl_name = 'llm_usage_daily'
+             AND name LIKE 'llm_usage_daily%'`
+        )
+        .all() as Array<{ name: string }>;
+      expect(indexes.map((index) => index.name).sort()).toEqual([
+        "llm_usage_daily_day",
+        "llm_usage_daily_org_day",
+      ]);
+
+      // Same dimensions with a different capability stays a separate row.
+      db.exec(`
+        INSERT INTO llm_usage_daily VALUES
+          ('2026-08-01', 'org_a', 'user_1', 'p1', 'openai', 'cred_1', 'gpt-x',
+           'image.generation', 1, 0, 0, 0.02, '2026-08-01T00:00:00.000Z');
+      `);
+      const count = db
+        .prepare(
+          `SELECT COUNT(*) AS n FROM llm_usage_daily
+           WHERE org_id = 'org_a' AND day = '2026-08-01'`
+        )
+        .get() as { n: number };
+      expect(count.n).toBe(2);
+
+      // Idempotent: a second run leaves the rebuilt table untouched.
+      migrateDatabase(db);
+      const total = db
+        .prepare("SELECT COUNT(*) AS n FROM llm_usage_daily")
+        .get() as { n: number };
+      expect(total.n).toBe(3);
+    } finally {
+      db.close();
+    }
+  });
+});
+
 describe("migration SQL hardening", () => {
   test("rejects unexpected tenant table names before SQLite can run injected ATTACH statements", () => {
     const db = new Database(":memory:");

@@ -27,6 +27,7 @@ import {
   installErrorTrackingSink,
   loadConfig,
   officeConverter,
+  PROVIDER_CAPABILITY_IDS,
   registerBrowserHandler,
   writeRuntimeServerUrl,
 } from "@atlas/core";
@@ -36,9 +37,11 @@ import {
   type Database,
   ensureBundledSkillsAssigned,
   seedDatabase,
+  UNKNOWN_USAGE_DIMENSION,
 } from "@atlas/db";
 import { createHonoApp } from "./http/app";
 import { disableBunIdleTimeoutForSse } from "./http/sse-idle-timeout";
+import { estimateUsageCostUsd } from "./providers/pricing";
 import { runFirstBootSeed } from "./seed";
 import { AgentService } from "./services/agent-service";
 import { AuthService } from "./services/auth-service";
@@ -144,11 +147,41 @@ registerGenerateImageTool(
     db: database.adapter,
     ensureSettingsLoaded: () => agent.ensureImageGenerationSettingsLoaded(),
     getUserConfig: (orgId) => agent.getUserConfigForOrg(orgId),
-    recordUsage: (modelId, inputTokens, outputTokens, instance) => {
+    recordUsage: (
+      modelId,
+      inputTokens,
+      outputTokens,
+      instance,
+      attribution
+    ) => {
       llmUsageTracker.record(modelId, inputTokens, outputTokens, {
         provider: instance.type,
         providerInstance: instance,
       });
+      void database.adapter
+        .incrementLlmUsageDaily(
+          {
+            capability: PROVIDER_CAPABILITY_IDS.imageGeneration,
+            modelId,
+            orgId: attribution.orgId,
+            profileId: attribution.profileId || UNKNOWN_USAGE_DIMENSION,
+            providerCredentialId: instance.id,
+            providerType: instance.type,
+            userId: attribution.userId?.trim() || UNKNOWN_USAGE_DIMENSION,
+          },
+          {
+            estimatedCostUsd: estimateUsageCostUsd(
+              modelId,
+              inputTokens,
+              outputTokens,
+              { provider: instance.type, providerInstance: instance }
+            ),
+            inputTokens,
+            outputTokens,
+            requestCount: 1,
+          }
+        )
+        .catch(() => undefined);
     },
   })
 );

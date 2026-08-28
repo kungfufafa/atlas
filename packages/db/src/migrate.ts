@@ -352,6 +352,26 @@ function migrateLlmTurnUsageTable(db: Database): void {
  * composite primary key stays intact and aggregation never drops rows.
  */
 function migrateLlmUsageDailyTable(db: Database): void {
+  // `capability` was added after the first cut and participates in the primary
+  // key, so SQLite requires a rebuild. Historical rows predate capability
+  // tracking and were all chat turns; keep them under the chat capability.
+  const columns = db
+    .prepare("PRAGMA table_info(llm_usage_daily)")
+    .all() as Array<{ name: string }>;
+  const needsCapabilityRebuild =
+    columns.length > 0 &&
+    !columns.some((column) => column.name === "capability");
+
+  if (needsCapabilityRebuild) {
+    // Renaming keeps the old indexes attached under their original names,
+    // which would block CREATE INDEX for the rebuilt table; drop them first.
+    db.exec(`
+      ALTER TABLE llm_usage_daily RENAME TO llm_usage_daily_legacy;
+      DROP INDEX IF EXISTS llm_usage_daily_org_day;
+      DROP INDEX IF EXISTS llm_usage_daily_day;
+    `);
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS llm_usage_daily (
       day TEXT NOT NULL,
@@ -361,6 +381,7 @@ function migrateLlmUsageDailyTable(db: Database): void {
       provider_type TEXT NOT NULL,
       provider_credential_id TEXT NOT NULL,
       model_id TEXT NOT NULL,
+      capability TEXT NOT NULL DEFAULT 'chat.completion',
       request_count INTEGER NOT NULL DEFAULT 0,
       input_tokens INTEGER NOT NULL DEFAULT 0,
       output_tokens INTEGER NOT NULL DEFAULT 0,
@@ -368,7 +389,7 @@ function migrateLlmUsageDailyTable(db: Database): void {
       updated_at TEXT NOT NULL,
       PRIMARY KEY (
         day, org_id, user_id, profile_id,
-        provider_type, provider_credential_id, model_id
+        provider_type, provider_credential_id, model_id, capability
       )
     );
     CREATE INDEX IF NOT EXISTS llm_usage_daily_org_day
@@ -376,6 +397,24 @@ function migrateLlmUsageDailyTable(db: Database): void {
     CREATE INDEX IF NOT EXISTS llm_usage_daily_day
       ON llm_usage_daily (day);
   `);
+
+  if (needsCapabilityRebuild) {
+    db.exec(`
+      INSERT INTO llm_usage_daily (
+        day, org_id, user_id, profile_id, provider_type,
+        provider_credential_id, model_id, capability,
+        request_count, input_tokens, output_tokens, estimated_cost_usd,
+        updated_at
+      )
+      SELECT
+        day, org_id, user_id, profile_id, provider_type,
+        provider_credential_id, model_id, 'chat.completion',
+        request_count, input_tokens, output_tokens, estimated_cost_usd,
+        updated_at
+      FROM llm_usage_daily_legacy;
+      DROP TABLE llm_usage_daily_legacy;
+    `);
+  }
 }
 
 /**

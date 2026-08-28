@@ -149,13 +149,13 @@ export async function describeImagesWithConfiguredVisionModel(
       readApiKeyForInstance(instance, options.env ?? process.env),
     registry: options.registry ?? builtinProviderAdapterRegistry,
   });
-  if (result.output.usage) {
-    options.recordUsage?.(
-      result.selection.model,
-      result.output.usage,
-      result.selection.instance
-    );
-  }
+  // Record the request even when the provider omits token usage so the
+  // execution still counts in the usage rollup.
+  options.recordUsage?.(
+    result.selection.model,
+    result.output.usage ?? { inputTokens: 0, outputTokens: 0 },
+    result.selection.instance
+  );
   return result.output.descriptions;
 }
 

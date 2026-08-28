@@ -165,9 +165,15 @@ describe("StatusPage helpers", () => {
       "user",
       "provider",
       "model",
+      "capability",
       "credential",
     ]);
-    expect(usageBreakdownGroups(false)).toEqual(["user", "provider", "model"]);
+    expect(usageBreakdownGroups(false)).toEqual([
+      "user",
+      "provider",
+      "model",
+      "capability",
+    ]);
     expect(usageBreakdownGroups(true)).not.toContain("workspace");
   });
 });
