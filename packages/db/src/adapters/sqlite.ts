@@ -37,6 +37,7 @@ import type {
   StoredOrgInviteRecord,
   StoredOrgMemberRecord,
   StoredOrgMemoryProposal,
+  StoredOrgUsageBudgetRecord,
   StoredOutboxRecord,
   StoredProfileComposioToolkitRecord,
   StoredProfileRecord,
@@ -374,6 +375,14 @@ interface OrgInviteRow {
   revoked_at: string | null;
   role: string;
   token_hash: string;
+}
+
+interface OrgUsageBudgetRow {
+  enforce_budget: number;
+  monthly_limit_usd: number;
+  org_id: string;
+  per_user_monthly_requests: number;
+  updated_at: string;
 }
 
 interface OrgMemoryProposalRow {
@@ -1113,10 +1122,15 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     "SELECT * FROM org_usage_budgets WHERE org_id = ?"
   );
   const upsertOrgUsageBudgetStmt = db.prepare(`
-    INSERT INTO org_usage_budgets (org_id, monthly_limit_usd, updated_at)
-    VALUES (?, ?, ?)
+    INSERT INTO org_usage_budgets (
+      org_id, monthly_limit_usd, enforce_budget,
+      per_user_monthly_requests, updated_at
+    )
+    VALUES (?, ?, ?, ?, ?)
     ON CONFLICT(org_id) DO UPDATE SET
       monthly_limit_usd = excluded.monthly_limit_usd,
+      enforce_budget = excluded.enforce_budget,
+      per_user_monthly_requests = excluded.per_user_monthly_requests,
       updated_at = excluded.updated_at
   `);
   const listOrgUsageBudgetsStmt = db.prepare(
@@ -2952,20 +2966,8 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     },
 
     getOrgUsageBudget(orgId) {
-      const row = getOrgUsageBudgetStmt.get(orgId) as {
-        org_id: string;
-        monthly_limit_usd: number;
-        updated_at: string;
-      } | null;
-      return Promise.resolve(
-        row
-          ? {
-              monthlyLimitUsd: row.monthly_limit_usd,
-              orgId: row.org_id,
-              updatedAt: row.updated_at,
-            }
-          : null
-      );
+      const row = getOrgUsageBudgetStmt.get(orgId) as OrgUsageBudgetRow | null;
+      return Promise.resolve(row ? toOrgUsageBudgetRecord(row) : null);
     },
 
     async getPendingOrgInvite(orgId, email) {
@@ -3519,18 +3521,8 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     },
 
     listOrgUsageBudgets() {
-      const rows = listOrgUsageBudgetsStmt.all() as {
-        org_id: string;
-        monthly_limit_usd: number;
-        updated_at: string;
-      }[];
-      return Promise.resolve(
-        rows.map((row) => ({
-          monthlyLimitUsd: row.monthly_limit_usd,
-          orgId: row.org_id,
-          updatedAt: row.updated_at,
-        }))
-      );
+      const rows = listOrgUsageBudgetsStmt.all() as OrgUsageBudgetRow[];
+      return Promise.resolve(rows.map(toOrgUsageBudgetRecord));
     },
 
     async listProfileComposioToolkits(profileId) {
@@ -4539,6 +4531,8 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       upsertOrgUsageBudgetStmt.run(
         record.orgId,
         record.monthlyLimitUsd,
+        record.enforceBudget ? 1 : 0,
+        record.perUserMonthlyRequests,
         record.updatedAt
       );
     },
@@ -5525,6 +5519,18 @@ function toOrganizationRecord(row: OrganizationRow): StoredOrganizationRecord {
     skillsPostTurnReview: row.skills_post_turn_review !== 0,
     skillsWriteApproval: row.skills_write_approval !== 0,
     slug: row.slug,
+    updatedAt: row.updated_at,
+  };
+}
+
+function toOrgUsageBudgetRecord(
+  row: OrgUsageBudgetRow
+): StoredOrgUsageBudgetRecord {
+  return {
+    enforceBudget: row.enforce_budget !== 0,
+    monthlyLimitUsd: row.monthly_limit_usd,
+    orgId: row.org_id,
+    perUserMonthlyRequests: row.per_user_monthly_requests,
     updatedAt: row.updated_at,
   };
 }

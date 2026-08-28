@@ -212,6 +212,11 @@ export interface LlmUsageReportResponse {
 }
 
 export interface OrgUsageBudgetResponse {
+  /**
+   * When true, cost-bearing API executions are rejected once the budget is
+   * reached. Subscription executions are unaffected by the USD budget.
+   */
+  enforced: boolean;
   /** Fraction of the budget used (0..1+), or null when no budget. */
   fractionUsed: number | null;
   /** `YYYY-MM` the spend is measured over. */
@@ -221,6 +226,8 @@ export interface OrgUsageBudgetResponse {
   /** Estimated spend so far this month (USD). */
   monthToDateUsd: number;
   overBudget: boolean;
+  /** Max AI requests per member per month (any credential path), or null. */
+  perUserMonthlyRequests: number | null;
 }
 
 export interface LlmUsageStats {

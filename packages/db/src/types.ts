@@ -385,9 +385,20 @@ export interface StoredLlmUsageDailyRecord extends LlmUsageDimensions {
 }
 
 export interface StoredOrgUsageBudgetRecord {
+  /**
+   * When true, cost-bearing (API-key) executions are rejected once the
+   * month-to-date estimated spend reaches `monthlyLimitUsd`. When false the
+   * budget stays a soft, visibility-only signal.
+   */
+  enforceBudget: boolean;
   /** Monthly spend limit in USD. 0 means "no budget set". */
   monthlyLimitUsd: number;
   orgId: string;
+  /**
+   * Max AI requests per member per calendar month across every credential
+   * path (subscription and API). 0 means unlimited.
+   */
+  perUserMonthlyRequests: number;
   updatedAt: string;
 }
 

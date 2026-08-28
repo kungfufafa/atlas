@@ -30,6 +30,16 @@ export interface UsageReportOptions {
 const MAX_ROWS = 100;
 const DEFAULT_ROWS = 50;
 
+function normalizeNonNegative(
+  value: number | undefined,
+  fallback: number
+): number {
+  if (value === undefined) {
+    return fallback;
+  }
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
 /**
  * Reads the multi-tenant usage rollup with RBAC-aware scoping:
  * - platform admin without an active workspace → every workspace
@@ -121,27 +131,46 @@ export class UsageReportService {
     ]);
     const limit =
       budget && budget.monthlyLimitUsd > 0 ? budget.monthlyLimitUsd : null;
+    const perUserMonthlyRequests =
+      budget && budget.perUserMonthlyRequests > 0
+        ? budget.perUserMonthlyRequests
+        : null;
 
     return {
+      enforced: budget?.enforceBudget === true,
       fractionUsed: limit ? monthToDateUsd / limit : null,
       month,
       monthlyLimitUsd: limit,
       monthToDateUsd,
       overBudget: limit ? monthToDateUsd > limit : false,
+      perUserMonthlyRequests,
     };
   }
 
   async setBudget(
     orgId: string,
-    monthlyLimitUsd: number
+    policy: {
+      enforced?: boolean;
+      monthlyLimitUsd?: number;
+      perUserMonthlyRequests?: number;
+    }
   ): Promise<OrgUsageBudgetResponse> {
-    const normalized =
-      Number.isFinite(monthlyLimitUsd) && monthlyLimitUsd > 0
-        ? monthlyLimitUsd
-        : 0;
+    const existing = await this.db.getOrgUsageBudget(orgId);
+    const monthlyLimitUsd = normalizeNonNegative(
+      policy.monthlyLimitUsd,
+      existing?.monthlyLimitUsd ?? 0
+    );
+    const perUserMonthlyRequests = Math.floor(
+      normalizeNonNegative(
+        policy.perUserMonthlyRequests,
+        existing?.perUserMonthlyRequests ?? 0
+      )
+    );
     await this.db.upsertOrgUsageBudget({
-      monthlyLimitUsd: normalized,
+      enforceBudget: policy.enforced ?? existing?.enforceBudget ?? false,
+      monthlyLimitUsd,
       orgId,
+      perUserMonthlyRequests,
       updatedAt: new Date().toISOString(),
     });
     return this.getBudgetStatus(orgId);

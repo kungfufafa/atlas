@@ -379,17 +379,36 @@ function migrateLlmUsageDailyTable(db: Database): void {
 }
 
 /**
- * Per-workspace monthly spend budget (USD). Soft budget: used for visibility
- * and over-budget flagging, not to hard-block requests.
+ * Per-workspace usage policy. The USD budget is soft (visibility) unless
+ * `enforce_budget` is set, in which case cost-bearing API executions are
+ * rejected once month-to-date spend reaches the limit. Subscription-backed
+ * executions record $0 cost and are governed by `per_user_monthly_requests`
+ * instead, which caps requests per member across every credential path.
  */
 function migrateOrgUsageBudgetsTable(db: Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS org_usage_budgets (
       org_id TEXT PRIMARY KEY NOT NULL,
       monthly_limit_usd REAL NOT NULL DEFAULT 0,
+      enforce_budget INTEGER NOT NULL DEFAULT 0,
+      per_user_monthly_requests INTEGER NOT NULL DEFAULT 0,
       updated_at TEXT NOT NULL
     );
   `);
+
+  const columns = db
+    .prepare("PRAGMA table_info(org_usage_budgets)")
+    .all() as Array<{ name: string }>;
+  if (!columns.some((column) => column.name === "enforce_budget")) {
+    db.exec(
+      "ALTER TABLE org_usage_budgets ADD COLUMN enforce_budget INTEGER NOT NULL DEFAULT 0;"
+    );
+  }
+  if (!columns.some((column) => column.name === "per_user_monthly_requests")) {
+    db.exec(
+      "ALTER TABLE org_usage_budgets ADD COLUMN per_user_monthly_requests INTEGER NOT NULL DEFAULT 0;"
+    );
+  }
 }
 
 function migrateToolOutputSavingsTable(db: Database): void {
