@@ -4,6 +4,7 @@ import type { LlmUsageDimensions } from "./types";
 
 function dims(overrides: Partial<LlmUsageDimensions>): LlmUsageDimensions {
   return {
+    capability: "chat.completion",
     modelId: "gpt-x",
     orgId: "org_a",
     profileId: "profile_1",
@@ -94,6 +95,28 @@ describe("llm_usage_daily rollup + aggregation (in-memory)", () => {
       "user_1",
       "user_2",
     ]);
+  });
+
+  test("keeps capabilities as separate rows and aggregates by capability", async () => {
+    const db = await seed();
+    await db.incrementLlmUsageDaily(
+      dims({ capability: "image.generation", modelId: "gpt-image-2" }),
+      {
+        estimatedCostUsd: 0.02,
+        inputTokens: 0,
+        outputTokens: 0,
+        requestCount: 1,
+      }
+    );
+
+    const byCapability = await db.aggregateLlmUsage({
+      groupBy: "capability",
+      orgId: "org_a",
+    });
+    const chat = byCapability.find((row) => row.key === "chat.completion");
+    const image = byCapability.find((row) => row.key === "image.generation");
+    expect(chat?.requestCount).toBe(3);
+    expect(image?.requestCount).toBe(1);
   });
 
   test("scopes to a single user (member view) and honors limit", async () => {

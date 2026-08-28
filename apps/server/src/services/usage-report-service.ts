@@ -1,4 +1,5 @@
 import type {
+  LlmUsageAuthKind,
   LlmUsageReportGroupBy,
   LlmUsageReportResponse,
   LlmUsageReportRow,
@@ -6,7 +7,12 @@ import type {
   OrgUsageBudgetResponse,
 } from "@atlas/core";
 import {
+  getBuiltinProviderDefinition,
+  isSubscriptionProvider,
+} from "@atlas/core";
+import {
   type DatabaseAdapter,
+  type LlmUsageAggregateRow,
   type LlmUsageGroupBy,
   UNKNOWN_USAGE_DIMENSION,
 } from "@atlas/db";
@@ -79,6 +85,17 @@ export class UsageReportService {
       Math.max(1, Math.floor(options.limit ?? DEFAULT_ROWS))
     );
 
+    if (options.groupBy === "auth") {
+      const providerRows = await this.db.aggregateLlmUsage({
+        from: options.from,
+        groupBy: "provider",
+        orgId,
+        to: options.to,
+        userId,
+      });
+      return { ...emptyReport, rows: foldRowsByAuthKind(providerRows) };
+    }
+
     const rows = await this.db.aggregateLlmUsage({
       from: options.from,
       groupBy: options.groupBy as LlmUsageGroupBy,
@@ -88,14 +105,77 @@ export class UsageReportService {
       userId,
     });
 
+    const credentialInfo =
+      options.groupBy === "credential" && orgId
+        ? await this.loadCredentialInfo(orgId)
+        : null;
+
     const labeled = await Promise.all(
       rows.map(async (row) => ({
         ...row,
-        label: await this.resolveLabel(options.groupBy, row.key),
+        ...this.resolveAuthKind(options.groupBy, row.key, credentialInfo),
+        label: await this.resolveLabel(
+          options.groupBy,
+          row.key,
+          credentialInfo
+        ),
       }))
     );
 
     return { ...emptyReport, rows: labeled };
+  }
+
+  /**
+   * Maps provider instance id → label/type for the caller's workspace so
+   * credential rows read as the configured provider instance instead of a raw
+   * id. Rows for since-deleted instances keep their raw key: historical usage
+   * is never reassigned when configuration changes.
+   */
+  private async loadCredentialInfo(
+    orgId: string
+  ): Promise<Map<string, { label: string; type: string }>> {
+    const record = await this.db.getOrgAiConfig(orgId).catch(() => null);
+    const providers =
+      record &&
+      typeof record.config === "object" &&
+      record.config !== null &&
+      Array.isArray((record.config as { providers?: unknown }).providers)
+        ? ((record.config as { providers: unknown[] }).providers ?? [])
+        : [];
+
+    const info = new Map<string, { label: string; type: string }>();
+    for (const entry of providers) {
+      if (typeof entry !== "object" || entry === null) {
+        continue;
+      }
+      const { id, label, type } = entry as {
+        id?: unknown;
+        label?: unknown;
+        type?: unknown;
+      };
+      if (typeof id === "string" && typeof type === "string") {
+        info.set(id, {
+          label: typeof label === "string" && label.trim() ? label : id,
+          type,
+        });
+      }
+    }
+    return info;
+  }
+
+  private resolveAuthKind(
+    groupBy: LlmUsageReportGroupBy,
+    key: string,
+    credentialInfo: Map<string, { label: string; type: string }> | null
+  ): Pick<LlmUsageReportRow, "authKind"> {
+    if (groupBy === "provider") {
+      return { authKind: authKindForProviderType(key) };
+    }
+    if (groupBy === "credential") {
+      const type = credentialInfo?.get(key)?.type;
+      return type ? { authKind: authKindForProviderType(type) } : {};
+    }
+    return {};
   }
 
   private currentMonth(): { month: string; from: string } {
@@ -149,7 +229,8 @@ export class UsageReportService {
 
   private async resolveLabel(
     groupBy: LlmUsageReportGroupBy,
-    key: string
+    key: string,
+    credentialInfo: Map<string, { label: string; type: string }> | null
   ): Promise<string> {
     if (key === UNKNOWN_USAGE_DIMENSION) {
       return "Unknown";
@@ -165,8 +246,70 @@ export class UsageReportService {
       return user?.name?.trim() || user?.email || key;
     }
 
+    if (groupBy === "provider") {
+      return getBuiltinProviderDefinition(key)?.displayName ?? key;
+    }
+
+    if (groupBy === "credential") {
+      return credentialInfo?.get(key)?.label ?? key;
+    }
+
+    if (groupBy === "capability") {
+      return CAPABILITY_LABELS[key] ?? key;
+    }
+
     return key;
   }
+}
+
+const CAPABILITY_LABELS: Record<string, string> = {
+  "audio.transcription": "Audio transcription",
+  "chat.completion": "Chat",
+  "image.generation": "Image generation",
+  "image.understanding": "Image parsing",
+};
+
+const AUTH_KIND_LABELS: Record<LlmUsageAuthKind, string> = {
+  api: "API keys",
+  subscription: "Subscriptions",
+};
+
+function authKindForProviderType(providerType: string): LlmUsageAuthKind {
+  return isSubscriptionProvider(providerType) ? "subscription" : "api";
+}
+
+/**
+ * Collapses provider-type rows into the credential path that served them.
+ * Subscription usage is Atlas-observed activity with no API billing; API rows
+ * carry the estimated spend.
+ */
+function foldRowsByAuthKind(
+  providerRows: LlmUsageAggregateRow[]
+): LlmUsageReportRow[] {
+  const buckets = new Map<LlmUsageAuthKind, LlmUsageReportRow>();
+  for (const row of providerRows) {
+    const authKind = authKindForProviderType(row.key);
+    const bucket = buckets.get(authKind) ?? {
+      authKind,
+      estimatedCostUsd: 0,
+      inputTokens: 0,
+      key: authKind,
+      label: AUTH_KIND_LABELS[authKind],
+      outputTokens: 0,
+      requestCount: 0,
+      totalTokens: 0,
+    };
+    bucket.estimatedCostUsd += row.estimatedCostUsd;
+    bucket.inputTokens += row.inputTokens;
+    bucket.outputTokens += row.outputTokens;
+    bucket.requestCount += row.requestCount;
+    bucket.totalTokens += row.totalTokens;
+    buckets.set(authKind, bucket);
+  }
+
+  return [...buckets.values()].sort(
+    (left, right) => right.totalTokens - left.totalTokens
+  );
 }
 
 export type { LlmUsageReportRow };

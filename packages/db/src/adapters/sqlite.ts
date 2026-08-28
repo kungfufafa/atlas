@@ -1091,13 +1091,13 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   const incrementLlmUsageDailyStmt = db.prepare(`
     INSERT INTO llm_usage_daily (
       day, org_id, user_id, profile_id, provider_type,
-      provider_credential_id, model_id,
+      provider_credential_id, model_id, capability,
       request_count, input_tokens, output_tokens, estimated_cost_usd, updated_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(
       day, org_id, user_id, profile_id,
-      provider_type, provider_credential_id, model_id
+      provider_type, provider_credential_id, model_id, capability
     ) DO UPDATE SET
       request_count = llm_usage_daily.request_count + excluded.request_count,
       input_tokens = llm_usage_daily.input_tokens + excluded.input_tokens,
@@ -2002,6 +2002,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   return {
     aggregateLlmUsage(options) {
       const columnByGroup: Record<string, string> = {
+        capability: "capability",
         credential: "provider_credential_id",
         model: "model_id",
         profile: "profile_id",
@@ -3157,6 +3158,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         dimensions.providerType,
         dimensions.providerCredentialId,
         dimensions.modelId,
+        dimensions.capability,
         delta.requestCount,
         delta.inputTokens,
         delta.outputTokens,

@@ -33,19 +33,26 @@ async function record(
   orgId: string,
   userId: string,
   modelId: string,
-  tokens: number
+  tokens: number,
+  overrides: {
+    capability?: string;
+    estimatedCostUsd?: number;
+    providerCredentialId?: string;
+    providerType?: string;
+  } = {}
 ) {
   await db.incrementLlmUsageDaily(
     {
+      capability: overrides.capability ?? "chat.completion",
       modelId,
       orgId,
       profileId: "p1",
-      providerCredentialId: "cred_shared",
-      providerType: "openrouter",
+      providerCredentialId: overrides.providerCredentialId ?? "cred_shared",
+      providerType: overrides.providerType ?? "openrouter",
       userId,
     },
     {
-      estimatedCostUsd: 0.01,
+      estimatedCostUsd: overrides.estimatedCostUsd ?? 0.01,
       inputTokens: tokens,
       outputTokens: 0,
       requestCount: 1,
@@ -133,6 +140,132 @@ describe("UsageReportService RBAC scoping", () => {
     const shared = report.rows.find((row) => row.key === "cred_shared");
     expect(shared?.requestCount).toBe(3);
     expect(shared?.totalTokens).toBe(1400);
+  });
+});
+
+describe("UsageReportService subscription vs API visibility", () => {
+  beforeEach(async () => {
+    // Mixed credentials in org_a: Claude subscription coding plus OpenAI
+    // API-key image generation by the same user.
+    await record("org_a", "user_1", "claude-sonnet-4-6", 500, {
+      capability: "chat.completion",
+      estimatedCostUsd: 0,
+      providerCredentialId: "cred_claude_sub",
+      providerType: "claude",
+    });
+    await record("org_a", "user_1", "gpt-image-2", 40, {
+      capability: "image.generation",
+      estimatedCostUsd: 0.08,
+      providerCredentialId: "cred_openai_key",
+      providerType: "openai",
+    });
+  });
+
+  test("auth grouping splits subscription and API usage within the workspace", async () => {
+    const report = await service.getReport(
+      { groupBy: "auth" },
+      { orgId: "org_a", orgRole: "admin" }
+    );
+
+    const subscription = report.rows.find((row) => row.key === "subscription");
+    const api = report.rows.find((row) => row.key === "api");
+    expect(subscription).toMatchObject({
+      authKind: "subscription",
+      requestCount: 1,
+      totalTokens: 500,
+    });
+    expect(subscription?.estimatedCostUsd).toBe(0);
+    // API bucket = openrouter chat rows from the shared seed + openai image row.
+    expect(api?.authKind).toBe("api");
+    expect(api?.requestCount).toBe(3);
+    expect(api?.estimatedCostUsd).toBeCloseTo(0.1, 5);
+  });
+
+  test("auth grouping respects member self-scoping", async () => {
+    const report = await service.getReport(
+      { groupBy: "auth" },
+      { orgId: "org_a", orgRole: "member", userId: "user_2" }
+    );
+    // user_2 only has one API chat turn from the shared seed.
+    expect(report.rows).toHaveLength(1);
+    expect(report.rows[0]).toMatchObject({
+      key: "api",
+      requestCount: 1,
+    });
+  });
+
+  test("provider rows carry authKind and display names", async () => {
+    const report = await service.getReport(
+      { groupBy: "provider" },
+      { orgId: "org_a", orgRole: "admin" }
+    );
+    const claude = report.rows.find((row) => row.key === "claude");
+    const openai = report.rows.find((row) => row.key === "openai");
+    expect(claude).toMatchObject({
+      authKind: "subscription",
+      label: "Claude",
+    });
+    expect(openai).toMatchObject({ authKind: "api", label: "OpenAI" });
+  });
+
+  test("capability grouping separates chat from image generation", async () => {
+    const report = await service.getReport(
+      { groupBy: "capability" },
+      { orgId: "org_a", orgRole: "admin" }
+    );
+    const chat = report.rows.find((row) => row.key === "chat.completion");
+    const image = report.rows.find((row) => row.key === "image.generation");
+    expect(chat?.label).toBe("Chat");
+    expect(chat?.requestCount).toBe(3);
+    expect(image).toMatchObject({
+      label: "Image generation",
+      requestCount: 1,
+    });
+  });
+
+  test("credential rows resolve workspace instance labels and auth kind", async () => {
+    await db.upsertOrgAiConfig({
+      config: {
+        defaultProviderId: "cred_claude_sub",
+        providers: [
+          {
+            apiKey: "",
+            createdAt: "2026-01-01T00:00:00.000Z",
+            id: "cred_claude_sub",
+            label: "Claude (host)",
+            type: "claude",
+          },
+          {
+            apiKey: "sk-test",
+            createdAt: "2026-01-01T00:00:00.000Z",
+            id: "cred_openai_key",
+            label: "OpenAI production",
+            type: "openai",
+          },
+        ],
+      },
+      orgId: "org_a",
+      updatedAt: new Date().toISOString(),
+    });
+
+    const report = await service.getReport(
+      { groupBy: "credential" },
+      { orgId: "org_a", orgRole: "admin" }
+    );
+    const sub = report.rows.find((row) => row.key === "cred_claude_sub");
+    const key = report.rows.find((row) => row.key === "cred_openai_key");
+    const removed = report.rows.find((row) => row.key === "cred_shared");
+    expect(sub).toMatchObject({
+      authKind: "subscription",
+      label: "Claude (host)",
+    });
+    expect(key).toMatchObject({
+      authKind: "api",
+      label: "OpenAI production",
+    });
+    // Historical usage for a removed instance keeps its raw key un-reassigned.
+    expect(removed?.label).toBe("cred_shared");
+    expect(removed?.authKind).toBeUndefined();
   });
 });
 

@@ -59,7 +59,8 @@ export interface GenerateImageToolDeps {
     modelId: string,
     inputTokens: number,
     outputTokens: number,
-    instance: ProviderInstance
+    instance: ProviderInstance,
+    attribution: { orgId: string; profileId: string; userId?: string }
   ) => void;
 }
 
@@ -229,14 +230,19 @@ export async function runGenerateImageTool(
     }
   }
 
-  if (result.usage && deps.recordUsage) {
-    deps.recordUsage(
-      result.model,
-      result.usage.inputTokens,
-      result.usage.outputTokens,
-      selection.instance
-    );
-  }
+  // Most image models return no token usage; the request itself must still be
+  // recorded so image generation shows up in the usage rollup.
+  deps.recordUsage?.(
+    result.model,
+    result.usage?.inputTokens ?? 0,
+    result.usage?.outputTokens ?? 0,
+    selection.instance,
+    {
+      orgId,
+      profileId,
+      ...(context.userId?.trim() ? { userId: context.userId.trim() } : {}),
+    }
+  );
 
   return {
     attachmentId,

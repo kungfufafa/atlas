@@ -515,6 +515,7 @@ export class AgentService {
 
     return {
       dimensions: {
+        capability: PROVIDER_CAPABILITY_IDS.chatCompletion,
         modelId,
         orgId: options.orgId,
         profileId: options.profileId || UNKNOWN_USAGE_DIMENSION,
@@ -524,6 +525,52 @@ export class AgentService {
       },
       pricing: { provider: instance.type, providerInstance: instance },
     };
+  }
+
+  /**
+   * Folds one capability execution (image generation, transcription, vision
+   * describe) into the multi-tenant usage rollup. Fire and forget on purpose:
+   * a usage counter must never delay or fail the capability result.
+   */
+  private recordCapabilityUsageDaily(options: {
+    capability: string;
+    instance: ProviderInstance;
+    modelId: string;
+    orgId: string;
+    profileId?: string | null;
+    usage?: { inputTokens: number; outputTokens: number } | null;
+    userId?: string | null;
+  }): void {
+    const inputTokens = options.usage?.inputTokens ?? 0;
+    const outputTokens = options.usage?.outputTokens ?? 0;
+    const estimatedCostUsd = estimateUsageCostUsd(
+      options.modelId,
+      inputTokens,
+      outputTokens,
+      {
+        provider: options.instance.type,
+        providerInstance: options.instance,
+      }
+    );
+    void this.db
+      .incrementLlmUsageDaily(
+        {
+          capability: options.capability,
+          modelId: options.modelId,
+          orgId: options.orgId,
+          profileId: options.profileId?.trim() || UNKNOWN_USAGE_DIMENSION,
+          providerCredentialId: options.instance.id,
+          providerType: options.instance.type,
+          userId: options.userId?.trim() || UNKNOWN_USAGE_DIMENSION,
+        },
+        {
+          estimatedCostUsd,
+          inputTokens,
+          outputTokens,
+          requestCount: 1,
+        }
+      )
+      .catch(() => undefined);
   }
 
   private turnUsageRecorderFor(
@@ -1126,18 +1173,23 @@ export class AgentService {
 
   async transcribeAudioForOrg(
     orgId: string,
-    input: TranscribeAudioRequest
+    input: TranscribeAudioRequest,
+    attribution?: { userId?: string | null }
   ): Promise<TranscribeAudioResponse> {
     const config = await this.getOrgUserConfig(orgId);
-    return this.transcribeAudioWithConfig(input, config);
+    return this.transcribeAudioWithConfig(input, config, {
+      orgId,
+      userId: attribution?.userId,
+    });
   }
 
   async generateImageForOrg(
     orgId: string,
-    input: GenerateImageRequest
+    input: GenerateImageRequest,
+    attribution?: { userId?: string | null }
   ): Promise<GenerateImageResponse> {
     const config = await this.getOrgUserConfig(orgId);
-    return this.generateImageWithConfig(input, config, orgId);
+    return this.generateImageWithConfig(input, config, orgId, attribution);
   }
 
   async setUserTimezone(timezone: string | undefined): Promise<string> {
@@ -3823,7 +3875,8 @@ export class AgentService {
 
   private async transcribeAudioWithConfig(
     input: TranscribeAudioRequest,
-    config: UserConfig | null
+    config: UserConfig | null,
+    attribution?: { orgId?: string | null; userId?: string | null }
   ): Promise<TranscribeAudioResponse> {
     const data = input.data?.trim();
     const mediaType = input.mediaType?.trim();
@@ -3853,13 +3906,26 @@ export class AgentService {
       process.env,
       this.providerAdapterRegistry
     );
+    const orgId = attribution?.orgId?.trim();
+    if (orgId) {
+      // Transcription providers do not report token usage; the request count
+      // is the Atlas-observed signal.
+      this.recordCapabilityUsageDaily({
+        capability: PROVIDER_CAPABILITY_IDS.audioTranscription,
+        instance: selection.instance,
+        modelId: selection.model,
+        orgId,
+        userId: attribution?.userId,
+      });
+    }
     return { text };
   }
 
   private async generateImageWithConfig(
     input: GenerateImageRequest,
     config: UserConfig | null,
-    orgId?: string | null
+    orgId?: string | null,
+    attribution?: { userId?: string | null }
   ): Promise<GenerateImageResponse> {
     const prompt = input.prompt?.trim();
     if (!prompt) {
@@ -3890,33 +3956,14 @@ export class AgentService {
       }
     );
     if (orgId) {
-      const estimatedCostUsd = estimateUsageCostUsd(
-        result.model,
-        usage.inputTokens,
-        usage.outputTokens,
-        {
-          provider: selection.instance.type,
-          providerInstance: selection.instance,
-        }
-      );
-      void this.db
-        .incrementLlmUsageDaily(
-          {
-            modelId: result.model,
-            orgId,
-            profileId: UNKNOWN_USAGE_DIMENSION,
-            providerCredentialId: selection.instance.id,
-            providerType: selection.instance.type,
-            userId: UNKNOWN_USAGE_DIMENSION,
-          },
-          {
-            estimatedCostUsd,
-            inputTokens: usage.inputTokens,
-            outputTokens: usage.outputTokens,
-            requestCount: 1,
-          }
-        )
-        .catch(() => undefined);
+      this.recordCapabilityUsageDaily({
+        capability: PROVIDER_CAPABILITY_IDS.imageGeneration,
+        instance: selection.instance,
+        modelId: result.model,
+        orgId,
+        usage,
+        userId: attribution?.userId,
+      });
     }
     return {
       data: Buffer.from(result.data).toString("base64"),
@@ -5137,7 +5184,7 @@ export class AgentService {
       images: ReturnType<typeof extractImageParts>
     ): Promise<string[]> =>
       describeImagesWithConfiguredVisionModel(userConfig, images, {
-        recordUsage: (model, usage, instance) =>
+        recordUsage: (model, usage, instance) => {
           this.llmUsageTracker?.record(
             model,
             usage.inputTokens,
@@ -5146,7 +5193,17 @@ export class AgentService {
               provider: instance.type,
               providerInstance: instance,
             }
-          ),
+          );
+          this.recordCapabilityUsageDaily({
+            capability: PROVIDER_CAPABILITY_IDS.imageUnderstanding,
+            instance,
+            modelId: model,
+            orgId,
+            profileId,
+            usage,
+            userId,
+          });
+        },
         registry: this.providerAdapterRegistry,
       });
     const forbidProfileSkillMarkdownWrites =

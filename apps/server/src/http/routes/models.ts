@@ -1509,11 +1509,14 @@ export function registerModelRoutes(
   app.post("/v1/audio/transcribe", async (c) => {
     requireNotViewerFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
+    const auth = getRequestAuth(c);
     const body = await readJson<TranscribeAudioRequest>(c.req.raw);
 
     try {
       return json<TranscribeAudioResponse>(
-        await agent.transcribeAudioForOrg(orgId, body)
+        await agent.transcribeAudioForOrg(orgId, body, {
+          userId: auth.user.id,
+        })
       );
     } catch (error) {
       if (error instanceof AtlasApiError) {
@@ -1555,11 +1558,14 @@ export function registerModelRoutes(
   app.post("/v1/images/generate", async (c) => {
     requireNotViewerFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
+    const auth = getRequestAuth(c);
     const body = await readJson<GenerateImageRequest>(c.req.raw);
 
     try {
       return json<GenerateImageResponse>(
-        await agent.generateImageForOrg(orgId, body)
+        await agent.generateImageForOrg(orgId, body, {
+          userId: auth.user.id,
+        })
       );
     } catch (error) {
       if (error instanceof AtlasApiError) {

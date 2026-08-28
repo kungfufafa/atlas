@@ -188,9 +188,19 @@ export type LlmUsageReportGroupBy =
   | "user"
   | "provider"
   | "model"
-  | "credential";
+  | "credential"
+  | "capability"
+  | "auth";
+
+/** Credential path that served a request: host subscription login or API key. */
+export type LlmUsageAuthKind = "subscription" | "api";
 
 export interface LlmUsageReportRow {
+  /**
+   * Present for provider/credential/auth groupings: whether the rows were
+   * served by a subscription login or an API-key credential.
+   */
+  authKind?: LlmUsageAuthKind;
   estimatedCostUsd: number;
   inputTokens: number;
   /** Raw grouping key (org id, user id, provider type, model id, …). */
