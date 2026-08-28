@@ -269,6 +269,49 @@ describe("UsageReportService subscription vs API visibility", () => {
   });
 });
 
+describe("UsageReportService platform overview", () => {
+  test("includes workspaces that only have a policy and skips unknown org keys", async () => {
+    await db.upsertOrgUsageBudget({
+      enforceBudget: false,
+      monthlyLimitUsd: 50,
+      orgId: "org_quiet",
+      perUserMonthlyRequests: 200,
+      updatedAt: new Date().toISOString(),
+    });
+    await seedOrg("org_quiet", "Quiet Division");
+    // Usage with an unresolved workspace must not become an overview row.
+    await db.incrementLlmUsageDaily(
+      {
+        capability: "chat.completion",
+        modelId: "gpt-x",
+        orgId: "unknown",
+        profileId: "p1",
+        providerCredentialId: "cred",
+        providerType: "openai",
+        userId: "user_x",
+      },
+      { estimatedCostUsd: 0, inputTokens: 5, outputTokens: 5, requestCount: 1 }
+    );
+
+    const overview = await service.getPlatformOverview();
+    const quiet = overview.workspaces.find((row) => row.orgId === "org_quiet");
+    expect(quiet).toMatchObject({
+      monthlyLimitUsd: 50,
+      orgName: "Quiet Division",
+      perUserMonthlyRequests: 200,
+      requestCount: 0,
+      totalTokens: 0,
+    });
+    expect(overview.workspaces.some((row) => row.orgId === "unknown")).toBe(
+      false
+    );
+    // Seeded orgs with usage are present and labeled.
+    expect(overview.workspaces.map((row) => row.orgName)).toEqual(
+      expect.arrayContaining(["Acme", "Globex"])
+    );
+  });
+});
+
 describe("UsageReportService budgets", () => {
   test("reports month-to-date spend and over-budget after setting a limit", async () => {
     const db = createInMemoryDatabaseAdapter();

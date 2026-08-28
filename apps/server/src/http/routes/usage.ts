@@ -160,6 +160,40 @@ export function registerUsageRoutes(
     return json(status);
   });
 
+  // Platform-wide (cross-workspace) usage report. Lives under /v1/platform so
+  // the org-context middleware does not force a workspace scope; the guard is
+  // the same platform-admin requirement as the other /v1/platform routes.
+  app.get("/v1/platform/usage", async (c) => {
+    const db = options.databaseAdapter;
+    if (!db) {
+      throw new Error("Database adapter is not configured.");
+    }
+    requirePlatformAdminFromContext(c);
+
+    const limitRaw = Number(c.req.query("limit"));
+    const limit =
+      Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : undefined;
+    const report = await new UsageReportService(db).getReport(
+      {
+        from: parseDate(c.req.query("from")),
+        groupBy: parseGroupBy(c.req.query("groupBy")),
+        limit,
+        to: parseDate(c.req.query("to")),
+      },
+      { isPlatformAdmin: true }
+    );
+    return json(report);
+  });
+
+  app.get("/v1/platform/usage/overview", async (c) => {
+    const db = options.databaseAdapter;
+    if (!db) {
+      throw new Error("Database adapter is not configured.");
+    }
+    requirePlatformAdminFromContext(c);
+    return json(await new UsageReportService(db).getPlatformOverview());
+  });
+
   // Retention: platform admins can prune old rollup rows (default: >365 days).
   app.post("/v1/usage/prune", async (c) => {
     const db = options.databaseAdapter;

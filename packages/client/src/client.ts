@@ -113,6 +113,7 @@ import type {
   OrgUsageBudgetResponse,
   PatchSkillRequest,
   PinOrgMemoryRequest,
+  PlatformUsageOverviewResponse,
   PreviewDataImportRequest,
   PreviewJob,
   PreviewManifest,
@@ -345,6 +346,35 @@ export class AtlasClient {
 
   async getUsageBudget(): Promise<OrgUsageBudgetResponse> {
     return this.request<OrgUsageBudgetResponse>("/v1/usage/budget");
+  }
+
+  /** Platform-admin only: cross-workspace usage report. */
+  async getPlatformUsageReport(params: {
+    groupBy: LlmUsageReportGroupBy;
+    from?: string;
+    to?: string;
+    limit?: number;
+  }): Promise<LlmUsageReportResponse> {
+    const search = new URLSearchParams({ groupBy: params.groupBy });
+    if (params.from) {
+      search.set("from", params.from);
+    }
+    if (params.to) {
+      search.set("to", params.to);
+    }
+    if (params.limit) {
+      search.set("limit", String(params.limit));
+    }
+    return this.request<LlmUsageReportResponse>(
+      `/v1/platform/usage?${search.toString()}`
+    );
+  }
+
+  /** Platform-admin only: month-to-date usage and budget state per workspace. */
+  async getPlatformUsageOverview(): Promise<PlatformUsageOverviewResponse> {
+    return this.request<PlatformUsageOverviewResponse>(
+      "/v1/platform/usage/overview"
+    );
   }
 
   async setUsageBudget(

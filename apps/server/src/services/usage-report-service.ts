@@ -5,6 +5,8 @@ import type {
   LlmUsageReportRow,
   OrgRole,
   OrgUsageBudgetResponse,
+  PlatformUsageOverviewResponse,
+  PlatformUsageOverviewRow,
 } from "@atlas/core";
 import {
   getBuiltinProviderDefinition,
@@ -225,6 +227,62 @@ export class UsageReportService {
       overBudget: limit ? monthToDateUsd > limit : false,
       perUserMonthlyRequests,
     };
+  }
+
+  /**
+   * Platform-admin, cross-workspace month-to-date overview: every workspace
+   * with recorded usage or a configured policy, joined with its budget state.
+   * Never exposed through workspace-scoped routes — the caller must hold
+   * platform admin.
+   */
+  async getPlatformOverview(): Promise<PlatformUsageOverviewResponse> {
+    const { from, month } = this.currentMonth();
+    const [usageRows, budgets] = await Promise.all([
+      this.db.aggregateLlmUsage({ from, groupBy: "workspace" }),
+      this.db.listOrgUsageBudgets(),
+    ]);
+
+    const usageByOrg = new Map(usageRows.map((row) => [row.key, row]));
+    const budgetByOrg = new Map(
+      budgets.map((budget) => [budget.orgId, budget])
+    );
+    const orgIds = new Set([...usageByOrg.keys(), ...budgetByOrg.keys()]);
+    orgIds.delete(UNKNOWN_USAGE_DIMENSION);
+
+    const workspaces: PlatformUsageOverviewRow[] = await Promise.all(
+      [...orgIds].map(async (orgId) => {
+        const usage = usageByOrg.get(orgId);
+        const budget = budgetByOrg.get(orgId);
+        const organization = await this.db.getOrganizationById(orgId);
+        const limit =
+          budget && budget.monthlyLimitUsd > 0 ? budget.monthlyLimitUsd : null;
+        const spentUsd = usage?.estimatedCostUsd ?? 0;
+        return {
+          enforced: budget?.enforceBudget === true,
+          estimatedCostUsd: spentUsd,
+          fractionUsed: limit ? spentUsd / limit : null,
+          monthlyLimitUsd: limit,
+          orgId,
+          orgName: organization?.name ?? orgId,
+          overBudget: limit ? spentUsd > limit : false,
+          perUserMonthlyRequests:
+            budget && budget.perUserMonthlyRequests > 0
+              ? budget.perUserMonthlyRequests
+              : null,
+          requestCount: usage?.requestCount ?? 0,
+          totalTokens: usage?.totalTokens ?? 0,
+        };
+      })
+    );
+
+    workspaces.sort(
+      (left, right) =>
+        right.estimatedCostUsd - left.estimatedCostUsd ||
+        right.totalTokens - left.totalTokens ||
+        left.orgName.localeCompare(right.orgName)
+    );
+
+    return { month, workspaces };
   }
 
   async setBudget(

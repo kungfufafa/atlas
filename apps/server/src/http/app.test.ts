@@ -57,6 +57,7 @@ function createServerOptions() {
   const authService = new AuthService();
   return {
     agent: {
+      assertSessionTurnAllowed: async () => {},
       assignMcpServer: async (_profileId: string, _body: unknown) => ({
         id: "default",
       }),

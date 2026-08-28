@@ -240,6 +240,29 @@ export interface OrgUsageBudgetResponse {
   perUserMonthlyRequests: number | null;
 }
 
+/** One workspace row in the platform-wide month-to-date usage overview. */
+export interface PlatformUsageOverviewRow {
+  /** Whether the workspace budget hard-blocks cost-bearing executions. */
+  enforced: boolean;
+  /** Month-to-date estimated API spend (USD). */
+  estimatedCostUsd: number;
+  /** Fraction of the budget used (0..1+), or null when no budget. */
+  fractionUsed: number | null;
+  monthlyLimitUsd: number | null;
+  orgId: string;
+  orgName: string;
+  overBudget: boolean;
+  perUserMonthlyRequests: number | null;
+  requestCount: number;
+  totalTokens: number;
+}
+
+export interface PlatformUsageOverviewResponse {
+  /** `YYYY-MM` the overview is measured over. */
+  month: string;
+  workspaces: PlatformUsageOverviewRow[];
+}
+
 export interface LlmUsageStats {
   estimatedCostUsd: number;
   inputTokens: number;

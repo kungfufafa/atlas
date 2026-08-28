@@ -96,6 +96,9 @@ export function StatusPage({ embedded = false }: { embedded?: boolean } = {}) {
             embedded={embedded}
             orgId={activeOrg?.id ?? null}
           />
+          {user?.isPlatformAdmin ? (
+            <PlatformUsageSection embedded={embedded} />
+          ) : null}
         </>
       ) : null}
     </div>
@@ -212,6 +215,103 @@ function UsageBreakdownSection({
         isLoading={isLoading}
         rows={rows}
       />
+    </section>
+  );
+}
+
+function PlatformUsageSection({ embedded }: { embedded: boolean }) {
+  const { data, isLoading, error } = useQuery({
+    queryFn: () => client.getPlatformUsageOverview(),
+    queryKey: ["platform-usage-overview"],
+  });
+  const workspaces = data?.workspaces ?? [];
+  const hasCost = workspaces.some((row) => row.estimatedCostUsd > 0);
+
+  return (
+    <section className={cn(embedded ? "px-4 py-4" : `${sectionClass} p-4`)}>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-semibold text-foreground text-sm">
+          All workspaces{data ? ` · ${data.month}` : ""}
+        </h2>
+      </div>
+
+      {error ? (
+        <p className="text-destructive text-sm" role="alert">
+          Could not load workspace usage: {formatError(error)}
+        </p>
+      ) : isLoading ? (
+        <p className="text-muted-foreground text-sm">
+          Loading workspace usage…
+        </p>
+      ) : workspaces.length === 0 ? (
+        <p className="text-muted-foreground text-sm">
+          No usage recorded this month yet.
+        </p>
+      ) : (
+        <div className="overflow-hidden rounded-md border border-border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-border border-b bg-muted/40 text-left text-muted-foreground text-xs">
+                <th className="px-3 py-2 font-medium">Workspace</th>
+                <th className="px-3 py-2 text-right font-medium">Requests</th>
+                <th className="px-3 py-2 text-right font-medium">
+                  Total tokens
+                </th>
+                {hasCost ? (
+                  <th className="px-3 py-2 text-right font-medium">
+                    Est. cost
+                  </th>
+                ) : null}
+                <th className="px-3 py-2 text-right font-medium">Budget</th>
+              </tr>
+            </thead>
+            <tbody>
+              {workspaces.map((row) => (
+                <tr
+                  className="border-border border-t first:border-t-0"
+                  key={row.orgId}
+                >
+                  <td className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate font-medium text-foreground">
+                        {row.orgName}
+                      </span>
+                      {row.overBudget ? (
+                        <span className="shrink-0 rounded-full border border-destructive/30 bg-destructive/10 px-1.5 py-0.5 text-2xs text-destructive">
+                          Over budget
+                        </span>
+                      ) : null}
+                      {row.enforced ? (
+                        <span className="shrink-0 rounded-full border border-border bg-muted/40 px-1.5 py-0.5 text-2xs text-muted-foreground">
+                          Enforced
+                        </span>
+                      ) : null}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {row.requestCount.toLocaleString()}
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {row.totalTokens.toLocaleString()}
+                  </td>
+                  {hasCost ? (
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {row.estimatedCostUsd > 0
+                        ? formatUsd(row.estimatedCostUsd)
+                        : "—"}
+                    </td>
+                  ) : null}
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {row.monthlyLimitUsd == null
+                      ? "—"
+                      : `${formatUsd(row.estimatedCostUsd)} / ${formatUsd(row.monthlyLimitUsd)}`}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </section>
   );
 }
