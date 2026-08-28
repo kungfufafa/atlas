@@ -66,11 +66,19 @@ Husky runs `bun x ultracite fix` on staged files in `.husky/pre-commit` and re-s
 
 ## Testing
 
+Default suite is fast and deterministic: workspace unit/integration tests plus the in-memory critical-path checks. It does **not** start the channel-loop server or require LibreOffice / Playwright browsers.
+
 ```bash
-bun test
+bun run test          # unit + critical-path residuals (no LibreOffice / Chromium)
+bun run test:heavy    # browser-session + office-fidelity (needs Chromium / LibreOffice)
+bun run test:smoke    # channel file-in/file-out harness (starts a local Atlas server)
+bun run typecheck     # server / packages / platform (excludes apps/web)
+bun run typecheck:web # apps/web tsc — this is what Docker publish runs before vite build
 ```
 
-Assert behavior (outputs, status codes, side effects), not prompt text, description strings, or exact error copy.
+`bun test` from the repo root also picks up `scripts/channel-loop-harness`; prefer `bun run test` unless you want that harness. Assert behavior (outputs, status codes, side effects), not prompt text, description strings, or exact error copy.
+
+Office conversion and Chromium browser-session cases `skipIf` the binary is missing, so `bun run test` stays green on a laptop without those installs. CI runs `test:heavy` on a job that installs them.
 
 ### LLM cassette tests (MSW)
 

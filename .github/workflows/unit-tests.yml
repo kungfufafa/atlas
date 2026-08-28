@@ -9,8 +9,12 @@ concurrency:
   group: unit-tests-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  LLM_VCR_MODE: replay
+
 jobs:
-  test:
+  static:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -22,13 +26,64 @@ jobs:
           bun-version: 1.3.14
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bun install --frozen-lockfile --ignore-scripts
 
       - name: Type-check server-side code
         run: bun run typecheck
 
-      - name: Build workspaces
-        run: bun run build
+      - name: Type-check web
+        run: bun run typecheck:web
+
+  unit:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Run unit tests
+        run: bun run test
+
+  smoke:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Channel file-in/file-out loop
+        run: bun run test:smoke
+
+  heavy:
+    timeout-minutes: 25
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
 
       - name: Install LibreOffice (office preview fidelity tests)
         run: |
@@ -39,14 +94,14 @@ jobs:
             libreoffice-impress \
             libreoffice-writer
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}
+
       - name: Install Playwright Chromium (browser session tests)
         run: bunx playwright install --with-deps chromium
 
-      - name: Run tests
-        run: bun run test
-
-      - name: Channel file-in/file-out loop
-        run: bun test scripts/channel-loop-harness/channel-loop-harness.test.ts
-
-      - name: Critical-path residual checks
-        run: bun test scripts/e2e-critical-paths.test.ts
+      - name: Run browser and office fidelity tests
+        run: bun run test:heavy
