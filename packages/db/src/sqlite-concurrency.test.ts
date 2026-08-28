@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  configureSqliteConnection,
   createSqliteDatabase,
   SQLITE_BUSY_TIMEOUT_MS,
 } from "./adapters/sqlite";
@@ -28,10 +29,12 @@ describe("sqlite concurrency pragmas", () => {
       const journal = probe.query("PRAGMA journal_mode").get() as {
         journal_mode: string;
       };
+      expect(journal.journal_mode.toLowerCase()).toBe("wal");
+
+      configureSqliteConnection(probe, databasePath);
       const busy = probe.query("PRAGMA busy_timeout").get() as {
         timeout: number;
       };
-      expect(journal.journal_mode.toLowerCase()).toBe("wal");
       expect(busy.timeout).toBe(SQLITE_BUSY_TIMEOUT_MS);
     } finally {
       probe.close();

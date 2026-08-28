@@ -1,11 +1,4 @@
-import {
-  afterAll,
-  beforeAll,
-  describe,
-  expect,
-  setDefaultTimeout,
-  test,
-} from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import {
   browserTool,
@@ -36,14 +29,10 @@ function playwrightChromiumAvailable(): boolean {
 }
 
 const chromiumAvailable = playwrightChromiumAvailable();
+const BROWSER_TEST_TIMEOUT_MS = 30_000;
 
 let testServer: ReturnType<typeof serve> | null = null;
 let testServerUrl = "";
-
-// Chromium cold-start on GitHub Actions regularly exceeds bun's 5s default,
-// then later tests reuse a closed browser ("Target page, context or browser
-// has been closed"). Extra headroom matches telegram/sqlite CI timeouts.
-setDefaultTimeout(30_000);
 
 describe.skipIf(!chromiumAvailable)(
   "BrowserSessionService and browserTool",
@@ -140,144 +129,168 @@ describe.skipIf(!chromiumAvailable)(
       testServer?.stop(true);
     });
 
-    test("navigates to page, extracts title and compact element refs", async () => {
-      const output = await browserTool.run(
-        {
-          action: "open",
-          url: `${testServerUrl}/`,
-        },
-        { orgId: "org-1", profileId: "prof-1", sessionId: "sess-1" }
-      );
+    test(
+      "navigates to page, extracts title and compact element refs",
+      async () => {
+        const output = await browserTool.run(
+          {
+            action: "open",
+            url: `${testServerUrl}/`,
+          },
+          { orgId: "org-1", profileId: "prof-1", sessionId: "sess-1" }
+        );
 
-      expect(output.status).toBe("success");
-      expect(output.snapshot?.title).toBe("Atlas Test Store");
-      expect(output.snapshot?.interactiveElements.length).toBeGreaterThan(0);
-      const linkEl = output.snapshot?.interactiveElements.find(
-        (e) => e.name === "Products"
-      );
-      expect(linkEl).toBeDefined();
-      expect(linkEl?.ref).toMatch(/^e\d+$/);
-    });
+        expect(output.status).toBe("success");
+        expect(output.snapshot?.title).toBe("Atlas Test Store");
+        expect(output.snapshot?.interactiveElements.length).toBeGreaterThan(0);
+        const linkEl = output.snapshot?.interactiveElements.find(
+          (e) => e.name === "Products"
+        );
+        expect(linkEl).toBeDefined();
+        expect(linkEl?.ref).toMatch(/^e\d+$/);
+      },
+      BROWSER_TEST_TIMEOUT_MS
+    );
 
-    test("clicks element using element ref", async () => {
-      const openOutput = await browserTool.run(
-        {
-          action: "open",
-          url: `${testServerUrl}/`,
-        },
-        { orgId: "org-1", profileId: "prof-1", sessionId: "sess-1" }
-      );
+    test(
+      "clicks element using element ref",
+      async () => {
+        const openOutput = await browserTool.run(
+          {
+            action: "open",
+            url: `${testServerUrl}/`,
+          },
+          { orgId: "org-1", profileId: "prof-1", sessionId: "sess-1" }
+        );
 
-      const linkEl = openOutput.snapshot?.interactiveElements.find(
-        (e) => e.name === "Products"
-      );
-      expect(linkEl).toBeDefined();
+        const linkEl = openOutput.snapshot?.interactiveElements.find(
+          (e) => e.name === "Products"
+        );
+        expect(linkEl).toBeDefined();
 
-      const clickOutput = await browserTool.run(
-        {
-          action: "click",
-          element: linkEl!.ref,
-        },
-        { orgId: "org-1", profileId: "prof-1", sessionId: "sess-1" }
-      );
+        const clickOutput = await browserTool.run(
+          {
+            action: "click",
+            element: linkEl!.ref,
+          },
+          { orgId: "org-1", profileId: "prof-1", sessionId: "sess-1" }
+        );
 
-      expect(clickOutput.status).toBe("success");
-      expect(clickOutput.snapshot?.title).toBe("Products - Test Store");
-      expect(clickOutput.snapshot?.text).toContain("Product Catalog");
-    });
+        expect(clickOutput.status).toBe("success");
+        expect(clickOutput.snapshot?.title).toBe("Products - Test Store");
+        expect(clickOutput.snapshot?.text).toContain("Product Catalog");
+      },
+      BROWSER_TEST_TIMEOUT_MS
+    );
 
-    test("types into textbox and clicks submit", async () => {
-      const pageSnap = await browserTool.run(
-        {
-          action: "open",
-          url: `${testServerUrl}/products`,
-        },
-        { orgId: "org-1", profileId: "prof-1", sessionId: "sess-1" }
-      );
+    test(
+      "types into textbox and clicks submit",
+      async () => {
+        const pageSnap = await browserTool.run(
+          {
+            action: "open",
+            url: `${testServerUrl}/products`,
+          },
+          { orgId: "org-1", profileId: "prof-1", sessionId: "sess-1" }
+        );
 
-      const inputEl = pageSnap.snapshot?.interactiveElements.find(
-        (e) => e.role === "textbox"
-      );
-      expect(inputEl).toBeDefined();
+        const inputEl = pageSnap.snapshot?.interactiveElements.find(
+          (e) => e.role === "textbox"
+        );
+        expect(inputEl).toBeDefined();
 
-      await browserTool.run(
-        {
-          action: "type",
-          element: inputEl!.ref,
-          text: "Atlas Pro",
-        },
-        { orgId: "org-1", profileId: "prof-1", sessionId: "sess-1" }
-      );
+        await browserTool.run(
+          {
+            action: "type",
+            element: inputEl!.ref,
+            text: "Atlas Pro",
+          },
+          { orgId: "org-1", profileId: "prof-1", sessionId: "sess-1" }
+        );
 
-      const btnEl = pageSnap.snapshot?.interactiveElements.find(
-        (e) => e.role === "button" || e.name === "Search"
-      );
-      expect(btnEl).toBeDefined();
+        const btnEl = pageSnap.snapshot?.interactiveElements.find(
+          (e) => e.role === "button" || e.name === "Search"
+        );
+        expect(btnEl).toBeDefined();
 
-      const searchOutput = await browserTool.run(
-        {
-          action: "click",
-          element: btnEl!.ref,
-        },
-        { orgId: "org-1", profileId: "prof-1", sessionId: "sess-1" }
-      );
+        const searchOutput = await browserTool.run(
+          {
+            action: "click",
+            element: btnEl!.ref,
+          },
+          { orgId: "org-1", profileId: "prof-1", sessionId: "sess-1" }
+        );
 
-      expect(searchOutput.snapshot?.title).toBe("Search Results");
-      expect(searchOutput.snapshot?.text).toContain("Price: $299");
-    });
+        expect(searchOutput.snapshot?.title).toBe("Search Results");
+        expect(searchOutput.snapshot?.text).toContain("Price: $299");
+      },
+      BROWSER_TEST_TIMEOUT_MS
+    );
 
-    test("finds text on page", async () => {
-      const findOutput = await browserTool.run(
-        {
-          action: "find",
-          query: "$299",
-        },
-        { orgId: "org-1", profileId: "prof-1", sessionId: "sess-1" }
-      );
+    test(
+      "finds text on page",
+      async () => {
+        const findOutput = await browserTool.run(
+          {
+            action: "find",
+            query: "$299",
+          },
+          { orgId: "org-1", profileId: "prof-1", sessionId: "sess-1" }
+        );
 
-      expect(findOutput.status).toBe("success");
-      expect(findOutput.message).toContain("$299");
-    });
+        expect(findOutput.status).toBe("success");
+        expect(findOutput.message).toContain("$299");
+      },
+      BROWSER_TEST_TIMEOUT_MS
+    );
 
-    test("closes browser session context", async () => {
-      const closeOutput = await browserTool.run(
-        {
-          action: "close",
-        },
-        { orgId: "org-1", profileId: "prof-1", sessionId: "sess-1" }
-      );
+    test(
+      "closes browser session context",
+      async () => {
+        const closeOutput = await browserTool.run(
+          {
+            action: "close",
+          },
+          { orgId: "org-1", profileId: "prof-1", sessionId: "sess-1" }
+        );
 
-      expect(closeOutput.status).toBe("success");
-    });
+        expect(closeOutput.status).toBe("success");
+      },
+      BROWSER_TEST_TIMEOUT_MS
+    );
 
-    test("closing one org browser session leaves another org's session intact", async () => {
-      await browserTool.run(
-        { action: "open", url: `${testServerUrl}/` },
-        { orgId: "org-a", profileId: "prof-a", sessionId: "sess-a" }
-      );
-      await browserTool.run(
-        { action: "open", url: `${testServerUrl}/products` },
-        { orgId: "org-b", profileId: "prof-b", sessionId: "sess-b" }
-      );
+    test(
+      "closing one org browser session leaves another org's session intact",
+      async () => {
+        await browserTool.run(
+          { action: "open", url: `${testServerUrl}/` },
+          { orgId: "org-a", profileId: "prof-a", sessionId: "sess-a" }
+        );
+        await browserTool.run(
+          { action: "open", url: `${testServerUrl}/products` },
+          { orgId: "org-b", profileId: "prof-b", sessionId: "sess-b" }
+        );
 
-      const closeOutput = await browserTool.run(
-        { action: "close" },
-        { orgId: "org-a", profileId: "prof-a", sessionId: "sess-a" }
-      );
-      expect(closeOutput.status).toBe("success");
+        const closeOutput = await browserTool.run(
+          { action: "close" },
+          { orgId: "org-a", profileId: "prof-a", sessionId: "sess-a" }
+        );
+        expect(closeOutput.status).toBe("success");
 
-      const remaining = await browserTool.run(
-        { action: "find", query: "Product Catalog" },
-        { orgId: "org-b", profileId: "prof-b", sessionId: "sess-b" }
-      );
-      expect(remaining.status).toBe("success");
-      expect(remaining.message).toContain("Product Catalog");
+        const remaining = await browserTool.run(
+          { action: "find", query: "Product Catalog" },
+          { orgId: "org-b", profileId: "prof-b", sessionId: "sess-b" }
+        );
+        expect(remaining.status).toBe("success");
+        expect(remaining.message).toContain("Product Catalog");
 
-      await browserTool.run(
-        { action: "close" },
-        { orgId: "org-b", profileId: "prof-b", sessionId: "sess-b" }
-      );
-    });
+        await browserTool.run(
+          { action: "close" },
+          { orgId: "org-b", profileId: "prof-b", sessionId: "sess-b" }
+        );
+      },
+      BROWSER_TEST_TIMEOUT_MS
+    );
   }
 );
 

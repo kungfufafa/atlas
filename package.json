@@ -38,6 +38,7 @@
     "test:heavy": "bun test apps/server/src/services/browser-session-service.test.ts packages/core/src/artifact-preview/office-worker.test.ts",
     "test:smoke": "bun test scripts/channel-loop-harness/channel-loop-harness.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
+    "typecheck:web": "tsc --noEmit -p apps/web/tsconfig.json",
     "view:cassettes": "bun run apps/server/src/testing/cassettes/serve.ts"
   },
   "overrides": {

@@ -444,7 +444,10 @@ interface ArtifactShareRow {
 
 export const SQLITE_BUSY_TIMEOUT_MS = 5000;
 
-function configureSqliteConnection(db: Database, databasePath: string): void {
+export function configureSqliteConnection(
+  db: Database,
+  databasePath: string
+): void {
   // Server, workers, and test harnesses can share one on-disk file. WAL lets
   // readers proceed during a write; busy_timeout retries instead of failing
   // immediately with SQLITE_BUSY.

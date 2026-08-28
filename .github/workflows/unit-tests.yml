@@ -31,8 +31,8 @@ jobs:
       - name: Type-check server-side code
         run: bun run typecheck
 
-      - name: Build workspaces
-        run: bun run build
+      - name: Type-check web
+        run: bun run typecheck:web
 
   unit:
     timeout-minutes: 15

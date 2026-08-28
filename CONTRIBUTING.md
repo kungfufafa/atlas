@@ -72,6 +72,8 @@ Default suite is fast and deterministic: workspace unit/integration tests plus t
 bun run test          # unit + critical-path residuals (no LibreOffice / Chromium)
 bun run test:heavy    # browser-session + office-fidelity (needs Chromium / LibreOffice)
 bun run test:smoke    # channel file-in/file-out harness (starts a local Atlas server)
+bun run typecheck     # server / packages / platform (excludes apps/web)
+bun run typecheck:web # apps/web tsc — this is what Docker publish runs before vite build
 ```
 
 `bun test` from the repo root also picks up `scripts/channel-loop-harness`; prefer `bun run test` unless you want that harness. Assert behavior (outputs, status codes, side effects), not prompt text, description strings, or exact error copy.
