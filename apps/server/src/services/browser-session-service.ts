@@ -168,6 +168,20 @@ export async function assertBrowserNavigationUrl(
   );
 }
 
+type TestBrowserLaunch = (options: {
+  args: string[];
+  headless: boolean;
+  http1: boolean;
+}) => Promise<Browser>;
+
+let testBrowserLaunch: TestBrowserLaunch | null = null;
+
+export function setBrowserLaunchForTests(
+  launch: TestBrowserLaunch | null
+): void {
+  testBrowserLaunch = launch;
+}
+
 export class BrowserSessionService {
   private browserPromise: Promise<Browser> | null = null;
   private http1BrowserPromise: Promise<Browser> | null = null;
@@ -215,6 +229,9 @@ export class BrowserSessionService {
   private async launchBrowser(http1 = false): Promise<Browser> {
     const headless = shouldLaunchHeadlessBrowser();
     const args = browserLaunchArgs({ headed: !headless, http1 });
+    if (testBrowserLaunch) {
+      return testBrowserLaunch({ args, headless, http1 });
+    }
 
     const launch = (channel?: "chrome") =>
       chromium.launch({
