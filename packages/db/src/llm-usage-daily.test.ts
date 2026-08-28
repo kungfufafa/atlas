@@ -149,17 +149,24 @@ describe("llm_usage_daily rollup + aggregation (in-memory)", () => {
     const db = await seed();
     expect(await db.getOrgUsageBudget("org_a")).toBeNull();
     await db.upsertOrgUsageBudget({
+      enforceBudget: false,
       monthlyLimitUsd: 25,
       orgId: "org_a",
+      perUserMonthlyRequests: 0,
       updatedAt: new Date().toISOString(),
     });
     expect((await db.getOrgUsageBudget("org_a"))?.monthlyLimitUsd).toBe(25);
     await db.upsertOrgUsageBudget({
+      enforceBudget: true,
       monthlyLimitUsd: 40,
       orgId: "org_a",
+      perUserMonthlyRequests: 500,
       updatedAt: new Date().toISOString(),
     });
-    expect((await db.getOrgUsageBudget("org_a"))?.monthlyLimitUsd).toBe(40);
+    const updated = await db.getOrgUsageBudget("org_a");
+    expect(updated?.monthlyLimitUsd).toBe(40);
+    expect(updated?.enforceBudget).toBe(true);
+    expect(updated?.perUserMonthlyRequests).toBe(500);
     expect(await db.listOrgUsageBudgets()).toHaveLength(1);
   });
 });

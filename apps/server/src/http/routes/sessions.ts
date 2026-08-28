@@ -702,6 +702,14 @@ export function registerSessionRoutes(
       }
       throw error;
     }
+    try {
+      await agent.assertSessionTurnAllowed(orgId, sessionId, auth.user.id);
+    } catch (error) {
+      if (error instanceof AtlasApiError) {
+        return errorResponse(error.message, error.status);
+      }
+      throw error;
+    }
     const turnStarted = await agent.beginSessionTurn(orgId, sessionId);
     if (turnStarted === null) {
       return errorResponse("Session not found", 404);

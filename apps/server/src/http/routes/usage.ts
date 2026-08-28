@@ -141,11 +141,22 @@ export function registerUsageRoutes(
     }
     requireOrgAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
-    const body = await readJson<{ monthlyLimitUsd?: number }>(c.req.raw);
-    const status = await new UsageReportService(db).setBudget(
-      orgId,
-      Number(body.monthlyLimitUsd ?? 0)
-    );
+    const body = await readJson<{
+      enforced?: boolean;
+      monthlyLimitUsd?: number;
+      perUserMonthlyRequests?: number;
+    }>(c.req.raw);
+    const status = await new UsageReportService(db).setBudget(orgId, {
+      ...(body.enforced === undefined
+        ? {}
+        : { enforced: body.enforced === true }),
+      ...(body.monthlyLimitUsd === undefined
+        ? {}
+        : { monthlyLimitUsd: Number(body.monthlyLimitUsd) }),
+      ...(body.perUserMonthlyRequests === undefined
+        ? {}
+        : { perUserMonthlyRequests: Number(body.perUserMonthlyRequests) }),
+    });
     return json(status);
   });
 

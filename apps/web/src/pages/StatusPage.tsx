@@ -16,7 +16,7 @@ import {
   SparklesIcon,
   ZapIcon,
 } from "hugeicons-react";
-import { type ReactNode, useMemo, useState } from "react";
+import { type FormEvent, type ReactNode, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -266,13 +266,19 @@ function BudgetCard({
     queryFn: () => client.getUsageBudget(),
     queryKey: ["usage-budget", orgId],
   });
-  const [draft, setDraft] = useState("");
+  const [draftLimit, setDraftLimit] = useState("");
+  const [draftPerUser, setDraftPerUser] = useState("");
 
   const save = useMutation({
-    mutationFn: (limit: number) => client.setUsageBudget(limit),
+    mutationFn: (policy: {
+      enforced?: boolean;
+      monthlyLimitUsd?: number;
+      perUserMonthlyRequests?: number;
+    }) => client.setUsageBudget(policy),
     onSuccess: (next) => {
       queryClient.setQueryData(["usage-budget", orgId], next);
-      setDraft("");
+      setDraftLimit("");
+      setDraftPerUser("");
     },
   });
 
@@ -281,8 +287,32 @@ function BudgetCard({
   }
 
   const limit = budget.monthlyLimitUsd;
+  const perUserLimit = budget.perUserMonthlyRequests;
   const pct =
     budget.fractionUsed == null ? 0 : Math.min(1, budget.fractionUsed);
+
+  const submitPolicy = (event: FormEvent) => {
+    event.preventDefault();
+    const policy: {
+      monthlyLimitUsd?: number;
+      perUserMonthlyRequests?: number;
+    } = {};
+    if (draftLimit.trim()) {
+      const value = Number(draftLimit);
+      if (Number.isFinite(value) && value >= 0) {
+        policy.monthlyLimitUsd = value;
+      }
+    }
+    if (draftPerUser.trim()) {
+      const value = Number(draftPerUser);
+      if (Number.isFinite(value) && value >= 0) {
+        policy.perUserMonthlyRequests = value;
+      }
+    }
+    if (Object.keys(policy).length > 0) {
+      save.mutate(policy);
+    }
+  };
 
   return (
     <div
@@ -302,28 +332,46 @@ function BudgetCard({
             {`$${budget.monthToDateUsd.toFixed(2)} spent`}
             {limit == null ? " · no budget set" : ` of $${limit.toFixed(2)}`}
             {budget.overBudget ? " · over budget" : ""}
+            {limit != null && budget.enforced ? " · enforced" : ""}
+            {perUserLimit == null
+              ? ""
+              : ` · ${perUserLimit.toLocaleString()} requests/user/mo`}
           </p>
         </div>
         {canManage ? (
-          <form
-            className="flex items-center gap-1"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const value = Number(draft);
-              if (Number.isFinite(value) && value >= 0) {
-                save.mutate(value);
-              }
-            }}
-          >
+          <form className="flex items-center gap-1" onSubmit={submitPolicy}>
             <input
               aria-label="Monthly budget in USD"
-              className="w-24 rounded-md border border-border bg-background px-2 py-1 text-xs"
+              className="w-20 rounded-md border border-border bg-background px-2 py-1 text-xs"
               inputMode="decimal"
-              onChange={(event) => setDraft(event.target.value)}
-              placeholder={limit == null ? "Set $/mo" : String(limit)}
+              onChange={(event) => setDraftLimit(event.target.value)}
+              placeholder={limit == null ? "$/mo" : `$${limit}`}
               type="text"
-              value={draft}
+              value={draftLimit}
             />
+            <input
+              aria-label="Requests per user per month"
+              className="w-24 rounded-md border border-border bg-background px-2 py-1 text-xs"
+              inputMode="numeric"
+              onChange={(event) => setDraftPerUser(event.target.value)}
+              placeholder={
+                perUserLimit == null ? "req/user/mo" : String(perUserLimit)
+              }
+              type="text"
+              value={draftPerUser}
+            />
+            <label className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-muted-foreground text-xs">
+              <input
+                aria-label="Block API requests over budget"
+                checked={budget.enforced}
+                disabled={save.isPending}
+                onChange={(event) =>
+                  save.mutate({ enforced: event.target.checked })
+                }
+                type="checkbox"
+              />
+              Enforce
+            </label>
             <button
               className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted"
               disabled={save.isPending}

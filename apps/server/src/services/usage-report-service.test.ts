@@ -294,10 +294,41 @@ describe("UsageReportService budgets", () => {
     expect(noBudget.monthlyLimitUsd).toBeNull();
     expect(noBudget.monthToDateUsd).toBeCloseTo(0.6, 5);
     expect(noBudget.overBudget).toBe(false);
+    expect(noBudget.enforced).toBe(false);
+    expect(noBudget.perUserMonthlyRequests).toBeNull();
 
-    const set = await service.setBudget("org_a", 0.5);
+    const set = await service.setBudget("org_a", { monthlyLimitUsd: 0.5 });
     expect(set.monthlyLimitUsd).toBe(0.5);
     expect(set.overBudget).toBe(true);
     expect(set.fractionUsed).toBeCloseTo(1.2, 5);
+  });
+
+  test("policy updates merge instead of clobbering unrelated fields", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const service = new UsageReportService(db);
+
+    await service.setBudget("org_a", {
+      monthlyLimitUsd: 20,
+      perUserMonthlyRequests: 500,
+    });
+    const enforcedOnly = await service.setBudget("org_a", { enforced: true });
+    expect(enforcedOnly).toMatchObject({
+      enforced: true,
+      monthlyLimitUsd: 20,
+      perUserMonthlyRequests: 500,
+    });
+
+    const limitOnly = await service.setBudget("org_a", { monthlyLimitUsd: 35 });
+    expect(limitOnly).toMatchObject({
+      enforced: true,
+      monthlyLimitUsd: 35,
+      perUserMonthlyRequests: 500,
+    });
+
+    const cleared = await service.setBudget("org_a", {
+      perUserMonthlyRequests: 0,
+    });
+    expect(cleared.perUserMonthlyRequests).toBeNull();
+    expect(cleared.monthlyLimitUsd).toBe(35);
   });
 });

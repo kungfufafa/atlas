@@ -338,6 +338,7 @@ import {
   resolveToolsFromStorage,
   withToolSearchCatalog,
 } from "./tool-resolver";
+import { UsageLimitService } from "./usage-limit-service";
 
 interface StoredSession {
   channel: AgentChannel;
@@ -416,6 +417,7 @@ export class AgentService {
   private skillSuggestionService: SkillSuggestionService | null = null;
   private orgMemoryService: OrgMemoryService | null = null;
   private readonly memoryService: MemoryService;
+  private readonly usageLimits: UsageLimitService;
   readonly identityService: IdentityService;
   readonly executionPlane: ExecutionPlaneService;
   readonly learningPlane: LearningPlaneService;
@@ -440,6 +442,7 @@ export class AgentService {
   ) {
     this.userConfig = userConfig;
     this.db = db;
+    this.usageLimits = new UsageLimitService(db);
     this.memoryService = new MemoryService(db);
     this.identityService = new IdentityService(db);
     this.executionPlane = new ExecutionPlaneService(db);
@@ -2055,6 +2058,11 @@ export class AgentService {
     }
 
     const profile = await this.requireProfile(orgId, profileId);
+    await this.usageLimits.assertWithinLimits({
+      orgId,
+      providerType: this.safeProviderTypeFor(userConfig, profile.model),
+      userId: actor.userId,
+    });
     const profileTools = await this.resolveProfileTools(
       profile,
       {
@@ -2332,6 +2340,7 @@ export class AgentService {
       profileId,
       task.orgId
     );
+    await this.assertSessionTurnAllowed(task.orgId, sessionId);
     const session = await this.resolveSession(task.orgId, sessionId);
 
     if (!session) {
@@ -2817,6 +2826,64 @@ export class AgentService {
     this.agentQuestionnaireState.clearSession(sessionId);
     await this.db.deleteSession(sessionId);
     return true;
+  }
+
+  /**
+   * Usage-governance gate for a session turn, called before the turn starts.
+   * Resolves the provider that will serve the turn (session override →
+   * profile model → workspace default) so subscription turns are not blocked
+   * by the USD budget. A missing session passes through — the caller's own
+   * lookup produces its 404.
+   */
+  async assertSessionTurnAllowed(
+    orgId: string,
+    sessionId: string,
+    userId?: string | null
+  ): Promise<void> {
+    const record = await this.getSessionRecordForOrg(orgId, sessionId);
+    if (!record) {
+      return;
+    }
+
+    const userConfig = await this.getOrgUserConfig(orgId);
+    let modelSelection: string | null = null;
+    try {
+      modelSelection = await this.resolveApprovedStoredSessionModelOverride(
+        orgId,
+        record
+      );
+    } catch {
+      modelSelection = null;
+    }
+    if (!modelSelection) {
+      const profile = await this.db.getProfileForOrg(record.profileId, orgId);
+      modelSelection = profile?.model ?? null;
+    }
+
+    await this.usageLimits.assertWithinLimits({
+      orgId,
+      providerType: this.safeProviderTypeFor(userConfig, modelSelection),
+      userId: userId?.trim() || record.userId,
+    });
+  }
+
+  /**
+   * Best-effort provider-type resolution for limit checks. Selection errors
+   * (e.g. a stale subscription model) fall back to null, which the limit
+   * service treats as cost-bearing.
+   */
+  private safeProviderTypeFor(
+    userConfig: UserConfig | null,
+    modelSelection: string | null | undefined
+  ): string | null {
+    try {
+      return (
+        this.resolveConfiguredProviderSelection(userConfig, modelSelection)
+          ?.instance.type ?? null
+      );
+    } catch {
+      return null;
+    }
   }
 
   async resolveSession(
@@ -3895,6 +3962,13 @@ export class AgentService {
     if (!selection) {
       throw new AtlasApiError(TRANSCRIPTION_MODEL_REQUIRED_MESSAGE, 400);
     }
+    if (attribution?.orgId?.trim()) {
+      await this.usageLimits.assertWithinLimits({
+        orgId: attribution.orgId.trim(),
+        providerType: selection.instance.type,
+        userId: attribution.userId,
+      });
+    }
     const text = await transcribeAudio(
       selection.instance,
       selection.model,
@@ -3936,6 +4010,13 @@ export class AgentService {
     });
     if (!selection) {
       throw new AtlasApiError(IMAGE_MODEL_REQUIRED_MESSAGE, 400);
+    }
+    if (orgId) {
+      await this.usageLimits.assertWithinLimits({
+        orgId,
+        providerType: selection.instance.type,
+        userId: attribution?.userId,
+      });
     }
     const result = await generateImage(
       selection,

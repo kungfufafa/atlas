@@ -348,10 +348,18 @@ export class AtlasClient {
   }
 
   async setUsageBudget(
-    monthlyLimitUsd: number
+    policy:
+      | number
+      | {
+          enforced?: boolean;
+          monthlyLimitUsd?: number;
+          perUserMonthlyRequests?: number;
+        }
   ): Promise<OrgUsageBudgetResponse> {
+    const body =
+      typeof policy === "number" ? { monthlyLimitUsd: policy } : policy;
     return this.request<OrgUsageBudgetResponse>("/v1/usage/budget", {
-      body: JSON.stringify({ monthlyLimitUsd }),
+      body: JSON.stringify(body),
       method: "PUT",
     });
   }
