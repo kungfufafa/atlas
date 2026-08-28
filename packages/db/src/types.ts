@@ -355,8 +355,13 @@ export interface StoredLlmTurnUsageRecord {
 /** Sentinel for a usage dimension that could not be resolved at record time. */
 export const UNKNOWN_USAGE_DIMENSION = "unknown";
 
+/** Capability id recorded for rollup rows written before capability tracking. */
+export const DEFAULT_USAGE_CAPABILITY = "chat.completion";
+
 /** Attribution dimensions for a single LLM turn's usage. */
 export interface LlmUsageDimensions {
+  /** Capability that ran (e.g. `chat.completion`, `image.generation`). */
+  capability: string;
   modelId: string;
   orgId: string;
   profileId: string;
@@ -397,7 +402,8 @@ export type LlmUsageGroupBy =
   | "profile"
   | "provider"
   | "credential"
-  | "model";
+  | "model"
+  | "capability";
 
 export interface LlmUsageAggregateOptions {
   /** Inclusive lower bound, `YYYY-MM-DD` (UTC). */

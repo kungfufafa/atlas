@@ -103,6 +103,8 @@ export function StatusPage({ embedded = false }: { embedded?: boolean } = {}) {
 }
 
 const USAGE_TAB_LABELS: Record<LlmUsageReportGroupBy, string> = {
+  auth: "Auth",
+  capability: "Capabilities",
   credential: "Credentials",
   model: "Models",
   provider: "Providers",
@@ -202,6 +204,8 @@ function UsageBreakdownSection({
 
       <BudgetCard canManage={canManageBudget} orgId={orgId} />
 
+      <AuthSplitStrip from={from} orgId={orgId} />
+
       <UsageBreakdownTable
         error={error ? formatError(error) : null}
         hasCost={hasCost}
@@ -209,6 +213,44 @@ function UsageBreakdownSection({
         rows={rows}
       />
     </section>
+  );
+}
+
+function AuthSplitStrip({
+  from,
+  orgId,
+}: {
+  from: string;
+  orgId: string | null;
+}) {
+  const { data } = useQuery({
+    queryFn: () => client.getUsageReport({ from, groupBy: "auth" }),
+    queryKey: ["usage-report", orgId, "auth", from],
+  });
+  const rows = data?.rows ?? [];
+
+  if (rows.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+      {rows.map((row) => (
+        <div
+          className="rounded-md border border-border bg-muted/20 px-3 py-2"
+          key={row.key}
+        >
+          <p className="font-medium text-foreground text-xs">{row.label}</p>
+          <p className="text-muted-foreground text-xs tabular-nums">
+            {row.requestCount.toLocaleString()} requests ·{" "}
+            {row.totalTokens.toLocaleString()} tokens
+            {row.authKind === "api" && row.estimatedCostUsd > 0
+              ? ` · ${formatUsd(row.estimatedCostUsd)} est.`
+              : ""}
+          </p>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -360,8 +402,15 @@ function UsageBreakdownTable({
               key={row.key}
             >
               <td className="px-3 py-2">
-                <div className="truncate font-medium text-foreground">
-                  {row.label}
+                <div className="flex items-center gap-2">
+                  <span className="truncate font-medium text-foreground">
+                    {row.label}
+                  </span>
+                  {row.authKind === "subscription" ? (
+                    <span className="shrink-0 rounded-full border border-border bg-muted/40 px-1.5 py-0.5 text-2xs text-muted-foreground">
+                      Subscription
+                    </span>
+                  ) : null}
                 </div>
                 <UsageShareBar max={maxTokens} value={row.totalTokens} />
               </td>

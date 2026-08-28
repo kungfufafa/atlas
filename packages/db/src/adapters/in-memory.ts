@@ -296,6 +296,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         if (options.groupBy === "model") {
           return record.modelId;
         }
+        if (options.groupBy === "capability") {
+          return record.capability;
+        }
         return record.orgId;
       };
 
@@ -1262,6 +1265,7 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         dimensions.providerType,
         dimensions.providerCredentialId,
         dimensions.modelId,
+        dimensions.capability,
       ].join("\u0000");
       const existing = llmUsageDaily.get(key);
       llmUsageDaily.set(key, {
