@@ -153,6 +153,13 @@ const CHAT_NATIVE_DEFAULTS = {
   [CHAT_TOOL_USE]: "unknown",
 } as const satisfies Partial<Record<string, CapabilitySupportPreset>>;
 
+/** First-party chat adapters implement tools. Chat policy reads modelDefault, not native, so unknown here fail-closes Default Agent. Thinking is on by default, so reasoning must be selectable too. */
+const FIRST_PARTY_CHAT_DEFAULTS = {
+  [CHAT_REASONING]: "supported",
+  [CHAT_STREAMING]: "supported",
+  [CHAT_TOOL_USE]: "supported",
+} as const satisfies Partial<Record<string, CapabilitySupportPreset>>;
+
 function createManifest(
   options: BuiltinManifestOptions
 ): ProviderCapabilityManifestV1 {
@@ -365,11 +372,15 @@ function openAIStyleRegistration(options: {
     displayName: options.displayName,
     executors: options.executors,
     modelDefaults: {
+      ...FIRST_PARTY_CHAT_DEFAULTS,
       [CHAT_INPUT_IMAGE]:
         options.providerId === "deepseek" ? "unsupported" : "unknown",
     },
     models: options.models,
-    native: options.native,
+    native: {
+      ...FIRST_PARTY_CHAT_DEFAULTS,
+      ...options.native,
+    },
     providerId: options.providerId,
   });
 }
@@ -513,16 +524,14 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
         [CHAT_NATIVE_WEB_SEARCH]: NATIVE_WEB_SEARCH_CONSTRAINTS,
       },
       modelDefaults: {
+        ...FIRST_PARTY_CHAT_DEFAULTS,
         [CHAT_INPUT_IMAGE]: "supported",
         [CHAT_NATIVE_WEB_SEARCH]: "supported",
-        [CHAT_STREAMING]: "supported",
-        [CHAT_TOOL_USE]: "supported",
       },
       native: {
+        ...FIRST_PARTY_CHAT_DEFAULTS,
         [CHAT_INPUT_IMAGE]: "supported",
         [CHAT_NATIVE_WEB_SEARCH]: "supported",
-        [CHAT_STREAMING]: "supported",
-        [CHAT_TOOL_USE]: "supported",
       },
       providerId: "anthropic",
     }),
@@ -558,12 +567,13 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
         }),
       displayName: "Cerebras",
       modelDefaults: {
+        ...FIRST_PARTY_CHAT_DEFAULTS,
         [CHAT_STRUCTURED_OUTPUT]: "supported",
       },
       native: {
+        ...FIRST_PARTY_CHAT_DEFAULTS,
         [CHAT_INPUT_IMAGE]: "supported",
         [CHAT_STRUCTURED_OUTPUT]: "supported",
-        [CHAT_TOOL_USE]: "supported",
       },
       providerId: "cerebras",
     }),
@@ -587,6 +597,7 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
         [PROVIDER_CAPABILITY_IDS.imageGeneration]:
           fireworksImageGenerationExecutor,
       },
+      modelDefaults: FIRST_PARTY_CHAT_DEFAULTS,
       models: [
         ...modelsSupporting(PROVIDER_CAPABILITY_IDS.audioTranscription, [
           "whisper-v3",
@@ -604,6 +615,7 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
         ),
       ],
       native: {
+        ...FIRST_PARTY_CHAT_DEFAULTS,
         [CHAT_INPUT_IMAGE]: "supported",
         [PROVIDER_CAPABILITY_IDS.audioTranscription]: "supported",
         [PROVIDER_CAPABILITY_IDS.imageGeneration]: "supported",
@@ -626,6 +638,7 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
         [PROVIDER_CAPABILITY_IDS.imageGeneration]:
           cloudflareImageGenerationExecutor,
       },
+      modelDefaults: FIRST_PARTY_CHAT_DEFAULTS,
       models: [
         ...modelsSupporting(PROVIDER_CAPABILITY_IDS.audioTranscription, [
           "@cf/openai/whisper",
@@ -639,6 +652,7 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
         ),
       ],
       native: {
+        ...FIRST_PARTY_CHAT_DEFAULTS,
         [CHAT_INPUT_IMAGE]: "supported",
         [PROVIDER_CAPABILITY_IDS.audioTranscription]: "supported",
         [PROVIDER_CAPABILITY_IDS.imageGeneration]: "supported",
@@ -667,11 +681,10 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
           NATIVE_WEB_SEARCH_WITHOUT_LOCAL_TOOLS_CONSTRAINTS,
       },
       modelDefaults: {
+        ...FIRST_PARTY_CHAT_DEFAULTS,
         [CHAT_INPUT_IMAGE]: "supported",
         [CHAT_NATIVE_WEB_SEARCH]: "supported",
-        [CHAT_STREAMING]: "supported",
         [CHAT_STRUCTURED_OUTPUT]: "supported",
-        [CHAT_TOOL_USE]: "supported",
       },
       models: [
         ...modelsSupporting(PROVIDER_CAPABILITY_IDS.audioTranscription, [
@@ -689,11 +702,10 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
         ),
       ],
       native: {
+        ...FIRST_PARTY_CHAT_DEFAULTS,
         [CHAT_INPUT_IMAGE]: "supported",
         [CHAT_NATIVE_WEB_SEARCH]: "supported",
-        [CHAT_STREAMING]: "supported",
         [CHAT_STRUCTURED_OUTPUT]: "supported",
-        [CHAT_TOOL_USE]: "supported",
         [PROVIDER_CAPABILITY_IDS.audioTranscription]: "supported",
         [PROVIDER_CAPABILITY_IDS.imageGeneration]: "supported",
       },
@@ -722,11 +734,10 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
         [CHAT_NATIVE_WEB_SEARCH]: NATIVE_WEB_SEARCH_CONSTRAINTS,
       },
       modelDefaults: {
+        ...FIRST_PARTY_CHAT_DEFAULTS,
         [CHAT_INPUT_IMAGE]: "supported",
         [CHAT_NATIVE_WEB_SEARCH]: "supported",
-        [CHAT_STREAMING]: "supported",
         [CHAT_STRUCTURED_OUTPUT]: "supported",
-        [CHAT_TOOL_USE]: "supported",
       },
       models: [
         ...modelsSupporting(PROVIDER_CAPABILITY_IDS.audioTranscription, [
@@ -743,11 +754,10 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
         ),
       ],
       native: {
+        ...FIRST_PARTY_CHAT_DEFAULTS,
         [CHAT_INPUT_IMAGE]: "supported",
         [CHAT_NATIVE_WEB_SEARCH]: "supported",
-        [CHAT_STREAMING]: "supported",
         [CHAT_STRUCTURED_OUTPUT]: "supported",
-        [CHAT_TOOL_USE]: "supported",
         [PROVIDER_CAPABILITY_IDS.audioTranscription]: "supported",
         [PROVIDER_CAPABILITY_IDS.imageGeneration]: "supported",
       },
@@ -781,6 +791,7 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
         [PROVIDER_CAPABILITY_IDS.imageGeneration]:
           openRouterImageGenerationExecutor,
       },
+      modelDefaults: FIRST_PARTY_CHAT_DEFAULTS,
       models: [
         ...modelsSupporting(PROVIDER_CAPABILITY_IDS.audioTranscription, [
           "openai/whisper-large-v3",
@@ -793,6 +804,7 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
         ),
       ],
       native: {
+        ...FIRST_PARTY_CHAT_DEFAULTS,
         [CHAT_INPUT_IMAGE]: "supported",
         [PROVIDER_CAPABILITY_IDS.audioTranscription]: "supported",
         [PROVIDER_CAPABILITY_IDS.imageGeneration]: "supported",
@@ -810,6 +822,18 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
       discoverModels: discoverOpenCodeGoModels,
       displayName: "OpenCode Go",
       listConfiguredModels: getModelsForOpenCodeGoInstance,
+      modelDefaults: {
+        [CHAT_REASONING]: "supported",
+        [CHAT_STREAMING]: "supported",
+        [CHAT_STRUCTURED_OUTPUT]: "supported",
+        [CHAT_TOOL_USE]: "supported",
+      },
+      native: {
+        [CHAT_REASONING]: "supported",
+        [CHAT_STREAMING]: "supported",
+        [CHAT_STRUCTURED_OUTPUT]: "supported",
+        [CHAT_TOOL_USE]: "supported",
+      },
       providerId: "opencode_go",
     }),
     registration({
@@ -835,6 +859,7 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
         operation === "connection-validation"
           ? "API key is required for Ollama Cloud mode."
           : "API key is required for Ollama Cloud.",
+      modelDefaults: FIRST_PARTY_CHAT_DEFAULTS,
       models: [
         ...modelsSupporting(
           PROVIDER_CAPABILITY_IDS.imageGeneration,
@@ -843,6 +868,7 @@ export const BUILTIN_PROVIDER_ADAPTERS: readonly ProviderAdapterRegistration[] =
         ),
       ],
       native: {
+        ...FIRST_PARTY_CHAT_DEFAULTS,
         [CHAT_INPUT_IMAGE]: "supported",
         [PROVIDER_CAPABILITY_IDS.imageGeneration]: "supported",
       },

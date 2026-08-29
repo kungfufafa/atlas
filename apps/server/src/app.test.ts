@@ -272,6 +272,96 @@ describe("browser session auth", () => {
     expect(afterLogout.status).toBe(401);
   });
 
+  test("token auth returns a session token that authenticates without CSRF", async () => {
+    const { app } = createBrowserAuthApp();
+
+    await app.fetch(
+      new Request("http://localhost:4310/v1/auth/setup", {
+        body: JSON.stringify(buildSetupAuthBody()),
+        method: "POST",
+      })
+    );
+
+    const loginResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/login", {
+        body: JSON.stringify({
+          email: "admin@example.com",
+          password: "password123",
+        }),
+        headers: { "X-Atlas-Auth-Mode": "token" },
+        method: "POST",
+      })
+    );
+
+    expect(loginResponse.status).toBe(200);
+    const loginBody = (await loginResponse.json()) as {
+      email: string;
+      sessionToken?: string;
+    };
+    expect(loginBody.email).toBe("admin@example.com");
+    expect(loginBody.sessionToken).toBeTruthy();
+
+    const meResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/me", {
+        headers: { Authorization: `Bearer ${loginBody.sessionToken}` },
+      })
+    );
+    expect(meResponse.status).toBe(200);
+    const meBody = (await meResponse.json()) as { email: string };
+    expect(meBody.email).toBe("admin@example.com");
+
+    const mutation = await app.fetch(
+      new Request("http://localhost:4310/v1/workers/whatsapp/start", {
+        headers: { Authorization: `Bearer ${loginBody.sessionToken}` },
+        method: "POST",
+      })
+    );
+    expect(mutation.status).not.toBe(401);
+    expect(mutation.status).not.toBe(403);
+
+    const logoutResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/logout", {
+        headers: { Authorization: `Bearer ${loginBody.sessionToken}` },
+        method: "POST",
+      })
+    );
+    expect(logoutResponse.status).toBe(200);
+
+    const afterLogout = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/me", {
+        headers: { Authorization: `Bearer ${loginBody.sessionToken}` },
+      })
+    );
+    expect(afterLogout.status).toBe(401);
+  });
+
+  test("login without token auth mode omits the session token", async () => {
+    const { app } = createBrowserAuthApp();
+
+    await app.fetch(
+      new Request("http://localhost:4310/v1/auth/setup", {
+        body: JSON.stringify(buildSetupAuthBody()),
+        method: "POST",
+      })
+    );
+
+    const loginResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/login", {
+        body: JSON.stringify({
+          email: "admin@example.com",
+          password: "password123",
+        }),
+        method: "POST",
+      })
+    );
+
+    expect(loginResponse.status).toBe(200);
+    const loginBody = (await loginResponse.json()) as {
+      sessionToken?: string;
+    };
+    expect(loginBody.sessionToken).toBeUndefined();
+  });
+
   test("browser sessions require CSRF on mutating routes", async () => {
     const { app, databaseAdapter } = createBrowserAuthApp();
 

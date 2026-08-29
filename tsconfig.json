@@ -16,7 +16,8 @@
       "@atlas/client": ["./packages/client/src/index.ts"],
       "@atlas/core": ["./packages/core/src/index.ts"],
       "@atlas/core/*": ["./packages/core/src/*"],
-      "@atlas/db": ["./packages/db/src/index.ts"]
+      "@atlas/db": ["./packages/db/src/index.ts"],
+      "@atlas/design-tokens": ["./packages/design-tokens/src/index.ts"]
     }
   }
 }

@@ -1,0 +1,5 @@
+appId: app.atlas.mobile
+---
+- launchApp
+- assertVisible: "Connect to your self-hosted server"
+- tapOn: "Continue"

@@ -7,9 +7,22 @@ Agent platform built to work with your team — not replace them. Multi-tenant m
 ## Dev
 
 - Bun 1.3+: `bun install`, `bun run`, `bun test`
-- Servers: `bun run dev:server` | `dev:web` | `dev:cli`
-- Layout: `apps/{server,web,cli}`, channel workers in `apps/platform/{telegram,whatsapp,discord,automation}`
+- Servers: `bun run dev:server` | `dev:web` | `dev:cli` | `dev:mobile`
+- Layout: `apps/{server,web,cli,mobile}`, channel workers in `apps/platform/{telegram,whatsapp,discord,automation}`
 - Writing Tests: assert behavior, not prompt/description/error copy.
+
+## Mobile (`apps/mobile`)
+
+Expo SDK 57 in the Bun workspace. Metro and native builds already use Expo
+Autolinking (`autolinkingModuleResolution`; iOS `use_expo_modules!`).
+`expo-modules-autolinking verify` warns about nested `expo-constants`
+(`57.0.16` at the workspace root vs `57.0.15` under `expo-asset` and
+`expo-linking`). Do **not** hide that with LogBox, Metro `blockList` /
+`disableHierarchicalLookup`, a one-off `overrides` entry, or deleting
+`bun.lock`. It is not a broken autolink; clearing it needs a
+workspace-wide Bun linker migration and TypeScript alignment (mobile
+declares `typescript ~6.0.3`; root typecheck uses `5.9.3` and excludes
+`apps/mobile`). See `docs/adr/0003-mobile-stack.md`.
 
 ## LLM cassette tests (MSW)
 

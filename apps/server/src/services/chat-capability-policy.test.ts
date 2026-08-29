@@ -110,6 +110,46 @@ describe("server chat capability policy", () => {
     expect(generateText).toHaveBeenCalledTimes(0);
   });
 
+  test("lets OpenCode Go use tools and reasoning from adapter defaults", () => {
+    const policy = resolvePolicy(
+      {
+        apiKey: "test-key",
+        createdAt,
+        id: "opencode-go-test",
+        label: "OpenCode Go",
+        type: "opencode_go",
+      },
+      "opencode-go/kimi-k2.7-code"
+    );
+
+    expect(
+      policy.capabilities[PROVIDER_CAPABILITY_IDS.chatToolUse]
+    ).toMatchObject({ selectable: true, status: "supported" });
+    expect(
+      policy.capabilities[PROVIDER_CAPABILITY_IDS.chatReasoning]
+    ).toMatchObject({ selectable: true, status: "supported" });
+    expect(
+      policy.capabilities[PROVIDER_CAPABILITY_IDS.chatStreaming]
+    ).toMatchObject({ selectable: true, status: "supported" });
+  });
+
+  test("keeps OpenCode Go tool-use selectable for live catalog models", () => {
+    const policy = resolvePolicy(
+      {
+        apiKey: "test-key",
+        createdAt,
+        id: "opencode-go-live",
+        label: "OpenCode Go",
+        type: "opencode_go",
+      },
+      "opencode-go/future-model"
+    );
+
+    expect(
+      policy.capabilities[PROVIDER_CAPABILITY_IDS.chatToolUse]
+    ).toMatchObject({ selectable: true, status: "supported" });
+  });
+
   test("combines adapter defaults with static model reasoning evidence", () => {
     const policy = resolvePolicy(
       {
@@ -133,19 +173,62 @@ describe("server chat capability policy", () => {
     ).toMatchObject({ selectable: true, status: "supported" });
   });
 
+  test("lets first-party chat providers use tools without admin evidence", () => {
+    const firstParty: Array<ProviderInstance["type"]> = [
+      "anthropic",
+      "cerebras",
+      "cloudflare",
+      "deepseek",
+      "fireworks",
+      "gemini",
+      "minimax",
+      "minimax_cn",
+      "ollama",
+      "openai",
+      "openrouter",
+      "opencode_go",
+      "xai",
+      "zhipu",
+      "zhipu_cn",
+    ];
+
+    for (const type of firstParty) {
+      const policy = resolvePolicy(
+        {
+          apiKey: "test-key",
+          createdAt,
+          id: `${type}-test`,
+          label: type,
+          type,
+        },
+        "any-model"
+      );
+      expect(
+        policy.capabilities[PROVIDER_CAPABILITY_IDS.chatToolUse],
+        type
+      ).toMatchObject({ selectable: true, status: "supported" });
+      expect(
+        policy.capabilities[PROVIDER_CAPABILITY_IDS.chatReasoning],
+        type
+      ).toMatchObject({ selectable: true, status: "supported" });
+    }
+  });
+
   test("preserves unknown evidence and honors an admin override", () => {
-    const fireworksPolicy = resolvePolicy(
+    const compatiblePolicy = resolvePolicy(
       {
         apiKey: "test-key",
+        baseUrl: "http://127.0.0.1:1234/v1",
         createdAt,
-        id: "fireworks-test",
-        label: "Fireworks",
-        type: "fireworks",
+        customModels: [{ default: true, id: "local-model" }],
+        id: "compatible-test",
+        label: "Local",
+        type: "openai_compatible",
       },
-      "accounts/fireworks/models/kimi-k2p6"
+      "local-model"
     );
     expect(
-      fireworksPolicy.capabilities[PROVIDER_CAPABILITY_IDS.chatToolUse]
+      compatiblePolicy.capabilities[PROVIDER_CAPABILITY_IDS.chatToolUse]
     ).toMatchObject({
       reasons: ["model-unknown"],
       selectable: false,

@@ -9,6 +9,7 @@ flowchart TB
   subgraph clients ["Clients"]
     web["apps/web"]
     cli["apps/cli"]
+    mobile["apps/mobile"]
     tg["apps/platform/telegram"]
     wa["apps/platform/whatsapp"]
   end
@@ -82,12 +83,14 @@ atlas/
 │   ├── server/                 # HTTP API, auth, org, agent orchestration
 │   ├── web/                    # Dashboard
 │   ├── cli/                    # Terminal client
+│   ├── mobile/                 # Expo / React Native client
 │   └── platform/{automation,telegram,whatsapp,discord}/
 ├── packages/
 │   ├── agent/                  # Prompt assembly, tool loop, chat session
 │   ├── core/                   # Contracts, soul, config, builtin tools
 │   ├── db/                     # SQLite schema, adapters, migrations
-│   └── client/                 # Shared HTTP/SSE client
+│   ├── client/                 # Shared HTTP/SSE client
+│   └── design-tokens/          # Shared color tokens for web and mobile
 └── docs/website/
 ```
 

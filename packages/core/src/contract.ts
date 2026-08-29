@@ -494,6 +494,8 @@ export interface AuthUserResponse {
   name?: string | null;
   orgId?: string | null;
   phone?: string | null;
+  /** Present only when the client requested token auth (`X-Atlas-Auth-Mode: token`). */
+  sessionToken?: string;
 }
 
 export interface UpdateAuthProfileRequest {
@@ -855,6 +857,8 @@ export interface AcceptOrgInviteResponse {
   email: string;
   orgId: string;
   role: OrgRole;
+  /** Present only when the client requested token auth (`X-Atlas-Auth-Mode: token`). */
+  sessionToken?: string;
 }
 
 export interface PreviewOrgInviteResponse {

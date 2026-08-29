@@ -1,0 +1,68 @@
+{
+  "expo": {
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0a0a0b",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "package": "app.atlas.mobile",
+      "predictiveBackGestureEnabled": false,
+      "versionCode": 1
+    },
+    "experiments": {
+      "reactCompiler": true,
+      "typedRoutes": true
+    },
+    "icon": "./assets/images/icon.png",
+    "ios": {
+      "buildNumber": "1",
+      "bundleIdentifier": "app.atlas.mobile",
+      "icon": "./assets/expo.icon",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        },
+        "NSLocalNetworkUsageDescription": "Atlas needs access to your local network to connect to the Atlas server you select."
+      }
+    },
+    "name": "Atlas",
+    "orientation": "portrait",
+    "plugins": [
+      "expo-router",
+      "./plugins/with-local-cleartext",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#2563eb",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 76
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": false,
+          "microphonePermission": false,
+          "photosPermission": "Allow Atlas to attach photos to chats."
+        }
+      ],
+      "expo-document-picker"
+    ],
+    "scheme": "atlas",
+    "slug": "atlas",
+    "userInterfaceStyle": "automatic",
+    "version": "1.0.0",
+    "web": {
+      "favicon": "./assets/images/favicon.png",
+      "output": "single"
+    }
+  }
+}

@@ -27,6 +27,7 @@ Run the pieces you need:
 bun run dev:server   # API
 bun run dev:web      # web dashboard (starts the server if needed)
 bun run dev:cli      # terminal client
+bun run dev:mobile   # Expo app (Android / iOS)
 ```
 
 - Local Bun web dashboard: http://localhost:3000
@@ -41,6 +42,7 @@ See [AGENTS.md](./AGENTS.md) for Docker run/build scripts and deeper layout note
 | `apps/server` | Hono HTTP API, agent service, tool playground, workers control |
 | `apps/web` | React dashboard |
 | `apps/cli` | Terminal chat client |
+| `apps/mobile` | Expo / React Native client |
 | `apps/platform/telegram` | Telegram channel worker |
 | `apps/platform/whatsapp` | WhatsApp channel worker |
 | `apps/platform/discord` | Discord channel worker |
@@ -49,6 +51,7 @@ See [AGENTS.md](./AGENTS.md) for Docker run/build scripts and deeper layout note
 | `packages/agent` | Chat loop, prompts, compaction |
 | `packages/db` | SQLite schema and adapters |
 | `packages/client` | HTTP + SSE client (`X-Org-Id`, auth) |
+| `packages/design-tokens` | Shared color tokens for web and mobile |
 | `docs/website` | User-facing docs site (MDX) |
 
 Workspaces: `apps/*`, `apps/platform/*`, `packages/*`.

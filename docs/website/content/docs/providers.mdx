@@ -36,7 +36,7 @@ Atlas supports these built-in provider types:
 | Cloudflare Workers AI | Cloudflare-hosted models; requires an account ID and API token |
 | Fireworks | Fireworks AI models |
 | Ollama | Local or Ollama Cloud; multiple instances allowed |
-| OpenCode Go | Live catalog from the official OpenCode Go endpoint |
+| OpenCode Go | $10/month coding-model gateway. Paste the Go API key; Atlas follows the live catalog |
 | MiniMax / MiniMax (CN) | Global and mainland China MiniMax endpoints |
 | xAI Grok | Grok models from xAI |
 | GLM (Z.ai) / GLM (CN) | Global Z.ai and mainland China GLM endpoints |
@@ -47,6 +47,28 @@ Most built-in types allow one configured instance each. **Ollama** and **Custom 
 For a custom endpoint, pick a preset such as LM Studio, vLLM, LiteLLM, llama.cpp, Groq, Together, or TokenRouter — or enter your own name and base URL — then browse models from that endpoint. API keys are optional for local servers that do not require auth. Choose **Chat completions** or **Responses** in the **API** field to match the endpoint you are connecting. If the provider only documents a `/responses` route, choose **Responses**.
 
 When you change a saved provider's base URL, enter the API key for the new endpoint in the same edit dialog. Atlas never forwards a saved credential to a different URL.
+
+First-party API-key providers enable **tool use** and **reasoning** for chat as soon as the key is saved. A **Custom (OpenAI-compatible)** endpoint starts unverified — set **Capability evidence** if that server supports tools. If reasoning is unknown, Atlas still chats and just skips thinking.
+
+## OpenCode Go
+
+OpenCode Go is a low-cost subscription for open coding models. Atlas talks to the official gateway, so you only paste an API key — no base URL, no capability evidence, no model shortlist.
+
+1. Sign in at [opencode.ai/auth](https://opencode.ai/auth), subscribe to **Go**, and copy the API key
+2. In Atlas, add **OpenCode Go** (setup wizard or **Settings → LLM providers**) and paste the key
+3. Leave the model list empty so Atlas follows the live catalog at `https://opencode.ai/zen/go/v1/models`
+
+The default chat model is **Kimi K2.7 Code** (`opencode-go/kimi-k2.7-code`). Atlas routes each model to the endpoint OpenCode documents:
+
+- `/v1/chat/completions` — GLM, Kimi, DeepSeek, MiMo, Hy, LongCat
+- `/v1/messages` — MiniMax and Qwen
+- `/v1/responses` — Grok, GPT 5.6 Luna, Muse Spark
+
+Tool use and reasoning are on by default because Go models are curated for coding agents. Image input stays off except for vision models such as DeepSeek V4 Flash Vision Exp.
+
+This is not [OpenCode Zen](https://opencode.ai/docs/zen). Zen is a separate pay-as-you-go catalog at `/zen/v1`. Go uses `/zen/go/v1`.
+
+See the official [OpenCode Go](https://opencode.ai/docs/go/) page for current models, usage caps, and pricing.
 
 ## Connect a ChatGPT or Claude subscription
 

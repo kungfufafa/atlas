@@ -48,6 +48,79 @@ describe("createOpenCodeGoProvider", () => {
     expect(result.content).toBe("Hello from OpenCode Go");
   });
 
+  test("sends DeepSeek thinking with tools on OpenCode Go chat completions", async () => {
+    let capturedBody: Record<string, unknown> | null = null;
+
+    mockFetch(async (request) => {
+      capturedBody = (await request.json()) as Record<string, unknown>;
+      return new Response(
+        JSON.stringify({
+          choices: [{ message: { content: "ok" } }],
+        }),
+        { headers: { "Content-Type": "application/json" }, status: 200 }
+      );
+    });
+
+    const provider = createOpenCodeGoProvider({
+      apiKey: "test",
+      model: "opencode-go/deepseek-v4-flash",
+    });
+
+    await provider.generateChat({
+      messages: [{ content: "Hi", role: "user" }],
+      providerOptions: { thinking: { effort: "high", enabled: true } },
+      system: "You are a helpful assistant.",
+      tools: [
+        {
+          description: "Ping",
+          name: "ping",
+          parameters: { properties: {}, type: "object" },
+        },
+      ],
+    });
+
+    expect(capturedBody?.thinking).toEqual({ type: "enabled" });
+    expect(capturedBody?.reasoning_effort).toBe("high");
+    expect(capturedBody?.tools).toEqual([
+      {
+        function: {
+          description: "Ping",
+          name: "ping",
+          parameters: { properties: {}, type: "object" },
+        },
+        type: "function",
+      },
+    ]);
+  });
+
+  test("does not send DeepSeek thinking on other OpenCode Go chat models", async () => {
+    let capturedBody: Record<string, unknown> | null = null;
+
+    mockFetch(async (request) => {
+      capturedBody = (await request.json()) as Record<string, unknown>;
+      return new Response(
+        JSON.stringify({
+          choices: [{ message: { content: "ok" } }],
+        }),
+        { headers: { "Content-Type": "application/json" }, status: 200 }
+      );
+    });
+
+    const provider = createOpenCodeGoProvider({
+      apiKey: "test",
+      model: "opencode-go/kimi-k2.7-code",
+    });
+
+    await provider.generateChat({
+      messages: [{ content: "Hi", role: "user" }],
+      providerOptions: { thinking: { effort: "high", enabled: true } },
+      system: "You are a helpful assistant.",
+    });
+
+    expect(capturedBody?.thinking).toBeUndefined();
+    expect(capturedBody?.reasoning_effort).toBeUndefined();
+  });
+
   test("strips the catalog prefix from already-bare chat model ids", async () => {
     let capturedBody: Record<string, unknown> | null = null;
 

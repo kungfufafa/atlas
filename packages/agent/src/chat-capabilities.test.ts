@@ -324,7 +324,7 @@ describe("chat capability policy", () => {
     expect(provider.generateCalls).toBe(1);
   });
 
-  test("requires reasoning only when thinking is requested", async () => {
+  test("drops thinking when reasoning is unverified instead of blocking chat", async () => {
     const provider = createCapturingProvider();
     const policy = supportedPolicy({
       [PROVIDER_CAPABILITY_IDS.chatReasoning]: {
@@ -339,10 +339,9 @@ describe("chat capability policy", () => {
       provider,
     }).createChatSession({ enableToolLoop: false });
 
-    await expect(thinkingSession.send("think")).rejects.toMatchObject({
-      capabilityId: PROVIDER_CAPABILITY_IDS.chatReasoning,
-      code: "CHAT_CAPABILITY_UNKNOWN",
-    });
+    await expect(thinkingSession.send("think")).resolves.toBe("Answer");
+    expect(provider.generateCalls).toBe(1);
+    expect(provider.inputs[0]?.providerOptions?.thinking).toBeUndefined();
 
     const plainSession = createAgentHarness({
       chatCapabilityPolicy: policy,
@@ -352,7 +351,7 @@ describe("chat capability policy", () => {
     await expect(plainSession.send("do not think")).resolves.toBe("Answer");
   });
 
-  test("fails closed when reasoning explicitly disallows image input", async () => {
+  test("drops thinking when reasoning cannot accept image input", async () => {
     const provider = createCapturingProvider();
     const session = createAgentHarness({
       chatCapabilityPolicy: supportedPolicy({
@@ -373,12 +372,9 @@ describe("chat capability policy", () => {
         images: [{ data: TINY_PNG_BASE64, mediaType: "image/png" }],
         message: "Think about this image.",
       })
-    ).rejects.toMatchObject({
-      capabilityId: PROVIDER_CAPABILITY_IDS.chatReasoning,
-      code: "CHAT_CAPABILITY_UNSUPPORTED",
-      reasons: expect.arrayContaining(["request-constraints-unsupported"]),
-    });
-    expect(provider.generateCalls + provider.streamCalls).toBe(0);
+    ).resolves.toBe("Answer");
+    expect(provider.generateCalls).toBe(1);
+    expect(provider.inputs[0]?.providerOptions?.thinking).toBeUndefined();
   });
 
   test("degrades unsupported streaming to generateChat and emits handlers", async () => {

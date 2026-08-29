@@ -543,7 +543,20 @@ async function sendMessage(
     enableTools && localTools.length > 0
       ? toLlmToolDefinitions(localTools)
       : undefined;
+  const usesImageInput =
+    messageContentHasImages(
+      resolveUserContentForNonVisionProvider(userContent)
+    ) ||
+    messagesIncludeUserImages(resolveMessagesForNonVisionProvider(history));
+  const canUseReasoning =
+    !dependencies.chatCapabilityPolicy ||
+    chatCapabilitySupportsRequest(
+      dependencies.chatCapabilityPolicy,
+      PROVIDER_CAPABILITY_IDS.chatReasoning,
+      { "request.multimodal": usesImageInput }
+    );
   const providerOptions = buildProviderOptions(dependencies, {
+    thinking: canUseReasoning,
     webSearch: nativeWebSearch,
   });
   const chatCapabilityRequest = resolveChatCapabilityRequest(
@@ -551,11 +564,7 @@ async function sendMessage(
     {
       requestsReasoning: providerOptions?.thinking?.enabled === true,
       sendsTools: Boolean(llmTools?.length),
-      usesImageInput:
-        messageContentHasImages(
-          resolveUserContentForNonVisionProvider(userContent)
-        ) ||
-        messagesIncludeUserImages(resolveMessagesForNonVisionProvider(history)),
+      usesImageInput,
       usesNativeWebSearch: providerOptions?.webSearch === true,
     }
   );
@@ -1403,10 +1412,11 @@ function requireChatCapabilityForRequest(
 
 function buildProviderOptions(
   dependencies: AgentDependencies,
-  options: { webSearch: boolean }
+  options: { thinking: boolean; webSearch: boolean }
 ): ProviderChatOptions | undefined {
   const base = dependencies.chatOptions;
-  const thinking = base?.thinking?.enabled ? base.thinking : undefined;
+  const thinking =
+    options.thinking && base?.thinking?.enabled ? base.thinking : undefined;
   const webSearch = options.webSearch ? true : undefined;
 
   if (!(webSearch || thinking)) {

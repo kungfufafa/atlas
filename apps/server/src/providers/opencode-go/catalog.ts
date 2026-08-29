@@ -1,8 +1,12 @@
-import type { CustomModelEntry, ProviderInstance } from "@atlas/core";
+import {
+  type CustomModelEntry,
+  PROVIDER_CAPABILITY_IDS,
+  type ProviderCapabilityClaims,
+  type ProviderInstance,
+} from "@atlas/core";
 import {
   catalogCustomModelsToCatalog,
   ensureCurrentModelInCatalog,
-  getModelsForProviderInstance,
 } from "../compatible-models";
 import type { ProviderModelOption } from "../models";
 import {
@@ -20,6 +24,27 @@ export const DEFAULT_OPENCODE_GO_API_MODEL_ID = "kimi-k2.7-code";
 export const DEFAULT_OPENCODE_GO_CATALOG_MODEL_ID = `opencode-go/${DEFAULT_OPENCODE_GO_API_MODEL_ID}`;
 
 const CACHE_TTL_MS = 1000 * 60 * 30;
+
+function openCodeGoChatCapabilityClaims(options?: {
+  vision?: boolean;
+}): ProviderCapabilityClaims {
+  const supported = {
+    source: "provider-discovery" as const,
+    status: "supported" as const,
+    verified: true,
+  };
+
+  return {
+    [PROVIDER_CAPABILITY_IDS.chatCompletion]: supported,
+    [PROVIDER_CAPABILITY_IDS.chatReasoning]: supported,
+    [PROVIDER_CAPABILITY_IDS.chatStreaming]: supported,
+    [PROVIDER_CAPABILITY_IDS.chatStructuredOutput]: supported,
+    [PROVIDER_CAPABILITY_IDS.chatToolUse]: supported,
+    ...(options?.vision
+      ? { [PROVIDER_CAPABILITY_IDS.chatInputImage]: supported }
+      : {}),
+  };
+}
 
 type CatalogCache = {
   entries: CustomModelEntry[];
@@ -81,22 +106,20 @@ export async function fetchOpenCodeGoGatewayModels(
     .map((id) => {
       const existing = staticByApiId.get(id);
       const catalogId = toOpenCodeGoCatalogModelId(id);
+      const vision = id.includes("vision") || existing?.supportsVision === true;
 
       return {
+        capabilities: openCodeGoChatCapabilityClaims({ vision }),
         id: catalogId,
         name: existing?.name?.trim() || id,
+        supportsThinking: existing?.supportsThinking ?? true,
+        ...(vision ? { supportsVision: true } : {}),
         ...(existing?.inputPerMillionUsd === undefined
           ? {}
           : { inputPerMillionUsd: existing.inputPerMillionUsd }),
         ...(existing?.outputPerMillionUsd === undefined
           ? {}
           : { outputPerMillionUsd: existing.outputPerMillionUsd }),
-        ...(existing?.supportsThinking === undefined
-          ? {}
-          : { supportsThinking: existing.supportsThinking }),
-        ...(existing?.supportsVision === undefined
-          ? {}
-          : { supportsVision: existing.supportsVision }),
         ...((
           hasDefault
             ? id === DEFAULT_OPENCODE_GO_API_MODEL_ID
@@ -131,18 +154,25 @@ export async function getModelsForOpenCodeGoInstance(
   instance: ProviderInstance,
   currentModel?: string | null
 ): Promise<ProviderModelOption[]> {
-  if (instance.customModels?.length) {
-    return getModelsForProviderInstance(instance, currentModel);
-  }
-
   const live = await getLiveOpenCodeGoCatalog();
+  const preferred =
+    instance.customModels?.find((entry) => entry.default)?.id ??
+    instance.customModels?.[0]?.id;
+  const preferredCatalogId = preferred
+    ? toOpenCodeGoCatalogModelId(preferred)
+    : undefined;
   const annotated = live.map((model) => ({
     ...model,
+    ...(preferredCatalogId ? { default: model.id === preferredCatalogId } : {}),
     providerId: instance.id,
     providerLabel: instance.label,
   }));
 
-  return ensureCurrentModelInCatalog(annotated, currentModel, "opencode_go");
+  return ensureCurrentModelInCatalog(
+    annotated,
+    currentModel ?? preferred,
+    "opencode_go"
+  );
 }
 
 export async function withLiveOpenCodeGoCatalog(

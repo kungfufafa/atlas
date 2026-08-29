@@ -1,0 +1,22 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "types": ["bun"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/assets/*": ["./assets/*"],
+      "@atlas/core/local-auth": ["./src/shims/local-auth.ts"],
+      "@atlas/core/runtime": ["./src/shims/runtime.ts"],
+      "node:async_hooks": ["./src/shims/async-hooks.ts"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
+  ],
+  "exclude": ["**/*.test.ts", "node_modules"]
+}

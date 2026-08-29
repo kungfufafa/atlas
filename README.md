@@ -49,6 +49,12 @@ Or start the server alone:
 bun run dev:server
 ```
 
+Mobile (Expo, after the server is running):
+
+```bash
+bun run dev:mobile
+```
+
 ### Docker
 
 You can also run Atlas with Docker.

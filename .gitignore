@@ -13,6 +13,10 @@ data/automations/*
 !data/automations/.gitkeep
 data/logs/*
 !data/logs/.gitkeep
+.expo/
+apps/mobile/ios
+apps/mobile/android
+apps/mobile/expo-env.d.ts
 .agents/
 apps/data/*
 .cursor/

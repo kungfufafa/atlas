@@ -1,11 +1,17 @@
+import type { Artifact } from "@atlas/core/artifact-types";
 import type {
+  ActivityEvent,
   AgentQuestionnaire,
   AgentTodo,
+  ApprovalRequest,
   AutomationDefinition,
   ChatContextUsage,
   ChatMessage,
+  Citation,
   CompactionResponse,
+  ExecutionPolicy,
   SendMessageInput,
+  SourceItem,
 } from "@atlas/core/contract";
 
 /** Fetch `credentials` option (same values as the standard `RequestCredentials` type). */
@@ -22,30 +28,35 @@ export interface AtlasClientOptions {
   credentials?: FetchCredentials;
   fetch?: typeof fetch;
   orgId?: string | null;
+  /** Redirect handling for every request made by this client. */
+  redirect?: RequestRedirect;
+  /**
+   * Native/mobile clients: request a session token in login/setup JSON,
+   * send it as Bearer, skip cookie CSRF, and skip disk local-auth retries.
+   */
+  tokenAuth?: boolean;
 }
 
 export type StreamHandler = (delta: string) => void;
 
 export interface StreamHandlers {
-  onActivityComplete?: (activity: import("@atlas/core").ActivityEvent) => void;
-  onActivityStart?: (activity: import("@atlas/core").ActivityEvent) => void;
-  onActivityUpdate?: (activity: import("@atlas/core").ActivityEvent) => void;
-  onApprovalRequested?: (
-    approval: import("@atlas/core").ApprovalRequest
-  ) => void;
-  onArtifactCreated?: (artifact: import("@atlas/core").Artifact) => void;
+  onActivityComplete?: (activity: ActivityEvent) => void;
+  onActivityStart?: (activity: ActivityEvent) => void;
+  onActivityUpdate?: (activity: ActivityEvent) => void;
+  onApprovalRequested?: (approval: ApprovalRequest) => void;
+  onArtifactCreated?: (artifact: Artifact) => void;
   onChunk: StreamHandler;
   onCitationCreated?: (event: {
-    citation: import("@atlas/core").Citation;
-    source?: import("@atlas/core").SourceItem;
+    citation: Citation;
+    source?: SourceItem;
   }) => void;
   onContextUsage?: (usage: ChatContextUsage) => void;
   onMemorySaved?: (summary: string) => void;
-  onPolicyResolved?: (policy: import("@atlas/core").ExecutionPolicy) => void;
+  onPolicyResolved?: (policy: ExecutionPolicy) => void;
   onQuestionnaireUpdated?: (questionnaire: AgentQuestionnaire | null) => void;
   onRelatedQuestions?: (questions: string[]) => void;
   onSourcesUpdated?: (event: {
-    sources: import("@atlas/core").SourceItem[];
+    sources: SourceItem[];
     citedCount: number;
     reviewedCount: number;
   }) => void;

@@ -100,13 +100,83 @@ describe("built-in provider adapter registry", () => {
   test("declares structured-output defaults for adapters that enforce JSON", () => {
     const registry = createBuiltinProviderAdapterRegistry();
 
-    for (const providerId of ["cerebras", "gemini", "openai"]) {
+    for (const providerId of ["cerebras", "gemini", "openai", "opencode_go"]) {
       expect(
         registry.require(providerId).manifest.capabilities[
           PROVIDER_CAPABILITY_IDS.chatStructuredOutput
         ]?.modelDefault.status
       ).toBe("supported");
     }
+  });
+
+  test("lets OpenCode Go chat with tools and reasoning without admin evidence", () => {
+    const go = createBuiltinProviderAdapterRegistry().require("opencode_go");
+
+    for (const capabilityId of [
+      PROVIDER_CAPABILITY_IDS.chatReasoning,
+      PROVIDER_CAPABILITY_IDS.chatStreaming,
+      PROVIDER_CAPABILITY_IDS.chatStructuredOutput,
+      PROVIDER_CAPABILITY_IDS.chatToolUse,
+    ]) {
+      const entry = go.manifest.capabilities[capabilityId];
+      expect(entry?.implementation.status).toBe("available");
+      expect(entry?.modelDefault.status).toBe("supported");
+      expect(entry?.native.status).toBe("supported");
+    }
+  });
+
+  test("lets first-party chat providers use tools without admin evidence", () => {
+    const registry = createBuiltinProviderAdapterRegistry();
+    const firstParty = [
+      "anthropic",
+      "cerebras",
+      "chatgpt",
+      "claude",
+      "cloudflare",
+      "deepseek",
+      "fireworks",
+      "gemini",
+      "minimax",
+      "minimax_cn",
+      "ollama",
+      "openai",
+      "openrouter",
+      "opencode_go",
+      "xai",
+      "zhipu",
+      "zhipu_cn",
+    ];
+
+    for (const providerId of firstParty) {
+      const entry =
+        registry.require(providerId).manifest.capabilities[
+          PROVIDER_CAPABILITY_IDS.chatToolUse
+        ];
+      expect(entry?.implementation.status, providerId).toBe("available");
+      expect(entry?.modelDefault.status, providerId).toBe("supported");
+      expect(entry?.native.status, providerId).toBe("supported");
+    }
+
+    for (const providerId of firstParty.filter((id) => id !== "chatgpt")) {
+      const entry =
+        registry.require(providerId).manifest.capabilities[
+          PROVIDER_CAPABILITY_IDS.chatReasoning
+        ];
+      expect(entry?.modelDefault.status, providerId).toBe("supported");
+    }
+
+    expect(
+      registry.require("chatgpt").manifest.capabilities[
+        PROVIDER_CAPABILITY_IDS.chatReasoning
+      ]?.modelDefault.status
+    ).toBe("unknown");
+
+    const custom =
+      registry.require("openai_compatible").manifest.capabilities[
+        PROVIDER_CAPABILITY_IDS.chatToolUse
+      ];
+    expect(custom?.implementation.status).toBe("available");
+    expect(custom?.modelDefault.status).toBe("unknown");
   });
 
   test("keeps ChatGPT model capabilities runtime-gated while wiring media handlers", () => {

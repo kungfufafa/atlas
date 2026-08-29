@@ -47,14 +47,11 @@ export function createOpenCodeGoProvider(
 
     return {
       generateChat: (input: GenerateChatInput) =>
-        anthropic.generateChat({ ...input, providerOptions: undefined }),
+        anthropic.generateChat(withoutNativeWebSearch(input)),
       generateText: (input: GenerateTextInput) => anthropic.generateText(input),
       name: "opencode_go",
       streamChat: (input: GenerateChatInput, handlers: StreamChatHandlers) =>
-        anthropic.streamChat(
-          { ...input, providerOptions: undefined },
-          handlers
-        ),
+        anthropic.streamChat(withoutNativeWebSearch(input), handlers),
     };
   }
 
@@ -70,7 +67,7 @@ export function createOpenCodeGoProvider(
         generateOpenAIResponsesChat({
           apiKey: options.apiKey,
           baseUrl: OPENCODE_GO_CHAT_BASE_URL,
-          input: { ...input, providerOptions: undefined },
+          input: withoutNativeWebSearch(input),
           label: "OpenCode Go",
           model,
           providerInstanceId: options.providerInstanceId,
@@ -82,7 +79,7 @@ export function createOpenCodeGoProvider(
         const result = await generateOpenAIResponsesChat({
           apiKey: options.apiKey,
           baseUrl: OPENCODE_GO_CHAT_BASE_URL,
-          input: toChatInput(input),
+          input: withoutNativeWebSearch(toChatInput(input)),
           label: "OpenCode Go",
           model,
           providerInstanceId: options.providerInstanceId,
@@ -102,7 +99,7 @@ export function createOpenCodeGoProvider(
           apiKey: options.apiKey,
           baseUrl: OPENCODE_GO_CHAT_BASE_URL,
           handlers,
-          input: { ...input, providerOptions: undefined },
+          input: withoutNativeWebSearch(input),
           label: "OpenCode Go",
           model,
           providerInstanceId: options.providerInstanceId,
@@ -121,4 +118,18 @@ export function createOpenCodeGoProvider(
     providerName: "opencode_go",
     providerReplayRevision: options.providerReplayRevision,
   });
+}
+
+function withoutNativeWebSearch(input: GenerateChatInput): GenerateChatInput {
+  if (!input.providerOptions?.webSearch) {
+    return input;
+  }
+
+  return {
+    ...input,
+    providerOptions: {
+      ...input.providerOptions,
+      webSearch: false,
+    },
+  };
 }

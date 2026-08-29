@@ -33,6 +33,7 @@ import {
   getRequestAuth,
   json,
   readJson,
+  withOptionalSessionToken,
 } from "../shared";
 import type { HonoApp } from "../types";
 
@@ -52,6 +53,7 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
       name: z.string().nullable().optional(),
       orgId: z.string().nullable().optional(),
       phone: z.string().nullable().optional(),
+      sessionToken: z.string().optional(),
     })
     .openapi("AuthUserResponse");
   const updateAuthProfileSchema = z
@@ -246,6 +248,7 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
       email: z.string(),
       orgId: z.string(),
       role: z.enum(["admin", "member", "viewer"]),
+      sessionToken: z.string().optional(),
     })
     .openapi("AcceptOrgInviteResponse");
   const previewInviteQuerySchema = z
@@ -489,7 +492,11 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
         organization.id
       );
 
-      return json<AuthUserResponse>(authBody, 201, response.headers);
+      return json<AuthUserResponse>(
+        withOptionalSessionToken(authBody, response.sessionToken, c.req.raw),
+        201,
+        response.headers
+      );
     });
   });
 
@@ -528,7 +535,11 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
       response.session.id,
       response.session.activeOrgId
     );
-    return json<AuthUserResponse>(authBody, 200, response.headers);
+    return json<AuthUserResponse>(
+      withOptionalSessionToken(authBody, response.sessionToken, c.req.raw),
+      200,
+      response.headers
+    );
   });
 
   app.openapi(meRoute, async (c) => {
@@ -588,7 +599,7 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
 
     assertBrowserCsrf(c.req.raw, auth, authService);
 
-    if (auth.mode === "browser-session" && auth.session) {
+    if (auth.session) {
       const revokedAt = new Date().toISOString();
       await databaseAdapter.revokeBrowserSessionBySessionTokenHash(
         auth.session.sessionTokenHash,
@@ -656,11 +667,15 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
     );
 
     return json<AcceptOrgInviteResponse>(
-      {
-        email: accepted.user.email,
-        orgId: accepted.orgId,
-        role: accepted.role,
-      },
+      withOptionalSessionToken(
+        {
+          email: accepted.user.email,
+          orgId: accepted.orgId,
+          role: accepted.role,
+        },
+        response.sessionToken,
+        c.req.raw
+      ),
       200,
       response.headers
     );

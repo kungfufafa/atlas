@@ -246,6 +246,8 @@ export class AtlasClient {
   private readonly fetchImpl: typeof fetch;
   private readonly credentials: FetchCredentials;
   private readonly clientOrigin: string | null;
+  private readonly redirect: RequestRedirect | undefined;
+  private readonly tokenAuth: boolean;
   private authToken: string | null;
   private orgId: string | null;
 
@@ -253,8 +255,11 @@ export class AtlasClient {
     this.baseUrl = (options.baseUrl ?? resolveServerUrl()).replace(/\/$/, "");
     const fetchFn = options.fetch ?? fetch;
     this.fetchImpl = ((input, init) => fetchFn(input, init)) as typeof fetch;
-    this.credentials = options.credentials ?? "include";
+    this.tokenAuth = options.tokenAuth === true;
+    this.credentials =
+      options.credentials ?? (this.tokenAuth ? "omit" : "include");
     this.clientOrigin = options.clientOrigin?.trim().replace(/\/$/, "") || null;
+    this.redirect = options.redirect;
     this.authToken = options.authToken ?? null;
     this.orgId = options.orgId ?? null;
   }
@@ -285,6 +290,9 @@ export class AtlasClient {
   private applyAuthUserResponse(response: AuthUserResponse): void {
     const activeOrgId = response.activeOrgId ?? response.orgId ?? null;
     this.setOrgId(activeOrgId);
+    if (this.tokenAuth && response.sessionToken) {
+      this.setAuthToken(response.sessionToken);
+    }
   }
 
   async health(): Promise<HealthResponse> {
@@ -791,6 +799,7 @@ export class AtlasClient {
         credentials: this.credentials,
         headers,
         method: "GET",
+        ...(this.redirect ? { redirect: this.redirect } : {}),
         signal: options?.signal,
       }
     );
@@ -1611,6 +1620,7 @@ export class AtlasClient {
                 credentials: this.credentials,
                 headers,
                 method: "POST",
+                ...(this.redirect ? { redirect: this.redirect } : {}),
                 signal: options?.signal,
               }
             );
@@ -2112,11 +2122,13 @@ export class AtlasClient {
   }
 
   async connectComposioToolkit(
-    toolkitSlug: string
+    toolkitSlug: string,
+    options?: { callbackOrigin?: string }
   ): Promise<ComposioConnectResponse> {
     const body: ComposioConnectRequest = {};
 
-    const callbackOrigin = readBrowserOrigin();
+    const callbackOrigin =
+      options?.callbackOrigin?.trim() || readBrowserOrigin();
     if (callbackOrigin) {
       body.callbackOrigin = callbackOrigin;
     }
@@ -2212,6 +2224,7 @@ export class AtlasClient {
           Accept: "text/event-stream",
         }),
         method: "POST",
+        ...(this.redirect ? { redirect: this.redirect } : {}),
         signal: options?.signal,
       }
     );
@@ -2307,6 +2320,9 @@ export class AtlasClient {
       }
     );
     this.setOrgId(response.orgId);
+    if (this.tokenAuth && response.sessionToken) {
+      this.setAuthToken(response.sessionToken);
+    }
     return response;
   }
 
@@ -2777,6 +2793,7 @@ export class AtlasClient {
       ...init,
       credentials: this.credentials,
       headers,
+      ...(this.redirect ? { redirect: this.redirect } : {}),
     });
 
     if (!response.ok) {
@@ -2784,6 +2801,7 @@ export class AtlasClient {
         response.status === 401 &&
         this.authToken &&
         !retried &&
+        !this.tokenAuth &&
         path !== "/v1/auth/local-token/rotate"
       ) {
         const freshToken = await loadLocalAuthToken();
@@ -2816,10 +2834,16 @@ export class AtlasClient {
       ...init,
       credentials: this.credentials,
       headers,
+      ...(this.redirect ? { redirect: this.redirect } : {}),
     });
 
     if (!response.ok) {
-      if (response.status === 401 && this.authToken && !retried) {
+      if (
+        response.status === 401 &&
+        this.authToken &&
+        !retried &&
+        !this.tokenAuth
+      ) {
         const freshToken = await loadLocalAuthToken();
         if (freshToken && freshToken !== this.authToken) {
           this.authToken = freshToken;
@@ -2844,6 +2868,10 @@ export class AtlasClient {
 
     if (this.authToken) {
       merged["Authorization"] = `Bearer ${this.authToken}`;
+    }
+
+    if (this.tokenAuth && !merged["X-Atlas-Auth-Mode"]) {
+      merged["X-Atlas-Auth-Mode"] = "token";
     }
 
     const scope = getOrgIdScope();

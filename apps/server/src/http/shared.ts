@@ -29,6 +29,7 @@ import type { AppEnv } from "./types";
 const SESSION_COOKIE_NAME = "atlas_session";
 const CSRF_COOKIE_NAME = "atlas_csrf";
 const CSRF_HEADER_NAME = "x-csrf-token";
+export const TOKEN_AUTH_MODE_HEADER = "x-atlas-auth-mode";
 const SESSION_COOKIE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 const DEFAULT_JSON_BODY_READ_TIMEOUT_MS = 30_000;
 
@@ -133,7 +134,7 @@ function isSecureCookieRequest(request: Request): boolean {
 export interface RequestAuthContext {
   activeOrgId?: string;
   isPlatformAdmin: boolean;
-  mode: "browser-session" | "local-token";
+  mode: "bearer-session" | "browser-session" | "local-token";
   orgRole?: OrgRole;
   session?: StoredBrowserSessionRecord;
   user: Pick<StoredUserRecord, "id" | "email">;
@@ -152,62 +153,44 @@ export function getRequestAuth(c: Context<AppEnv>): RequestAuthContext {
   return auth;
 }
 
-export async function authenticateRequest(
-  request: Request,
-  authService: AuthService,
+export function wantsTokenAuth(request: Request): boolean {
+  return (
+    request.headers.get(TOKEN_AUTH_MODE_HEADER)?.trim().toLowerCase() ===
+    "token"
+  );
+}
+
+async function authenticateLocalToken(
+  token: string,
   databaseAdapter: DatabaseAdapter
 ): Promise<RequestAuthContext | null> {
-  const authHeader = request.headers.get("Authorization");
-  if (authHeader?.startsWith("Bearer ")) {
-    const payload = await verifyLocalAuthToken(authHeader.slice(7).trim());
-    if (!payload) {
-      return null;
-    }
-
-    let user = await databaseAdapter.getUserByEmail(payload.email);
-    if (payload.email === LOCAL_CLIENT_EMAIL) {
-      await ensureLocalClientAccess(databaseAdapter);
-      user = await databaseAdapter.getUserByEmail(payload.email);
-    }
-    if (!user) {
-      return null;
-    }
-
-    return {
-      isPlatformAdmin: Boolean(user.isPlatformAdmin),
-      mode: "local-token",
-      user: toAuthUser(user),
-    };
-  }
-
-  const sessionToken = getRequestTokenFromCookies(request, SESSION_COOKIE_NAME);
-  if (!sessionToken) {
-    const anthropicApiKey = request.headers.get("x-api-key")?.trim();
-
-    if (anthropicApiKey) {
-      const payload = await verifyLocalAuthToken(anthropicApiKey);
-
-      if (payload) {
-        let user = await databaseAdapter.getUserByEmail(payload.email);
-
-        if (payload.email === LOCAL_CLIENT_EMAIL) {
-          await ensureLocalClientAccess(databaseAdapter);
-          user = await databaseAdapter.getUserByEmail(payload.email);
-        }
-
-        if (user) {
-          return {
-            isPlatformAdmin: Boolean(user.isPlatformAdmin),
-            mode: "local-token",
-            user: toAuthUser(user),
-          };
-        }
-      }
-    }
-
+  const payload = await verifyLocalAuthToken(token);
+  if (!payload) {
     return null;
   }
 
+  let user = await databaseAdapter.getUserByEmail(payload.email);
+  if (payload.email === LOCAL_CLIENT_EMAIL) {
+    await ensureLocalClientAccess(databaseAdapter);
+    user = await databaseAdapter.getUserByEmail(payload.email);
+  }
+  if (!user) {
+    return null;
+  }
+
+  return {
+    isPlatformAdmin: Boolean(user.isPlatformAdmin),
+    mode: "local-token",
+    user: toAuthUser(user),
+  };
+}
+
+async function authenticateSessionToken(
+  sessionToken: string,
+  authService: AuthService,
+  databaseAdapter: DatabaseAdapter,
+  mode: "bearer-session" | "browser-session"
+): Promise<RequestAuthContext | null> {
   const sessionTokenHash = authService.hashToken(sessionToken);
   const session =
     await databaseAdapter.getBrowserSessionBySessionTokenHash(sessionTokenHash);
@@ -231,10 +214,47 @@ export async function authenticateRequest(
 
   return {
     isPlatformAdmin: Boolean(user.isPlatformAdmin),
-    mode: "browser-session",
+    mode,
     session,
     user: toAuthUser(user),
   };
+}
+
+export async function authenticateRequest(
+  request: Request,
+  authService: AuthService,
+  databaseAdapter: DatabaseAdapter
+): Promise<RequestAuthContext | null> {
+  const authHeader = request.headers.get("Authorization");
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7).trim();
+    return (
+      (await authenticateLocalToken(token, databaseAdapter)) ??
+      (await authenticateSessionToken(
+        token,
+        authService,
+        databaseAdapter,
+        "bearer-session"
+      ))
+    );
+  }
+
+  const sessionToken = getRequestTokenFromCookies(request, SESSION_COOKIE_NAME);
+  if (!sessionToken) {
+    const anthropicApiKey = request.headers.get("x-api-key")?.trim();
+    if (anthropicApiKey) {
+      return authenticateLocalToken(anthropicApiKey, databaseAdapter);
+    }
+
+    return null;
+  }
+
+  return authenticateSessionToken(
+    sessionToken,
+    authService,
+    databaseAdapter,
+    "browser-session"
+  );
 }
 
 function csrfTokensEqual(left: string, right: string): boolean {
@@ -306,6 +326,7 @@ export async function createBrowserSessionResponse(
   body: { email: string };
   headers: Headers;
   session: StoredBrowserSessionRecord;
+  sessionToken: string;
 }> {
   const now = new Date().toISOString();
   const session = authService.createBrowserSessionTokens();
@@ -335,7 +356,20 @@ export async function createBrowserSessionResponse(
     body: { email: user.email },
     headers,
     session: record,
+    sessionToken: session.sessionToken,
   };
+}
+
+export function withOptionalSessionToken<T extends object>(
+  body: T,
+  sessionToken: string,
+  request: Request
+): T & { sessionToken?: string } {
+  if (!wantsTokenAuth(request)) {
+    return body;
+  }
+
+  return { ...body, sessionToken };
 }
 
 export function clearBrowserSessionCookies(headers: Headers): void {

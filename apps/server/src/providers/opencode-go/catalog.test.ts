@@ -35,6 +35,7 @@ describe("fetchOpenCodeGoGatewayModels", () => {
             { id: "glm-5.3", object: "model" },
             { id: "kimi-k2.7-code", object: "model" },
             { id: "qwen3.8-max", object: "model" },
+            { id: "deepseek-v4-flash-vision-exp", object: "model" },
           ],
           object: "list",
         }),
@@ -55,6 +56,28 @@ describe("fetchOpenCodeGoGatewayModels", () => {
     expect(
       entries.find((entry) => entry.id === "opencode-go/kimi-k2.7-code")?.name
     ).toBe("Kimi K2.7 Code");
+    expect(
+      entries.find((entry) => entry.id === "opencode-go/kimi-k2.7-code")
+        ?.capabilities?.["chat.tool-use"]
+    ).toMatchObject({ status: "supported", verified: true });
+    expect(
+      entries.find((entry) => entry.id === "opencode-go/glm-5.3")
+        ?.supportsThinking
+    ).toBe(true);
+    expect(
+      entries.find(
+        (entry) => entry.id === "opencode-go/deepseek-v4-flash-vision-exp"
+      )?.supportsVision
+    ).toBe(true);
+    expect(
+      entries.find(
+        (entry) => entry.id === "opencode-go/deepseek-v4-flash-vision-exp"
+      )?.capabilities?.["chat.input.image"]
+    ).toMatchObject({ status: "supported" });
+    expect(
+      entries.find((entry) => entry.id === "opencode-go/kimi-k2.7-code")
+        ?.capabilities?.["chat.input.image"]
+    ).toBeUndefined();
   });
 
   test("reuses the cached catalog within the TTL", async () => {
@@ -101,5 +124,42 @@ describe("getModelsForOpenCodeGoInstance", () => {
       "opencode-go/kimi-k3",
     ]);
     expect(models[0]?.providerId).toBe("go-1");
+  });
+
+  test("keeps the live catalog when a default shortlist is saved", async () => {
+    globalThis.fetch = (async () =>
+      new Response(
+        JSON.stringify({
+          data: [
+            { id: "glm-5.3" },
+            { id: "kimi-k3" },
+            { id: "deepseek-v4-flash" },
+          ],
+          object: "list",
+        }),
+        { headers: { "Content-Type": "application/json" }, status: 200 }
+      )) as typeof fetch;
+
+    const models = await getModelsForOpenCodeGoInstance({
+      apiKey: "sk-test",
+      createdAt: "2026-06-07T10:00:00.000Z",
+      customModels: [{ id: "opencode-go/deepseek-v4-flash" }],
+      id: "go-1",
+      label: "OpenCode Go",
+      type: "opencode_go",
+    });
+
+    expect(models.map((model) => model.id)).toEqual([
+      "opencode-go/deepseek-v4-flash",
+      "opencode-go/glm-5.3",
+      "opencode-go/kimi-k3",
+    ]);
+    expect(
+      models.find((model) => model.id === "opencode-go/deepseek-v4-flash")
+        ?.default
+    ).toBe(true);
+    expect(
+      models.find((model) => model.id === "opencode-go/glm-5.3")?.default
+    ).toBeFalsy();
   });
 });

@@ -19,6 +19,7 @@ import {
   messagesIncludeUserImages,
   toOpenAIChatUserContent,
 } from "@atlas/core";
+import { toOpenCodeGoApiModelId } from "../models";
 import {
   buildChatCompletionResult,
   DEFAULT_USER_AGENT,
@@ -367,7 +368,7 @@ async function buildChatCompletionRequestBody(options: {
       options.messages,
       provider
     ),
-    ...(provider === "deepseek"
+    ...(usesDeepSeekThinkingBody(provider, options.model)
       ? buildDeepSeekThinkingBody(options.thinking)
       : {}),
     ...(hasTools
@@ -381,6 +382,20 @@ async function buildChatCompletionRequestBody(options: {
         }
       : {}),
   };
+}
+
+function usesDeepSeekThinkingBody(
+  provider: ProviderName,
+  model: string
+): boolean {
+  if (provider === "deepseek") {
+    return true;
+  }
+
+  return (
+    provider === "opencode_go" &&
+    toOpenCodeGoApiModelId(model).startsWith("deepseek")
+  );
 }
 
 function buildDeepSeekThinkingBody(

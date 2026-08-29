@@ -69,6 +69,52 @@ test("automation run requests disable Bun fetch idle timeout", async () => {
   expect(fetchCalls[0]!.init?.body).toBe(JSON.stringify({ fireId: "tick-1" }));
 });
 
+test("clients reject redirects for regular and streaming requests", async () => {
+  const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
+    [];
+  const client = createClient({
+    baseUrl: "https://atlas.example.com",
+    fetch: async (input, init) => {
+      fetchCalls.push({ init, input });
+      const url = String(input);
+
+      if (url.endsWith("/stream")) {
+        return new Response(null, { status: 204 });
+      }
+
+      if (url.includes("messages?stream=true")) {
+        return new Response('data: {"type":"done","reply":"ok"}\n\n', {
+          headers: { "Content-Type": "text/event-stream" },
+        });
+      }
+
+      if (url.endsWith("/agent-browser/install")) {
+        return new Response(
+          'data: {"type":"done","status":{"installCommand":"","installed":true,"nextStep":null,"ready":true,"statusMessage":null,"version":"1"}}\n\n',
+          { headers: { "Content-Type": "text/event-stream" } }
+        );
+      }
+
+      return Response.json({ ok: true });
+    },
+    redirect: "error",
+  });
+
+  await client.health();
+  await client.subscribeSessionStream("session-1", () => {});
+  await client
+    .createChatSession("session-1", "web")
+    .sendStream("hello", () => {});
+  await client.installAgentBrowser();
+
+  expect(fetchCalls.map((call) => call.init?.redirect)).toEqual([
+    "error",
+    "error",
+    "error",
+    "error",
+  ]);
+});
+
 test("automation worker curator requests use internal org-scoped routes", async () => {
   const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
     [];
@@ -277,6 +323,34 @@ test("preview and accept invite hit public auth routes", async () => {
   );
   expect(fetchCalls[1]!.init?.method).toBe("POST");
   expect(accepted.orgId).toBe("org_acme");
+});
+
+test("token auth clients request a session token and omit cookies", async () => {
+  const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
+    [];
+  const client = createClient({
+    baseUrl: "http://localhost:4310",
+    fetch: async (input, init) => {
+      fetchCalls.push({ init, input });
+      return Response.json({
+        email: "admin@example.com",
+        orgId: "org_acme",
+        sessionToken: "session-token-1",
+      });
+    },
+    tokenAuth: true,
+  });
+
+  const user = await client.login("admin@example.com", "password123");
+  expect(user.sessionToken).toBe("session-token-1");
+
+  const loginHeaders = new Headers(fetchCalls[0]!.init?.headers);
+  expect(loginHeaders.get("X-Atlas-Auth-Mode")).toBe("token");
+  expect(fetchCalls[0]!.init?.credentials).toBe("omit");
+
+  await client.health();
+  const authedHeaders = new Headers(fetchCalls[1]!.init?.headers);
+  expect(authedHeaders.get("Authorization")).toBe("Bearer session-token-1");
 });
 
 test("non-browser clients send local auth as a bearer token", async () => {

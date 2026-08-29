@@ -63,7 +63,7 @@ export class IdentityService {
 
   async bindExternalPrincipal(input: {
     actor?: {
-      mode: "browser-session" | "local-token";
+      mode: "bearer-session" | "browser-session" | "local-token";
       userId: string;
     };
     channel: ChannelType;
