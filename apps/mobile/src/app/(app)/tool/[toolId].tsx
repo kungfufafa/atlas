@@ -111,10 +111,11 @@ export default function ToolPlaygroundScreen() {
                     size="sm"
                     variant="outline"
                   >
-                    <Text>Suggest</Text>
+                    <Text>{suggest.isPending ? "Suggesting…" : "Suggest"}</Text>
                   </Button>
                   {query.data?.handlerType === "javascript" ? (
                     <Button
+                      disabled={remove.isPending}
                       onPress={() => {
                         confirmDestructive({
                           message: query.data?.name,
@@ -140,7 +141,7 @@ export default function ToolPlaygroundScreen() {
                       size="sm"
                       variant="outline"
                     >
-                      <Text>Delete</Text>
+                      <Text>{remove.isPending ? "Deleting…" : "Delete"}</Text>
                     </Button>
                   ) : null}
                 </ActionCluster>

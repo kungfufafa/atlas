@@ -65,11 +65,19 @@ export default function IntegrationsScreen() {
 
   const data = query.data;
   const pairingCode = data?.whatsapp.pairingCode;
+  const isConnectToolkitPending = connectToolkit.isPending;
+  const isEnableToolkitPending = enableToolkit.isPending;
   const enabledSlugs = new Set(
     (toolkitsQuery.data?.orgToolkits ?? []).map(
       (toolkit) => toolkit.toolkitSlug
     )
   );
+  const telegramTokenTrimmed = telegramToken.trim();
+  const discordTokenTrimmed = discordToken.trim();
+  const composioKeyTrimmed = composioKey.trim();
+  const canSaveTelegram = telegramTokenTrimmed.length > 0;
+  const canSaveDiscord = discordTokenTrimmed.length > 0;
+  const canSaveComposio = composioKeyTrimmed.length > 0;
 
   const toggle = (key: ChannelKey) => {
     if (!isAdmin) {
@@ -105,15 +113,18 @@ export default function IntegrationsScreen() {
               {open === "telegram" && isAdmin ? (
                 <InlineForm>
                   <Input
+                    autoCapitalize="none"
+                    autoCorrect={false}
                     onChangeText={setTelegramToken}
                     placeholder="Bot token"
                     secureTextEntry
                     value={telegramToken}
                   />
                   <Button
+                    disabled={saveTelegram.isPending || !canSaveTelegram}
                     onPress={() => {
                       void saveTelegram
-                        .mutateAsync(telegramToken.trim())
+                        .mutateAsync(telegramTokenTrimmed)
                         .then(() => {
                           setTelegramToken("");
                           setOpen(null);
@@ -144,6 +155,7 @@ export default function IntegrationsScreen() {
                   <ActionCluster>
                     {pairingCode ? (
                       <Button
+                        disabled={pairWhatsApp.isPending}
                         onPress={() => {
                           void Clipboard.setStringAsync(pairingCode);
                         }}
@@ -154,6 +166,7 @@ export default function IntegrationsScreen() {
                       </Button>
                     ) : null}
                     <Button
+                      disabled={pairWhatsApp.isPending}
                       onPress={() => {
                         void pairWhatsApp
                           .mutateAsync(undefined)
@@ -172,6 +185,7 @@ export default function IntegrationsScreen() {
                       <Text>{pairingCode ? "New code" : "Generate code"}</Text>
                     </Button>
                     <Button
+                      disabled={reconnectWhatsApp.isPending}
                       onPress={() => {
                         void reconnectWhatsApp
                           .mutateAsync(undefined)
@@ -204,15 +218,18 @@ export default function IntegrationsScreen() {
               {open === "discord" && isAdmin ? (
                 <InlineForm>
                   <Input
+                    autoCapitalize="none"
+                    autoCorrect={false}
                     onChangeText={setDiscordToken}
                     placeholder="Bot token"
                     secureTextEntry
                     value={discordToken}
                   />
                   <Button
+                    disabled={saveDiscord.isPending || !canSaveDiscord}
                     onPress={() => {
                       void saveDiscord
-                        .mutateAsync(discordToken.trim())
+                        .mutateAsync(discordTokenTrimmed)
                         .then(() => {
                           setDiscordToken("");
                           setOpen(null);
@@ -249,15 +266,18 @@ export default function IntegrationsScreen() {
               {open === "composio" && isAdmin ? (
                 <InlineForm>
                   <Input
+                    autoCapitalize="none"
+                    autoCorrect={false}
                     onChangeText={setComposioKey}
                     placeholder="Composio API key"
                     secureTextEntry
                     value={composioKey}
                   />
                   <Button
+                    disabled={saveComposio.isPending || !canSaveComposio}
                     onPress={() => {
                       void saveComposio
-                        .mutateAsync(composioKey.trim())
+                        .mutateAsync(composioKeyTrimmed)
                         .then(async () => {
                           setComposioKey("");
                           setOpen(null);
@@ -286,7 +306,7 @@ export default function IntegrationsScreen() {
                 <ListRow
                   key={toolkit.id}
                   onPress={
-                    isAdmin
+                    isAdmin && !isConnectToolkitPending
                       ? () => {
                           void connectToolkit
                             .mutateAsync(toolkit.toolkitSlug)
@@ -318,18 +338,24 @@ export default function IntegrationsScreen() {
                     .map((toolkit) => (
                       <ListRow
                         key={toolkit.slug}
-                        onPress={() => {
-                          void enableToolkit
-                            .mutateAsync(toolkit.slug)
-                            .then(() =>
-                              enableToolkit.queryClient.invalidateQueries({
-                                queryKey: queryKeys.composioToolkits,
-                              })
-                            )
-                            .catch((error: unknown) => {
-                              showMutationError("Composio", error);
-                            });
-                        }}
+                        onPress={
+                          isEnableToolkitPending
+                            ? undefined
+                            : () => {
+                                void enableToolkit
+                                  .mutateAsync(toolkit.slug)
+                                  .then(() =>
+                                    enableToolkit.queryClient.invalidateQueries(
+                                      {
+                                        queryKey: queryKeys.composioToolkits,
+                                      }
+                                    )
+                                  )
+                                  .catch((error: unknown) => {
+                                    showMutationError("Composio", error);
+                                  });
+                              }
+                        }
                         showChevron={false}
                         title={toolkit.name}
                         value="Enable"

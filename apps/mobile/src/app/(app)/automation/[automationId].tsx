@@ -77,6 +77,7 @@ export default function AutomationDetailScreen() {
               {canMutate ? (
                 <ActionCluster>
                   <Button
+                    disabled={run.isPending}
                     onPress={() => {
                       void run
                         .mutateAsync(undefined)
@@ -87,9 +88,10 @@ export default function AutomationDetailScreen() {
                     }}
                     size="sm"
                   >
-                    <Text>Run now</Text>
+                    <Text>{run.isPending ? "Running…" : "Run now"}</Text>
                   </Button>
                   <Button
+                    disabled={toggle.isPending}
                     onPress={() => {
                       void toggle
                         .mutateAsync(!(automationQuery.data?.enabled ?? false))
@@ -105,10 +107,15 @@ export default function AutomationDetailScreen() {
                     variant="outline"
                   >
                     <Text>
-                      {automationQuery.data?.enabled ? "Pause" : "Enable"}
+                      {toggle.isPending
+                        ? "Updating…"
+                        : automationQuery.data?.enabled
+                          ? "Pause"
+                          : "Enable"}
                     </Text>
                   </Button>
                   <Button
+                    disabled={remove.isPending}
                     onPress={() => {
                       confirmDestructive({
                         onConfirm: () => {
@@ -131,7 +138,7 @@ export default function AutomationDetailScreen() {
                     size="sm"
                     variant="outline"
                   >
-                    <Text>Delete</Text>
+                    <Text>{remove.isPending ? "Deleting…" : "Delete"}</Text>
                   </Button>
                 </ActionCluster>
               ) : null}

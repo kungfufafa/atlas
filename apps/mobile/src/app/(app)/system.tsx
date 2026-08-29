@@ -162,6 +162,26 @@ export default function SystemScreen() {
     profilesQuery.data?.find((profile) => profile.isDefault) ??
     profilesQuery.data?.[0];
   const status = statusQuery.data;
+  const toolNameTrimmed = toolName.trim();
+  const toolDescriptionTrimmed = toolDescription.trim();
+  const modulePathTrimmed = modulePath.trim();
+  const mcpNameTrimmed = mcpName.trim();
+  const mcpUrlTrimmed = mcpUrl.trim();
+  const skillNameTrimmed = skillName.trim();
+  const skillDescriptionTrimmed = skillDescription.trim();
+  const skillBodyTrimmed = skillBody.trim();
+  const installUrlTrimmed = installUrl.trim();
+  const memoryTrimmed = memory.trim();
+  const canCreateTool =
+    toolNameTrimmed.length > 0 &&
+    toolDescriptionTrimmed.length > 0 &&
+    modulePathTrimmed.length > 0;
+  const canCreateMcp = mcpNameTrimmed.length > 0 && mcpUrlTrimmed.length > 0;
+  const canCreateSkill =
+    skillNameTrimmed.length > 0 &&
+    skillDescriptionTrimmed.length > 0 &&
+    skillBodyTrimmed.length > 0;
+  const canInstallSkill = installUrlTrimmed.length > 0;
 
   return (
     <>
@@ -244,12 +264,13 @@ export default function SystemScreen() {
                     value={modulePath}
                   />
                   <Button
+                    disabled={createTool.isPending || !canCreateTool}
                     onPress={() => {
                       void createTool
                         .mutateAsync({
-                          description: toolDescription.trim(),
-                          modulePath: modulePath.trim(),
-                          name: toolName.trim(),
+                          description: toolDescriptionTrimmed,
+                          modulePath: modulePathTrimmed,
+                          name: toolNameTrimmed,
                         })
                         .then(async () => {
                           setToolName("");
@@ -268,7 +289,11 @@ export default function SystemScreen() {
                         });
                     }}
                   >
-                    <Text>Register tool</Text>
+                    <Text>
+                      {createTool.isPending
+                        ? "Registering tool…"
+                        : "Register tool"}
+                    </Text>
                   </Button>
                 </InlineForm>
               ) : null}
@@ -296,11 +321,12 @@ export default function SystemScreen() {
                     value={mcpUrl}
                   />
                   <Button
+                    disabled={createMcp.isPending || !canCreateMcp}
                     onPress={() => {
                       void createMcp
                         .mutateAsync({
-                          name: mcpName.trim(),
-                          url: mcpUrl.trim(),
+                          name: mcpNameTrimmed,
+                          url: mcpUrlTrimmed,
                         })
                         .then(async (response) => {
                           setMcpName("");
@@ -319,7 +345,9 @@ export default function SystemScreen() {
                         });
                     }}
                   >
-                    <Text>Add MCP</Text>
+                    <Text>
+                      {createMcp.isPending ? "Adding MCP…" : "Add MCP"}
+                    </Text>
                   </Button>
                 </InlineForm>
               ) : null}
@@ -355,12 +383,13 @@ export default function SystemScreen() {
                     value={skillBody}
                   />
                   <Button
+                    disabled={createSkill.isPending || !canCreateSkill}
                     onPress={() => {
                       void createSkill
                         .mutateAsync({
-                          body: skillBody,
-                          description: skillDescription.trim(),
-                          name: skillName.trim(),
+                          body: skillBodyTrimmed,
+                          description: skillDescriptionTrimmed,
+                          name: skillNameTrimmed,
                         })
                         .then(async (response) => {
                           setSkillName("");
@@ -380,7 +409,11 @@ export default function SystemScreen() {
                         });
                     }}
                   >
-                    <Text>Create skill</Text>
+                    <Text>
+                      {createSkill.isPending
+                        ? "Creating skill…"
+                        : "Create skill"}
+                    </Text>
                   </Button>
                   <Input
                     autoCapitalize="none"
@@ -390,6 +423,7 @@ export default function SystemScreen() {
                   />
                   <ActionCluster>
                     <Button
+                      disabled={installSkill.isPending || !canInstallSkill}
                       onPress={() => {
                         if (!defaultProfile) {
                           Alert.alert("No profile to install into.");
@@ -398,7 +432,7 @@ export default function SystemScreen() {
                         void installSkill
                           .mutateAsync({
                             profileId: defaultProfile.id,
-                            url: installUrl.trim(),
+                            url: installUrlTrimmed,
                           })
                           .then(async (response) => {
                             setInstallUrl("");
@@ -418,9 +452,12 @@ export default function SystemScreen() {
                       size="sm"
                       variant="outline"
                     >
-                      <Text>Install URL</Text>
+                      <Text>
+                        {installSkill.isPending ? "Installing…" : "Install URL"}
+                      </Text>
                     </Button>
                     <Button
+                      disabled={syncSkills.isPending}
                       onPress={() => {
                         void syncSkills
                           .mutateAsync(undefined)
@@ -436,7 +473,7 @@ export default function SystemScreen() {
                       size="sm"
                       variant="outline"
                     >
-                      <Text>Sync</Text>
+                      <Text>{syncSkills.isPending ? "Syncing…" : "Sync"}</Text>
                     </Button>
                   </ActionCluster>
                 </InlineForm>
@@ -453,9 +490,10 @@ export default function SystemScreen() {
                     />
                     <ActionCluster>
                       <Button
+                        disabled={saveMemory.isPending}
                         onPress={() => {
                           void saveMemory
-                            .mutateAsync(memory)
+                            .mutateAsync(memoryTrimmed)
                             .then(() =>
                               saveMemory.queryClient.invalidateQueries({
                                 queryKey: queryKeys.orgMemory(activeOrg.id),
@@ -468,7 +506,9 @@ export default function SystemScreen() {
                         size="sm"
                         variant="outline"
                       >
-                        <Text>Save memory</Text>
+                        <Text>
+                          {saveMemory.isPending ? "Saving…" : "Save memory"}
+                        </Text>
                       </Button>
                     </ActionCluster>
                   </View>

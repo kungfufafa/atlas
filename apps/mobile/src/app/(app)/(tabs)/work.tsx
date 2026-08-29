@@ -100,6 +100,7 @@ export default function WorkScreen() {
 
   const loading = automationsQuery.isLoading || tasksQuery.isLoading;
   const error = automationsQuery.error ?? tasksQuery.error;
+  const isCreatePending = createTask.isPending || createAutomation.isPending;
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -109,12 +110,13 @@ export default function WorkScreen() {
               accessibilityLabel={
                 tab === "tasks" ? "New task" : "New automation"
               }
+              disabled={isCreatePending}
               onPress={() => setCreating((current) => !current)}
             />
           )
         : undefined,
     });
-  }, [canMutate, navigation, tab]);
+  }, [canMutate, isCreatePending, navigation, tab]);
 
   return (
     <RequireWorkspaceMutation>
@@ -152,18 +154,17 @@ export default function WorkScreen() {
                   value={prompt}
                 />
                 <Button
-                  disabled={
-                    createTask.isPending ||
-                    createAutomation.isPending ||
-                    !title.trim() ||
-                    !prompt.trim()
-                  }
+                  disabled={isCreatePending || !title.trim() || !prompt.trim()}
                   onPress={() => {
                     void submit();
                   }}
                 >
                   <Text>
-                    {tab === "tasks" ? "Create task" : "Create automation"}
+                    {isCreatePending
+                      ? "Creating…"
+                      : tab === "tasks"
+                        ? "Create task"
+                        : "Create automation"}
                   </Text>
                 </Button>
               </InlineForm>

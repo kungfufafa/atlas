@@ -62,73 +62,95 @@ export default function LoginScreen() {
 
   return (
     <AuthShell
-      footer={
-        <Button
-          accessibilityLabel="Join a workspace"
-          className="w-full"
-          onPress={() => router.push("/(auth)/invite")}
-          variant="outline"
-        >
-          <Text>Join a workspace</Text>
-        </Button>
+      description={
+        activeServer
+          ? "Sign in to continue to your team workspace."
+          : "Connect the Atlas server your team uses to get started."
       }
-      title="Sign in"
+      footer={
+        activeServer ? (
+          <Button
+            accessibilityLabel="Join a workspace"
+            className="w-full"
+            onPress={() => router.push("/(auth)/invite")}
+            variant="outline"
+          >
+            <Text>Join a workspace</Text>
+          </Button>
+        ) : undefined
+      }
+      title={activeServer ? "Welcome back" : "Welcome to Atlas"}
     >
-      <ServerLoginRow disabled={form.formState.isSubmitting} />
-      <View className="gap-2">
-        <Label>Email</Label>
-        <Controller
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <Input
-              autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              onChangeText={field.onChange}
-              placeholder="you@example.com"
-              value={field.value}
+      {activeServer ? (
+        <>
+          <ServerLoginRow disabled={form.formState.isSubmitting} />
+          <View className="gap-2">
+            <Label>Email</Label>
+            <Controller
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <Input
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  keyboardType="email-address"
+                  onChangeText={field.onChange}
+                  placeholder="you@example.com"
+                  value={field.value}
+                />
+              )}
             />
-          )}
-        />
-        {form.formState.errors.email?.message ? (
-          <Text className="text-destructive text-sm">
-            {form.formState.errors.email.message}
-          </Text>
-        ) : null}
-      </View>
-      <View className="gap-2">
-        <Label>Password</Label>
-        <Controller
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <PasswordInput
-              autoComplete="password"
-              onChangeText={field.onChange}
-              placeholder="Password"
-              value={field.value}
+            {form.formState.errors.email?.message ? (
+              <Text className="text-destructive text-sm">
+                {form.formState.errors.email.message}
+              </Text>
+            ) : null}
+          </View>
+          <View className="gap-2">
+            <Label>Password</Label>
+            <Controller
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <PasswordInput
+                  autoComplete="password"
+                  onChangeText={field.onChange}
+                  placeholder="Password"
+                  value={field.value}
+                />
+              )}
             />
-          )}
-        />
-        {form.formState.errors.password?.message ? (
-          <Text className="text-destructive text-sm">
-            {form.formState.errors.password.message}
-          </Text>
-        ) : null}
-      </View>
-      {healthQuery.isError ? (
-        <Text className="text-destructive">
-          Could not reach this Atlas server.
-        </Text>
-      ) : null}
-      {error ? <Text className="text-destructive">{error}</Text> : null}
-      <Button
-        disabled={form.formState.isSubmitting || !activeServer}
-        onPress={onSubmit}
-      >
-        <Text>{form.formState.isSubmitting ? "Signing in…" : "Sign in"}</Text>
-      </Button>
+            {form.formState.errors.password?.message ? (
+              <Text className="text-destructive text-sm">
+                {form.formState.errors.password.message}
+              </Text>
+            ) : null}
+          </View>
+          {healthQuery.isError ? (
+            <Text className="text-destructive">
+              Could not reach this Atlas server.
+            </Text>
+          ) : null}
+          {error ? <Text className="text-destructive">{error}</Text> : null}
+          <Button disabled={form.formState.isSubmitting} onPress={onSubmit}>
+            <Text>
+              {form.formState.isSubmitting ? "Signing in…" : "Sign in"}
+            </Text>
+          </Button>
+        </>
+      ) : (
+        <>
+          <View className="rounded-xl border border-border bg-muted/40 px-4 py-3">
+            <Text className="font-heading">What you’ll need</Text>
+            <Text className="mt-1 text-muted-foreground text-sm">
+              Your Atlas address from your team or workspace admin.
+            </Text>
+          </View>
+          <Button onPress={() => router.push("/(auth)/connect")}>
+            <Text>Connect a server</Text>
+          </Button>
+        </>
+      )}
     </AuthShell>
   );
 }

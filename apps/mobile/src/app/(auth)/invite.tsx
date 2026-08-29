@@ -27,6 +27,14 @@ export default function InviteScreen() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const token = tokenFromInviteInput(tokenInput);
+  const tokenTrimmed = token.trim();
+  const passwordTrimmed = password.trim();
+  const confirmPasswordTrimmed = confirmPassword.trim();
+  const canSubmit =
+    !busy &&
+    Boolean(tokenTrimmed) &&
+    (isAuthenticated ||
+      (passwordTrimmed.length > 0 && confirmPasswordTrimmed.length > 0));
 
   useEffect(() => {
     if (params.token) {
@@ -79,12 +87,15 @@ export default function InviteScreen() {
   };
 
   const submit = async () => {
-    if (!token) {
+    if (!tokenTrimmed) {
       setError("Invite token is required.");
       return;
     }
     if (!isAuthenticated) {
-      const passwordError = validateSetupPassword(password, confirmPassword);
+      const passwordError = validateSetupPassword(
+        passwordTrimmed,
+        confirmPasswordTrimmed
+      );
       if (passwordError) {
         setError(passwordError);
         return;
@@ -93,7 +104,10 @@ export default function InviteScreen() {
     setBusy(true);
     setError(null);
     try {
-      await acceptInvite(token, isAuthenticated ? undefined : password);
+      await acceptInvite(
+        tokenTrimmed,
+        isAuthenticated ? undefined : passwordTrimmed
+      );
       router.replace("/(app)/(tabs)/chats");
     } catch (caught) {
       setError(formatAuthError(caught));
@@ -104,6 +118,7 @@ export default function InviteScreen() {
 
   return (
     <AuthShell
+      description="Paste the invite link your workspace admin sent you."
       footer={
         <Button
           accessibilityLabel="Sign in"
@@ -116,7 +131,7 @@ export default function InviteScreen() {
       }
       footerClassName="mt-4"
       onBack={goSignIn}
-      title="Join workspace"
+      title="Join a workspace"
     >
       <View className="gap-2">
         <Label>Invite</Label>
@@ -160,7 +175,7 @@ export default function InviteScreen() {
       ) : null}
       {error ? <Text className="text-destructive">{error}</Text> : null}
       {previewName ? (
-        <Button disabled={busy} onPress={() => void submit()}>
+        <Button disabled={!canSubmit} onPress={() => void submit()}>
           <Text>{busy ? "Joining…" : "Join workspace"}</Text>
         </Button>
       ) : null}

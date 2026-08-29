@@ -112,6 +112,7 @@ export default function ProfileScreen() {
   const assignedSkillIds = new Set(
     (profileQuery.data?.skills ?? []).map((skill) => skill.id)
   );
+  const nameTrimmed = name.trim();
   const assignedMcpIds = new Set(
     (profileQuery.data?.mcpServers ?? []).map((server) => server.id)
   );
@@ -124,6 +125,9 @@ export default function ProfileScreen() {
       queryKey: queryKeys.profiles,
     });
   };
+  const isToolBusy = assignTool.isPending || unassignTool.isPending;
+  const isSkillBusy = assignSkill.isPending || unassignSkill.isPending;
+  const isMcpBusy = assignMcp.isPending || unassignMcp.isPending;
 
   return (
     <>
@@ -188,9 +192,10 @@ export default function ProfileScreen() {
                     value={name}
                   />
                   <Button
+                    disabled={saveProfile.isPending || !nameTrimmed}
                     onPress={() => {
                       void saveProfile
-                        .mutateAsync(name.trim())
+                        .mutateAsync(nameTrimmed)
                         .then(() => invalidateProfile())
                         .catch((error: unknown) => {
                           showMutationError("Could not save agent", error);
@@ -199,7 +204,7 @@ export default function ProfileScreen() {
                     size="sm"
                     variant="outline"
                   >
-                    <Text>Save</Text>
+                    <Text>{saveProfile.isPending ? "Saving…" : "Save"}</Text>
                   </Button>
                 </View>
               ) : null}
@@ -231,6 +236,10 @@ export default function ProfileScreen() {
                       {admin ? (
                         <ActionCluster>
                           <Button
+                            disabled={
+                              saveSoul.isPending ||
+                              soulDrafts[file.key] === undefined
+                            }
                             onPress={() => {
                               void saveSoul
                                 .mutateAsync({
@@ -252,7 +261,9 @@ export default function ProfileScreen() {
                             size="sm"
                             variant="outline"
                           >
-                            <Text>Save</Text>
+                            <Text>
+                              {saveSoul.isPending ? "Saving…" : "Save"}
+                            </Text>
                           </Button>
                         </ActionCluster>
                       ) : null}
@@ -268,7 +279,7 @@ export default function ProfileScreen() {
                   <ListRow
                     key={tool.id}
                     onPress={
-                      admin
+                      admin && !isToolBusy
                         ? () => {
                             void (
                               assigned
@@ -299,7 +310,7 @@ export default function ProfileScreen() {
                   <ListRow
                     key={skill.id}
                     onPress={
-                      admin
+                      admin && !isSkillBusy
                         ? () => {
                             void (
                               assigned
@@ -331,7 +342,7 @@ export default function ProfileScreen() {
                   <ListRow
                     key={server.id}
                     onPress={
-                      admin
+                      admin && !isMcpBusy
                         ? () => {
                             void (
                               assigned

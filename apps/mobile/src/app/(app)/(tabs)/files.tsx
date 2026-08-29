@@ -60,11 +60,18 @@ export default function FilesScreen() {
   );
 
   const uploadKnowledge = useCallback(() => {
+    if (upload.isPending) {
+      return;
+    }
+    if (!profile) {
+      Alert.alert("No active profile found.");
+      return;
+    }
     void DocumentPicker.getDocumentAsync({
       copyToCacheDirectory: true,
     }).then(async (result) => {
       const asset = result.assets?.[0];
-      if (!(asset && profile && client)) {
+      if (!(asset && client)) {
         return;
       }
       if (!isKnowledgeBaseFilename(asset.name)) {
@@ -102,12 +109,13 @@ export default function FilesScreen() {
           ? () => (
               <HeaderAddButton
                 accessibilityLabel="Upload knowledge"
+                disabled={upload.isPending}
                 onPress={uploadKnowledge}
               />
             )
           : undefined,
     });
-  }, [navigation, tab, uploadKnowledge]);
+  }, [navigation, tab, uploadKnowledge, upload.isPending]);
 
   return (
     <RequireWorkspaceAdmin>

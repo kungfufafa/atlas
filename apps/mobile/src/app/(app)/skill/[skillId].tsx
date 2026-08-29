@@ -26,6 +26,9 @@ export default function SkillDetailScreen() {
     (client, input: { body: string; description: string }) =>
       client.patchSkill(skillId, input)
   );
+  const descriptionTrimmed = description.trim();
+  const bodyTrimmed = body.trim();
+  const canSave = !save.isPending && Boolean(descriptionTrimmed && bodyTrimmed);
   const remove = useAtlasMutation((client) => client.deleteSkill(skillId));
 
   useEffect(() => {
@@ -60,9 +63,13 @@ export default function SkillDetailScreen() {
                 />
                 <ActionCluster>
                   <Button
+                    disabled={!canSave}
                     onPress={() => {
                       void save
-                        .mutateAsync({ body, description })
+                        .mutateAsync({
+                          body: bodyTrimmed,
+                          description: descriptionTrimmed,
+                        })
                         .then(() =>
                           save.queryClient.invalidateQueries({
                             queryKey: queryKeys.skill(skillId),
@@ -102,7 +109,7 @@ export default function SkillDetailScreen() {
                     size="sm"
                     variant="outline"
                   >
-                    <Text>Delete</Text>
+                    <Text>{remove.isPending ? "Deleting…" : "Delete"}</Text>
                   </Button>
                 </ActionCluster>
               </View>

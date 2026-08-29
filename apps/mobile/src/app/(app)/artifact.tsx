@@ -198,6 +198,7 @@ export default function ArtifactScreen() {
               <ActionCluster>
                 {admin && editable && content != null ? (
                   <Button
+                    disabled={save.isPending}
                     onPress={() => {
                       void save
                         .mutateAsync({ content, expectedHash: hash })
@@ -211,20 +212,26 @@ export default function ArtifactScreen() {
                     }}
                     size="sm"
                   >
-                    <Text>Save</Text>
+                    <Text>{save.isPending ? "Saving…" : "Save"}</Text>
                   </Button>
                 ) : null}
                 <Button
+                  disabled={revokeShare.isPending || publishShare.isPending}
                   onPress={() => {
                     void openExternally();
                   }}
                   size="sm"
                   variant="outline"
                 >
-                  <Text>Share</Text>
+                  <Text>
+                    {revokeShare.isPending || publishShare.isPending
+                      ? "Preparing…"
+                      : "Share"}
+                  </Text>
                 </Button>
                 {admin ? (
                   <Button
+                    disabled={revokeShare.isPending || publishShare.isPending}
                     onPress={() => {
                       if (shareId) {
                         void revokeShare
@@ -254,11 +261,20 @@ export default function ArtifactScreen() {
                     size="sm"
                     variant="outline"
                   >
-                    <Text>{shareId ? "Revoke link" : "Copy link"}</Text>
+                    <Text>
+                      {shareId
+                        ? revokeShare.isPending
+                          ? "Revoking…"
+                          : "Revoke link"
+                        : publishShare.isPending
+                          ? "Creating link…"
+                          : "Copy link"}
+                    </Text>
                   </Button>
                 ) : null}
                 {admin ? (
                   <Button
+                    disabled={remove.isPending}
                     onPress={() => {
                       confirmDestructive({
                         message: filename,
@@ -284,7 +300,7 @@ export default function ArtifactScreen() {
                     size="sm"
                     variant="outline"
                   >
-                    <Text>Delete</Text>
+                    <Text>{remove.isPending ? "Deleting…" : "Delete"}</Text>
                   </Button>
                 ) : null}
               </ActionCluster>

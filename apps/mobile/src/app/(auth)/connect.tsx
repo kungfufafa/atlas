@@ -24,6 +24,8 @@ export default function ConnectScreen() {
   const activeCheckRef = useRef<AbortController | null>(null);
   const connectionAttemptRef = useRef(0);
   const isMountedRef = useRef(true);
+  const urlTrimmed = url.trim();
+  const canCheckConnection = urlTrimmed.length > 0;
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -129,7 +131,11 @@ export default function ConnectScreen() {
   };
 
   return (
-    <AuthShell onBack={goBack} title="Server">
+    <AuthShell
+      description="Enter the address where you open Atlas in a browser. You can change this later."
+      onBack={goBack}
+      title="Connect your Atlas"
+    >
       <View className="gap-2">
         <Label>Server URL</Label>
         <Input
@@ -138,22 +144,24 @@ export default function ConnectScreen() {
           editable={!isSubmitting}
           keyboardType="url"
           onChangeText={setUrl}
-          placeholder="https://atlas.example.com"
+          placeholder="atlas.example.com"
           value={url}
         />
       </View>
       {error ? <Text className="text-destructive">{error}</Text> : null}
       <Button
-        disabled={isSubmitting}
+        disabled={isSubmitting || !canCheckConnection}
         onPress={() => {
-          void connectTo(url);
+          void connectTo(urlTrimmed);
         }}
       >
-        <Text>{isSubmitting ? "Checking…" : "Continue"}</Text>
+        <Text>
+          {isSubmitting ? "Checking connection…" : "Check and continue"}
+        </Text>
       </Button>
       {servers.length > 0 ? (
         <View className="mt-4 gap-3">
-          <Text className="font-heading">Saved</Text>
+          <Text className="font-heading">Saved servers</Text>
           <ServerSwitcher
             disabled={isSubmitting}
             onBeforeChange={() => {

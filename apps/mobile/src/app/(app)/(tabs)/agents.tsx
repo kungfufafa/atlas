@@ -50,12 +50,13 @@ export default function AgentsScreen() {
         ? () => (
             <HeaderAddButton
               accessibilityLabel="New agent"
+              disabled={createProfile.isPending}
               onPress={() => setCreating((current) => !current)}
             />
           )
         : undefined,
     });
-  }, [admin, navigation]);
+  }, [admin, createProfile.isPending, navigation]);
 
   return (
     <RequireWorkspaceAdmin>
@@ -96,7 +97,9 @@ export default function AgentsScreen() {
                       });
                   }}
                 >
-                  <Text>Create agent</Text>
+                  <Text>
+                    {createProfile.isPending ? "Creating…" : "Create agent"}
+                  </Text>
                 </Button>
               </InlineForm>
             ) : null}

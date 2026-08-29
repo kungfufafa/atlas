@@ -15,16 +15,17 @@ function Screen({
   padded?: boolean;
 }) {
   const insets = useSafeAreaInsets();
+  const safeAreaPadding = {
+    ...(edges.includes("bottom") ? { paddingBottom: insets.bottom } : {}),
+    ...(edges.includes("left") ? { paddingLeft: insets.left } : {}),
+    ...(edges.includes("right") ? { paddingRight: insets.right } : {}),
+    ...(edges.includes("top") ? { paddingTop: insets.top } : {}),
+  };
 
   return (
     <View
       className={cn("flex-1 bg-background", padded && "px-4 py-4", className)}
-      style={{
-        paddingBottom: edges.includes("bottom") ? insets.bottom : undefined,
-        paddingLeft: edges.includes("left") ? insets.left : undefined,
-        paddingRight: edges.includes("right") ? insets.right : undefined,
-        paddingTop: edges.includes("top") ? insets.top : undefined,
-      }}
+      style={safeAreaPadding}
     >
       {children}
     </View>

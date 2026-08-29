@@ -1,5 +1,5 @@
 import { Stack, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, View } from "react-native";
 import { ActionCluster } from "@/components/atlas/action-cluster";
 import { Screen } from "@/components/atlas/screen";
@@ -7,6 +7,7 @@ import { ServerSwitcher } from "@/components/atlas/server-switcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Separator } from "@/components/ui/separator";
 import { Text } from "@/components/ui/text";
 import { useAuth } from "@/features/auth/auth-context";
@@ -17,6 +18,17 @@ import { showMutationError } from "@/lib/mutation-error";
 import type { ThemePreference } from "@/lib/storage";
 
 const THEME_OPTIONS: ThemePreference[] = ["system", "light", "dark"];
+const FALLBACK_DEVICE_TIMEZONE =
+  Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+function isValidTimezone(timezone: string): boolean {
+  try {
+    new Intl.DateTimeFormat(undefined, { timeZone: timezone });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export default function AccountScreen() {
   const router = useRouter();
@@ -39,21 +51,43 @@ export default function AccountScreen() {
     client.setTimezone(next)
   );
 
+  useEffect(() => {
+    if (timezoneQuery.data) {
+      setTimezone((current) => current || timezoneQuery.data);
+    }
+  }, [timezoneQuery.data]);
+
+  const timezoneTrimmed = timezone.trim();
+  const hasTimezoneValue = timezoneTrimmed.length > 0;
+  const isTimezoneInvalid =
+    hasTimezoneValue && !isValidTimezone(timezoneTrimmed);
+  const nameTrimmed = name.trim();
+  const currentPasswordTrimmed = currentPassword.trim();
+  const newPasswordTrimmed = newPassword.trim();
+
   return (
     <>
       <Stack.Screen options={{ headerShown: true, title: "Account" }} />
       <Screen padded>
-        <ScrollView keyboardShouldPersistTaps="handled">
-          <View className="gap-6 pb-8">
-            <View className="gap-2">
-              <Text className="font-heading">{user?.email}</Text>
+        <ScrollView
+          contentContainerStyle={{
+            paddingBottom: 40,
+            paddingTop: 0,
+          }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="gap-8">
+            <View className="gap-3">
+              <Text className="font-heading text-base">{user?.email}</Text>
               <Label>Name</Label>
               <Input onChangeText={setName} value={name} />
               <ActionCluster>
                 <Button
+                  disabled={saveProfile.isPending || !nameTrimmed}
                   onPress={() => {
                     void saveProfile
-                      .mutateAsync(name.trim())
+                      .mutateAsync(nameTrimmed)
                       .then((response) => {
                         applyUser(response);
                       })
@@ -64,14 +98,14 @@ export default function AccountScreen() {
                   size="sm"
                   variant="outline"
                 >
-                  <Text>Save name</Text>
+                  <Text>{saveProfile.isPending ? "Saving…" : "Save name"}</Text>
                 </Button>
               </ActionCluster>
             </View>
 
             {orgs.length > 1 ? (
-              <View>
-                <Text className="mb-2 font-heading">Workspace</Text>
+              <View className="gap-1">
+                <Text className="font-heading">Workspace</Text>
                 {orgs.map((org) => (
                   <Pressable
                     className="flex-row items-center justify-between border-border border-b py-3"
@@ -91,25 +125,37 @@ export default function AccountScreen() {
 
             <Separator />
 
-            <View className="gap-2">
+            <View className="gap-3">
               <Text className="font-heading">Password</Text>
-              <Input
+              <PasswordInput
+                autoCapitalize="none"
+                autoComplete="current-password"
+                autoCorrect={false}
                 onChangeText={setCurrentPassword}
                 placeholder="Current password"
-                secureTextEntry
                 value={currentPassword}
               />
-              <Input
+              <PasswordInput
+                autoCapitalize="none"
+                autoComplete="new-password"
+                autoCorrect={false}
                 onChangeText={setNewPassword}
                 placeholder="New password"
-                secureTextEntry
                 value={newPassword}
               />
               <ActionCluster>
                 <Button
+                  disabled={
+                    savePassword.isPending ||
+                    !currentPasswordTrimmed ||
+                    !newPasswordTrimmed
+                  }
                   onPress={() => {
                     void savePassword
-                      .mutateAsync({ currentPassword, newPassword })
+                      .mutateAsync({
+                        currentPassword: currentPasswordTrimmed,
+                        newPassword: newPasswordTrimmed,
+                      })
                       .then(() => {
                         setCurrentPassword("");
                         setNewPassword("");
@@ -121,26 +167,53 @@ export default function AccountScreen() {
                   size="sm"
                   variant="outline"
                 >
-                  <Text>Change password</Text>
+                  <Text>
+                    {savePassword.isPending ? "Changing…" : "Change password"}
+                  </Text>
                 </Button>
               </ActionCluster>
             </View>
 
             <Separator />
 
-            <View className="gap-2">
+            <View className="gap-3">
               <Text className="font-heading">Timezone</Text>
               <Input
                 autoCapitalize="none"
                 onChangeText={setTimezone}
-                placeholder={timezoneQuery.data ?? "America/New_York"}
+                placeholder={
+                  timezoneQuery.data ??
+                  FALLBACK_DEVICE_TIMEZONE ??
+                  "America/New_York"
+                }
                 value={timezone}
               />
+              {hasTimezoneValue && isTimezoneInvalid ? (
+                <Text className="text-destructive text-sm">
+                  Enter a valid IANA timezone (example: Asia/Jakarta).
+                </Text>
+              ) : null}
+              <Button
+                onPress={() => {
+                  setTimezone(
+                    FALLBACK_DEVICE_TIMEZONE ?? timezoneQuery.data ?? ""
+                  );
+                }}
+                size="sm"
+                variant="outline"
+              >
+                <Text>Use device timezone</Text>
+              </Button>
               <ActionCluster>
                 <Button
+                  disabled={
+                    saveTimezone.isPending ||
+                    isTimezoneInvalid ||
+                    !hasTimezoneValue
+                  }
                   onPress={() => {
                     void saveTimezone
-                      .mutateAsync(timezone.trim())
+                      .mutateAsync(timezoneTrimmed)
                       .catch((error: unknown) => {
                         showMutationError("Could not save timezone", error);
                       });
@@ -148,14 +221,18 @@ export default function AccountScreen() {
                   size="sm"
                   variant="outline"
                 >
-                  <Text>Save timezone</Text>
+                  <Text>
+                    {saveTimezone.isPending
+                      ? "Saving timezone…"
+                      : "Save timezone"}
+                  </Text>
                 </Button>
               </ActionCluster>
             </View>
 
             <Separator />
 
-            <View className="gap-2">
+            <View className="gap-3">
               <Text className="font-heading">Appearance</Text>
               <View className="flex-row gap-2">
                 {THEME_OPTIONS.map((option) => (
@@ -175,7 +252,7 @@ export default function AccountScreen() {
 
             <Separator />
 
-            <View className="gap-2">
+            <View className="gap-3">
               <Text className="font-heading">Server</Text>
               <ServerSwitcher />
               <ActionCluster>
@@ -190,6 +267,7 @@ export default function AccountScreen() {
             </View>
 
             <Button
+              className="mt-1"
               onPress={() => {
                 void logout()
                   .then(() => {

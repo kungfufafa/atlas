@@ -1,6 +1,6 @@
 import type { CreateProviderRequest } from "@atlas/core/contract";
 import { Stack, useNavigation } from "expo-router";
-import { useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { EmptyState } from "@/components/atlas/empty-state";
 import { HeaderAddButton } from "@/components/atlas/header-add-button";
@@ -31,6 +31,9 @@ export default function ProvidersScreen() {
   const selected =
     providers.find((provider) => provider.id === providerId) ?? providers[0];
   const [model, setModel] = useState(selected?.fallbackModelId ?? "");
+  const modelTrimmed = model.trim();
+  const hasModel = modelTrimmed.length > 0;
+  const isApiKeyRequired = selected?.apiKey.requirement === "required";
 
   const create = useAtlasMutation((client, request: CreateProviderRequest) =>
     client.createProvider(request)
@@ -39,16 +42,21 @@ export default function ProvidersScreen() {
     client.deleteProvider(providerKey)
   );
 
+  useEffect(() => {
+    setModel(selected?.fallbackModelId ?? "");
+  }, [selected?.fallbackModelId]);
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
         <HeaderAddButton
           accessibilityLabel="Add provider"
+          disabled={create.isPending || remove.isPending}
           onPress={() => setCreating((current) => !current)}
         />
       ),
     });
-  }, [navigation]);
+  }, [create.isPending, navigation, remove.isPending]);
 
   return (
     <>
@@ -86,23 +94,36 @@ export default function ProvidersScreen() {
                     ))}
                   </View>
                   <Input
+                    autoCapitalize="none"
+                    autoCorrect={false}
                     onChangeText={setApiKey}
                     placeholder="API key"
                     secureTextEntry
                     value={apiKey}
                   />
-                  <Input onChangeText={setModel} value={model} />
+                  <Input
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    onChangeText={setModel}
+                    placeholder={`Model (default: ${selected?.fallbackModelId})`}
+                    value={model}
+                  />
                   <Button
-                    disabled={create.isPending || !apiKey.trim()}
+                    disabled={
+                      create.isPending || (isApiKeyRequired && !apiKey.trim())
+                    }
                     onPress={() => {
                       void create
                         .mutateAsync({
                           apiKey: apiKey.trim(),
-                          model: model.trim() || selected?.fallbackModelId,
+                          model: hasModel
+                            ? modelTrimmed
+                            : selected?.fallbackModelId,
                           type: providerId,
                         } as CreateProviderRequest)
                         .then(async () => {
                           setApiKey("");
+                          setModel(selected?.fallbackModelId ?? "");
                           setCreating(false);
                           await create.queryClient.invalidateQueries({
                             queryKey: queryKeys.providers,
@@ -113,7 +134,9 @@ export default function ProvidersScreen() {
                         });
                     }}
                   >
-                    <Text>Add provider</Text>
+                    <Text>
+                      {create.isPending ? "Adding provider…" : "Add provider"}
+                    </Text>
                   </Button>
                 </InlineForm>
               ) : null}
@@ -125,6 +148,7 @@ export default function ProvidersScreen() {
                     key={provider.id}
                     right={
                       <Button
+                        disabled={remove.isPending}
                         onPress={() => {
                           confirmDestructive({
                             confirmLabel: "Remove",
@@ -150,7 +174,7 @@ export default function ProvidersScreen() {
                         size="sm"
                         variant="outline"
                       >
-                        <Text>Remove</Text>
+                        <Text>{remove.isPending ? "Removing…" : "Remove"}</Text>
                       </Button>
                     }
                     subtitle={provider.type}

@@ -28,7 +28,7 @@ function QueryState({
 
   if (error) {
     return (
-      <Screen className="items-center justify-center px-4">
+      <Screen className="items-center justify-center">
         <View className="items-center gap-3">
           <Text className="text-center text-destructive">
             {isOffline

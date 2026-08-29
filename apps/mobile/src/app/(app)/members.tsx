@@ -39,11 +39,12 @@ export default function MembersScreen() {
       headerRight: () => (
         <HeaderAddButton
           accessibilityLabel="Invite member"
+          disabled={invite.isPending || remove.isPending}
           onPress={() => setCreating((current) => !current)}
         />
       ),
     });
-  }, [navigation]);
+  }, [invite.isPending, navigation, remove.isPending]);
 
   return (
     <>
@@ -62,15 +63,21 @@ export default function MembersScreen() {
                 <InlineForm>
                   <Input
                     autoCapitalize="none"
+                    autoCorrect={false}
                     keyboardType="email-address"
                     onChangeText={setEmail}
                     placeholder="Invite email"
                     value={email}
                   />
                   <Button
+                    disabled={invite.isPending || !email.trim()}
                     onPress={() => {
+                      const nextEmail = email.trim();
+                      if (!nextEmail) {
+                        return;
+                      }
                       void invite
-                        .mutateAsync(email.trim())
+                        .mutateAsync(nextEmail)
                         .then(async () => {
                           setEmail("");
                           setCreating(false);
@@ -83,7 +90,9 @@ export default function MembersScreen() {
                         });
                     }}
                   >
-                    <Text>Send invite</Text>
+                    <Text>
+                      {invite.isPending ? "Inviting…" : "Send invite"}
+                    </Text>
                   </Button>
                 </InlineForm>
               ) : null}
@@ -95,6 +104,7 @@ export default function MembersScreen() {
                     key={member.userId}
                     right={
                       <Button
+                        disabled={remove.isPending}
                         onPress={() => {
                           confirmDestructive({
                             confirmLabel: "Remove",
@@ -122,7 +132,7 @@ export default function MembersScreen() {
                         size="sm"
                         variant="outline"
                       >
-                        <Text>Remove</Text>
+                        <Text>{remove.isPending ? "Removing…" : "Remove"}</Text>
                       </Button>
                     }
                     subtitle={member.role}

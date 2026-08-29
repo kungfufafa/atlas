@@ -16,6 +16,7 @@ import { AuthShell } from "@/components/atlas/auth-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Text } from "@/components/ui/text";
 import { formatAuthError, useAuth } from "@/features/auth/auth-context";
 import { useServer } from "@/features/server/server-context";
@@ -54,23 +55,48 @@ export default function SetupScreen() {
 
   const selectedProvider =
     providers.find((provider) => provider.id === providerId) ?? providers[0];
+  const isOpencodeProvider = selectedProvider?.id === "opencode_go";
+  const isApiKeyRequired = selectedProvider?.apiKey.requirement === "required";
+  const modelTrimmed = model.trim();
+  const apiKeyTrimmed = apiKey.trim();
+  const canSubmitProvider = !isApiKeyRequired || apiKeyTrimmed.length > 0;
 
-  const heading =
+  const stepContent =
     step === 1
-      ? "Create the admin account"
+      ? {
+          description:
+            "This account manages your workspace, teammates, and settings.",
+          title: "Create your admin account",
+        }
       : step === 2
-        ? "Create your workspace"
-        : "Connect a provider";
+        ? {
+            description: "This is the shared home your team will join.",
+            title: "Name your workspace",
+          }
+        : {
+            description:
+              "Add an AI provider now, or do it later from workspace settings.",
+            title: "Connect an AI provider",
+          };
 
   const goChats = () => {
     router.replace("/(app)/(tabs)/chats");
   };
+  const nameTrimmed = name.trim();
+  const emailTrimmed = email.trim();
+  const passwordTrimmed = password.trim();
+  const confirmPasswordTrimmed = confirmPassword.trim();
+  const canContinueSetup =
+    nameTrimmed.length > 0 &&
+    emailTrimmed.length > 0 &&
+    passwordTrimmed.length > 0 &&
+    confirmPasswordTrimmed.length > 0;
 
   const submitAccount = () => {
     const validation =
-      validateSetupName(name) ??
-      validateSetupEmail(email) ??
-      validateSetupPassword(password, confirmPassword);
+      validateSetupName(nameTrimmed) ??
+      validateSetupEmail(emailTrimmed) ??
+      validateSetupPassword(passwordTrimmed, confirmPasswordTrimmed);
     if (validation) {
       setError(validation);
       return;
@@ -95,9 +121,9 @@ export default function SetupScreen() {
     try {
       await setup({
         admin: {
-          email,
-          name: name.trim(),
-          password,
+          email: emailTrimmed,
+          name: nameTrimmed,
+          password: passwordTrimmed,
         },
         organization: { name: trimmedName, slug: trimmedSlug },
       });
@@ -116,7 +142,7 @@ export default function SetupScreen() {
       setError("Connect a server first.");
       return;
     }
-    if (!apiKey.trim()) {
+    if (isApiKeyRequired && !apiKeyTrimmed) {
       setError("API key is required.");
       return;
     }
@@ -125,11 +151,10 @@ export default function SetupScreen() {
     setError(null);
     try {
       const request = {
-        apiKey: apiKey.trim(),
-        model:
-          providerId === "opencode_go"
-            ? selectedProvider?.fallbackModelId
-            : model.trim() || selectedProvider?.fallbackModelId,
+        apiKey: isApiKeyRequired ? apiKeyTrimmed : "",
+        model: isOpencodeProvider
+          ? selectedProvider?.fallbackModelId
+          : modelTrimmed || selectedProvider?.fallbackModelId,
         type: providerId,
       } as CreateProviderRequest;
       await client.createProvider(request);
@@ -147,18 +172,20 @@ export default function SetupScreen() {
 
   return (
     <AuthShell
+      description={stepContent.description}
       footer={
         step === 2 ? (
           <Pressable className="items-center py-4" onPress={() => setStep(1)}>
-            <Text className="text-primary">Back</Text>
+            <Text className="text-primary">Back to account</Text>
           </Pressable>
         ) : step === 3 ? (
           <Pressable className="items-center py-4" onPress={goChats}>
-            <Text className="text-primary">Skip for now</Text>
+            <Text className="text-primary">I’ll add this later</Text>
           </Pressable>
         ) : null
       }
-      title={heading}
+      progress={{ current: step, total: 3 }}
+      title={stepContent.title}
     >
       {step === 1 ? (
         <>
@@ -168,24 +195,29 @@ export default function SetupScreen() {
           <Field label="Email">
             <Input
               autoCapitalize="none"
+              autoCorrect={false}
               keyboardType="email-address"
               onChangeText={setEmail}
               value={email}
             />
           </Field>
           <Field label="Password">
-            <Input
+            <PasswordInput
+              autoCapitalize="none"
+              autoComplete="new-password"
+              autoCorrect={false}
               onChangeText={setPassword}
               placeholder="Password"
-              secureTextEntry
               value={password}
             />
           </Field>
           <Field label="Confirm password">
-            <Input
+            <PasswordInput
+              autoCapitalize="none"
+              autoComplete="new-password"
+              autoCorrect={false}
               onChangeText={setConfirmPassword}
               placeholder="Password"
-              secureTextEntry
               value={confirmPassword}
             />
           </Field>
@@ -208,6 +240,7 @@ export default function SetupScreen() {
           <Field label="Slug">
             <Input
               autoCapitalize="none"
+              autoCorrect={false}
               onChangeText={(value) => {
                 setSlugEdited(true);
                 setWorkspaceSlug(value);
@@ -220,6 +253,7 @@ export default function SetupScreen() {
 
       {step === 3 ? (
         <>
+          <Text className="font-heading">Choose a provider</Text>
           <View className="flex-row flex-wrap gap-2">
             {providers.map((provider) => (
               <Pressable
@@ -230,7 +264,7 @@ export default function SetupScreen() {
                 key={provider.id}
                 onPress={() => {
                   setProviderId(provider.id);
-                  setModel(provider.fallbackModelId);
+                  setModel(provider.fallbackModelId ?? "");
                 }}
               >
                 <Text>{provider.displayName}</Text>
@@ -238,19 +272,22 @@ export default function SetupScreen() {
             ))}
           </View>
           <Field label="API key">
-            <Input
+            <PasswordInput
               autoCapitalize="none"
+              autoComplete="off"
+              autoCorrect={false}
               onChangeText={setApiKey}
               placeholder={selectedProvider?.apiKey.placeholder}
-              secureTextEntry
               value={apiKey}
             />
           </Field>
-          {providerId === "opencode_go" ? null : (
+          {isOpencodeProvider ? null : (
             <Field label="Model">
               <Input
                 autoCapitalize="none"
+                autoCorrect={false}
                 onChangeText={setModel}
+                placeholder={`Model (default: ${selectedProvider?.fallbackModelId})`}
                 value={model}
               />
             </Field>
@@ -261,7 +298,7 @@ export default function SetupScreen() {
       {error ? <Text className="text-destructive">{error}</Text> : null}
 
       {step === 1 ? (
-        <Button onPress={submitAccount}>
+        <Button disabled={!canContinueSetup} onPress={submitAccount}>
           <Text>Continue</Text>
         </Button>
       ) : null}
@@ -271,8 +308,11 @@ export default function SetupScreen() {
         </Button>
       ) : null}
       {step === 3 ? (
-        <Button disabled={busy} onPress={() => void submitProvider()}>
-          <Text>{busy ? "Saving…" : "Continue"}</Text>
+        <Button
+          disabled={busy || !canSubmitProvider}
+          onPress={() => void submitProvider()}
+        >
+          <Text>{busy ? "Saving…" : "Save and continue"}</Text>
         </Button>
       ) : null}
     </AuthShell>

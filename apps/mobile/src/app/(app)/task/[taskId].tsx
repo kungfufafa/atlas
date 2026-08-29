@@ -62,6 +62,7 @@ export default function TaskDetailScreen() {
               {canMutate ? (
                 <ActionCluster>
                   <Button
+                    disabled={run.isPending}
                     onPress={() => {
                       void run
                         .mutateAsync(undefined)
@@ -72,9 +73,10 @@ export default function TaskDetailScreen() {
                     }}
                     size="sm"
                   >
-                    <Text>Run</Text>
+                    <Text>{run.isPending ? "Running…" : "Run"}</Text>
                   </Button>
                   <Button
+                    disabled={remove.isPending}
                     onPress={() => {
                       confirmDestructive({
                         onConfirm: () => {
@@ -94,7 +96,7 @@ export default function TaskDetailScreen() {
                     size="sm"
                     variant="outline"
                   >
-                    <Text>Delete</Text>
+                    <Text>{remove.isPending ? "Deleting…" : "Delete"}</Text>
                   </Button>
                 </ActionCluster>
               ) : null}

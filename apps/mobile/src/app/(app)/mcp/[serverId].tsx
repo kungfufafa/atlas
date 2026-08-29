@@ -59,6 +59,7 @@ export default function McpDetailScreen() {
                 </Text>
                 <ActionCluster>
                   <Button
+                    disabled={connect.isPending}
                     onPress={() => {
                       void connect
                         .mutateAsync(undefined)
@@ -69,9 +70,10 @@ export default function McpDetailScreen() {
                     }}
                     size="sm"
                   >
-                    <Text>Connect</Text>
+                    <Text>{connect.isPending ? "Connecting…" : "Connect"}</Text>
                   </Button>
                   <Button
+                    disabled={sync.isPending}
                     onPress={() => {
                       void sync
                         .mutateAsync(undefined)
@@ -83,9 +85,10 @@ export default function McpDetailScreen() {
                     size="sm"
                     variant="outline"
                   >
-                    <Text>Sync</Text>
+                    <Text>{sync.isPending ? "Syncing…" : "Sync"}</Text>
                   </Button>
                   <Button
+                    disabled={test.isPending || !server}
                     onPress={() => {
                       if (!server) {
                         return;
@@ -110,9 +113,10 @@ export default function McpDetailScreen() {
                     size="sm"
                     variant="outline"
                   >
-                    <Text>Test</Text>
+                    <Text>{test.isPending ? "Testing…" : "Test"}</Text>
                   </Button>
                   <Button
+                    disabled={remove.isPending}
                     onPress={() => {
                       confirmDestructive({
                         message: server?.name,
@@ -136,7 +140,7 @@ export default function McpDetailScreen() {
                     size="sm"
                     variant="outline"
                   >
-                    <Text>Delete</Text>
+                    <Text>{remove.isPending ? "Deleting…" : "Delete"}</Text>
                   </Button>
                 </ActionCluster>
               </View>

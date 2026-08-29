@@ -152,6 +152,7 @@ export default function KnowledgeDocumentScreen() {
                   <Text>Share</Text>
                 </Button>
                 <Button
+                  disabled={remove.isPending}
                   onPress={() => {
                     confirmDestructive({
                       message: name,
@@ -180,7 +181,7 @@ export default function KnowledgeDocumentScreen() {
                   size="sm"
                   variant="outline"
                 >
-                  <Text>Delete</Text>
+                  <Text>{remove.isPending ? "Deleting…" : "Delete"}</Text>
                 </Button>
               </ActionCluster>
               {imageUri ? (

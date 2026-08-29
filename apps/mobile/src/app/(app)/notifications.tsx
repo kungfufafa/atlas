@@ -63,6 +63,11 @@ export default function NotificationsScreen() {
     (isAdmin && (memoryQuery.isLoading || skillsQuery.isLoading));
   const error =
     automationsQuery.error ?? memoryQuery.error ?? skillsQuery.error;
+  const isProposalActionPending =
+    approveMemory.isPending ||
+    approveSkill.isPending ||
+    rejectMemory.isPending ||
+    rejectSkill.isPending;
 
   return (
     <>
@@ -83,10 +88,16 @@ export default function NotificationsScreen() {
                 <View key={item.id}>
                   <ListRow
                     onPress={
-                      item.kind === "automation-run" && item.automationId
+                      item.kind === "automation-run" &&
+                      item.automationId &&
+                      !markRead.isPending
                         ? () => {
+                            const automationId = item.automationId;
+                            if (!automationId) {
+                              return;
+                            }
                             void markRead
-                              .mutateAsync(item.automationId ?? "")
+                              .mutateAsync(automationId)
                               .catch((error: unknown) => {
                                 showMutationError(
                                   "Could not mark as read",
@@ -94,7 +105,7 @@ export default function NotificationsScreen() {
                                 );
                               })
                               .finally(() => {
-                                router.push(`/automation/${item.automationId}`);
+                                router.push(`/automation/${automationId}`);
                               });
                           }
                         : item.kind === "skill-proposal" && item.profileId
@@ -114,6 +125,12 @@ export default function NotificationsScreen() {
                     <View className="flex-row gap-2 border-border border-b px-4 pb-3">
                       <Button
                         className="flex-1"
+                        disabled={
+                          isProposalActionPending ||
+                          (item.kind === "skill-proposal"
+                            ? approveSkill.isPending
+                            : approveMemory.isPending)
+                        }
                         onPress={() => {
                           const run =
                             item.kind === "skill-proposal"
@@ -129,10 +146,24 @@ export default function NotificationsScreen() {
                         }}
                         size="sm"
                       >
-                        <Text>Approve</Text>
+                        <Text>
+                          {item.kind === "skill-proposal" &&
+                          approveSkill.isPending
+                            ? "Approving…"
+                            : item.kind === "org-memory-proposal" &&
+                                approveMemory.isPending
+                              ? "Approving…"
+                              : "Approve"}
+                        </Text>
                       </Button>
                       <Button
                         className="flex-1"
+                        disabled={
+                          isProposalActionPending ||
+                          (item.kind === "skill-proposal"
+                            ? rejectSkill.isPending
+                            : rejectMemory.isPending)
+                        }
                         onPress={() => {
                           const run =
                             item.kind === "skill-proposal"
@@ -147,7 +178,15 @@ export default function NotificationsScreen() {
                         size="sm"
                         variant="outline"
                       >
-                        <Text>Reject</Text>
+                        <Text>
+                          {item.kind === "skill-proposal" &&
+                          rejectSkill.isPending
+                            ? "Rejecting…"
+                            : item.kind === "org-memory-proposal" &&
+                                rejectMemory.isPending
+                              ? "Rejecting…"
+                              : "Reject"}
+                        </Text>
                       </Button>
                     </View>
                   ) : null}
