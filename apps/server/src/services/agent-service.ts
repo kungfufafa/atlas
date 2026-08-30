@@ -2482,26 +2482,14 @@ export class AgentService {
     );
     const profile = await this.requireProfile(orgId, resolvedProfileId);
 
-    if (
-      profile.isSuper &&
-      (access?.excludeSuperAgent ||
-        !canAccessSuperAgentProfile({
-          isPlatformAdmin: access?.isPlatformAdmin,
-          orgRole: access?.orgRole,
-        }))
-    ) {
-      throw new AtlasApiError(
-        "Super Agent is only available to Workspace Admins and Superadmins.",
-        403
-      );
-    }
-
     const sessionId = nanoid();
     const modelOverride = await this.normalizeSessionModelOverride(
       orgId,
       access?.model
     );
     let principalUserId = userId ?? null;
+    let sessionOrgRole = access?.orgRole ?? null;
+    let sessionIsPlatformAdmin = access?.isPlatformAdmin === true;
     if (
       channel === "telegram" ||
       channel === "whatsapp" ||
@@ -2516,6 +2504,8 @@ export class AgentService {
         orgRole: access?.orgRole ?? "member",
       });
       principalUserId = principal.userId;
+      sessionOrgRole = principal.orgRole;
+      sessionIsPlatformAdmin = principal.isPlatformAdmin;
     } else if (
       principalUserId &&
       isServiceAccountUserId(principalUserId) &&
@@ -2525,6 +2515,20 @@ export class AgentService {
     ) {
       throw new PrincipalRequiredError(
         "Service-account identity cannot create this session."
+      );
+    }
+
+    if (
+      profile.isSuper &&
+      (access?.excludeSuperAgent ||
+        !canAccessSuperAgentProfile({
+          isPlatformAdmin: sessionIsPlatformAdmin,
+          orgRole: sessionOrgRole,
+        }))
+    ) {
+      throw new AtlasApiError(
+        "Super Agent is only available to Workspace Admins and Superadmins.",
+        403
       );
     }
 
@@ -2548,16 +2552,16 @@ export class AgentService {
       sessionId,
       modelOverride,
       principalUserId,
-      access?.orgRole,
-      access?.isPlatformAdmin
+      sessionOrgRole,
+      sessionIsPlatformAdmin
     );
 
     this.sessions.set(sessionId, {
       channel,
-      isPlatformAdmin: access?.isPlatformAdmin === true,
+      isPlatformAdmin: sessionIsPlatformAdmin,
       modelOverride,
       orgId,
-      orgRole: access?.orgRole ?? null,
+      orgRole: sessionOrgRole,
       profileId: resolvedProfileId,
       session,
     });

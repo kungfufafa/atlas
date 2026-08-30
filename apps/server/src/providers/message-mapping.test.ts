@@ -63,6 +63,69 @@ describe("provider user content mapping", () => {
     });
   });
 
+  test("toAnthropicMessages keeps only assistant tool calls that have immediate tool results", async () => {
+    const result = await toAnthropicMessages([
+      { content: "Look this up", role: "user" },
+      {
+        content: "",
+        role: "assistant",
+        toolCalls: [
+          { arguments: { q: "keep" }, id: "call_keep", name: "lookup" },
+          { arguments: { q: "drop" }, id: "call_drop", name: "lookup" },
+        ],
+      },
+      {
+        content: '{"result":"ok"}',
+        role: "tool",
+        toolCallId: "call_keep",
+      },
+      { content: "Summarize", role: "user" },
+    ]);
+
+    expect(result).toHaveLength(4);
+    const assistant = result.find((message) => message.role === "assistant");
+    expect(Array.isArray(assistant?.content)).toBe(true);
+
+    const blocks = assistant?.content as Array<Record<string, unknown>>;
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toEqual({
+      id: "call_keep",
+      input: { q: "keep" },
+      name: "lookup",
+      type: "tool_use",
+    });
+
+    const toolResult = result.find(
+      (message, index) => message.role === "user" && index > 1
+    );
+    expect(toolResult?.content).toEqual([
+      {
+        content: '{"result":"ok"}',
+        tool_use_id: "call_keep",
+        type: "tool_result",
+      },
+    ]);
+  });
+
+  test("toAnthropicMessages drops assistant tool_use without tool results", async () => {
+    const result = await toAnthropicMessages([
+      { content: "Look this up", role: "user" },
+      {
+        content: "",
+        role: "assistant",
+        toolCalls: [
+          { arguments: { q: "x" }, id: "call_orphan", name: "lookup" },
+        ],
+      },
+      { content: "What did you find?", role: "user" },
+    ]);
+
+    expect(result).toEqual([
+      { content: "Look this up", role: "user" },
+      { content: "What did you find?", role: "user" },
+    ]);
+  });
+
   test("toAnthropicMessages inlines text/plain documents for opencode_go", async () => {
     const text = "alpha beta gamma";
     const data = Buffer.from(text, "utf8").toString("base64");

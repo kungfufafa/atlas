@@ -3,6 +3,7 @@ import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { ensureBundledSkillFiles } from "@atlas/core";
+import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
 import type { StoredProfileRecord } from "@atlas/db";
 import {
   createInMemoryDatabaseAdapter,
@@ -359,6 +360,74 @@ describe("AgentService branching", () => {
       service.resolveSession(ORG_ID, sessionId, {
         userId: "user_admin",
       })
+    ).rejects.toMatchObject({ status: 403 });
+  });
+
+  test("maps channel workers to the mapped principal before super-agent profile checks", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await db.upsertOrganization({
+      createdAt: now,
+      id: ORG_ID,
+      name: "Test Org",
+      slug: "test-org",
+      updatedAt: now,
+    });
+    await db.createUser({
+      createdAt: now,
+      email: "member@example.com",
+      id: "user_member",
+      name: "Member",
+      passwordHash: "x",
+      updatedAt: now,
+    });
+    await db.createUser({
+      createdAt: now,
+      email: "local-client@atlas.local",
+      id: LOCAL_CLIENT_USER_ID,
+      name: "Local client",
+      passwordHash: "x",
+      updatedAt: now,
+    });
+    await db.upsertOrgMember({
+      createdAt: now,
+      orgId: ORG_ID,
+      role: "member",
+      userId: "user_member",
+    });
+    await db.upsertChannelOrgMapping({
+      channel: "whatsapp",
+      channelUserId: "wa_member",
+      createdAt: now,
+      orgId: ORG_ID,
+      userId: "user_member",
+    });
+    await db.upsertProfile({
+      createdAt: now,
+      id: "profile_super",
+      isDefault: false,
+      isSuper: true,
+      model: null,
+      name: "Super Agent",
+      orgId: ORG_ID,
+      systemPrompt: "You are Super Agent.",
+      updatedAt: now,
+    });
+    await db.upsertProfile(createDefaultProfile());
+    const service = new AgentService(null, null, db);
+
+    await expect(
+      service.createSession(
+        ORG_ID,
+        "whatsapp",
+        "profile_super",
+        LOCAL_CLIENT_USER_ID,
+        {
+          externalPrincipal: { channelUserId: "wa_member" },
+          isPlatformAdmin: false,
+          orgRole: "admin",
+        }
+      )
     ).rejects.toMatchObject({ status: 403 });
   });
 });

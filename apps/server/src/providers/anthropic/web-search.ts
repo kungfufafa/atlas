@@ -57,9 +57,45 @@ export async function toAnthropicMessages(
   modelId?: string,
   providerReplayRevision?: string
 ): Promise<MessageParam[]> {
+  const normalizedMessages: ChatMessage[] = [];
+
+  for (const [index, rawMessage] of messages.entries()) {
+    if (rawMessage.role !== "assistant" || !rawMessage.toolCalls?.length) {
+      normalizedMessages.push(rawMessage);
+      continue;
+    }
+
+    const visibleToolResults = new Set<string>();
+    for (const follower of messages.slice(index + 1)) {
+      if (follower.role !== "tool") {
+        break;
+      }
+      if (follower.toolCallId) {
+        visibleToolResults.add(follower.toolCallId);
+      }
+    }
+
+    const remainingToolCalls = rawMessage.toolCalls.filter((call) =>
+      visibleToolResults.has(call.id)
+    );
+    if (remainingToolCalls.length === 0) {
+      continue;
+    }
+
+    if (remainingToolCalls.length !== rawMessage.toolCalls.length) {
+      normalizedMessages.push({
+        ...rawMessage,
+        toolCalls: remainingToolCalls,
+      });
+      continue;
+    }
+
+    normalizedMessages.push(rawMessage);
+  }
+
   const result: MessageParam[] = [];
 
-  for (const message of messages) {
+  for (const message of normalizedMessages) {
     if (message.role === "user") {
       result.push({
         content: (await toAnthropicUserContent(
