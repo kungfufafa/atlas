@@ -90,6 +90,33 @@ describe("provider user content mapping", () => {
     });
   });
 
+  test("toAnthropicMessages drops assistant tool_use without tool results", async () => {
+    const result = await toAnthropicMessages([
+      { content: "Look this up", role: "user" },
+      {
+        content: "",
+        role: "assistant",
+        toolCalls: [
+          { arguments: { q: "x" }, id: "call_orphan", name: "lookup" },
+        ],
+      },
+      { content: "What did you find?", role: "user" },
+    ]);
+
+    expect(result).toEqual([
+      { content: "Look this up", role: "user" },
+      { content: "What did you find?", role: "user" },
+    ]);
+    expect(
+      result.some(
+        (message) =>
+          message.role === "assistant" &&
+          Array.isArray(message.content) &&
+          message.content.some((block) => block.type === "tool_use")
+      )
+    ).toBe(false);
+  });
+
   test("toGeminiContents maps image and document parts", async () => {
     const imageResult = await toGeminiContents([multimodalUserMessage]);
     expect(imageResult[0]?.parts?.[0]?.text).toBe("What is this?");

@@ -674,6 +674,20 @@ async function sendMessage(
   }
 }
 
+function closeUnexecutedToolCalls(
+  history: ChatMessage[],
+  toolCalls: ToolCall[]
+): void {
+  for (const call of toolCalls) {
+    history.push({
+      content: serializeToolResult({ error: "duplicate_tool_call" }),
+      name: call.name,
+      role: "tool",
+      toolCallId: call.id,
+    });
+  }
+}
+
 function rollbackFailedSend(history: ChatMessage[]): void {
   while (history.length > 0) {
     const last = history.at(-1);
@@ -792,8 +806,11 @@ async function runConversation(
       ).length;
 
       if (repeatedCount >= 4) {
-        // Break out of loop to avoid runaway token burn on hallucinated repeats
+        // Break out of loop to avoid runaway token burn on hallucinated repeats.
+        // The assistant message is already on history; close its tool_use
+        // blocks so Anthropic / OpenCode messages do not 400 the next turn.
         metrics.duplicateToolCallPreventionsTotal.inc();
+        closeUnexecutedToolCalls(history, result.toolCalls);
         break;
       }
 

@@ -440,6 +440,67 @@ describe("agent chat tool loop", () => {
     expect(maxActive).toBe(1);
   });
 
+  test("closes unmatched tool calls when the duplicate-call guard fires", async () => {
+    let executions = 0;
+    const countingTool: ToolDefinition = {
+      ...sampleTool,
+      run(input) {
+        executions += 1;
+        return Promise.resolve(input);
+      },
+    };
+    const repeatCall = (id: string): ChatCompletionResult => {
+      const toolCall = {
+        arguments: { message: "hi" },
+        id,
+        name: "sample",
+      };
+      return {
+        assistantMessage: {
+          content: "",
+          role: "assistant",
+          toolCalls: [toolCall],
+        },
+        content: "",
+        toolCalls: [toolCall],
+      };
+    };
+    const provider = createMockProvider([
+      repeatCall("call_1"),
+      repeatCall("call_2"),
+      repeatCall("call_3"),
+      repeatCall("call_4"),
+    ]);
+    const harness = createAgentHarness({ provider, tools: [countingTool] });
+    const session = harness.createChatSession({ tools: [countingTool] });
+
+    await session.send("say hi");
+
+    expect(executions).toBe(3);
+
+    const history = session.getHistory() as ChatMessage[];
+    const assistantToolCalls = history.filter(
+      (message): message is Extract<ChatMessage, { role: "assistant" }> =>
+        message.role === "assistant" && (message.toolCalls?.length ?? 0) > 0
+    );
+    const toolResults = new Set(
+      history
+        .filter(
+          (message): message is Extract<ChatMessage, { role: "tool" }> =>
+            message.role === "tool"
+        )
+        .map((message) => message.toolCallId)
+    );
+
+    expect(assistantToolCalls.length).toBeGreaterThan(0);
+    for (const message of assistantToolCalls) {
+      for (const call of message.toolCalls ?? []) {
+        expect(toolResults.has(call.id)).toBe(true);
+      }
+    }
+    expect(history.at(-1)?.role).toBe("tool");
+  });
+
   test("rolls back incomplete tool turns when follow-up provider call fails", async () => {
     const provider = createMockProvider([
       {

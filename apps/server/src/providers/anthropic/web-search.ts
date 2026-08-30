@@ -50,6 +50,33 @@ export function buildAnthropicTools(
   return combined.length > 0 ? combined : undefined;
 }
 
+/**
+ * Anthropic rejects `tool_use` that is followed by a user turn instead of
+ * `tool_result`. Trailing unmatched calls (current turn or replay fixtures)
+ * stay so provider-content mapping still works.
+ */
+function dropOrphanToolUseInterruptedByUser(
+  messages: ChatMessage[]
+): ChatMessage[] {
+  return messages.filter((message, index) => {
+    if (message.role !== "assistant" || !message.toolCalls?.length) {
+      return true;
+    }
+
+    const following = messages.slice(index + 1);
+    const hasResults = message.toolCalls.every((call) =>
+      following.some(
+        (entry) => entry.role === "tool" && entry.toolCallId === call.id
+      )
+    );
+    if (hasResults) {
+      return true;
+    }
+
+    return !following.some((entry) => entry.role !== "tool");
+  });
+}
+
 export async function toAnthropicMessages(
   messages: ChatMessage[],
   provider: ProviderName = "anthropic",
@@ -59,7 +86,7 @@ export async function toAnthropicMessages(
 ): Promise<MessageParam[]> {
   const result: MessageParam[] = [];
 
-  for (const message of messages) {
+  for (const message of dropOrphanToolUseInterruptedByUser(messages)) {
     if (message.role === "user") {
       result.push({
         content: (await toAnthropicUserContent(
