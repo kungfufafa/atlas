@@ -15,7 +15,7 @@
     "@atlas/core": "workspace:*",
     "@atlas/db": "workspace:*",
     "@composio/core": "^0.14.1",
-    "@countrystatecity/timezones": "^1.0.5",
+    "@countrystatecity/timezones": "^1.0.9",
     "@google/genai": "^2.7.0",
     "@hono/zod-openapi": "^1.4.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
