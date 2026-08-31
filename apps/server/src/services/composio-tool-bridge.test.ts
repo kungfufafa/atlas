@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { setupTestConfigDir } from "../test-config-dir";
 import { resolveComposioCallbackBaseUrl } from "./composio-callback-url";
 import type { ComposioService } from "./composio-service";
 import {
@@ -7,6 +8,8 @@ import {
   composioConnectionKey,
 } from "./composio-tool-bridge";
 import { McpClientManager } from "./mcp-client-manager";
+
+setupTestConfigDir("atlas-composio-tool-bridge-");
 
 describe("composio-tool-bridge", () => {
   test("connection key includes user id", () => {

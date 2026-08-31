@@ -62,6 +62,28 @@ describe("resolveDiscordApplicationId", () => {
 
     await expect(resolveDiscordApplicationId("bad-token")).resolves.toBeNull();
   });
+
+  test("force refresh evicts a cached application id", async () => {
+    let requestCount = 0;
+    globalThis.fetch = (async () => {
+      requestCount += 1;
+      return new Response(JSON.stringify({ id: "1525937133096013954" }), {
+        status: 200,
+      });
+    }) as typeof fetch;
+    await expect(resolveDiscordApplicationId("cached-token")).resolves.toBe(
+      "1525937133096013954"
+    );
+
+    globalThis.fetch = (async () => {
+      requestCount += 1;
+      return new Response(null, { status: 401 });
+    }) as typeof fetch;
+    await expect(
+      resolveDiscordApplicationId("cached-token", { forceRefresh: true })
+    ).resolves.toBeNull();
+    expect(requestCount).toBe(2);
+  });
 });
 
 describe("loadDiscordSettingsPublic", () => {

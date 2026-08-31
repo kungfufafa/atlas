@@ -1,4 +1,6 @@
 import { join } from "node:path";
+import { maskSecret } from "./email-config";
+import { parseSentryDsn } from "./error-tracking-dsn";
 import { parseIni, readTextOrNull, writeTextFile } from "./fs";
 import { getUserConfigDir } from "./user-config";
 
@@ -88,5 +90,41 @@ export async function saveErrorTrackingDsn(
 }
 
 export async function isErrorTrackingEnabled(): Promise<boolean> {
-  return resolveErrorTrackingDsn(await loadErrorTrackingConfig()) !== null;
+  return (
+    parseSentryDsn(
+      resolveErrorTrackingDsn(await loadErrorTrackingConfig()) ?? ""
+    ) !== null
+  );
+}
+
+export interface ErrorTrackingSettingsPublic {
+  configurationSource: "environment" | "settings" | null;
+  configured: boolean;
+  disabledByDoNotTrack: boolean;
+  dsnMasked: string | null;
+}
+
+/** The raw DSN contains an ingest key and must never leave the server. */
+export async function loadErrorTrackingSettingsPublic(
+  env: Record<string, string | undefined> = process.env
+): Promise<ErrorTrackingSettingsPublic> {
+  const file = await loadErrorTrackingConfig();
+  const effectiveDsn = resolveErrorTrackingDsn(file, env);
+  const validEffectiveDsn = effectiveDsn ? parseSentryDsn(effectiveDsn) : null;
+  const disabledByDoNotTrack = TRUTHY_VALUES.has(
+    env.DO_NOT_TRACK?.trim().toLowerCase() ?? ""
+  );
+  const configurationSource =
+    env.ATLAS_ERROR_TRACKING_DSN === undefined
+      ? file.dsn
+        ? "settings"
+        : null
+      : "environment";
+
+  return {
+    configurationSource,
+    configured: Boolean(validEffectiveDsn),
+    disabledByDoNotTrack,
+    dsnMasked: validEffectiveDsn ? maskSecret(effectiveDsn ?? "") : null,
+  };
 }

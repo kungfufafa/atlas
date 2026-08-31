@@ -1,12 +1,16 @@
 import { describe, expect, test } from "bun:test";
-import { mkdir, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   type AgentChatSession,
   type AgentHarness,
   executeToolCall,
 } from "@atlas/agent";
-import { getCustomToolsDir, type ToolContext } from "@atlas/core";
+import {
+  getCustomToolsDir,
+  getProfileSoulDir,
+  type ToolContext,
+} from "@atlas/core";
 import {
   createInMemoryDatabaseAdapter,
   type DatabaseAdapter,
@@ -20,6 +24,7 @@ const ORG_ID = "org_tool_reload";
 const PROFILE_ID = "profile_tool_reload";
 const TOOL_ID = "tool_reload_probe";
 const MODULE_FILENAME = "reload-probe.js";
+const RETRY_PROBE_FILENAME = "reload-probe-attempts.txt";
 
 setupTestConfigDir("atlas-agent-tool-reload-");
 
@@ -119,6 +124,19 @@ async function createResolvedSession(
   expect(guard.read()).toBeFunction();
 }
 
+async function waitForFile(filePath: string): Promise<void> {
+  const deadline = Date.now() + 2000;
+  while (Date.now() < deadline) {
+    try {
+      await access(filePath);
+      return;
+    } catch {
+      await Bun.sleep(10);
+    }
+  }
+  throw new Error(`Timed out waiting for ${filePath}`);
+}
+
 describe("AgentService JavaScript tool reload", () => {
   test("legacy org config migration keeps the first session tool guard current", async () => {
     const db = createInMemoryDatabaseAdapter();
@@ -167,14 +185,16 @@ describe("AgentService JavaScript tool reload", () => {
   test("revoking retrySafe stops an active retry through the stale session guard", async () => {
     const toolsDir = getCustomToolsDir();
     await mkdir(toolsDir, { recursive: true });
+    await mkdir(getProfileSoulDir(ORG_ID, PROFILE_ID), { recursive: true });
     const modulePath = path.join(toolsDir, MODULE_FILENAME);
+    const retryProbePath = path.join(toolsDir, RETRY_PROBE_FILENAME);
     await writeFile(
       modulePath,
-      `export const retrySafe = true;
+      `import { appendFileSync } from "node:fs";
+
+export const retrySafe = true;
 export async function run() {
-  const probe = globalThis.__atlasRetryReloadProbe;
-  probe.attempts += 1;
-  probe.started();
+  appendFileSync(${JSON.stringify(RETRY_PROBE_FILENAME)}, "attempt\\n");
   throw new Error("transient custom failure");
 }
 `,
@@ -192,62 +212,43 @@ export async function run() {
     }
     staleTool.retryPolicy = {
       ...staleTool.retryPolicy,
-      initialDelayMs: 25,
+      initialDelayMs: 250,
     };
 
-    let markStarted: (() => void) | undefined;
-    const started = new Promise<void>((resolve) => {
-      markStarted = resolve;
-    });
-    const runtime = globalThis as typeof globalThis & {
-      __atlasRetryReloadProbe?: {
-        attempts: number;
-        started: () => void;
-      };
-    };
-    runtime.__atlasRetryReloadProbe = {
-      attempts: 0,
-      started: () => markStarted?.(),
-    };
+    const pending = executeToolCall(
+      [staleTool],
+      { arguments: {}, id: "call_stale_retry", name: staleTool.name },
+      { beforeToolCall: guard.read() }
+    );
+    await waitForFile(retryProbePath);
 
-    try {
-      const pending = executeToolCall(
-        [staleTool],
-        { arguments: {}, id: "call_stale_retry", name: staleTool.name },
-        { beforeToolCall: guard.read() }
-      );
-      await started;
-
-      await writeFile(
-        modulePath,
-        `export async function run() {
+    await writeFile(
+      modulePath,
+      `export async function run() {
   return { version: "reloaded" };
 }
 `,
-        "utf8"
-      );
-      expect(
-        await service.runToolPlayground(
-          TOOL_ID,
-          {},
-          {
-            orgId: ORG_ID,
-            userId: "user_1",
-          }
-        )
-      ).toEqual({ ok: true, result: { version: "reloaded" } });
+      "utf8"
+    );
+    expect(
+      await service.runToolPlayground(
+        TOOL_ID,
+        {},
+        {
+          orgId: ORG_ID,
+          userId: "user_1",
+        }
+      )
+    ).toEqual({ ok: true, result: { version: "reloaded" } });
 
-      expect(await pending).toEqual({
-        error: "Tool configuration changed. Retry the request.",
-        errorCode: "CANCELLED",
-      });
-      expect(runtime.__atlasRetryReloadProbe.attempts).toBe(1);
-      expect((await loadJavascriptTool(record))?.retryPolicy).toEqual({
-        maxRetries: 0,
-      });
-    } finally {
-      delete runtime.__atlasRetryReloadProbe;
-    }
+    expect(await pending).toEqual({
+      error: "Tool configuration changed. Retry the request.",
+      errorCode: "CANCELLED",
+    });
+    expect(await readFile(retryProbePath, "utf8")).toBe("attempt\n");
+    expect((await loadJavascriptTool(record))?.retryPolicy).toEqual({
+      maxRetries: 0,
+    });
   });
 
   test("does not invalidate session guards when JavaScript reload fails", async () => {

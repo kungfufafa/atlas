@@ -2,7 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { setupTestConfigDir } from "../test-config-dir";
 import { resolveArtifactShareBaseUrl } from "./artifact-share-service";
+
+setupTestConfigDir("atlas-artifact-share-service-");
 
 const SHARE_PUBLISH_URL =
   "http://127.0.0.1:4310/v1/profiles/p1/artifacts/shares";

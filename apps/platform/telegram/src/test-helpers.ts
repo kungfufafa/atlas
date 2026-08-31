@@ -394,9 +394,9 @@ export function createMockClient(
     }),
     isolateOrgId: <T>(fn: () => T | Promise<T>) =>
       orgIdScope.run({ orgId: activeOrgId }, fn),
-    listProfiles: async () => {
+    listProfiles: async (orgIdOverride?: string) => {
       calls.listProfiles += 1;
-      const orgId = currentOrgId();
+      const orgId = orgIdOverride ?? currentOrgId();
       const scopedProfiles =
         (orgId ? options.profilesByOrgId?.[orgId] : undefined) ?? profiles;
 

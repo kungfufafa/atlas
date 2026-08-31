@@ -33,6 +33,7 @@ import {
   parseChannel,
   readJson,
   readJsonWithLimit,
+  readOptionalJson,
   streamMessage,
   streamTurnSubscribe,
 } from "../shared";
@@ -185,7 +186,7 @@ export function registerSessionRoutes(
     sessionId: z.string().openapi({ param: { in: "path", name: "sessionId" } }),
   });
   const sessionListQuerySchema = z.object({
-    channel: agentChannelSchema.optional(),
+    channel: agentChannelSchema,
     profileId: z.string().optional(),
   });
   const streamQuerySchema = z.object({
@@ -506,7 +507,7 @@ export function registerSessionRoutes(
   app.get("/v1/sessions", async (c) => {
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = c.req.query("profileId")?.trim();
-    const channel = parseChannel(c.req.query("channel") ?? "web");
+    const channel = parseChannel(c.req.query("channel"));
 
     if (!profileId) {
       return errorResponse("profileId is required.", 400);
@@ -573,9 +574,7 @@ export function registerSessionRoutes(
     requireNotViewerFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
-    const body = await readJson<CompactSessionRequest>(c.req.raw).catch(
-      () => ({}) as CompactSessionRequest
-    );
+    const body = await readOptionalJson<CompactSessionRequest>(c.req.raw, {});
     const result = await agent.compactSession(orgId, sessionId, {
       force: body.force ?? false,
     });

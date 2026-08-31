@@ -173,8 +173,8 @@ export function createMockClient(
         total: artifacts.length,
       };
     },
-    listProfiles: async () => {
-      const orgId = currentOrgId();
+    listProfiles: async (orgIdOverride?: string) => {
+      const orgId = orgIdOverride ?? currentOrgId();
       const scopedProfiles =
         (orgId ? options.profilesByOrgId?.[orgId] : undefined) ?? profiles;
 
@@ -586,6 +586,9 @@ export function createSlashInteraction(options: {
     channel,
     channelId: options.inThread ? threadId : channelId,
     commandName: options.commandName,
+    deleteReply: async () => {
+      replies.push("__deleted__");
+    },
     editReply: async ({ content }: { content: string }) => {
       replies.push(content);
     },

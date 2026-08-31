@@ -105,7 +105,8 @@ describe("ProfileService Super Agent update", () => {
         soulFiles: { "SOUL.md": "Updated soul" },
         systemPrompt: " Updated prompt ",
       },
-      { userId: USER_ID }
+      { userId: USER_ID },
+      { actorUserId: USER_ID, source: "super_bot" }
     );
 
     expect(result.profile).toMatchObject({
@@ -131,6 +132,42 @@ describe("ProfileService Super Agent update", () => {
     );
     expect((await lstat(soulDir)).mode % 0o1000).toBe(0o700);
     expect((await lstat(join(soulDir, "SOUL.md"))).mode % 0o1000).toBe(0o600);
+    expect(await db.listProfileChangeEvents(ORG_ID, profileId)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          actorUserId: USER_ID,
+          field: "system_prompt",
+          source: "super_bot",
+        }),
+        expect.objectContaining({
+          actorUserId: USER_ID,
+          field: "soul.soul",
+          source: "super_bot",
+        }),
+      ])
+    );
+  });
+
+  test("keeps a committed Super Agent update when history storage fails", async () => {
+    const { db, profileId, service } = await createFixture();
+    db.createProfileChangeEvent = async () => {
+      throw new Error("ledger unavailable");
+    };
+
+    await expect(
+      service.updateProfileAsActor(
+        ORG_ID,
+        profileId,
+        { systemPrompt: "Committed prompt" },
+        { userId: USER_ID },
+        { actorUserId: USER_ID, source: "super_bot" }
+      )
+    ).resolves.toMatchObject({
+      profile: { systemPrompt: "Committed prompt" },
+    });
+    expect((await db.getProfileForOrg(profileId, ORG_ID))?.systemPrompt).toBe(
+      "Committed prompt"
+    );
   });
 
   test("preserves omitted write-approval governance", async () => {

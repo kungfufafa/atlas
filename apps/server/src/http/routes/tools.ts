@@ -11,6 +11,7 @@ import type {
   ToolSourceResponse,
 } from "@atlas/core";
 import { createRoute, z } from "@hono/zod-openapi";
+import { requireProfileChangeHistoryService } from "../../services/profile-change-history";
 import type { ServerOptions } from "../context";
 import {
   requireActiveOrgIdFromContext,
@@ -336,9 +337,18 @@ export function registerToolRoutes(app: HonoApp, options: ServerOptions): void {
   });
 
   app.delete("/v1/tools/:toolId", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
-    await agent.deleteTool(orgId, decodeURIComponent(c.req.param("toolId")));
+    await requireProfileChangeHistoryService(
+      options.databaseAdapter
+    ).withOrgAssignmentChanges(
+      {
+        field: "tools",
+        meta: { actorUserId: auth.user.id, source: "dashboard" },
+        orgId,
+      },
+      () => agent.deleteTool(orgId, decodeURIComponent(c.req.param("toolId")))
+    );
     return new Response(null, { status: 204 });
   });
 
@@ -395,26 +405,41 @@ export function registerToolRoutes(app: HonoApp, options: ServerOptions): void {
   });
 
   app.post("/v1/profiles/:profileId/tools", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
+    const profileId = decodeURIComponent(c.req.param("profileId"));
     const body = await readJson<AssignToolRequest>(c.req.raw);
     return json<ProfileResponse>(
-      await agent.assignTool(
-        orgId,
-        decodeURIComponent(c.req.param("profileId")),
-        body
+      await requireProfileChangeHistoryService(
+        options.databaseAdapter
+      ).withAssignmentChange(
+        {
+          field: "tools",
+          meta: { actorUserId: auth.user.id, source: "dashboard" },
+          orgId,
+          profileId,
+        },
+        () => agent.assignTool(orgId, profileId, body)
       )
     );
   });
 
   app.delete("/v1/profiles/:profileId/tools/:toolId", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
+    const profileId = decodeURIComponent(c.req.param("profileId"));
+    const toolId = decodeURIComponent(c.req.param("toolId"));
     return json<ProfileResponse>(
-      await agent.unassignTool(
-        orgId,
-        decodeURIComponent(c.req.param("profileId")),
-        decodeURIComponent(c.req.param("toolId"))
+      await requireProfileChangeHistoryService(
+        options.databaseAdapter
+      ).withAssignmentChange(
+        {
+          field: "tools",
+          meta: { actorUserId: auth.user.id, source: "dashboard" },
+          orgId,
+          profileId,
+        },
+        () => agent.unassignTool(orgId, profileId, toolId)
       )
     );
   });

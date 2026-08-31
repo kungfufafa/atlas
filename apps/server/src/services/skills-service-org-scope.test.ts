@@ -16,6 +16,7 @@ import {
   ensureProfileDefaultBundledSkills,
   type SqliteDatabase,
 } from "@atlas/db";
+import { ProfileService } from "./profile-service";
 import { SkillProposalService } from "./skill-proposal-service";
 import { SkillSuggestionService } from "./skill-suggestion-service";
 import { SkillsService } from "./skills-service";
@@ -227,6 +228,155 @@ describe("skills are scoped per org", () => {
     expect(orgA.skill.body).toContain("Org A steps.");
   });
 
+  test("dashboard patch records the profile-owned SKILL.md payload", async () => {
+    const db = await openDb();
+    const service = new SkillsService(db);
+    const created = await service.createAndAssignRawSkillToProfile(
+      "org_a",
+      "profile_a",
+      ORG_A_SKILL
+    );
+
+    await service.patchSkill(
+      "org_a",
+      created.skill.id,
+      { body: "Org A steps, revised." },
+      {
+        changeMeta: {
+          actorUserId: "user_admin_a",
+          source: "dashboard",
+        },
+        profileId: "profile_a",
+      }
+    );
+
+    const events = await db.listProfileChangeEvents("org_a", "profile_a");
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      actorUserId: "user_admin_a",
+      field: "skills",
+      source: "dashboard",
+    });
+    expect(JSON.parse(events[0]!.beforeValue ?? "null")).toMatchObject({
+      content: expect.stringContaining("Org A steps."),
+      path: "SKILL.md",
+      skillName: "deploy-notes",
+    });
+    expect(JSON.parse(events[0]!.afterValue ?? "null")).toMatchObject({
+      content: expect.stringContaining("Org A steps, revised."),
+      path: "SKILL.md",
+      skillName: "deploy-notes",
+    });
+  });
+
+  test("an org-scoped list hides another org's skills", async () => {
+    const db = await openDb();
+    const service = new SkillsService(db);
+
+    const orgA = await service.createAndAssignRawSkillToProfile(
+      "org_a",
+      "profile_a",
+      ORG_A_SKILL
+    );
+    const orgB = await service.createAndAssignRawSkillToProfile(
+      "org_b",
+      "profile_b",
+      ORG_B_SKILL
+    );
+
+    const listed = await service.listSkills("org_a");
+    expect(listed.skills.some((skill) => skill.id === orgA.skill.id)).toBe(
+      true
+    );
+    expect(listed.skills.some((skill) => skill.id === orgB.skill.id)).toBe(
+      false
+    );
+  });
+
+  test("org A cannot patch or delete org B's skill by id", async () => {
+    const db = await openDb();
+    const service = new SkillsService(db);
+
+    const orgB = await service.createAndAssignRawSkillToProfile(
+      "org_b",
+      "profile_b",
+      ORG_B_SKILL
+    );
+
+    await expect(
+      service.patchSkill("org_a", orgB.skill.id, { body: "Compromised." })
+    ).rejects.toMatchObject({ status: 404 });
+    await expect(
+      service.deleteSkill("org_a", orgB.skill.id)
+    ).rejects.toMatchObject({ status: 404 });
+
+    const unchanged = await service.getSkill(orgB.skill.id);
+    expect(unchanged.skill.body).toContain("Org B steps.");
+    expect(await db.getSkill(orgB.skill.id)).not.toBeNull();
+  });
+
+  test("org A cannot assign org B's skill to its profile", async () => {
+    const db = await openDb();
+    const skills = new SkillsService(db);
+    const profiles = new ProfileService(db);
+
+    const orgB = await skills.createAndAssignRawSkillToProfile(
+      "org_b",
+      "profile_b",
+      ORG_B_SKILL
+    );
+
+    await expect(
+      profiles.assignSkill("org_a", "profile_a", {
+        skillId: orgB.skill.id,
+      })
+    ).rejects.toMatchObject({ status: 404 });
+    expect(
+      (await db.listSkillsForProfile("profile_a")).some(
+        (skill) => skill.id === orgB.skill.id
+      )
+    ).toBe(false);
+  });
+
+  test("an org-scoped list does not consolidate another org's rows", async () => {
+    const db = await openDb();
+    const service = new SkillsService(db);
+    const now = new Date().toISOString();
+    const sourcePath = profileSkillDir("org_b", "profile_b", "deploy-notes");
+
+    for (const [id, suffix] of [
+      ["skill_foreign_dup_a", "a"],
+      ["skill_foreign_dup_b", "b"],
+    ] as const) {
+      await db.upsertSkill({
+        createdAt: now,
+        createdBy: "human",
+        description: `foreign ${suffix}`,
+        disableModelInvocation: false,
+        enabled: true,
+        hasTool: false,
+        id,
+        name: "deploy-notes",
+        orgId: "org_b",
+        sourcePath: `${sourcePath}-${suffix}`,
+        updatedAt: now,
+      });
+    }
+    await db.assignSkillToProfile("profile_b", "skill_foreign_dup_b");
+
+    await service.listSkills("org_a");
+
+    const foreignRows = (await db.listSkills()).filter(
+      (skill) => skill.orgId === "org_b" && skill.name === "deploy-notes"
+    );
+    expect(foreignRows).toHaveLength(2);
+    expect(
+      (await db.listSkillsForProfile("profile_b")).some(
+        (skill) => skill.id === "skill_foreign_dup_b"
+      )
+    ).toBe(true);
+  });
+
   test("a proposal stages against the caller's own org", async () => {
     const db = await openDb();
     const service = new SkillsService(db);
@@ -409,5 +559,25 @@ describe("skills are scoped per org", () => {
     expect((await db.getSkillByName("weather", "org_b"))?.id).toBe(
       global?.id ?? ""
     );
+    expect(
+      (await service.listSkills("org_a")).skills.some(
+        (skill) => skill.name === "weather"
+      )
+    ).toBe(true);
+    await expect(
+      service.patchSkill("org_a", global?.id ?? "", { body: "Changed." })
+    ).rejects.toMatchObject({ status: 403 });
+    await expect(
+      service.deleteSkill("org_a", global?.id ?? "")
+    ).rejects.toMatchObject({ status: 403 });
+
+    await new ProfileService(db).assignSkill("org_a", "profile_a", {
+      skillId: global?.id ?? "",
+    });
+    expect(
+      (await db.listSkillsForProfile("profile_a")).some(
+        (skill) => skill.id === global?.id
+      )
+    ).toBe(true);
   });
 });

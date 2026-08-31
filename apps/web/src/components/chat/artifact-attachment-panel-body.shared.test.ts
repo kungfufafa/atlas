@@ -53,6 +53,16 @@ describe("artifactPanelBodyClassName", () => {
     ).toContain("px-8");
   });
 
+  test("lets markdown content use the full preview width", () => {
+    expect(
+      artifactPanelBodyClassName({
+        isHtml: false,
+        isImage: false,
+        isMarkdown: true,
+      })
+    ).toContain("artifact-preview-panel");
+  });
+
   test("uses a full-bleed code canvas when source is showing", () => {
     expect(
       artifactPanelBodyClassName({

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parseCliOrgArgs } from "./org";
+import { InvalidOrgArgError, parseCliOrgArgs } from "./org";
 
 describe("parseCliOrgArgs", () => {
   test("parses --org flag", () => {
@@ -7,5 +7,30 @@ describe("parseCliOrgArgs", () => {
       orgId: "org_abc",
     });
     expect(parseCliOrgArgs(["--org=org_xyz"])).toEqual({ orgId: "org_xyz" });
+  });
+
+  test("parses organization slugs", () => {
+    expect(parseCliOrgArgs(["--org", "acme-co"])).toEqual({
+      orgId: "acme-co",
+    });
+  });
+
+  test("rejects a missing --org value", () => {
+    expect(() => parseCliOrgArgs(["--org"])).toThrow(InvalidOrgArgError);
+    expect(() => parseCliOrgArgs(["--org", "--theme", "dark"])).toThrow(
+      InvalidOrgArgError
+    );
+  });
+
+  test("rejects invalid organization references", () => {
+    expect(() => parseCliOrgArgs(["--org", "../etc"])).toThrow(
+      InvalidOrgArgError
+    );
+    expect(() => parseCliOrgArgs(["--org=org_abc/../x"])).toThrow(
+      InvalidOrgArgError
+    );
+    expect(() => parseCliOrgArgs([`--org=${"a".repeat(200)}`])).toThrow(
+      InvalidOrgArgError
+    );
   });
 });

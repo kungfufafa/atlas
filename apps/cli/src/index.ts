@@ -4,7 +4,8 @@ import {
   stopSpawnedServer,
 } from "@atlas/core/ensure-server";
 import { loadLocalAuthToken } from "@atlas/core/local-auth";
-import { runChat } from "./chat";
+import { runChat, runCleanupThenExit } from "./chat";
+import { isCliVerbose } from "./display-path";
 import { parseCliOrgArgs, resolveCliOrgId } from "./org";
 import { parseCliProfileArgs } from "./profile";
 import {
@@ -17,6 +18,7 @@ import {
   ensureUserConfiguredViaCli,
 } from "./setup";
 import { detectTheme, setTheme, type Theme } from "./styled-text";
+import { InvalidThemeArgError, parseThemeArg } from "./theme-arg";
 
 const FORCE_EXIT_TIMEOUT_MS = 5000;
 
@@ -30,35 +32,20 @@ if (isRotateTokenCommand()) {
   }
 }
 
-function parseThemeArg(argv = process.argv.slice(2)): Theme | null {
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-
-    if (arg === "--theme") {
-      const value = argv[index + 1]?.trim();
-      if (value === "light" || value === "dark") {
-        return value;
-      }
-      index += 1;
-      continue;
-    }
-
-    if (arg === "--theme=light") {
-      return "light";
-    }
-    if (arg === "--theme=dark") {
-      return "dark";
-    }
-  }
-
-  return null;
-}
-
 async function resolveTheme(): Promise<Theme> {
-  const explicit = parseThemeArg();
-  if (explicit) {
-    return explicit;
+  try {
+    const explicit = parseThemeArg();
+    if (explicit) {
+      return explicit;
+    }
+  } catch (error) {
+    if (error instanceof InvalidThemeArgError) {
+      console.error(error.message);
+      process.exit(1);
+    }
+    throw error;
   }
+
   if (process.env.ATLAS_THEME === "light") {
     return "light";
   }
@@ -125,6 +112,7 @@ try {
     offline: !health.providerConfigured,
     profileId: cliProfile.profileId,
     signal: abortController.signal,
+    verbose: isCliVerbose(),
   });
 } catch (error) {
   if (!abortController.signal.aborted) {
@@ -153,14 +141,13 @@ function registerCleanupHandlers(
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
     process.on(signal, () => {
       if (stopping) {
-        forceCleanup();
-        process.exit(0);
+        void runCleanupThenExit(forceCleanup);
+        return;
       }
       stopping = true;
       cleanup();
       setTimeout(() => {
-        forceCleanup();
-        process.exit(0);
+        void runCleanupThenExit(forceCleanup);
       }, FORCE_EXIT_TIMEOUT_MS);
     });
   }

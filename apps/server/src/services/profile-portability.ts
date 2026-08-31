@@ -50,6 +50,7 @@ import type {
 import { zipSync } from "fflate";
 import { validateDecodedImageAttachments } from "./image-decoder-validation";
 import { resolveJavascriptModulePath } from "./javascript-tool-loader";
+import { ProfileChangeHistoryService } from "./profile-change-history";
 
 export const PROFILE_PACK_KIND = "atlas-profile-export" as const;
 export const PROFILE_PACK_MANIFEST_FILENAME = "atlas-profile-export.json";
@@ -164,6 +165,7 @@ export interface PreviewProfilePackImportOptions {
 }
 
 export interface ImportProfilePackOptions {
+  actorUserId?: string | null;
   availableModelIds?: ReadonlySet<string>;
   confirm: boolean;
   name?: string;
@@ -502,6 +504,17 @@ async function performProfilePackImport(
         409
       );
     }
+
+    await new ProfileChangeHistoryService(db).recordBestEffort({
+      actorUserId: options.actorUserId,
+      afterValue: JSON.stringify({ name, profileId }),
+      beforeValue: null,
+      createdAt: now,
+      field: "pack_import",
+      orgId,
+      profileId,
+      source: "pack_import",
+    });
 
     return { manifest, profileId, skippedAssignments };
   } catch (error) {

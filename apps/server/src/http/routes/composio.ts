@@ -17,7 +17,7 @@ import {
   requireNotViewerFromContext,
   requireOrgAdminFromContext,
 } from "../org-guards";
-import { errorResponse, json, readJson } from "../shared";
+import { errorResponse, json, readJson, readOptionalJson } from "../shared";
 import type { HonoApp } from "../types";
 
 export function registerComposioOAuthRoutes(
@@ -155,8 +155,9 @@ export function registerComposioRoutes(
     const auth = requireNotViewerFromContext(c);
 
     try {
-      const body = await readJson<ComposioConnectRequest>(c.req.raw).catch(
-        () => ({}) as ComposioConnectRequest
+      const body = await readOptionalJson<ComposioConnectRequest>(
+        c.req.raw,
+        {}
       );
       const result = await service.connectToolkit(
         auth.activeOrgId!,

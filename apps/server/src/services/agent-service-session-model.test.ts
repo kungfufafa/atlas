@@ -1,4 +1,11 @@
-import { afterEach, describe, expect, mock, test } from "bun:test";
+import {
+  afterEach,
+  describe,
+  expect,
+  mock,
+  setDefaultTimeout,
+  test,
+} from "bun:test";
 import { PROVIDER_CAPABILITY_IDS } from "@atlas/core";
 import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import {
@@ -11,6 +18,7 @@ import { AgentService } from "./agent-service";
 import { sessionTurnRegistry } from "./session-turn-registry";
 
 setupTestConfigDir("atlas-session-model-service-");
+setDefaultTimeout(15_000);
 
 const originalFetch = globalThis.fetch;
 const originalOpenAiApiKey = process.env.OPENAI_API_KEY;

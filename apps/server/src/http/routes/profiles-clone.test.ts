@@ -118,4 +118,35 @@ describe("POST /v1/profiles/:profileId/clone", () => {
       before.length + 1
     );
   }, 20_000);
+
+  test("malformed non-empty JSON is rejected instead of treated as empty", async () => {
+    const { app, databaseAdapter } = createApp();
+    const session = await setupFreshInstallSession(
+      app,
+      databaseAdapter,
+      "malformed-clone@example.com"
+    );
+    const orgId = session.orgId!;
+    const before = await databaseAdapter.listProfilesForOrg(orgId);
+    const source = before.find((profile) => !profile.isSuper);
+
+    const response = await app.fetch(
+      new Request(`${BASE}/v1/profiles/${source!.id}/clone`, {
+        body: "{",
+        headers: session.headers(
+          {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": session.csrfToken,
+          },
+          orgId
+        ),
+        method: "POST",
+      })
+    );
+
+    expect(response.status).toBe(400);
+    expect(await databaseAdapter.listProfilesForOrg(orgId)).toHaveLength(
+      before.length
+    );
+  }, 20_000);
 });

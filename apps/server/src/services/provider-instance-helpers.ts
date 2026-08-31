@@ -19,6 +19,7 @@ import {
   resolveOllamaHostMode,
   validateCustomModels,
   validateDisplayName,
+  validateProviderApiKeyFormat,
   validateProviderCustomModelId,
   validateProviderInstanceLabel,
 } from "@atlas/core";
@@ -188,6 +189,10 @@ export function buildProviderInstanceFromCreateRequest(
     );
   }
 
+  if (apiKey) {
+    validateProviderApiKeyFormat(apiKey, type);
+  }
+
   const normalizedRequest: CreateProviderRequest = isSubscriptionProvider(type)
     ? { label: request.label, model: request.model, type }
     : {
@@ -243,7 +248,7 @@ export function applyProviderInstanceUpdate(
   }
 
   if (!subscriptionProvider && requestedApiKey) {
-    next.apiKey = requestedApiKey;
+    next.apiKey = validateProviderApiKeyFormat(requestedApiKey, instance.type);
   }
 
   if (request.baseUrl !== undefined) {

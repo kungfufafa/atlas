@@ -705,7 +705,7 @@ describe("buildProviderInstanceFromCreateRequest", () => {
   test("keeps custom models for a provider that opts in through catalog metadata", () => {
     const instance = buildProviderInstanceFromCreateRequest(
       {
-        apiKey: "sk-test",
+        apiKey: `sk-${"a".repeat(48)}`,
         customModels: [{ default: true, id: "gpt-future" }],
         type: "openai",
       },
@@ -768,7 +768,7 @@ describe("buildProviderInstanceFromCreateRequest", () => {
     expect(() =>
       buildProviderInstanceFromCreateRequest(
         {
-          apiKey: "router-key",
+          apiKey: `sk-or-${"a".repeat(30)}`,
           customModels: [{ default: true, id: "missing-vendor" }],
           type: "openrouter",
         },
@@ -858,5 +858,14 @@ describe("buildProviderInstanceFromCreateRequest", () => {
         expect((error as AtlasApiError).status).toBe(400);
       }
     }
+  });
+
+  test("rejects an obviously malformed OpenAI key before persisting it", () => {
+    expect(() =>
+      buildProviderInstanceFromCreateRequest(
+        { apiKey: "sk-junk-qa-123", type: "openai" },
+        []
+      )
+    ).toThrow(/valid OpenAI API key/i);
   });
 });

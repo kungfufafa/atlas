@@ -4,6 +4,7 @@ import type {
   CreateProfileRequest,
   DocumentAttachment,
   ImageAttachment,
+  KnowledgeBaseDuplicateAction,
   SoulStackFiles,
   UpdateProfileRequest,
   UpdateSessionRequest,
@@ -85,12 +86,7 @@ export function useUpdateProfileMutation() {
       input: UpdateProfileRequest;
     }) => client.updateProfile(profileId, input),
     onSuccess: async (_data, variables) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all }),
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.profiles.detail(variables.profileId),
-        }),
-      ]);
+      await invalidateProfileQueries(queryClient, variables.profileId);
     },
   });
 }
@@ -155,6 +151,9 @@ async function invalidateProfileQueries(
     queryClient.invalidateQueries({
       queryKey: queryKeys.profiles.detail(profileId),
     }),
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.profiles.history(profileId),
+    }),
   ]);
 }
 
@@ -198,12 +197,7 @@ export function useAssignToolMutation() {
       toolId: string;
     }) => client.assignTool(profileId, { toolId }),
     onSuccess: async (_data, variables) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all }),
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.profiles.detail(variables.profileId),
-        }),
-      ]);
+      await invalidateProfileQueries(queryClient, variables.profileId);
     },
   });
 }
@@ -220,12 +214,7 @@ export function useUnassignToolMutation() {
       toolId: string;
     }) => client.unassignTool(profileId, toolId),
     onSuccess: async (_data, variables) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all }),
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.profiles.detail(variables.profileId),
-        }),
-      ]);
+      await invalidateProfileQueries(queryClient, variables.profileId);
     },
   });
 }
@@ -317,12 +306,7 @@ export function useAssignMcpServerMutation() {
       serverId: string;
     }) => client.assignMcpServer(profileId, { serverId }),
     onSuccess: async (_data, variables) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all }),
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.profiles.detail(variables.profileId),
-        }),
-      ]);
+      await invalidateProfileQueries(queryClient, variables.profileId);
     },
   });
 }
@@ -339,12 +323,7 @@ export function useUnassignMcpServerMutation() {
       serverId: string;
     }) => client.unassignMcpServer(profileId, serverId),
     onSuccess: async (_data, variables) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all }),
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.profiles.detail(variables.profileId),
-        }),
-      ]);
+      await invalidateProfileQueries(queryClient, variables.profileId);
     },
   });
 }
@@ -442,12 +421,7 @@ export function useAssignSkillMutation() {
       skillId: string;
     }) => client.assignSkill(profileId, { skillId }),
     onSuccess: async (_data, variables) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all }),
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.profiles.detail(variables.profileId),
-        }),
-      ]);
+      await invalidateProfileQueries(queryClient, variables.profileId);
     },
   });
 }
@@ -464,12 +438,7 @@ export function useUnassignSkillMutation() {
       skillId: string;
     }) => client.unassignSkill(profileId, skillId),
     onSuccess: async (_data, variables) => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all }),
-        queryClient.invalidateQueries({
-          queryKey: queryKeys.profiles.detail(variables.profileId),
-        }),
-      ]);
+      await invalidateProfileQueries(queryClient, variables.profileId);
     },
   });
 }
@@ -702,6 +671,9 @@ export function useWriteSoulFileMutation() {
         queryClient.invalidateQueries({ queryKey: soulKey }),
         queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all }),
         queryClient.invalidateQueries({
+          queryKey: queryKeys.profiles.history(variables.profileId),
+        }),
+        queryClient.invalidateQueries({
           queryKey: [...soulKey, "file", variables.fileKey],
         }),
       ]);
@@ -752,10 +724,12 @@ export function useUploadKnowledgeBaseDocumentMutation() {
     mutationFn: ({
       profileId,
       document,
+      onDuplicate,
     }: {
       profileId: string;
       document: DocumentAttachment;
-    }) => client.uploadKnowledgeBaseDocument(profileId, document),
+      onDuplicate?: KnowledgeBaseDuplicateAction;
+    }) => client.uploadKnowledgeBaseDocument(profileId, document, onDuplicate),
     onSuccess: async (_data, variables) => {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.knowledgeBase.profile(variables.profileId),

@@ -7,6 +7,7 @@ import { DiscordAuthStore } from "./auth-store";
 import {
   chatLockOptions,
   createChatHandler,
+  getChatLockCountForTests,
   resetChatLocksForTests,
   withChatLock,
 } from "./chat-handler";
@@ -26,6 +27,76 @@ import { ThreadStore } from "./thread-store";
 afterEach(() => {
   resetChatLocksForTests();
   chatLockOptions.waitMs = 15 * 60 * 1000;
+});
+
+describe("createChatHandler guild auth silence", () => {
+  test("unlinked guild mentions stay quiet", async () => {
+    await withTempHome(async (homeDir) => {
+      const { handleMessage, calls } = await createPairedHandler(homeDir, {
+        pairedUserIds: [],
+      });
+      const mention = createGuildChatMessage({
+        content: "<@bot_id> hello",
+        mentionsBot: true,
+        userId: "555555555555555555",
+      });
+
+      await handleMessage(mention.message);
+
+      expect(mention.channelSentMessages).toEqual([]);
+      expect(calls.sendStream).toBe(0);
+    });
+  });
+
+  test("unlinked guild slash deletes its deferred reply", async () => {
+    await withTempHome(async (homeDir) => {
+      const { handleSlashCommand } = await createPairedHandler(homeDir, {
+        pairedUserIds: [],
+      });
+      const status = createSlashInteraction({
+        commandName: "status",
+        userId: "555555555555555555",
+      });
+
+      await handleSlashCommand(status.interaction);
+
+      expect(status.replies).toEqual(["__deleted__"]);
+    });
+  });
+
+  test("reloads auth only after the conversation lock is available", async () => {
+    await withTempHome(async (homeDir) => {
+      const { authStore, handleMessage } = await createPairedHandler(homeDir);
+      const dm = createDmMessage({
+        channelId: "dm_auth_lock",
+        content: "hello",
+      });
+
+      let releaseHold!: () => void;
+      const hold = new Promise<void>((resolve) => {
+        releaseHold = resolve;
+      });
+      const held = withChatLock(dm.message.channel.id, async () => {
+        await hold;
+      });
+
+      const reloadCalls: number[] = [];
+      const originalReload = authStore.reload.bind(authStore);
+      authStore.reload = async () => {
+        reloadCalls.push(Date.now());
+        return originalReload();
+      };
+
+      const pending = handleMessage(dm.message);
+      await Bun.sleep(20);
+      expect(reloadCalls).toEqual([]);
+
+      releaseHold();
+      await held;
+      await pending;
+      expect(reloadCalls.length).toBeGreaterThanOrEqual(1);
+    });
+  });
 });
 
 /**
@@ -113,6 +184,7 @@ async function createPairedHandler(
 
   return {
     ...handlers,
+    authStore,
     calls,
     client,
     createdSessionProfileIds,
@@ -2011,6 +2083,18 @@ describe("createChatHandler guild thread routing", () => {
     releaseHang();
     await first;
     expect(order).toEqual(["first-start", "second", "first-end"]);
+  });
+
+  test("releases completed and failed chat locks from memory", async () => {
+    await withChatLock("chat-success", async () => undefined);
+    expect(getChatLockCountForTests()).toBe(0);
+
+    await expect(
+      withChatLock("chat-failure", async () => {
+        throw new Error("turn failed");
+      })
+    ).rejects.toThrow("turn failed");
+    expect(getChatLockCountForTests()).toBe(0);
   });
 
   test("locks chat to fixedWorkspaceId and prevents switching workspaces", async () => {

@@ -43,6 +43,7 @@ import type {
   DiscoverModelsRequest,
   DocumentAttachment,
   EmailSettingsResponse,
+  ErrorTrackingSettingsResponse,
   GenerateImageRequest,
   GenerateImageResponse,
   ImageAttachment,
@@ -51,6 +52,7 @@ import type {
   InitSoulResponse,
   InitUserContextResponse,
   InstallSkillRequest,
+  KnowledgeBaseDuplicateAction,
   ListArtifactsOptions,
   ListArtifactsResponse,
   ListKnowledgeBaseResponse,
@@ -71,6 +73,7 @@ import type {
   ProviderInstance,
   RunToolResponse,
   SendEmailTestResponse,
+  SendErrorTrackingTestResponse,
   SkillResponse,
   SoulStackResponse,
   SoulStatusResponse,
@@ -93,6 +96,7 @@ import type {
   UpdateComposioSettingsRequest,
   UpdateDiscordSettingsRequest,
   UpdateEmailSettingsRequest,
+  UpdateErrorTrackingSettingsRequest,
   UpdateImageGenerationRequest,
   UpdateProfileRequest,
   UpdateProviderRequest,
@@ -115,12 +119,14 @@ import {
   AtlasApiError,
   appendOrgMemorySection,
   assignedSkillsForbidMarkdownWrites,
+  buildErrorReport,
   buildThinkingProviderOptions,
   buildToolExecutionContext,
   buildUserContextStatus,
   composeKnowledgeBaseCatalog,
   composeSoulSystemPrompt,
   composeTurnMemoryContext,
+  createErrorTrackingSink,
   createSmtpSender,
   DEFAULT_THINKING_EFFORT,
   DEFAULT_THINKING_ENABLED,
@@ -146,6 +152,7 @@ import {
   loadDiscordSettingsPublic,
   loadEmailConfig,
   loadEmailSettingsPublic,
+  loadErrorTrackingSettingsPublic,
   loadSoulStack,
   loadTelegramSettingsPublic,
   loadUserConfig,
@@ -165,21 +172,25 @@ import {
   type OrgRole,
   PROVIDER_CAPABILITY_IDS,
   PrincipalRequiredError,
+  parseSentryDsn,
   persistInlineAttachmentsInContent,
   previewService,
   readArtifactFile,
   readBundledSkillBody,
+  refreshErrorTrackingEnabled,
   regenerateDiscordHandshake,
   regenerateTelegramHandshake,
   regenerateWhatsAppPairingCode,
   rehydrateMessagesForProvider as rehydrateAttachmentMessages,
   rehydrateAttachmentRefsInContent,
   replaceImagePartsWithDescriptions,
+  resolveDiscordApplicationId,
   resolveSoulStackForProfile,
   runAsPrincipal,
   saveComposioConfig,
   saveDiscordConfig,
   saveEmailConfig,
+  saveErrorTrackingDsn,
   saveTelegramConfig,
   saveUserThinkingSettings,
   saveUserTimezone,
@@ -301,6 +312,11 @@ import type { McpService } from "./mcp-service";
 import { buildMcpToolDefinitions } from "./mcp-tool-bridge";
 import { MemoryService } from "./memory-service";
 import { OrgMemoryService } from "./org-memory-service";
+import {
+  ProfileChangeHistoryService,
+  type ProfileChangeMeta,
+  soulFieldFromKey,
+} from "./profile-change-history";
 import { ProfileService } from "./profile-service";
 import {
   applyProviderInstanceUpdate,
@@ -1720,9 +1736,12 @@ export class AgentService {
     if (botToken) {
       let verification: Response;
       try {
-        verification = await fetch(
-          `https://api.telegram.org/bot${botToken}/getMe`
-        );
+        const requestPath = [`bot${botToken}`, "getMe"]
+          .map(encodeURIComponent)
+          .join("/");
+        verification = await fetch(`https://api.telegram.org/${requestPath}`, {
+          signal: AbortSignal.timeout(5000),
+        });
       } catch {
         throw new AtlasApiError(
           "Could not reach Telegram to verify the bot token. Check your network and try again.",
@@ -1735,6 +1754,20 @@ export class AgentService {
           `Telegram rejected this bot token (${verification.status}). Paste a fresh token from @BotFather.`,
           400
         );
+      }
+
+      let payload: { ok?: boolean; result?: { is_bot?: boolean } };
+      try {
+        payload = (await verification.json()) as typeof payload;
+      } catch {
+        throw new AtlasApiError(
+          "Telegram returned an invalid token-verification response.",
+          502
+        );
+      }
+
+      if (!(payload.ok === true && payload.result?.is_bot === true)) {
+        throw new AtlasApiError("Telegram rejected this bot token.", 400);
       }
 
       if (await telegramBotTokenUsedByAnotherWorkspace(orgId, botToken)) {
@@ -1821,6 +1854,13 @@ export class AgentService {
 
     if (!(botToken || existing.configured)) {
       throw new Error("Bot token is required.");
+    }
+
+    if (
+      botToken &&
+      !(await resolveDiscordApplicationId(botToken, { forceRefresh: true }))
+    ) {
+      throw new AtlasApiError("Discord bot token could not be validated.", 400);
     }
 
     if (
@@ -1917,6 +1957,45 @@ export class AgentService {
     }
 
     return this.getComposioSettings();
+  }
+
+  async getErrorTrackingSettings(): Promise<ErrorTrackingSettingsResponse> {
+    return loadErrorTrackingSettingsPublic();
+  }
+
+  async setErrorTrackingSettings(
+    input: UpdateErrorTrackingSettingsRequest
+  ): Promise<ErrorTrackingSettingsResponse> {
+    const dsn = input.dsn?.trim() ?? "";
+
+    if (dsn && !parseSentryDsn(dsn)) {
+      throw new AtlasApiError(
+        "That does not look like a Sentry-compatible DSN.",
+        400
+      );
+    }
+
+    await saveErrorTrackingDsn(dsn || null);
+    await refreshErrorTrackingEnabled();
+    return this.getErrorTrackingSettings();
+  }
+
+  /** Sends a test directly so a failed test never enters the crash retry queue. */
+  async sendErrorTrackingTest(): Promise<SendErrorTrackingTestResponse> {
+    const { configured } = await loadErrorTrackingSettingsPublic();
+
+    if (!configured) {
+      throw new AtlasApiError("Save a DSN first.", 400);
+    }
+
+    const delivered = await createErrorTrackingSink()(
+      buildErrorReport(new Error("Test event from Atlas"), {
+        kind: "test",
+        source: "settings",
+      })
+    );
+
+    return { delivered };
   }
 
   async getEmailSettings(): Promise<EmailSettingsResponse> {
@@ -4020,12 +4099,14 @@ export class AgentService {
   async updateProfile(
     orgId: string,
     profileId: string,
-    request: UpdateProfileRequest
+    request: UpdateProfileRequest,
+    changeMeta?: ProfileChangeMeta
   ): Promise<ProfileResponse> {
     const response = await this.profileService.updateProfile(
       orgId,
       profileId,
-      request
+      request,
+      changeMeta
     );
 
     this.invalidateProfileSessions(profileId);
@@ -4245,21 +4326,23 @@ export class AgentService {
     return response;
   }
 
-  async listSkills(): Promise<ListSkillsResponse> {
-    return this.requireSkillsService().listSkills();
+  async listSkills(orgId: string): Promise<ListSkillsResponse> {
+    return this.requireSkillsService().listSkills(orgId);
   }
 
-  async getSkill(skillId: string): Promise<SkillResponse> {
-    return this.requireSkillsService().getSkill(skillId);
+  async getSkill(orgId: string, skillId: string): Promise<SkillResponse> {
+    return this.requireSkillsService().getSkillForOrg(orgId, skillId);
   }
 
   async createSkill(
     orgId: string,
-    request: CreateSkillRequest
+    request: CreateSkillRequest,
+    options?: { allowGlobal?: boolean }
   ): Promise<SkillResponse> {
     const response = await this.requireSkillsService().createSkill(
       orgId,
-      request
+      request,
+      options
     );
     this.sessions.clear();
     return response;
@@ -4267,11 +4350,13 @@ export class AgentService {
 
   async installSkillFromGitHub(
     orgId: string,
-    request: InstallSkillRequest
+    request: InstallSkillRequest,
+    changeMeta?: ProfileChangeMeta
   ): Promise<SkillResponse> {
     const response = await this.requireSkillsService().installSkillFromGitHub(
       orgId,
-      request
+      request,
+      changeMeta
     );
     this.sessions.clear();
     return response;
@@ -4281,7 +4366,11 @@ export class AgentService {
     orgId: string,
     skillId: string,
     request: PatchSkillRequest,
-    options?: { profileId?: string }
+    options?: {
+      allowGlobalMutation?: boolean;
+      changeMeta?: ProfileChangeMeta;
+      profileId?: string;
+    }
   ): Promise<SkillResponse> {
     const response = await this.requireSkillsService().patchSkill(
       orgId,
@@ -4293,13 +4382,18 @@ export class AgentService {
     return response;
   }
 
-  async deleteSkill(skillId: string): Promise<void> {
-    await this.requireSkillsService().deleteSkill(skillId);
+  async deleteSkill(
+    orgId: string,
+    skillId: string,
+    options?: { allowGlobalMutation?: boolean }
+  ): Promise<void> {
+    await this.requireSkillsService().deleteSkill(orgId, skillId, options);
     this.sessions.clear();
   }
 
-  async syncSkills(): Promise<SyncSkillsResponse> {
-    const response = await this.requireSkillsService().syncDiscoveredSkills();
+  async syncSkills(orgId: string): Promise<SyncSkillsResponse> {
+    const response =
+      await this.requireSkillsService().syncDiscoveredSkills(orgId);
     this.sessions.clear();
     return response;
   }
@@ -4371,12 +4465,14 @@ export class AgentService {
   async uploadKnowledgeBaseDocument(
     orgId: string,
     profileId: string,
-    document: DocumentAttachment
+    document: DocumentAttachment,
+    onDuplicate?: KnowledgeBaseDuplicateAction
   ): Promise<UploadKnowledgeBaseResponse> {
     const response = await this.profileService.uploadKnowledgeBaseDocument(
       orgId,
       profileId,
-      document
+      document,
+      onDuplicate
     );
     this.invalidateProfileSessions(profileId);
     return response;
@@ -4482,7 +4578,8 @@ export class AgentService {
     orgId: string,
     profileId: string,
     key: string,
-    request: UpdateSoulFileRequest
+    request: UpdateSoulFileRequest,
+    changeMeta?: ProfileChangeMeta
   ): Promise<void> {
     if (!isWritableSoulFileKey(key)) {
       throw new Error(`Invalid soul file key: ${key}`);
@@ -4490,11 +4587,24 @@ export class AgentService {
 
     await withProfileSoulMutationLock(orgId, profileId, async () => {
       await this.requireProfile(orgId, profileId);
-      await writeSoulFile(
-        getProfileSoulDir(orgId, profileId),
-        key,
-        request.content
-      );
+      const soulDir = getProfileSoulDir(orgId, profileId);
+      const beforeValue = changeMeta
+        ? ((await loadSoulStack(soulDir)).files[key] ?? null)
+        : null;
+      await writeSoulFile(soulDir, key, request.content);
+
+      const field = soulFieldFromKey(key);
+      if (changeMeta && field) {
+        await new ProfileChangeHistoryService(this.db).recordBestEffort({
+          actorUserId: changeMeta.actorUserId,
+          afterValue: request.content,
+          beforeValue,
+          field,
+          orgId,
+          profileId,
+          source: changeMeta.source,
+        });
+      }
     });
     this.invalidateProfileSessions(profileId);
   }

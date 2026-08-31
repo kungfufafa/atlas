@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import type { ChatMessage, SessionMessageMeta } from "@atlas/core/contract";
 import { extractTurnArtifacts } from "./chat-artifacts";
-import { chatMessagesToListItems } from "./chat-history";
+import {
+  chatMessagesToListItems,
+  formatSessionRelativeTime,
+  formatSessionTimestamp,
+} from "./chat-history";
 
 const tinyPngBase64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
@@ -455,5 +459,21 @@ describe("chatMessagesToListItems", () => {
     const items = chatMessagesToListItems(messages);
 
     expect(items.filter((item) => item.tool === "web_search")).toHaveLength(0);
+  });
+});
+
+describe("formatSessionTimestamp", () => {
+  test("formats valid timestamps", () => {
+    const formatted = formatSessionTimestamp("2026-06-14T10:00:00.000Z");
+    expect(formatted).not.toBe("Unknown time");
+    expect(formatted.length).toBeGreaterThan(0);
+  });
+
+  test("does not echo invalid date input", () => {
+    expect(formatSessionTimestamp("not-a-date")).toBe("Unknown time");
+    expect(formatSessionTimestamp("<img src=x onerror=alert(1)>")).toBe(
+      "Unknown time"
+    );
+    expect(formatSessionRelativeTime("totally-bogus")).toBe("Unknown time");
   });
 });

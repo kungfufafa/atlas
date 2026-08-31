@@ -515,7 +515,7 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
     }
 
     const valid = await authService.verifyPassword(
-      body.password,
+      body.password?.trim() ?? "",
       user.passwordHash
     );
     if (!valid) {

@@ -11,6 +11,7 @@ import {
   createWhatsAppOutboundAdapter,
   resolveWhatsAppOutboundListenPort,
   resolveWhatsAppOutboundPort,
+  WHATSAPP_OUTBOUND_TOKEN_HEADER,
 } from "./whatsapp-outbound";
 
 describe("WhatsApp outbound port resolution", () => {
@@ -51,20 +52,25 @@ describe("createWhatsAppOutboundAdapter multi-workspace isolation", () => {
     await useTempHome(async () => {
       await writePrivateTextFile(
         getWhatsAppConfigPath("workspace-a"),
-        "profile_id=default\nphone_number=+628111\npaired_jid=111@s.whatsapp.net\noutbound_port=5551\n",
+        "profile_id=default\nphone_number=+628111\npaired_jid=111@s.whatsapp.net\noutbound_port=5551\noutbound_token=alpha-secret\n",
         { ensureDir: getWhatsAppConfigDir("workspace-a") }
       );
       await writePrivateTextFile(
         getWhatsAppConfigPath("workspace-b"),
-        "profile_id=default\nphone_number=+628222\npaired_jid=222@s.whatsapp.net\noutbound_port=5552\n",
+        "profile_id=default\nphone_number=+628222\npaired_jid=222@s.whatsapp.net\noutbound_port=5552\noutbound_token=beta-secret\n",
         { ensureDir: getWhatsAppConfigDir("workspace-b") }
       );
 
-      const calls: Array<{ url: string; body: Record<string, unknown> }> = [];
+      const calls: Array<{
+        body: Record<string, unknown>;
+        headers: Headers;
+        url: string;
+      }> = [];
       const adapter = createWhatsAppOutboundAdapter({
         fetchImpl: async (input, init) => {
           calls.push({
             body: JSON.parse(String(init?.body)),
+            headers: new Headers(init?.headers),
             url: String(input),
           });
           return new Response("ok", { status: 200 });
@@ -81,6 +87,9 @@ describe("createWhatsAppOutboundAdapter multi-workspace isolation", () => {
         text: "hello from A",
         to: "111@s.whatsapp.net",
       });
+      expect(calls[0]?.headers.get(WHATSAPP_OUTBOUND_TOKEN_HEADER)).toBe(
+        "alpha-secret"
+      );
 
       const resToNumber = await adapter.send({
         orgId: "workspace-a",
@@ -110,6 +119,9 @@ describe("createWhatsAppOutboundAdapter multi-workspace isolation", () => {
         text: "hello from B",
         to: "222@s.whatsapp.net",
       });
+      expect(calls[2]?.headers.get(WHATSAPP_OUTBOUND_TOKEN_HEADER)).toBe(
+        "beta-secret"
+      );
 
       const resUnconfigured = await adapter.send({
         orgId: "workspace-c",

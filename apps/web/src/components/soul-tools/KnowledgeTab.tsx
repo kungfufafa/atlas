@@ -1,6 +1,13 @@
 import type { KnowledgeBaseDocument } from "@atlas/core/contract";
 import { useEffect, useRef, useState } from "react";
 import { KnowledgeTabPanel } from "@/components/soul-tools/knowledge-tab-panel";
+import {
+  formatKnowledgeBaseDuplicatePrompt,
+  type KnowledgeBaseDuplicateContext,
+  type KnowledgeBaseDuplicateDecision,
+  type PreparedKnowledgeBaseUpload,
+  uploadPreparedKnowledgeBaseDocuments,
+} from "@/components/soul-tools/knowledge-upload.shared";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,9 +30,21 @@ import {
   isKnowledgeBaseFile,
 } from "@/lib/knowledge-base-files";
 
+type DuplicatePrompt = KnowledgeBaseDuplicateContext & {
+  profileId: string;
+};
+
+type DuplicateResolver = {
+  profileId: string;
+  resolve: (decision: KnowledgeBaseDuplicateDecision) => void;
+};
+
 export function KnowledgeTab({ profileId }: { profileId: string | null }) {
   const { data: profiles = [], error: profilesError } = useProfilesQuery();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const duplicateResolverRef = useRef<DuplicateResolver | null>(null);
+  const profileIdRef = useRef(profileId);
+  profileIdRef.current = profileId;
   const {
     data: knowledgeBase = null,
     isLoading: knowledgeLoading,
@@ -36,6 +55,8 @@ export function KnowledgeTab({ profileId }: { profileId: string | null }) {
   const [error, setError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] =
     useState<KnowledgeBaseDocument | null>(null);
+  const [duplicatePrompt, setDuplicatePrompt] =
+    useState<DuplicatePrompt | null>(null);
 
   const selectedProfile =
     profiles.find((profile) => profile.id === profileId) ?? null;
@@ -45,7 +66,12 @@ export function KnowledgeTab({ profileId }: { profileId: string | null }) {
     (document) => document.status === "ready"
   ).length;
   const loading = knowledgeLoading && !knowledgeBase;
-  const busy = uploadMutation.isPending || deleteMutation.isPending;
+  const activeDuplicatePrompt =
+    duplicatePrompt?.profileId === profileId ? duplicatePrompt : null;
+  const busy =
+    uploadMutation.isPending ||
+    deleteMutation.isPending ||
+    activeDuplicatePrompt !== null;
 
   useEffect(() => {
     const queryError = profilesError ?? knowledgeError;
@@ -54,38 +80,87 @@ export function KnowledgeTab({ profileId }: { profileId: string | null }) {
     }
   }, [profilesError, knowledgeError]);
 
+  useEffect(
+    () => () => {
+      const pending = duplicateResolverRef.current;
+      if (pending?.profileId === profileId) {
+        duplicateResolverRef.current = null;
+        setDuplicatePrompt((current) =>
+          current?.profileId === profileId ? null : current
+        );
+        pending.resolve("cancel");
+      }
+    },
+    [profileId]
+  );
+
+  function askDuplicateDecision(
+    context: KnowledgeBaseDuplicateContext,
+    uploadProfileId: string
+  ): Promise<KnowledgeBaseDuplicateDecision> {
+    if (profileIdRef.current !== uploadProfileId) {
+      return Promise.resolve("cancel");
+    }
+
+    return new Promise((resolve) => {
+      duplicateResolverRef.current?.resolve("cancel");
+      duplicateResolverRef.current = { profileId: uploadProfileId, resolve };
+      setDuplicatePrompt({ ...context, profileId: uploadProfileId });
+    });
+  }
+
+  function settleDuplicatePrompt(
+    decision: KnowledgeBaseDuplicateDecision
+  ): void {
+    const pending = duplicateResolverRef.current;
+    duplicateResolverRef.current = null;
+    setDuplicatePrompt(null);
+    pending?.resolve(decision);
+  }
+
   async function handleUpload(files: FileList | null) {
     if (!(profileId && files?.length)) {
       return;
     }
 
     setError(null);
+    const uploadProfileId = profileId;
 
-    await Promise.all(
-      Array.from(files).map(async (file) => {
+    try {
+      const prepared: PreparedKnowledgeBaseUpload[] = [];
+      for (const file of Array.from(files)) {
         if (!isKnowledgeBaseFile(file)) {
           setError(
             `Unsupported file type: ${file.name}. Allowed: txt, md, csv, pdf.`
           );
-          return;
+          continue;
         }
 
-        try {
-          const document = await fileToDocumentAttachment(file);
-          if (!document) {
-            setError(`Failed to read file: ${file.name}`);
-            return;
-          }
-
-          await uploadMutation.mutateAsync({ document, profileId });
-        } catch (err) {
-          setError(formatError(err));
+        const document = await fileToDocumentAttachment(file);
+        if (!document) {
+          setError(`Failed to read file: ${file.name}`);
+          continue;
         }
-      })
-    );
+        prepared.push({ document, filename: file.name });
+      }
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      await uploadPreparedKnowledgeBaseDocuments(prepared, {
+        decideDuplicate: (context) =>
+          askDuplicateDecision(context, uploadProfileId),
+        isCancelled: () => profileIdRef.current !== uploadProfileId,
+        upload: (item, onDuplicate) =>
+          uploadMutation.mutateAsync({
+            document: item.document,
+            onDuplicate,
+            profileId: uploadProfileId,
+          }),
+      });
+    } catch (err) {
+      setError(formatError(err));
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   }
 
@@ -172,6 +247,42 @@ export function KnowledgeTab({ profileId }: { profileId: string | null }) {
             >
               {deleteMutation.isPending ? <Spinner className="size-4" /> : null}
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        onOpenChange={(open) => {
+          if (!open && activeDuplicatePrompt) {
+            settleDuplicatePrompt("skip");
+          }
+        }}
+        open={activeDuplicatePrompt !== null}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Document already exists</DialogTitle>
+            <DialogDescription>
+              {activeDuplicatePrompt
+                ? formatKnowledgeBaseDuplicatePrompt(activeDuplicatePrompt)
+                : null}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              onClick={() => settleDuplicatePrompt("skip")}
+              type="button"
+              variant="outline"
+            >
+              Skip
+            </Button>
+            <Button
+              onClick={() => settleDuplicatePrompt("replace")}
+              type="button"
+              variant="destructive"
+            >
+              Replace
             </Button>
           </DialogFooter>
         </DialogContent>

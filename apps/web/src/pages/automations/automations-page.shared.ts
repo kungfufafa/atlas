@@ -6,6 +6,10 @@ import type {
 
 export const sectionClass = "rounded-md border border-border bg-card";
 
+/** Keep tab panels in the flex height chain so tall run output scrolls. */
+export const agentWorkPanelClassName =
+  "flex min-h-0 flex-1 flex-col overflow-hidden";
+
 export function formatTrigger(trigger: AutomationTrigger): string {
   if (trigger.type === "manual") {
     return "Manual trigger";

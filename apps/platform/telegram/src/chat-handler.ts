@@ -139,15 +139,23 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       : null;
 
     if (groupDecision && !groupDecision.shouldHandle) {
-      console.log(
-        [
-          "Ignored Telegram group message",
-          `reason=${groupDecision.reason}`,
-          `bot=@${botInfo?.username ?? "unknown"}`,
+      const parts = [
+        "Ignored Telegram group message",
+        `reason=${groupDecision.reason}`,
+        `bot=@${botInfo?.username ?? "unknown"}`,
+        `messageId=${ctx.message?.message_id ?? "unknown"}`,
+        `textBytes=${Buffer.byteLength(text ?? "", "utf8")}`,
+      ];
+      if (process.env.ATLAS_CH_DEBUG === "1") {
+        parts.splice(
+          3,
+          0,
           `botId=${botInfo?.id ?? "unknown"}`,
-          `text=${JSON.stringify(text ?? "")}`,
-        ].join(" ")
-      );
+          `chatId=${chatId}`,
+          `userId=${userId}`
+        );
+      }
+      console.log(parts.join(" "));
       return;
     }
 
@@ -600,9 +608,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     let reply = "";
     const streamedArtifacts = new Map<string, ChannelArtifactRef>();
 
-    typingLoop.start();
-
     try {
+      typingLoop.start();
+
       reply = await session.sendStream(
         input,
         {
@@ -841,15 +849,12 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           }
         : isTopic || workspaceLocked
           ? null
-          : resolveProfileInScopes(
-              await listProfileScopes(orgs, currentOrgId),
-              arg
-            );
+          : resolveProfileInScopes(await listProfileScopes(orgs), arg);
 
     if (!resolved) {
       if (isTopic && currentOrgId && !workspaceLocked) {
         const crossOrgMatch = resolveProfileInScopes(
-          await listProfileScopes(orgs, currentOrgId),
+          await listProfileScopes(orgs),
           arg
         );
 
@@ -905,29 +910,23 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   }
 
   async function listProfileScopes(
-    orgs: Array<{ id: string; name: string }>,
-    restoreOrgId?: string
+    orgs: Array<{ id: string; name: string }>
   ): Promise<ProfileScope[]> {
     const scopes: ProfileScope[] = [];
 
     for (const org of orgs) {
-      client.setOrgId(org.id);
-      const profiles = await listSelectableProfiles();
+      const profiles = await listSelectableProfiles(org.id);
 
       if (profiles.length > 0) {
         scopes.push({ orgId: org.id, orgName: org.name, profiles });
       }
     }
 
-    if (restoreOrgId) {
-      client.setOrgId(restoreOrgId);
-    }
-
     return scopes;
   }
 
-  async function listSelectableProfiles() {
-    const { profiles } = await client.listProfiles();
+  async function listSelectableProfiles(orgId?: string) {
+    const { profiles } = await client.listProfiles(orgId);
     return filterProfilesForChatAccess(profiles, { excludeSuperAgent: true });
   }
 
@@ -970,10 +969,16 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const existing = sessionStore.get(chatId);
 
     if (existing) {
+      const hot = sessionStore.getHotSession<RemoteChatSession>(chatId);
+      if (hot) {
+        return hot;
+      }
+
       const session = client.createChatSession(existing.sessionId, "telegram");
 
       try {
         await session.getMessages();
+        sessionStore.setHotSession(chatId, session);
         return session;
       } catch {
         // Session missing on server; create a new one below
@@ -1001,6 +1006,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       sessionId: session.id,
       updatedAt: new Date().toISOString(),
     });
+    sessionStore.setHotSession(chatId, session);
     await sessionStore.save();
 
     return session;
@@ -1102,7 +1108,7 @@ export function resetChatLocksForTests(): void {
   rateLimiter.reset();
 }
 
-async function withChatLock(
+export async function withChatLock(
   chatId: string,
   fn: () => Promise<void>
 ): Promise<void> {
@@ -1111,7 +1117,10 @@ async function withChatLock(
   const current = new Promise<void>((resolve) => {
     release = resolve;
   });
-  const chain = previous.then(() => current);
+  const chain = previous.then(
+    () => current,
+    () => current
+  );
   chatLocks.set(chatId, chain);
 
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -1134,4 +1143,11 @@ async function withChatLock(
       chatLocks.delete(chatId);
     }
   }
+}
+
+export function seedChatLockForTests(
+  chatId: string,
+  promise: Promise<void>
+): void {
+  chatLocks.set(chatId, promise);
 }

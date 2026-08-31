@@ -706,6 +706,61 @@ describe("OrgService", () => {
     ]);
   });
 
+  test("validates member names and removal user ids", async () => {
+    const { orgService } = createOrgService();
+    const created = await orgService.createOrganization({
+      name: "Acme",
+      slug: "acme-member-validation",
+    });
+
+    for (const name of ["   ", "Bad\r\nName", "a".repeat(121)]) {
+      await expect(
+        orgService.addMember({
+          email: `member-${name.length}@acme.com`,
+          name,
+          orgId: created.organization.id,
+          phone: "",
+          role: "member",
+        })
+      ).rejects.toMatchObject({ status: 400 });
+    }
+
+    await expect(
+      orgService.removeMember(created.organization.id, "../not-a-user")
+    ).rejects.toMatchObject({ message: "Invalid user id.", status: 400 });
+  });
+
+  test("rejects member writes after an organization is archived", async () => {
+    const { orgService, databaseAdapter } = createOrgService();
+    const created = await orgService.createOrganization({
+      name: "Archived",
+      slug: "archived-member-writes",
+    });
+    const now = new Date().toISOString();
+    await databaseAdapter.upsertOrganization({
+      ...(await databaseAdapter.getOrganizationById(created.organization.id))!,
+      archivedAt: now,
+      updatedAt: now,
+    });
+
+    await expect(
+      orgService.addMember({
+        email: "blocked@acme.com",
+        name: "Blocked",
+        orgId: created.organization.id,
+        phone: "",
+        role: "member",
+      })
+    ).rejects.toMatchObject({ status: 404 });
+    await expect(
+      orgService.updateMember(
+        created.organization.id,
+        "user_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        { role: "viewer" }
+      )
+    ).rejects.toMatchObject({ status: 404 });
+  });
+
   test("protects the last org admin from removal or demotion", async () => {
     const { orgService } = createOrgService();
     const created = await orgService.createOrganization({

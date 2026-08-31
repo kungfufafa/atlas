@@ -12,7 +12,6 @@ import {
   readArtifactFile,
   readArtifactShareSnapshot,
   resolveArtifactMimeType,
-  resolveWebPublicUrl,
   writeArtifactShareSnapshot,
 } from "@atlas/core";
 import type {
@@ -34,21 +33,10 @@ export function resolveArtifactShareBaseUrl(options: {
   clientOrigin?: string;
   request?: Request;
 }): string {
-  const resolved = resolveComposioCallbackBaseUrl({
+  return resolveComposioCallbackBaseUrl({
     clientOrigin: options.clientOrigin,
     request: options.request,
   });
-
-  if (!isLoopbackComposioCallbackBaseUrl(resolved)) {
-    return resolved;
-  }
-
-  const configured = resolveWebPublicUrl();
-  if (configured && !isLoopbackComposioCallbackBaseUrl(configured)) {
-    return configured;
-  }
-
-  return resolved;
 }
 
 function toPublicSharePreview(

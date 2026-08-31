@@ -1,6 +1,13 @@
+import { createHash } from "node:crypto";
 import { readdir, rename, rm } from "node:fs/promises";
 import { join } from "node:path";
-import type { DocumentAttachment, KnowledgeBaseDocument } from "../contract";
+import type {
+  DocumentAttachment,
+  KnowledgeBaseDocument,
+  KnowledgeBaseDuplicateAction,
+  KnowledgeBaseDuplicateMatch,
+  KnowledgeBaseUploadOutcome,
+} from "../contract";
 import {
   ensureDir,
   pathExists,
@@ -12,6 +19,7 @@ import {
 } from "../fs";
 import { createId } from "../ids";
 import { MAX_DOCUMENT_BYTES } from "../message-content";
+import { withProfileSoulMutationLock } from "../soul/mutation-lock";
 import { getProfileSoulDir } from "../soul/resolve";
 import {
   buildExtractedTextHeader,
@@ -28,6 +36,51 @@ import {
 
 interface KnowledgeBaseManifest {
   documents: KnowledgeBaseDocument[];
+}
+
+export class KnowledgeBaseDuplicateError extends Error {
+  readonly existing: KnowledgeBaseDocument;
+  readonly match: KnowledgeBaseDuplicateMatch;
+
+  constructor(
+    existing: KnowledgeBaseDocument,
+    match: KnowledgeBaseDuplicateMatch
+  ) {
+    super(
+      `Duplicate knowledge base document: ${existing.filename} (matched by ${match === "content_hash" ? "content hash" : "name and size"}).`
+    );
+    this.name = "KnowledgeBaseDuplicateError";
+    this.existing = existing;
+    this.match = match;
+  }
+}
+
+export interface UploadKnowledgeBaseDocumentResult {
+  document: KnowledgeBaseDocument;
+  outcome: KnowledgeBaseUploadOutcome;
+}
+
+function findDuplicateDocument(
+  documents: KnowledgeBaseDocument[],
+  candidate: { contentHash: string; filename: string; sizeBytes: number }
+): {
+  document: KnowledgeBaseDocument;
+  match: KnowledgeBaseDuplicateMatch;
+} | null {
+  const byHash = documents.find(
+    (document) => document.contentHash === candidate.contentHash
+  );
+  if (byHash) {
+    return { document: byHash, match: "content_hash" };
+  }
+
+  const byNameSize = documents.find(
+    (document) =>
+      document.contentHash === undefined &&
+      document.filename === candidate.filename &&
+      document.sizeBytes === candidate.sizeBytes
+  );
+  return byNameSize ? { document: byNameSize, match: "name_size" } : null;
 }
 
 async function migrateLegacyKnowledgeBaseDir(
@@ -182,11 +235,36 @@ export async function listKnowledgeBaseDocuments(
   );
 }
 
-export async function uploadKnowledgeBaseDocument(
+export function uploadKnowledgeBaseDocument(
   orgId: string,
   profileId: string,
-  attachment: DocumentAttachment
-): Promise<KnowledgeBaseDocument> {
+  attachment: DocumentAttachment,
+  onDuplicate: KnowledgeBaseDuplicateAction = "error"
+): Promise<UploadKnowledgeBaseDocumentResult> {
+  return withProfileSoulMutationLock(orgId, profileId, () =>
+    uploadKnowledgeBaseDocumentUnlocked(
+      orgId,
+      profileId,
+      attachment,
+      onDuplicate
+    )
+  );
+}
+
+async function uploadKnowledgeBaseDocumentUnlocked(
+  orgId: string,
+  profileId: string,
+  attachment: DocumentAttachment,
+  onDuplicate: KnowledgeBaseDuplicateAction
+): Promise<UploadKnowledgeBaseDocumentResult> {
+  if (
+    onDuplicate !== "error" &&
+    onDuplicate !== "skip" &&
+    onDuplicate !== "replace"
+  ) {
+    throw new Error("Invalid knowledge base duplicate action.");
+  }
+
   const filename = attachment.filename.trim();
 
   if (!filename) {
@@ -217,6 +295,31 @@ export async function uploadKnowledgeBaseDocument(
   }
 
   await ensureKnowledgeBaseDirs(orgId, profileId);
+
+  const contentHash = createHash("sha256").update(bytes).digest("hex");
+  let outcome: KnowledgeBaseUploadOutcome = "created";
+  let replacedDocument: KnowledgeBaseDocument | null = null;
+  const existingManifest = await readManifest(orgId, profileId);
+  const duplicate = findDuplicateDocument(existingManifest.documents, {
+    contentHash,
+    filename,
+    sizeBytes: bytes.length,
+  });
+
+  if (duplicate) {
+    if (onDuplicate === "skip") {
+      return { document: duplicate.document, outcome: "skipped" };
+    }
+    if (onDuplicate === "error") {
+      throw new KnowledgeBaseDuplicateError(
+        duplicate.document,
+        duplicate.match
+      );
+    }
+
+    replacedDocument = duplicate.document;
+    outcome = "replaced";
+  }
 
   const documentId = createId("kb");
   const uploadedAt = new Date().toISOString();
@@ -258,6 +361,7 @@ export async function uploadKnowledgeBaseDocument(
   }
 
   const document: KnowledgeBaseDocument = {
+    contentHash,
     filename,
     id: documentId,
     mediaType,
@@ -268,13 +372,49 @@ export async function uploadKnowledgeBaseDocument(
   };
 
   const manifest = await readManifest(orgId, profileId);
-  manifest.documents.push(document);
+  if (replacedDocument) {
+    const replacementIndex = manifest.documents.findIndex(
+      (entry) => entry.id === replacedDocument.id
+    );
+    if (replacementIndex < 0) {
+      throw new Error("Failed to replace existing knowledge base document.");
+    }
+    manifest.documents.splice(replacementIndex, 1, document);
+  } else {
+    manifest.documents.push(document);
+  }
   await writeManifest(orgId, profileId, manifest);
 
-  return document;
+  if (replacedDocument) {
+    const oldStoredPath = getKnowledgeBaseStoredDocumentPath(
+      orgId,
+      profileId,
+      replacedDocument.id,
+      replacedDocument.filename
+    );
+    const oldExtractedPath = getKnowledgeBaseExtractedPath(
+      orgId,
+      profileId,
+      replacedDocument.id
+    );
+    await removeFile(oldStoredPath).catch(() => undefined);
+    await removeFile(oldExtractedPath).catch(() => undefined);
+  }
+
+  return { document, outcome };
 }
 
-export async function deleteKnowledgeBaseDocument(
+export function deleteKnowledgeBaseDocument(
+  orgId: string,
+  profileId: string,
+  documentId: string
+): Promise<boolean> {
+  return withProfileSoulMutationLock(orgId, profileId, () =>
+    deleteKnowledgeBaseDocumentUnlocked(orgId, profileId, documentId)
+  );
+}
+
+async function deleteKnowledgeBaseDocumentUnlocked(
   orgId: string,
   profileId: string,
   documentId: string

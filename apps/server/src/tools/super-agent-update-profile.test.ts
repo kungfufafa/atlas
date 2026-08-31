@@ -43,6 +43,7 @@ function responseFor(
 function buildHarness(options?: { now?: () => number; ttl?: number }) {
   const calls: Array<{
     actor: { userId: string };
+    changeMeta?: { actorUserId?: string | null; source: string };
     orgId: string;
     profileId: string;
     request: UpdateProfileRequest;
@@ -58,9 +59,10 @@ function buildHarness(options?: { now?: () => number; ttl?: number }) {
       orgId: string,
       profileId: string,
       request: UpdateProfileRequest,
-      actor: { userId: string }
+      actor: { userId: string },
+      changeMeta?: { actorUserId?: string | null; source: string }
     ): Promise<ProfileResponse> {
-      calls.push({ actor, orgId, profileId, request });
+      calls.push({ actor, changeMeta, orgId, profileId, request });
       return responseFor(profileId, request);
     },
   } as ProfileService;
@@ -109,6 +111,10 @@ describe("Super Agent update_profile confirmation", () => {
       profile: { id: PROFILE_ID, name: "Customer Support" },
     });
     expect(calls).toHaveLength(1);
+    expect(calls[0]?.changeMeta).toEqual({
+      actorUserId: USER_ID,
+      source: "super_bot",
+    });
     expect(invalidatedProfileIds).toEqual([PROFILE_ID]);
 
     await expect(tool.run(draft, context())).resolves.toMatchObject({
@@ -210,6 +216,7 @@ describe("Super Agent update_profile confirmation", () => {
 
     expect(calls[0]).toEqual({
       actor: { userId: USER_ID },
+      changeMeta: { actorUserId: USER_ID, source: "super_bot" },
       orgId: ORG_ID,
       profileId: PROFILE_ID,
       request: {

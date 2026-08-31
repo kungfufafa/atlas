@@ -198,6 +198,10 @@ function ChatMessageListSession({
     stickIntentRef.current = atBottom;
   }, []);
 
+  const handleScrollerRef = useCallback((ref: HTMLElement | Window | null) => {
+    scrollerRef.current = ref instanceof HTMLElement ? ref : null;
+  }, []);
+
   // followOutput is Virtuoso's documented append follower. It scrolls with
   // align-end semantics, so skip it while the list still fits the viewport.
   const handleFollowOutput = useCallback((_atBottom: boolean) => {
@@ -332,9 +336,7 @@ function ChatMessageListSession({
           initialTopMostItemIndex={0}
           itemContent={renderTurn}
           ref={virtuosoRef}
-          scrollerRef={(ref) => {
-            scrollerRef.current = ref instanceof HTMLElement ? ref : null;
-          }}
+          scrollerRef={handleScrollerRef}
           totalListHeightChanged={handleTotalListHeightChanged}
         />
         <ConversationScrollButton />
@@ -391,7 +393,13 @@ function AssistantTurn({
   const anchorMessage = findAssistantTurnAnchor(turnMessages);
   const turnComplete = isAssistantTurnComplete(turnMessages);
   const showArtifacts = artifacts.length > 0;
-  const showActions = !streamActive && turnComplete && anchorMessage != null;
+  const showActions =
+    !streamActive &&
+    turnComplete &&
+    anchorMessage != null &&
+    !anchorMessage.failed;
+  const retryDisabled =
+    actionsDisabled || branchingMessageId === anchorMessage?.id;
 
   const sources = mergeTurnSources(
     lastAssistantMsg?.sources,
@@ -433,7 +441,9 @@ function AssistantTurn({
               : `text:${segment.message.id}`
           }
           modelLabel={modelLabel}
+          onRetryMessage={onRetryMessage}
           profileId={profileId}
+          retryDisabled={retryDisabled}
           segment={segment}
           showThinking={showThinking}
         />
@@ -578,6 +588,7 @@ function RelatedQuestions({
 function isBranchableAssistantMessage(message: ChatListItem): boolean {
   return (
     message.role === "assistant" &&
+    !message.failed &&
     !message.streaming &&
     typeof message.historyIndex === "number" &&
     Boolean(message.createdAt)

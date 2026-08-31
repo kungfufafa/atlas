@@ -27,15 +27,15 @@ installErrorHandlers("worker:discord");
 await installErrorTrackingSink();
 
 let spawnedChild: Bun.Subprocess | null = null;
-let clientStop: (() => void) | null = null;
+let clientStop: (() => Promise<void>) | null = null;
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
-registerCleanupHandlers(() => {
-  clientStop?.();
+registerCleanupHandlers(async () => {
+  await clientStop?.();
   if (heartbeatTimer) {
     clearInterval(heartbeatTimer);
   }
-  void clearDiscordWorkerHeartbeat();
+  await clearDiscordWorkerHeartbeat();
   stopSpawnedServer(spawnedChild);
 });
 
@@ -121,8 +121,8 @@ try {
   );
   console.log(`Bot: ${discord.user.tag}`);
 
-  clientStop = () => {
-    void discord.destroy();
+  clientStop = async () => {
+    await discord.destroy();
   };
 
   await writeDiscordWorkerHeartbeat(
@@ -140,15 +140,30 @@ try {
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   console.error(message);
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
+  }
+  try {
+    await clientStop?.();
+  } catch {
+    // Destroy is best-effort during fatal startup cleanup.
+  }
+  await clearDiscordWorkerHeartbeat();
   stopSpawnedServer(spawnedChild);
   process.exit(1);
 }
 
-function registerCleanupHandlers(cleanup: () => void): void {
+function registerCleanupHandlers(cleanup: () => void | Promise<void>): void {
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
     process.on(signal, () => {
-      cleanup();
-      process.exit(0);
+      void (async () => {
+        try {
+          await cleanup();
+        } finally {
+          process.exit(0);
+        }
+      })();
     });
   }
 }

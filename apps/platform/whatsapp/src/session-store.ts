@@ -19,12 +19,14 @@ type ChatSessionMap = Record<string, ChatSessionRecord>;
 export class SessionStore {
   private readonly path: string;
   private map: ChatSessionMap = {};
+  private readonly hotSessions = new Map<string, unknown>();
 
   constructor(path = getChatSessionsPath()) {
     this.path = path;
   }
 
   async load(): Promise<void> {
+    this.hotSessions.clear();
     const raw = await readTextOrNull(this.path);
 
     if (raw === null) {
@@ -53,16 +55,35 @@ export class SessionStore {
 
   set(jid: string, record: ChatSessionRecord): void {
     const key = normalizeWhatsAppUserJid(jid);
+    const previous = this.map[key] ?? this.map[jid];
     if (key !== jid) {
       delete this.map[jid];
     }
     this.map[key] = record;
+    if (previous && previous.sessionId !== record.sessionId) {
+      this.hotSessions.delete(key);
+      this.hotSessions.delete(jid);
+    }
   }
 
   delete(jid: string): void {
     const key = normalizeWhatsAppUserJid(jid);
     delete this.map[key];
     delete this.map[jid];
+    this.hotSessions.delete(key);
+    this.hotSessions.delete(jid);
+  }
+
+  getHotSession<T>(jid: string): T | undefined {
+    const key = normalizeWhatsAppUserJid(jid);
+    return (this.hotSessions.get(key) ?? this.hotSessions.get(jid)) as
+      | T
+      | undefined;
+  }
+
+  setHotSession(jid: string, session: unknown): void {
+    const key = normalizeWhatsAppUserJid(jid);
+    this.hotSessions.set(key, session);
   }
 
   getArtifactShareUrls(jid: string): Record<string, string> {

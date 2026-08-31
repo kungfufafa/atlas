@@ -567,6 +567,7 @@ describe("profile service knowledge base", () => {
     );
 
     expect(uploaded.document.status).toBe("ready");
+    expect(uploaded.outcome).toBe("created");
     expect(uploaded.profileId).toBe(profileId);
 
     const listed = await service.listKnowledgeBase(ORG_ID, profileId);
@@ -582,6 +583,48 @@ describe("profile service knowledge base", () => {
 
     const afterDelete = await service.listKnowledgeBase(ORG_ID, profileId);
     expect(afterDelete.documents).toHaveLength(0);
+  });
+
+  test("maps duplicate uploads to 409 and supports replacement", async () => {
+    tempConfigDir = await mkdtemp(path.join(os.tmpdir(), "atlas-profile-kb-"));
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
+
+    const service = new ProfileService(createInMemoryDatabaseAdapter());
+    const created = await service.createProfile(ORG_ID, { name: "KB Bot" });
+    const attachment = {
+      data: Buffer.from("project fact", "utf8").toString("base64"),
+      filename: "notes.txt",
+      mediaType: "text/plain",
+    };
+    const first = await service.uploadKnowledgeBaseDocument(
+      ORG_ID,
+      created.profile.id,
+      attachment
+    );
+
+    await expect(
+      service.uploadKnowledgeBaseDocument(
+        ORG_ID,
+        created.profile.id,
+        attachment
+      )
+    ).rejects.toMatchObject({
+      knowledgeBaseDuplicate: {
+        existingDocumentId: first.document.id,
+        existingFilename: "notes.txt",
+        match: "content_hash",
+      },
+      status: 409,
+    });
+
+    const replaced = await service.uploadKnowledgeBaseDocument(
+      ORG_ID,
+      created.profile.id,
+      attachment,
+      "replace"
+    );
+    expect(replaced.outcome).toBe("replaced");
+    expect(replaced.document.id).not.toBe(first.document.id);
   });
 
   test("readKnowledgeBaseDocument returns preview text and download bytes", async () => {

@@ -7,7 +7,7 @@ import { createRoute, z } from "@hono/zod-openapi";
 import type { SkillCuratorService } from "../../services/skill-curator-service";
 import type { ServerOptions } from "../context";
 import { requireOrgAdminFromContext } from "../org-guards";
-import { json } from "../shared";
+import { json, readOptionalJson } from "../shared";
 import type { HonoApp } from "../types";
 
 const orgParams = z.object({
@@ -85,9 +85,9 @@ export function registerSkillCuratorRoutes(
   app.post("/v1/orgs/:orgId/skill-curator/consolidate", async (c) => {
     const auth = requireOrgAdminFromContext(c);
     const orgId = resolveOrgId(c.req.param("orgId"), auth.activeOrgId ?? "");
-    const body = (await c.req.json().catch(() => ({}))) as {
+    const body = await readOptionalJson<{
       profileId?: unknown;
-    };
+    }>(c.req.raw, {});
     if (body.profileId !== undefined && typeof body.profileId !== "string") {
       throw new AtlasApiError("profileId must be a string.", 400);
     }

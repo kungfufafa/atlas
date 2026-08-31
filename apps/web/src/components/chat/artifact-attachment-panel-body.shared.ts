@@ -41,7 +41,7 @@ export function artifactPanelBodyClassName({
   }
 
   if (isMarkdown) {
-    return "overflow-y-auto px-8 py-10";
+    return "artifact-preview-panel overflow-y-auto px-8 py-10";
   }
 
   return "flex flex-col overflow-hidden";

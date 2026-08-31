@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { createInMemoryDatabaseAdapter } from "@atlas/db";
+import type { ProfileChangeMeta } from "../../services/profile-change-history";
 import { SkillsService } from "../../services/skills-service";
 import { setupTestConfigDir } from "../../test-config-dir";
 import { createMinimalHonoApp } from "../test-app-helpers";
@@ -29,10 +30,15 @@ function createApp() {
   return {
     ...createMinimalHonoApp({
       agent: {
-        installSkillFromGitHub: (orgId: string, request: unknown) =>
+        installSkillFromGitHub: (
+          orgId: string,
+          request: unknown,
+          changeMeta?: ProfileChangeMeta
+        ) =>
           skillsService.installSkillFromGitHub(
             orgId,
-            request as { profileId: string; url: string }
+            request as { profileId: string; url: string },
+            changeMeta
           ),
         listProfiles: async () => ({ profiles: [] }),
       },
@@ -100,6 +106,16 @@ describe("POST /v1/skills/install", () => {
 
     const assigned = await databaseAdapter.listSkillsForProfile(profileId);
     expect(assigned.some((skill) => skill.id === body.skill.id)).toBe(true);
+    const admin = await databaseAdapter.getUserByEmail("admin@org.com");
+    expect(
+      await databaseAdapter.listProfileChangeEvents(orgId, profileId)
+    ).toEqual([
+      expect.objectContaining({
+        actorUserId: admin?.id,
+        field: "skills",
+        source: "dashboard",
+      }),
+    ]);
   });
 
   test("invalid frontmatter returns 400 and writes no skill", async () => {

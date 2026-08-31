@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { getUserConfigDir, saveUserConfig } from "@atlas/core";
+import { AtlasApiError, getUserConfigDir, saveUserConfig } from "@atlas/core";
 import { createClient } from "./index";
 
 test("chat stream request includes cookie CSRF protection", async () => {
@@ -159,6 +159,126 @@ test("clients send org context on authenticated requests", async () => {
   const headers = new Headers(fetchCalls[0]!.init?.headers);
   expect(headers.get("Authorization")).toBe("Bearer local-auth-token");
   expect(headers.get("X-Org-Id")).toBe("org_test");
+});
+
+test("listProfiles scopes an individual request without mutating the client", async () => {
+  const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
+    [];
+  const client = createClient({
+    authToken: "local-auth-token",
+    baseUrl: "http://localhost:4310",
+    fetch: async (input, init) => {
+      fetchCalls.push({ init, input });
+      return Response.json({ profiles: [] });
+    },
+    orgId: "org_default",
+  });
+
+  await client.listProfiles("org_other");
+  await client.listProfiles();
+
+  expect(new Headers(fetchCalls[0]?.init?.headers).get("X-Org-Id")).toBe(
+    "org_other"
+  );
+  expect(new Headers(fetchCalls[1]?.init?.headers).get("X-Org-Id")).toBe(
+    "org_default"
+  );
+});
+
+test("profile history encodes the profile id and pagination", async () => {
+  const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
+    [];
+  const client = createClient({
+    baseUrl: "http://localhost:4310",
+    fetch: async (input, init) => {
+      fetchCalls.push({ init, input });
+      return Response.json({ events: [] });
+    },
+  });
+
+  const response = await client.listProfileChangeHistory("profile / one", {
+    limit: 25,
+    offset: 50,
+  });
+
+  expect(response.events).toEqual([]);
+  expect(String(fetchCalls[0]?.input)).toBe(
+    "http://localhost:4310/v1/profiles/profile%20%2F%20one/history?limit=25&offset=50"
+  );
+  expect(fetchCalls[0]?.init?.method).toBeUndefined();
+});
+
+test("knowledge base uploads send an explicit duplicate action", async () => {
+  const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
+    [];
+  const client = createClient({
+    baseUrl: "http://localhost:4310",
+    fetch: async (input, init) => {
+      fetchCalls.push({ init, input });
+      return Response.json({
+        document: { id: "document_1" },
+        outcome: "replaced",
+        profileId: "profile_1",
+      });
+    },
+  });
+  const document = {
+    data: "SGVsbG8=",
+    filename: "guide.md",
+    mediaType: "text/markdown",
+  };
+
+  await client.uploadKnowledgeBaseDocument(
+    "profile / one",
+    document,
+    "replace"
+  );
+
+  expect(String(fetchCalls[0]?.input)).toBe(
+    "http://localhost:4310/v1/profiles/profile%20%2F%20one/knowledge-base"
+  );
+  expect(fetchCalls[0]?.init?.method).toBe("POST");
+  expect(JSON.parse(String(fetchCalls[0]?.init?.body))).toEqual({
+    document,
+    onDuplicate: "replace",
+  });
+});
+
+test("knowledge base duplicate errors retain the existing document", async () => {
+  const client = createClient({
+    baseUrl: "http://localhost:4310",
+    fetch: async () =>
+      Response.json(
+        {
+          duplicate: {
+            existingDocumentId: "kb_existing",
+            existingFilename: "Existing guide.md",
+            match: "content_hash",
+          },
+          error: "Duplicate knowledge base document.",
+        },
+        { status: 409 }
+      ),
+  });
+
+  try {
+    await client.uploadKnowledgeBaseDocument("profile_1", {
+      data: "SGVsbG8=",
+      filename: "new-guide.md",
+      mediaType: "text/markdown",
+    });
+    throw new Error("Expected duplicate upload to fail.");
+  } catch (error) {
+    expect(error).toBeInstanceOf(AtlasApiError);
+    expect(error).toMatchObject({
+      knowledgeBaseDuplicate: {
+        existingDocumentId: "kb_existing",
+        existingFilename: "Existing guide.md",
+        match: "content_hash",
+      },
+      status: 409,
+    });
+  }
 });
 
 test("capability mapping helpers use the generic workspace endpoints", async () => {
@@ -369,6 +489,36 @@ test("non-browser clients send local auth as a bearer token", async () => {
 
   const headers = new Headers(fetchCalls[0]!.init?.headers);
   expect(headers.get("Authorization")).toBe("Bearer local-auth-token");
+});
+
+test("JSON content type is sent only when a request has a body", async () => {
+  const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
+    [];
+  const client = createClient({
+    baseUrl: "http://localhost:4310",
+    fetch: async (input, init) => {
+      fetchCalls.push({ init, input });
+      return Response.json(
+        String(input).endsWith("/test")
+          ? { delivered: true }
+          : {
+              configurationSource: "settings",
+              configured: true,
+              disabledByDoNotTrack: false,
+              dsnMasked: "http.../42",
+            }
+      );
+    },
+  });
+
+  await client.getErrorTrackingSettings();
+  await client.sendErrorTrackingTest();
+  await client.setErrorTrackingSettings({ dsn: "https://key@example.com/42" });
+
+  const headers = fetchCalls.map((call) =>
+    new Headers(call.init?.headers).get("Content-Type")
+  );
+  expect(headers).toEqual([null, null, "application/json"]);
 });
 
 test("data export downloads zip bytes with filename metadata", async () => {

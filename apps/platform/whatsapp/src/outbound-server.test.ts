@@ -2,8 +2,10 @@ import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import * as os from "node:os";
 import path from "node:path";
+import { WHATSAPP_OUTBOUND_TOKEN_HEADER } from "@atlas/core";
 import { writePrivateTextFile } from "@atlas/core/fs";
 import {
+  ensureWhatsAppOutboundToken,
   getWhatsAppConfigDir,
   getWhatsAppConfigPath,
 } from "@atlas/core/whatsapp-config";
@@ -13,6 +15,14 @@ describe("WhatsApp outbound server destination send", () => {
   let tempHome = "";
   let homedirSpy: ReturnType<typeof spyOn<typeof os, "homedir">> | null = null;
   let stop: (() => void) | undefined;
+
+  async function authorizedHeaders(orgId: string): Promise<HeadersInit> {
+    const token = await ensureWhatsAppOutboundToken(orgId);
+    return {
+      "Content-Type": "application/json",
+      [WHATSAPP_OUTBOUND_TOKEN_HEADER]: token ?? "",
+    };
+  }
 
   afterEach(async () => {
     stop?.();
@@ -57,7 +67,7 @@ describe("WhatsApp outbound server destination send", () => {
         text: "Meeting jam 3",
         to: "6289500000001",
       }),
-      headers: { "Content-Type": "application/json" },
+      headers: await authorizedHeaders("org_finance"),
       method: "POST",
     });
     const body = (await response.json()) as {
@@ -108,7 +118,7 @@ describe("WhatsApp outbound server destination send", () => {
         text: "should not send",
         to: "6289500000001",
       }),
-      headers: { "Content-Type": "application/json" },
+      headers: await authorizedHeaders("org_finance"),
       method: "POST",
     });
     const body = (await response.json()) as { error?: string };
@@ -158,5 +168,40 @@ describe("WhatsApp outbound server destination send", () => {
     expect(first.port).toBeGreaterThan(0);
     expect(second.port).toBeGreaterThan(0);
     expect(first.port).not.toBe(second.port);
+  });
+
+  test("rejects callers without the workspace outbound token", async () => {
+    tempHome = await mkdtemp(path.join(os.tmpdir(), "atlas-wa-outbound-srv-"));
+    homedirSpy = spyOn(os, "homedir").mockReturnValue(tempHome);
+    await writePrivateTextFile(
+      getWhatsAppConfigPath("org_finance"),
+      [
+        "profile_id=default",
+        "paired_jid=6281111111111@s.whatsapp.net",
+        "outbound_port=0",
+        "",
+      ].join("\n"),
+      { ensureDir: getWhatsAppConfigDir("org_finance") }
+    );
+
+    const sent: string[] = [];
+    const server = await startWhatsAppOutboundServer({
+      getSendHandle: () => ({
+        sendMessage: async (_jid, content) => {
+          sent.push(content.text);
+        },
+      }),
+      orgId: "org_finance",
+    });
+    stop = server.stop;
+
+    const response = await fetch(`http://127.0.0.1:${server.port}/send`, {
+      body: JSON.stringify({ text: "must not send" }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+
+    expect(response.status).toBe(401);
+    expect(sent).toEqual([]);
   });
 });

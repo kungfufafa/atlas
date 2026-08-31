@@ -247,7 +247,8 @@ export function createSuperAgentTools(
           orgId,
           profileId,
           request,
-          { userId }
+          { userId },
+          { actorUserId: userId, source: "super_bot" }
         );
         options.onProfileUpdated?.(profileId);
         return result;
@@ -283,7 +284,8 @@ export function createSuperAgentTools(
           profileId,
           {
             toolId,
-          }
+          },
+          { actorUserId: context.userId ?? null, source: "super_bot" }
         );
         sessionState.markToolAssigned(context.sessionId, toolId);
         return result;

@@ -9,6 +9,7 @@ import {
 } from "./paths";
 import {
   deleteKnowledgeBaseDocument,
+  KnowledgeBaseDuplicateError,
   listKnowledgeBaseDocuments,
   readKnowledgeBaseDocumentContent,
   uploadKnowledgeBaseDocument,
@@ -52,15 +53,17 @@ describe("knowledge base store", () => {
       mediaType: "text/plain",
     });
 
-    expect(uploaded.status).toBe("ready");
-    expect(uploaded.filename).toBe("notes.txt");
+    expect(uploaded.outcome).toBe("created");
+    expect(uploaded.document.status).toBe("ready");
+    expect(uploaded.document.filename).toBe("notes.txt");
+    expect(uploaded.document.contentHash).toMatch(/^[a-f0-9]{64}$/);
 
     const listed = await listKnowledgeBaseDocuments(ORG_ID, profileId);
     expect(listed).toHaveLength(1);
-    expect(listed[0]?.id).toBe(uploaded.id);
+    expect(listed[0]?.id).toBe(uploaded.document.id);
 
     const extracted = await readFile(
-      getKnowledgeBaseExtractedPath(ORG_ID, profileId, uploaded.id),
+      getKnowledgeBaseExtractedPath(ORG_ID, profileId, uploaded.document.id),
       "utf8"
     );
     expect(extracted).toContain("# source: notes.txt");
@@ -70,24 +73,125 @@ describe("knowledge base store", () => {
       getKnowledgeBaseManifestPath(ORG_ID, profileId),
       "utf8"
     );
-    expect(manifest).toContain(uploaded.id);
+    expect(manifest).toContain(uploaded.document.id);
 
     const storedPath = getKnowledgeBaseStoredDocumentPath(
       ORG_ID,
       profileId,
-      uploaded.id,
-      uploaded.filename
+      uploaded.document.id,
+      uploaded.document.filename
     );
-    expect(storedPath).toContain(uploaded.id);
+    expect(storedPath).toContain(uploaded.document.id);
     expect(await readFile(storedPath, "utf8")).toContain("needle in haystack");
 
     const deleted = await deleteKnowledgeBaseDocument(
       ORG_ID,
       profileId,
-      uploaded.id
+      uploaded.document.id
     );
     expect(deleted).toBe(true);
     expect(await listKnowledgeBaseDocuments(ORG_ID, profileId)).toHaveLength(0);
+  });
+
+  test("rejects duplicate uploads and supports skip or replace", async () => {
+    const profileId = "profile_kb_dedupe";
+    await setupProfile(profileId);
+    const attachment = {
+      data: Buffer.from("same bytes", "utf8").toString("base64"),
+      filename: "notes.txt",
+      mediaType: "text/plain",
+    };
+
+    const first = await uploadKnowledgeBaseDocument(
+      ORG_ID,
+      profileId,
+      attachment
+    );
+    await expect(
+      uploadKnowledgeBaseDocument(ORG_ID, profileId, attachment)
+    ).rejects.toBeInstanceOf(KnowledgeBaseDuplicateError);
+
+    const skipped = await uploadKnowledgeBaseDocument(
+      ORG_ID,
+      profileId,
+      attachment,
+      "skip"
+    );
+    expect(skipped).toMatchObject({
+      document: { id: first.document.id },
+      outcome: "skipped",
+    });
+
+    const replaced = await uploadKnowledgeBaseDocument(
+      ORG_ID,
+      profileId,
+      attachment,
+      "replace"
+    );
+    expect(replaced.outcome).toBe("replaced");
+    expect(replaced.document.id).not.toBe(first.document.id);
+    expect(await listKnowledgeBaseDocuments(ORG_ID, profileId)).toEqual([
+      replaced.document,
+    ]);
+  });
+
+  test("uses name and size to detect duplicates in legacy manifests", async () => {
+    const profileId = "profile_kb_legacy_dedupe";
+    await setupProfile(profileId);
+    await uploadKnowledgeBaseDocument(ORG_ID, profileId, {
+      data: Buffer.from("legacy body", "utf8").toString("base64"),
+      filename: "legacy.txt",
+      mediaType: "text/plain",
+    });
+
+    const manifestPath = getKnowledgeBaseManifestPath(ORG_ID, profileId);
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as {
+      documents: Array<Record<string, unknown>>;
+    };
+    delete manifest.documents[0]?.contentHash;
+    await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+
+    await expect(
+      uploadKnowledgeBaseDocument(ORG_ID, profileId, {
+        data: Buffer.from("xxxxxxxxxxx", "utf8").toString("base64"),
+        filename: "legacy.txt",
+        mediaType: "text/plain",
+      })
+    ).rejects.toMatchObject({ match: "name_size" });
+  });
+
+  test("does not treat equal-size current documents as duplicates", async () => {
+    const profileId = "profile_kb_hash_dedupe";
+    await setupProfile(profileId);
+    const upload = (body: string, onDuplicate?: "replace") =>
+      uploadKnowledgeBaseDocument(
+        ORG_ID,
+        profileId,
+        {
+          data: Buffer.from(body, "utf8").toString("base64"),
+          filename: "notes.txt",
+          mediaType: "text/plain",
+        },
+        onDuplicate
+      );
+
+    const first = await upload("alpha");
+    const second = await upload("bravo");
+    const replaceWithoutMatch = await upload("cider", "replace");
+
+    expect(second.outcome).toBe("created");
+    expect(replaceWithoutMatch.outcome).toBe("created");
+    expect(
+      (await listKnowledgeBaseDocuments(ORG_ID, profileId))
+        .map((document) => document.id)
+        .sort()
+    ).toEqual(
+      [
+        first.document.id,
+        second.document.id,
+        replaceWithoutMatch.document.id,
+      ].sort()
+    );
   });
 
   test("rejects unsupported document types", async () => {
@@ -213,7 +317,7 @@ describe("knowledge base store", () => {
     const preview = await readKnowledgeBaseDocumentContent(
       ORG_ID,
       profileId,
-      uploaded.id,
+      uploaded.document.id,
       { render: "text" }
     );
     expect(preview.contentType).toBe("text/plain");
@@ -223,7 +327,7 @@ describe("knowledge base store", () => {
     const download = await readKnowledgeBaseDocumentContent(
       ORG_ID,
       profileId,
-      uploaded.id
+      uploaded.document.id
     );
     expect(download.contentType).toBe("text/plain");
     expect(download.bytes.toString("utf8")).toBe("needle in haystack");

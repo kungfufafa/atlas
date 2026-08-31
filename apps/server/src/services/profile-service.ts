@@ -12,6 +12,7 @@ import type {
   DeleteKnowledgeBaseResponse,
   DocumentAttachment,
   ImageAttachment,
+  KnowledgeBaseDuplicateAction,
   ListKnowledgeBaseResponse,
   ListProfilesResponse,
   ListToolsResponse,
@@ -34,6 +35,7 @@ import {
   getUserConfigDir,
   hasProfileAvatar,
   initSoulDirectory,
+  KnowledgeBaseDuplicateError,
   listKnowledgeBaseDocuments,
   listKnowledgeBaseSources,
   uploadKnowledgeBaseDocument as persistKnowledgeBaseDocument,
@@ -50,6 +52,7 @@ import { isProtectedToolId } from "@atlas/core/tools/protected";
 import type {
   DatabaseAdapter,
   StoredProfileRecord,
+  StoredSkillRecord,
   StoredToolRecord,
 } from "@atlas/db";
 import {
@@ -63,6 +66,11 @@ import {
   validateJavascriptToolModule,
 } from "./javascript-tool-loader";
 import { toMcpServerSummaries } from "./mcp-service";
+import {
+  ProfileChangeHistoryService,
+  type ProfileChangeMeta,
+  soulFieldFromFileName,
+} from "./profile-change-history";
 import { toSkillSummaries } from "./skills-service";
 import { readToolSource } from "./tool-source";
 
@@ -89,6 +97,10 @@ export interface ProfileUpdateActor {
 
 function isToolVisibleToOrg(tool: StoredToolRecord, orgId: string): boolean {
   return tool.orgId == null || tool.orgId === orgId;
+}
+
+function isSkillVisibleToOrg(skill: StoredSkillRecord, orgId: string): boolean {
+  return skill.orgId == null || skill.orgId === orgId;
 }
 
 function slugifyProfileName(name: string): string {
@@ -159,7 +171,9 @@ export class ProfileService {
     const profile = await this.requireProfile(orgId, profileId);
     const tools = await this.db.listToolsForProfile(profileId);
     const mcpServers = await this.db.listMcpServersForProfile(profileId);
-    const skills = await this.db.listSkillsForProfile(profileId);
+    const skills = (await this.db.listSkillsForProfile(profileId)).filter(
+      (skill) => isSkillVisibleToOrg(skill, orgId)
+    );
     const skillUsage = await this.db.listSkillUsageForProfile(profileId);
 
     return {
@@ -269,11 +283,18 @@ export class ProfileService {
   async updateProfile(
     orgId: string,
     profileId: string,
-    request: UpdateProfileRequest
+    request: UpdateProfileRequest,
+    changeMeta?: ProfileChangeMeta
   ): Promise<ProfileResponse> {
     return withProfileSoulMutationLock(orgId, profileId, async () => {
       const profile = await this.requireProfile(orgId, profileId);
-      return this.commitProfileUpdate(orgId, profile, request);
+      return this.commitProfileUpdate(
+        orgId,
+        profile,
+        request,
+        undefined,
+        changeMeta
+      );
     });
   }
 
@@ -281,7 +302,8 @@ export class ProfileService {
     orgId: string,
     profileId: string,
     request: UpdateProfileRequest,
-    actor: ProfileUpdateActor
+    actor: ProfileUpdateActor,
+    changeMeta?: ProfileChangeMeta
   ): Promise<ProfileResponse> {
     return withProfileSoulMutationLock(orgId, profileId, async () => {
       const profile = await this.requireProfileUpdateActor(
@@ -290,8 +312,12 @@ export class ProfileService {
         actor
       );
 
-      return this.commitProfileUpdate(orgId, profile, request, () =>
-        this.requireProfileUpdateActor(orgId, profileId, actor)
+      return this.commitProfileUpdate(
+        orgId,
+        profile,
+        request,
+        () => this.requireProfileUpdateActor(orgId, profileId, actor),
+        changeMeta
       );
     });
   }
@@ -413,15 +439,25 @@ export class ProfileService {
   async assignTool(
     orgId: string,
     profileId: string,
-    request: AssignToolRequest
+    request: AssignToolRequest,
+    changeMeta?: ProfileChangeMeta
   ): Promise<ProfileResponse> {
     await this.requireProfile(orgId, profileId);
 
     const tool = await this.requireTool(orgId, request.toolId);
+    const assign = async (): Promise<ProfileResponse> => {
+      await this.db.assignToolToProfile(profileId, tool.id);
+      return this.getProfile(orgId, profileId);
+    };
 
-    await this.db.assignToolToProfile(profileId, tool.id);
+    if (changeMeta) {
+      return new ProfileChangeHistoryService(this.db).withAssignmentChange(
+        { field: "tools", meta: changeMeta, orgId, profileId },
+        assign
+      );
+    }
 
-    return this.getProfile(orgId, profileId);
+    return assign();
   }
 
   async unassignTool(
@@ -486,8 +522,8 @@ export class ProfileService {
 
     const skill = await this.db.getSkill(request.skillId);
 
-    if (!skill) {
-      throw new Error("Skill not found.");
+    if (!(skill && isSkillVisibleToOrg(skill, orgId))) {
+      throw new AtlasApiError("Skill not found.", 404);
     }
 
     await this.db.assignSkillToProfile(profileId, request.skillId);
@@ -585,7 +621,8 @@ export class ProfileService {
   async uploadKnowledgeBaseDocument(
     orgId: string,
     profileId: string,
-    document: DocumentAttachment
+    document: DocumentAttachment,
+    onDuplicate?: KnowledgeBaseDuplicateAction
   ): Promise<UploadKnowledgeBaseResponse> {
     await this.requireProfile(orgId, profileId);
 
@@ -593,10 +630,23 @@ export class ProfileService {
       const uploaded = await persistKnowledgeBaseDocument(
         orgId,
         profileId,
-        document
+        document,
+        onDuplicate
       );
-      return { document: uploaded, profileId };
+      return {
+        document: uploaded.document,
+        outcome: uploaded.outcome,
+        profileId,
+      };
     } catch (error) {
+      if (error instanceof KnowledgeBaseDuplicateError) {
+        throw new AtlasApiError(error.message, 409, undefined, undefined, {
+          existingDocumentId: error.existing.id,
+          existingFilename: error.existing.filename,
+          match: error.match,
+        });
+      }
+
       const message =
         error instanceof Error
           ? error.message
@@ -687,7 +737,8 @@ export class ProfileService {
     orgId: string,
     profile: StoredProfileRecord,
     request: UpdateProfileRequest,
-    revalidate?: () => Promise<StoredProfileRecord>
+    revalidate?: () => Promise<StoredProfileRecord>,
+    changeMeta?: ProfileChangeMeta
   ): Promise<ProfileResponse> {
     validateProfileUpdateRequest(request);
     const updated = buildUpdatedProfileRecord(profile, request);
@@ -729,6 +780,42 @@ export class ProfileService {
       throw error;
     } finally {
       await cleanupStagedSoulFiles(stagedSoulFiles);
+    }
+
+    if (changeMeta) {
+      const history = new ProfileChangeHistoryService(this.db);
+      const createdAt = new Date().toISOString();
+
+      if (request.systemPrompt !== undefined) {
+        await history.recordBestEffort({
+          actorUserId: changeMeta.actorUserId,
+          afterValue: updated.systemPrompt,
+          beforeValue: profile.systemPrompt,
+          createdAt,
+          field: "system_prompt",
+          orgId,
+          profileId: profile.id,
+          source: changeMeta.source,
+        });
+      }
+
+      for (const stagedSoulFile of stagedSoulFiles) {
+        const field = soulFieldFromFileName(stagedSoulFile.fileName);
+        if (!field) {
+          continue;
+        }
+
+        await history.recordBestEffort({
+          actorUserId: changeMeta.actorUserId,
+          afterValue: stagedSoulFile.next.toString("utf8"),
+          beforeValue: stagedSoulFile.original?.toString("utf8") ?? null,
+          createdAt,
+          field,
+          orgId,
+          profileId: profile.id,
+          source: changeMeta.source,
+        });
+      }
     }
 
     return this.getProfile(orgId, profile.id);

@@ -65,7 +65,16 @@ describe("org memory tools", () => {
   });
 
   test("propose_org_memory as member creates a proposal", async () => {
-    const service = new OrgMemoryService(createInMemoryDatabaseAdapter());
+    const database = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await database.upsertOrganization({
+      createdAt: now,
+      id: "org_a",
+      name: "Org A",
+      slug: "org-a",
+      updatedAt: now,
+    });
+    const service = new OrgMemoryService(database);
     const proposeTool = createOrgMemoryTools(service)[2];
     const result = await proposeTool.run(
       { bullet: "standups are at 10am UTC" },
@@ -80,7 +89,16 @@ describe("org memory tools", () => {
   });
 
   test("propose_org_memory as viewer throws", async () => {
-    const service = new OrgMemoryService(createInMemoryDatabaseAdapter());
+    const database = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await database.upsertOrganization({
+      createdAt: now,
+      id: "org_a",
+      name: "Org A",
+      slug: "org-a",
+      updatedAt: now,
+    });
+    const service = new OrgMemoryService(database);
     const proposeTool = createOrgMemoryTools(service)[2];
     await expect(
       proposeTool.run({ bullet: "fact" }, context("org_a", "viewer"))

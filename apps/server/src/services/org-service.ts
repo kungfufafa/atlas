@@ -56,6 +56,9 @@ const LAST_MEMBERSHIP_MESSAGE =
   "Cannot archive your last remaining organization.";
 const LAST_ORGANIZATION_MESSAGE =
   "Cannot archive the last remaining organization.";
+const MAX_MEMBER_NAME_LENGTH = 120;
+const MEMBER_NAME_CONTROL_CHARS = /[\u0000-\u001F\u007F]/;
+const ORG_MEMBER_USER_ID_PATTERN = /^user_[A-Za-z0-9_]{1,64}$/;
 
 export class OrgService {
   private readonly archiveActorLocks = new Map<string, Promise<unknown>>();
@@ -468,9 +471,7 @@ export class OrgService {
     const email = normalizeSetupEmail(input.email);
     const phone = normalizeOptionalPhone(input.phone);
 
-    if (!name) {
-      throw new AtlasApiError("Member name is required.", 400);
-    }
+    assertMemberName(name);
 
     if (!SETUP_EMAIL_PATTERN.test(email)) {
       throw new AtlasApiError("A valid email address is required.", 400);
@@ -625,7 +626,9 @@ export class OrgService {
   }
 
   async removeMember(orgId: string, userId: string): Promise<void> {
+    assertOrgMemberUserIdShape(userId);
     await this.runSerializedMembershipChange(orgId, async () => {
+      await this.requireActiveOrganization(orgId);
       await this.assertCanChangeAdminMembership(orgId, userId);
 
       const deleted = await this.databaseAdapter.deleteOrgMember(orgId, userId);
@@ -646,6 +649,7 @@ export class OrgService {
     }
 
     return this.runSerializedMembershipChange(orgId, async () => {
+      await this.requireActiveOrganization(orgId);
       const member = await this.assertCanChangeAdminMembership(
         orgId,
         userId,
@@ -1018,6 +1022,24 @@ export class OrgService {
       await initSoulDirectory(getProfileSoulDir(orgId, superAgentProfile.id));
     });
     await ensurePreinstalledMcpServers(this.databaseAdapter, orgId);
+  }
+}
+
+function assertMemberName(name: string): void {
+  if (!name) {
+    throw new AtlasApiError("Member name is required.", 400);
+  }
+  if (name.length > MAX_MEMBER_NAME_LENGTH) {
+    throw new AtlasApiError("Member name is too long.", 400);
+  }
+  if (MEMBER_NAME_CONTROL_CHARS.test(name)) {
+    throw new AtlasApiError("Member name contains invalid characters.", 400);
+  }
+}
+
+function assertOrgMemberUserIdShape(userId: string): void {
+  if (!ORG_MEMBER_USER_ID_PATTERN.test(userId)) {
+    throw new AtlasApiError("Invalid user id.", 400);
   }
 }
 

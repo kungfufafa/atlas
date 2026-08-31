@@ -1,4 +1,5 @@
 import {
+  AtlasApiError,
   type AutomationResponse,
   type CreateAutomationRequest,
   type DraftAutomationRequest,
@@ -374,7 +375,7 @@ export function registerAutomationRoutes(
   });
 
   app.put("/v1/automations/:automationId", async (c) => {
-    requireNotViewerFromContext(c);
+    const auth = requireNotViewerFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const automationId = decodeURIComponent(c.req.param("automationId"));
     const body = await readJson<UpdateAutomationRequest>(c.req.raw);
@@ -383,12 +384,31 @@ export function registerAutomationRoutes(
       const automation = await automationService.update(
         automationId,
         orgId,
-        body
+        body,
+        {
+          isPlatformAdmin: auth.isPlatformAdmin,
+          orgRole: auth.orgRole,
+        }
       );
       return json<AutomationResponse>({ automation });
     } catch (error) {
-      if (error instanceof Error && error.message === "Automation not found.") {
-        return errorResponse(error.message, 404);
+      if (error instanceof AtlasApiError) {
+        return errorResponse(error.message, error.status);
+      }
+      if (error instanceof Error) {
+        if (error.message === "Automation not found.") {
+          return errorResponse(error.message, 404);
+        }
+
+        if (
+          new Set([
+            "Profile not found.",
+            "Profile id is required.",
+            "No default profile exists for this organization.",
+          ]).has(error.message)
+        ) {
+          return errorResponse(error.message, 400);
+        }
       }
       throw error;
     }

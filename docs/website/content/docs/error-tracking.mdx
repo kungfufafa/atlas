@@ -1,0 +1,46 @@
+---
+title: "Error tracking"
+description: "Send Atlas process crashes to a Sentry-compatible error tracker without exposing the ingest DSN."
+---
+
+Atlas can send uncaught process errors to Sentry, GlitchTip, Bugsink, or a self-hosted Sentry instance. Error tracking is off until a platform admin configures it, and Atlas does not provide a separate error inbox.
+
+## Configure error tracking
+
+You need a Sentry-compatible project DSN and the Atlas platform admin role.
+
+1. Copy the DSN from your error-tracking project. Use the project DSN, not a browser CSP reporting URL.
+2. In Atlas, open **Integrations → Error tracking**.
+3. Paste the DSN and select **Save**. Atlas validates it and applies the change without a restart.
+4. Select **Send test event**, then confirm the informational event appears in your tracker.
+
+The API and dashboard never return the complete saved DSN. They show only a masked value.
+
+## What Atlas sends
+
+Atlas reports uncaught exceptions and unhandled rejections from the server and the Telegram, WhatsApp, Discord, and automation workers. Reports contain the error category, scrubbed stack information, process source, Bun version, operating system, and architecture.
+
+Atlas does not intentionally include chat messages, request payloads, tool results, or ordinary HTTP errors. Before delivery it scrubs home-directory paths, bearer tokens, common API-key formats, credential-like variables, email addresses, long opaque tokens, and quoted payload fragments. Long messages are truncated.
+
+## Turn it off
+
+Clear the DSN in **Integrations → Error tracking**, then select **Save**. To disable delivery for the entire deployment regardless of the saved setting, set `DO_NOT_TRACK=1`.
+
+`ATLAS_ERROR_TRACKING_DSN` overrides the saved DSN. Setting that environment variable to an empty value disables delivery instead of falling back to the saved configuration.
+When either environment override is active, the dashboard shows that state and prevents edits that would not affect the running deployment.
+
+## Troubleshooting
+
+| What you see | What to check |
+| --- | --- |
+| Atlas rejects the DSN | Copy the project DSN again and make sure it uses `http` or `https` and includes a project id. |
+| The test event cannot be delivered | Verify outbound network access and confirm the project still accepts events. |
+| The test button is disabled | Save a valid DSN, or check whether an environment override has disabled delivery. |
+| Error tracking remains off | Check whether `DO_NOT_TRACK` or an empty `ATLAS_ERROR_TRACKING_DSN` is set. |
+
+The DSN applies to the whole Atlas installation, so only a platform admin can view or change this setting.
+
+## Related docs
+
+- [Integrations](/integrations)
+- [Backup and restore](/backup-restore)

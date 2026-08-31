@@ -22,6 +22,7 @@ import { CapabilityEvidenceEditor } from "@/components/settings/CapabilityEviden
 import {
   ProviderCompatibleEditDialog,
   ProviderManageModelsDialog,
+  ProviderRemoveDialog,
   ProviderReplaceKeyDialog,
 } from "@/components/settings/provider-instance-dialogs";
 import { useProviderInstanceCard } from "@/components/settings/use-provider-instance-card";
@@ -79,6 +80,7 @@ export function ProviderInstanceCard({
   onUpdate,
   onDelete,
   onError,
+  isSole = false,
 }: {
   instance: ProviderInstanceSummary;
   catalog: ProviderModelOption[];
@@ -89,6 +91,7 @@ export function ProviderInstanceCard({
   ) => Promise<void>;
   onDelete: (providerId: string) => Promise<void>;
   onError: (error: string | null) => void;
+  isSole?: boolean;
 }) {
   const card = useProviderInstanceCard({
     catalog,
@@ -169,13 +172,22 @@ export function ProviderInstanceCard({
               destructive
               disabled={card.busy}
               label="Remove"
-              onClick={() => void card.handleDelete()}
+              onClick={() => card.setDeleteOpen(true)}
             >
               <Delete02Icon className="size-3.5" />
             </ProviderActionButton>
           </div>
         </td>
       </tr>
+
+      <ProviderRemoveDialog
+        busy={card.busy}
+        isSole={isSole}
+        label={instance.label}
+        onConfirm={() => void card.handleDelete()}
+        onOpenChange={card.setDeleteOpen}
+        open={card.deleteOpen}
+      />
 
       {subscriptionProvider ? null : (
         <ProviderReplaceKeyDialog

@@ -928,3 +928,47 @@ export function validateProviderInstanceLabel(
 
   return trimmed;
 }
+
+interface ApiKeyFormatRule {
+  minLength: number;
+  prefix: string;
+}
+
+// Providers with opaque, deployment-specific, or subscription credentials are
+// intentionally excluded to avoid rejecting valid custom formats.
+const API_KEY_FORMAT_RULES: Partial<
+  Record<UserProviderName, ApiKeyFormatRule>
+> = {
+  anthropic: { minLength: 30, prefix: "sk-ant-" },
+  cerebras: { minLength: 20, prefix: "csk-" },
+  deepseek: { minLength: 30, prefix: "sk-" },
+  gemini: { minLength: 30, prefix: "AIza" },
+  openai: { minLength: 40, prefix: "sk-" },
+  openrouter: { minLength: 20, prefix: "sk-or-" },
+};
+
+export function validateProviderApiKeyFormat(
+  apiKey: string,
+  type: UserProviderName
+): string {
+  const trimmed = apiKey.trim();
+  const rule = API_KEY_FORMAT_RULES[type];
+  if (!(trimmed && rule)) {
+    return trimmed;
+  }
+
+  const hasWrongPrefix = !trimmed.startsWith(rule.prefix);
+  const tooShort = trimmed.length < rule.minLength;
+  if (hasWrongPrefix || tooShort) {
+    const label = getBuiltinProviderDefinition(type)?.displayName ?? type;
+    const reason = hasWrongPrefix
+      ? ` (expected it to start with "${rule.prefix}")`
+      : ` (expected at least ${rule.minLength} characters)`;
+    throw new AtlasApiError(
+      `That doesn't look like a valid ${label} API key${reason}.`,
+      400
+    );
+  }
+
+  return trimmed;
+}

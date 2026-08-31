@@ -9,43 +9,54 @@ export function migrateDatabase(db: Database): void {
   const sql = readFileSync(schemaPath, "utf8");
 
   db.exec(sql);
-  migrateProfilesTable(db);
-  migrateAutomationsTable(db);
-  migrateTasksTable(db);
-  migrateSessionsTable(db);
-  migrateMcpTables(db);
-  migrateSkillsTables(db);
-  migrateUsersTable(db);
-  migrateOrgTables(db);
-  migrateOrgMemoryProposalsTable(db);
-  migrateSkillProposalsTable(db);
-  migrateSkillSuggestionsTable(db);
-  migrateSkillsWriteApprovalColumns(db);
-  migrateSkillsPostTurnReviewColumns(db);
-  migrateSkillsCuratorConsolidationColumns(db);
-  migrateOrganizationArchivedAt(db);
-  migrateSkillUsageTables(db);
-  migrateTenantOrgScope(db);
-  migrateSkillOrgIds(db);
-  migrateMcpServerOrgIds(db);
-  migrateToolOrgIds(db);
-  migrateProfileOrgColumns(db);
-  migrateSessionOrgScope(db);
-  migrateOrgAiConfigsTable(db);
-  migrateBrowserSessionsTable(db);
+  runAtomicMigration(db, migrateProfilesTable);
+  runAtomicMigration(db, migrateAutomationsTable);
+  runAtomicMigration(db, migrateTasksTable);
+  runAtomicMigration(db, migrateSessionsTable);
+  runAtomicMigration(db, migrateMcpTables);
+  runAtomicMigration(db, migrateSkillsTables);
+  runAtomicMigration(db, migrateUsersTable);
+  runAtomicMigration(db, migrateOrgTables);
+  runAtomicMigration(db, migrateOrgMemoryProposalsTable);
+  runAtomicMigration(db, migrateSkillProposalsTable);
+  runAtomicMigration(db, migrateSkillSuggestionsTable);
+  runAtomicMigration(db, migrateSkillsWriteApprovalColumns);
+  runAtomicMigration(db, migrateSkillsPostTurnReviewColumns);
+  runAtomicMigration(db, migrateSkillsCuratorConsolidationColumns);
+  runAtomicMigration(db, migrateOrganizationArchivedAt);
+  runAtomicMigration(db, migrateSkillUsageTables);
+  runAtomicMigration(db, migrateTenantOrgScope);
+  runAtomicMigration(db, migrateSkillOrgIds);
+  runAtomicMigration(db, migrateMcpServerOrgIds);
+  runAtomicMigration(db, migrateToolOrgIds);
+  runAtomicMigration(db, migrateProfileOrgColumns);
+  runAtomicMigration(db, migrateSessionOrgScope);
+  runAtomicMigration(db, migrateOrgAiConfigsTable);
+  runAtomicMigration(db, migrateBrowserSessionsTable);
+
+  // This migration intentionally owns its transaction because SQLite requires
+  // foreign-key enforcement to be disabled outside an active transaction.
   migrateLegacyProfileIds(db);
-  migrateCodingDelegationSkillName(db);
-  migrateWorkspaceSettingsTable(db);
-  migrateLlmUsageModelStatsTable(db);
-  migrateToolOutputSavingsTable(db);
-  migrateLlmTurnUsageTable(db);
-  migrateLlmUsageDailyTable(db);
-  migrateOrgUsageBudgetsTable(db);
-  migrateAttachmentsTable(db);
-  migrateAutomationRunsTable(db);
-  migrateAutomationRunReadStateTable(db);
-  migrateComposioTables(db);
-  migrateComposioUserConnections(db);
+  runAtomicMigration(db, migrateCodingDelegationSkillName);
+  runAtomicMigration(db, migrateWorkspaceSettingsTable);
+  runAtomicMigration(db, migrateLlmUsageModelStatsTable);
+  runAtomicMigration(db, migrateToolOutputSavingsTable);
+  runAtomicMigration(db, migrateLlmTurnUsageTable);
+  runAtomicMigration(db, migrateLlmUsageDailyTable);
+  runAtomicMigration(db, migrateOrgUsageBudgetsTable);
+  runAtomicMigration(db, migrateAttachmentsTable);
+  runAtomicMigration(db, migrateAutomationRunsTable);
+  runAtomicMigration(db, migrateAutomationRunReadStateTable);
+  runAtomicMigration(db, migrateComposioTables);
+  runAtomicMigration(db, migrateComposioUserConnections);
+  runAtomicMigration(db, migrateProfileChangeEventsTable);
+}
+
+function runAtomicMigration(
+  db: Database,
+  migration: (database: Database) => void
+): void {
+  db.transaction(() => migration(db))();
 }
 
 export function resolveSchemaPath(
@@ -1268,6 +1279,22 @@ function migrateSessionsTable(db: Database): void {
       ALTER TABLE sessions ADD COLUMN user_id TEXT REFERENCES users (id) ON DELETE SET NULL;
     `);
   }
+
+  if (!columnNames.has("updated_at")) {
+    db.exec("ALTER TABLE sessions ADD COLUMN updated_at TEXT;");
+    db.exec(`
+      UPDATE sessions
+      SET updated_at = COALESCE(
+        (
+          SELECT MAX(created_at)
+          FROM session_messages
+          WHERE session_id = sessions.id
+        ),
+        created_at
+      )
+      WHERE updated_at IS NULL;
+    `);
+  }
 }
 
 function migrateSessionOrgScope(db: Database): void {
@@ -1566,6 +1593,27 @@ function migrateComposioUserConnections(db: Database): void {
 
     normalizeToolkitStmt.run(now, toolkit.id);
   }
+}
+
+function migrateProfileChangeEventsTable(db: Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS profile_change_events (
+      id TEXT PRIMARY KEY NOT NULL,
+      org_id TEXT NOT NULL,
+      profile_id TEXT NOT NULL,
+      actor_user_id TEXT,
+      source TEXT NOT NULL,
+      field TEXT NOT NULL,
+      before_value TEXT,
+      after_value TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE,
+      FOREIGN KEY (profile_id) REFERENCES profiles (id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS profile_change_events_profile_created
+      ON profile_change_events (profile_id, created_at DESC);
+  `);
 }
 
 function migrateComposioTables(db: Database): void {

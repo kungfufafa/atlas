@@ -1,10 +1,14 @@
+import { randomUUID } from "node:crypto";
 import type { Dirent, Mode } from "node:fs";
 import {
   access,
   chmod,
   mkdir,
+  open,
   readdir,
   readFile,
+  rename,
+  stat,
   unlink,
   writeFile,
 } from "node:fs/promises";
@@ -69,10 +73,42 @@ export async function writeTextFile(
   const mode = options.mode ?? PRIVATE_FILE_MODE;
   const directory = options.ensureDir ?? dirname(path);
   await ensureDir(directory, options.ensureDirMode ?? PRIVATE_DIR_MODE);
-  await writeFile(path, content, { encoding: "utf8", mode });
 
-  if (options.chmod ?? mode === PRIVATE_FILE_MODE) {
-    await chmod(path, mode);
+  let preservedMode: number | undefined;
+  if (options.chmod === false && (await pathExists(path))) {
+    // biome-ignore lint/suspicious/noBitwiseOperators: permission bits are stored in st_mode.
+    preservedMode = (await stat(path)).mode & 0o777;
+  }
+
+  // A same-directory temporary file makes rename atomic. A unique name also
+  // keeps simultaneous writers from sharing and corrupting one temp file.
+  const tempPath = `${path}.atlas-tmp-${process.pid}-${randomUUID()}`;
+  let renamed = false;
+  try {
+    await writeFile(tempPath, content, {
+      encoding: "utf8",
+      mode: preservedMode ?? mode,
+    });
+
+    const handle = await open(tempPath, "r+");
+    try {
+      await handle.sync();
+    } finally {
+      await handle.close();
+    }
+
+    await rename(tempPath, path);
+    renamed = true;
+
+    if (options.chmod ?? true) {
+      await chmod(path, mode);
+    } else if (preservedMode !== undefined) {
+      await chmod(path, preservedMode);
+    }
+  } finally {
+    if (!renamed) {
+      await unlink(tempPath).catch(() => undefined);
+    }
   }
 }
 

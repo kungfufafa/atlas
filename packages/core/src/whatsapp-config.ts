@@ -18,6 +18,7 @@ export interface WhatsAppConfigFile {
   allowedNumbers: string[];
   blockedNumbers: string[];
   outboundPort?: string | null;
+  outboundToken?: string | null;
   pairedJid: string | null;
   pairedLid: string | null;
   pairingAssertion?: string | null;
@@ -476,6 +477,7 @@ export async function loadWhatsAppConfigFile(
   const pairedJid = values.paired_jid?.trim() || null;
   const pairedLid = values.paired_lid?.trim() || null;
   const outboundPort = values.outbound_port?.trim() || null;
+  const outboundToken = values.outbound_token?.trim() || null;
 
   const accessModeRaw = values.access_mode?.trim()?.toLowerCase();
   const accessMode: ChannelAccessMode =
@@ -497,6 +499,7 @@ export async function loadWhatsAppConfigFile(
     allowedNumbers,
     blockedNumbers,
     outboundPort,
+    outboundToken,
     pairedJid,
     pairedLid,
     pairingAssertion,
@@ -571,6 +574,7 @@ async function writeWhatsAppConfigFile(
     ...(config.pairedJid ? [`paired_jid=${config.pairedJid}`] : []),
     ...(config.pairedLid ? [`paired_lid=${config.pairedLid}`] : []),
     ...(config.outboundPort ? [`outbound_port=${config.outboundPort}`] : []),
+    ...(config.outboundToken ? [`outbound_token=${config.outboundToken}`] : []),
     "",
   ];
 
@@ -631,6 +635,7 @@ function buildSavedWhatsAppConfig(
     allowedNumbers,
     blockedNumbers,
     outboundPort: existing?.outboundPort ?? null,
+    outboundToken: existing?.outboundToken ?? null,
     pairedJid,
     pairedLid: existing?.pairedLid ?? null,
     pairingAssertion: existing?.pairingAssertion ?? null,
@@ -898,6 +903,28 @@ export async function saveWhatsAppOutboundPort(
     { ...config, outboundPort: String(port) },
     orgId
   );
+}
+
+/**
+ * Shared secret for the loopback outbound server. It is stored in the private
+ * per-workspace WhatsApp config so only the matching Atlas worker can send.
+ */
+export async function ensureWhatsAppOutboundToken(
+  orgId?: string | null
+): Promise<string | null> {
+  const config = await loadWhatsAppConfigFile(orgId);
+  if (!config) {
+    return null;
+  }
+
+  const existing = config.outboundToken?.trim();
+  if (existing) {
+    return existing;
+  }
+
+  const outboundToken = randomBytes(32).toString("hex");
+  await writeWhatsAppConfigFile({ ...config, outboundToken }, orgId);
+  return outboundToken;
 }
 
 export function resolveWhatsAppConfigFromSources(options: {

@@ -208,6 +208,10 @@ export function createSkillManageTools(
         const { orgId, profileId } = requireSkillManageAccess(context);
         const action = readAction(input);
         const proposalOnly = context.forceSkillWriteProposal?.() === true;
+        const changeMeta = {
+          actorUserId: context.userId ?? null,
+          source: "skill_manage" as const,
+        };
 
         if (proposalOnly && skillProposalService === null) {
           throw new Error(
@@ -424,7 +428,8 @@ export function createSkillManageTools(
           const response = await service.createAndAssignRawSkillToProfile(
             orgId,
             profileId,
-            content
+            content,
+            { changeMeta }
           );
 
           return skillManageResult({
@@ -456,7 +461,8 @@ export function createSkillManageTools(
             profileId,
             name,
             oldString,
-            newString
+            newString,
+            changeMeta
           );
 
           return skillManageResult({
@@ -483,7 +489,8 @@ export function createSkillManageTools(
             orgId,
             profileId,
             name,
-            content
+            content,
+            changeMeta
           );
 
           return skillManageResult({
@@ -513,7 +520,8 @@ export function createSkillManageTools(
             profileId,
             name,
             relativePath,
-            content
+            content,
+            changeMeta
           );
 
           return skillManageResult({
@@ -539,7 +547,8 @@ export function createSkillManageTools(
               orgId,
               profileId,
               name,
-              relativePath
+              relativePath,
+              changeMeta
             );
 
           return skillManageResult({
@@ -555,7 +564,12 @@ export function createSkillManageTools(
           throw new Error("name is required for delete.");
         }
 
-        await service.deleteAssignedProfileSkill(orgId, profileId, name);
+        await service.deleteAssignedProfileSkill(
+          orgId,
+          profileId,
+          name,
+          changeMeta
+        );
 
         return skillManageResult({
           action: "delete",

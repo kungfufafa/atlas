@@ -8,6 +8,7 @@ import type {
   InitSoulResponse,
   ListArtifactsResponse,
   ListKnowledgeBaseResponse,
+  ListProfileChangeHistoryResponse,
   ListProfilesResponse,
   ProfileResponse,
   SoulStackResponse,
@@ -24,13 +25,20 @@ import {
 } from "@atlas/core";
 import { filterProfilesForChatAccess } from "@atlas/core/profiles";
 import { createRoute, z } from "@hono/zod-openapi";
+import { requireProfileChangeHistoryService } from "../../services/profile-change-history";
 import type { ServerOptions } from "../context";
 import {
   requireActiveOrgIdFromContext,
   requireOrgAdminOrPlatformAdminFromContext,
   requirePlatformAdmin,
 } from "../org-guards";
-import { getRequestAuth, json, readJson, readJsonWithLimit } from "../shared";
+import {
+  getRequestAuth,
+  json,
+  readJson,
+  readJsonWithLimit,
+  readOptionalJson,
+} from "../shared";
 import type { HonoApp } from "../types";
 import {
   parseArtifactEditRequest,
@@ -40,6 +48,26 @@ import {
 const AVATAR_JSON_OVERHEAD_BYTES = 64 * 1024;
 const MAX_AVATAR_BODY_BYTES =
   Math.ceil((MAX_IMAGE_BYTES * 4) / 3) + AVATAR_JSON_OVERHEAD_BYTES;
+const HISTORY_INTEGER_PATTERN = /^\d+$/;
+
+function parseHistoryQueryInteger(
+  raw: string | undefined,
+  min: number,
+  max = Number.MAX_SAFE_INTEGER
+): number | null | undefined {
+  if (raw === undefined) {
+    return;
+  }
+
+  if (!HISTORY_INTEGER_PATTERN.test(raw)) {
+    return null;
+  }
+
+  const value = Number(raw);
+  return Number.isSafeInteger(value) && value >= min && value <= max
+    ? value
+    : null;
+}
 
 export function registerProfileRoutes(
   app: HonoApp,
@@ -128,6 +156,16 @@ export function registerProfileRoutes(
     .object({})
     .passthrough()
     .openapi("UploadKnowledgeBaseResponse");
+  const knowledgeBaseDuplicateSchema = z
+    .object({
+      duplicate: z.object({
+        existingDocumentId: z.string(),
+        existingFilename: z.string(),
+        match: z.enum(["content_hash", "name_size"]),
+      }),
+      error: z.string(),
+    })
+    .openapi("KnowledgeBaseDuplicateResponse");
   const deleteKnowledgeBaseSchema = z
     .object({})
     .passthrough()
@@ -194,6 +232,54 @@ export function registerProfileRoutes(
         },
       },
       summary: "Get a bot profile",
+      tags: ["Profiles"],
+    })
+  );
+  app.openAPIRegistry.registerPath(
+    createRoute({
+      method: "get",
+      operationId: "listProfileChangeHistory",
+      path: "/v1/profiles/{profileId}/history",
+      request: {
+        params: profileIdParam,
+        query: z.object({
+          limit: z.coerce.number().int().min(1).max(200).optional(),
+          offset: z.coerce.number().int().min(0).optional(),
+        }),
+      },
+      responses: {
+        200: {
+          content: {
+            "application/json": {
+              schema: z.object({
+                events: z.array(
+                  z.object({
+                    actorUserId: z.string().nullable(),
+                    afterValue: z.string().nullable(),
+                    beforeValue: z.string().nullable(),
+                    createdAt: z.string(),
+                    field: z.string(),
+                    id: z.string(),
+                    orgId: z.string(),
+                    profileId: z.string(),
+                    source: z.string(),
+                  })
+                ),
+              }),
+            },
+          },
+          description: "Append-only profile change history",
+        },
+        403: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Workspace Admin access required",
+        },
+        404: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Profile not found in the active workspace",
+        },
+      },
+      summary: "List append-only profile change history",
       tags: ["Profiles"],
     })
   );
@@ -491,6 +577,12 @@ export function registerProfileRoutes(
         params: profileIdParam,
       },
       responses: {
+        200: {
+          content: {
+            "application/json": { schema: uploadKnowledgeBaseResponseSchema },
+          },
+          description: "Skipped or replaced knowledge base document",
+        },
         201: {
           content: {
             "application/json": { schema: uploadKnowledgeBaseResponseSchema },
@@ -504,6 +596,12 @@ export function registerProfileRoutes(
         404: {
           content: { "application/json": { schema: errorSchema } },
           description: "Error",
+        },
+        409: {
+          content: {
+            "application/json": { schema: knowledgeBaseDuplicateSchema },
+          },
+          description: "Duplicate knowledge base document",
         },
         500: {
           content: { "application/json": { schema: errorSchema } },
@@ -700,16 +798,16 @@ export function registerProfileRoutes(
   });
 
   app.put("/v1/profiles/:profileId/soul/files/:fileKey", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
+    const fileKey = decodeURIComponent(c.req.param("fileKey"));
     const body = await readJson<UpdateSoulFileRequest>(c.req.raw);
-    await agent.writeProfileSoulFile(
-      orgId,
-      profileId,
-      decodeURIComponent(c.req.param("fileKey")),
-      body
-    );
+    await agent.writeProfileSoulFile(orgId, profileId, fileKey, body, {
+      actorUserId: auth.user.id,
+      source: "dashboard",
+    });
+
     return new Response(null, { status: 204 });
   });
 
@@ -854,9 +952,15 @@ export function registerProfileRoutes(
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
     const body = await readJson<UploadKnowledgeBaseRequest>(c.req.raw);
+    const result = await agent.uploadKnowledgeBaseDocument(
+      orgId,
+      profileId,
+      body.document,
+      body.onDuplicate
+    );
     return json<UploadKnowledgeBaseResponse>(
-      await agent.uploadKnowledgeBaseDocument(orgId, profileId, body.document),
-      201
+      result,
+      result.outcome === "created" ? 201 : 200
     );
   });
 
@@ -940,14 +1044,40 @@ export function registerProfileRoutes(
     return json<ProfileResponse>(await agent.getProfile(orgId, profileId));
   });
 
-  app.put("/v1/profiles/:profileId", async (c) => {
+  app.get("/v1/profiles/:profileId/history", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
-    const body = await readJson<UpdateProfileRequest>(c.req.raw);
+    const limit = parseHistoryQueryInteger(c.req.query("limit"), 1, 200);
+    const offset = parseHistoryQueryInteger(c.req.query("offset"), 0);
 
+    if (limit === null) {
+      return json({ error: "limit must be an integer between 1 and 200" }, 400);
+    }
+
+    if (offset === null) {
+      return json({ error: "offset must be a non-negative integer" }, 400);
+    }
+
+    return json<ListProfileChangeHistoryResponse>(
+      await requireProfileChangeHistoryService(options.databaseAdapter).list(
+        orgId,
+        profileId,
+        { limit, offset }
+      )
+    );
+  });
+
+  app.put("/v1/profiles/:profileId", async (c) => {
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    const profileId = decodeURIComponent(c.req.param("profileId"));
+    const body = await readJson<UpdateProfileRequest>(c.req.raw);
     return json<ProfileResponse>(
-      await agent.updateProfile(orgId, profileId, body)
+      await agent.updateProfile(orgId, profileId, body, {
+        actorUserId: auth.user.id,
+        source: "dashboard",
+      })
     );
   });
 
@@ -1005,9 +1135,7 @@ export function registerProfileRoutes(
     requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
-    const body = await readJson<CloneProfileRequest>(c.req.raw).catch(
-      () => ({}) as CloneProfileRequest
-    );
+    const body = await readOptionalJson<CloneProfileRequest>(c.req.raw, {});
     return json<ProfileResponse>(
       await agent.cloneProfile(orgId, profileId, body),
       201

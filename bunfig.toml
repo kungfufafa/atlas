@@ -1,2 +1,5 @@
 [install]
 linker = "isolated"
+
+[test]
+preload = ["./apps/server/src/testing/custom-tool-test-env.ts"]

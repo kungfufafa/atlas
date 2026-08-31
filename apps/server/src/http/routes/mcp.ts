@@ -8,6 +8,7 @@ import type {
   UpdateMcpServerRequest,
 } from "@atlas/core";
 import { createRoute, z } from "@hono/zod-openapi";
+import { requireProfileChangeHistoryService } from "../../services/profile-change-history";
 import type { ServerOptions } from "../context";
 import {
   requireActiveOrgIdFromContext,
@@ -354,36 +355,61 @@ export function registerMcpRoutes(app: HonoApp, options: ServerOptions): void {
   });
 
   app.delete("/v1/mcp/servers/:serverId", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
-    await mcpService.deleteServer(
-      orgId,
-      decodeURIComponent(c.req.param("serverId"))
+    await requireProfileChangeHistoryService(
+      options.databaseAdapter
+    ).withOrgAssignmentChanges(
+      {
+        field: "mcp",
+        meta: { actorUserId: auth.user.id, source: "dashboard" },
+        orgId,
+      },
+      () =>
+        mcpService.deleteServer(
+          orgId,
+          decodeURIComponent(c.req.param("serverId"))
+        )
     );
     return new Response(null, { status: 204 });
   });
 
   app.post("/v1/profiles/:profileId/mcp-servers", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
+    const profileId = decodeURIComponent(c.req.param("profileId"));
     const body = await readJson<AssignMcpServerRequest>(c.req.raw);
     return json<ProfileResponse>(
-      await agent.assignMcpServer(
-        orgId,
-        decodeURIComponent(c.req.param("profileId")),
-        body
+      await requireProfileChangeHistoryService(
+        options.databaseAdapter
+      ).withAssignmentChange(
+        {
+          field: "mcp",
+          meta: { actorUserId: auth.user.id, source: "dashboard" },
+          orgId,
+          profileId,
+        },
+        () => agent.assignMcpServer(orgId, profileId, body)
       )
     );
   });
 
   app.delete("/v1/profiles/:profileId/mcp-servers/:serverId", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
+    const profileId = decodeURIComponent(c.req.param("profileId"));
+    const serverId = decodeURIComponent(c.req.param("serverId"));
     return json<ProfileResponse>(
-      await agent.unassignMcpServer(
-        orgId,
-        decodeURIComponent(c.req.param("profileId")),
-        decodeURIComponent(c.req.param("serverId"))
+      await requireProfileChangeHistoryService(
+        options.databaseAdapter
+      ).withAssignmentChange(
+        {
+          field: "mcp",
+          meta: { actorUserId: auth.user.id, source: "dashboard" },
+          orgId,
+          profileId,
+        },
+        () => agent.unassignMcpServer(orgId, profileId, serverId)
       )
     );
   });

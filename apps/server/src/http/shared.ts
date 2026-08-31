@@ -412,6 +412,22 @@ export async function readJson<T>(request: Request): Promise<T> {
   }
 }
 
+export async function readOptionalJson<T>(
+  request: Request,
+  fallback: T
+): Promise<T> {
+  const body = await request.text();
+  if (!body.trim()) {
+    return fallback;
+  }
+
+  try {
+    return JSON.parse(body) as T;
+  } catch {
+    throw new AtlasApiError("Invalid JSON in request body.", 400);
+  }
+}
+
 export async function readJsonWithLimit<T>(
   request: Request,
   maxBytes: number,

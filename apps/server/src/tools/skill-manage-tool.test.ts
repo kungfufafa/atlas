@@ -30,6 +30,7 @@ function memberContext(overrides: Partial<ToolContext> = {}): ToolContext {
     orgId: ORG_ID,
     orgRole: "member",
     profileId: PROFILE_ID,
+    userId: "user_member",
     ...overrides,
   };
 }
@@ -89,6 +90,25 @@ describe("skill_manage tool", () => {
     configDir = await mkdtemp(join(tmpdir(), "atlas-skill-manage-"));
     process.env.ATLAS_CONFIG_DIR = configDir;
     const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await db.upsertOrganization({
+      createdAt: now,
+      id: ORG_ID,
+      name: "Test Org",
+      slug: "test-org",
+      updatedAt: now,
+    });
+    await db.upsertProfile({
+      createdAt: now,
+      id: PROFILE_ID,
+      isDefault: true,
+      isSuper: false,
+      model: null,
+      name: "Default Agent",
+      orgId: ORG_ID,
+      systemPrompt: "",
+      updatedAt: now,
+    });
     const service = new SkillsService(db);
     return { db, service, tool: skillManageTool(service) };
   }
@@ -113,6 +133,15 @@ describe("skill_manage tool", () => {
 
     const assigned = await db.listSkillsForProfile(PROFILE_ID);
     expect(assigned.map((skill) => skill.name)).toContain("research-paper");
+    expect(await db.listProfileChangeEvents(ORG_ID, PROFILE_ID)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          actorUserId: "user_member",
+          field: "skills",
+          source: "skill_manage",
+        }),
+      ])
+    );
 
     const matched = await service.formatMatchedSkillsForPrompt(
       ORG_ID,
@@ -202,6 +231,34 @@ describe("skill_manage tool", () => {
 
     const detail = await service.getSkill(skill!.id);
     expect(detail.skill.body).toContain("methods, and limitations");
+    expect(await db.listProfileChangeEvents(ORG_ID, PROFILE_ID)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          afterValue: expect.stringContaining("methods, and limitations"),
+          beforeValue: expect.stringContaining(
+            "Summarize contributions and limitations"
+          ),
+          source: "skill_manage",
+        }),
+      ])
+    );
+  });
+
+  test("keeps a created skill assigned when history storage fails", async () => {
+    const { db, tool } = await setup();
+    db.createProfileChangeEvent = async () => {
+      throw new Error("ledger unavailable");
+    };
+
+    await expect(
+      tool.run(
+        { action: "create", content: researchSkillMarkdown },
+        memberContext()
+      )
+    ).resolves.toMatchObject({ assigned: true, name: "research-paper" });
+    expect((await db.listSkillsForProfile(PROFILE_ID))[0]?.name).toBe(
+      "research-paper"
+    );
   });
 
   test("delete removes assignment, DB row, and directory", async () => {
@@ -493,7 +550,7 @@ Body.
   });
 
   test("edit, write_file, and remove_file manage an assigned skill", async () => {
-    const { service, tool } = await setup();
+    const { db, service, tool } = await setup();
 
     await tool.run(
       {
@@ -564,5 +621,38 @@ Use canary then prod.
       )!.id
     );
     expect(detail.skill.body).toContain("Use canary then prod.");
+
+    const supportingFileEvents = (
+      await db.listProfileChangeEvents(ORG_ID, PROFILE_ID)
+    ).filter((event) => {
+      try {
+        const after = JSON.parse(event.afterValue ?? "null") as {
+          path?: string;
+        } | null;
+        const before = JSON.parse(event.beforeValue ?? "null") as {
+          path?: string;
+        } | null;
+        return after?.path === "notes.md" || before?.path === "notes.md";
+      } catch {
+        return false;
+      }
+    });
+    expect(supportingFileEvents).toHaveLength(2);
+    expect(
+      supportingFileEvents.every(
+        (event) =>
+          event.actorUserId === "user_member" && event.source === "skill_manage"
+      )
+    ).toBe(true);
+    expect(
+      supportingFileEvents.map((event) =>
+        JSON.parse(event.afterValue ?? "null")
+      )
+    ).toEqual(
+      expect.arrayContaining([
+        { content: "sidecar\n", path: "notes.md", skillName: "deploy" },
+        { content: null, path: "notes.md", skillName: "deploy" },
+      ])
+    );
   });
 });

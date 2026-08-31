@@ -32,6 +32,12 @@ The data root follows `ATLAS_CONFIG_DIR` when set. By default it is `/atlas/data
 
 On first run, complete the setup wizard in the browser and add your LLM provider. See [Providers](/providers) and [First-time setup](/first-time-setup).
 
+### Custom JavaScript tool isolation
+
+Custom JavaScript tools use a host-enforced filesystem boundary. Docker deployments require Landlock ABI 3, available on Linux kernel 6.2 or newer, because containers share the host kernel. Atlas blocks custom-tool inspection and execution when Landlock is unavailable instead of exposing other workspaces or server secrets.
+
+`ATLAS_ALLOW_UNSANDBOXED_CUSTOM_TOOLS=1` disables this boundary. Use that emergency option only when the whole Atlas instance already runs inside an equivalent single-trust-domain sandbox; it is unsafe for a shared or multi-tenant host. Source installs use the same Landlock requirement on Linux or `sandbox-exec` on macOS. See [Builtin tools → Custom JavaScript isolation](/builtin-tools#custom-javascript-isolation).
+
 ### Crash reporting (optional)
 
 Atlas can send uncaught server and worker crashes to a Sentry-compatible endpoint such as Sentry, GlitchTip, Bugsink, or a self-hosted installation. Reporting is off by default.

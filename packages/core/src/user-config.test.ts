@@ -17,7 +17,28 @@ import {
   saveUserConfig,
   saveUserTimezone,
   saveUserWebPublicUrl,
+  validateProviderApiKeyFormat,
 } from "./user-config";
+
+describe("validateProviderApiKeyFormat", () => {
+  test("rejects malformed keys for providers with documented formats", () => {
+    expect(() =>
+      validateProviderApiKeyFormat("sk-junk-qa-123", "openai")
+    ).toThrow(/valid OpenAI API key/i);
+    expect(() =>
+      validateProviderApiKeyFormat(`AIza${"a".repeat(40)}`, "anthropic")
+    ).toThrow(/valid Anthropic API key/i);
+  });
+
+  test("accepts valid and opaque provider key formats", () => {
+    const openAiKey = `sk-${"a".repeat(48)}`;
+    expect(validateProviderApiKeyFormat(openAiKey, "openai")).toBe(openAiKey);
+    expect(validateProviderApiKeyFormat("short", "fireworks")).toBe("short");
+    expect(validateProviderApiKeyFormat("short", "openai_compatible")).toBe(
+      "short"
+    );
+  });
+});
 
 describe("saveUserTimezone", () => {
   // readJson casts the body without validating it, so timezone can arrive
