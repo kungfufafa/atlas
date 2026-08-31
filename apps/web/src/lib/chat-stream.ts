@@ -449,31 +449,29 @@ export function isAbortError(error: unknown): boolean {
 export function finalizeStreamingMessages(
   messages: ChatListItem[]
 ): ChatListItem[] {
-  const next = messages.map((message) =>
-    message.role === "tool" && message.toolStatus === "running"
-      ? {
-          ...message,
-          artifactStreaming: false,
-          content: `${message.tool} stopped`,
-          toolStatus: "done" as const,
-        }
-      : message
-  );
+  return messages.map((message) => {
+    if (message.role === "tool" && message.toolStatus === "running") {
+      return {
+        ...message,
+        artifactStreaming: false,
+        content: `${message.tool} stopped`,
+        toolStatus: "done" as const,
+      };
+    }
 
-  for (let index = next.length - 1; index >= 0; index -= 1) {
-    const message = next[index];
-
-    if (message?.role === "assistant") {
-      next[index] = {
+    if (
+      message.role === "assistant" &&
+      (message.streaming || message.thinkingStreaming)
+    ) {
+      return {
         ...message,
         streaming: false,
         thinkingStreaming: false,
       };
-      break;
     }
-  }
 
-  return next;
+    return message;
+  });
 }
 
 export function deriveChatStatus(
@@ -935,8 +933,14 @@ export function appendOutgoingMessages(
   ]);
 }
 
-export const composerIconButtonClass =
-  "size-7 shrink-0 rounded-full bg-muted text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-40";
+/** Visible 28px face with a 40px interaction target. */
+export const composerHitTargetClass =
+  "relative after:absolute after:top-1/2 after:left-1/2 after:size-10 after:-translate-x-1/2 after:-translate-y-1/2";
+
+export const composerIconButtonClass = cn(
+  composerHitTargetClass,
+  "size-7 shrink-0 rounded-full bg-muted text-muted-foreground transition-[color,background-color,transform,opacity] hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.96] disabled:pointer-events-none disabled:opacity-40"
+);
 
 export const composerToolbarClass =
   "flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden @[22rem]/composer:gap-1.5";
@@ -952,18 +956,20 @@ const composerInputGroupBase =
 export const composerInputGroupClass =
   "chat-composer-input @container/composer overflow-visible has-[[data-slot=input-group-control]:focus-visible]:border-border has-[[data-slot=input-group-control]:focus-visible]:ring-0";
 
-export const composerDockClass =
-  "flex w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-xs transition-[box-shadow,border-color]";
+export type ComposerStackEdge = "start" | "continue";
+
+export function composerShelfPanelClass(
+  edge: ComposerStackEdge = "start"
+): string {
+  return cn(
+    "relative z-0 w-full shrink-0 overflow-hidden border border-border border-b-0 bg-card shadow-xs",
+    edge === "start" ? "rounded-t-xl rounded-b-none" : "rounded-none"
+  );
+}
 
 export const composerShellClass = cn(
   composerInputGroupBase,
   "[&_[data-slot=input-group]]:rounded-xl [&_[data-slot=input-group]]:border [&_[data-slot=input-group]]:border-border [&_[data-slot=input-group]]:shadow-xs [&_[data-slot=input-group]]:transition-[box-shadow,border-color]"
-);
-
-export const composerShellStackedClass = cn(
-  composerInputGroupBase,
-  "w-full [&_form]:w-full",
-  "[&_[data-slot=input-group]]:w-full [&_[data-slot=input-group]]:rounded-none [&_[data-slot=input-group]]:border-0 [&_[data-slot=input-group]]:bg-transparent [&_[data-slot=input-group]]:shadow-none"
 );
 
 export const composerShellCompactClass =

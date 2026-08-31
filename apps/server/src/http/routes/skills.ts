@@ -9,6 +9,7 @@ import type {
   SyncSkillsResponse,
 } from "@atlas/core";
 import { createRoute, z } from "@hono/zod-openapi";
+import { requireProfileChangeHistoryService } from "../../services/profile-change-history";
 import type { ServerOptions } from "../context";
 import {
   requireActiveOrgIdFromContext,
@@ -260,40 +261,50 @@ export function registerSkillRoutes(
 
   app.get("/v1/skills", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
-    return json<ListSkillsResponse>(await agent.listSkills());
+    const orgId = requireActiveOrgIdFromContext(c);
+    return json<ListSkillsResponse>(await agent.listSkills(orgId));
   });
 
   app.post("/v1/skills", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<CreateSkillRequest>(c.req.raw);
-    return json<SkillResponse>(await agent.createSkill(orgId, body));
+    return json<SkillResponse>(
+      await agent.createSkill(orgId, body, {
+        allowGlobal: auth.isPlatformAdmin,
+      })
+    );
   });
 
   app.post("/v1/skills/install", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<InstallSkillRequest>(c.req.raw);
     return json<SkillResponse>(
-      await agent.installSkillFromGitHub(orgId, body),
+      await agent.installSkillFromGitHub(orgId, body, {
+        actorUserId: auth.user.id,
+        source: "dashboard",
+      }),
       201
     );
   });
 
   app.post("/v1/skills/sync", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
-    return json<SyncSkillsResponse>(await agent.syncSkills());
+    const orgId = requireActiveOrgIdFromContext(c);
+    return json<SyncSkillsResponse>(await agent.syncSkills(orgId));
   });
 
   app.get("/v1/skills/:skillId", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
     return json<SkillResponse>(
-      await agent.getSkill(decodeURIComponent(c.req.param("skillId")))
+      await agent.getSkill(orgId, decodeURIComponent(c.req.param("skillId")))
     );
   });
 
   app.patch("/v1/skills/:skillId", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<PatchSkillRequest>(c.req.raw);
     const profileId = c.req.query("profileId")?.trim() || undefined;
@@ -302,38 +313,70 @@ export function registerSkillRoutes(
         orgId,
         decodeURIComponent(c.req.param("skillId")),
         body,
-        profileId ? { profileId } : undefined
+        {
+          allowGlobalMutation: auth.isPlatformAdmin,
+          changeMeta: { actorUserId: auth.user.id, source: "dashboard" },
+          ...(profileId ? { profileId } : {}),
+        }
       )
     );
   });
 
   app.delete("/v1/skills/:skillId", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
-    await agent.deleteSkill(decodeURIComponent(c.req.param("skillId")));
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    await requireProfileChangeHistoryService(
+      options.databaseAdapter
+    ).withOrgAssignmentChanges(
+      {
+        field: "skills",
+        meta: { actorUserId: auth.user.id, source: "dashboard" },
+        orgId,
+      },
+      () =>
+        agent.deleteSkill(orgId, decodeURIComponent(c.req.param("skillId")), {
+          allowGlobalMutation: auth.isPlatformAdmin,
+        })
+    );
     return new Response(null, { status: 204 });
   });
 
   app.post("/v1/profiles/:profileId/skills", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
+    const profileId = decodeURIComponent(c.req.param("profileId"));
     const body = await readJson<AssignSkillRequest>(c.req.raw);
     return json<ProfileResponse>(
-      await agent.assignSkill(
-        orgId,
-        decodeURIComponent(c.req.param("profileId")),
-        body
+      await requireProfileChangeHistoryService(
+        options.databaseAdapter
+      ).withAssignmentChange(
+        {
+          field: "skills",
+          meta: { actorUserId: auth.user.id, source: "dashboard" },
+          orgId,
+          profileId,
+        },
+        () => agent.assignSkill(orgId, profileId, body)
       )
     );
   });
 
   app.delete("/v1/profiles/:profileId/skills/:skillId", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
+    const auth = requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
+    const profileId = decodeURIComponent(c.req.param("profileId"));
+    const skillId = decodeURIComponent(c.req.param("skillId"));
     return json<ProfileResponse>(
-      await agent.unassignSkill(
-        orgId,
-        decodeURIComponent(c.req.param("profileId")),
-        decodeURIComponent(c.req.param("skillId"))
+      await requireProfileChangeHistoryService(
+        options.databaseAdapter
+      ).withAssignmentChange(
+        {
+          field: "skills",
+          meta: { actorUserId: auth.user.id, source: "dashboard" },
+          orgId,
+          profileId,
+        },
+        () => agent.unassignSkill(orgId, profileId, skillId)
       )
     );
   });

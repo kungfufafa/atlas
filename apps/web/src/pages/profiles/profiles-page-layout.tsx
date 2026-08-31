@@ -22,6 +22,8 @@ import { useSkillProposals } from "@/hooks/use-skill-proposals";
 import { resolveSuperAgentChatProfileId } from "@/lib/profiles";
 import { cn } from "@/lib/utils";
 import { ProfileConfigTab } from "@/pages/profiles/profile-config-tab";
+import { canViewProfileHistory } from "@/pages/profiles/profile-history.shared";
+import { ProfileHistoryTab } from "@/pages/profiles/profile-history-tab";
 import {
   profilePanelHeaderClass,
   profilePanelHeaderLabelClass,
@@ -36,6 +38,7 @@ import {
 import type { ProfilesPageState } from "@/pages/profiles/use-profiles-page";
 
 function ProfilesPageHeaderTablist({
+  canViewHistory,
   detail,
   detailTab,
   isOrgAdmin,
@@ -44,6 +47,7 @@ function ProfilesPageHeaderTablist({
   selectedId,
   setDetailTab,
 }: {
+  canViewHistory: boolean;
   detail: ProfilesPageState["detail"];
   detailTab: ProfilesPageState["detailTab"];
   isOrgAdmin: boolean;
@@ -78,6 +82,16 @@ function ProfilesPageHeaderTablist({
       >
         Prompt
       </ProfileDetailTabButton>
+      {canViewHistory ? (
+        <ProfileDetailTabButton
+          active={detailTab === "history"}
+          controls="profile-detail-panel-history"
+          id="profile-detail-tab-history"
+          onSelect={() => setDetailTab("history")}
+        >
+          History
+        </ProfileDetailTabButton>
+      ) : null}
       {isOrgAdmin ? (
         <ProfileDetailTabButton
           active={detailTab === "proposals"}
@@ -101,6 +115,7 @@ function ProfilesPageHeaderTablist({
 function ProfilesPageDetailPanel({
   activeOrgId,
   busy,
+  canViewHistory,
   canCreateProfile,
   detail,
   detailLoading,
@@ -114,6 +129,7 @@ function ProfilesPageDetailPanel({
 }: {
   activeOrgId: string | null;
   busy: boolean;
+  canViewHistory: boolean;
   canCreateProfile: boolean;
   detail: ProfilesPageState["detail"];
   detailLoading: boolean;
@@ -162,6 +178,15 @@ function ProfilesPageDetailPanel({
       >
         <SoulTab profileId={selectedId} />
       </div>
+    ) : detailTab === "history" && canViewHistory ? (
+      <div
+        aria-labelledby="profile-detail-tab-history"
+        className="no-scrollbar p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto"
+        id="profile-detail-panel-history"
+        role="tabpanel"
+      >
+        <ProfileHistoryTab profileId={selectedId} />
+      </div>
     ) : null
   ) : (
     <div className="flex min-h-48 items-center justify-center p-4 text-muted-foreground text-sm">
@@ -192,6 +217,12 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
   const { user, activeOrg } = useAuth();
   const isOrgAdmin = activeOrg?.role === "admin";
   const canCreateProfile = user?.isPlatformAdmin === true || isOrgAdmin;
+  const canViewHistory = canViewProfileHistory({
+    isPlatformAdmin: user?.isPlatformAdmin === true,
+    orgRole: activeOrg?.role,
+  });
+  const visibleDetailTab =
+    detailTab === "history" && !canViewHistory ? "profile" : detailTab;
   const { navigateToNewChat } = useAppNavigation();
   const superAgentProfileId = resolveSuperAgentChatProfileId(profiles);
   const { data: skillProposalsData } = useSkillProposals(
@@ -212,8 +243,9 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
   return (
     <div className="space-y-4">
       <ProfilesPageHeaderTablist
+        canViewHistory={canViewHistory}
         detail={detail}
-        detailTab={detailTab}
+        detailTab={visibleDetailTab}
         isOrgAdmin={isOrgAdmin}
         pageHeaderActions={pageHeaderActions}
         pendingSkillProposals={pendingSkillProposals}
@@ -422,9 +454,10 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
               activeOrgId={activeOrg?.id ?? null}
               busy={busy}
               canCreateProfile={canCreateProfile}
+              canViewHistory={canViewHistory}
               detail={detail}
               detailLoading={detailLoading}
-              detailTab={detailTab}
+              detailTab={visibleDetailTab}
               isOrgAdmin={isOrgAdmin}
               onAskSuperAgent={onAskSuperAgent}
               onCreate={() => setCreateOpen(true)}

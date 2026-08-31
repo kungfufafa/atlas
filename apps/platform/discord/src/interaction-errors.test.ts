@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+  deferSlashInteraction,
   getDiscordErrorCode,
   isIgnorableInteractionError,
 } from "./interaction-errors";
@@ -28,5 +29,44 @@ describe("getDiscordErrorCode", () => {
   test("returns null without a numeric code", () => {
     expect(getDiscordErrorCode({ code: "10062" })).toBeNull();
     expect(getDiscordErrorCode("nope")).toBeNull();
+  });
+});
+
+describe("deferSlashInteraction", () => {
+  test("replies with a visible failure when defer fails", async () => {
+    const replies: string[] = [];
+    const shouldContinue = await deferSlashInteraction({
+      commandName: "status",
+      deferReply: async () => {
+        throw new Error("gateway failed");
+      },
+      editReply: async ({ content }) => {
+        replies.push(`edit:${content}`);
+      },
+      reply: async ({ content }) => {
+        replies.push(content);
+      },
+    });
+
+    expect(shouldContinue).toBe(false);
+    expect(replies).toEqual(["Something went wrong."]);
+  });
+
+  test("falls back to editReply if the failure was already acknowledged", async () => {
+    const replies: string[] = [];
+    await deferSlashInteraction({
+      commandName: "status",
+      deferReply: async () => {
+        throw new Error("defer failed");
+      },
+      editReply: async ({ content }) => {
+        replies.push(content);
+      },
+      reply: async () => {
+        throw new Error("already acknowledged");
+      },
+    });
+
+    expect(replies).toEqual(["Something went wrong."]);
   });
 });

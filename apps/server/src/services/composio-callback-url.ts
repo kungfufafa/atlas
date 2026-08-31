@@ -103,16 +103,18 @@ export function resolveComposioOAuthCallbackBaseUrl(options: {
   clientOrigin?: string;
   request: Request;
 }): string {
-  const requestOrigin = normalizePublicHttpOrigin(
-    new URL(options.request.url).origin
-  );
   const configured = normalizePublicHttpOrigin(
     resolveWebPublicUrl() ?? undefined
   );
+  if (configured) {
+    return configured;
+  }
+
+  const requestOrigin = normalizePublicHttpOrigin(
+    new URL(options.request.url).origin
+  );
   const allowed = new Set(
-    [requestOrigin, configured].filter((value): value is string =>
-      Boolean(value)
-    )
+    [requestOrigin].filter((value): value is string => Boolean(value))
   );
   const explicit = normalizePublicHttpOrigin(options.clientOrigin);
   if (explicit && allowed.has(explicit)) {
@@ -126,17 +128,23 @@ export function resolveComposioOAuthCallbackBaseUrl(options: {
     return headerOrigin;
   }
 
+  return requestOrigin ?? "http://127.0.0.1:3000";
+}
+
+/**
+ * Resolve a callback/share base URL. A configured operator URL wins because
+ * request origins and forwarded headers are caller-controlled.
+ */
+export function resolveComposioCallbackBaseUrl(
+  options: { clientOrigin?: string; request?: Request } = {}
+): string {
+  const configured = normalizePublicHttpOrigin(
+    resolveWebPublicUrl() ?? undefined
+  );
   if (configured) {
     return configured;
   }
 
-  return requestOrigin ?? "http://127.0.0.1:3000";
-}
-
-/** OAuth callback base URL — prefers the browser origin from the active request. */
-export function resolveComposioCallbackBaseUrl(
-  options: { clientOrigin?: string; request?: Request } = {}
-): string {
   const fromBrowser = resolveRequestClientOrigin(
     options.request,
     options.clientOrigin
@@ -160,11 +168,6 @@ export function resolveComposioCallbackBaseUrl(
 
     const url = new URL(options.request.url);
     return `${url.protocol}//${url.host}`;
-  }
-
-  const configured = resolveWebPublicUrl();
-  if (configured) {
-    return configured;
   }
 
   const webPort = process.env.ATLAS_WEB_PORT?.trim() || "3000";

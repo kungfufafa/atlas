@@ -3,6 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { withTempHomedir } from "./testing/channel-config-fixtures";
 import {
+  ensureWhatsAppOutboundToken,
   generatePairingCode,
   isWhatsAppUserAuthorized,
   loadWhatsAppConfigFile,
@@ -139,6 +140,26 @@ describe("generatePairingCode", () => {
 });
 
 describe("saveWhatsAppConfig", () => {
+  test("mints and preserves a private outbound token per workspace", async () => {
+    await withTempHomedir("atlas-core-wa-token-", async () => {
+      await saveWhatsAppConfig({ profileId: "default" }, "org_alpha");
+      await saveWhatsAppConfig({ profileId: "default" }, "org_beta");
+
+      const alpha = await ensureWhatsAppOutboundToken("org_alpha");
+      const beta = await ensureWhatsAppOutboundToken("org_beta");
+
+      expect(alpha).toMatch(/^[a-f0-9]{64}$/);
+      expect(beta).toMatch(/^[a-f0-9]{64}$/);
+      expect(beta).not.toBe(alpha);
+      expect(await ensureWhatsAppOutboundToken("org_alpha")).toBe(alpha);
+
+      await saveWhatsAppConfig({ profileId: "updated" }, "org_alpha");
+      expect((await loadWhatsAppConfigFile("org_alpha"))?.outboundToken).toBe(
+        alpha
+      );
+    });
+  });
+
   test("creates config without auto-generating a pairing code", async () => {
     await withTempHomedir("atlas-core-wa-home-", async () => {
       const result = await saveWhatsAppConfig({ profileId: "profile_custom" });

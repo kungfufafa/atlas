@@ -38,7 +38,8 @@ export function useAutomationsPage() {
   const automations = automationsData?.automations ?? EMPTY_AUTOMATIONS;
   const unreadByAutomationId =
     automationsData?.unread?.byAutomationId ?? EMPTY_UNREAD_BY_AUTOMATION_ID;
-  const { data: profiles = [] } = useProfilesQuery();
+  const { data: profiles = [], isLoading: profilesLoading } =
+    useProfilesQuery();
   const superAgentProfile = findSuperAgentProfile(profiles);
   const [searchParams] = useSearchParams();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -161,6 +162,7 @@ export function useAutomationsPage() {
           description: editDraft.description,
           enabled: editDraft.enabled,
           name: editDraft.name,
+          profileId: editDraft.profileId,
           prompt: editDraft.prompt,
           trigger: editDraft.trigger,
         },
@@ -263,6 +265,8 @@ export function useAutomationsPage() {
 
   const selectedSubtitle = selected
     ? [
+        profiles.find((profile) => profile.id === selected.profileId)?.name ??
+          selected.profileId,
         formatTrigger(selected.trigger),
         selected.enabled ? "enabled" : "disabled",
         runScheduleHint,
@@ -289,6 +293,8 @@ export function useAutomationsPage() {
     isSearching,
     loading,
     openEdit,
+    profiles,
+    profilesLoading,
     refetchRuns,
     refresh,
     refreshing,

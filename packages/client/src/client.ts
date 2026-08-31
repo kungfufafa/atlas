@@ -61,6 +61,7 @@ import type {
   DraftTaskPromptResponse,
   EditableArtifactResponse,
   EmailSettingsResponse,
+  ErrorTrackingSettingsResponse,
   GenerateImageRequest,
   GenerateImageResponse,
   HealthResponse,
@@ -71,6 +72,8 @@ import type {
   InitUserContextResponse,
   InstallSkillRequest,
   InviteOrgMemberRequest,
+  KnowledgeBaseDuplicateAction,
+  KnowledgeBaseDuplicateConflict,
   ListArtifactsResponse,
   ListAutomationRunsResponse,
   ListAutomationsResponse,
@@ -82,6 +85,7 @@ import type {
   ListOrgMembersResponse,
   ListOrgMemoryHistoryResponse,
   ListOrgMemoryProposalsResponse,
+  ListProfileChangeHistoryResponse,
   ListProfileComposioToolkitsResponse,
   ListProfilesResponse,
   ListProvidersResponse,
@@ -137,6 +141,7 @@ import type {
   RunToolResponse,
   SendEmailTestRequest,
   SendEmailTestResponse,
+  SendErrorTrackingTestResponse,
   SendMessageResponse,
   SessionMessagesResponse,
   SessionStatusResponse,
@@ -188,6 +193,7 @@ import type {
   UpdateDiscordSettingsRequest,
   UpdateEditableArtifactRequest,
   UpdateEmailSettingsRequest,
+  UpdateErrorTrackingSettingsRequest,
   UpdateImageGenerationRequest,
   UpdateMcpServerRequest,
   UpdateNotificationDestinationRequest,
@@ -847,13 +853,33 @@ export class AtlasClient {
     );
   }
 
-  async listProfiles(): Promise<ListProfilesResponse> {
-    return this.request<ListProfilesResponse>("/v1/profiles");
+  async listProfiles(orgId?: string): Promise<ListProfilesResponse> {
+    return this.request<ListProfilesResponse>(
+      "/v1/profiles",
+      orgId ? { headers: { "X-Org-Id": orgId } } : undefined
+    );
   }
 
   async getProfile(profileId: string): Promise<ProfileResponse> {
     return this.request<ProfileResponse>(
       `/v1/profiles/${encodeURIComponent(profileId)}`
+    );
+  }
+
+  async listProfileChangeHistory(
+    profileId: string,
+    options: { limit?: number; offset?: number } = {}
+  ): Promise<ListProfileChangeHistoryResponse> {
+    const query = new URLSearchParams();
+    if (options.limit !== undefined) {
+      query.set("limit", String(options.limit));
+    }
+    if (options.offset !== undefined) {
+      query.set("offset", String(options.offset));
+    }
+    const suffix = query.size > 0 ? `?${query.toString()}` : "";
+    return this.request<ListProfileChangeHistoryResponse>(
+      `/v1/profiles/${encodeURIComponent(profileId)}/history${suffix}`
     );
   }
 
@@ -1480,12 +1506,16 @@ export class AtlasClient {
 
   async uploadKnowledgeBaseDocument(
     profileId: string,
-    document: DocumentAttachment
+    document: DocumentAttachment,
+    onDuplicate?: KnowledgeBaseDuplicateAction
   ): Promise<UploadKnowledgeBaseResponse> {
     return this.request<UploadKnowledgeBaseResponse>(
       `/v1/profiles/${encodeURIComponent(profileId)}/knowledge-base`,
       {
-        body: JSON.stringify({ document } satisfies UploadKnowledgeBaseRequest),
+        body: JSON.stringify({
+          document,
+          ...(onDuplicate ? { onDuplicate } : {}),
+        } satisfies UploadKnowledgeBaseRequest),
         method: "POST",
       }
     );
@@ -2048,6 +2078,29 @@ export class AtlasClient {
       method: "PUT",
     });
   }
+
+  async getErrorTrackingSettings(): Promise<ErrorTrackingSettingsResponse> {
+    return this.request<ErrorTrackingSettingsResponse>(
+      "/v1/settings/error-tracking"
+    );
+  }
+
+  async setErrorTrackingSettings(
+    request: UpdateErrorTrackingSettingsRequest
+  ): Promise<ErrorTrackingSettingsResponse> {
+    return this.request<ErrorTrackingSettingsResponse>(
+      "/v1/settings/error-tracking",
+      { body: JSON.stringify(request), method: "PUT" }
+    );
+  }
+
+  async sendErrorTrackingTest(): Promise<SendErrorTrackingTestResponse> {
+    return this.request<SendErrorTrackingTestResponse>(
+      "/v1/settings/error-tracking/test",
+      { method: "POST" }
+    );
+  }
+
   async listNotificationDestinations(): Promise<ListNotificationDestinationsResponse> {
     return this.request<ListNotificationDestinationsResponse>(
       "/v1/notification-destinations"
@@ -2787,7 +2840,9 @@ export class AtlasClient {
     retried = false
   ): Promise<T> {
     const method = (init?.method ?? "GET").toUpperCase();
-    const headers = this.buildHeaders(method, init?.headers);
+    const headers = this.buildHeaders(method, init?.headers, {
+      hasBody: init?.body != null,
+    });
 
     const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
       ...init,
@@ -2827,8 +2882,9 @@ export class AtlasClient {
     retried = false
   ): Promise<Response> {
     const method = (init?.method ?? "GET").toUpperCase();
-    const headers = this.buildHeaders(method, init?.headers);
-    delete headers["Content-Type"];
+    const headers = this.buildHeaders(method, init?.headers, {
+      hasBody: false,
+    });
 
     const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
       ...init,
@@ -2859,12 +2915,16 @@ export class AtlasClient {
 
   private buildHeaders(
     method: string,
-    headers?: HeadersInit
+    headers?: HeadersInit,
+    options: { hasBody?: boolean } = {}
   ): Record<string, string> {
     const merged: Record<string, string> = {
-      "Content-Type": "application/json",
       ...((headers as Record<string, string>) ?? {}),
     };
+
+    if (options.hasBody && merged["Content-Type"] == null) {
+      merged["Content-Type"] = "application/json";
+    }
 
     if (this.authToken) {
       merged["Authorization"] = `Bearer ${this.authToken}`;
@@ -2894,8 +2954,57 @@ async function createApiError(
   response: Response,
   path: string
 ): Promise<AtlasApiError> {
-  const message = await readApiErrorMessage(response);
-  return new AtlasApiError(message, response.status, path);
+  const payloadResponse = response.clone();
+  const [message, payload] = await Promise.all([
+    readApiErrorMessage(response),
+    readApiErrorPayload(payloadResponse),
+  ]);
+  return new AtlasApiError(
+    message,
+    response.status,
+    path,
+    undefined,
+    parseKnowledgeBaseDuplicateConflict(payload)
+  );
+}
+
+async function readApiErrorPayload(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+function parseKnowledgeBaseDuplicateConflict(
+  payload: unknown
+): KnowledgeBaseDuplicateConflict | undefined {
+  if (
+    !(typeof payload === "object" && payload !== null && "duplicate" in payload)
+  ) {
+    return;
+  }
+
+  const duplicate = (payload as { duplicate?: unknown }).duplicate;
+  if (!(typeof duplicate === "object" && duplicate !== null)) {
+    return;
+  }
+
+  const candidate = duplicate as Record<string, unknown>;
+  const match = candidate.match;
+  if (
+    typeof candidate.existingDocumentId !== "string" ||
+    typeof candidate.existingFilename !== "string" ||
+    (match !== "content_hash" && match !== "name_size")
+  ) {
+    return;
+  }
+
+  return {
+    existingDocumentId: candidate.existingDocumentId,
+    existingFilename: candidate.existingFilename,
+    match,
+  };
 }
 
 function isMutatingMethod(method: string): boolean {

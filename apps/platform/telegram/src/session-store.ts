@@ -16,12 +16,14 @@ type ChatSessionMap = Record<string, ChatSessionRecord>;
 export class SessionStore {
   private readonly path: string;
   private map: ChatSessionMap = {};
+  private readonly hotSessions = new Map<string, unknown>();
 
   constructor(path = getChatSessionsPath()) {
     this.path = path;
   }
 
   async load(): Promise<void> {
+    this.hotSessions.clear();
     const raw = await readTextOrNull(this.path);
 
     if (raw === null) {
@@ -48,11 +50,24 @@ export class SessionStore {
   }
 
   set(chatId: string, record: ChatSessionRecord): void {
+    const previous = this.map[chatId];
     this.map[chatId] = record;
+    if (previous && previous.sessionId !== record.sessionId) {
+      this.hotSessions.delete(chatId);
+    }
   }
 
   delete(chatId: string): void {
     delete this.map[chatId];
+    this.hotSessions.delete(chatId);
+  }
+
+  getHotSession<T>(chatId: string): T | undefined {
+    return this.hotSessions.get(chatId) as T | undefined;
+  }
+
+  setHotSession(chatId: string, session: unknown): void {
+    this.hotSessions.set(chatId, session);
   }
 
   getArtifactShareUrls(chatId: string): Record<string, string> {

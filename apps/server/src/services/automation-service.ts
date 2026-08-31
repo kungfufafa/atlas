@@ -154,7 +154,8 @@ export class AutomationService {
   async update(
     id: string,
     orgId: string,
-    input: UpdateAutomationRequest
+    input: UpdateAutomationRequest,
+    access?: ProfileAccess
   ): Promise<StoredAutomation> {
     const existing = await this.get(id, orgId);
 
@@ -173,6 +174,15 @@ export class AutomationService {
       trigger,
     });
 
+    let profileId = existing.profileId;
+
+    if (input.profileId !== undefined) {
+      if (!input.profileId.trim()) {
+        throw new Error("Profile id is required.");
+      }
+      profileId = await this.resolveProfileId(orgId, input.profileId, access);
+    }
+
     let delivery = existing.delivery;
 
     if (input.delivery === null) {
@@ -183,7 +193,7 @@ export class AutomationService {
 
     await validateAutomationDelivery(delivery, {
       isEmailConfigured: this.canSendEmail
-        ? () => this.canSendEmail!(existing.profileId, orgId)
+        ? () => this.canSendEmail!(profileId, orgId)
         : undefined,
     });
 
@@ -193,6 +203,7 @@ export class AutomationService {
       description: input.description?.trim() ?? existing.description,
       enabled: input.enabled ?? existing.enabled,
       name: input.name?.trim() || existing.name,
+      profileId,
       prompt: input.prompt?.trim() || existing.prompt,
       trigger,
       updatedAt: new Date().toISOString(),

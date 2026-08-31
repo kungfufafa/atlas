@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   claimInboundDelivery,
   createInboundMessageDedupe,
+  detachWhatsAppSocketListeners,
   extractDisconnectStatusCode,
   isSupportedUpsertType,
   shouldRequestDevicePairingCode,
@@ -10,6 +11,24 @@ import {
 } from "./socket";
 
 describe("WhatsApp socket helpers", () => {
+  test("removes every bridge listener before retiring a socket", () => {
+    const removed: string[] = [];
+    detachWhatsAppSocketListeners({
+      ev: {
+        removeAllListeners: (event) => {
+          removed.push(event);
+        },
+      },
+    });
+
+    expect(removed).toEqual([
+      "chats.phoneNumberShare",
+      "connection.update",
+      "creds.update",
+      "messages.upsert",
+    ]);
+  });
+
   test("backs off 408 reconnects exponentially up to 30s", () => {
     expect(whatsAppReconnectDelayMs(0)).toBe(1000);
     expect(whatsAppReconnectDelayMs(1)).toBe(2000);

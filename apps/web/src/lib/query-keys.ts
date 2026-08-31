@@ -29,6 +29,9 @@ export const queryKeys = {
   email: {
     settings: ["email", "settings"] as const,
   },
+  errorTracking: {
+    settings: ["error-tracking", "settings"] as const,
+  },
   health: ["health"] as const,
   imageGenerationSettings: ["imageGeneration", "settings"] as const,
   knowledgeBase: {
@@ -54,6 +57,7 @@ export const queryKeys = {
   profiles: {
     all: ["profiles"] as const,
     detail: (profileId: string) => ["profiles", profileId] as const,
+    history: (profileId: string) => ["profiles", profileId, "history"] as const,
   },
   providerModelDiscovery: (providerId: string) =>
     ["providers", providerId, "modelDiscovery"] as const,

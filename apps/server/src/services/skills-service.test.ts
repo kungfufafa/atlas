@@ -279,6 +279,25 @@ describe("SkillsService", () => {
     expect(listed.skills.some((skill) => skill.name === "notes")).toBe(true);
   });
 
+  test("requires an explicit host capability to create a global skill", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const service = new SkillsService(db);
+    const request = {
+      body: "Shared instructions.",
+      description: "Shared host workflow.",
+      name: "shared-host-workflow",
+    };
+
+    await expect(service.createSkill(ORG_ID, request)).rejects.toMatchObject({
+      status: 403,
+    });
+    await expect(
+      service.createSkill(ORG_ID, request, { allowGlobal: true })
+    ).resolves.toMatchObject({
+      skill: { name: "shared-host-workflow" },
+    });
+  });
+
   test("deletes profile skills from disk and the database", async () => {
     const db = createInMemoryDatabaseAdapter();
     const service = new SkillsService(db);
@@ -289,7 +308,7 @@ describe("SkillsService", () => {
       profileId: PROFILE_ID,
     });
 
-    await service.deleteSkill(created.skill.id);
+    await service.deleteSkill(ORG_ID, created.skill.id);
 
     const listed = await service.listSkills();
     expect(listed.skills.some((skill) => skill.name === "notes")).toBe(false);
@@ -307,9 +326,11 @@ describe("SkillsService", () => {
     );
     expect(agentBrowser).toBeTruthy();
 
-    await expect(service.deleteSkill(agentBrowser!.id)).rejects.toThrow(
-      "Bundled system skills cannot be deleted."
-    );
+    await expect(
+      service.deleteSkill(ORG_ID, agentBrowser!.id, {
+        allowGlobalMutation: true,
+      })
+    ).rejects.toThrow("Bundled system skills cannot be deleted.");
   });
 
   test("composes always-on agent-browser capability prompt when assigned", async () => {

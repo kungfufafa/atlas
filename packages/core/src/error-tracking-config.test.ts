@@ -6,6 +6,7 @@ import {
   getErrorTrackingConfigPath,
   isErrorTrackingEnabled,
   loadErrorTrackingConfig,
+  loadErrorTrackingSettingsPublic,
   resolveErrorTrackingDsn,
   saveErrorTrackingDsn,
 } from "./error-tracking-config";
@@ -60,6 +61,62 @@ test("a legacy DSN password is never persisted", async () => {
 
   expect(configured.dsn).toBe("https://public-key@errors.example.com/7");
   expect(stored).not.toContain("legacy-secret");
+});
+
+test("public settings mask the ingest key", async () => {
+  await saveErrorTrackingDsn(DSN);
+
+  const settings = await loadErrorTrackingSettingsPublic();
+
+  expect(settings).toMatchObject({
+    configurationSource: "settings",
+    configured: true,
+    disabledByDoNotTrack: false,
+  });
+  expect(settings.dsnMasked).not.toContain("public-key");
+  expect(JSON.stringify(settings)).not.toContain(DSN);
+});
+
+test("public settings report the effective environment override", async () => {
+  await saveErrorTrackingDsn(DSN);
+
+  const settings = await loadErrorTrackingSettingsPublic({
+    ATLAS_ERROR_TRACKING_DSN: "https://environment-key@errors.example.com/9",
+  });
+
+  expect(settings).toMatchObject({
+    configurationSource: "environment",
+    configured: true,
+    disabledByDoNotTrack: false,
+  });
+  expect(settings.dsnMasked).not.toContain("environment-key");
+  expect(JSON.stringify(settings)).not.toContain("environment-key");
+});
+
+test("public settings report effective opt-out state", async () => {
+  await saveErrorTrackingDsn(DSN);
+
+  expect(
+    await loadErrorTrackingSettingsPublic({ DO_NOT_TRACK: "true" })
+  ).toEqual({
+    configurationSource: "settings",
+    configured: false,
+    disabledByDoNotTrack: true,
+    dsnMasked: null,
+  });
+});
+
+test("public settings do not claim that an invalid environment DSN sends", async () => {
+  expect(
+    await loadErrorTrackingSettingsPublic({
+      ATLAS_ERROR_TRACKING_DSN: "not-a-dsn",
+    })
+  ).toEqual({
+    configurationSource: "environment",
+    configured: false,
+    disabledByDoNotTrack: false,
+    dsnMasked: null,
+  });
 });
 
 test("DO_NOT_TRACK overrides both file and environment DSNs", () => {

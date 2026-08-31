@@ -37,6 +37,37 @@ export function createOrgMemoryChangeId(): string {
   return `omh_${String(orgMemoryChangeSequence).padStart(8, "0")}_${crypto.randomUUID().replace(/-/g, "")}`;
 }
 
+function parseOrgMemoryHistoryMetadata(
+  raw: string,
+  revisionId: string,
+  orgId: string
+): OrgMemoryChangeLogEntry | null {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null) {
+      throw new Error("Invalid history metadata shape.");
+    }
+    const candidate = parsed as Partial<OrgMemoryChangeLogEntry>;
+    if (
+      candidate.id !== revisionId ||
+      candidate.orgId !== orgId ||
+      typeof candidate.action !== "string" ||
+      typeof candidate.createdAt !== "string" ||
+      typeof candidate.label !== "string" ||
+      typeof candidate.orgId !== "string"
+    ) {
+      throw new Error("Invalid history metadata shape.");
+    }
+    return candidate as OrgMemoryChangeLogEntry;
+  } catch {
+    // Never include the malformed contents: history may contain sensitive data.
+    console.warn(
+      `Skipping malformed org memory history metadata for revision ${revisionId}.`
+    );
+    return null;
+  }
+}
+
 export async function appendOrgMemoryHistory(
   orgId: string,
   entry: OrgMemoryChangeLogEntry,
@@ -79,11 +110,11 @@ export async function listOrgMemoryHistory(
 
   const records: OrgMemoryChangeLogEntry[] = [];
   for (const id of ids) {
-    if (records.length >= limit) {
-      break;
-    }
     const raw = await readText(historyMetaPath(orgId, id, configDir));
-    records.push(JSON.parse(raw) as OrgMemoryChangeLogEntry);
+    const record = parseOrgMemoryHistoryMetadata(raw, id, orgId);
+    if (record) {
+      records.push(record);
+    }
   }
 
   records.sort((left, right) => {
@@ -107,7 +138,14 @@ export async function getOrgMemoryHistoryEntry(
     return null;
   }
 
-  const entry = JSON.parse(await readText(metaPath)) as OrgMemoryChangeLogEntry;
+  const entry = parseOrgMemoryHistoryMetadata(
+    await readText(metaPath),
+    revisionId,
+    orgId
+  );
+  if (!entry) {
+    return null;
+  }
   const content = await readText(contentPath);
   return { ...entry, content };
 }

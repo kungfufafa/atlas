@@ -1,6 +1,54 @@
-import type { ImageAttachment } from "@atlas/core";
-import { validateImageAttachments } from "@atlas/core";
+import {
+  type ImageAttachment,
+  MAX_IMAGE_BYTES,
+  validateImageAttachments,
+} from "@atlas/core";
 import { getImageBinary, hasImage } from "@crosscopy/clipboard";
+
+type ClipboardBytes = Uint8Array | Buffer | number[];
+
+export function detectClipboardImageMediaType(
+  bytes: ClipboardBytes
+): ImageAttachment["mediaType"] {
+  const eq = (signature: number[], offset = 0): boolean =>
+    bytes.length >= offset + signature.length &&
+    signature.every((value, index) => bytes[offset + index] === value);
+
+  if (eq([0x89, 0x50, 0x4e, 0x47])) {
+    return "image/png";
+  }
+  if (eq([0xff, 0xd8, 0xff])) {
+    return "image/jpeg";
+  }
+  if (
+    eq([0x47, 0x49, 0x46, 0x38]) &&
+    (bytes[4] === 0x37 || bytes[4] === 0x39)
+  ) {
+    return "image/gif";
+  }
+  if (eq([0x52, 0x49, 0x46, 0x46]) && eq([0x57, 0x45, 0x42, 0x50], 8)) {
+    return "image/webp";
+  }
+
+  throw new Error(
+    "Unsupported clipboard image type. Allowed: jpeg, png, gif, webp."
+  );
+}
+
+export function attachmentFromClipboardBytes(
+  bytes: ClipboardBytes
+): ImageAttachment {
+  if (bytes.length > MAX_IMAGE_BYTES) {
+    throw new Error(
+      `Clipboard image is too large (${bytes.length} bytes). Maximum is ${MAX_IMAGE_BYTES / (1024 * 1024)} MB.`
+    );
+  }
+
+  return {
+    data: Buffer.from(bytes).toString("base64"),
+    mediaType: detectClipboardImageMediaType(bytes),
+  };
+}
 
 export function isClipboardImagePasteSupported(): boolean {
   return true;
@@ -17,11 +65,7 @@ export async function readClipboardImage(): Promise<ImageAttachment | null> {
     return null;
   }
 
-  const attachment: ImageAttachment = {
-    data: Buffer.from(bytes).toString("base64"),
-    mediaType: "image/png",
-  };
-
+  const attachment = attachmentFromClipboardBytes(bytes);
   validateImageAttachments([attachment]);
   return attachment;
 }

@@ -1,5 +1,6 @@
-import type { ChatListItem } from "@/lib/chat-history";
+import type { ChatListItem, FailedChatTurn } from "@/lib/chat-history";
 import { resolveHistoryProfileId } from "@/lib/chat-history";
+import { createClientId } from "@/lib/client-id";
 
 export function shouldResetChatOnWorkspaceChange(
   previousOrgId: string | null | undefined,
@@ -81,4 +82,127 @@ export function findRetryCheckpoint(
         message.historyIndex < promptMessage.historyIndex!
     ) ?? null
   );
+}
+
+function buildFailedAssistantMessage(error: string): ChatListItem {
+  return {
+    content: error,
+    failed: true,
+    id: createClientId(),
+    role: "assistant",
+  };
+}
+
+export function markStreamingTurnFailed(
+  messages: ChatListItem[],
+  error: string
+): ChatListItem[] {
+  const failedAssistantIndex = messages.findLastIndex(
+    (message) =>
+      message.role === "assistant" &&
+      Boolean(message.streaming || message.thinkingStreaming)
+  );
+
+  const next = messages.map((message, index) => {
+    if (message.role === "tool" && message.toolStatus === "running") {
+      return {
+        ...message,
+        artifactStreaming: false,
+        content: `${message.tool} stopped`,
+        toolStatus: "done" as const,
+      };
+    }
+
+    if (
+      message.role === "assistant" &&
+      (message.streaming || message.thinkingStreaming)
+    ) {
+      return {
+        ...message,
+        ...(index === failedAssistantIndex
+          ? { content: error, failed: true }
+          : {}),
+        streaming: false,
+        thinkingStreaming: false,
+      };
+    }
+
+    return message;
+  });
+
+  if (failedAssistantIndex >= 0) {
+    return next;
+  }
+
+  return next.at(-1)?.role === "user"
+    ? [...next, buildFailedAssistantMessage(error)]
+    : next;
+}
+
+export function appendFailedTurnIfNeeded(
+  messages: ChatListItem[],
+  failed: FailedChatTurn
+): ChatListItem[] {
+  if (messages.some((message) => message.failed)) {
+    return messages;
+  }
+
+  const last = messages.at(-1);
+  const failedPromptAlreadyPersisted =
+    last?.role === "user" && last.content === failed.text;
+
+  return [
+    ...messages,
+    ...(failedPromptAlreadyPersisted
+      ? []
+      : [
+          {
+            content: failed.text,
+            id: createClientId(),
+            role: "user" as const,
+          },
+        ]),
+    buildFailedAssistantMessage(failed.error),
+  ];
+}
+
+export function findFailedRetryPrompt(
+  messages: ChatListItem[],
+  failedMessage: ChatListItem
+): ChatListItem | null {
+  const failedIndex = messages.findIndex(
+    (message) => message.id === failedMessage.id
+  );
+
+  if (failedIndex < 0) {
+    return null;
+  }
+
+  return (
+    messages
+      .slice(0, failedIndex)
+      .findLast((message) => message.role === "user") ?? null
+  );
+}
+
+export function messagesWithoutFailedTurn(
+  messages: ChatListItem[],
+  failedMessage: ChatListItem
+): ChatListItem[] {
+  const failedIndex = messages.findIndex(
+    (message) => message.id === failedMessage.id
+  );
+
+  if (failedIndex < 0) {
+    return messages;
+  }
+
+  let start = failedIndex;
+  const previous = messages[failedIndex - 1];
+
+  if (previous?.role === "user" && typeof previous.historyIndex !== "number") {
+    start = failedIndex - 1;
+  }
+
+  return [...messages.slice(0, start), ...messages.slice(failedIndex + 1)];
 }

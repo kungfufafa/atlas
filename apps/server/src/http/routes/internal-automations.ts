@@ -4,7 +4,7 @@ import {
   type StoredAutomation,
 } from "@atlas/core";
 import type { ServerOptions } from "../context";
-import { errorResponse, json, readJson } from "../shared";
+import { errorResponse, json, readOptionalJson } from "../shared";
 import type { HonoApp } from "../types";
 
 export function registerInternalAutomationRoutes(
@@ -90,9 +90,7 @@ export function registerInternalAutomationRoutes(
       }
     }
 
-    const body = await readJson<{ fireId?: string }>(c.req.raw).catch(() => ({
-      fireId: undefined as string | undefined,
-    }));
+    const body = await readOptionalJson<{ fireId?: string }>(c.req.raw, {});
     const fireId = body.fireId?.trim();
     if (!fireId) {
       return errorResponse("Scheduled automation runs require a fireId.", 400);

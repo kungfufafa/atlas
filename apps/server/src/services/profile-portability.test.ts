@@ -213,6 +213,7 @@ describe("profile pack portability", () => {
       "org_destination",
       exported.data,
       {
+        actorUserId: "admin_destination",
         availableModelIds: new Set(),
         confirm: true,
         restoreCustomTools: true,
@@ -267,6 +268,47 @@ describe("profile pack portability", () => {
         toolkitId: "toolkit_destination",
       },
     ]);
+    expect(
+      await db.listProfileChangeEvents("org_destination", imported.profileId)
+    ).toEqual([
+      expect.objectContaining({
+        actorUserId: "admin_destination",
+        afterValue: JSON.stringify({
+          name: "Portable",
+          profileId: imported.profileId,
+        }),
+        beforeValue: null,
+        field: "pack_import",
+        source: "pack_import",
+      }),
+    ]);
+  });
+
+  test("keeps a published import when history storage fails", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    await seedOrganization(db, "org_destination");
+    const failingDb = {
+      ...db,
+      async createProfileChangeEvent(): Promise<void> {
+        throw new Error("ledger unavailable");
+      },
+    };
+    const archive = zipSync({
+      [PROFILE_PACK_MANIFEST_FILENAME]: Buffer.from(
+        JSON.stringify(createManifest())
+      ),
+    });
+
+    const imported = await importProfilePack(
+      failingDb,
+      "org_destination",
+      archive,
+      { actorUserId: "admin_destination", confirm: true }
+    );
+
+    expect(
+      await db.getProfileForOrg(imported.profileId, "org_destination")
+    ).not.toBeNull();
   });
 
   test("skips legacy slug-only Composio assignments instead of widening access", async () => {

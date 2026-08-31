@@ -1,22 +1,25 @@
-import type { ProfileRef } from "./contract";
+import type { KnowledgeBaseDuplicateConflict, ProfileRef } from "./contract";
 import { LLM_FETCH_TIMEOUT_MS } from "./fetch-idle";
 
 export class AtlasApiError extends Error {
   readonly status: number;
   readonly path?: string;
   readonly profiles?: ProfileRef[];
+  readonly knowledgeBaseDuplicate?: KnowledgeBaseDuplicateConflict;
 
   constructor(
     message: string,
     status: number,
     path?: string,
-    profiles?: ProfileRef[]
+    profiles?: ProfileRef[],
+    knowledgeBaseDuplicate?: KnowledgeBaseDuplicateConflict
   ) {
     super(message);
     this.name = "AtlasApiError";
     this.status = status;
     this.path = path;
     this.profiles = profiles;
+    this.knowledgeBaseDuplicate = knowledgeBaseDuplicate;
   }
 }
 

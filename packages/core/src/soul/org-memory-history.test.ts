@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {
@@ -9,6 +9,7 @@ import {
   listOrgMemoryHistory,
   ORG_MEMORY_HISTORY_MAX_ENTRIES,
 } from "./org-memory-history";
+import { getOrgMemoryHistoryDir } from "./resolve";
 
 const originalConfigDir = process.env.ATLAS_CONFIG_DIR;
 
@@ -103,5 +104,44 @@ describe("org memory history", () => {
     expect(changes[0]?.label).toBe(
       `Edit ${ORG_MEMORY_HISTORY_MAX_ENTRIES + 2}`
     );
+  });
+
+  test("skips malformed metadata before sorting and limiting history", async () => {
+    const orgId = await setupOrg();
+    const historyDir = getOrgMemoryHistoryDir(orgId, tempDir);
+    await mkdir(historyDir, { recursive: true });
+    await writeFile(path.join(historyDir, "omh_99999999_bad.json"), "{secret");
+    await writeFile(path.join(historyDir, "omh_99999999_bad.md"), "secret");
+
+    const validId = "omh_00000001_valid";
+    await writeFile(
+      path.join(historyDir, `${validId}.json`),
+      JSON.stringify({
+        action: "edit",
+        actorUserId: "user_a",
+        createdAt: "2026-07-31T09:00:00.000Z",
+        id: validId,
+        label: "Valid",
+        orgId,
+      })
+    );
+    await writeFile(path.join(historyDir, `${validId}.md`), "valid");
+
+    const warnings: string[] = [];
+    const originalWarn = console.warn;
+    console.warn = (message?: unknown) => warnings.push(String(message));
+    try {
+      await expect(listOrgMemoryHistory(orgId, 1, tempDir)).resolves.toEqual([
+        expect.objectContaining({ id: validId }),
+      ]);
+      await expect(
+        getOrgMemoryHistoryEntry(orgId, "omh_99999999_bad", tempDir)
+      ).resolves.toBeNull();
+    } finally {
+      console.warn = originalWarn;
+    }
+
+    expect(warnings).toHaveLength(2);
+    expect(warnings.join(" ")).not.toContain("secret");
   });
 });

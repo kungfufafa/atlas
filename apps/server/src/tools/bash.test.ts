@@ -123,6 +123,30 @@ describe("bash tool", () => {
     expect(result.stdout).toBe("http://127.0.0.1:4310");
   });
 
+  test("drops env keys that hijack the shell before the command runs", async () => {
+    workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-bash-"));
+    const hijackPath = path.join(workspaceRoot, "hijack.sh");
+    await writeFile(hijackPath, "echo HIJACKED\n", "utf8");
+
+    const result = await runBash(
+      {
+        command: 'echo "keep=$KEEP_ME preload=$LD_PRELOAD node=$NODE_OPTIONS"',
+        env: {
+          BASH_ENV: hijackPath,
+          KEEP_ME: "kept",
+          LD_PRELOAD: "/tmp/evil.so",
+          NODE_OPTIONS: "--require=/tmp/evil.js",
+        },
+      },
+      { orgId: "org_test", profileId: "profile_test" },
+      { workspaceRoot }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).not.toContain("HIJACKED");
+    expect(result.stdout.trim()).toBe("keep=kept preload= node=");
+  });
+
   test("scrubs provider credentials from host-native coding-agent processes", async () => {
     workspaceRoot = await mkdtemp(path.join(os.tmpdir(), "atlas-bash-"));
     const previousOpenAiKey = process.env.OPENAI_API_KEY;

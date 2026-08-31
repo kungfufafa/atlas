@@ -25,6 +25,7 @@
     "builtin-tools",
     "skills",
     "integrations",
+    "error-tracking",
     "coding-agent",
     "agent-browser",
     "mcp",

@@ -50,6 +50,7 @@ export function useProviderInstanceCard({
   const [replaceKeyOpen, setReplaceKeyOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [capabilityEvidenceOpen, setCapabilityEvidenceOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [dialogError, setDialogError] = useState<string | null>(null);
@@ -177,6 +178,7 @@ export function useProviderInstanceCard({
 
     try {
       await onDelete(instance.id);
+      setDeleteOpen(false);
     } catch (error) {
       onError(formatError(error));
     } finally {
@@ -275,6 +277,7 @@ export function useProviderInstanceCard({
     busy,
     capabilityEvidenceOpen,
     catalogModelsForType,
+    deleteOpen,
     dialogError,
     editBaseUrl,
     editLabel,
@@ -303,6 +306,7 @@ export function useProviderInstanceCard({
     saveManageModels,
     setApiKey,
     setCapabilityEvidenceOpen,
+    setDeleteOpen,
     setEditBaseUrl,
     setEditLabel,
     setEditOpen,

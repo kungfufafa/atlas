@@ -120,6 +120,7 @@ export class OrgMemoryService {
     content: string,
     change?: OrgMemoryChangeContext
   ): Promise<void> {
+    await this.requireActiveOrganization(orgId);
     const trimmed = content.trim();
     if (Buffer.byteLength(trimmed, "utf8") > SUMMARY_BYTE_CAP * 4) {
       throw new AtlasApiError(
@@ -167,6 +168,7 @@ export class OrgMemoryService {
     revisionId: string,
     actorUserId: string
   ): Promise<string> {
+    await this.requireActiveOrganization(orgId);
     const record = await getOrgMemoryHistoryEntry(
       orgId,
       revisionId,
@@ -186,20 +188,25 @@ export class OrgMemoryService {
   }
 
   async undoLastChange(orgId: string, actorUserId: string): Promise<string> {
+    await this.requireActiveOrganization(orgId);
+    const currentContent = (await this.getMemory(orgId)).trim();
     const history = await listOrgMemoryHistory(
       orgId,
-      2,
+      undefined,
       this.options.configDir
     );
-    const previous = history[1];
-    if (!previous) {
-      throw new AtlasApiError(
-        "No previous org memory revision to restore.",
-        404
+    for (const change of history) {
+      const record = await getOrgMemoryHistoryEntry(
+        orgId,
+        change.id,
+        this.options.configDir
       );
+      if (record && record.content.trim() !== currentContent) {
+        return this.restoreHistoryRevision(orgId, change.id, actorUserId);
+      }
     }
 
-    return this.restoreHistoryRevision(orgId, previous.id, actorUserId);
+    throw new AtlasApiError("No previous org memory revision to restore.", 404);
   }
 
   /**
@@ -212,6 +219,7 @@ export class OrgMemoryService {
     bullet: string,
     options: { pin?: boolean; change?: OrgMemoryChangeContext } = {}
   ): Promise<void> {
+    await this.requireActiveOrganization(orgId);
     const text = this.normalizeBullet(bullet);
     const content = await this.getMemory(orgId);
     const parsed = parseOrgMemoryContent(content);
@@ -327,6 +335,7 @@ export class OrgMemoryService {
       change?: OrgMemoryChangeContext;
     } = {}
   ) {
+    await this.requireActiveOrganization(orgId);
     const targets = new Set(
       entries.map((e) => e.trim().replace(/^-\s+/, "").trim()).filter(Boolean)
     );
@@ -436,6 +445,7 @@ export class OrgMemoryService {
     orgId: string,
     input: ProposeOrgMemoryInput
   ): Promise<ProposeOrgMemoryResult> {
+    await this.requireActiveOrganization(orgId);
     const text = this.normalizeProposalBullet(input.bullet);
     const warnings = detectOrgMemoryInjectionWarnings(text);
     const content = await this.getMemory(orgId);
@@ -507,6 +517,7 @@ export class OrgMemoryService {
     reviewerUserId: string,
     options: { pin?: boolean } = {}
   ): Promise<StoredOrgMemoryProposal> {
+    await this.requireActiveOrganization(orgId);
     const db = this.requireDatabase();
     const proposal = await this.getProposal(orgId, proposalId);
 
@@ -568,6 +579,7 @@ export class OrgMemoryService {
     proposalId: string,
     reviewerUserId: string
   ): Promise<StoredOrgMemoryProposal> {
+    await this.requireActiveOrganization(orgId);
     const db = this.requireDatabase();
     const proposal = await this.getProposal(orgId, proposalId);
 
@@ -715,11 +727,19 @@ export class OrgMemoryService {
     return this.database;
   }
 
+  private async requireActiveOrganization(orgId: string): Promise<void> {
+    const org = await this.requireDatabase().getOrganizationById(orgId);
+    if (!org || org.archivedAt) {
+      throw new AtlasApiError("Not found", 404);
+    }
+  }
+
   private async commitMemory(
     orgId: string,
     content: string,
     change: OrgMemoryChangeContext
   ): Promise<void> {
+    await this.requireActiveOrganization(orgId);
     const current = await this.getMemory(orgId);
     if (current === content) {
       return;

@@ -206,6 +206,63 @@ describe("AutomationService", () => {
     expect(automation.description).toBe("run the tool");
   });
 
+  test("updates the run-as profile with profile access checks", async () => {
+    const db = await createTestDb();
+    const now = new Date().toISOString();
+    await db.upsertProfile({
+      createdAt: now,
+      id: "profile_secondary",
+      isDefault: false,
+      isSuper: false,
+      model: null,
+      name: "Secondary Agent",
+      orgId: ORG_ID,
+      systemPrompt: "",
+      updatedAt: now,
+    });
+    await db.upsertProfile({
+      createdAt: now,
+      id: "profile_super_agent",
+      isDefault: false,
+      isSuper: true,
+      model: null,
+      name: "Super Agent",
+      orgId: ORG_ID,
+      systemPrompt: "",
+      updatedAt: now,
+    });
+    const service = new AutomationService(db, {
+      getUserTimezone: async () => "UTC",
+    });
+    const automation = await service.create(
+      ORG_ID,
+      {
+        description: "Run once",
+        name: "Profile-aware task",
+        prompt: "Do the work",
+        trigger: { type: "manual" },
+      },
+      PROFILE_ID
+    );
+
+    const updated = await service.update(
+      automation.id,
+      ORG_ID,
+      { profileId: "profile_secondary" },
+      PRINCIPAL
+    );
+
+    expect(updated.profileId).toBe("profile_secondary");
+    await expect(
+      service.update(
+        automation.id,
+        ORG_ID,
+        { profileId: "profile_super_agent" },
+        PRINCIPAL
+      )
+    ).rejects.toMatchObject({ status: 403 });
+  });
+
   test("defaults schedule timezone from user config", async () => {
     const db = await createTestDb();
     const service = new AutomationService(db, {

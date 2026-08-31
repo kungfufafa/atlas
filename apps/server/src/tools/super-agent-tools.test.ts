@@ -163,13 +163,19 @@ describe("super agent assign_tool_to_profile", () => {
   test("allows the first assignment for a tool created this turn", async () => {
     sessionState.beginTurn(SESSION_ID);
     sessionState.markToolCreated(SESSION_ID, "tool_weather");
+    let receivedMeta:
+      | { actorUserId?: string | null; source: string }
+      | undefined;
 
     const assignTool = getAssignToolTool(
       {
         async assignTool(
           _orgId: string,
-          profileId: string
+          profileId: string,
+          _request: unknown,
+          changeMeta?: { actorUserId?: string | null; source: string }
         ): Promise<ProfileResponse> {
+          receivedMeta = changeMeta;
           return {
             profile: {
               createdAt: "2026-01-01T00:00:00.000Z",
@@ -196,9 +202,13 @@ describe("super agent assign_tool_to_profile", () => {
     await expect(
       assignTool.run(
         { profileId: "default", toolId: "tool_weather" },
-        { orgId: ORG_ID, sessionId: SESSION_ID }
+        { orgId: ORG_ID, sessionId: SESSION_ID, userId: "user_admin" }
       )
     ).resolves.toBeDefined();
+    expect(receivedMeta).toEqual({
+      actorUserId: "user_admin",
+      source: "super_bot",
+    });
   });
 
   test("blocks a second assignment for the same tool in the same turn", async () => {

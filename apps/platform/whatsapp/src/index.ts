@@ -34,7 +34,7 @@ await installErrorTrackingSink();
 
 let spawnedChild: Bun.Subprocess | null = null;
 let socketHandle: {
-  stop: () => void;
+  stop: () => Promise<void>;
   socket: {
     sendMessage: (jid: string, content: { text: string }) => Promise<unknown>;
   } | null;
@@ -52,15 +52,15 @@ function persistWorkerHeartbeat(): void {
 }
 
 registerProcessLifecycleLogging();
-registerCleanupHandlers(() => {
+registerCleanupHandlers(async () => {
   outboundServer?.stop();
-  socketHandle?.stop();
+  await socketHandle?.stop();
   if (heartbeatTimer) {
     clearInterval(heartbeatTimer);
   }
-  void clearWhatsAppWorkerHeartbeat();
-  void clearWhatsAppQrCode();
-  void clearWhatsAppDevicePairingCode();
+  await clearWhatsAppWorkerHeartbeat();
+  await clearWhatsAppQrCode();
+  await clearWhatsAppDevicePairingCode();
   stopSpawnedServer(spawnedChild);
 });
 
@@ -195,16 +195,34 @@ try {
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   console.error(message);
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
+  }
+  outboundServer?.stop();
+  try {
+    await socketHandle?.stop();
+  } catch {
+    // Socket stop is best-effort during fatal startup cleanup.
+  }
+  await clearWhatsAppWorkerHeartbeat();
+  await clearWhatsAppQrCode();
+  await clearWhatsAppDevicePairingCode();
   stopSpawnedServer(spawnedChild);
   process.exit(1);
 }
 
-function registerCleanupHandlers(cleanup: () => void): void {
+function registerCleanupHandlers(cleanup: () => void | Promise<void>): void {
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
     process.on(signal, () => {
       console.log(`WhatsApp worker received ${signal}. Shutting down.`);
-      cleanup();
-      process.exit(0);
+      void (async () => {
+        try {
+          await cleanup();
+        } finally {
+          process.exit(0);
+        }
+      })();
     });
   }
 }

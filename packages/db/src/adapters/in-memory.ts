@@ -37,6 +37,7 @@ import type {
   StoredOrgMemoryProposal,
   StoredOrgUsageBudgetRecord,
   StoredOutboxRecord,
+  StoredProfileChangeEvent,
   StoredProfileComposioToolkitRecord,
   StoredProfileRecord,
   StoredSessionMessageRecord,
@@ -221,6 +222,7 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
   const profileSkills = new Map<string, Set<string>>();
   const skillUsage = new Map<string, StoredSkillUsageRecord>();
   const sessions = new Map<string, StoredSessionRecord>();
+  const sessionUpdatedAt = new Map<string, string>();
   const sessionMessages = new Map<string, StoredSessionMessageRecord[]>();
   const attachments = new Map<string, StoredAttachmentRecord>();
   const usersById = new Map<string, StoredUserRecord>();
@@ -232,6 +234,7 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
   const orgInvites = new Map<string, StoredOrgInviteRecord>();
   const orgInvitesByTokenHash = new Map<string, StoredOrgInviteRecord>();
   const orgMemoryProposals = new Map<string, StoredOrgMemoryProposal>();
+  const profileChangeEvents = new Map<string, StoredProfileChangeEvent>();
   const skillProposals = new Map<string, StoredSkillProposal>();
   const skillSuggestions = new Map<string, StoredSkillSuggestion>();
   const artifactShares = new Map<string, StoredArtifactShareRecord>();
@@ -632,6 +635,13 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       orgMemoryProposals.set(record.id, record);
     },
 
+    async createProfileChangeEvent(record) {
+      if (profileChangeEvents.has(record.id)) {
+        throw new Error(`Profile change event already exists: ${record.id}`);
+      }
+      profileChangeEvents.set(record.id, { ...record });
+    },
+
     async createProfileIfAbsent(record) {
       if (profiles.has(record.id)) {
         return false;
@@ -748,6 +758,11 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       profileMcpServers.delete(id);
       profileSkills.delete(id);
       profileComposioToolkits.delete(id);
+      for (const [eventId, event] of profileChangeEvents) {
+        if (event.profileId === id) {
+          profileChangeEvents.delete(eventId);
+        }
+      }
       return true;
     },
 
@@ -760,6 +775,11 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       profileMcpServers.delete(id);
       profileSkills.delete(id);
       profileComposioToolkits.delete(id);
+      for (const [eventId, event] of profileChangeEvents) {
+        if (event.profileId === id && event.orgId === orgId) {
+          profileChangeEvents.delete(eventId);
+        }
+      }
       return true;
     },
 
@@ -778,6 +798,7 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
     async deleteSession(id) {
       sessionMessages.delete(id);
+      sessionUpdatedAt.delete(id);
       return sessions.delete(id);
     },
 
@@ -1616,6 +1637,21 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       );
     },
 
+    async listProfileChangeEvents(orgId, profileId, options = {}) {
+      const limit = options.limit ?? 100;
+      const offset = options.offset ?? 0;
+      return [...profileChangeEvents.values()]
+        .filter(
+          (event) => event.orgId === orgId && event.profileId === profileId
+        )
+        .sort((left, right) => {
+          const byTime = right.createdAt.localeCompare(left.createdAt);
+          return byTime || right.id.localeCompare(left.id);
+        })
+        .slice(offset, offset + limit)
+        .map((event) => ({ ...event }));
+    },
+
     async listProfileComposioToolkits(profileId) {
       if (profiles.get(profileId)?.isImporting) {
         return [];
@@ -1674,7 +1710,11 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
             session.profileId === profileId && session.channel === channel
         )
         .map((session) =>
-          summarizeSession(session, sessionMessages.get(session.id) ?? [])
+          summarizeSession(
+            session,
+            sessionMessages.get(session.id) ?? [],
+            sessionUpdatedAt.get(session.id)
+          )
         )
         .filter((summary) => summary.messageCount > 0)
         .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
@@ -2055,6 +2095,12 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
     async replaceMessagesForSession(sessionId, messages) {
       sessionMessages.set(sessionId, [...messages]);
+      const updatedAt = messages.reduce(
+        (latest, message) =>
+          message.createdAt > latest ? message.createdAt : latest,
+        new Date().toISOString()
+      );
+      sessionUpdatedAt.set(sessionId, updatedAt);
     },
 
     async replaceProfileComposioToolkits(profileId, assignments) {
@@ -2222,10 +2268,11 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         return false;
       }
 
+      const updatedAt = new Date().toISOString();
       const updated = {
         ...organization,
         archivedAt,
-        updatedAt: archivedAt,
+        updatedAt,
       };
       organizations.set(orgId, updated);
       organizationsBySlug.set(updated.slug, updated);
@@ -2552,6 +2599,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         return;
       }
       sessions.set(record.id, record);
+      if (!sessionUpdatedAt.has(record.id)) {
+        sessionUpdatedAt.set(record.id, record.createdAt);
+      }
     },
 
     async upsertSkill(record) {
@@ -2603,13 +2653,18 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
 function summarizeSession(
   session: StoredSessionRecord,
-  messages: StoredSessionMessageRecord[]
+  messages: StoredSessionMessageRecord[],
+  sessionUpdatedAt?: string
 ): StoredSessionSummaryRecord {
   const sorted = [...messages].sort((left, right) => left.seq - right.seq);
-  const updatedAt =
+  const fromMessages =
     sorted.length > 0
       ? sorted[sorted.length - 1]!.createdAt
       : session.createdAt;
+  const updatedAt =
+    sessionUpdatedAt && sessionUpdatedAt > fromMessages
+      ? sessionUpdatedAt
+      : fromMessages;
   const firstUser = sorted.find(
     (message) =>
       typeof message.payload === "object" &&

@@ -17,12 +17,12 @@ export type ProfileSaveStatus =
   | "saved"
   | "error";
 
-export type ProfileDetailTab = "profile" | "prompt" | "proposals";
+export type ProfileDetailTab = "history" | "profile" | "prompt" | "proposals";
 
 export function resolveProfileDetailTab(
   value: string | null
 ): ProfileDetailTab {
-  if (value === "prompt" || value === "proposals") {
+  if (value === "history" || value === "prompt" || value === "proposals") {
     return value;
   }
 

@@ -13,6 +13,7 @@ import {
   type DiscordSettingsResponse,
   type DiscoverModelsRequest,
   type EmailSettingsResponse,
+  type ErrorTrackingSettingsResponse,
   type GenerateImageRequest,
   type GenerateImageResponse,
   type ImageGenerationSettingsResponse,
@@ -23,6 +24,7 @@ import {
   resetWhatsAppSessionForReconnect,
   type SendEmailTestRequest,
   type SendEmailTestResponse,
+  type SendErrorTrackingTestResponse,
   type TelegramSettingsResponse,
   type TestProviderRequest,
   type TestProviderResponse,
@@ -36,6 +38,7 @@ import {
   type UpdateComposioSettingsRequest,
   type UpdateDiscordSettingsRequest,
   type UpdateEmailSettingsRequest,
+  type UpdateErrorTrackingSettingsRequest,
   type UpdateImageGenerationRequest,
   type UpdateProviderRequest,
   type UpdateProviderResponse,
@@ -64,7 +67,13 @@ import {
   requireOrgAdminOrPlatformAdminFromContext,
   requirePlatformAdminFromContext,
 } from "../org-guards";
-import { errorResponse, getRequestAuth, json, readJson } from "../shared";
+import {
+  errorResponse,
+  getRequestAuth,
+  json,
+  readJson,
+  readOptionalJson,
+} from "../shared";
 import type { HonoApp } from "../types";
 
 export function registerModelRoutes(
@@ -180,6 +189,18 @@ export function registerModelRoutes(
     .object({})
     .passthrough()
     .openapi("ComposioSettingsResponse");
+  const errorTrackingSettingsSchema = z
+    .object({})
+    .passthrough()
+    .openapi("ErrorTrackingSettingsResponse");
+  const updateErrorTrackingRequestSchema = z
+    .object({})
+    .passthrough()
+    .openapi("UpdateErrorTrackingSettingsRequest");
+  const sendErrorTrackingTestSchema = z
+    .object({})
+    .passthrough()
+    .openapi("SendErrorTrackingTestResponse");
   const emailSettingsSchema = z
     .object({})
     .passthrough()
@@ -1049,6 +1070,85 @@ export function registerModelRoutes(
   app.openAPIRegistry.registerPath(
     createRoute({
       method: "get",
+      operationId: "getErrorTrackingSettings",
+      path: "/v1/settings/error-tracking",
+      responses: {
+        200: {
+          content: {
+            "application/json": { schema: errorTrackingSettingsSchema },
+          },
+          description: "Error tracking settings",
+        },
+        403: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Forbidden",
+        },
+      },
+      summary: "Get error tracking settings",
+      tags: ["Models"],
+    })
+  );
+  app.openAPIRegistry.registerPath(
+    createRoute({
+      method: "put",
+      operationId: "setErrorTrackingSettings",
+      path: "/v1/settings/error-tracking",
+      request: {
+        body: {
+          content: {
+            "application/json": { schema: updateErrorTrackingRequestSchema },
+          },
+          required: true,
+        },
+      },
+      responses: {
+        200: {
+          content: {
+            "application/json": { schema: errorTrackingSettingsSchema },
+          },
+          description: "Error tracking settings",
+        },
+        400: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Error",
+        },
+        403: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Forbidden",
+        },
+      },
+      summary: "Set error tracking settings",
+      tags: ["Models"],
+    })
+  );
+  app.openAPIRegistry.registerPath(
+    createRoute({
+      method: "post",
+      operationId: "sendErrorTrackingTest",
+      path: "/v1/settings/error-tracking/test",
+      responses: {
+        200: {
+          content: {
+            "application/json": { schema: sendErrorTrackingTestSchema },
+          },
+          description: "Test event result",
+        },
+        400: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Error",
+        },
+        403: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Forbidden",
+        },
+      },
+      summary: "Send an error tracking test event",
+      tags: ["Models"],
+    })
+  );
+  app.openAPIRegistry.registerPath(
+    createRoute({
+      method: "get",
       operationId: "getEmailSettings",
       path: "/v1/settings/email",
       responses: {
@@ -1599,9 +1699,7 @@ export function registerModelRoutes(
 
   app.post("/v1/settings/email/test", async (c) => {
     const auth = requireOrgAdminOrPlatformAdminFromContext(c);
-    const body = await readJson<SendEmailTestRequest>(c.req.raw).catch(
-      () => ({}) as SendEmailTestRequest
-    );
+    const body = await readOptionalJson<SendEmailTestRequest>(c.req.raw, {});
 
     try {
       return json<SendEmailTestResponse>(
@@ -1754,6 +1852,47 @@ export function registerModelRoutes(
       return errorResponse(message, 400);
     }
   });
+
+  app.get("/v1/settings/error-tracking", async (c) => {
+    requirePlatformAdminFromContext(c);
+    return json<ErrorTrackingSettingsResponse>(
+      await agent.getErrorTrackingSettings()
+    );
+  });
+
+  app.put("/v1/settings/error-tracking", async (c) => {
+    requirePlatformAdminFromContext(c);
+    const body = await readJson<UpdateErrorTrackingSettingsRequest>(c.req.raw);
+
+    try {
+      return json<ErrorTrackingSettingsResponse>(
+        await agent.setErrorTrackingSettings(body)
+      );
+    } catch (error) {
+      if (error instanceof AtlasApiError) {
+        return errorResponse(error.message, error.status);
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      return errorResponse(message, 400);
+    }
+  });
+
+  app.post("/v1/settings/error-tracking/test", async (c) => {
+    requirePlatformAdminFromContext(c);
+
+    try {
+      return json<SendErrorTrackingTestResponse>(
+        await agent.sendErrorTrackingTest()
+      );
+    } catch (error) {
+      if (error instanceof AtlasApiError) {
+        return errorResponse(error.message, error.status);
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      return errorResponse(message, 400);
+    }
+  });
+
   app.get("/v1/settings/whatsapp", async (c) => {
     requireOrgAdminOrPlatformAdminFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);

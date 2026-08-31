@@ -426,6 +426,16 @@ Path guards enforce:
 
 All builtin tool IDs are protected and cannot be deleted from the dashboard.
 
+### Custom JavaScript isolation
+
+Atlas runs each custom JavaScript tool in a separate process with an empty-by-default environment. Provider keys, `ATLAS_CONFIG_DIR`, and other server secrets are not passed to it. The process can read its own module and can read or write only the active profile workspace. Inspection never receives workspace access.
+
+A flat `~/.atlas/tools/example.js` tool is intentionally a single-file module so it cannot read another workspace's flat tool source. If a tool needs relative imports or supporting files, put its entry module and dependencies together in a dedicated subdirectory and register that nested entry path. Atlas exposes only that subdirectory, read-only; package imports outside it remain blocked.
+
+The filesystem boundary uses macOS `sandbox-exec` or Linux Landlock ABI 3. Linux hosts, including Docker hosts, need kernel 6.2 or newer with Landlock enabled. Atlas blocks custom JavaScript inspection and execution when that boundary is unavailable; it does not silently run the module with host filesystem access.
+
+`ATLAS_ALLOW_UNSANDBOXED_CUSTOM_TOOLS=1` is an emergency compatibility escape hatch for an installation that already has an equivalent tenant-isolated VM or container boundary. Enabling it removes Atlas's filesystem isolation for custom JavaScript, so do not use it on a shared or multi-tenant Atlas host.
+
 ## Next steps
 
 - [Org memory](/org-memory) — shared facts, admin UI, and API

@@ -174,7 +174,7 @@ describe("provider content provenance", () => {
     expect(gemini[0]?.parts).toEqual([geminiRaw]);
 
     const anthropicRaw = {
-      id: "toolu_legacy",
+      id: NORMALIZED_TOOL_CALL.id,
       input: { query: "atlas" },
       name: "search",
       type: "tool_use",
@@ -185,6 +185,12 @@ describe("provider content provenance", () => {
         providerContent: [anthropicRaw],
         role: "assistant",
         toolCalls: [NORMALIZED_TOOL_CALL],
+      },
+      {
+        content: "tool result",
+        name: "search",
+        role: "tool",
+        toolCallId: NORMALIZED_TOOL_CALL.id,
       },
     ]);
     expect(anthropic[0]?.content).toEqual([anthropicRaw]);

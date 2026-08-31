@@ -1,7 +1,7 @@
-import { randomUUID } from "node:crypto";
-import { copyFile, rm } from "node:fs/promises";
+import { realpathSync } from "node:fs";
+import { realpath } from "node:fs/promises";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import type {
   JsonSchema,
   RetryPolicy,
@@ -14,9 +14,13 @@ import {
   permissiveObjectSchema,
 } from "@atlas/core";
 import type { StoredToolRecord } from "@atlas/db";
+import { spawnJsonTool } from "./custom-tool-subprocess";
 
-const moduleCache = new Map<string, JavascriptToolModule>();
-const moduleRevisions = new Map<string, number>();
+const BUN_BIN = process.env.ATLAS_BUN_BIN ?? "bun";
+const RUNNER_PATH = fileURLToPath(
+  new URL("./javascript-tool-runner.js", import.meta.url)
+);
+const moduleMetadataCache = new Map<string, JavascriptToolMetadata>();
 
 const JAVASCRIPT_TOOL_RETRY_POLICY: RetryPolicy = {
   backoffFactor: 2,
@@ -37,11 +41,15 @@ export interface JavascriptToolHandlerConfig {
   parameters?: JsonSchema;
 }
 
-interface JavascriptToolModule {
+interface JavascriptToolMetadata {
   parallelSafe?: boolean;
   parameters?: JsonSchema;
   retrySafe?: boolean;
-  run: (input: unknown, context: ToolContext) => Promise<unknown>;
+}
+
+interface CanonicalJavascriptModule {
+  modulePath: string;
+  moduleReadRoot?: string;
 }
 
 export async function loadJavascriptTool(
@@ -57,14 +65,10 @@ export async function loadJavascriptTool(
   }
 
   let modulePath: string;
-
   try {
     modulePath = resolveJavascriptModulePath(config.modulePath);
   } catch (error) {
-    return createErrorTool(
-      record,
-      error instanceof Error ? error.message : String(error)
-    );
+    return createErrorTool(record, errorMessage(error));
   }
 
   if (!(await pathExists(modulePath))) {
@@ -75,27 +79,36 @@ export async function loadJavascriptTool(
   }
 
   try {
-    const module = await importJavascriptModule(modulePath);
+    const canonicalModule = await canonicalizeJavascriptModulePath(modulePath);
+    modulePath = canonicalModule.modulePath;
+    // Inspection also happens in a child: importing an untrusted module must
+    // never execute top-level code in the Atlas server process.
+    const metadata = await inspectJavascriptModule(
+      modulePath,
+      canonicalModule.moduleReadRoot
+    );
     const parameters =
-      module.parameters ?? config.parameters ?? permissiveObjectSchema();
+      metadata.parameters ?? config.parameters ?? permissiveObjectSchema();
 
     return {
       description: record.description,
       name: record.name,
       parameters,
-      ...(module.parallelSafe ? { parallelSafe: true } : {}),
-      retryPolicy: module.retrySafe
+      ...(metadata.parallelSafe ? { parallelSafe: true } : {}),
+      retryPolicy: metadata.retrySafe
         ? JAVASCRIPT_TOOL_RETRY_POLICY
         : { maxRetries: 0 },
       async run(input, context) {
-        return module.run(input, context);
+        return runJavascriptTool(
+          modulePath,
+          canonicalModule.moduleReadRoot,
+          input,
+          context
+        );
       },
     };
   } catch (error) {
-    return createErrorTool(
-      record,
-      error instanceof Error ? error.message : String(error)
-    );
+    return createErrorTool(record, errorMessage(error));
   }
 }
 
@@ -103,13 +116,16 @@ export async function validateJavascriptToolModule(
   modulePath: string
 ): Promise<void> {
   const resolvedPath = resolveJavascriptModulePath(modulePath);
-
   if (!(await pathExists(resolvedPath))) {
     throw new Error(`Tool module not found: ${modulePath}`);
   }
 
-  invalidateJavascriptModuleCache(resolvedPath);
-  await importJavascriptModule(resolvedPath);
+  const canonicalModule = await canonicalizeJavascriptModulePath(resolvedPath);
+  invalidateJavascriptModuleCache(canonicalModule.modulePath);
+  await inspectJavascriptModule(
+    canonicalModule.modulePath,
+    canonicalModule.moduleReadRoot
+  );
 }
 
 export function resolveJavascriptModulePath(modulePath: string): string {
@@ -125,6 +141,80 @@ export function resolveJavascriptModulePath(modulePath: string): string {
   return resolved;
 }
 
+export function invalidateJavascriptModuleCache(modulePath: string): void {
+  moduleMetadataCache.delete(modulePath);
+  try {
+    moduleMetadataCache.delete(realpathSync(modulePath));
+  } catch {
+    // A deleted module cannot have a second canonical cache key.
+  }
+}
+
+async function inspectJavascriptModule(
+  modulePath: string,
+  moduleReadRoot?: string
+): Promise<JavascriptToolMetadata> {
+  const cached = moduleMetadataCache.get(modulePath);
+  if (cached) {
+    return cached;
+  }
+
+  const inspected = await spawnJsonTool({
+    bin: BUN_BIN,
+    context: {},
+    input: {},
+    label: "JavaScript tool inspection",
+    mode: "--inspect",
+    modulePath,
+    moduleReadRoot,
+    runnerPath: RUNNER_PATH,
+  });
+  const metadata = normalizeJavascriptToolMetadata(inspected);
+  moduleMetadataCache.set(modulePath, metadata);
+  return metadata;
+}
+
+async function runJavascriptTool(
+  modulePath: string,
+  moduleReadRoot: string | undefined,
+  input: unknown,
+  context: ToolContext
+): Promise<unknown> {
+  return spawnJsonTool({
+    bin: BUN_BIN,
+    context,
+    input,
+    label: "JavaScript tool",
+    mode: "--run",
+    modulePath,
+    moduleReadRoot,
+    runnerPath: RUNNER_PATH,
+    workspaceRoot: readOptionalString(context.workspaceRoot),
+  });
+}
+
+async function canonicalizeJavascriptModulePath(
+  modulePath: string
+): Promise<CanonicalJavascriptModule> {
+  const [toolsDir, canonicalModulePath] = await Promise.all([
+    realpath(getCustomToolsDir()),
+    realpath(modulePath),
+  ]);
+  if (!isPathInsideDirectory(canonicalModulePath, toolsDir)) {
+    throw new Error(`Tool module path must stay inside ${toolsDir}.`);
+  }
+  const moduleDirectory = path.dirname(canonicalModulePath);
+  return {
+    modulePath: canonicalModulePath,
+    // Flat modules remain single-file so one tenant's tool cannot read every
+    // other flat module. A dedicated subdirectory is its read-only dependency
+    // boundary and can safely contain relative imports/supporting files.
+    ...(moduleDirectory === toolsDir
+      ? {}
+      : { moduleReadRoot: moduleDirectory }),
+  };
+}
+
 function readJavascriptHandlerConfig(
   handlerConfig: unknown
 ): JavascriptToolHandlerConfig | null {
@@ -137,7 +227,6 @@ function readJavascriptHandlerConfig(
     typeof record.modulePath === "string" && record.modulePath.trim()
       ? record.modulePath.trim()
       : null;
-
   if (!modulePath) {
     return null;
   }
@@ -145,82 +234,23 @@ function readJavascriptHandlerConfig(
   const parameters = isJsonSchema(record.parameters)
     ? record.parameters
     : undefined;
-
   return { modulePath, parameters };
 }
 
-async function importJavascriptModule(
-  modulePath: string
-): Promise<JavascriptToolModule> {
-  const cached = moduleCache.get(modulePath);
-
-  if (cached) {
-    return cached;
+function normalizeJavascriptToolMetadata(
+  value: unknown
+): JavascriptToolMetadata {
+  if (typeof value !== "object" || value === null) {
+    throw new Error("Tool module inspection returned invalid metadata.");
   }
 
-  const revision = moduleRevisions.get(modulePath) ?? 0;
-  const importPath =
-    revision === 0 ? modulePath : await createReloadableModuleCopy(modulePath);
-  let imported: unknown;
-  try {
-    imported = await import(pathToFileURL(importPath).href);
-  } finally {
-    if (importPath !== modulePath) {
-      await rm(importPath, { force: true });
-    }
-  }
-  const module = normalizeJavascriptModule(imported);
-
-  moduleCache.set(modulePath, module);
-  return module;
-}
-
-async function createReloadableModuleCopy(modulePath: string): Promise<string> {
-  const parsed = path.parse(modulePath);
-  const reloadPath = path.join(
-    parsed.dir,
-    `.${parsed.name}.atlas-reload-${randomUUID()}${parsed.ext || ".js"}`
-  );
-  await copyFile(modulePath, reloadPath);
-  return reloadPath;
-}
-
-export function invalidateJavascriptModuleCache(modulePath: string): void {
-  moduleCache.delete(modulePath);
-  moduleRevisions.set(modulePath, (moduleRevisions.get(modulePath) ?? 0) + 1);
-}
-
-function normalizeJavascriptModule(imported: unknown): JavascriptToolModule {
-  if (typeof imported !== "object" || imported === null) {
-    throw new Error("Tool module must export a run function.");
-  }
-
-  const record = imported as Record<string, unknown>;
-  const defaultExport =
-    typeof record.default === "object" && record.default !== null
-      ? (record.default as Record<string, unknown>)
-      : null;
-  const source = defaultExport ?? record;
-  const run = source.run;
-
-  if (typeof run !== "function") {
-    throw new Error("Tool module must export a run function.");
-  }
-
-  const parameters = isJsonSchema(source.parameters)
-    ? source.parameters
-    : isJsonSchema(record.parameters)
-      ? record.parameters
-      : undefined;
-  const parallelSafe =
-    source.parallelSafe === true || record.parallelSafe === true;
-  const retrySafe = source.retrySafe === true || record.retrySafe === true;
-
+  const record = value as Record<string, unknown>;
   return {
-    parameters,
-    ...(parallelSafe ? { parallelSafe: true } : {}),
-    ...(retrySafe ? { retrySafe: true } : {}),
-    run: (input, context) => Promise.resolve(run(input, context)),
+    ...(record.parallelSafe === true ? { parallelSafe: true } : {}),
+    ...(isJsonSchema(record.parameters)
+      ? { parameters: record.parameters }
+      : {}),
+    ...(record.retrySafe === true ? { retrySafe: true } : {}),
   };
 }
 
@@ -243,7 +273,6 @@ function isPathInsideDirectory(
   directoryPath: string
 ): boolean {
   const relative = path.relative(directoryPath, targetPath);
-
   return (
     relative === "" || !(relative.startsWith("..") || path.isAbsolute(relative))
   );
@@ -251,4 +280,12 @@ function isPathInsideDirectory(
 
 function isJsonSchema(value: unknown): value is JsonSchema {
   return typeof value === "object" && value !== null;
+}
+
+function readOptionalString(value: unknown): string | undefined {
+  return typeof value === "string" && value ? value : undefined;
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }

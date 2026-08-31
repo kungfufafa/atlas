@@ -269,6 +269,7 @@ export function registerProfilePortabilityRoutes(
         orgId,
         decodeProfilePackRequestData(body.data),
         {
+          actorUserId: auth.user.id,
           availableModelIds: await getAvailableModelIds(options, orgId),
           confirm: body.confirm,
           name: body.name,

@@ -29,12 +29,12 @@ let spawnedChild: Bun.Subprocess | null = null;
 let botStop: (() => void) | null = null;
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
-registerCleanupHandlers(() => {
+registerCleanupHandlers(async () => {
   botStop?.();
   if (heartbeatTimer) {
     clearInterval(heartbeatTimer);
   }
-  void clearTelegramWorkerHeartbeat();
+  await clearTelegramWorkerHeartbeat();
   stopSpawnedServer(spawnedChild);
 });
 
@@ -130,16 +130,28 @@ try {
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   console.error(message);
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
+  }
+  botStop?.();
+  await clearTelegramWorkerHeartbeat();
+  stopSpawnedServer(spawnedChild);
   process.exit(1);
 } finally {
   stopSpawnedServer(spawnedChild);
 }
 
-function registerCleanupHandlers(cleanup: () => void): void {
+function registerCleanupHandlers(cleanup: () => void | Promise<void>): void {
   for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
     process.on(signal, () => {
-      cleanup();
-      process.exit(0);
+      void (async () => {
+        try {
+          await cleanup();
+        } finally {
+          process.exit(0);
+        }
+      })();
     });
   }
 }

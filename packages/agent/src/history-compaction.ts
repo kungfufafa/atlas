@@ -78,17 +78,6 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / TOKEN_ESTIMATE_RATIO);
 }
 
-function stripThinkingFromProviderContent(content: unknown[]): unknown[] {
-  return content.filter((item) => {
-    if (typeof item !== "object" || item === null) {
-      return true;
-    }
-
-    const type = (item as { type?: unknown }).type;
-    return type !== "thinking" && type !== "reasoning";
-  });
-}
-
 function estimateMessageTokens(messages: readonly ChatMessage[]): number {
   let total = 0;
 
@@ -99,18 +88,21 @@ function estimateMessageTokens(messages: readonly ChatMessage[]): number {
     }
 
     if (message.role === "assistant") {
-      total += estimateTokens(message.content);
-
-      if (message.toolCalls?.length) {
-        total += estimateTokens(JSON.stringify(message.toolCalls));
-      }
-
+      // Provider content is the replay payload and already contains any text,
+      // reasoning, and tool calls that would otherwise be counted separately.
       if (message.providerContent?.length) {
-        total += estimateTokens(
-          JSON.stringify(
-            stripThinkingFromProviderContent(message.providerContent)
-          )
-        );
+        total += estimateTokens(JSON.stringify(message.providerContent));
+      } else {
+        total += estimateTokens(message.content);
+
+        // Chat-completions providers replay this trace as reasoning_content.
+        if (message.thinking) {
+          total += estimateTokens(message.thinking);
+        }
+
+        if (message.toolCalls?.length) {
+          total += estimateTokens(JSON.stringify(message.toolCalls));
+        }
       }
 
       continue;
@@ -238,7 +230,7 @@ export function pruneToolOutputs(
 
   let total = 0;
   let pruned = 0;
-  const toPrune: Extract<ChatMessage, { role: "tool" }>[] = [];
+  const pruneIndexes: number[] = [];
   let turns = 0;
 
   for (
@@ -280,15 +272,21 @@ export function pruneToolOutputs(
     }
 
     pruned += estimate;
-    toPrune.push(message);
+    pruneIndexes.push(messageIndex);
   }
 
   if (pruned <= minimum) {
     return { prunedTokens: 0 };
   }
 
-  for (const message of toPrune) {
-    message.content = PRUNE_TRUNCATION;
+  // Copy-on-write: provider requests can still hold references to the original
+  // message objects while compaction updates the stored history.
+  for (const index of pruneIndexes) {
+    const message = messages[index];
+    if (!message || message.role !== "tool") {
+      continue;
+    }
+    messages[index] = { ...message, content: PRUNE_TRUNCATION };
   }
 
   return { prunedTokens: pruned };

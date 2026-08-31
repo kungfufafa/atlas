@@ -12,7 +12,6 @@ import { defaultExecutionQueue } from "../../services/backpressure-queue";
 import {
   getWebPublicUrlSettings,
   persistWebPublicUrl,
-  resolveRequestClientOrigin,
 } from "../../services/composio-callback-url";
 import { gracefulShutdownManager } from "../../services/graceful-shutdown";
 import { stuckJobReaper } from "../../services/stuck-job-reaper";
@@ -335,10 +334,7 @@ export function registerSystemRoutes(
   app.put("/v1/system/web-public-url", async (c) => {
     requirePlatformAdminFromContext(c);
     const body = await readJson<UpdateWebPublicUrlRequest>(c.req.raw);
-    const webPublicUrl = resolveRequestClientOrigin(
-      c.req.raw,
-      body.webPublicUrl
-    );
+    const webPublicUrl = body.webPublicUrl?.trim();
 
     if (!webPublicUrl) {
       return errorResponse("webPublicUrl is required.", 400);

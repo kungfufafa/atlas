@@ -180,6 +180,15 @@ describe("SkillProposalService", () => {
     expect(listed.skills.some((skill) => skill.name === "deploy-notes")).toBe(
       true
     );
+    expect(await db.listProfileChangeEvents(ORG_ID, profile.id)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          actorUserId: "admin_user",
+          field: "skills",
+          source: "skill_manage",
+        }),
+      ])
+    );
 
     const again = await service.approveProposal(
       ORG_ID,
@@ -362,6 +371,50 @@ describe("SkillProposalService", () => {
       "utf8"
     );
     expect(onDisk).toContain("- staging");
+
+    const removed = await service.stageProposal({
+      action: "remove_file",
+      orgId: ORG_ID,
+      profileId: profile.id,
+      relativePath: "checklist.md",
+      skillName: "deploy-notes",
+    });
+    await service.approveProposal(ORG_ID, removed.proposalId!, "admin_user");
+    await expect(
+      readFile(
+        join(
+          getProfileSkillsDir(ORG_ID, profile.id),
+          "deploy-notes",
+          "checklist.md"
+        ),
+        "utf8"
+      )
+    ).rejects.toMatchObject({ code: "ENOENT" });
+
+    const fileEvents = (
+      await db.listProfileChangeEvents(ORG_ID, profile.id)
+    ).filter((event) => event.afterValue?.includes('"path":"checklist.md"'));
+    expect(fileEvents).toHaveLength(2);
+    expect(
+      fileEvents.every(
+        (event) =>
+          event.actorUserId === "admin_user" && event.source === "skill_manage"
+      )
+    ).toBe(true);
+    expect(fileEvents.map((event) => JSON.parse(event.afterValue!))).toEqual(
+      expect.arrayContaining([
+        {
+          content: "- staging\n",
+          path: "checklist.md",
+          skillName: "deploy-notes",
+        },
+        {
+          content: null,
+          path: "checklist.md",
+          skillName: "deploy-notes",
+        },
+      ])
+    );
   });
 
   test("redacts API keys, bearer tokens, and private keys before proposal persistence", async () => {

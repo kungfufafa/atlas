@@ -223,6 +223,11 @@ export class SkillProposalService {
       return this.approveConsolidation(proposal, reviewerUserId);
     }
 
+    const changeMeta = {
+      actorUserId: reviewerUserId,
+      source: "skill_manage" as const,
+    };
+
     if (proposal.action === "create") {
       const storedContent = proposal.content;
       if (!storedContent?.trim()) {
@@ -234,7 +239,8 @@ export class SkillProposalService {
       await skills.createAndAssignRawSkillToProfile(
         orgId,
         proposal.profileId,
-        content
+        content,
+        { changeMeta }
       );
     } else if (proposal.action === "patch") {
       const storedOldString = proposal.patchOldString;
@@ -260,7 +266,8 @@ export class SkillProposalService {
         proposal.profileId,
         proposal.skillName,
         oldString,
-        newString
+        newString,
+        changeMeta
       );
     } else if (proposal.action === "edit") {
       const storedContent = proposal.content;
@@ -273,7 +280,8 @@ export class SkillProposalService {
         orgId,
         proposal.profileId,
         proposal.skillName,
-        content
+        content,
+        changeMeta
       );
     } else if (proposal.action === "write_file") {
       const storedContent = proposal.content;
@@ -291,7 +299,8 @@ export class SkillProposalService {
         proposal.profileId,
         proposal.skillName,
         relativePath,
-        content
+        content,
+        changeMeta
       );
     } else if (proposal.action === "remove_file") {
       const relativePath = proposal.relativePath;
@@ -302,13 +311,15 @@ export class SkillProposalService {
         orgId,
         proposal.profileId,
         proposal.skillName,
-        relativePath
+        relativePath,
+        changeMeta
       );
     } else {
       await skills.deleteAssignedProfileSkill(
         orgId,
         proposal.profileId,
-        proposal.skillName
+        proposal.skillName,
+        changeMeta
       );
     }
 

@@ -8,6 +8,8 @@ import type { ChannelSendResult, WhatsAppOutboundAdapter } from "./types";
 const DEFAULT_OUTBOUND_PORT = 4312;
 const EPHEMERAL_LISTEN_PORT = 0;
 
+export const WHATSAPP_OUTBOUND_TOKEN_HEADER = "x-atlas-token";
+
 export interface WhatsAppOutboundOptions {
   fetchImpl?: typeof fetch;
 }
@@ -74,7 +76,12 @@ export function createWhatsAppOutboundAdapter(
 
         const response = await fetchImpl(`http://127.0.0.1:${port}/send`, {
           body: JSON.stringify(payload),
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(config.outboundToken
+              ? { [WHATSAPP_OUTBOUND_TOKEN_HEADER]: config.outboundToken }
+              : {}),
+          },
           method: "POST",
         });
 

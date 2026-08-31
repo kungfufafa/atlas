@@ -824,9 +824,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     let reply = "";
     const streamedArtifacts = new Map<string, ChannelArtifactRef>();
 
-    typingLoop.start();
-
     try {
+      typingLoop.start();
+
       reply = await session.sendStream(
         input,
         {
@@ -953,10 +953,16 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const existing = sessionStore.get(jid);
 
     if (existing && existing.profileId === profileId) {
+      const hot = sessionStore.getHotSession<RemoteChatSession>(jid);
+      if (hot) {
+        return hot;
+      }
+
       const session = client.createChatSession(existing.sessionId, "whatsapp");
 
       try {
         await session.getMessages();
+        sessionStore.setHotSession(jid, session);
         return session;
       } catch {
         // Session missing on server; create a new one below
@@ -983,6 +989,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       sessionId: session.id,
       updatedAt: new Date().toISOString(),
     });
+    sessionStore.setHotSession(jid, session);
     await sessionStore.save();
 
     return session;
@@ -1135,7 +1142,7 @@ export function resetChatLocksForTests(): void {
   rateLimiter.reset();
 }
 
-async function withChatLock(
+export async function withChatLock(
   jid: string,
   fn: () => Promise<void>
 ): Promise<void> {
@@ -1144,7 +1151,10 @@ async function withChatLock(
   const current = new Promise<void>((resolve) => {
     release = resolve;
   });
-  const chain = previous.then(() => current);
+  const chain = previous.then(
+    () => current,
+    () => current
+  );
   chatLocks.set(jid, chain);
 
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -1167,4 +1177,11 @@ async function withChatLock(
       chatLocks.delete(jid);
     }
   }
+}
+
+export function seedChatLockForTests(
+  jid: string,
+  promise: Promise<void>
+): void {
+  chatLocks.set(jid, promise);
 }

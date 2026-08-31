@@ -152,6 +152,25 @@ describe("web_fetch SSRF guard", () => {
     ).rejects.toThrow(/private or reserved/);
   });
 
+  test("rejects non-global IPv6 literals", async () => {
+    stubFetch(async () => htmlResponse("<p>must not fetch</p>"));
+
+    for (const host of ["2001::1", "2001:db8::1", "::192.0.2.1"]) {
+      await expect(
+        webFetchTool.run({ url: `http://[${host}]/` }, CTX)
+      ).rejects.toThrow(/private or reserved/);
+    }
+  });
+
+  test("allows IPv6 literals adjacent to blocked ranges", async () => {
+    stubFetch(async () => htmlResponse("<p>ok</p>"));
+
+    for (const host of ["2001:200::1", "2001:db7:ffff::1", "2001:db9::1"]) {
+      const output = await webFetchTool.run({ url: `http://[${host}]/` }, CTX);
+      expect(output.status).toBe(200);
+    }
+  });
+
   test("rejects link-local 169.254.x.x", async () => {
     await expect(
       webFetchTool.run({ url: "http://169.254.169.254/" }, CTX)

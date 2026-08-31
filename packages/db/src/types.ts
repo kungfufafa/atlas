@@ -550,6 +550,35 @@ export interface StoredOrgInviteRecord {
 
 export type OrgMemoryProposalStatus = "pending" | "approved" | "rejected";
 
+export type ProfileChangeSource =
+  | "dashboard"
+  | "super_bot"
+  | "skill_manage"
+  | "pack_import";
+
+export type ProfileChangeField =
+  | "system_prompt"
+  | "soul.soul"
+  | "soul.style"
+  | "soul.instructions"
+  | "soul.memory"
+  | "tools"
+  | "skills"
+  | "mcp"
+  | "pack_import";
+
+export interface StoredProfileChangeEvent {
+  actorUserId: string | null;
+  afterValue: string | null;
+  beforeValue: string | null;
+  createdAt: string;
+  field: ProfileChangeField;
+  id: string;
+  orgId: string;
+  profileId: string;
+  source: ProfileChangeSource;
+}
+
 export interface StoredOrgMemoryProposal {
   bullet: string;
   createdAt: string;
@@ -879,6 +908,9 @@ export interface DatabaseAdapter {
 
   createOrgMemoryProposal(record: StoredOrgMemoryProposal): Promise<void>;
 
+  /** Append-only insert. Adapters intentionally expose no update/delete API. */
+  createProfileChangeEvent(record: StoredProfileChangeEvent): Promise<void>;
+
   /** Atomically inserts a profile and returns false when its global id exists. */
   createProfileIfAbsent(record: StoredProfileRecord): Promise<boolean>;
 
@@ -1195,6 +1227,12 @@ export interface DatabaseAdapter {
     status?: OrgMemoryProposalStatus
   ): Promise<StoredOrgMemoryProposal[]>;
   listOrgUsageBudgets(): Promise<StoredOrgUsageBudgetRecord[]>;
+
+  listProfileChangeEvents(
+    orgId: string,
+    profileId: string,
+    options?: { limit?: number; offset?: number }
+  ): Promise<StoredProfileChangeEvent[]>;
 
   listProfileComposioToolkits(
     profileId: string

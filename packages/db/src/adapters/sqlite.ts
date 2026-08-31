@@ -38,6 +38,7 @@ import type {
   StoredOrgMemberRecord,
   StoredOrgMemoryProposal,
   StoredOutboxRecord,
+  StoredProfileChangeEvent,
   StoredProfileComposioToolkitRecord,
   StoredProfileRecord,
   StoredSessionMessageRecord,
@@ -390,6 +391,18 @@ interface OrgMemoryProposalRow {
   status: string;
 }
 
+interface ProfileChangeEventRow {
+  actor_user_id: string | null;
+  after_value: string | null;
+  before_value: string | null;
+  created_at: string;
+  field: string;
+  id: string;
+  org_id: string;
+  profile_id: string;
+  source: string;
+}
+
 interface SkillProposalRow {
   action: string;
   consolidation_json: string | null;
@@ -689,6 +702,70 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     WHERE id = ? AND is_importing = 1
     LIMIT 1
   `);
+
+  const toNullableSqlBoolean = (value: boolean | null | undefined) => {
+    if (value == null) {
+      return null;
+    }
+    return value ? 1 : 0;
+  };
+  const runCreateProfileIfAbsent = (record: StoredProfileRecord) =>
+    createProfileIfAbsentStmt.run(
+      record.id,
+      record.name,
+      record.systemPrompt,
+      record.model,
+      toNullableSqlBoolean(record.thinkingEnabled),
+      record.thinkingEffort ?? null,
+      record.isSuper ? 1 : 0,
+      0,
+      record.orgId ?? null,
+      record.isDefault ? 1 : 0,
+      toNullableSqlBoolean(record.skillsWriteApproval),
+      toNullableSqlBoolean(record.skillsPostTurnReview),
+      toNullableSqlBoolean(record.skillsCuratorConsolidation),
+      record.createdAt,
+      record.updatedAt
+    );
+  const runUpsertProfile = (record: StoredProfileRecord) =>
+    upsertProfileStmt.run(
+      record.id,
+      record.name,
+      record.systemPrompt,
+      record.model,
+      toNullableSqlBoolean(record.thinkingEnabled),
+      record.thinkingEffort ?? null,
+      record.isSuper ? 1 : 0,
+      0,
+      record.orgId ?? null,
+      record.isDefault ? 1 : 0,
+      toNullableSqlBoolean(record.skillsWriteApproval),
+      toNullableSqlBoolean(record.skillsPostTurnReview),
+      toNullableSqlBoolean(record.skillsCuratorConsolidation),
+      record.createdAt,
+      record.updatedAt
+    );
+  const createProfileIfAbsentTransaction = db.transaction(
+    (record: StoredProfileRecord): boolean => {
+      const result = runCreateProfileIfAbsent(record);
+      if (result.changes !== 1) {
+        return false;
+      }
+      if (record.isDefault && record.orgId) {
+        clearDefaultProfileForOrgStmt.run(record.orgId, record.id);
+      }
+      return true;
+    }
+  );
+  const upsertDefaultProfileTransaction = db.transaction(
+    (record: StoredProfileRecord, orgId: string): void => {
+      if (getAnyProfileImportReservationStmt.get(record.id)) {
+        return;
+      }
+      clearDefaultProfileForOrgStmt.run(orgId, record.id);
+      runUpsertProfile(record);
+    }
+  );
   const deleteProfileStmt = db.prepare("DELETE FROM profiles WHERE id = ?");
   const deleteProfileForOrgStmt = db.prepare(
     "DELETE FROM profiles WHERE id = ? AND org_id = ?"
@@ -760,9 +837,9 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   `);
   const upsertSessionStmt = db.prepare(`
     INSERT INTO sessions (
-      id, org_id, profile_id, channel, created_at, user_id, model_override
+      id, org_id, profile_id, channel, created_at, updated_at, user_id, model_override
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       org_id = excluded.org_id,
       profile_id = excluded.profile_id,
@@ -770,6 +847,9 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       user_id = COALESCE(excluded.user_id, sessions.user_id),
       model_override = excluded.model_override
   `);
+  const updateSessionUpdatedAtStmt = db.prepare(
+    "UPDATE sessions SET updated_at = ? WHERE id = ?"
+  );
   const deleteSessionStmt = db.prepare("DELETE FROM sessions WHERE id = ?");
   const updateSessionModelOverrideStmt = db.prepare(
     "UPDATE sessions SET model_override = ? WHERE id = ?"
@@ -799,8 +879,36 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     INSERT INTO session_messages (id, session_id, seq, payload, created_at)
     VALUES (?, ?, ?, ?, ?)
   `);
+  const insertMessages = (
+    sessionId: string,
+    messages: StoredSessionMessageRecord[]
+  ): void => {
+    for (const message of messages) {
+      appendMessageStmt.run(
+        message.id,
+        sessionId,
+        message.seq,
+        JSON.stringify(message.payload),
+        message.createdAt
+      );
+    }
+  };
+  const appendMessagesTransaction = db.transaction(insertMessages);
   const deleteMessagesForSessionStmt = db.prepare(
     "DELETE FROM session_messages WHERE session_id = ?"
+  );
+  const replaceMessagesForSessionTransaction = db.transaction(
+    (sessionId: string, messages: StoredSessionMessageRecord[]) => {
+      deleteMessagesForSessionStmt.run(sessionId);
+      insertMessages(sessionId, messages);
+
+      const updatedAt = messages.reduce(
+        (latest, message) =>
+          message.createdAt > latest ? message.createdAt : latest,
+        new Date().toISOString()
+      );
+      updateSessionUpdatedAtStmt.run(updatedAt, sessionId);
+    }
   );
   const insertAttachmentStmt = db.prepare(`
     INSERT INTO attachments (
@@ -823,7 +931,10 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       s.created_at,
       s.title,
       COUNT(m.id) AS message_count,
-      COALESCE(MAX(m.created_at), s.created_at) AS updated_at,
+      max(
+        COALESCE(MAX(m.created_at), s.created_at),
+        COALESCE(s.updated_at, s.created_at)
+      ) AS updated_at,
       (
         SELECT payload
         FROM session_messages
@@ -1311,6 +1422,24 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     INSERT INTO profile_composio_toolkits (profile_id, toolkit_id, allowed_actions)
     VALUES (?, ?, ?)
   `);
+  const replaceProfileComposioToolkitsTransaction = db.transaction(
+    (profileId: string, assignments: StoredProfileComposioToolkitRecord[]) => {
+      if (!getProfileStmt.get(profileId)) {
+        return;
+      }
+      deleteProfileComposioToolkitsStmt.run(profileId);
+
+      for (const assignment of assignments) {
+        insertProfileComposioToolkitStmt.run(
+          profileId,
+          assignment.toolkitId,
+          assignment.allowedActions
+            ? JSON.stringify(assignment.allowedActions)
+            : null
+        );
+      }
+    }
+  );
   const listComposioUserConnectionsForUserStmt = db.prepare(`
     SELECT
       id,
@@ -1573,6 +1702,21 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       id, org_id, profile_id, session_id, proposed_by_user_id,
       bullet, status, pinned, reviewer_user_id, reviewed_at, created_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  const createProfileChangeEventStmt = db.prepare(`
+    INSERT INTO profile_change_events (
+      id, org_id, profile_id, actor_user_id, source, field,
+      before_value, after_value, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  const listProfileChangeEventsStmt = db.prepare(`
+    SELECT
+      id, org_id, profile_id, actor_user_id, source, field,
+      before_value, after_value, created_at
+    FROM profile_change_events
+    WHERE org_id = ? AND profile_id = ?
+    ORDER BY created_at DESC, id DESC
+    LIMIT ? OFFSET ?
   `);
   const listOrgMemoryProposalsStmt = db.prepare(`
     SELECT
@@ -2086,15 +2230,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       );
     },
     async appendMessagesForSession(sessionId, messages) {
-      for (const message of messages) {
-        appendMessageStmt.run(
-          message.id,
-          sessionId,
-          message.seq,
-          JSON.stringify(message.payload),
-          message.createdAt
-        );
-      }
+      appendMessagesTransaction(sessionId, messages);
     },
 
     async applySkillConsolidation(input) {
@@ -2465,43 +2601,22 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       );
     },
 
-    async createProfileIfAbsent(record) {
-      const result = createProfileIfAbsentStmt.run(
+    async createProfileChangeEvent(record) {
+      createProfileChangeEventStmt.run(
         record.id,
-        record.name,
-        record.systemPrompt,
-        record.model,
-        record.thinkingEnabled == null ? null : record.thinkingEnabled ? 1 : 0,
-        record.thinkingEffort ?? null,
-        record.isSuper ? 1 : 0,
-        0,
-        record.orgId ?? null,
-        record.isDefault ? 1 : 0,
-        record.skillsWriteApproval == null
-          ? null
-          : record.skillsWriteApproval
-            ? 1
-            : 0,
-        record.skillsPostTurnReview == null
-          ? null
-          : record.skillsPostTurnReview
-            ? 1
-            : 0,
-        record.skillsCuratorConsolidation == null
-          ? null
-          : record.skillsCuratorConsolidation
-            ? 1
-            : 0,
-        record.createdAt,
-        record.updatedAt
+        record.orgId,
+        record.profileId,
+        record.actorUserId,
+        record.source,
+        record.field,
+        record.beforeValue,
+        record.afterValue,
+        record.createdAt
       );
-      if (result.changes !== 1) {
-        return false;
-      }
-      if (record.isDefault && record.orgId) {
-        clearDefaultProfileForOrgStmt.run(record.orgId, record.id);
-      }
-      return true;
+    },
+
+    async createProfileIfAbsent(record) {
+      return createProfileIfAbsentTransaction(record);
     },
 
     async createSkillProposal(record) {
@@ -3551,6 +3666,18 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       );
     },
 
+    async listProfileChangeEvents(orgId, profileId, options = {}) {
+      const limit = options.limit ?? 100;
+      const offset = options.offset ?? 0;
+      const rows = listProfileChangeEventsStmt.all(
+        orgId,
+        profileId,
+        limit,
+        offset
+      ) as ProfileChangeEventRow[];
+      return rows.map(toProfileChangeEventRecord);
+    },
+
     async listProfileComposioToolkits(profileId) {
       return listProfileComposioToolkitsStmt
         .all(profileId)
@@ -3983,34 +4110,11 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     },
 
     async replaceMessagesForSession(sessionId, messages) {
-      deleteMessagesForSessionStmt.run(sessionId);
-
-      for (const message of messages) {
-        appendMessageStmt.run(
-          message.id,
-          sessionId,
-          message.seq,
-          JSON.stringify(message.payload),
-          message.createdAt
-        );
-      }
+      replaceMessagesForSessionTransaction(sessionId, messages);
     },
 
     async replaceProfileComposioToolkits(profileId, assignments) {
-      if (!getProfileStmt.get(profileId)) {
-        return;
-      }
-      deleteProfileComposioToolkitsStmt.run(profileId);
-
-      for (const assignment of assignments) {
-        insertProfileComposioToolkitStmt.run(
-          assignment.profileId,
-          assignment.toolkitId,
-          assignment.allowedActions
-            ? JSON.stringify(assignment.allowedActions)
-            : null
-        );
-      }
+      replaceProfileComposioToolkitsTransaction(profileId, assignments);
     },
 
     async reserveProfileImport(record) {
@@ -4201,9 +4305,10 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     },
 
     async tryMarkOrganizationArchived(orgId, archivedAt) {
+      const updatedAt = new Date().toISOString();
       const result = tryMarkOrganizationArchivedStmt.run(
         archivedAt,
-        archivedAt,
+        updatedAt,
         orgId
       );
       return result.changes > 0;
@@ -4574,42 +4679,14 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     },
 
     async upsertProfile(record) {
+      if (record.isDefault && record.orgId) {
+        upsertDefaultProfileTransaction(record, record.orgId);
+        return;
+      }
       if (getAnyProfileImportReservationStmt.get(record.id)) {
         return;
       }
-      if (record.isDefault && record.orgId) {
-        clearDefaultProfileForOrgStmt.run(record.orgId, record.id);
-      }
-
-      upsertProfileStmt.run(
-        record.id,
-        record.name,
-        record.systemPrompt,
-        record.model,
-        record.thinkingEnabled == null ? null : record.thinkingEnabled ? 1 : 0,
-        record.thinkingEffort ?? null,
-        record.isSuper ? 1 : 0,
-        0,
-        record.orgId ?? null,
-        record.isDefault ? 1 : 0,
-        record.skillsWriteApproval == null
-          ? null
-          : record.skillsWriteApproval
-            ? 1
-            : 0,
-        record.skillsPostTurnReview == null
-          ? null
-          : record.skillsPostTurnReview
-            ? 1
-            : 0,
-        record.skillsCuratorConsolidation == null
-          ? null
-          : record.skillsCuratorConsolidation
-            ? 1
-            : 0,
-        record.createdAt,
-        record.updatedAt
-      );
+      runUpsertProfile(record);
     },
 
     async upsertSession(record) {
@@ -4621,6 +4698,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.orgId ?? null,
         record.profileId,
         record.channel,
+        record.createdAt,
         record.createdAt,
         record.userId ?? null,
         record.modelOverride
@@ -5577,6 +5655,22 @@ function toOrgMemoryProposalRecord(
     reviewerUserId: row.reviewer_user_id,
     sessionId: row.session_id,
     status: row.status as OrgMemoryProposalStatus,
+  };
+}
+
+function toProfileChangeEventRecord(
+  row: ProfileChangeEventRow
+): StoredProfileChangeEvent {
+  return {
+    actorUserId: row.actor_user_id,
+    afterValue: row.after_value,
+    beforeValue: row.before_value,
+    createdAt: row.created_at,
+    field: row.field as StoredProfileChangeEvent["field"],
+    id: row.id,
+    orgId: row.org_id,
+    profileId: row.profile_id,
+    source: row.source as StoredProfileChangeEvent["source"],
   };
 }
 

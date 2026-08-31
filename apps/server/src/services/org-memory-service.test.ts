@@ -1,8 +1,12 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { ORG_MEMORY_PREAMBLE, parseOrgMemoryContent } from "@atlas/core";
+import {
+  getOrgMemoryHistoryDir,
+  ORG_MEMORY_PREAMBLE,
+  parseOrgMemoryContent,
+} from "@atlas/core";
 import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { OrgMemoryService } from "./org-memory-service";
 
@@ -16,12 +20,24 @@ describe("OrgMemoryService", () => {
     }
   });
 
-  async function setup(withDb = false): Promise<OrgMemoryService> {
+  async function setup(
+    archivedOrgIds: string[] = []
+  ): Promise<OrgMemoryService> {
     tempDir = await mkdtemp(path.join(os.tmpdir(), "atlas-org-memory-"));
-    return new OrgMemoryService(
-      withDb ? createInMemoryDatabaseAdapter() : null,
-      { configDir: tempDir }
-    );
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    const archived = new Set(archivedOrgIds);
+    for (const id of ["org_a", "org_b"]) {
+      await db.upsertOrganization({
+        archivedAt: archived.has(id) ? now : null,
+        createdAt: now,
+        id,
+        name: id,
+        slug: id.replaceAll("_", "-"),
+        updatedAt: now,
+      });
+    }
+    return new OrgMemoryService(db, { configDir: tempDir });
   }
 
   test("getMemory returns the canonical preamble when the file is missing", async () => {
@@ -110,7 +126,7 @@ describe("OrgMemoryService", () => {
   });
 
   test("propose creates pending row without writing MEMORY.md", async () => {
-    const service = await setup(true);
+    const service = await setup();
     const result = await service.propose("org_a", {
       bullet: "team standup is 10am UTC",
     });
@@ -124,7 +140,7 @@ describe("OrgMemoryService", () => {
   });
 
   test("propose returns already_pending for duplicate bullet", async () => {
-    const service = await setup(true);
+    const service = await setup();
     const first = await service.propose("org_a", {
       bullet: "shared deploy window",
     });
@@ -137,7 +153,7 @@ describe("OrgMemoryService", () => {
   });
 
   test("approve writes to recent-log section by default", async () => {
-    const service = await setup(true);
+    const service = await setup();
     const proposed = await service.propose("org_a", {
       bullet: "review PRs before lunch",
     });
@@ -152,7 +168,7 @@ describe("OrgMemoryService", () => {
   });
 
   test("approve with pin writes to pinned section and is idempotent", async () => {
-    const service = await setup(true);
+    const service = await setup();
     const proposed = await service.propose("org_a", {
       bullet: "always pin this",
     });
@@ -215,5 +231,41 @@ describe("OrgMemoryService", () => {
     const revision = await service.getHistoryRevision("org_a", latest.id);
     expect(revision.content).toContain("- first fact");
     expect(revision.change.id).toBe(latest.id);
+  });
+
+  test("undo skips malformed and duplicate current snapshots", async () => {
+    const service = await setup();
+    await service.setMemory("org_a", "first");
+    await service.setMemory("org_a", "second");
+    await service.setMemory("org_a", "second");
+    const latest = (await service.listHistory("org_a"))[0]!;
+    await writeFile(
+      path.join(getOrgMemoryHistoryDir("org_a", tempDir), `${latest.id}.json`),
+      "{"
+    );
+
+    const originalWarn = console.warn;
+    console.warn = () => undefined;
+    try {
+      await expect(
+        service.undoLastChange("org_a", "admin_user")
+      ).resolves.toContain("first");
+    } finally {
+      console.warn = originalWarn;
+    }
+  });
+
+  test("rejects memory writes for archived organizations", async () => {
+    const service = await setup(["org_a"]);
+
+    await expect(
+      service.addFact("org_a", "blocked", { pin: true })
+    ).rejects.toMatchObject({ status: 404 });
+    await expect(service.setMemory("org_a", "blocked")).rejects.toMatchObject({
+      status: 404,
+    });
+
+    await service.addFact("org_b", "allowed", { pin: true });
+    expect(await service.getMemory("org_b")).toContain("allowed");
   });
 });

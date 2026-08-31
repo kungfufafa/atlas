@@ -56,6 +56,7 @@ import {
   maybeSendRequestedDiscordArtifactAttachment,
   uploadDiscordArtifactFromToolResult,
 } from "./channel-artifact-flow";
+import { isChannelDebugEnabled } from "./channel-log";
 import type { DiscordBridgeConfig } from "./config";
 import { formatError, formatHelpText, splitDiscordMessage } from "./format";
 import {
@@ -177,7 +178,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     console.log(
       "[discord] handle",
       groupDecision?.reason ?? (isGuild ? "none" : "dm"),
-      { botId: botInfo?.id, botOwnsThread, channelId, isThread }
+      isChannelDebugEnabled()
+        ? { botId: botInfo?.id, botOwnsThread, channelId, isThread }
+        : { botOwnsThread, isThread }
     );
 
     if (groupDecision && !groupDecision.shouldHandle) {
@@ -199,17 +202,6 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         );
       }
       return;
-    }
-
-    await authStore.reload();
-    const isAuthorized = authStore.isAuthorized(userId);
-    if (isAuthorized) {
-      await bindPendingChannelPrincipal(userId);
-    }
-
-    if (isAuthorized && isThread && groupDecision?.reason === "claim-thread") {
-      await trackOwnedThread(channelId);
-      console.log("[discord] claimed thread", channelId);
     }
 
     const resolvedParentId = isThread
@@ -237,10 +229,28 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       parentResolution
     );
 
-    // Auth/org/thread-create run without the agent-stream lock so parallel parent mentions
-    // can each open a thread. Agent work locks per conversation/thread key below.
-    if (!isAuthorized) {
-      console.log("[discord] unauthorized", userId);
+    let isAuthorized = false;
+    await withChatLock(conversationKey, async () => {
+      await authStore.reload();
+      isAuthorized = authStore.isAuthorized(userId);
+      if (isAuthorized) {
+        await bindPendingChannelPrincipal(userId);
+        if (isThread && groupDecision?.reason === "claim-thread") {
+          await trackOwnedThread(channelId);
+          console.log(
+            isChannelDebugEnabled()
+              ? `[discord] claimed thread ${channelId}`
+              : "[discord] claimed thread"
+          );
+        }
+        return;
+      }
+
+      console.log(
+        isChannelDebugEnabled()
+          ? `[discord] unauthorized ${userId}`
+          : "[discord] unauthorized"
+      );
       const fileConfig = authStore.getConfig();
       if (
         fileConfig?.accessMode === "allowlist" ||
@@ -254,8 +264,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         return;
       }
 
+      // Do not reveal pairing state or create reply noise for unlinked guild users.
       if (isGuild) {
-        await messenger.send(LINK_IN_PRIVATE_REPLY);
         return;
       }
 
@@ -268,9 +278,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         return;
       }
 
-      await withChatLock(conversationKey, async () => {
-        await handlePairing(text, userId, messenger);
-      });
+      await handlePairing(text, userId, messenger);
+    });
+
+    if (!isAuthorized) {
       return;
     }
 
@@ -298,7 +309,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         orgGateText
       );
       if (!orgReady) {
-        console.log("[discord] skip org-gate", channelOrgKey);
+        console.log(
+          isChannelDebugEnabled()
+            ? `[discord] skip org-gate ${channelOrgKey}`
+            : "[discord] skip org-gate"
+        );
         return;
       }
     }
@@ -375,7 +390,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           thread as unknown as Parameters<typeof createDiscordMessenger>[0]
         );
         replyIsThread = true;
-        console.log("[discord] thread created", thread.id);
+        console.log(
+          isChannelDebugEnabled()
+            ? `[discord] thread created ${thread.id}`
+            : "[discord] thread created"
+        );
       } else {
         console.log("[discord] thread create failed, falling back to channel");
       }
@@ -383,8 +402,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     console.log(
       "[discord] chat start",
-      replyConversationKey,
-      messageText.slice(0, 80)
+      ...(isChannelDebugEnabled() ? [replyConversationKey] : []),
+      `messageId=${message.id ?? "unknown"}`,
+      `textBytes=${Buffer.byteLength(messageText, "utf8")}`
     );
 
     await withChatLock(replyConversationKey, async () => {
@@ -405,7 +425,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       );
     });
 
-    console.log("[discord] chat done", replyConversationKey);
+    console.log(
+      isChannelDebugEnabled()
+        ? `[discord] chat done ${replyConversationKey}`
+        : "[discord] chat done"
+    );
   }
 
   async function createGuildThread(
@@ -442,7 +466,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         await threadStore.save();
       } catch (error) {
         console.error(
-          `Failed to persist Discord thread ownership for ${threadId}; keeping in-memory tracking:`,
+          isChannelDebugEnabled()
+            ? `Failed to persist Discord thread ownership for ${threadId}; keeping in-memory tracking:`
+            : "Failed to persist Discord thread ownership; keeping in-memory tracking:",
           error
         );
       }
@@ -569,6 +595,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       }
 
       if (!authStore.isAuthorized(userId)) {
+        if (!interaction.channel?.isDMBased()) {
+          await interaction.deleteReply().catch(() => undefined);
+          return;
+        }
+
         if (
           interaction.commandName === "start" ||
           interaction.commandName === "help"
@@ -577,11 +608,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           return;
         }
 
-        await messenger.send(
-          interaction.channel?.isDMBased()
-            ? PAIRING_PROMPT
-            : LINK_IN_PRIVATE_REPLY
-        );
+        await messenger.send(PAIRING_PROMPT);
         return;
       }
 
@@ -841,8 +868,6 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const typingLoop = createTypingLoop(messenger);
     const todoStatus = new DiscordTodoStatusMessage(messenger);
     const questionnaireStatus = new DiscordQuestionnaireMessage(messenger);
-    typingLoop.start();
-
     let reply = "";
     let earlyAck: Promise<void> | undefined;
     let postedQuestionnaire = false;
@@ -851,6 +876,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const streamedArtifacts = new Map<string, ChannelArtifactRef>();
 
     try {
+      typingLoop.start();
+
       reply = await session.sendStream(
         streamInput,
         {
@@ -1132,10 +1159,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           }
         : isThread || workspaceLocked
           ? null
-          : resolveProfileInScopes(
-              await listProfileScopes(orgs, currentOrgId),
-              arg
-            );
+          : resolveProfileInScopes(await listProfileScopes(orgs), arg);
 
     if (!resolved) {
       await messenger.send("Unknown profile. Send /profile to see the list.");
@@ -1183,29 +1207,23 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   }
 
   async function listProfileScopes(
-    orgs: Array<{ id: string; name: string }>,
-    restoreOrgId?: string
+    orgs: Array<{ id: string; name: string }>
   ): Promise<ProfileScope[]> {
     const scopes: ProfileScope[] = [];
 
     for (const org of orgs) {
-      client.setOrgId(org.id);
-      const profiles = await listSelectableProfiles();
+      const profiles = await listSelectableProfiles(org.id);
 
       if (profiles.length > 0) {
         scopes.push({ orgId: org.id, orgName: org.name, profiles });
       }
     }
 
-    if (restoreOrgId) {
-      client.setOrgId(restoreOrgId);
-    }
-
     return scopes;
   }
 
-  async function listSelectableProfiles() {
-    const { profiles } = await client.listProfiles();
+  async function listSelectableProfiles(orgId?: string) {
+    const { profiles } = await client.listProfiles(orgId);
     return filterProfilesForChatAccess(profiles, { excludeSuperAgent: true });
   }
 
@@ -1248,10 +1266,16 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const existing = sessionStore.get(chatId);
 
     if (existing) {
+      const hot = sessionStore.getHotSession<RemoteChatSession>(chatId);
+      if (hot) {
+        return hot;
+      }
+
       const session = client.createChatSession(existing.sessionId, "discord");
 
       try {
         await session.getMessages();
+        sessionStore.setHotSession(chatId, session);
         return session;
       } catch {
         // Session missing on server; create a new one below
@@ -1281,6 +1305,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       sessionId: session.id,
       updatedAt: new Date().toISOString(),
     });
+    sessionStore.setHotSession(chatId, session);
     await sessionStore.save();
 
     return session;
@@ -1443,7 +1468,12 @@ async function hydrateThreadParentId(
     }
   } catch (error) {
     const id = "id" in channel ? String(channel.id) : "unknown";
-    console.warn(`Failed to hydrate Discord thread parentId for ${id}:`, error);
+    console.warn(
+      isChannelDebugEnabled()
+        ? `Failed to hydrate Discord thread parentId for ${id}:`
+        : "Failed to hydrate Discord thread parentId:",
+      error
+    );
   }
 }
 
@@ -1484,7 +1514,7 @@ export async function withChatLock(
 
   if (timedOut) {
     console.warn(
-      `Chat lock for ${chatId} exceeded ${waitMs}ms wait; proceeding to recover from a wedged run.`
+      `Chat lock${isChannelDebugEnabled() ? ` for ${chatId}` : ""} exceeded ${waitMs}ms wait; proceeding to recover from a wedged run.`
     );
   }
 
@@ -1492,6 +1522,9 @@ export async function withChatLock(
     await fn();
   } finally {
     release();
+    if (chatLocks.get(chatId) === gate) {
+      chatLocks.delete(chatId);
+    }
   }
 }
 
@@ -1499,4 +1532,8 @@ export async function withChatLock(
 export function resetChatLocksForTests(): void {
   chatLocks.clear();
   rateLimiter.reset();
+}
+
+export function getChatLockCountForTests(): number {
+  return chatLocks.size;
 }

@@ -132,6 +132,43 @@ describe("composio-callback-url", () => {
     }
   });
 
+  test("configured public URL cannot be overridden by caller headers", () => {
+    const previous = process.env.ATLAS_WEB_PUBLIC_URL;
+    process.env.ATLAS_WEB_PUBLIC_URL = "https://deployed.example.com";
+    const request = new Request(
+      "http://127.0.0.1:4310/v1/composio/toolkits/gmail/connect",
+      {
+        headers: {
+          Origin: "https://evil.example.com",
+          "X-Forwarded-Host": "evil.example.com",
+          "X-Forwarded-Proto": "https",
+        },
+        method: "POST",
+      }
+    );
+
+    try {
+      expect(
+        resolveComposioCallbackBaseUrl({
+          clientOrigin: "https://evil.example.com",
+          request,
+        })
+      ).toBe("https://deployed.example.com");
+      expect(
+        resolveComposioOAuthCallbackBaseUrl({
+          clientOrigin: "http://127.0.0.1:4310",
+          request,
+        })
+      ).toBe("https://deployed.example.com");
+    } finally {
+      if (previous === undefined) {
+        delete process.env.ATLAS_WEB_PUBLIC_URL;
+      } else {
+        process.env.ATLAS_WEB_PUBLIC_URL = previous;
+      }
+    }
+  });
+
   test("persistWebPublicUrl preserves path segments", async () => {
     const configDir = join(tmpdir(), `atlas-callback-url-test-${Date.now()}`);
     mkdirSync(configDir, { recursive: true });

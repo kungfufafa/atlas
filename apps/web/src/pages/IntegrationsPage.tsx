@@ -1,4 +1,5 @@
 import {
+  Bug01Icon,
   CodeIcon,
   HashtagIcon,
   Key01Icon,
@@ -13,6 +14,7 @@ import { CodingAgentsSettingsCard } from "@/components/CodingAgentsSettingsCard"
 import { ComposioConnectionsCard } from "@/components/ComposioConnectionsCard";
 import { ComposioSettingsCard } from "@/components/ComposioSettingsCard";
 import { DiscordSettingsCard } from "@/components/DiscordSettingsCard";
+import { ErrorTrackingSettingsCard } from "@/components/ErrorTrackingSettingsCard";
 import { LocalAuthTokenCard } from "@/components/LocalAuthTokenCard";
 import { NotificationDestinationsCard } from "@/components/NotificationDestinationsCard";
 import { TelegramSettingsCard } from "@/components/TelegramSettingsCard";
@@ -20,6 +22,10 @@ import { TokenOptimizationCard } from "@/components/TokenOptimizationCard";
 import { Spinner } from "@/components/ui/spinner";
 import { WhatsAppSettingsCard } from "@/components/WhatsAppSettingsCard";
 import { useAuth } from "@/context/use-auth";
+import {
+  canAccessIntegrationSection,
+  type IntegrationSectionId,
+} from "@/lib/integration-access";
 import { cn } from "@/lib/utils";
 
 const sectionClass = "rounded-md border border-border bg-card";
@@ -73,9 +79,13 @@ const INTEGRATION_SECTIONS = [
     id: "optimization",
     label: "Token optimisation",
   },
+  {
+    description: "Sentry-compatible event delivery",
+    icon: Bug01Icon,
+    id: "error-tracking",
+    label: "Error tracking",
+  },
 ] as const;
-
-type IntegrationSectionId = (typeof INTEGRATION_SECTIONS)[number]["id"];
 
 function resolveSection(value: string | null): IntegrationSectionId {
   if (
@@ -85,7 +95,8 @@ function resolveSection(value: string | null): IntegrationSectionId {
     value === "discord" ||
     value === "composio" ||
     value === "coding-agents" ||
-    value === "optimization"
+    value === "optimization" ||
+    value === "error-tracking"
   ) {
     return value;
   }
@@ -115,13 +126,9 @@ export function IntegrationsPage() {
   const section = resolveSection(
     canManageWorkspace ? searchParams.get("section") : "composio"
   );
-  const visibleSections = isPlatformAdmin
-    ? INTEGRATION_SECTIONS
-    : canManageWorkspace
-      ? INTEGRATION_SECTIONS.filter(
-          (item) => item.id !== "token" && item.id !== "coding-agents"
-        )
-      : INTEGRATION_SECTIONS.filter((item) => item.id === "composio");
+  const visibleSections = INTEGRATION_SECTIONS.filter((item) =>
+    canAccessIntegrationSection(item.id, { isOrgAdmin, isPlatformAdmin })
+  );
   const visibleSection = visibleSections.some((item) => item.id === section)
     ? section
     : "composio";
@@ -194,6 +201,10 @@ export function IntegrationsPage() {
 
           {visibleSection === "notifications" ? (
             <NotificationDestinationsCard />
+          ) : null}
+
+          {visibleSection === "error-tracking" && isPlatformAdmin ? (
+            <ErrorTrackingSettingsCard />
           ) : null}
 
           {visibleSection === "whatsapp" ? <WhatsAppSettingsCard /> : null}

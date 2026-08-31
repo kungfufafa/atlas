@@ -39,7 +39,7 @@ export interface WhatsAppSocketDeps {
 export interface WhatsAppSocketHandle {
   socket: WASocket | null;
   start: () => Promise<void>;
-  stop: () => void;
+  stop: () => Promise<void>;
 }
 
 export async function createWhatsAppSocket(
@@ -145,6 +145,7 @@ export async function createWhatsAppSocket(
 
         if (connection === "close") {
           generation += 1;
+          detachWhatsAppSocketListeners(current);
           deps.onDisconnected?.();
           const statusCode = extractDisconnectStatusCode(lastDisconnect);
           const loggedOut = statusCode === DisconnectReason.loggedOut;
@@ -287,12 +288,12 @@ export async function createWhatsAppSocket(
         }
       });
     },
-    stop() {
+    async stop() {
       stopped = true;
       generation += 1;
       const current = socket;
       socket = null;
-      void disposeWhatsAppSocket(current);
+      await disposeWhatsAppSocket(current);
     },
   };
 
@@ -394,21 +395,31 @@ const WHATSAPP_SOCKET_EVENTS = [
   "messages.upsert",
 ] as const;
 
+export function detachWhatsAppSocketListeners(target: {
+  ev: {
+    removeAllListeners: (
+      event: (typeof WHATSAPP_SOCKET_EVENTS)[number]
+    ) => unknown;
+  };
+}): void {
+  for (const event of WHATSAPP_SOCKET_EVENTS) {
+    target.ev.removeAllListeners(event);
+  }
+}
+
 async function disposeWhatsAppSocket(target: WASocket | null): Promise<void> {
   if (!target) {
     return;
   }
 
   try {
-    for (const event of WHATSAPP_SOCKET_EVENTS) {
-      target.ev.removeAllListeners(event);
-    }
+    detachWhatsAppSocketListeners(target);
   } catch {
     // Best-effort: Baileys versions differ on listener APIs.
   }
 
   try {
-    target.end(undefined);
+    await Promise.resolve(target.end(undefined));
   } catch {
     // Socket may already be closed.
   }

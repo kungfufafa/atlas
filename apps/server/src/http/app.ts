@@ -49,11 +49,12 @@ export function createHonoApp(options: ServerOptions) {
 
   app.onError((err) => {
     if (err instanceof AtlasApiError) {
-      return errorResponse(
-        err.message,
-        err.status,
-        err.profiles ? { profiles: err.profiles } : undefined
-      );
+      return errorResponse(err.message, err.status, {
+        ...(err.knowledgeBaseDuplicate
+          ? { duplicate: err.knowledgeBaseDuplicate }
+          : {}),
+        ...(err.profiles ? { profiles: err.profiles } : {}),
+      });
     }
 
     if (err instanceof SyntaxError) {

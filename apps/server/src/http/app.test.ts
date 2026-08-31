@@ -935,6 +935,33 @@ describe("createHonoApp", () => {
     expect(loginResponse.status).toBe(200);
   });
 
+  test("login trims passwords consistently with setup", async () => {
+    const options = createServerOptions();
+    const app = createHonoApp(options);
+    const setupResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/setup", {
+        body: JSON.stringify(
+          buildSetupAuthBody("padded@example.com", {
+            admin: { password: "  password123  " },
+          })
+        ),
+        method: "POST",
+      })
+    );
+    expect(setupResponse.status).toBe(201);
+
+    const loginResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/login", {
+        body: JSON.stringify({
+          email: "padded@example.com",
+          password: "  password123  ",
+        }),
+        method: "POST",
+      })
+    );
+    expect(loginResponse.status).toBe(200);
+  });
+
   test("change-password revokes other browser sessions", async () => {
     const options = createServerOptions();
     const app = createHonoApp(options);
@@ -1111,6 +1138,13 @@ describe("createHonoApp", () => {
     await expect(listResponse.json()).resolves.toEqual({
       sessions: [{ id: "default-web" }],
     });
+
+    const missingChannel = await app.fetch(
+      new Request("http://localhost:4310/v1/sessions?profileId=default", {
+        headers: session.headers(),
+      })
+    );
+    expect(missingChannel.status).toBe(400);
   });
 
   const smokeRoutes = [

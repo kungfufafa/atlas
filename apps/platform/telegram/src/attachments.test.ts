@@ -207,4 +207,62 @@ describe("downloadTelegramFile", () => {
       downloadTelegramFile(ctx, "file-1", MAX_DOCUMENT_BYTES)
     ).rejects.toThrow("network down");
   });
+
+  test("encodes the bot token as one URL path segment", async () => {
+    const token = "123456:ABC-DEF/ghi_jkl";
+    const fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("pdf-bytes", {
+        headers: { "content-type": "application/pdf" },
+      })
+    );
+    const ctx = {
+      api: {
+        getFile: async () => ({ file_path: "photos/file_0.jpg" }),
+        token,
+      },
+    } as unknown as Context;
+
+    try {
+      await downloadTelegramFile(ctx, "file-1", MAX_DOCUMENT_BYTES);
+      const fetched = fetchSpy.mock.calls[0]?.[0];
+      expect(fetched).toBeInstanceOf(URL);
+      expect((fetched as URL).pathname).toBe(
+        `/file/${encodeURIComponent(`bot${token}`)}/photos/file_0.jpg`
+      );
+      expect((fetched as URL).href).not.toContain(token);
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  test("cancels a streamed download as soon as it exceeds the cap", async () => {
+    let cancelled = false;
+    const body = new ReadableStream<Uint8Array>({
+      cancel: () => {
+        cancelled = true;
+      },
+      start(controller) {
+        controller.enqueue(new Uint8Array(6));
+        controller.enqueue(new Uint8Array(6));
+      },
+    });
+    const fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(body)
+    );
+    const ctx = {
+      api: {
+        getFile: async () => ({ file_path: "documents/report.pdf" }),
+        token: "test-token",
+      },
+    } as unknown as Context;
+
+    try {
+      await expect(
+        downloadTelegramFile(ctx, "file-1", 8)
+      ).rejects.toBeInstanceOf(Error);
+      expect(cancelled).toBe(true);
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
 });

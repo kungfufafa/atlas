@@ -9,7 +9,7 @@ import {
   requireOrgAdminFromContext,
   requirePlatformAdminFromContext,
 } from "../org-guards";
-import { getRequestAuth, json, readJson } from "../shared";
+import { getRequestAuth, json, readJson, readOptionalJson } from "../shared";
 import type { HonoApp } from "../types";
 
 const GROUP_BY_VALUES: LlmUsageReportGroupBy[] = [
@@ -156,8 +156,8 @@ export function registerUsageRoutes(
       throw new Error("Database adapter is not configured.");
     }
     requirePlatformAdminFromContext(c);
-    const body = await readJson<{ days?: number }>(c.req.raw).catch(() => ({}));
-    const requested = Number((body as { days?: number }).days);
+    const body = await readOptionalJson<{ days?: number }>(c.req.raw, {});
+    const requested = Number(body.days);
     const days =
       Number.isFinite(requested) && requested > 0 ? Math.floor(requested) : 365;
     const before = new Date(Date.now() - days * 86_400_000)

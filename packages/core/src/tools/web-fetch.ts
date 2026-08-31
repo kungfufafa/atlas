@@ -1,5 +1,5 @@
 import { lookup as dnsLookup } from "node:dns/promises";
-import { isIP } from "node:net";
+import { BlockList, isIP } from "node:net";
 import rehypeParse from "rehype-parse";
 import rehypeRemark from "rehype-remark";
 import remarkGfm from "remark-gfm";
@@ -80,6 +80,20 @@ const TRUNCATION_MARKER = "\n...[truncated]";
 const REQUEST_TIMEOUT_MS = 30_000;
 const MAX_REDIRECTS = 5;
 const MAX_LINKS = 50;
+
+const NON_PUBLIC_IPV6_RANGES = new BlockList();
+for (const [network, prefix] of [
+  ["::", 96], // Unspecified, loopback, and deprecated IPv4-compatible.
+  ["::ffff:0:0", 96], // IPv4-mapped.
+  ["64:ff9b::", 96], // Well-known NAT64 prefix.
+  ["2001::", 23], // IETF special-purpose assignments.
+  ["2001:db8::", 32], // Documentation range.
+  ["fc00::", 7], // Unique-local.
+  ["fe80::", 10], // Link-local.
+  ["fec0::", 10], // Deprecated site-local.
+] as const) {
+  NON_PUBLIC_IPV6_RANGES.addSubnet(network, prefix, "ipv6");
+}
 
 /**
  * Private / reserved address ranges that indicate a local or internal target.
@@ -218,21 +232,7 @@ function isPrivateIpv4(ip: string): boolean {
 }
 
 function isPrivateIpv6(ip: string): boolean {
-  const normalized = ip.toLowerCase();
-  return (
-    normalized === "::1" ||
-    normalized === "::" ||
-    normalized.startsWith("fc") ||
-    normalized.startsWith("fd") ||
-    normalized.startsWith("fe80:") ||
-    normalized.startsWith("fe90:") ||
-    normalized.startsWith("fea0:") ||
-    normalized.startsWith("feb0:") ||
-    normalized.startsWith("fec0:") ||
-    normalized.startsWith("::ffff:") ||
-    normalized.startsWith("::ffff:0:") ||
-    normalized.startsWith("64:ff9b:")
-  );
+  return NON_PUBLIC_IPV6_RANGES.check(ip, "ipv6");
 }
 
 function isPrivateIp(ip: string): boolean {

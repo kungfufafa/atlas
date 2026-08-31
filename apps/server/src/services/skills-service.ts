@@ -40,6 +40,7 @@ import {
   patchSkillFile,
   pickPreferredSkillSourcePath,
   removeProfileSkillSupportingFile,
+  resolveProfileSkillSupportingFilePath,
   SKILL_FILE_NAME,
   type SkillOutcomeSignal,
   type SkillRanker,
@@ -53,6 +54,10 @@ import {
   type StoredSkillRecord,
   type StoredSkillUsageRecord,
 } from "@atlas/db";
+import {
+  ProfileChangeHistoryService,
+  type ProfileChangeMeta,
+} from "./profile-change-history";
 import { withProfileSkillMutationLock } from "./skill-mutation-lock";
 import {
   type SkillUsageRecordingContext,
@@ -62,6 +67,30 @@ import {
 export type { SkillUsageRecordingContext };
 
 const bundledSkillNames = new Set<string>(BUNDLED_SKILL_NAMES);
+
+function isSkillVisibleToOrg(skill: StoredSkillRecord, orgId: string): boolean {
+  return skill.orgId == null || skill.orgId === orgId;
+}
+
+function serializeSkillFileChange(
+  skillName: string,
+  relativePath: string,
+  content: string | null
+): string {
+  return JSON.stringify({ content, path: relativePath, skillName });
+}
+
+async function readOptionalFileContent(
+  absolutePath: string
+): Promise<string | null | undefined> {
+  try {
+    return await readFile(absolutePath, "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return null;
+    }
+  }
+}
 
 export class SkillsService {
   private readonly skillRanker: SkillRanker;
@@ -76,7 +105,7 @@ export class SkillsService {
     this.skillRanker = skillRanker ?? createFts5SkillRanker();
   }
 
-  async syncDiscoveredSkills(): Promise<SyncSkillsResponse> {
+  async syncDiscoveredSkills(orgId?: string): Promise<SyncSkillsResponse> {
     const discovered = await discoverSkills();
     let created = 0;
     let updated = 0;
@@ -87,7 +116,7 @@ export class SkillsService {
       updated += result.created ? 0 : 1;
     }
 
-    await this.consolidateDuplicateSkills();
+    await this.consolidateDuplicateSkills(orgId);
 
     return {
       created,
@@ -108,10 +137,12 @@ export class SkillsService {
     }
   }
 
-  async listSkills(): Promise<ListSkillsResponse> {
-    await this.syncDiscoveredSkills();
+  async listSkills(orgId?: string): Promise<ListSkillsResponse> {
+    await this.syncDiscoveredSkills(orgId);
 
-    const profiles = await this.db.listProfiles();
+    const profiles = orgId
+      ? await this.db.listProfilesForOrg(orgId)
+      : await this.db.listProfiles();
 
     for (const profile of profiles) {
       if (!profile.orgId) {
@@ -121,18 +152,28 @@ export class SkillsService {
       await this.syncProfileSkills(profile.orgId, profile.id);
     }
 
-    const skills = await this.db.listSkills();
+    const allSkills = await this.db.listSkills();
+    const skills = orgId
+      ? allSkills.filter((skill) => isSkillVisibleToOrg(skill, orgId))
+      : allSkills;
     return { skills: skills.map((skill) => toSkillSummary(skill)) };
   }
 
   async createSkill(
     orgId: string,
-    request: CreateSkillRequest
+    request: CreateSkillRequest,
+    options: { allowGlobal?: boolean } = {}
   ): Promise<SkillResponse> {
     const profileId = request.profileId?.trim() || undefined;
     if (profileId) {
       return withProfileSkillMutationLock(orgId, profileId, () =>
         this.createSkillUnlocked(orgId, { ...request, profileId })
+      );
+    }
+    if (!options.allowGlobal) {
+      throw new AtlasApiError(
+        "Only Superadmins can create shared global skills.",
+        403
       );
     }
     return this.createSkillUnlocked(orgId, request);
@@ -183,18 +224,44 @@ export class SkillsService {
     orgId: string,
     skillId: string,
     request: PatchSkillRequest,
-    options?: { profileId?: string }
+    options?: {
+      allowGlobalMutation?: boolean;
+      changeMeta?: ProfileChangeMeta;
+      profileId?: string;
+    }
   ): Promise<SkillResponse> {
-    const existing = await this.requireSkill(skillId);
+    const existing = await this.requireSkillForOrg(orgId, skillId);
+    if (existing.orgId == null && !options?.allowGlobalMutation) {
+      throw new AtlasApiError(
+        "Only Superadmins can update shared global skills.",
+        403
+      );
+    }
     const ownerOrgId = existing.orgId ?? orgId;
-    const profileId =
-      options?.profileId?.trim() ||
-      (existing.orgId
-        ? await this.resolveOwningProfileId(existing.orgId, existing.sourcePath)
-        : null);
+    const owningProfileId = existing.orgId
+      ? await this.resolveOwningProfileId(existing.orgId, existing.sourcePath)
+      : null;
+    const requestedProfileId = options?.profileId?.trim() || null;
+    if (requestedProfileId) {
+      const requestedProfile = await this.db.getProfileForOrg(
+        requestedProfileId,
+        orgId
+      );
+      if (!requestedProfile) {
+        throw new AtlasApiError("Profile not found.", 404);
+      }
+      if (owningProfileId && requestedProfileId !== owningProfileId) {
+        throw new AtlasApiError("Skill not found.", 404);
+      }
+    }
+    const profileId = owningProfileId ?? requestedProfileId;
     if (profileId) {
       return withProfileSkillMutationLock(ownerOrgId, profileId, () =>
-        this.patchSkillUnlocked(orgId, skillId, request, options)
+        this.patchSkillUnlocked(orgId, skillId, request, {
+          ...options,
+          owningProfileId,
+          profileId,
+        })
       );
     }
     return this.patchSkillUnlocked(orgId, skillId, request, options);
@@ -204,7 +271,12 @@ export class SkillsService {
     orgId: string,
     skillId: string,
     request: PatchSkillRequest,
-    options?: { profileId?: string }
+    options?: {
+      allowGlobalMutation?: boolean;
+      changeMeta?: ProfileChangeMeta;
+      owningProfileId?: string | null;
+      profileId?: string;
+    }
   ): Promise<SkillResponse> {
     const hasDescription = request.description !== undefined;
     const hasBody = request.body !== undefined;
@@ -215,7 +287,7 @@ export class SkillsService {
       throw new Error("No skill changes provided.");
     }
 
-    const record = await this.requireSkill(skillId);
+    const record = await this.requireSkillForOrg(orgId, skillId);
 
     if (bundledSkillNames.has(record.name)) {
       throw new Error("Bundled system skills cannot be edited.");
@@ -260,6 +332,18 @@ export class SkillsService {
       await this.skillUsageService.recordPatch(orgId, profileId, synced.id);
     }
 
+    if (options?.changeMeta && options.owningProfileId) {
+      await this.recordSkillFileChange(
+        orgId,
+        options.owningProfileId,
+        record.name,
+        SKILL_FILE_NAME,
+        existing,
+        skillFilePath,
+        options.changeMeta
+      );
+    }
+
     return this.getSkill(synced.id);
   }
 
@@ -282,7 +366,8 @@ export class SkillsService {
 
   async installSkillFromGitHub(
     orgId: string,
-    request: InstallSkillRequest
+    request: InstallSkillRequest,
+    changeMeta?: ProfileChangeMeta
   ): Promise<SkillResponse> {
     const profileId = request.profileId?.trim() ?? "";
     const url = request.url?.trim() ?? "";
@@ -318,7 +403,7 @@ export class SkillsService {
         orgId,
         profileId,
         content,
-        { createdBy: "human" }
+        { changeMeta, createdBy: "human" }
       );
       return { skill: installed.skill };
     } catch (error) {
@@ -350,16 +435,34 @@ export class SkillsService {
     orgId: string,
     profileId: string,
     content: string,
-    options?: { createdBy?: SkillCreatedBy }
+    options?: {
+      changeMeta?: ProfileChangeMeta;
+      createdBy?: SkillCreatedBy;
+    }
   ): Promise<SkillResponse & { created: boolean }> {
-    return withProfileSkillMutationLock(orgId, profileId, () =>
-      this.createAndAssignRawSkillToProfileUnlocked(
-        orgId,
-        profileId,
-        content,
-        options
-      )
-    );
+    const mutate = () =>
+      withProfileSkillMutationLock(orgId, profileId, () =>
+        this.createAndAssignRawSkillToProfileUnlocked(
+          orgId,
+          profileId,
+          content,
+          options
+        )
+      );
+
+    if (options?.changeMeta) {
+      return new ProfileChangeHistoryService(this.db).withAssignmentChange(
+        {
+          field: "skills",
+          meta: options.changeMeta,
+          orgId,
+          profileId,
+        },
+        mutate
+      );
+    }
+
+    return mutate();
   }
 
   private async createAndAssignRawSkillToProfileUnlocked(
@@ -430,10 +533,17 @@ export class SkillsService {
     orgId: string,
     profileId: string,
     name: string,
-    content: string
+    content: string,
+    changeMeta?: ProfileChangeMeta
   ): Promise<SkillResponse> {
     return withProfileSkillMutationLock(orgId, profileId, () =>
-      this.editAssignedProfileSkillUnlocked(orgId, profileId, name, content)
+      this.editAssignedProfileSkillUnlocked(
+        orgId,
+        profileId,
+        name,
+        content,
+        changeMeta
+      )
     );
   }
 
@@ -441,7 +551,8 @@ export class SkillsService {
     orgId: string,
     profileId: string,
     name: string,
-    content: string
+    content: string,
+    changeMeta?: ProfileChangeMeta
   ): Promise<SkillResponse> {
     const skillName = assertValidSkillName(name);
     const { name: parsedName } = parseRawProfileSkillContent(
@@ -456,7 +567,17 @@ export class SkillsService {
       );
     }
 
-    await this.assertProfileOwnedSkill(orgId, profileId, skillName);
+    const ownedSkill = await this.assertProfileOwnedSkill(
+      orgId,
+      profileId,
+      skillName
+    );
+    const beforeValue = changeMeta
+      ? await readFile(
+          path.join(ownedSkill.sourcePath, SKILL_FILE_NAME),
+          "utf8"
+        )
+      : null;
 
     const written = await writeRawProfileSkillMarkdown({
       allowExisting: true,
@@ -479,6 +600,17 @@ export class SkillsService {
 
     await this.skillUsageService.recordPatch(orgId, profileId, record.id);
 
+    if (changeMeta && beforeValue !== null) {
+      await this.recordSkillContentChange(
+        orgId,
+        profileId,
+        record.name,
+        record.sourcePath,
+        beforeValue,
+        changeMeta
+      );
+    }
+
     return this.getSkill(record.id);
   }
 
@@ -487,7 +619,8 @@ export class SkillsService {
     profileId: string,
     name: string,
     relativePath: string,
-    content: string
+    content: string,
+    changeMeta?: ProfileChangeMeta
   ): Promise<{ skillName: string; relativePath: string }> {
     return withProfileSkillMutationLock(orgId, profileId, () =>
       this.writeAssignedProfileSkillSupportingFileUnlocked(
@@ -495,7 +628,8 @@ export class SkillsService {
         profileId,
         name,
         relativePath,
-        content
+        content,
+        changeMeta
       )
     );
   }
@@ -505,10 +639,20 @@ export class SkillsService {
     profileId: string,
     name: string,
     relativePath: string,
-    content: string
+    content: string,
+    changeMeta?: ProfileChangeMeta
   ): Promise<{ skillName: string; relativePath: string }> {
     const skillName = assertValidSkillName(name);
     await this.assertProfileOwnedSkill(orgId, profileId, skillName);
+    const target = resolveProfileSkillSupportingFilePath(
+      orgId,
+      profileId,
+      skillName,
+      relativePath
+    );
+    const beforeContent = changeMeta
+      ? await readOptionalFileContent(target.absolutePath)
+      : undefined;
 
     const written = await writeProfileSkillSupportingFile({
       content,
@@ -518,6 +662,18 @@ export class SkillsService {
       relativePath,
     });
 
+    if (changeMeta && beforeContent !== undefined) {
+      await this.recordSkillFileChange(
+        orgId,
+        profileId,
+        skillName,
+        written.relativePath,
+        beforeContent,
+        written.absolutePath,
+        changeMeta
+      );
+    }
+
     return { relativePath: written.relativePath, skillName };
   }
 
@@ -525,14 +681,16 @@ export class SkillsService {
     orgId: string,
     profileId: string,
     name: string,
-    relativePath: string
+    relativePath: string,
+    changeMeta?: ProfileChangeMeta
   ): Promise<{ skillName: string; relativePath: string }> {
     return withProfileSkillMutationLock(orgId, profileId, () =>
       this.removeAssignedProfileSkillSupportingFileUnlocked(
         orgId,
         profileId,
         name,
-        relativePath
+        relativePath,
+        changeMeta
       )
     );
   }
@@ -541,10 +699,20 @@ export class SkillsService {
     orgId: string,
     profileId: string,
     name: string,
-    relativePath: string
+    relativePath: string,
+    changeMeta?: ProfileChangeMeta
   ): Promise<{ skillName: string; relativePath: string }> {
     const skillName = assertValidSkillName(name);
     await this.assertProfileOwnedSkill(orgId, profileId, skillName);
+    const target = resolveProfileSkillSupportingFilePath(
+      orgId,
+      profileId,
+      skillName,
+      relativePath
+    );
+    const beforeContent = changeMeta
+      ? await readOptionalFileContent(target.absolutePath)
+      : undefined;
 
     const removed = await removeProfileSkillSupportingFile({
       name: skillName,
@@ -552,6 +720,26 @@ export class SkillsService {
       profileId,
       relativePath,
     });
+
+    if (changeMeta && beforeContent !== undefined) {
+      await new ProfileChangeHistoryService(this.db).recordBestEffort({
+        actorUserId: changeMeta.actorUserId,
+        afterValue: serializeSkillFileChange(
+          skillName,
+          removed.relativePath,
+          null
+        ),
+        beforeValue: serializeSkillFileChange(
+          skillName,
+          removed.relativePath,
+          beforeContent
+        ),
+        field: "skills",
+        orgId,
+        profileId,
+        source: changeMeta.source,
+      });
+    }
 
     return { relativePath: removed.relativePath, skillName };
   }
@@ -561,7 +749,8 @@ export class SkillsService {
     profileId: string,
     name: string,
     oldString: string,
-    newString: string
+    newString: string,
+    changeMeta?: ProfileChangeMeta
   ): Promise<SkillResponse> {
     return withProfileSkillMutationLock(orgId, profileId, () =>
       this.patchAssignedProfileSkillUnlocked(
@@ -569,7 +758,8 @@ export class SkillsService {
         profileId,
         name,
         oldString,
-        newString
+        newString,
+        changeMeta
       )
     );
   }
@@ -579,8 +769,18 @@ export class SkillsService {
     profileId: string,
     name: string,
     oldString: string,
-    newString: string
+    newString: string,
+    changeMeta?: ProfileChangeMeta
   ): Promise<SkillResponse> {
+    const ownedSkill = changeMeta
+      ? await this.assertProfileOwnedSkill(orgId, profileId, name)
+      : null;
+    const beforeValue = ownedSkill
+      ? await readFile(
+          path.join(ownedSkill.sourcePath, SKILL_FILE_NAME),
+          "utf8"
+        )
+      : null;
     const patched = await patchSkillFile({
       name,
       newString,
@@ -597,17 +797,39 @@ export class SkillsService {
 
     await this.skillUsageService.recordPatch(orgId, profileId, record.id);
 
+    if (changeMeta && beforeValue !== null) {
+      await this.recordSkillContentChange(
+        orgId,
+        profileId,
+        record.name,
+        record.sourcePath,
+        beforeValue,
+        changeMeta
+      );
+    }
+
     return this.getSkill(record.id);
   }
 
   async deleteAssignedProfileSkill(
     orgId: string,
     profileId: string,
-    name: string
+    name: string,
+    changeMeta?: ProfileChangeMeta
   ): Promise<void> {
-    return withProfileSkillMutationLock(orgId, profileId, () =>
-      this.deleteAssignedProfileSkillUnlocked(orgId, profileId, name)
-    );
+    const mutate = () =>
+      withProfileSkillMutationLock(orgId, profileId, () =>
+        this.deleteAssignedProfileSkillUnlocked(orgId, profileId, name)
+      );
+
+    if (changeMeta) {
+      return new ProfileChangeHistoryService(this.db).withAssignmentChange(
+        { field: "skills", meta: changeMeta, orgId, profileId },
+        mutate
+      );
+    }
+
+    return mutate();
   }
 
   private async deleteAssignedProfileSkillUnlocked(
@@ -643,8 +865,18 @@ export class SkillsService {
     await deleteSkillDirectory(record.sourcePath);
   }
 
-  async deleteSkill(skillId: string): Promise<void> {
-    const record = await this.requireSkill(skillId);
+  async deleteSkill(
+    orgId: string,
+    skillId: string,
+    options: { allowGlobalMutation?: boolean } = {}
+  ): Promise<void> {
+    const record = await this.requireSkillForOrg(orgId, skillId);
+    if (record.orgId == null && !options.allowGlobalMutation) {
+      throw new AtlasApiError(
+        "Only Superadmins can delete shared global skills.",
+        403
+      );
+    }
 
     if (record.orgId) {
       const profileId = await this.resolveOwningProfileId(
@@ -653,16 +885,26 @@ export class SkillsService {
       );
       if (profileId) {
         return withProfileSkillMutationLock(record.orgId, profileId, () =>
-          this.deleteSkillUnlocked(skillId)
+          this.deleteSkillUnlocked(orgId, skillId, options)
         );
       }
     }
 
-    return this.deleteSkillUnlocked(skillId);
+    return this.deleteSkillUnlocked(orgId, skillId, options);
   }
 
-  private async deleteSkillUnlocked(skillId: string): Promise<void> {
-    const record = await this.requireSkill(skillId);
+  private async deleteSkillUnlocked(
+    orgId: string,
+    skillId: string,
+    options: { allowGlobalMutation?: boolean }
+  ): Promise<void> {
+    const record = await this.requireSkillForOrg(orgId, skillId);
+    if (record.orgId == null && !options.allowGlobalMutation) {
+      throw new AtlasApiError(
+        "Only Superadmins can delete shared global skills.",
+        403
+      );
+    }
 
     if (bundledSkillNames.has(record.name)) {
       throw new Error("Bundled system skills cannot be deleted.");
@@ -702,6 +944,11 @@ export class SkillsService {
         body,
       },
     };
+  }
+
+  async getSkillForOrg(orgId: string, skillId: string): Promise<SkillResponse> {
+    await this.requireSkillForOrg(orgId, skillId);
+    return this.getSkill(skillId);
   }
 
   async composeCatalogForProfile(
@@ -954,6 +1201,19 @@ export class SkillsService {
     return skill;
   }
 
+  private async requireSkillForOrg(
+    orgId: string,
+    skillId: string
+  ): Promise<StoredSkillRecord> {
+    const skill = await this.db.getSkill(skillId);
+
+    if (!(skill && isSkillVisibleToOrg(skill, orgId))) {
+      throw new AtlasApiError("Skill not found.", 404);
+    }
+
+    return skill;
+  }
+
   private async assertProfileOwnedSkill(
     orgId: string,
     profileId: string,
@@ -984,8 +1244,81 @@ export class SkillsService {
     return record;
   }
 
-  private async consolidateDuplicateSkills(): Promise<void> {
-    const skills = await this.db.listSkills();
+  private async recordSkillContentChange(
+    orgId: string,
+    profileId: string,
+    skillName: string,
+    sourcePath: string,
+    beforeValue: string,
+    changeMeta: ProfileChangeMeta
+  ): Promise<void> {
+    let afterValue: string;
+    try {
+      afterValue = await readFile(
+        path.join(sourcePath, SKILL_FILE_NAME),
+        "utf8"
+      );
+    } catch {
+      return;
+    }
+
+    await new ProfileChangeHistoryService(this.db).recordBestEffort({
+      actorUserId: changeMeta.actorUserId,
+      afterValue: serializeSkillFileChange(
+        skillName,
+        SKILL_FILE_NAME,
+        afterValue
+      ),
+      beforeValue: serializeSkillFileChange(
+        skillName,
+        SKILL_FILE_NAME,
+        beforeValue
+      ),
+      field: "skills",
+      orgId,
+      profileId,
+      source: changeMeta.source,
+    });
+  }
+
+  private async recordSkillFileChange(
+    orgId: string,
+    profileId: string,
+    skillName: string,
+    relativePath: string,
+    beforeContent: string | null,
+    absolutePath: string,
+    changeMeta: ProfileChangeMeta
+  ): Promise<void> {
+    const afterContent = await readOptionalFileContent(absolutePath);
+    if (afterContent === undefined) {
+      return;
+    }
+
+    await new ProfileChangeHistoryService(this.db).recordBestEffort({
+      actorUserId: changeMeta.actorUserId,
+      afterValue: serializeSkillFileChange(
+        skillName,
+        relativePath,
+        afterContent
+      ),
+      beforeValue: serializeSkillFileChange(
+        skillName,
+        relativePath,
+        beforeContent
+      ),
+      field: "skills",
+      orgId,
+      profileId,
+      source: changeMeta.source,
+    });
+  }
+
+  private async consolidateDuplicateSkills(orgId?: string): Promise<void> {
+    const allSkills = await this.db.listSkills();
+    const skills = orgId
+      ? allSkills.filter((skill) => skill.orgId === orgId)
+      : allSkills;
     const grouped = new Map<string, StoredSkillRecord[]>();
 
     for (const skill of skills) {
@@ -997,7 +1330,9 @@ export class SkillsService {
       grouped.set(key, group);
     }
 
-    const profiles = await this.db.listProfiles();
+    const profiles = orgId
+      ? await this.db.listProfilesForOrg(orgId)
+      : await this.db.listProfiles();
 
     for (const group of grouped.values()) {
       if (group.length <= 1) {

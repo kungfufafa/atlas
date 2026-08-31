@@ -1265,6 +1265,7 @@ export interface UpdateAutomationRequest {
   description?: string;
   enabled?: boolean;
   name?: string;
+  profileId?: string;
   prompt?: string;
   trigger?: AutomationTrigger;
 }
@@ -1582,6 +1583,22 @@ export interface UpdateComposioSettingsRequest {
   apiKey?: string;
 }
 
+export interface ErrorTrackingSettingsResponse {
+  configurationSource: "environment" | "settings" | null;
+  configured: boolean;
+  disabledByDoNotTrack: boolean;
+  dsnMasked: string | null;
+}
+
+export interface UpdateErrorTrackingSettingsRequest {
+  /** Empty clears the saved DSN; deployment environment overrides still win. */
+  dsn?: string;
+}
+
+export interface SendErrorTrackingTestResponse {
+  delivered: boolean;
+}
+
 export type NotificationDestinationChannel = "telegram";
 
 export type NotificationWebhookLevel = "info" | "success" | "warning" | "error";
@@ -1763,6 +1780,7 @@ export interface ProfileRef {
 }
 
 export interface ApiErrorResponse {
+  duplicate?: KnowledgeBaseDuplicateConflict;
   error: string;
   profiles?: ProfileRef[];
 }
@@ -2237,6 +2255,39 @@ export interface UpdateProfileRequest {
   systemPrompt?: string;
 }
 
+export type ProfileChangeSource =
+  | "dashboard"
+  | "super_bot"
+  | "skill_manage"
+  | "pack_import";
+
+export type ProfileChangeField =
+  | "system_prompt"
+  | "soul.soul"
+  | "soul.style"
+  | "soul.instructions"
+  | "soul.memory"
+  | "tools"
+  | "skills"
+  | "mcp"
+  | "pack_import";
+
+export interface ProfileChangeEvent {
+  actorUserId: string | null;
+  afterValue: string | null;
+  beforeValue: string | null;
+  createdAt: string;
+  field: ProfileChangeField;
+  id: string;
+  orgId: string;
+  profileId: string;
+  source: ProfileChangeSource;
+}
+
+export interface ListProfileChangeHistoryResponse {
+  events: ProfileChangeEvent[];
+}
+
 export interface CloneProfileRequest {
   id?: string;
   name?: string;
@@ -2426,7 +2477,25 @@ export type * from "./artifact-preview/types";
 
 export type KnowledgeBaseDocumentStatus = "ready" | "failed";
 
+export type KnowledgeBaseDuplicateAction = "error" | "skip" | "replace";
+
+export type KnowledgeBaseDuplicateMatch = "content_hash" | "name_size";
+
+export interface KnowledgeBaseDuplicateConflict {
+  existingDocumentId: string;
+  existingFilename: string;
+  match: KnowledgeBaseDuplicateMatch;
+}
+
+export interface KnowledgeBaseDuplicateResponse extends ApiErrorResponse {
+  duplicate: KnowledgeBaseDuplicateConflict;
+}
+
+export type KnowledgeBaseUploadOutcome = "created" | "skipped" | "replaced";
+
 export interface KnowledgeBaseDocument {
+  /** SHA-256 of the stored bytes. Optional for legacy manifests. */
+  contentHash?: string;
   error?: string;
   filename: string;
   id: string;
@@ -2454,10 +2523,12 @@ export interface ListKnowledgeBaseResponse {
 
 export interface UploadKnowledgeBaseRequest {
   document: DocumentAttachment;
+  onDuplicate?: KnowledgeBaseDuplicateAction;
 }
 
 export interface UploadKnowledgeBaseResponse {
   document: KnowledgeBaseDocument;
+  outcome: KnowledgeBaseUploadOutcome;
   profileId: string;
 }
 

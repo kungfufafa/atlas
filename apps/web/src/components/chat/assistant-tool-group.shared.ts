@@ -84,5 +84,5 @@ function hasThinkingContent(message: ChatListItem): boolean {
 
 function hasAssistantText(message: ChatListItem): boolean {
   // Empty streaming bubbles are handled by the awaiting-model placeholder, not as text.
-  return Boolean(message.content.trim());
+  return Boolean(message.content.trim() || message.failed);
 }

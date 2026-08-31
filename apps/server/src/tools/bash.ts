@@ -29,6 +29,13 @@ const CODING_AGENT_MAX_CAPTURE_CHARS = 5_000_000;
 /** Keep the newest N coding-agent logs; prune the rest after each write. */
 const CODING_AGENT_LOG_RETENTION = 10;
 
+/**
+ * Variables that cause the shell, dynamic loader, Node, or Python to execute
+ * caller-selected code before the requested command starts.
+ */
+const HIJACKING_ENV_KEY =
+  /^(BASH_ENV|IFS|PS4|SHELLOPTS|BASHOPTS|NODE_OPTIONS|BASH_FUNC_.*|LD_.*|DYLD_.*|PYTHON.*)$/;
+
 export interface BashInput {
   codingAgent?: boolean;
   /** Internal flag set after tool-input validation for host-native CLI login. */
@@ -152,9 +159,10 @@ function runShellCommand(
   options: ShellRunOptions
 ): Promise<BashOutput> {
   return new Promise((resolve, reject) => {
+    const safeEnvOverrides = filterShellHijackingEnv(envOverrides);
     const child = spawn("/bin/bash", ["-lc", command], {
       cwd,
-      env: mergeCodingAgentSpawnEnv(process.env, envOverrides, {
+      env: mergeCodingAgentSpawnEnv(process.env, safeEnvOverrides, {
         scrubCredentialKeys: options.codingAgentNativeLogin,
       }),
       // SIGTERMs the shell when the turn is cancelled, so a stopped chat does not
@@ -218,6 +226,18 @@ function runShellCommand(
         .catch(reject);
     });
   });
+}
+
+function filterShellHijackingEnv(
+  environment: Record<string, string>
+): Record<string, string> {
+  const filtered: Record<string, string> = {};
+  for (const [key, value] of Object.entries(environment)) {
+    if (!HIJACKING_ENV_KEY.test(key)) {
+      filtered[key] = value;
+    }
+  }
+  return filtered;
 }
 
 async function finalizeCodingAgentOutput(args: {

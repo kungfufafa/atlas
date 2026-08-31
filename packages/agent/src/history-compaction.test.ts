@@ -72,9 +72,10 @@ describe("history compaction", () => {
   });
 
   test("prunes old tool outputs while protecting recent turns", () => {
+    const original = createToolMessage(repeat("a", 200_000));
     const messages: ChatMessage[] = [
       { content: "turn 1", role: "user" },
-      createToolMessage(repeat("a", 200_000)),
+      original,
       { content: "done 1", role: "assistant" },
       { content: "turn 2", role: "user" },
       createToolMessage(repeat("b", 10_000)),
@@ -95,6 +96,8 @@ describe("history compaction", () => {
     expect(messages[10]?.role === "assistant" && messages[10].content).toBe(
       "done 4"
     );
+    expect(original.content).toBe(repeat("a", 200_000));
+    expect(messages[1]).not.toBe(original);
   });
 
   test("does not prune when tool output is well below the model's usable window", () => {
@@ -292,5 +295,40 @@ describe("history compaction", () => {
     const estimate = estimateHistoryTokens(messages, "system prompt");
 
     expect(estimate).toBeGreaterThan(100);
+  });
+
+  test("counts replay payload once and includes standalone thinking", () => {
+    const providerContent = [
+      { thinking: repeat("t", 800), type: "thinking" },
+      { text: "answer", type: "text" },
+    ];
+    const emptyEstimate = estimateHistoryTokens([], "");
+    const providerEstimate =
+      estimateHistoryTokens(
+        [
+          {
+            content: "answer",
+            providerContent,
+            role: "assistant",
+          },
+        ],
+        ""
+      ) - emptyEstimate;
+    const standaloneEstimate =
+      estimateHistoryTokens(
+        [
+          {
+            content: "answer",
+            role: "assistant",
+            thinking: repeat("t", 800),
+          },
+        ],
+        ""
+      ) - emptyEstimate;
+
+    expect(providerEstimate).toBe(
+      Math.ceil(JSON.stringify(providerContent).length / 4)
+    );
+    expect(standaloneEstimate).toBeGreaterThan(Math.ceil("answer".length / 4));
   });
 });

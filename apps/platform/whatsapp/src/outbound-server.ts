@@ -1,8 +1,11 @@
+import { timingSafeEqual } from "node:crypto";
 import {
+  ensureWhatsAppOutboundToken,
   loadWhatsAppConfigFile,
   resolveWhatsAppOutboundDestination,
   resolveWhatsAppOutboundListenPort,
   saveWhatsAppOutboundPort,
+  WHATSAPP_OUTBOUND_TOKEN_HEADER,
 } from "@atlas/core";
 import { splitWhatsAppMessage } from "./format";
 
@@ -15,11 +18,22 @@ export interface WhatsAppOutboundServerOptions {
   orgId?: string | null;
 }
 
+function tokenMatches(provided: string | null, expected: string): boolean {
+  if (!provided) {
+    return false;
+  }
+
+  const actual = Buffer.from(provided.trim());
+  const wanted = Buffer.from(expected);
+  return actual.length === wanted.length && timingSafeEqual(actual, wanted);
+}
+
 export async function startWhatsAppOutboundServer(
   options: WhatsAppOutboundServerOptions
 ): Promise<{ port: number; stop: () => void }> {
   const config = await loadWhatsAppConfigFile(options.orgId);
   const port = resolveWhatsAppOutboundListenPort(config);
+  await ensureWhatsAppOutboundToken(options.orgId);
   let stopped = false;
 
   const server = Bun.serve({
@@ -32,6 +46,22 @@ export async function startWhatsAppOutboundServer(
 
       if (request.method === "POST" && url.pathname === "/send") {
         const latestConfig = await loadWhatsAppConfigFile(options.orgId);
+        const expectedToken =
+          latestConfig?.outboundToken?.trim() ||
+          (await ensureWhatsAppOutboundToken(options.orgId));
+
+        if (
+          !(
+            expectedToken &&
+            tokenMatches(
+              request.headers.get(WHATSAPP_OUTBOUND_TOKEN_HEADER),
+              expectedToken
+            )
+          )
+        ) {
+          return Response.json({ error: "Unauthorized." }, { status: 401 });
+        }
+
         const pairedJid = latestConfig?.pairedJid?.trim();
 
         if (!(latestConfig && pairedJid)) {

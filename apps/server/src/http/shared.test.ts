@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { AtlasApiError } from "@atlas/core";
-import { readJsonWithLimit } from "./shared";
+import { readJsonWithLimit, readOptionalJson } from "./shared";
+
+const URL = "http://localhost:4310/test";
 
 describe("readJsonWithLimit", () => {
   test("enforces an absolute body-read deadline without awaiting a hanging cancel", async () => {
@@ -14,10 +16,7 @@ describe("readJsonWithLimit", () => {
         controller.enqueue(new TextEncoder().encode('{"data":"'));
       },
     });
-    const request = new Request("http://localhost/upload", {
-      body,
-      method: "POST",
-    });
+    const request = new Request(URL, { body, method: "POST" });
     const startedAt = Date.now();
 
     try {
@@ -40,10 +39,7 @@ describe("readJsonWithLimit", () => {
         controller.enqueue(new TextEncoder().encode("123456"));
       },
     });
-    const request = new Request("http://localhost/upload", {
-      body,
-      method: "POST",
-    });
+    const request = new Request(URL, { body, method: "POST" });
 
     try {
       await readJsonWithLimit(request, 5, { timeoutMs: 1000 });
@@ -52,5 +48,23 @@ describe("readJsonWithLimit", () => {
       expect(error).toBeInstanceOf(AtlasApiError);
       expect((error as AtlasApiError).status).toBe(413);
     }
+  });
+});
+
+describe("readOptionalJson", () => {
+  test("uses the fallback only for an empty body", async () => {
+    const request = new Request(URL, { body: " \n", method: "POST" });
+
+    await expect(
+      readOptionalJson(request, { enabled: false })
+    ).resolves.toEqual({ enabled: false });
+  });
+
+  test("rejects malformed non-empty JSON", async () => {
+    const request = new Request(URL, { body: "{", method: "POST" });
+
+    await expect(readOptionalJson(request, {})).rejects.toMatchObject({
+      status: 400,
+    });
   });
 });
