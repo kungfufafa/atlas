@@ -40,6 +40,7 @@ import {
   readOptionalJson,
 } from "../shared";
 import type { HonoApp } from "../types";
+import { getWorkspaceWorkerSessionArtifactPaths } from "../workspace-worker-artifacts";
 import {
   parseArtifactEditRequest,
   readArtifactEditJsonBody,
@@ -812,7 +813,10 @@ export function registerProfileRoutes(
   });
 
   app.get("/v1/profiles/:profileId/artifacts", async (c) => {
-    requireOrgAdminOrPlatformAdminFromContext(c);
+    const auth = getRequestAuth(c);
+    if (!auth.workspaceWorker) {
+      requireOrgAdminOrPlatformAdminFromContext(c);
+    }
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
     const folder = c.req.query("folder");
@@ -842,22 +846,64 @@ export function registerProfileRoutes(
       return json({ error: "folder must be at most 1024 characters" }, 400);
     }
 
-    return json<ListArtifactsResponse>(
-      await agent.listProfileArtifacts(orgId, profileId, {
-        folder,
-        limit,
-        offset,
-      })
+    const listing = await agent.listProfileArtifacts(
+      orgId,
+      profileId,
+      auth.workspaceWorker ? { folder } : { folder, limit, offset }
     );
+    if (!auth.workspaceWorker) {
+      return json<ListArtifactsResponse>(listing);
+    }
+
+    const sessionId = c.req.query("sessionId")?.trim();
+    if (!(options.databaseAdapter && sessionId)) {
+      return json({ error: "Not found" }, 404);
+    }
+    const allowedPaths = await getWorkspaceWorkerSessionArtifactPaths(
+      options.databaseAdapter,
+      sessionId
+    );
+    const scopedArtifacts = listing.artifacts.filter((artifact) =>
+      allowedPaths.has(artifact.path)
+    );
+    const scopedOffset = offset ?? 0;
+    const pagedArtifacts =
+      limit === undefined
+        ? scopedArtifacts
+        : scopedArtifacts.slice(scopedOffset, scopedOffset + limit);
+
+    return json<ListArtifactsResponse>({
+      ...listing,
+      artifacts: pagedArtifacts,
+      directory: "",
+      folders: [],
+      ...(limit === undefined ? {} : { limit, offset: scopedOffset }),
+      total: scopedArtifacts.length,
+    });
   });
 
   app.get("/v1/profiles/:profileId/artifacts/content", async (c) => {
+    const auth = getRequestAuth(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = decodeURIComponent(c.req.param("profileId"));
     const artifactPath = c.req.query("path");
 
     if (!artifactPath) {
       return json({ error: "path is required" }, 400);
+    }
+
+    if (auth.workspaceWorker) {
+      const sessionId = c.req.query("sessionId")?.trim();
+      if (!(options.databaseAdapter && sessionId)) {
+        return json({ error: "Not found" }, 404);
+      }
+      const allowedPaths = await getWorkspaceWorkerSessionArtifactPaths(
+        options.databaseAdapter,
+        sessionId
+      );
+      if (!allowedPaths.has(artifactPath)) {
+        return json({ error: "Not found" }, 404);
+      }
     }
 
     const render =

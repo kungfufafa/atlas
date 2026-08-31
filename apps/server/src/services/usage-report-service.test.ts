@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
+import type { AgentChannel } from "@atlas/core";
 import { createInMemoryDatabaseAdapter, type DatabaseAdapter } from "@atlas/db";
 import { UsageReportService } from "./usage-report-service";
 
@@ -36,7 +37,9 @@ async function record(
   tokens: number,
   overrides: {
     capability?: string;
+    channel?: AgentChannel;
     estimatedCostUsd?: number;
+    profileId?: string;
     providerCredentialId?: string;
     providerType?: string;
   } = {}
@@ -44,9 +47,10 @@ async function record(
   await db.incrementLlmUsageDaily(
     {
       capability: overrides.capability ?? "chat.completion",
+      channel: overrides.channel ?? "web",
       modelId,
       orgId,
-      profileId: "p1",
+      profileId: overrides.profileId ?? "p1",
       providerCredentialId: overrides.providerCredentialId ?? "cred_shared",
       providerType: overrides.providerType ?? "openrouter",
       userId,
@@ -65,11 +69,37 @@ beforeEach(async () => {
   service = new UsageReportService(db);
   await seedOrg("org_a", "Acme");
   await seedOrg("org_b", "Globex");
+  const now = new Date().toISOString();
+  await db.upsertProfile({
+    createdAt: now,
+    id: "p1",
+    isSuper: false,
+    model: null,
+    name: "Support",
+    orgId: "org_a",
+    systemPrompt: "",
+    updatedAt: now,
+  });
+  await db.upsertProfile({
+    createdAt: now,
+    id: "p2",
+    isSuper: false,
+    model: null,
+    name: "Research",
+    orgId: "org_b",
+    systemPrompt: "",
+    updatedAt: now,
+  });
   await seedUser("user_1", "Alice", "alice@acme.test");
   await seedUser("user_2", "Bob", "bob@acme.test");
   await record("org_a", "user_1", "gpt-x", 300);
-  await record("org_a", "user_2", "gpt-x", 100);
-  await record("org_b", "user_3", "claude-y", 1000);
+  await record("org_a", "user_2", "gpt-x", 100, {
+    channel: "whatsapp",
+  });
+  await record("org_b", "user_3", "claude-y", 1000, {
+    channel: "discord",
+    profileId: "p2",
+  });
 });
 
 describe("UsageReportService RBAC scoping", () => {
@@ -88,7 +118,7 @@ describe("UsageReportService RBAC scoping", () => {
       { isPlatformAdmin: true }
     );
     expect(report.scope).toBe("platform");
-    expect(report.rows.map((row) => row.label)).toEqual(["Globex", "Acme"]);
+    expect(report.rows.map((row) => row.label)).toEqual(["Acme", "Globex"]);
   });
 
   test("workspace admin is scoped to their workspace, broken down by user", async () => {
@@ -112,6 +142,87 @@ describe("UsageReportService RBAC scoping", () => {
     expect(report.scope).toBe("user");
     expect(report.rows).toHaveLength(1);
     expect(report.rows[0]).toMatchObject({ key: "gpt-x", requestCount: 1 });
+  });
+
+  test("labels profile and channel breakdowns", async () => {
+    const profileReport = await service.getReport(
+      { groupBy: "profile" },
+      { orgId: "org_a", orgRole: "admin" }
+    );
+    expect(profileReport.rows).toHaveLength(1);
+    expect(profileReport.rows[0]).toMatchObject({
+      key: "p1",
+      label: "Support",
+      requestCount: 2,
+    });
+
+    const channelReport = await service.getReport(
+      { groupBy: "channel" },
+      { orgId: "org_a", orgRole: "admin" }
+    );
+    expect(channelReport.rows.map((row) => row.label).sort()).toEqual([
+      "Web",
+      "WhatsApp",
+    ]);
+  });
+
+  test("filters usage by channel within the RBAC scope", async () => {
+    const report = await service.getReport(
+      { channel: "whatsapp", groupBy: "user" },
+      { orgId: "org_a", orgRole: "admin" }
+    );
+    expect(report.channel).toBe("whatsapp");
+    expect(report.rows).toHaveLength(1);
+    expect(report.rows[0]).toMatchObject({
+      key: "user_2",
+      label: "Bob",
+      requestCount: 1,
+    });
+  });
+
+  test("can filter historical unattributed usage explicitly", async () => {
+    await db.incrementLlmUsageDaily(
+      {
+        capability: "image.generation",
+        channel: "unknown",
+        modelId: "gpt-image-2",
+        orgId: "org_a",
+        profileId: "unknown",
+        providerCredentialId: "cred_shared",
+        providerType: "openai",
+        userId: "user_1",
+      },
+      {
+        estimatedCostUsd: 0.1,
+        inputTokens: 0,
+        outputTokens: 0,
+        requestCount: 1,
+      }
+    );
+
+    const report = await service.getReport(
+      { channel: "unknown", groupBy: "capability" },
+      { orgId: "org_a", orgRole: "member", userId: "user_1" }
+    );
+    expect(report.channel).toBe("unknown");
+    expect(report.rows).toEqual([
+      expect.objectContaining({
+        key: "image.generation",
+        requestCount: 1,
+      }),
+    ]);
+  });
+
+  test("allows a trusted export to request every report row", async () => {
+    for (let index = 0; index < 150; index += 1) {
+      await record("org_a", `bulk_user_${index}`, "gpt-x", 1);
+    }
+
+    const report = await service.getReport(
+      { groupBy: "user", limit: null },
+      { orgId: "org_a", orgRole: "admin" }
+    );
+    expect(report.rows).toHaveLength(152);
   });
 
   test("non-platform caller without a workspace gets nothing", async () => {
@@ -275,6 +386,8 @@ describe("UsageReportService budgets", () => {
     const service = new UsageReportService(db);
     await db.incrementLlmUsageDaily(
       {
+        capability: "chat.completion",
+        channel: "web",
         modelId: "gpt-x",
         orgId: "org_a",
         profileId: "p1",

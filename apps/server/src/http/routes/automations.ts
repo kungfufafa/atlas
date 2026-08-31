@@ -328,13 +328,14 @@ export function registerAutomationRoutes(
 
   app.post("/v1/automations/draft", async (c) => {
     requireNotViewerFromContext(c);
+    const auth = getRequestAuth(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const body = await readJson<DraftAutomationRequest>(c.req.raw);
-    const automation = await agent.draftAutomation(
-      orgId,
-      body.prompt,
-      parseChannel(body.channel)
-    );
+    const channel = parseChannel(body.channel);
+    if (auth.workspaceWorker && auth.workspaceWorker.channel !== channel) {
+      return errorResponse("Workspace worker channel mismatch", 403);
+    }
+    const automation = await agent.draftAutomation(orgId, body.prompt, channel);
     return json<DraftAutomationResponse>({ automation });
   });
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {
@@ -88,6 +88,80 @@ describe("inbound workspace documents", () => {
         )
       ).text();
       expect(written).toBe("safe");
+    });
+  });
+
+  test("enforces a profile storage quota before writing", async () => {
+    await withIsolatedAtlasHome("atlas-inbound-quota-", async () => {
+      await saveInboundWorkspaceDocument({
+        bytes: Buffer.from("12345"),
+        filename: "first.txt",
+        maxStoredBytes: 8,
+        orgId: "org_test",
+        profileId: "default",
+      });
+
+      await expect(
+        saveInboundWorkspaceDocument({
+          bytes: Buffer.from("6789"),
+          filename: "second.txt",
+          maxStoredBytes: 8,
+          orgId: "org_test",
+          profileId: "default",
+        })
+      ).rejects.toThrow("storage quota exceeded");
+    });
+  });
+
+  test("serializes concurrent filename allocation", async () => {
+    await withIsolatedAtlasHome("atlas-inbound-concurrent-", async () => {
+      const saved = await Promise.all(
+        ["one", "two"].map((content) =>
+          saveInboundWorkspaceDocument({
+            bytes: Buffer.from(content),
+            filename: "report.txt",
+            orgId: "org_test",
+            profileId: "default",
+          })
+        )
+      );
+
+      expect(saved.map((entry) => entry.relativePath).sort()).toEqual([
+        "artifacts/report-2.txt",
+        "artifacts/report.txt",
+      ]);
+    });
+  });
+
+  test("refuses a symlinked artifacts directory", async () => {
+    await withIsolatedAtlasHome("atlas-inbound-symlink-", async () => {
+      const atlasHome = process.env.ATLAS_CONFIG_DIR ?? "";
+      const profileDir = path.join(
+        atlasHome,
+        "orgs",
+        "org_test",
+        "profiles",
+        "default"
+      );
+      const outside = await mkdtemp(path.join(os.tmpdir(), "atlas-outside-"));
+      await mkdir(profileDir, { recursive: true });
+      await symlink(outside, path.join(profileDir, "artifacts"));
+
+      try {
+        await expect(
+          saveInboundWorkspaceDocument({
+            bytes: Buffer.from("secret"),
+            filename: "report.txt",
+            orgId: "org_test",
+            profileId: "default",
+          })
+        ).rejects.toThrow("must be a real directory");
+        expect(await Bun.file(path.join(outside, "report.txt")).exists()).toBe(
+          false
+        );
+      } finally {
+        await rm(outside, { force: true, recursive: true });
+      }
     });
   });
 });

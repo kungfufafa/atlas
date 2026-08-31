@@ -39,6 +39,16 @@ export interface UpdateTelegramSettingsInput {
   profileId?: string;
 }
 
+export interface TelegramPairingPrincipalInput {
+  channelUserId: string;
+  pairingAssertion: string;
+  pairingUserId: string;
+}
+
+export type TelegramPairingPrincipalBinder = (
+  input: TelegramPairingPrincipalInput
+) => Promise<void>;
+
 export function getTelegramConfigDir(orgId?: string | null): string {
   return orgId === undefined
     ? getWorkspaceChannelDir("telegram")
@@ -384,16 +394,9 @@ function runSerializedTelegramPair<T>(
 export async function verifyAndPairTelegramUser(
   handshakeInput: string,
   userId: number,
-  orgId?: string | null
-): Promise<
-  | {
-      ok: true;
-      message: string;
-      handshakeUserId: string | null;
-      pairingAssertion: string | null;
-    }
-  | { ok: false; message: string }
-> {
+  orgId?: string | null,
+  bindPrincipal?: TelegramPairingPrincipalBinder
+): Promise<{ ok: true; message: string } | { ok: false; message: string }> {
   return runSerializedTelegramPair(orgId, async () => {
     const config = await loadTelegramConfigFile(orgId);
 
@@ -404,16 +407,19 @@ export async function verifyAndPairTelegramUser(
       };
     }
 
-    if (isTelegramUserAuthorized(userId, config)) {
+    const expected = config.handshakeCode;
+    const matchesCurrentCode = Boolean(
+      expected &&
+        normalizeHandshakeInput(handshakeInput) ===
+          normalizeHandshakeInput(expected)
+    );
+
+    if (isTelegramUserAuthorized(userId, config) && !matchesCurrentCode) {
       return {
-        handshakeUserId: config.handshakeUserId,
         message: "This chat is already linked.",
         ok: true,
-        pairingAssertion: config.handshakeAssertion ?? null,
       };
     }
-
-    const expected = config.handshakeCode;
 
     if (!expected) {
       return {
@@ -423,10 +429,7 @@ export async function verifyAndPairTelegramUser(
       };
     }
 
-    if (
-      normalizeHandshakeInput(handshakeInput) !==
-      normalizeHandshakeInput(expected)
-    ) {
+    if (!matchesCurrentCode) {
       return {
         message:
           "Invalid pairing code. Copy it from Integrations → Telegram and try again.",
@@ -435,25 +438,42 @@ export async function verifyAndPairTelegramUser(
     }
 
     const pairedUserIds = [...new Set([...config.pairedUserIds, userId])];
-    const handshakeUserId = config.handshakeUserId;
-    const pairingAssertion = config.handshakeAssertion ?? null;
+    const pairingAssertion = config.handshakeAssertion?.trim() ?? "";
+    const pairingUserId = config.handshakeUserId?.trim() ?? "";
+
+    if (bindPrincipal) {
+      if (!(pairingAssertion && pairingUserId)) {
+        return {
+          message:
+            "That pairing code is no longer valid. Generate a new one in Integrations → Telegram.",
+          ok: false,
+        };
+      }
+
+      // Bind the canonical principal before consuming the one-time code. If
+      // the server rejects or cannot persist the bind, the config remains
+      // unchanged so the same issuer can retry safely.
+      await bindPrincipal({
+        channelUserId: String(userId),
+        pairingAssertion,
+        pairingUserId,
+      });
+    }
 
     await writeTelegramConfigFile(
       {
         ...config,
-        handshakeAssertion: pairingAssertion,
+        handshakeAssertion: null,
         handshakeCode: null,
-        handshakeUserId,
+        handshakeUserId: null,
         pairedUserIds,
       },
       orgId
     );
 
     return {
-      handshakeUserId,
       message: "Linked successfully. You can chat with Atlas now.",
       ok: true,
-      pairingAssertion,
     };
   });
 }

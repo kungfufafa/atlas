@@ -13,6 +13,7 @@ import {
   useReconnectWhatsApp,
   useRegenerateWhatsAppPairingCode,
   useSaveWhatsAppSettings,
+  useWhatsAppPairingStatus,
   useWhatsAppSettings,
 } from "@/hooks/use-whatsapp-settings";
 import { formatError } from "@/lib/client";
@@ -35,6 +36,7 @@ function useWhatsAppSettingsCard({
 }: WhatsAppSettingsCardProps) {
   const queryClient = useQueryClient();
   const { data: settings, isLoading, error: loadError } = useWhatsAppSettings();
+  const { data: pairingStatus } = useWhatsAppPairingStatus();
   const { data: status } = useSystemStatusQuery();
   const { data: profiles = [] } = useProfilesQuery();
   const saveMutation = useSaveWhatsAppSettings();
@@ -95,8 +97,8 @@ function useWhatsAppSettingsCard({
   const worker = status?.whatsappWorker;
   const running = worker?.running === true;
   const connected = worker?.connected === true;
-  const qrCode = worker?.qrCode ?? null;
-  const devicePairingCode = worker?.devicePairingCode ?? null;
+  const qrCode = pairingStatus?.qrCode ?? null;
+  const devicePairingCode = pairingStatus?.devicePairingCode ?? null;
   const paired = Boolean(worker?.paired || settings?.pairedJid);
   const pairingCode = settings?.pairingCode ?? null;
   const linkedNumber = settings?.phoneNumberMasked ?? null;
@@ -115,6 +117,9 @@ function useWhatsAppSettingsCard({
     if (worker?.paired && !settings?.pairedJid) {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.whatsapp.settings,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.whatsapp.pairingStatus,
       });
       return;
     }
@@ -151,6 +156,9 @@ function useWhatsAppSettingsCard({
       });
       void queryClient.invalidateQueries({
         queryKey: queryKeys.whatsapp.settings,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.whatsapp.pairingStatus,
       });
     }, 2000);
 
@@ -438,7 +446,7 @@ function useWhatsAppSettingsCard({
       onRegeneratePairingCode={handleRegeneratePairingCode}
       onSave={handleSave}
       paired={paired}
-      pairingCode={accessMode === "pairing" ? pairingCode : null}
+      pairingCode={pairingCode}
       phoneNumber={phoneNumber}
       profileId={profileId}
       profiles={profiles}

@@ -124,6 +124,7 @@ export const queryKeys = {
   visionSettings: ["vision", "settings"] as const,
   webPublicUrl: ["system", "webPublicUrl"] as const,
   whatsapp: {
+    pairingStatus: ["whatsapp", "pairingStatus"] as const,
     settings: ["whatsapp", "settings"] as const,
   },
   workerLogs: ["workerLogs"] as const,

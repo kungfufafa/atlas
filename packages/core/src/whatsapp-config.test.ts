@@ -358,6 +358,7 @@ describe("resolveWhatsAppConfigFromSources", () => {
       pairedLid: null,
       pairingAssertion: null,
       pairingCode: null,
+      pairingExpiresAt: null,
       pairingUserId: null,
       phoneNumber: "+1234567890",
       profileId: "profile_from_file",
@@ -513,7 +514,7 @@ describe("WhatsApp access mode settings", () => {
     });
   });
 
-  test("clears a chat access code when switching away from pairing mode", async () => {
+  test("preserves an identity-link code when switching access modes", async () => {
     await withTempHomedir(
       "atlas-core-wa-open-clears-code-",
       async (tempHome) => {
@@ -527,6 +528,9 @@ describe("WhatsApp access mode settings", () => {
             "access_mode=pairing",
             "phone_number=6281379292556",
             "pairing_code=ABCD1234",
+            "pairing_expires_at=2099-01-01T00:00:00.000Z",
+            "pairing_user_id=user_admin",
+            "pairing_assertion=assertion_pending",
             "",
           ].join("\n"),
           "utf8"
@@ -534,16 +538,19 @@ describe("WhatsApp access mode settings", () => {
 
         const result = await saveWhatsAppConfig({ accessMode: "open" });
         expect(result.accessMode).toBe("open");
-        expect(result.pairingCode).toBeNull();
+        expect(result.pairingCode).toBe("ABCD1234");
 
         const saved = await loadWhatsAppConfigFile();
         expect(saved?.accessMode).toBe("open");
-        expect(saved?.pairingCode).toBeNull();
+        expect(saved?.pairingAssertion).toBe("assertion_pending");
+        expect(saved?.pairingCode).toBe("ABCD1234");
+        expect(saved?.pairingExpiresAt).toBe("2099-01-01T00:00:00.000Z");
+        expect(saved?.pairingUserId).toBe("user_admin");
       }
     );
   });
 
-  test("hides a leftover chat access code in public settings for open mode", async () => {
+  test("shows an active identity-link code in public settings for open mode", async () => {
     await withTempHomedir("atlas-core-wa-open-hide-code-", async (tempHome) => {
       const dir = path.join(tempHome, ".atlas", "whatsapp");
       await mkdir(dir, { recursive: true });
@@ -562,25 +569,123 @@ describe("WhatsApp access mode settings", () => {
 
       const saved = await loadWhatsAppConfigFile();
       expect(saved?.pairingCode).toBe("ABCD1234");
-      expect(toWhatsAppSettingsPublic(saved).pairingCode).toBeNull();
+      expect(toWhatsAppSettingsPublic(saved).pairingCode).toBe("ABCD1234");
     });
   });
 
-  test("does not generate a chat access code in open mode", async () => {
+  test("generates an identity-link code in open mode", async () => {
     await withTempHomedir("atlas-core-wa-open-regen-", async () => {
       await saveWhatsAppConfig({
         accessMode: "open",
         phoneNumber: "+6281379292556",
       });
 
-      await expect(regenerateWhatsAppPairingCode()).rejects.toThrow();
+      const result = await regenerateWhatsAppPairingCode(
+        undefined,
+        "user_admin",
+        "assertion_open"
+      );
       const saved = await loadWhatsAppConfigFile();
-      expect(saved?.pairingCode).toBeNull();
+      expect(result.pairingCode).toMatch(/^[0-9A-F]{8}$/);
+      expect(saved?.pairingAssertion).toBe("assertion_open");
+    });
+  });
+
+  test("generates a time-bound code only with a canonical assertion", async () => {
+    await withTempHomedir("atlas-core-wa-pairing-ttl-", async () => {
+      await saveWhatsAppConfig({ phoneNumber: "+6281379292556" });
+
+      const before = Date.now();
+      const result = await regenerateWhatsAppPairingCode(
+        undefined,
+        "user_admin",
+        "assertion_pending"
+      );
+      const saved = await loadWhatsAppConfigFile();
+
+      expect(result.pairingCode).toMatch(/^[0-9A-F]{8}$/);
+      expect(saved?.pairingAssertion).toBe("assertion_pending");
+      expect(saved?.pairingUserId).toBe("user_admin");
+      expect(Date.parse(saved?.pairingExpiresAt ?? "")).toBeGreaterThan(before);
     });
   });
 });
 
 describe("verifyAndPairWhatsAppUser", () => {
+  test("rebinds an already-authorized JID when it sends the exact fresh code", async () => {
+    await withTempHomedir(
+      "atlas-core-wa-rebind-same-jid-",
+      async (tempHome) => {
+        const dir = path.join(tempHome, ".atlas", "whatsapp");
+        await mkdir(dir, { recursive: true });
+        await writeFile(
+          path.join(dir, "config.ini"),
+          [
+            "# Atlas WhatsApp bridge",
+            "profile_id=default",
+            "access_mode=pairing",
+            "paired_jid=628999999999@s.whatsapp.net",
+            "pairing_code=ABCD1234",
+            "pairing_user_id=user_b",
+            "pairing_assertion=assertion_user_b",
+            "",
+          ].join("\n"),
+          "utf8"
+        );
+        let bindingCount = 0;
+
+        const result = await verifyAndPairWhatsAppUser(
+          "ABCD1234",
+          "628999999999@s.whatsapp.net",
+          async (binding) => {
+            bindingCount += 1;
+            expect(binding.pairingUserId).toBe("user_b");
+          }
+        );
+
+        expect(result.ok).toBe(true);
+        expect(bindingCount).toBe(1);
+        expect((await loadWhatsAppConfigFile())?.pairingCode).toBeNull();
+      }
+    );
+  });
+
+  test("expires and atomically clears stale pairing state", async () => {
+    await withTempHomedir("atlas-core-wa-pair-expired-", async (tempHome) => {
+      const dir = path.join(tempHome, ".atlas", "whatsapp");
+      await mkdir(dir, { recursive: true });
+      await writeFile(
+        path.join(dir, "config.ini"),
+        [
+          "# Atlas WhatsApp bridge",
+          "profile_id=default",
+          "access_mode=pairing",
+          "pairing_code=ABCD1234",
+          "pairing_expires_at=2000-01-01T00:00:00.000Z",
+          "pairing_user_id=user_admin",
+          "pairing_assertion=assertion_expired",
+          "",
+        ].join("\n"),
+        "utf8"
+      );
+
+      const result = await verifyAndPairWhatsAppUser(
+        "ABCD1234",
+        "628999999999@s.whatsapp.net",
+        async () => {
+          throw new Error("expired codes must not bind");
+        }
+      );
+      const saved = await loadWhatsAppConfigFile();
+
+      expect(result.ok).toBe(false);
+      expect(saved?.pairingAssertion).toBeNull();
+      expect(saved?.pairingCode).toBeNull();
+      expect(saved?.pairingExpiresAt).toBeNull();
+      expect(saved?.pairingUserId).toBeNull();
+    });
+  });
+
   test("LID pair with an existing owner phone binds only the inbound LID", async () => {
     await withTempHomedir("atlas-core-wa-pair-lid-", async (tempHome) => {
       const dir = path.join(tempHome, ".atlas", "whatsapp");
@@ -594,6 +699,8 @@ describe("verifyAndPairWhatsAppUser", () => {
           "phone_number=628111111111",
           "paired_jid=628111111111@s.whatsapp.net",
           "pairing_code=ABCD1234",
+          "pairing_user_id=user_admin",
+          "pairing_assertion=assertion_lid",
           "",
         ].join("\n"),
         "utf8"
@@ -601,14 +708,26 @@ describe("verifyAndPairWhatsAppUser", () => {
 
       const guest = await verifyAndPairWhatsAppUser(
         "ABCD1234",
-        "154352568283178@lid"
+        "154352568283178@lid",
+        async (binding) => {
+          const pending = await loadWhatsAppConfigFile();
+          expect(binding).toEqual({
+            channelUserId: "154352568283178@lid",
+            pairingAssertion: "assertion_lid",
+            pairingUserId: "user_admin",
+          });
+          expect(pending?.pairedLid).toBeNull();
+          expect(pending?.pairingCode).toBe("ABCD1234");
+        }
       );
       expect(guest.ok).toBe(true);
 
       const saved = await loadWhatsAppConfigFile();
       expect(saved?.pairedLid).toBe("154352568283178@lid");
       expect(saved?.pairedJid).toBeNull();
+      expect(saved?.pairingAssertion).toBeNull();
       expect(saved?.pairingCode).toBeNull();
+      expect(saved?.pairingUserId).toBeNull();
       expect(
         isWhatsAppUserAuthorized("628111111111@s.whatsapp.net", saved!)
       ).toBe(false);
@@ -631,6 +750,8 @@ describe("verifyAndPairWhatsAppUser", () => {
           "phone_number=628111111111",
           "paired_lid=154352568283178@lid",
           "pairing_code=ABCD1234",
+          "pairing_user_id=user_admin",
+          "pairing_assertion=assertion_phone",
           "",
         ].join("\n"),
         "utf8"
@@ -638,7 +759,8 @@ describe("verifyAndPairWhatsAppUser", () => {
 
       const guest = await verifyAndPairWhatsAppUser(
         "ABCD1234",
-        "628999999999@s.whatsapp.net"
+        "628999999999@s.whatsapp.net",
+        async () => undefined
       );
       expect(guest.ok).toBe(true);
 
@@ -655,6 +777,59 @@ describe("verifyAndPairWhatsAppUser", () => {
     });
   });
 
+  test("keeps the user unpaired and preserves retry state when binding fails", async () => {
+    await withTempHomedir("atlas-core-wa-pair-bind-fail-", async (tempHome) => {
+      const dir = path.join(tempHome, ".atlas", "whatsapp");
+      await mkdir(dir, { recursive: true });
+      await writeFile(
+        path.join(dir, "config.ini"),
+        [
+          "# Atlas WhatsApp bridge",
+          "profile_id=default",
+          "access_mode=pairing",
+          "pairing_code=AABBCCDD",
+          "pairing_user_id=user_b",
+          "pairing_assertion=assertion_user_b",
+          "",
+        ].join("\n"),
+        "utf8"
+      );
+
+      await expect(
+        verifyAndPairWhatsAppUser(
+          "AABBCCDD",
+          "628222222222@s.whatsapp.net",
+          async () => {
+            throw new Error("principal binding unavailable");
+          }
+        )
+      ).rejects.toThrow("principal binding unavailable");
+
+      const afterFailure = await loadWhatsAppConfigFile();
+      expect(afterFailure).toMatchObject({
+        pairedJid: null,
+        pairingAssertion: "assertion_user_b",
+        pairingCode: "AABBCCDD",
+        pairingUserId: "user_b",
+      });
+
+      const retry = await verifyAndPairWhatsAppUser(
+        "AABBCCDD",
+        "628222222222@s.whatsapp.net",
+        async () => undefined
+      );
+      expect(retry.ok).toBe(true);
+
+      const afterRetry = await loadWhatsAppConfigFile();
+      expect(afterRetry).toMatchObject({
+        pairedJid: "628222222222@s.whatsapp.net",
+        pairingAssertion: null,
+        pairingCode: null,
+        pairingUserId: null,
+      });
+    });
+  });
+
   test("serializes concurrent pairing so only one JID consumes the code", async () => {
     await withTempHomedir("atlas-core-wa-pair-race-", async (tempHome) => {
       const dir = path.join(tempHome, ".atlas", "whatsapp");
@@ -666,14 +841,24 @@ describe("verifyAndPairWhatsAppUser", () => {
           "profile_id=default",
           "access_mode=pairing",
           "pairing_code=AABBCCDD",
+          "pairing_user_id=user_admin",
+          "pairing_assertion=assertion_race",
           "",
         ].join("\n"),
         "utf8"
       );
 
       const [first, second] = await Promise.all([
-        verifyAndPairWhatsAppUser("AABBCCDD", "628111111111@s.whatsapp.net"),
-        verifyAndPairWhatsAppUser("AABBCCDD", "628222222222@s.whatsapp.net"),
+        verifyAndPairWhatsAppUser(
+          "AABBCCDD",
+          "628111111111@s.whatsapp.net",
+          async () => undefined
+        ),
+        verifyAndPairWhatsAppUser(
+          "AABBCCDD",
+          "628222222222@s.whatsapp.net",
+          async () => undefined
+        ),
       ]);
 
       expect([first.ok, second.ok].sort()).toEqual([false, true]);

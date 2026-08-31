@@ -1,4 +1,5 @@
 import type {
+  LlmUsageChannelFilter,
   LlmUsageReportGroupBy,
   LlmUsageReportResponse,
   LlmUsageStatus,
@@ -35,6 +36,7 @@ import { cn } from "@/lib/utils";
 import {
   buildServiceColumns,
   deriveSummary,
+  formatWorkerResources,
   type StatusTone,
   usageBreakdownGroups,
 } from "@/pages/status-page.shared";
@@ -105,8 +107,10 @@ export function StatusPage({ embedded = false }: { embedded?: boolean } = {}) {
 const USAGE_TAB_LABELS: Record<LlmUsageReportGroupBy, string> = {
   auth: "Auth",
   capability: "Capabilities",
+  channel: "Channels",
   credential: "Credentials",
   model: "Models",
+  profile: "Profiles",
   provider: "Providers",
   user: "Users",
   workspace: "Workspaces",
@@ -117,6 +121,22 @@ const USAGE_RANGE_OPTIONS = [
   { days: 30, label: "30 days" },
   { days: 90, label: "90 days" },
 ] as const;
+
+const USAGE_CHANNEL_OPTIONS: Array<{
+  label: string;
+  value: LlmUsageChannelFilter | "all";
+}> = [
+  { label: "All channels", value: "all" },
+  { label: "WhatsApp", value: "whatsapp" },
+  { label: "Web", value: "web" },
+  { label: "Telegram", value: "telegram" },
+  { label: "Discord", value: "discord" },
+  { label: "Automation", value: "automation" },
+  { label: "Tasks", value: "task" },
+  { label: "Subagents", value: "subagent" },
+  { label: "CLI", value: "cli" },
+  { label: "Unattributed", value: "unknown" },
+];
 
 function usageRangeFrom(days: number): string {
   return new Date(Date.now() - (days - 1) * 86_400_000)
@@ -136,16 +156,28 @@ function UsageBreakdownSection({
   const tabs = usageBreakdownGroups(canManageBudget);
   const [groupBy, setGroupBy] = useState<LlmUsageReportGroupBy>(tabs[0]);
   const [days, setDays] = useState<number>(30);
+  const [channel, setChannel] = useState<LlmUsageChannelFilter | "all">("all");
   const from = usageRangeFrom(days);
+  const selectedChannel = channel === "all" ? undefined : channel;
 
   const { data, isLoading, error } = useQuery({
-    queryFn: () => client.getUsageReport({ from, groupBy, limit: 25 }),
-    queryKey: ["usage-report", orgId, groupBy, from],
+    queryFn: () =>
+      client.getUsageReport({
+        channel: selectedChannel,
+        from,
+        groupBy,
+        limit: 25,
+      }),
+    queryKey: ["usage-report", orgId, groupBy, from, selectedChannel],
   });
 
   const rows = data?.rows ?? [];
   const hasCost = rows.some((row) => row.estimatedCostUsd > 0);
-  const csvHref = `/v1/usage/export.csv?groupBy=${groupBy}&from=${from}`;
+  const csvSearch = new URLSearchParams({ from, groupBy });
+  if (selectedChannel) {
+    csvSearch.set("channel", selectedChannel);
+  }
+  const csvHref = `/v1/usage/export.csv?${csvSearch.toString()}`;
 
   return (
     <section className={cn(embedded ? "px-4 py-4" : `${sectionClass} p-4`)}>
@@ -159,6 +191,20 @@ function UsageBreakdownSection({
           </p>
         </div>
         <div className="flex items-center gap-1">
+          <select
+            aria-label="Usage channel"
+            className="rounded-md border border-border bg-background px-2 py-1 text-foreground text-xs"
+            onChange={(event) =>
+              setChannel(event.target.value as LlmUsageChannelFilter | "all")
+            }
+            value={channel}
+          >
+            {USAGE_CHANNEL_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
           <a
             className="rounded-md border border-border px-2 py-1 text-muted-foreground text-xs hover:text-foreground"
             download
@@ -204,7 +250,7 @@ function UsageBreakdownSection({
 
       <BudgetCard canManage={canManageBudget} orgId={orgId} />
 
-      <AuthSplitStrip from={from} orgId={orgId} />
+      <AuthSplitStrip channel={selectedChannel} from={from} orgId={orgId} />
 
       <UsageBreakdownTable
         error={error ? formatError(error) : null}
@@ -217,15 +263,17 @@ function UsageBreakdownSection({
 }
 
 function AuthSplitStrip({
+  channel,
   from,
   orgId,
 }: {
+  channel?: LlmUsageChannelFilter;
   from: string;
   orgId: string | null;
 }) {
   const { data } = useQuery({
-    queryFn: () => client.getUsageReport({ from, groupBy: "auth" }),
-    queryKey: ["usage-report", orgId, "auth", from],
+    queryFn: () => client.getUsageReport({ channel, from, groupBy: "auth" }),
+    queryKey: ["usage-report", orgId, "auth", from, channel],
   });
   const rows = data?.rows ?? [];
 
@@ -499,7 +547,7 @@ function StatusDashboard({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
+        <table className="w-full min-w-[46rem] border-collapse text-left text-sm">
           <thead className="text-muted-foreground text-xs">
             <tr>
               <th className="border-border border-b px-4 py-2.5 font-medium">
@@ -507,6 +555,9 @@ function StatusDashboard({
               </th>
               <th className="border-border border-b px-4 py-2.5 font-medium">
                 Status
+              </th>
+              <th className="border-border border-b px-4 py-2.5 font-medium">
+                Resources
               </th>
               <th className="border-border border-b px-4 py-2.5 font-medium">
                 {canManageWorkers ? (
@@ -1015,6 +1066,9 @@ function WorkerServiceRow({
             </Link>
           ) : null}
         </div>
+      </td>
+      <td className="whitespace-nowrap border-border border-b px-4 py-3 text-muted-foreground text-xs tabular-nums">
+        {formatWorkerResources(worker.process)}
       </td>
       <td className="border-border border-b px-4 py-3">
         {canManage ? (

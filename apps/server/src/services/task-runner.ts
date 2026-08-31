@@ -1,4 +1,12 @@
+import {
+  AtlasApiError,
+  type CanonicalPrincipal,
+  PrincipalRequiredError,
+  runAsPrincipal,
+  type StoredTask,
+} from "@atlas/core";
 import type { AgentService } from "./agent-service";
+import type { IdentityService } from "./identity-service";
 import type { TaskService } from "./task-service";
 
 export class TaskRunner {
@@ -6,12 +14,18 @@ export class TaskRunner {
 
   constructor(
     private readonly taskService: TaskService,
-    private readonly agentService: AgentService
+    private readonly agentService: AgentService,
+    private readonly identityService?: IdentityService
   ) {}
 
   async run(
-    taskId: string
+    taskId: string,
+    explicitPrincipal?: CanonicalPrincipal
   ): Promise<{ output?: string; error?: string; skipped?: boolean }> {
+    const task = await this.taskService.claimForRun(taskId, explicitPrincipal);
+
+    const principal = await this.resolvePrincipal(task, explicitPrincipal);
+
     if (this.running.has(taskId)) {
       return { error: "Task is already running.", skipped: true };
     }
@@ -19,19 +33,14 @@ export class TaskRunner {
     this.running.add(taskId);
 
     try {
-      const task = await this.taskService.get(taskId);
-
-      if (!task) {
-        throw new Error("Task not found.");
-      }
-
       const run = await this.taskService.createRun(taskId);
 
       try {
         const output = await this.agentService.runTaskPrompt(
           taskId,
           task.profileId,
-          task.prompt
+          task.prompt,
+          principal
         );
 
         await this.taskService.completeRun(run.id, taskId, { output });
@@ -46,6 +55,54 @@ export class TaskRunner {
     } finally {
       this.running.delete(taskId);
     }
+  }
+
+  private async resolvePrincipal(
+    task: StoredTask,
+    explicitPrincipal?: CanonicalPrincipal
+  ): Promise<CanonicalPrincipal> {
+    const ownerId = task.createdByUserId?.trim();
+    const orgId = task.orgId?.trim();
+    if (!(ownerId && orgId)) {
+      throw new AtlasApiError(
+        "Task has no canonical owner and cannot be run.",
+        403
+      );
+    }
+
+    const explicit = explicitPrincipal
+      ? runAsPrincipal(explicitPrincipal, (value) => value)
+      : undefined;
+    if (explicit && (explicit.orgId !== orgId || explicit.userId !== ownerId)) {
+      throw new AtlasApiError("Only the task owner can run this task.", 403);
+    }
+
+    let principal = explicit;
+    if (this.identityService) {
+      try {
+        principal = await this.identityService.resolveForUser(orgId, ownerId);
+      } catch (error) {
+        if (error instanceof PrincipalRequiredError) {
+          throw new AtlasApiError(error.message, 403);
+        }
+        throw error;
+      }
+    }
+
+    if (!principal) {
+      throw new AtlasApiError(
+        "Canonical principal is required to run this task.",
+        403
+      );
+    }
+    if (principal.userId !== ownerId || principal.orgId !== orgId) {
+      throw new AtlasApiError("Only the task owner can run this task.", 403);
+    }
+    if (principal.orgRole === "viewer" && !principal.isPlatformAdmin) {
+      throw new AtlasApiError("Viewers cannot run tasks.", 403);
+    }
+
+    return principal;
   }
 
   isRunning(taskId: string): boolean {

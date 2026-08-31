@@ -9,6 +9,7 @@ import {
   createChatHandler,
   getChatLockCountForTests,
   resetChatLocksForTests,
+  resolveDiscordSessionKey,
   withChatLock,
 } from "./chat-handler";
 import { SessionStore } from "./session-store";
@@ -144,21 +145,38 @@ async function createPairedHandler(
     failReadArtifact?: Parameters<
       typeof createMockClient
     >[0]["failReadArtifact"];
+    failBindPrincipal?: Parameters<
+      typeof createMockClient
+    >[0]["failBindPrincipal"];
     configProfileId?: string;
+    accessMode?: "open" | "allowlist" | "denylist" | "pairing";
+    handshakeAssertion?: string;
+    handshakeCode?: string;
+    handshakeUserId?: string;
     pairedUserIds?: string[];
     allowedUserIds?: string[];
     fixedWorkspaceId?: string;
   } = {}
 ) {
   await writeDiscordConfigIni(homeDir, {
+    accessMode: options.accessMode,
     allowedUserIds: options.allowedUserIds ?? [],
     botToken: "discord-bot-token",
+    handshakeAssertion: options.handshakeAssertion,
+    handshakeCode: options.handshakeCode,
+    handshakeUserId: options.handshakeUserId,
     pairedUserIds: options.pairedUserIds ?? ["424242424242424242"],
   });
 
   const authStore = new DiscordAuthStore();
   await authStore.reload();
-  const { client, calls, createdSessionProfileIds } = createMockClient(options);
+  const {
+    client,
+    calls,
+    createdSessionProfileIds,
+    getLastBindChannelPrincipalInput,
+    getLastTranscribeAudioInput,
+  } = createMockClient(options);
   const sessionStore = new SessionStore(
     path.join(homeDir, ".atlas", "discord", "chat-sessions.json")
   );
@@ -188,6 +206,8 @@ async function createPairedHandler(
     calls,
     client,
     createdSessionProfileIds,
+    getLastBindChannelPrincipalInput,
+    getLastTranscribeAudioInput,
     orgStore,
     sessionStore,
     threadStore,
@@ -252,6 +272,7 @@ describe("createChatHandler artifact delivery", () => {
         }
       );
       sessionStore.set("dm_channel_1", {
+        channelUserId: "424242424242424242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -297,6 +318,7 @@ describe("createChatHandler artifact delivery", () => {
         }
       );
       sessionStore.set("dm_channel_1", {
+        channelUserId: "424242424242424242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -325,6 +347,7 @@ describe("createChatHandler artifact delivery", () => {
         }
       );
       sessionStore.set("dm_channel_1", {
+        channelUserId: "424242424242424242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -380,6 +403,7 @@ describe("createChatHandler artifact delivery", () => {
         }
       );
       sessionStore.set("dm_channel_1", {
+        channelUserId: "424242424242424242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -462,6 +486,7 @@ describe("createChatHandler artifact delivery", () => {
         }
       );
       sessionStore.set("dm_channel_1", {
+        channelUserId: "424242424242424242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -540,6 +565,7 @@ describe("createChatHandler artifact delivery", () => {
         }
       );
       sessionStore.set("dm_channel_1", {
+        channelUserId: "424242424242424242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -614,6 +640,7 @@ describe("createChatHandler artifact delivery", () => {
         }
       );
       sessionStore.set("dm_channel_1", {
+        channelUserId: "424242424242424242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -669,6 +696,7 @@ describe("createChatHandler artifact delivery", () => {
         }
       );
       sessionStore.set("dm_channel_1", {
+        channelUserId: "424242424242424242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -728,6 +756,7 @@ describe("createChatHandler artifact delivery", () => {
         }
       );
       sessionStore.set("dm_channel_1", {
+        channelUserId: "424242424242424242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -758,6 +787,7 @@ describe("createChatHandler artifact delivery", () => {
         }
       );
       sessionStore.set("dm_channel_1", {
+        channelUserId: "424242424242424242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -804,6 +834,7 @@ describe("createChatHandler artifact delivery", () => {
         }
       );
       sessionStore.set("dm_channel_1", {
+        channelUserId: "424242424242424242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -895,6 +926,7 @@ describe("createChatHandler artifact delivery", () => {
         }
       );
       sessionStore.set("dm_channel_1", {
+        channelUserId: "424242424242424242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -931,6 +963,7 @@ describe("createChatHandler artifact delivery", () => {
         }
       );
       sessionStore.set("dm_channel_1", {
+        channelUserId: "424242424242424242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -959,6 +992,7 @@ describe("createChatHandler artifact delivery", () => {
       const { handleMessage, sessionStore } =
         await createPairedHandler(homeDir);
       sessionStore.set("dm_channel_1", {
+        channelUserId: "424242424242424242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -989,6 +1023,7 @@ describe("createChatHandler artifact delivery", () => {
         }
       );
       sessionStore.set("dm_channel_1", {
+        channelUserId: "424242424242424242",
         deliverableArtifacts: [
           {
             filename: "payload.exe",
@@ -1019,6 +1054,119 @@ describe("createChatHandler artifact delivery", () => {
     });
   });
 });
+
+describe("createChatHandler pairing principal security", () => {
+  test("does not reuse a legacy session without a canonical channel owner", async () => {
+    await withTempHome(async (homeDir) => {
+      const userId = "424242424242424242";
+      const { calls, handleMessage, sessionStore } =
+        await createPairedHandler(homeDir);
+      sessionStore.set("dm_channel_1", {
+        profileId: "default",
+        sessionId: "legacy_session",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+      const message = createDmMessage({ content: "hello", userId });
+
+      await handleMessage(message.message);
+
+      expect(calls.createSession).toBe(1);
+      expect(calls.sendStream).toBe(1);
+      expect(sessionStore.get("dm_channel_1")?.channelUserId).toBe(userId);
+      expect(sessionStore.get("dm_channel_1")?.sessionId).not.toBe(
+        "legacy_session"
+      );
+    });
+  });
+
+  test("open and allowlist callers cannot consume a pending admin assertion", async () => {
+    const userId = "424242424242424242";
+    for (const access of [
+      { accessMode: "open" as const, allowedUserIds: [] },
+      { accessMode: "allowlist" as const, allowedUserIds: [userId] },
+    ]) {
+      await withTempHome(async (homeDir) => {
+        const { calls, handleMessage } = await createPairedHandler(homeDir, {
+          ...access,
+          fixedWorkspaceId: "org_test",
+          handshakeAssertion: "assert_admin",
+          handshakeCode: "AABBCCDD",
+          handshakeUserId: "user_admin",
+          pairedUserIds: [],
+        });
+        const message = createDmMessage({ content: "hello agent", userId });
+
+        await handleMessage(message.message);
+
+        expect(calls.bindChannelPrincipal).toBe(0);
+        const saved = await loadDiscordConfigFile();
+        expect(saved?.handshakeAssertion).toBe("assert_admin");
+        expect(saved?.handshakeCode).toBe("AABBCCDD");
+      });
+    }
+  });
+
+  test("an authorized open caller binds only after sending the exact active code", async () => {
+    await withTempHome(async (homeDir) => {
+      const userId = "424242424242424242";
+      const { calls, getLastBindChannelPrincipalInput, handleMessage } =
+        await createPairedHandler(homeDir, {
+          accessMode: "open",
+          fixedWorkspaceId: "org_test",
+          handshakeAssertion: "assert_user",
+          handshakeCode: "AABBCCDD",
+          handshakeUserId: "user_test",
+          pairedUserIds: [],
+        });
+
+      const wrong = createDmMessage({ content: "DEADBEEF", userId });
+      await handleMessage(wrong.message);
+      expect(calls.bindChannelPrincipal).toBe(0);
+      expect((await loadDiscordConfigFile())?.handshakeCode).toBe("AABBCCDD");
+
+      const exact = createDmMessage({ content: "AABBCCDD", userId });
+      await handleMessage(exact.message);
+      expect(calls.bindChannelPrincipal).toBe(1);
+      expect(getLastBindChannelPrincipalInput()).toMatchObject({
+        channel: "discord",
+        channelUserId: userId,
+        expectedUserId: "user_test",
+        pairingAssertion: "assert_user",
+      });
+      expect(exact.sentMessages).toEqual([
+        "Linked successfully. You can chat with Atlas now.",
+      ]);
+      expect((await loadDiscordConfigFile())?.handshakeCode).toBeNull();
+    });
+  });
+
+  test("a failed canonical bind keeps the code active and never reports success", async () => {
+    await withTempHome(async (homeDir) => {
+      const { calls, handleMessage } = await createPairedHandler(homeDir, {
+        failBindPrincipal: true,
+        fixedWorkspaceId: "org_test",
+        handshakeAssertion: "assert_retry",
+        handshakeCode: "AABBCCDD",
+        handshakeUserId: "user_test",
+        pairedUserIds: [],
+      });
+      const pairAttempt = createDmMessage({ content: "AABBCCDD" });
+
+      await handleMessage(pairAttempt.message);
+
+      expect(calls.bindChannelPrincipal).toBe(1);
+      expect(pairAttempt.sentMessages).toEqual([
+        "Could not link this chat. The pairing code is still active; try again.",
+      ]);
+      const saved = await loadDiscordConfigFile();
+      expect(saved?.handshakeAssertion).toBe("assert_retry");
+      expect(saved?.handshakeCode).toBe("AABBCCDD");
+      expect(saved?.pairedUserIds).toEqual([]);
+    });
+  });
+});
+
 describe("createChatHandler early ack", () => {
   async function setupAckHandler(
     homeDir: string,
@@ -1039,6 +1187,7 @@ describe("createChatHandler early ack", () => {
     );
     await sessionStore.load();
     sessionStore.set("dm_channel_1", {
+      channelUserId: "424242424242424242",
       profileId: "default",
       sessionId: "session_test",
       updatedAt: new Date().toISOString(),
@@ -1196,6 +1345,7 @@ describe("createChatHandler questionnaire delivery", () => {
         }
       );
       sessionStore.set("dm_channel_1", {
+        channelUserId: "424242424242424242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -1243,6 +1393,43 @@ describe("createChatHandler guild thread routing", () => {
       expect(guild.channelSentMessages).not.toContain("Thread reply");
       expect(threadStore.hasThreadId(guild.createdThreadId!)).toBe(true);
       expect(streamedInputs[0]).toEqual({ message: "summarize this" });
+    });
+  });
+
+  test("attributes guild voice transcription to the created thread session", async () => {
+    await withTempHome(async (homeDir) => {
+      const fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response("ogg-bytes", {
+          headers: { "content-type": "audio/ogg" },
+        })
+      );
+      const { getLastTranscribeAudioInput, handleMessage, sessionStore } =
+        await createPairedHandler(homeDir);
+      const guild = createGuildChatMessage({
+        attachments: [
+          {
+            contentType: "audio/ogg",
+            name: "voice-message.ogg",
+          },
+        ],
+        content: "<@bot_id>",
+        mentionsBot: true,
+      });
+
+      await handleMessage(guild.message);
+
+      const conversationKey = `g:guild_channel_1:t:${guild.createdThreadId}`;
+      const sessionKey = resolveDiscordSessionKey(
+        conversationKey,
+        "424242424242424242",
+        true
+      );
+      expect(guild.startThreadCalls).toBe(1);
+      expect(sessionStore.get(sessionKey)?.sessionId).toBe("session_test");
+      expect(getLastTranscribeAudioInput()).toEqual(
+        expect.objectContaining({ sessionId: "session_test" })
+      );
+      fetchSpy.mockRestore();
     });
   });
 
@@ -1372,7 +1559,13 @@ describe("createChatHandler guild thread routing", () => {
       expect(followUp.threadSentMessages).toContain("ok");
       expect(threadStore.hasThreadId(firstThreadId)).toBe(true);
       expect(
-        sessionStore.get(`g:guild_channel_1:t:${firstThreadId}`)
+        sessionStore.get(
+          resolveDiscordSessionKey(
+            `g:guild_channel_1:t:${firstThreadId}`,
+            "424242424242424242",
+            true
+          )
+        )
       ).toBeTruthy();
       expect(streamedByThread).toContain("continue topic one");
     });
@@ -1456,6 +1649,46 @@ describe("createChatHandler guild thread routing", () => {
       expect(guild.startThreadCalls).toBe(0);
       expect(guild.threadSentMessages).toContain("In-thread answer");
       expect(streamedInputs[0]).toEqual({ message: "keep going" });
+    });
+  });
+
+  test("keeps separate thread sessions for different sender principals", async () => {
+    await withTempHome(async (homeDir) => {
+      const firstUserId = "424242424242424242";
+      const secondUserId = "525252525252525252";
+      const { calls, handleMessage, sessionStore, threadStore } =
+        await createPairedHandler(homeDir, {
+          pairedUserIds: [firstUserId, secondUserId],
+        });
+      threadStore.add("thread_shared");
+      await threadStore.save();
+
+      for (const userId of [firstUserId, secondUserId]) {
+        const message = createGuildChatMessage({
+          content: "keep going",
+          inThread: true,
+          parentId: "guild_channel_1",
+          threadId: "thread_shared",
+          userId,
+        });
+        await handleMessage(message.message);
+      }
+
+      const conversationKey = "g:guild_channel_1:t:thread_shared";
+      const firstKey = resolveDiscordSessionKey(
+        conversationKey,
+        firstUserId,
+        true
+      );
+      const secondKey = resolveDiscordSessionKey(
+        conversationKey,
+        secondUserId,
+        true
+      );
+      expect(firstKey).not.toBe(secondKey);
+      expect(sessionStore.get(firstKey)?.channelUserId).toBe(firstUserId);
+      expect(sessionStore.get(secondKey)?.channelUserId).toBe(secondUserId);
+      expect(calls.createSession).toBe(2);
     });
   });
 
@@ -1608,7 +1841,13 @@ describe("createChatHandler guild thread routing", () => {
           ],
         });
 
-      sessionStore.set("guild_channel_1", {
+      const parentSessionKey = resolveDiscordSessionKey(
+        "guild_channel_1",
+        "424242424242424242",
+        true
+      );
+      sessionStore.set(parentSessionKey, {
+        channelUserId: "424242424242424242",
         profileId: "support",
         sessionId: "channel_session",
         updatedAt: new Date().toISOString(),
@@ -1625,9 +1864,15 @@ describe("createChatHandler guild thread routing", () => {
       expect(threadId).toBeTruthy();
       expect(createdSessionProfileIds).toContain("support");
       expect(
-        sessionStore.get(`g:guild_channel_1:t:${threadId}`)?.profileId
+        sessionStore.get(
+          resolveDiscordSessionKey(
+            `g:guild_channel_1:t:${threadId}`,
+            "424242424242424242",
+            true
+          )
+        )?.profileId
       ).toBe("support");
-      expect(sessionStore.get("guild_channel_1")?.profileId).toBe("support");
+      expect(sessionStore.get(parentSessionKey)?.profileId).toBe("support");
     });
   });
 
@@ -1648,7 +1893,13 @@ describe("createChatHandler guild thread routing", () => {
         ],
       });
 
-      sessionStore.set("guild_channel_1", {
+      const parentSessionKey = resolveDiscordSessionKey(
+        "guild_channel_1",
+        "424242424242424242",
+        true
+      );
+      sessionStore.set(parentSessionKey, {
+        channelUserId: "424242424242424242",
         profileId: "support",
         sessionId: "channel_session",
         updatedAt: new Date().toISOString(),
@@ -1665,10 +1916,16 @@ describe("createChatHandler guild thread routing", () => {
       });
       await handleMessage(switchProfile.message);
 
-      expect(sessionStore.get("g:guild_channel_1:t:thread_42")?.profileId).toBe(
-        "sales"
-      );
-      expect(sessionStore.get("guild_channel_1")?.profileId).toBe("support");
+      expect(
+        sessionStore.get(
+          resolveDiscordSessionKey(
+            "g:guild_channel_1:t:thread_42",
+            "424242424242424242",
+            true
+          )
+        )?.profileId
+      ).toBe("sales");
+      expect(sessionStore.get(parentSessionKey)?.profileId).toBe("support");
       expect(createdSessionProfileIds.at(-1)).toBe("sales");
     });
   });
@@ -1732,7 +1989,13 @@ describe("createChatHandler guild thread routing", () => {
       const { handleSlashCommand, sessionStore } =
         await createPairedHandler(homeDir);
       const conversationKey = "g:guild_channel_1:t:thread_1";
-      sessionStore.set(conversationKey, {
+      const sessionKey = resolveDiscordSessionKey(
+        conversationKey,
+        "424242424242424242",
+        true
+      );
+      sessionStore.set(sessionKey, {
+        channelUserId: "424242424242424242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -2013,7 +2276,13 @@ describe("createChatHandler guild thread routing", () => {
       expect(streamedByKey).toEqual(["hello from partial"]);
       expect(orgStore.get("g:thread_partial")).toBeUndefined();
       expect(
-        sessionStore.get("g:guild_channel_1:t:thread_partial")
+        sessionStore.get(
+          resolveDiscordSessionKey(
+            "g:guild_channel_1:t:thread_partial",
+            "424242424242424242",
+            true
+          )
+        )
       ).toBeTruthy();
       expect(
         sessionStore.get("g:thread_partial:t:thread_partial")
@@ -2030,11 +2299,19 @@ describe("createChatHandler guild thread routing", () => {
 
       orgStore.set("g:guild_channel_1", "org_b");
       await orgStore.save();
-      sessionStore.set("g:guild_channel_1:t:thread_partial_slash", {
-        profileId: "default",
-        sessionId: "session_test",
-        updatedAt: new Date().toISOString(),
-      });
+      sessionStore.set(
+        resolveDiscordSessionKey(
+          "g:guild_channel_1:t:thread_partial_slash",
+          "424242424242424242",
+          true
+        ),
+        {
+          channelUserId: "424242424242424242",
+          profileId: "default",
+          sessionId: "session_test",
+          updatedAt: new Date().toISOString(),
+        }
+      );
       await sessionStore.save();
 
       const clearCmd = createSlashInteraction({
@@ -2300,12 +2577,13 @@ describe("createChatHandler inbound files", () => {
       );
 
       let lastInput: unknown;
-      const { handleMessage, calls } = await createPairedHandler(homeDir, {
-        onSendStream: async (input) => {
-          lastInput = input;
-          return "Agent reply";
-        },
-      });
+      const { handleMessage, calls, getLastTranscribeAudioInput } =
+        await createPairedHandler(homeDir, {
+          onSendStream: async (input) => {
+            lastInput = input;
+            return "Agent reply";
+          },
+        });
 
       const dm = createDmMessage({
         attachments: [
@@ -2319,6 +2597,9 @@ describe("createChatHandler inbound files", () => {
       await handleMessage(dm.message);
 
       expect(calls.transcribeAudio).toBe(1);
+      expect(getLastTranscribeAudioInput()).toEqual(
+        expect.objectContaining({ sessionId: "session_test" })
+      );
       expect(calls.sendStream).toBe(1);
       expect(lastInput).toEqual({
         documents: undefined,
@@ -2381,6 +2662,7 @@ describe("createChatHandler inbound files", () => {
         }
       );
       sessionStore.set("dm_channel_1", {
+        channelUserId: "424242424242424242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),

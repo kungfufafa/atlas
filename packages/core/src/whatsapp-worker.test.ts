@@ -54,6 +54,20 @@ describe("resolveWhatsAppWorkerStatus", () => {
       ).devicePairingCode
     ).toBeNull();
   });
+
+  test("is unhealthy when a paired worker process has no live socket", () => {
+    expect(
+      resolveWhatsAppWorkerStatus(
+        {
+          ...unpairedSettings,
+          pairedJid: "6281234567890@s.whatsapp.net",
+        },
+        true,
+        null,
+        false
+      )
+    ).toMatchObject({ connected: false, ok: false, running: true });
+  });
 });
 
 describe("WhatsApp device pairing code file", () => {

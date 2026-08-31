@@ -23,10 +23,7 @@ import {
   resolveProfileInput,
   resolveProfileInScopes,
 } from "@atlas/core/profiles";
-import {
-  clearTelegramPairingAssertion,
-  normalizeHandshakeInput,
-} from "@atlas/core/telegram-config";
+import { normalizeHandshakeInput } from "@atlas/core/telegram-config";
 import type { Context } from "grammy";
 import {
   clearActiveStream,
@@ -161,6 +158,12 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     const channelOrgKey = resolveChannelOrgKey(chatId, userId, isGroup);
     const conversationKey = resolveConversationKey(ctx, chatId, isGroup);
+    const channelUserId = String(userId);
+    const sessionKey = resolveTelegramSessionKey(
+      conversationKey,
+      channelUserId,
+      isGroup
+    );
     const isTopic = isTelegramTopicMessage(ctx);
 
     if (text && isStopCommand(text, botInfo?.username, isGroup)) {
@@ -178,7 +181,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         return;
       }
 
-      if (!stopActiveStream(conversationKey)) {
+      if (!stopActiveStream(sessionKey)) {
         await telegram.send("Nothing to stop.");
       }
 
@@ -201,15 +204,22 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
-    await withChatLock(conversationKey, async () => {
+    await withChatLock(sessionKey, async () => {
       await authStore.reload();
       const isAuthorized = authStore.isAuthorized(userId);
-      if (isAuthorized) {
-        await bindPendingChannelPrincipal(String(userId));
+      const fileConfig = authStore.getConfig();
+      const isExplicitPairingAttempt = Boolean(
+        !isGroup &&
+          text &&
+          fileConfig?.handshakeCode &&
+          looksLikeHandshakeAttempt(text)
+      );
+      if (isExplicitPairingAttempt && text) {
+        await handlePairing(text, userId, channelOrgKey, sessionKey, telegram);
+        return;
       }
 
       if (!isAuthorized) {
-        const fileConfig = authStore.getConfig();
         if (
           fileConfig?.accessMode === "allowlist" ||
           fileConfig?.accessMode === "denylist"
@@ -248,7 +258,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           return;
         }
 
-        await handlePairing(ctx, text, userId, telegram);
+        await handlePairing(text, userId, channelOrgKey, sessionKey, telegram);
         return;
       }
 
@@ -285,7 +295,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         await handleCommand(
           ctx,
           text,
-          conversationKey,
+          sessionKey,
           channelOrgKey,
           isTopic,
           telegram
@@ -299,7 +309,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         await handleChatMessage(
           ctx,
           withGroupContext(imageInput, isGroup),
-          conversationKey,
+          sessionKey,
           telegram,
           ""
         );
@@ -312,22 +322,28 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         await handleChatMessage(
           ctx,
           withGroupContext(documentInput, isGroup),
-          conversationKey,
+          sessionKey,
           telegram,
           ""
         );
         return;
       }
 
-      const audioInput = await tryBuildAudioInput(ctx, telegram);
+      const preparedAudio = await tryBuildAudioInput(
+        ctx,
+        telegram,
+        sessionKey,
+        channelUserId
+      );
 
-      if (audioInput) {
+      if (preparedAudio) {
         await handleChatMessage(
           ctx,
-          withGroupContext(audioInput, isGroup),
-          conversationKey,
+          withGroupContext(preparedAudio.input, isGroup),
+          sessionKey,
           telegram,
-          ""
+          "",
+          preparedAudio.session
         );
         return;
       }
@@ -348,7 +364,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       await handleChatMessage(
         ctx,
         withGroupContext({ message: messageText }, isGroup),
-        conversationKey,
+        sessionKey,
         telegram,
         messageText
       );
@@ -356,9 +372,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   }
 
   async function handlePairing(
-    ctx: Context,
     text: string,
     userId: number,
+    channelOrgKey: string,
+    sessionKey: string,
     telegram: TelegramRichMessenger
   ): Promise<void> {
     const command = parseTelegramSlashCommand(text);
@@ -385,46 +402,68 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
-    const result = await authStore.tryPair(text, userId);
-    await telegram.send(result.message);
-    if (result.ok) {
-      await bindPendingChannelPrincipal(
-        String(userId),
-        result.pairingAssertion
+    try {
+      const result = await authStore.tryPair(
+        text,
+        userId,
+        ({ channelUserId, pairingAssertion, pairingUserId }) =>
+          bindPairingPrincipal({
+            channelOrgKey,
+            channelUserId,
+            pairingAssertion,
+            pairingUserId,
+            sessionKey,
+          })
+      );
+      await telegram.send(result.message);
+    } catch (error) {
+      console.error("Failed to bind Telegram channel principal:", error);
+      await telegram.send(
+        "Could not link this chat. The pairing code is still active; try again."
       );
     }
     // Pairing messages stay out of agent session history — only Telegram + config.ini.
   }
 
-  async function bindPendingChannelPrincipal(
-    channelUserId: string,
-    pairingAssertion?: string | null
-  ): Promise<void> {
-    const assertion =
-      pairingAssertion?.trim() ||
-      authStore.getConfig()?.handshakeAssertion?.trim() ||
-      "";
-    if (!assertion) {
-      return;
-    }
+  async function bindPairingPrincipal(input: {
+    channelOrgKey: string;
+    channelUserId: string;
+    pairingAssertion: string;
+    pairingUserId: string;
+    sessionKey: string;
+  }): Promise<void> {
     const orgId =
-      getOrgSelection(orgStore, channelUserId)?.orgId ??
       fixedWorkspaceId ??
+      getOrgSelection(orgStore, input.channelOrgKey)?.orgId ??
       undefined;
     if (!orgId) {
-      return;
+      throw new Error(
+        "Telegram pairing requires an authoritative workspace context."
+      );
     }
-    try {
-      await client.bindChannelPrincipal({
-        channel: "telegram",
-        channelUserId,
-        pairingAssertion: assertion,
-      });
-      await clearTelegramPairingAssertion(orgId);
-      await authStore.reload();
-    } catch (error) {
-      console.error("Failed to bind Telegram channel principal:", error);
+    const principal = await client.bindChannelPrincipal({
+      channel: "telegram",
+      channelUserId: input.channelUserId,
+      expectedUserId: input.pairingUserId,
+      pairingAssertion: input.pairingAssertion,
+    });
+    if (principal.orgId !== orgId || principal.userId !== input.pairingUserId) {
+      throw new Error(
+        "Telegram pairing principal did not match the pending authorization."
+      );
     }
+
+    const invalidatedSessionKeys = new Set(
+      sessionStore.deleteByChannelUserId(input.channelUserId)
+    );
+    if (sessionStore.get(input.sessionKey)) {
+      sessionStore.delete(input.sessionKey);
+      invalidatedSessionKeys.add(input.sessionKey);
+    }
+    for (const invalidatedSessionKey of invalidatedSessionKeys) {
+      stopActiveStream(invalidatedSessionKey);
+    }
+    await sessionStore.save();
   }
 
   async function handleCommand(
@@ -563,14 +602,21 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
   async function tryBuildAudioInput(
     ctx: Context,
-    telegram: TelegramRichMessenger
-  ): Promise<SendMessageInput | null> {
+    telegram: TelegramRichMessenger,
+    conversationKey: string,
+    channelUserId: string
+  ): Promise<{
+    input: SendMessageInput;
+    session: RemoteChatSession;
+  } | null> {
     if (!hasTelegramAudio(ctx)) {
       return null;
     }
 
     try {
-      return await buildTelegramAudioInput(ctx, client);
+      const session = await resolveSession(conversationKey, channelUserId);
+      const input = await buildTelegramAudioInput(ctx, client, session.id);
+      return input ? { input, session } : null;
     } catch (error) {
       await telegram.send(formatTelegramAudioError(error));
       return null;
@@ -582,12 +628,12 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     input: SendMessageInput,
     conversationKey: string,
     telegram: TelegramRichMessenger,
-    attachUserText: string
+    attachUserText: string,
+    preparedSession?: RemoteChatSession
   ): Promise<void> {
-    const session = await resolveSession(
-      conversationKey,
-      String(ctx.from?.id ?? "")
-    );
+    const session =
+      preparedSession ??
+      (await resolveSession(conversationKey, String(ctx.from?.id ?? "")));
     const profileId = sessionStore.get(conversationKey)?.profileId;
 
     if (profileId) {
@@ -967,8 +1013,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     channelUserId: string
   ): Promise<RemoteChatSession> {
     const existing = sessionStore.get(chatId);
+    const normalizedChannelUserId = channelUserId.trim();
+    const belongsToCurrentSender =
+      existing?.channelUserId?.trim() === normalizedChannelUserId;
 
-    if (existing) {
+    if (existing && belongsToCurrentSender) {
       const hot = sessionStore.getHotSession<RemoteChatSession>(chatId);
       if (hot) {
         return hot;
@@ -990,18 +1039,22 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
   async function createAndBindSession(
     chatId: string,
-    profileId?: string,
-    channelUserId?: string
+    profileId: string | undefined,
+    channelUserId: string
   ): Promise<RemoteChatSession> {
     const resolvedProfileId =
       profileId ?? (await resolveSessionProfileId(chatId));
-    const principalUserId = channelUserId?.trim() || chatId;
+    const principalUserId = channelUserId.trim();
+    if (!principalUserId) {
+      throw new Error("Telegram channel user identity is required.");
+    }
     const session = await client.createSession("telegram", {
       externalPrincipal: { channelUserId: principalUserId },
       profileId: resolvedProfileId,
     });
 
     sessionStore.set(chatId, {
+      channelUserId: principalUserId,
       profileId: resolvedProfileId,
       sessionId: session.id,
       updatedAt: new Date().toISOString(),
@@ -1036,6 +1089,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
 
     sessionStore.set(conversationKey, {
+      channelUserId: existing.channelUserId,
       profileId: existing.profileId,
       sessionId: existing.sessionId,
       updatedAt: new Date().toISOString(),
@@ -1044,6 +1098,18 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   }
 
   return (ctx: Context) => client.isolateOrgId(() => handleMessage(ctx));
+}
+
+export function resolveTelegramSessionKey(
+  conversationKey: string,
+  channelUserId: string,
+  isGroup: boolean
+): string {
+  if (!isGroup) {
+    return conversationKey;
+  }
+
+  return `${conversationKey}:sender:${encodeURIComponent(channelUserId.trim())}`;
 }
 
 function withGroupContext(

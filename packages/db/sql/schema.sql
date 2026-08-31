@@ -150,11 +150,13 @@ CREATE TABLE IF NOT EXISTS tasks (
   status TEXT NOT NULL DEFAULT 'backlog',
   position INTEGER NOT NULL DEFAULT 0,
   session_id TEXT,
+  created_by_user_id TEXT,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL,
   FOREIGN KEY (profile_id) REFERENCES profiles (id) ON DELETE CASCADE,
   FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE,
-  FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE SET NULL
+  FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE SET NULL,
+  FOREIGN KEY (created_by_user_id) REFERENCES users (id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS tasks_status_position
@@ -397,12 +399,12 @@ CREATE TABLE IF NOT EXISTS profile_skill_usage (
 CREATE INDEX IF NOT EXISTS profile_skill_usage_org_profile ON profile_skill_usage (org_id, profile_id);
 
 CREATE TABLE IF NOT EXISTS channel_org_mappings (
+  org_id TEXT NOT NULL,
   channel TEXT NOT NULL,
   channel_user_id TEXT NOT NULL,
   user_id TEXT NOT NULL,
-  org_id TEXT NOT NULL,
   created_at TEXT NOT NULL,
-  PRIMARY KEY (channel, channel_user_id),
+  PRIMARY KEY (org_id, channel, channel_user_id),
   FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
   FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE
 );

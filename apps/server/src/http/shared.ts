@@ -14,13 +14,15 @@ import {
   type SendMessageInput,
   type StreamEvent,
   verifyLocalAuthToken,
+  verifyWorkspaceWorkerAuthToken,
+  type WorkspaceWorkerAuthClaim,
 } from "@atlas/core";
 import type {
   DatabaseAdapter,
   StoredBrowserSessionRecord,
   StoredUserRecord,
 } from "@atlas/db";
-import { ensureLocalClientAccess } from "@atlas/db";
+import { ensureLocalClientAccess, ensureLocalClientIdentity } from "@atlas/db";
 import type { Context } from "hono";
 import type { AuthService } from "../services/auth-service";
 import { sessionTurnRegistry } from "../services/session-turn-registry";
@@ -134,10 +136,15 @@ function isSecureCookieRequest(request: Request): boolean {
 export interface RequestAuthContext {
   activeOrgId?: string;
   isPlatformAdmin: boolean;
-  mode: "bearer-session" | "browser-session" | "local-token";
+  mode:
+    | "bearer-session"
+    | "browser-session"
+    | "local-token"
+    | "workspace-worker";
   orgRole?: OrgRole;
   session?: StoredBrowserSessionRecord;
   user: Pick<StoredUserRecord, "id" | "email">;
+  workspaceWorker?: WorkspaceWorkerAuthClaim;
 }
 
 function toAuthUser(user: StoredUserRecord): RequestAuthContext["user"] {
@@ -185,6 +192,47 @@ async function authenticateLocalToken(
   };
 }
 
+async function authenticateWorkspaceWorkerToken(
+  token: string,
+  databaseAdapter: DatabaseAdapter
+): Promise<RequestAuthContext | null> {
+  const claim = await verifyWorkspaceWorkerAuthToken(token);
+  if (!claim) {
+    return null;
+  }
+
+  const user = await ensureLocalClientIdentity(databaseAdapter);
+  if (!user) {
+    return null;
+  }
+
+  return {
+    activeOrgId: claim.orgId,
+    isPlatformAdmin: false,
+    mode: "workspace-worker",
+    orgRole: "member",
+    user: toAuthUser(user),
+    workspaceWorker: claim,
+  };
+}
+
+async function authenticateBearerToken(
+  token: string,
+  authService: AuthService,
+  databaseAdapter: DatabaseAdapter
+): Promise<RequestAuthContext | null> {
+  return (
+    (await authenticateWorkspaceWorkerToken(token, databaseAdapter)) ??
+    (await authenticateLocalToken(token, databaseAdapter)) ??
+    (await authenticateSessionToken(
+      token,
+      authService,
+      databaseAdapter,
+      "bearer-session"
+    ))
+  );
+}
+
 async function authenticateSessionToken(
   sessionToken: string,
   authService: AuthService,
@@ -228,22 +276,18 @@ export async function authenticateRequest(
   const authHeader = request.headers.get("Authorization");
   if (authHeader?.startsWith("Bearer ")) {
     const token = authHeader.slice(7).trim();
-    return (
-      (await authenticateLocalToken(token, databaseAdapter)) ??
-      (await authenticateSessionToken(
-        token,
-        authService,
-        databaseAdapter,
-        "bearer-session"
-      ))
-    );
+    return authenticateBearerToken(token, authService, databaseAdapter);
   }
 
   const sessionToken = getRequestTokenFromCookies(request, SESSION_COOKIE_NAME);
   if (!sessionToken) {
     const anthropicApiKey = request.headers.get("x-api-key")?.trim();
     if (anthropicApiKey) {
-      return authenticateLocalToken(anthropicApiKey, databaseAdapter);
+      return authenticateBearerToken(
+        anthropicApiKey,
+        authService,
+        databaseAdapter
+      );
     }
 
     return null;

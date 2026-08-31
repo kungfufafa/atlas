@@ -181,4 +181,98 @@ describe("verifyAndPairDiscordUser concurrency", () => {
       );
     });
   });
+
+  test("binds before consuming state and leaves failures retryable", async () => {
+    await withTempHomedir("atlas-dc-pair-bind-", async (homeDir) => {
+      await writeChannelIniConfig(homeDir, "discord", {
+        botToken: "discord-bot-token",
+        handshakeAssertion: "assert_retry",
+        handshakeCode: "AABBCCDD",
+        handshakeUserId: "user_admin",
+      });
+
+      await expect(
+        verifyAndPairDiscordUser(
+          "AABBCCDD",
+          "111111111111111111",
+          undefined,
+          async () => {
+            throw new Error("network down");
+          }
+        )
+      ).rejects.toThrow("network down");
+      let saved = await loadDiscordConfigFile();
+      expect(saved?.handshakeCode).toBe("AABBCCDD");
+      expect(saved?.handshakeAssertion).toBe("assert_retry");
+      expect(saved?.handshakeUserId).toBe("user_admin");
+      expect(saved?.pairedUserIds).toEqual([]);
+
+      const bindings: unknown[] = [];
+      const result = await verifyAndPairDiscordUser(
+        "AABBCCDD",
+        "111111111111111111",
+        undefined,
+        async (input) => {
+          bindings.push(input);
+        }
+      );
+      expect(result.ok).toBe(true);
+      expect(bindings).toEqual([
+        {
+          channelUserId: "111111111111111111",
+          pairingAssertion: "assert_retry",
+          pairingUserId: "user_admin",
+        },
+      ]);
+      saved = await loadDiscordConfigFile();
+      expect(saved?.handshakeCode).toBeNull();
+      expect(saved?.handshakeAssertion).toBeNull();
+      expect(saved?.handshakeUserId).toBeNull();
+      expect(saved?.pairedUserIds).toEqual(["111111111111111111"]);
+    });
+  });
+
+  test("rebinds an already authorized sender only with the exact fresh code", async () => {
+    await withTempHomedir("atlas-dc-pair-rebind-", async (homeDir) => {
+      const userId = "111111111111111111";
+      await writeChannelIniConfig(homeDir, "discord", {
+        botToken: "discord-bot-token",
+        handshakeAssertion: "assert_rebind",
+        handshakeCode: "AABBCCDD",
+        handshakeUserId: "user_new",
+        pairedUserIds: [userId],
+      });
+
+      const bindings: unknown[] = [];
+      const wrongCode = await verifyAndPairDiscordUser(
+        "DEADBEEF",
+        userId,
+        undefined,
+        async (input) => {
+          bindings.push(input);
+        }
+      );
+      expect(wrongCode.ok).toBe(true);
+      expect(bindings).toEqual([]);
+      expect((await loadDiscordConfigFile())?.handshakeCode).toBe("AABBCCDD");
+
+      const result = await verifyAndPairDiscordUser(
+        "AABBCCDD",
+        userId,
+        undefined,
+        async (input) => {
+          bindings.push(input);
+        }
+      );
+      expect(result.ok).toBe(true);
+      expect(bindings).toEqual([
+        {
+          channelUserId: userId,
+          pairingAssertion: "assert_rebind",
+          pairingUserId: "user_new",
+        },
+      ]);
+      expect((await loadDiscordConfigFile())?.handshakeCode).toBeNull();
+    });
+  });
 });

@@ -44,9 +44,11 @@ export async function maybeSendRequestedTelegramArtifactAttachment(input: {
   }
 
   try {
+    const sessionId = input.sessionStore.get(input.conversationKey)?.sessionId;
     const { data } = await input.client.readProfileArtifactContent(
       input.profileId,
-      artifact.path
+      artifact.path,
+      { sessionId }
     );
     const result = await sendTelegramArtifact(input.ctx, {
       bytes: new Uint8Array(data),
@@ -92,7 +94,8 @@ export async function deliverTelegramTurnArtifactShares(input: {
     publish: async (path) => {
       const response = await input.client.publishProfileArtifactShare(
         input.profileId,
-        path
+        path,
+        { sessionId: input.session.id }
       );
       webPublicUrlConfigured = response.webPublicUrlConfigured;
       return response;
@@ -128,7 +131,8 @@ export async function deliverTelegramTurnArtifactShares(input: {
     try {
       const { data } = await input.client.readProfileArtifactContent(
         input.profileId,
-        artifact.path
+        artifact.path,
+        { sessionId: input.session.id }
       );
       const result = await sendTelegramArtifact(input.ctx, {
         bytes: new Uint8Array(data),

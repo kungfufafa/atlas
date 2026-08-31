@@ -11,6 +11,7 @@ import { ChannelOrgStore } from "@atlas/core/channel-org";
 import type {
   AgentQuestionnaire,
   ChatMessage,
+  TranscribeAudioRequest,
   UserOrgSummary,
 } from "@atlas/core/contract";
 import { withIsolatedAtlasHome } from "@atlas/core/testing/atlas-home";
@@ -86,11 +87,13 @@ export function createMockClient(
       handlers?: StreamHandlers
     ) => Promise<string>;
     artifactContentBytes?: Uint8Array;
+    failBindPrincipal?: boolean;
     failPublishShare?: boolean;
     failReadArtifact?: boolean;
   } = {}
 ) {
   const calls = {
+    bindChannelPrincipal: 0,
     createSession: 0,
     getSessionMessages: 0,
     listProfileArtifacts: 0,
@@ -100,6 +103,10 @@ export function createMockClient(
     transcribeAudio: 0,
   };
   const createdSessionProfileIds: string[] = [];
+  let lastBindChannelPrincipalInput:
+    | Parameters<AtlasClient["bindChannelPrincipal"]>[0]
+    | undefined;
+  let lastTranscribeAudioInput: TranscribeAudioRequest | undefined;
 
   const sendStream = async (input: unknown, handlers?: StreamHandlers) => {
     calls.sendStream += 1;
@@ -131,10 +138,19 @@ export function createMockClient(
   const currentOrgId = () => orgIdScope.getStore()?.orgId ?? activeOrgId;
 
   const client = {
-    bindChannelPrincipal: async () => ({
-      orgId: currentOrgId() ?? "org_test",
-      userId: "user_test",
-    }),
+    bindChannelPrincipal: async (
+      input: Parameters<AtlasClient["bindChannelPrincipal"]>[0]
+    ) => {
+      calls.bindChannelPrincipal += 1;
+      lastBindChannelPrincipalInput = input;
+      if (options.failBindPrincipal) {
+        throw new Error("bind failed");
+      }
+      return {
+        orgId: currentOrgId() ?? "org_test",
+        userId: "user_test",
+      };
+    },
     createChatSession: () => session,
     createSession: async (_channel: string, input?: { profileId?: string }) => {
       calls.createSession += 1;
@@ -227,15 +243,22 @@ export function createMockClient(
         activeOrgId = next;
       }
     },
-    transcribeAudio: async () => {
+    transcribeAudio: async (input: TranscribeAudioRequest) => {
       calls.transcribeAudio += 1;
+      lastTranscribeAudioInput = input;
       return { text: "Transcribed voice message" };
     },
   } as unknown as AtlasClient;
 
   assertBridgeClientMethods(client);
 
-  return { calls, client, createdSessionProfileIds };
+  return {
+    calls,
+    client,
+    createdSessionProfileIds,
+    getLastBindChannelPrincipalInput: () => lastBindChannelPrincipalInput,
+    getLastTranscribeAudioInput: () => lastTranscribeAudioInput,
+  };
 }
 
 export interface MockDmMessage {
@@ -330,6 +353,12 @@ export function createGuildChatMessage(options: {
   userId?: string;
   channelId?: string;
   threadId?: string;
+  attachments?: Array<{
+    contentType?: string | null;
+    name?: string;
+    size?: number;
+    url?: string;
+  }>;
   /** Pass `null` to simulate a partial thread channel with missing parentId. */
   parentId?: string | null;
   /** Parent id returned by channel.fetch() when initial parentId is null. */
@@ -370,6 +399,18 @@ export function createGuildChatMessage(options: {
   const mentionedRoleIds = options.mentionedRoleIds ?? [];
   const botHeldRoleIds = new Set(options.botHeldRoleIds ?? []);
   const existingThreads = options.existingThreads ?? new Map();
+  const attachmentItems = options.attachments ?? [];
+  const attachments = new Map(
+    attachmentItems.map((item, index) => [
+      item.url ?? `att_${index}`,
+      {
+        contentType: item.contentType ?? null,
+        name: item.name ?? "file",
+        size: item.size ?? 12,
+        url: item.url ?? `https://cdn.example/${item.name ?? "file"}`,
+      },
+    ])
+  );
 
   const messages = new Map<string, { author: { id: string } }>();
   if (options.replyToBot) {
@@ -462,6 +503,10 @@ export function createGuildChatMessage(options: {
   };
 
   const message = {
+    attachments: {
+      size: attachments.size,
+      values: () => attachments.values(),
+    },
     author: { bot: false, id: userId },
     channel,
     client: {
@@ -616,8 +661,12 @@ export function createSlashInteraction(options: {
 export async function writeDiscordConfigIni(
   homeDir: string,
   config: {
+    accessMode?: "open" | "allowlist" | "denylist" | "pairing";
     botToken: string;
     profileId?: string;
+    handshakeAssertion?: string | null;
+    handshakeCode?: string | null;
+    handshakeUserId?: string | null;
     pairedUserIds?: string[];
     allowedUserIds?: string[];
   }
@@ -629,7 +678,20 @@ export async function writeDiscordConfigIni(
     "# Atlas Discord bridge",
     `bot_token=${config.botToken}`,
     `profile_id=${config.profileId ?? "default"}`,
+    `access_mode=${config.accessMode ?? "pairing"}`,
   ];
+
+  if (config.handshakeCode) {
+    lines.push(`handshake_code=${config.handshakeCode}`);
+  }
+
+  if (config.handshakeAssertion) {
+    lines.push(`handshake_assertion=${config.handshakeAssertion}`);
+  }
+
+  if (config.handshakeUserId) {
+    lines.push(`handshake_user_id=${config.handshakeUserId}`);
+  }
 
   if (config.pairedUserIds?.length) {
     lines.push(`paired_user_ids=${config.pairedUserIds.join(",")}`);

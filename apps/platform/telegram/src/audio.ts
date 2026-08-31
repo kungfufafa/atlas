@@ -17,7 +17,8 @@ export function hasTelegramAudio(ctx: Context): boolean {
 
 export async function buildTelegramAudioInput(
   ctx: Context,
-  client: AtlasClient
+  client: AtlasClient,
+  sessionId: string
 ): Promise<SendMessageInput | null> {
   const voice = ctx.message?.voice;
   const audio = ctx.message?.audio;
@@ -43,6 +44,7 @@ export async function buildTelegramAudioInput(
     data: Buffer.from(downloaded.bytes).toString("base64"),
     filename,
     mediaType,
+    sessionId,
   });
 
   const caption = ctx.message?.caption?.trim() ?? "";

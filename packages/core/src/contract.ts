@@ -183,9 +183,13 @@ export interface WorkerLogsResponse {
 }
 
 export type LlmUsageReportScope = "platform" | "workspace" | "user";
+/** Product-surface filter, including rows recorded before attribution existed. */
+export type LlmUsageChannelFilter = AgentChannel | "unknown";
 export type LlmUsageReportGroupBy =
   | "workspace"
   | "user"
+  | "profile"
+  | "channel"
   | "provider"
   | "model"
   | "credential"
@@ -213,6 +217,8 @@ export interface LlmUsageReportRow {
 }
 
 export interface LlmUsageReportResponse {
+  /** Optional product-surface filter applied to the report. */
+  channel: LlmUsageChannelFilter | null;
   from: string | null;
   groupBy: LlmUsageReportGroupBy;
   rows: LlmUsageReportRow[];
@@ -892,6 +898,8 @@ export interface ListChannelOrgMappingsResponse {
 }
 
 export interface ExternalPrincipalInput {
+  /** Trusted channel-native aliases observed for the same sender. */
+  channelUserAliases?: string[];
   channelUserId: string;
 }
 
@@ -1294,8 +1302,10 @@ export type TaskStatus = (typeof TASK_STATUSES)[number];
 
 export interface StoredTask {
   createdAt: string;
+  createdByUserId: string | null;
   description: string;
   id: string;
+  orgId: string | null;
   position: number;
   profileId: string;
   prompt: string;
@@ -1496,6 +1506,8 @@ export interface TranscribeAudioRequest {
   data: string;
   filename?: string;
   mediaType: string;
+  /** Session used to resolve the canonical actor/profile/channel for usage. */
+  sessionId?: string;
 }
 
 export interface TranscribeAudioResponse {
@@ -1516,6 +1528,8 @@ export interface UpdateImageGenerationRequest {
 
 export interface GenerateImageRequest {
   prompt: string;
+  /** Session used to resolve the canonical actor/profile/channel for usage. */
+  sessionId?: string;
   size?: string;
 }
 
@@ -1741,6 +1755,11 @@ export interface WhatsAppSettingsResponse {
   pairingCode: string | null;
   phoneNumberMasked: string | null;
   profileId: string;
+}
+
+export interface WhatsAppPairingStatusResponse {
+  devicePairingCode: string | null;
+  qrCode: string | null;
 }
 
 export interface UpdateWhatsAppSettingsRequest {

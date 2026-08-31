@@ -14,7 +14,11 @@ import {
   UNSUPPORTED_MEDIA_REPLY,
 } from "./attachments";
 import { TelegramAuthStore } from "./auth-store";
-import { createChatHandler, resetChatLocksForTests } from "./chat-handler";
+import {
+  createChatHandler,
+  resetChatLocksForTests,
+  resolveTelegramSessionKey,
+} from "./chat-handler";
 import { SessionStore } from "./session-store";
 import {
   createMessageContext,
@@ -141,6 +145,49 @@ describe("createChatHandler group chats", () => {
     });
   });
 
+  test("keeps separate group sessions for different sender principals", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        botToken: "1234567890:TEST",
+        pairedUserIds: [42, 43],
+      });
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        getBotInfo: () => TEST_BOT_INFO,
+        orgStore,
+        sessionStore,
+      });
+
+      for (const userId of [42, 43]) {
+        const message = createMessageContext({
+          chatId: -100_123,
+          chatType: "supergroup",
+          entities: [{ length: 6, offset: 0, type: "mention" }],
+          text: "@mybot hello",
+          userId,
+        });
+        await handleMessage(message.ctx);
+      }
+
+      const firstKey = resolveTelegramSessionKey("-100123", "42", true);
+      const secondKey = resolveTelegramSessionKey("-100123", "43", true);
+      expect(firstKey).not.toBe(secondKey);
+      expect(sessionStore.get(firstKey)?.channelUserId).toBe("42");
+      expect(sessionStore.get(secondKey)?.channelUserId).toBe("43");
+      expect(calls.createSession).toBe(2);
+    });
+  });
+
   test("group topics create isolated sessions and fall back to the configured profile", async () => {
     await withTempHome(async (homeDir) => {
       await writeTelegramConfigIni(homeDir, {
@@ -195,8 +242,16 @@ describe("createChatHandler group chats", () => {
 
       expect(calls.createSession).toBe(2);
       expect(getLastCreateSessionProfileId()).toBe("research");
-      expect(sessionStore.get("g:-100123:t:10")?.profileId).toBe("research");
-      expect(sessionStore.get("g:-100123:t:20")?.profileId).toBe("research");
+      expect(
+        sessionStore.get(
+          resolveTelegramSessionKey("g:-100123:t:10", "42", true)
+        )?.profileId
+      ).toBe("research");
+      expect(
+        sessionStore.get(
+          resolveTelegramSessionKey("g:-100123:t:20", "42", true)
+        )?.profileId
+      ).toBe("research");
       expect(sessionStore.get("-100123")).toBeUndefined();
     });
   });
@@ -252,8 +307,16 @@ describe("createChatHandler group chats", () => {
       expect(switchTopic10.replies).toEqual([
         "Now using Research Bot. Chat history reset.",
       ]);
-      expect(sessionStore.get("g:-100123:t:10")?.profileId).toBe("research");
-      expect(sessionStore.get("g:-100123:t:20")?.profileId).toBe("default");
+      expect(
+        sessionStore.get(
+          resolveTelegramSessionKey("g:-100123:t:10", "42", true)
+        )?.profileId
+      ).toBe("research");
+      expect(
+        sessionStore.get(
+          resolveTelegramSessionKey("g:-100123:t:20", "42", true)
+        )?.profileId
+      ).toBe("default");
       expect(getLastCreateSessionProfileId()).toBe("default");
       expect(orgStore.get("g:-100123")?.orgId).toBe("org_test");
     });
@@ -407,7 +470,10 @@ describe("createChatHandler group chats", () => {
       await handleMessage(switchGroup.ctx);
 
       expect(getLastCreateSessionProfileId()).toBe("support");
-      expect(sessionStore.get("-100123")?.profileId).toBe("support");
+      expect(
+        sessionStore.get(resolveTelegramSessionKey("-100123", "42", true))
+          ?.profileId
+      ).toBe("support");
       expect(sessionStore.get("g:-100123:t:10")).toBeUndefined();
     });
   });
@@ -795,6 +861,45 @@ describe("createChatHandler group chats", () => {
 });
 
 describe("createChatHandler security", () => {
+  test("does not reuse a legacy session without a canonical channel owner", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        botToken: "1234567890:TEST",
+        pairedUserIds: [1001],
+      });
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      await sessionStore.load();
+      sessionStore.set("1001", {
+        profileId: "default",
+        sessionId: "legacy_session",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        orgStore,
+        sessionStore,
+      });
+
+      const message = createMessageContext({ text: "hello", userId: 1001 });
+      await handleMessage(message.ctx);
+
+      expect(calls.createSession).toBe(1);
+      expect(calls.sendStream).toBe(1);
+      expect(sessionStore.get("1001")?.channelUserId).toBe("1001");
+      expect(sessionStore.get("1001")?.sessionId).not.toBe("legacy_session");
+    });
+  });
+
   test("ignores messages without a sender id", async () => {
     await withTempHome(async (homeDir) => {
       await writeTelegramConfigIni(homeDir, {
@@ -907,58 +1012,9 @@ describe("createChatHandler security", () => {
     await withTempHome(async (homeDir) => {
       await writeTelegramConfigIni(homeDir, {
         botToken: "1234567890:TEST",
+        handshakeAssertion: "assert_pair",
         handshakeCode: "ABCD1234",
-      });
-
-      const authStore = new TelegramAuthStore();
-      await authStore.reload();
-      const { client, calls } = createMockClient();
-      const sessionStore = new SessionStore(
-        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
-      );
-      const orgStore = createTestOrgStore(homeDir);
-      await orgStore.load();
-      const handleMessage = createChatHandler({
-        authStore,
-        client,
-        config: { botToken: "1234567890:TEST", profileId: "default" },
-        orgStore,
-        sessionStore,
-      });
-
-      const pairAttempt = createMessageContext({
-        text: "ab cd 12 34",
-        userId: 1001,
-      });
-      await handleMessage(pairAttempt.ctx);
-
-      expect(pairAttempt.replies).toEqual([
-        "Linked successfully. You can chat with Atlas now.",
-      ]);
-      expect(authStore.isAuthorized(1001)).toBe(true);
-      expect(authStore.getConfig()?.handshakeCode).toBeNull();
-      expect(authStore.getConfig()?.pairedUserIds).toEqual([1001]);
-      expect(calls.bindChannelPrincipal).toBe(0);
-      expect(calls.sendStream).toBe(0);
-
-      const chatAttempt = createMessageContext({
-        text: "hello agent",
-        userId: 1001,
-      });
-      await handleMessage(chatAttempt.ctx);
-
-      expect(calls.createSession).toBe(1);
-      expect(calls.sendStream).toBe(1);
-      expect(chatAttempt.replies.at(-1)).toBe("Agent reply");
-    });
-  });
-
-  test("binds the canonical user after pairing with an assertion", async () => {
-    await withTempHome(async (homeDir) => {
-      await writeTelegramConfigIni(homeDir, {
-        botToken: "1234567890:TEST",
-        handshakeAssertion: "assert_1",
-        handshakeCode: "ABCD1234",
+        handshakeUserId: "user_test",
       });
 
       const authStore = new TelegramAuthStore();
@@ -987,7 +1043,69 @@ describe("createChatHandler security", () => {
       expect(pairAttempt.replies).toEqual([
         "Linked successfully. You can chat with Atlas now.",
       ]);
+      expect(authStore.isAuthorized(1001)).toBe(true);
+      expect(authStore.getConfig()?.handshakeCode).toBeNull();
+      expect(authStore.getConfig()?.pairedUserIds).toEqual([1001]);
       expect(calls.bindChannelPrincipal).toBe(1);
+      expect(calls.sendStream).toBe(0);
+
+      const chatAttempt = createMessageContext({
+        text: "hello agent",
+        userId: 1001,
+      });
+      await handleMessage(chatAttempt.ctx);
+
+      expect(calls.createSession).toBe(1);
+      expect(calls.sendStream).toBe(1);
+      expect(chatAttempt.replies.at(-1)).toBe("Agent reply");
+    });
+  });
+
+  test("binds the canonical user after pairing with an assertion", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        botToken: "1234567890:TEST",
+        handshakeAssertion: "assert_1",
+        handshakeCode: "ABCD1234",
+        handshakeUserId: "user_test",
+      });
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls, getLastBindChannelPrincipalInput } =
+        createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        fixedWorkspaceId: "org_test",
+        orgStore,
+        sessionStore,
+      });
+
+      const pairAttempt = createMessageContext({
+        text: "ab cd 12 34",
+        userId: 1001,
+      });
+      await handleMessage(pairAttempt.ctx);
+
+      expect(pairAttempt.replies).toEqual([
+        "Linked successfully. You can chat with Atlas now.",
+      ]);
+      expect(calls.bindChannelPrincipal).toBe(1);
+      expect(getLastBindChannelPrincipalInput()).toMatchObject({
+        channel: "telegram",
+        channelUserId: "1001",
+        expectedUserId: "user_test",
+        pairingAssertion: "assert_1",
+      });
+      expect(authStore.getConfig()?.handshakeAssertion).toBeNull();
+      expect(authStore.getConfig()?.handshakeUserId).toBeNull();
     });
   });
 
@@ -995,7 +1113,9 @@ describe("createChatHandler security", () => {
     await withTempHome(async (homeDir) => {
       await writeTelegramConfigIni(homeDir, {
         botToken: "1234567890:TEST",
+        handshakeAssertion: "assert_profile",
         handshakeCode: "ABCD1234",
+        handshakeUserId: "user_test",
         profileId: "missing_profile",
       });
 
@@ -1015,6 +1135,7 @@ describe("createChatHandler security", () => {
         authStore,
         client,
         config: { botToken: "1234567890:TEST", profileId: "missing_profile" },
+        fixedWorkspaceId: "org_test",
         orgStore,
         sessionStore,
       });
@@ -1041,7 +1162,9 @@ describe("createChatHandler security", () => {
     await withTempHome(async (homeDir) => {
       await writeTelegramConfigIni(homeDir, {
         botToken: "1234567890:TEST",
+        handshakeAssertion: "assert_once",
         handshakeCode: "ABCD1234",
+        handshakeUserId: "user_test",
       });
 
       const authStore = new TelegramAuthStore();
@@ -1056,6 +1179,7 @@ describe("createChatHandler security", () => {
         authStore,
         client,
         config: { botToken: "1234567890:TEST", profileId: "default" },
+        fixedWorkspaceId: "org_test",
         orgStore,
         sessionStore,
       });
@@ -1147,6 +1271,131 @@ describe("createChatHandler security", () => {
       expect(calls.createSession).toBe(1);
       expect(calls.sendStream).toBe(1);
       expect(replies.at(-1)).toBe("Agent reply");
+    });
+  });
+
+  test("open and allowlist callers cannot consume a pending admin assertion", async () => {
+    for (const access of [
+      { accessMode: "open" as const, allowedUserIds: [] },
+      { accessMode: "allowlist" as const, allowedUserIds: [1001] },
+    ]) {
+      await withTempHome(async (homeDir) => {
+        await writeTelegramConfigIni(homeDir, {
+          ...access,
+          botToken: "1234567890:TEST",
+          handshakeAssertion: "assert_admin",
+          handshakeCode: "ABCD1234",
+          handshakeUserId: "user_admin",
+        });
+        const authStore = new TelegramAuthStore();
+        await authStore.reload();
+        const { client, calls } = createMockClient();
+        const sessionStore = new SessionStore(
+          path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+        );
+        const orgStore = createTestOrgStore(homeDir);
+        await orgStore.load();
+        const handleMessage = createChatHandler({
+          authStore,
+          client,
+          config: { botToken: "1234567890:TEST", profileId: "default" },
+          fixedWorkspaceId: "org_test",
+          orgStore,
+          sessionStore,
+        });
+
+        const message = createMessageContext({
+          text: "hello agent",
+          userId: 1001,
+        });
+        await handleMessage(message.ctx);
+
+        expect(calls.bindChannelPrincipal).toBe(0);
+        expect(authStore.getConfig()?.handshakeAssertion).toBe("assert_admin");
+        expect(authStore.getConfig()?.handshakeCode).toBe("ABCD1234");
+      });
+    }
+  });
+
+  test("an authorized open caller binds only after sending the exact active code", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        accessMode: "open",
+        botToken: "1234567890:TEST",
+        handshakeAssertion: "assert_user",
+        handshakeCode: "ABCD1234",
+        handshakeUserId: "user_test",
+      });
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        fixedWorkspaceId: "org_test",
+        orgStore,
+        sessionStore,
+      });
+
+      const wrong = createMessageContext({ text: "DEADBEEF", userId: 1001 });
+      await handleMessage(wrong.ctx);
+      expect(calls.bindChannelPrincipal).toBe(0);
+      expect(authStore.getConfig()?.handshakeCode).toBe("ABCD1234");
+
+      const exact = createMessageContext({ text: "ABCD1234", userId: 1001 });
+      await handleMessage(exact.ctx);
+      expect(calls.bindChannelPrincipal).toBe(1);
+      expect(exact.replies).toEqual([
+        "Linked successfully. You can chat with Atlas now.",
+      ]);
+      expect(authStore.getConfig()?.handshakeCode).toBeNull();
+    });
+  });
+
+  test("a failed canonical bind keeps the code active and never reports success", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        botToken: "1234567890:TEST",
+        handshakeAssertion: "assert_retry",
+        handshakeCode: "ABCD1234",
+        handshakeUserId: "user_test",
+      });
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({ failBindPrincipal: true });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        fixedWorkspaceId: "org_test",
+        orgStore,
+        sessionStore,
+      });
+      const pairAttempt = createMessageContext({
+        text: "ABCD1234",
+        userId: 1001,
+      });
+
+      await handleMessage(pairAttempt.ctx);
+
+      expect(calls.bindChannelPrincipal).toBe(1);
+      expect(pairAttempt.replies).toEqual([
+        "Could not link this chat. The pairing code is still active; try again.",
+      ]);
+      expect(authStore.getConfig()?.handshakeAssertion).toBe("assert_retry");
+      expect(authStore.getConfig()?.handshakeCode).toBe("ABCD1234");
+      expect(authStore.getConfig()?.pairedUserIds).toEqual([]);
     });
   });
 
@@ -2326,7 +2575,8 @@ describe("createChatHandler document attachments", () => {
           status: 200,
         })
       );
-      const { client, calls, getLastStreamInput } = createMockClient();
+      const { client, calls, getLastStreamInput, getLastTranscribeAudioInput } =
+        createMockClient();
       const sessionStore = new SessionStore(
         path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
       );
@@ -2353,6 +2603,9 @@ describe("createChatHandler document attachments", () => {
       await handleMessage(ctx);
 
       expect(calls.transcribeAudio).toBe(1);
+      expect(getLastTranscribeAudioInput()).toEqual(
+        expect.objectContaining({ sessionId: "session_test" })
+      );
       expect(calls.sendStream).toBe(1);
       expect(getLastStreamInput()).toEqual({
         message: "Transcribed voice message",
@@ -2508,6 +2761,7 @@ describe("createChatHandler artifact delivery", () => {
       );
       await sessionStore.load();
       sessionStore.set("4242", {
+        channelUserId: "4242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -2580,6 +2834,7 @@ describe("createChatHandler artifact delivery", () => {
       );
       await sessionStore.load();
       sessionStore.set("4242", {
+        channelUserId: "4242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -2656,6 +2911,7 @@ describe("createChatHandler artifact delivery", () => {
       );
       await sessionStore.load();
       sessionStore.set("4242", {
+        channelUserId: "4242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -2757,6 +3013,7 @@ describe("createChatHandler artifact delivery", () => {
       );
       await sessionStore.load();
       sessionStore.set("4242", {
+        channelUserId: "4242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -2798,6 +3055,7 @@ describe("createChatHandler artifact delivery", () => {
       );
       await sessionStore.load();
       sessionStore.set("4242", {
+        channelUserId: "4242",
         deliverableArtifacts: [
           {
             filename: "report.md",
@@ -2857,6 +3115,7 @@ describe("createChatHandler artifact delivery", () => {
       );
       await sessionStore.load();
       sessionStore.set("4242", {
+        channelUserId: "4242",
         deliverableArtifacts: [
           {
             filename: "report.md",
@@ -2924,6 +3183,7 @@ describe("createChatHandler artifact delivery", () => {
       );
       await sessionStore.load();
       sessionStore.set("4242", {
+        channelUserId: "4242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),
@@ -2973,6 +3233,7 @@ describe("createChatHandler artifact delivery", () => {
       );
       await sessionStore.load();
       sessionStore.set("4242", {
+        channelUserId: "4242",
         deliverableArtifacts: [
           {
             filename: "report.md",
@@ -3054,6 +3315,7 @@ describe("createChatHandler artifact delivery", () => {
       );
       await sessionStore.load();
       sessionStore.set("4242", {
+        channelUserId: "4242",
         profileId: "default",
         sessionId: "session_test",
         updatedAt: new Date().toISOString(),

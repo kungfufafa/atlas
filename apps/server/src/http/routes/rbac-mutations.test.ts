@@ -247,6 +247,7 @@ const WORKSPACE_CHANNEL_ROUTES = [
   "/v1/settings/telegram",
   "/v1/settings/discord",
   "/v1/settings/whatsapp",
+  "/v1/settings/whatsapp/pairing-status",
 ] as const;
 
 describe("RBAC: viewer cannot reach state-changing automation/task routes", () => {

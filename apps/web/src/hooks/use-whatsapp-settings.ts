@@ -13,8 +13,17 @@ export const whatsappSettingsQueryOptions = queryOptions({
   queryKey: queryKeys.whatsapp.settings,
 });
 
+export const whatsappPairingStatusQueryOptions = queryOptions({
+  queryFn: () => client.getWhatsAppPairingStatus(),
+  queryKey: queryKeys.whatsapp.pairingStatus,
+});
+
 export function useWhatsAppSettings() {
   return useQuery(whatsappSettingsQueryOptions);
+}
+
+export function useWhatsAppPairingStatus() {
+  return useQuery(whatsappPairingStatusQueryOptions);
 }
 
 export function useSaveWhatsAppSettings() {
@@ -26,6 +35,9 @@ export function useSaveWhatsAppSettings() {
     onSuccess: (saved) => {
       queryClient.setQueryData(queryKeys.whatsapp.settings, saved);
       void queryClient.invalidateQueries({ queryKey: queryKeys.systemStatus });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.whatsapp.pairingStatus,
+      });
     },
   });
 }
@@ -38,6 +50,9 @@ export function useRegenerateWhatsAppPairingCode() {
     onSuccess: (saved) => {
       queryClient.setQueryData(queryKeys.whatsapp.settings, saved);
       void queryClient.invalidateQueries({ queryKey: queryKeys.systemStatus });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.whatsapp.pairingStatus,
+      });
     },
   });
 }
@@ -50,6 +65,9 @@ export function useReconnectWhatsApp() {
     onSuccess: (saved) => {
       queryClient.setQueryData(queryKeys.whatsapp.settings, saved);
       void queryClient.invalidateQueries({ queryKey: queryKeys.systemStatus });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.whatsapp.pairingStatus,
+      });
     },
   });
 }

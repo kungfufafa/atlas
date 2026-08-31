@@ -3,6 +3,7 @@ import type { SystemStatusResponse } from "@atlas/core/contract";
 import {
   buildServiceColumns,
   deriveSummary,
+  formatWorkerResources,
   usageBreakdownGroups,
 } from "./status-page.shared";
 
@@ -144,6 +145,26 @@ describe("StatusPage helpers", () => {
     ]);
   });
 
+  test("does not report a paired bridge as healthy when its socket is disconnected", () => {
+    const status = {
+      ...healthyStatus,
+      whatsappWorker: {
+        ...healthyStatus.whatsappWorker,
+        connected: false,
+        ok: false,
+      },
+    };
+
+    expect(buildServiceColumns(status)[2]).toMatchObject({
+      status: "Disconnected",
+      tone: "bad",
+    });
+    expect(deriveSummary(status)).toMatchObject({
+      title: "WhatsApp bridge disconnected",
+      tone: "warn",
+    });
+  });
+
   test("marks automation as PM2 unavailable when no managed process is present", () => {
     const columns = buildServiceColumns({
       ...healthyStatus,
@@ -160,9 +181,45 @@ describe("StatusPage helpers", () => {
     });
   });
 
+  test("formats worker resources for the status table", () => {
+    expect(
+      formatWorkerResources({
+        cpuPercent: 12.34,
+        managed: true,
+        memoryMb: 42.92,
+        status: "online",
+        uptimeSeconds: 93_784,
+      })
+    ).toBe("CPU 12.3% · Memory 42.9 MB · Uptime 1d 2h");
+  });
+
+  test("uses em dashes for unavailable worker resources", () => {
+    expect(formatWorkerResources(undefined)).toBe("—");
+    expect(
+      formatWorkerResources({
+        cpuPercent: null,
+        managed: false,
+        memoryMb: null,
+        status: null,
+        uptimeSeconds: null,
+      })
+    ).toBe("—");
+    expect(
+      formatWorkerResources({
+        cpuPercent: 0,
+        managed: true,
+        memoryMb: null,
+        status: "online",
+        uptimeSeconds: 90,
+      })
+    ).toBe("CPU 0% · Memory — · Uptime 1m 30s");
+  });
+
   test("keeps usage breakdown inside the active workspace", () => {
     expect(usageBreakdownGroups(true)).toEqual([
       "user",
+      "profile",
+      "channel",
       "provider",
       "model",
       "capability",
@@ -170,6 +227,8 @@ describe("StatusPage helpers", () => {
     ]);
     expect(usageBreakdownGroups(false)).toEqual([
       "user",
+      "profile",
+      "channel",
       "provider",
       "model",
       "capability",

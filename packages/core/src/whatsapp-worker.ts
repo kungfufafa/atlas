@@ -46,11 +46,12 @@ export function resolveWhatsAppWorkerStatus(
 ): WhatsAppWorkerStatus {
   const configured = settings.configured;
   const paired = settings.pairedJid !== null;
-  const ok = !configured || running;
+  const bridgeConnected = running && connected;
+  const ok = !configured || (running && (!paired || bridgeConnected));
 
   return {
     configured,
-    connected,
+    connected: bridgeConnected,
     devicePairingCode: paired ? null : devicePairingCode,
     ok,
     paired,

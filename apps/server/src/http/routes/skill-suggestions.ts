@@ -93,12 +93,32 @@ export function registerSkillSuggestionRoutes(
     const auth = requireNotViewerFromContext(c);
     const orgId = resolveOrgId(c, auth.activeOrgId ?? "");
     const service = requireService();
-    const sessionId = c.req.query("sessionId");
+    const sessionId = c.req.query("sessionId")?.trim();
     const status = c.req.query("status") as "pending" | "applied" | undefined;
     const profileId = c.req.query("profileId");
+    const isOrgAdmin = auth.orgRole === "admin" || auth.isPlatformAdmin;
+    if (!(isOrgAdmin || sessionId)) {
+      throw new AtlasApiError("Forbidden", 403);
+    }
+    if (
+      !isOrgAdmin &&
+      sessionId &&
+      !(await options.agent.canAccessSession(
+        orgId,
+        sessionId,
+        {
+          isPlatformAdmin: auth.isPlatformAdmin,
+          orgRole: auth.orgRole,
+          userId: auth.user.id,
+        },
+        "read"
+      ))
+    ) {
+      throw new AtlasApiError("Not found", 404);
+    }
     const suggestions = await service.listSuggestions(orgId, {
       profileId: profileId || undefined,
-      sessionId: sessionId || undefined,
+      sessionId,
       status,
     });
     return json<ListSkillSuggestionsResponse>({
@@ -154,6 +174,26 @@ export function registerSkillSuggestionRoutes(
       const orgId = resolveOrgId(c, auth.activeOrgId ?? "");
       const suggestionId = decodeURIComponent(c.req.param("suggestionId"));
       const service = requireService();
+      const suggestion = await service.getSuggestion(orgId, suggestionId);
+      const isOrgAdmin = auth.orgRole === "admin" || auth.isPlatformAdmin;
+      const suggestionSessionId = suggestion.sessionId?.trim();
+      if (!isOrgAdmin) {
+        const ownsSuggestionSession = suggestionSessionId
+          ? await options.agent.canAccessSession(
+              orgId,
+              suggestionSessionId,
+              {
+                isPlatformAdmin: auth.isPlatformAdmin,
+                orgRole: auth.orgRole,
+                userId: auth.user.id,
+              },
+              "read"
+            )
+          : false;
+        if (!ownsSuggestionSession) {
+          throw new AtlasApiError("Not found", 404);
+        }
+      }
       const result = await service.applySuggestion(
         orgId,
         suggestionId,

@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { join } from "node:path";
 import {
   getWhatsAppConfigDir,
   normalizePhoneNumberDigits,
@@ -14,6 +16,8 @@ import {
   createBaileysLogger,
   getSafeWhatsAppErrorType,
 } from "./baileys-logger";
+import { isWhatsAppInboundReplaySafeError } from "./delivery-error";
+import { InboundDeliveryLedger } from "./inbound-delivery-ledger";
 import {
   extractInboundText,
   inspectInboundWhatsAppMedia,
@@ -21,6 +25,10 @@ import {
   parseInboundWhatsAppMessage,
   type WhatsAppInboundChat,
 } from "./inbound-message";
+import {
+  BoundedWorkQueue,
+  InboundQueueSaturatedError,
+} from "./inbound-work-queue";
 
 export interface WhatsAppSocketDeps {
   onConnected?: (me: { id: string; lid?: string | null }) => void;
@@ -42,6 +50,71 @@ export interface WhatsAppSocketHandle {
   stop: () => Promise<void>;
 }
 
+const BUSY_REPLY_COOLDOWN_MS = 60_000;
+const BUSY_REPLY_GLOBAL_WINDOW_MS = 60_000;
+const BUSY_REPLY_GLOBAL_LIMIT = 20;
+const INBOUND_RETRY_ATTEMPTS = 3;
+const INBOUND_RETRY_BASE_DELAY_MS = 500;
+
+interface BusyReplyLimiterOptions {
+  cooldownMs?: number;
+  globalLimit?: number;
+  now?: () => number;
+  windowMs?: number;
+}
+
+/**
+ * Prevents queue overload from turning into an outbound reply amplifier. The
+ * per-chat cooldown also keeps one noisy sender from consuming the global
+ * allowance reserved for other users.
+ */
+export class BusyReplyLimiter {
+  private readonly cooldownMs: number;
+  private globalCount = 0;
+  private readonly globalLimit: number;
+  private readonly lastReplyByChat = new Map<string, number>();
+  private readonly now: () => number;
+  private readonly windowMs: number;
+  private windowStartedAt: number;
+
+  constructor(options: BusyReplyLimiterOptions = {}) {
+    this.cooldownMs = options.cooldownMs ?? BUSY_REPLY_COOLDOWN_MS;
+    this.globalLimit = options.globalLimit ?? BUSY_REPLY_GLOBAL_LIMIT;
+    this.now = options.now ?? Date.now;
+    this.windowMs = options.windowMs ?? BUSY_REPLY_GLOBAL_WINDOW_MS;
+    this.windowStartedAt = this.now();
+  }
+
+  allow(chatId: string): boolean {
+    const now = this.now();
+    if (now - this.windowStartedAt >= this.windowMs) {
+      this.windowStartedAt = now;
+      this.globalCount = 0;
+      this.prune(now);
+    }
+
+    const lastReplyAt = this.lastReplyByChat.get(chatId);
+    if (
+      this.globalCount >= this.globalLimit ||
+      (lastReplyAt !== undefined && now - lastReplyAt < this.cooldownMs)
+    ) {
+      return false;
+    }
+
+    this.lastReplyByChat.set(chatId, now);
+    this.globalCount += 1;
+    return true;
+  }
+
+  private prune(now: number): void {
+    for (const [chatId, lastReplyAt] of this.lastReplyByChat) {
+      if (now - lastReplyAt >= this.cooldownMs) {
+        this.lastReplyByChat.delete(chatId);
+      }
+    }
+  }
+}
+
 export async function createWhatsAppSocket(
   deps: WhatsAppSocketDeps
 ): Promise<WhatsAppSocketHandle> {
@@ -55,7 +128,21 @@ export async function createWhatsAppSocket(
   let reconnectAttempt = 0;
   let loggedMissingTextPayload = false;
   const baileysLogger = createBaileysLogger();
-  const inboundDedupe = createInboundMessageDedupe();
+  const inboundDeliveryLedger = new InboundDeliveryLedger(
+    join(getWhatsAppConfigDir(), "inbound-deliveries.jsonl")
+  );
+  await inboundDeliveryLedger.load();
+  const inboundWorkQueue = new BoundedWorkQueue({
+    maxConcurrent: 4,
+    maxQueued: 100,
+    maxWaitMs: 2 * 60 * 1000,
+  });
+  const busyReplyQueue = new BoundedWorkQueue({
+    maxConcurrent: 2,
+    maxQueued: 20,
+    maxWaitMs: 10_000,
+  });
+  const busyReplyLimiter = new BusyReplyLimiter();
 
   const handle = {
     get socket() {
@@ -67,7 +154,9 @@ export async function createWhatsAppSocket(
       }
 
       const myGen = ++generation;
-      await disposeWhatsAppSocket(socket);
+      const previous = socket;
+      socket = null;
+      await disposeWhatsAppSocket(previous);
       if (myGen !== generation || stopped) {
         return;
       }
@@ -195,95 +284,144 @@ export async function createWhatsAppSocket(
       });
 
       next.ev.on("messages.upsert", async (m) => {
-        if (myGen !== generation || socket !== current) {
-          return;
-        }
+        try {
+          await inboundWorkQueue.run(async () => {
+            if (myGen !== generation || socket !== current) {
+              return;
+            }
 
-        const isVerbose = isVerboseLoggingEnabled(
-          process.env.WHATSAPP_VERBOSE_LOGS
-        );
-
-        if (isVerbose) {
-          console.log(
-            `WhatsApp messages.upsert type=${m.type} count=${m.messages.length}`
-          );
-        }
-
-        if (!isSupportedUpsertType(m.type)) {
-          return;
-        }
-
-        const me = state.creds.me;
-
-        for (const msg of m.messages) {
-          const remoteJid = msg.key.remoteJid ?? null;
-          const messageId = msg.key.id?.trim();
-          const text = extractInboundText(msg.message);
-          const mediaKind = inspectInboundWhatsAppMedia(msg.message)?.kind;
-          const inbound = parseInboundWhatsAppMessage(msg, me);
-
-          if (isVerbose) {
-            const chatKind = remoteJid
-              ? isPrivateWhatsAppChat(remoteJid)
-                ? "private"
-                : "group-or-other"
-              : "unknown";
-            console.log(
-              `WhatsApp upsert item chat=${chatKind} fromMe=${msg.key.fromMe ? "yes" : "no"} text=${text ? "yes" : "no"} media=${mediaKind ?? "-"} handle=${inbound ? "yes" : "no"}`
+            const isVerbose = isVerboseLoggingEnabled(
+              process.env.WHATSAPP_VERBOSE_LOGS
             );
-          }
 
-          const isProtocolOrSync = Boolean(
-            msg.message?.protocolMessage ||
-              msg.message?.senderKeyDistributionMessage ||
-              msg.message?.messageContextInfo
-          );
+            if (isVerbose) {
+              console.log(
+                `WhatsApp messages.upsert type=${m.type} count=${m.messages.length}`
+              );
+            }
 
-          if (
-            isVerbose &&
-            remoteJid &&
-            !text &&
-            !isProtocolOrSync &&
-            !loggedMissingTextPayload &&
-            isPrivateWhatsAppChat(remoteJid)
-          ) {
-            loggedMissingTextPayload = true;
-            console.log(
-              "WhatsApp missing-text payload:",
-              summarizeMissingTextPayload(
-                msg as Parameters<typeof summarizeMissingTextPayload>[0]
-              )
-            );
-          }
+            if (!isSupportedUpsertType(m.type)) {
+              return;
+            }
 
-          if (
-            !claimInboundDelivery(inboundDedupe, {
-              messageId,
-              remoteJid,
-              shouldHandle: Boolean(inbound),
-            })
-          ) {
-            continue;
-          }
-          if (!(remoteJid && inbound)) {
-            continue;
-          }
+            const me = state.creds.me;
 
-          console.log("WhatsApp message received.", {
-            group: inbound.isGroup,
-            hasMedia: Boolean(mediaKind),
-            hasText: Boolean(text),
+            for (const msg of m.messages) {
+              const remoteJid = msg.key.remoteJid ?? null;
+              const messageId = msg.key.id?.trim();
+              const text = extractInboundText(msg.message);
+              const mediaKind = inspectInboundWhatsAppMedia(msg.message)?.kind;
+              const inbound = parseInboundWhatsAppMessage(msg, me);
+
+              if (isVerbose) {
+                const chatKind = remoteJid
+                  ? isPrivateWhatsAppChat(remoteJid)
+                    ? "private"
+                    : "group-or-other"
+                  : "unknown";
+                console.log(
+                  `WhatsApp upsert item chat=${chatKind} fromMe=${msg.key.fromMe ? "yes" : "no"} text=${text ? "yes" : "no"} media=${mediaKind ?? "-"} handle=${inbound ? "yes" : "no"}`
+                );
+              }
+
+              const isProtocolOrSync = Boolean(
+                msg.message?.protocolMessage ||
+                  msg.message?.senderKeyDistributionMessage ||
+                  msg.message?.messageContextInfo
+              );
+
+              if (
+                isVerbose &&
+                remoteJid &&
+                !text &&
+                !isProtocolOrSync &&
+                !loggedMissingTextPayload &&
+                isPrivateWhatsAppChat(remoteJid)
+              ) {
+                loggedMissingTextPayload = true;
+                console.log(
+                  "WhatsApp missing-text payload:",
+                  summarizeMissingTextPayload(
+                    msg as Parameters<typeof summarizeMissingTextPayload>[0]
+                  )
+                );
+              }
+
+              if (!(remoteJid && inbound)) {
+                continue;
+              }
+
+              const deliveryId = buildInboundDeliveryId({
+                messageId,
+                participant: msg.key.participant,
+                remoteJid,
+              });
+              if (deliveryId && !inboundDeliveryLedger.claim(deliveryId)) {
+                continue;
+              }
+
+              console.log("WhatsApp message received.", {
+                group: inbound.isGroup,
+                hasMedia: Boolean(mediaKind),
+                hasText: Boolean(text),
+              });
+
+              const deliveryResult = await runClaimedInboundDelivery({
+                deliver: () =>
+                  deps.onMessage({
+                    ...inbound,
+                    inbound: msg,
+                  }),
+                deliveryId,
+                isCurrent: () =>
+                  !stopped && myGen === generation && socket === current,
+                ledger: inboundDeliveryLedger,
+              });
+              if (deliveryResult.error) {
+                console.error("WhatsApp inbound message handling failed.", {
+                  attempts: deliveryResult.attempts,
+                  deliveryDisposition: deliveryResult.disposition,
+                  errorType: getSafeWhatsAppErrorType(deliveryResult.error),
+                });
+                continue;
+              }
+              if (deliveryResult.attempts > 1) {
+                console.warn("WhatsApp inbound message retry recovered.", {
+                  attempts: deliveryResult.attempts,
+                });
+              }
+            }
           });
-
-          try {
-            await deps.onMessage({
-              ...inbound,
-              inbound: msg,
-            });
-          } catch (error) {
-            console.error("WhatsApp inbound message handling failed.", {
-              errorType: getSafeWhatsAppErrorType(error),
-            });
+        } catch (error) {
+          const queue = inboundWorkQueue.snapshot();
+          console.error("WhatsApp inbound queue rejected a message batch.", {
+            active: queue.active,
+            errorType: getSafeWhatsAppErrorType(error),
+            queued: queue.queued,
+          });
+          if (error instanceof InboundQueueSaturatedError) {
+            for (const message of m.messages) {
+              const jid = message.key.remoteJid?.trim();
+              if (
+                !(
+                  jid &&
+                  parseInboundWhatsAppMessage(message, state.creds.me) &&
+                  busyReplyLimiter.allow(jid)
+                )
+              ) {
+                continue;
+              }
+              void busyReplyQueue
+                .run(async () => {
+                  if (myGen !== generation || socket !== current) {
+                    return;
+                  }
+                  await current.sendMessage(jid, {
+                    text: "Atlas is busy. Please try again shortly.",
+                  });
+                })
+                .catch(() => undefined);
+            }
           }
         }
       });
@@ -298,6 +436,165 @@ export async function createWhatsAppSocket(
   };
 
   return handle;
+}
+
+export type FailedInboundDeliveryDisposition =
+  | "delivery-error-recorded"
+  | "delivery-error-recording-failed"
+  | "released-for-provider-replay"
+  | "untracked";
+
+interface FailedInboundDeliveryLedger {
+  complete: (id: string) => Promise<void>;
+  release: (id: string) => void;
+}
+
+type ClaimedInboundDeliveryDisposition =
+  | FailedInboundDeliveryDisposition
+  | "completed"
+  | "completion-recording-failed"
+  | "released-stale";
+
+export interface ClaimedInboundDeliveryResult {
+  attempts: number;
+  disposition: ClaimedInboundDeliveryDisposition;
+  error?: unknown;
+}
+
+interface RunClaimedInboundDeliveryInput {
+  deliver: () => Promise<void>;
+  deliveryId: string | null;
+  isCurrent?: () => boolean;
+  ledger: FailedInboundDeliveryLedger;
+  maxAttempts?: number;
+  retryBaseDelayMs?: number;
+  wait?: (delayMs: number) => Promise<void>;
+}
+
+/**
+ * Retries failures that the handler contract considers safe to replay while
+ * retaining the in-flight ledger claim. Delivery failures are never replayed:
+ * the agent may already have run and the outbound result can be unknown.
+ */
+export async function runClaimedInboundDelivery(
+  input: RunClaimedInboundDeliveryInput
+): Promise<ClaimedInboundDeliveryResult> {
+  const maxAttempts = input.maxAttempts ?? INBOUND_RETRY_ATTEMPTS;
+  const retryBaseDelayMs =
+    input.retryBaseDelayMs ?? INBOUND_RETRY_BASE_DELAY_MS;
+  const wait = input.wait ?? waitForInboundRetryDelay;
+
+  if (!(Number.isSafeInteger(maxAttempts) && maxAttempts > 0)) {
+    throw new RangeError("WhatsApp inbound retry attempts must be positive.");
+  }
+  if (!(Number.isFinite(retryBaseDelayMs) && retryBaseDelayMs >= 0)) {
+    throw new RangeError("WhatsApp inbound retry delay cannot be negative.");
+  }
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    if (input.isCurrent?.() === false) {
+      if (input.deliveryId) {
+        input.ledger.release(input.deliveryId);
+      }
+      return { attempts: attempt - 1, disposition: "released-stale" };
+    }
+
+    try {
+      await input.deliver();
+    } catch (error) {
+      const replaySafe = isWhatsAppInboundReplaySafeError(error);
+      if (!replaySafe || attempt === maxAttempts) {
+        return {
+          attempts: attempt,
+          disposition: await settleFailedInboundDelivery({
+            deliveryId: input.deliveryId,
+            error,
+            ledger: input.ledger,
+          }),
+          error,
+        };
+      }
+
+      try {
+        await wait(calculateInboundRetryDelayMs(retryBaseDelayMs, attempt));
+      } catch (error) {
+        if (input.deliveryId) {
+          input.ledger.release(input.deliveryId);
+        }
+        return {
+          attempts: attempt,
+          disposition: "released-stale",
+          error,
+        };
+      }
+      continue;
+    }
+
+    if (!input.deliveryId) {
+      return { attempts: attempt, disposition: "untracked" };
+    }
+
+    try {
+      await input.ledger.complete(input.deliveryId);
+      return { attempts: attempt, disposition: "completed" };
+    } catch (error) {
+      // InboundDeliveryLedger keeps the id completed in memory even if its
+      // durable append fails. Releasing here could duplicate the agent turn.
+      return {
+        attempts: attempt,
+        disposition: "completion-recording-failed",
+        error,
+      };
+    }
+  }
+
+  throw new Error("WhatsApp inbound retry loop exited unexpectedly.");
+}
+
+function calculateInboundRetryDelayMs(
+  baseDelayMs: number,
+  failedAttempt: number
+): number {
+  return baseDelayMs * 2 ** Math.max(0, failedAttempt - 1);
+}
+
+async function waitForInboundRetryDelay(delayMs: number): Promise<void> {
+  if (delayMs <= 0) {
+    return;
+  }
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, delayMs);
+  });
+}
+
+/**
+ * Outbound delivery errors happen after the handler may already have invoked
+ * the agent. Persist those inbound ids as consumed so a Baileys replay cannot
+ * repeat the turn and its side effects. Other handler failures release their
+ * claim because they remain safe for a provider replay.
+ */
+export async function settleFailedInboundDelivery(input: {
+  deliveryId: string | null;
+  error: unknown;
+  ledger: FailedInboundDeliveryLedger;
+}): Promise<FailedInboundDeliveryDisposition> {
+  if (!input.deliveryId) {
+    return "untracked";
+  }
+
+  if (isWhatsAppInboundReplaySafeError(input.error)) {
+    input.ledger.release(input.deliveryId);
+    return "released-for-provider-replay";
+  }
+
+  try {
+    await input.ledger.complete(input.deliveryId);
+    return "delivery-error-recorded";
+  } catch {
+    // InboundDeliveryLedger marks the id completed in memory before writing.
+    // Do not release it and risk duplicating the agent turn in this process.
+    return "delivery-error-recording-failed";
+  }
 }
 
 export function whatsAppReconnectDelayMs(attempt: number): number {
@@ -386,6 +683,22 @@ export function claimInboundDelivery(
   }
 
   return dedupe.remember(`${input.remoteJid}:${messageId}`);
+}
+
+export function buildInboundDeliveryId(input: {
+  messageId?: string | null;
+  participant?: string | null;
+  remoteJid: string;
+}): string | null {
+  const messageId = input.messageId?.trim();
+  if (!messageId) {
+    return null;
+  }
+
+  const participant = input.participant?.trim() || "direct";
+  return createHash("sha256")
+    .update(`${input.remoteJid}:${participant}:${messageId}`)
+    .digest("hex");
 }
 
 const WHATSAPP_SOCKET_EVENTS = [

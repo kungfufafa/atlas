@@ -12,6 +12,7 @@ import { ChannelOrgStore } from "@atlas/core/channel-org";
 import type {
   AgentTodo,
   ChatMessage,
+  TranscribeAudioRequest,
   UserOrgSummary,
 } from "@atlas/core/contract";
 import { withIsolatedAtlasHome } from "@atlas/core/testing/atlas-home";
@@ -206,6 +207,7 @@ export function createMockClient(
     >;
     messages?: ChatMessage[];
     artifactContentBytes?: Uint8Array;
+    failBindPrincipal?: boolean;
     failPublishShare?: boolean;
     failReadArtifact?: boolean;
   } = {}
@@ -224,9 +226,13 @@ export function createMockClient(
   };
   const orgIds: string[] = [];
   const createSessionOrgIds: Array<string | null> = [];
+  let lastBindChannelPrincipalInput:
+    | Parameters<AtlasClient["bindChannelPrincipal"]>[0]
+    | undefined;
   let lastCreateSessionProfileId: string | undefined;
   let lastCreateSessionExternalPrincipal: { channelUserId: string } | undefined;
   let lastStreamInput: unknown;
+  let lastTranscribeAudioInput: TranscribeAudioRequest | undefined;
   const orgIdScope = new AsyncLocalStorage<{ orgId: string | null }>();
 
   let streamControl: MockStreamControl | null = null;
@@ -360,8 +366,14 @@ export function createMockClient(
   const currentOrgId = () => orgIdScope.getStore()?.orgId ?? activeOrgId;
 
   const client = {
-    bindChannelPrincipal: async () => {
+    bindChannelPrincipal: async (
+      input: Parameters<AtlasClient["bindChannelPrincipal"]>[0]
+    ) => {
       calls.bindChannelPrincipal += 1;
+      lastBindChannelPrincipalInput = input;
+      if (options.failBindPrincipal) {
+        throw new Error("bind failed");
+      }
       return {
         orgId: currentOrgId() ?? "org_test",
         userId: "user_test",
@@ -451,8 +463,9 @@ export function createMockClient(
       }
       orgIds.push(next ?? "");
     },
-    transcribeAudio: async () => {
+    transcribeAudio: async (input: TranscribeAudioRequest) => {
       calls.transcribeAudio += 1;
+      lastTranscribeAudioInput = input;
       return { text: "Transcribed voice message" };
     },
   } as unknown as AtlasClient;
@@ -463,10 +476,12 @@ export function createMockClient(
     calls,
     client,
     getCreateSessionOrgIds: () => createSessionOrgIds,
+    getLastBindChannelPrincipalInput: () => lastBindChannelPrincipalInput,
     getLastCreateSessionExternalPrincipal: () =>
       lastCreateSessionExternalPrincipal,
     getLastCreateSessionProfileId: () => lastCreateSessionProfileId,
     getLastStreamInput: () => lastStreamInput,
+    getLastTranscribeAudioInput: () => lastTranscribeAudioInput,
     getStreamControl: () => streamControl,
     getStreamControls: () => streamControls,
     orgIds,
@@ -476,10 +491,12 @@ export function createMockClient(
 export async function writeTelegramConfigIni(
   homeDir: string,
   config: {
+    accessMode?: "open" | "allowlist" | "denylist" | "pairing";
     botToken: string;
     profileId?: string;
     handshakeCode?: string | null;
     handshakeAssertion?: string | null;
+    handshakeUserId?: string | null;
     pairedUserIds?: number[];
     allowedUserIds?: number[];
   }
@@ -491,6 +508,7 @@ export async function writeTelegramConfigIni(
     "# Atlas Telegram bridge",
     `bot_token=${config.botToken}`,
     `profile_id=${config.profileId ?? "default"}`,
+    `access_mode=${config.accessMode ?? "pairing"}`,
   ];
 
   if (config.handshakeCode) {
@@ -499,6 +517,10 @@ export async function writeTelegramConfigIni(
 
   if (config.handshakeAssertion) {
     lines.push(`handshake_assertion=${config.handshakeAssertion}`);
+  }
+
+  if (config.handshakeUserId) {
+    lines.push(`handshake_user_id=${config.handshakeUserId}`);
   }
 
   if (config.pairedUserIds?.length) {

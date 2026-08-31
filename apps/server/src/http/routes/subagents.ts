@@ -30,6 +30,27 @@ export function registerSubagentRoutes(
     if (!auth.orgRole) {
       return errorResponse("Canonical principal is required.", 403);
     }
+    const principal = {
+      isPlatformAdmin: auth.isPlatformAdmin === true,
+      orgId,
+      orgRole: auth.orgRole,
+      userId: auth.user.id,
+    };
+    if (
+      body.sessionId &&
+      !(await agent.canAccessSession(
+        orgId,
+        body.sessionId,
+        {
+          isPlatformAdmin: principal.isPlatformAdmin,
+          orgRole: principal.orgRole,
+          userId: principal.userId,
+        },
+        "invoke"
+      ))
+    ) {
+      return errorResponse("Session not found.", 404);
+    }
     if (
       !canAccessSuperAgentProfile({
         isPlatformAdmin: auth.isPlatformAdmin,
@@ -52,12 +73,7 @@ export function registerSubagentRoutes(
         agentDepth: 1,
         context: body.context,
         orgId,
-        principal: {
-          isPlatformAdmin: auth.isPlatformAdmin === true,
-          orgId,
-          orgRole: auth.orgRole,
-          userId: auth.user.id,
-        },
+        principal,
         profileId: body.profileId,
         sessionId: body.sessionId,
         task: body.task,

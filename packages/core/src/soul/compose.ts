@@ -1,6 +1,7 @@
 import type { LoadedSoulStack } from "./types";
 
 export interface ComposeSoulPromptOptions {
+  includeMemory?: boolean;
   profilePrompt?: string;
 }
 
@@ -33,7 +34,7 @@ export function composeSoulSystemPrompt(
     );
   }
 
-  if (stack.files.memory) {
+  if (options.includeMemory !== false && stack.files.memory) {
     sections.push("", "# Continuity (MEMORY.md)", stack.files.memory);
   }
 

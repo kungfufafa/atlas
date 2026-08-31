@@ -1,4 +1,7 @@
-import type { WhatsAppConfigFile } from "@atlas/core/whatsapp-config";
+import type {
+  WhatsAppConfigFile,
+  WhatsAppPairingPrincipalBinder,
+} from "@atlas/core/whatsapp-config";
 import {
   isWhatsAppUserAuthorized,
   loadWhatsAppConfigFile,
@@ -39,6 +42,24 @@ export class WhatsAppAuthStore {
     );
   }
 
+  isPairedIdentity(
+    jid: string,
+    extras?: { senderPn?: string | null }
+  ): boolean {
+    if (!this.config) {
+      return false;
+    }
+
+    return isWhatsAppUserAuthorized(
+      {
+        jid,
+        mappedPhoneJid: lookupWhatsAppLidPhone(this.lidMap, jid),
+        senderPn: extras?.senderPn,
+      },
+      { ...this.config, accessMode: "pairing" }
+    );
+  }
+
   async rememberSenderPn(
     remoteJid: string,
     senderPn?: string | null
@@ -61,18 +82,21 @@ export class WhatsAppAuthStore {
 
   async tryPair(
     pairingCodeInput: string,
-    jid: string
+    jid: string,
+    bindPrincipal: WhatsAppPairingPrincipalBinder
   ): Promise<{
     ok: boolean;
     message: string;
-    pairingAssertion?: string | null;
   }> {
-    const result = await verifyAndPairWhatsAppUser(
-      pairingCodeInput,
-      jid,
-      this.orgId
-    );
-    await this.reload();
-    return result;
+    try {
+      return await verifyAndPairWhatsAppUser(
+        pairingCodeInput,
+        jid,
+        bindPrincipal,
+        this.orgId
+      );
+    } finally {
+      await this.reload();
+    }
   }
 }

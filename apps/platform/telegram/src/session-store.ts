@@ -5,6 +5,7 @@ import { getTelegramConfigDir } from "@atlas/core/telegram-config";
 
 export interface ChatSessionRecord {
   artifactShareUrls?: Record<string, string>;
+  channelUserId?: string;
   deliverableArtifacts?: DeliverableChannelArtifact[];
   profileId: string;
   sessionId: string;
@@ -68,6 +69,19 @@ export class SessionStore {
 
   setHotSession(chatId: string, session: unknown): void {
     this.hotSessions.set(chatId, session);
+  }
+
+  deleteByChannelUserId(channelUserId: string): string[] {
+    const normalized = channelUserId.trim();
+    const deleted: string[] = [];
+    for (const [chatId, record] of Object.entries(this.map)) {
+      if (record.channelUserId?.trim() !== normalized) {
+        continue;
+      }
+      delete this.map[chatId];
+      deleted.push(chatId);
+    }
+    return deleted;
   }
 
   getArtifactShareUrls(chatId: string): Record<string, string> {

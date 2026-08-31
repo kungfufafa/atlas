@@ -4,9 +4,14 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   clearAutomationWorkerHeartbeat,
+  getWhatsAppConfigDir,
+  getWhatsAppConfigPath,
+  getWhatsAppDevicePairingCodePath,
+  getWhatsAppQrCodePath,
   saveComposioConfig,
   type WorkerProcessInfo,
   writeAutomationWorkerHeartbeat,
+  writePrivateTextFile,
 } from "@atlas/core";
 import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { SystemStatusService } from "./system-status-service";
@@ -153,6 +158,29 @@ describe("SystemStatusService", () => {
     expect(status.automationWorker.scheduledJobs).toBe(0);
   });
 
+  test("never includes WhatsApp pairing secrets in general status", async () => {
+    await withConfigDir();
+    const orgId = "org_status_secret";
+    await writePrivateTextFile(
+      getWhatsAppConfigPath(orgId),
+      "profile_id=default\naccess_mode=pairing\n",
+      { ensureDir: getWhatsAppConfigDir(orgId) }
+    );
+    await writePrivateTextFile(getWhatsAppQrCodePath(orgId), "qr-secret", {
+      ensureDir: getWhatsAppConfigDir(orgId),
+    });
+    await writePrivateTextFile(
+      getWhatsAppDevicePairingCodePath(orgId),
+      "device-secret",
+      { ensureDir: getWhatsAppConfigDir(orgId) }
+    );
+
+    const status = await createService(null).getStatus(orgId);
+
+    expect(status.whatsappWorker.qrCode).toBeNull();
+    expect(status.whatsappWorker.devicePairingCode).toBeNull();
+  });
+
   test("reports automation worker process when PM2 is unavailable", async () => {
     await withConfigDir();
 
@@ -203,6 +231,7 @@ describe("SystemStatusService", () => {
     await db.incrementLlmUsageDaily(
       {
         capability: "chat.completion",
+        channel: "web",
         modelId: "gpt-workspace-a",
         orgId: "org_a",
         profileId: "p_a",
@@ -220,6 +249,7 @@ describe("SystemStatusService", () => {
     await db.incrementLlmUsageDaily(
       {
         capability: "chat.completion",
+        channel: "web",
         modelId: "claude-workspace-b",
         orgId: "org_b",
         profileId: "p_b",

@@ -880,7 +880,7 @@ describe("organization schema migration", () => {
     }
   });
 
-  test("creates channel_org_mappings with foreign keys", () => {
+  test("creates tenant-scoped channel_org_mappings with foreign keys", () => {
     const db = new Database(":memory:");
 
     try {
@@ -910,14 +910,232 @@ describe("organization schema migration", () => {
 
       const fkCheck = db.prepare("PRAGMA foreign_key_check").all();
       expect(fkCheck).toEqual([]);
+      const primaryKey = (
+        db.prepare("PRAGMA table_info(channel_org_mappings)").all() as Array<{
+          name: string;
+          pk: number;
+        }>
+      )
+        .filter((column) => column.pk > 0)
+        .sort((left, right) => left.pk - right.pk)
+        .map((column) => column.name);
+      expect(primaryKey).toEqual(["org_id", "channel", "channel_user_id"]);
+    } finally {
+      db.close();
+    }
+  });
+
+  test("migrates legacy channel mappings and permits the same identity per org", () => {
+    const db = new Database(":memory:");
+
+    try {
+      migrateDatabase(db);
+      db.exec(`
+        INSERT INTO users (
+          id, email, password_hash, is_platform_admin, created_at, updated_at
+        ) VALUES (
+          'user_1', 'user@example.com', 'hash', 0,
+          '2026-06-21T00:00:00.000Z', '2026-06-21T00:00:00.000Z'
+        );
+
+        INSERT INTO organizations (
+          id, name, slug, created_at, updated_at
+        ) VALUES
+          ('org_acme', 'Acme', 'acme',
+           '2026-06-21T00:00:00.000Z', '2026-06-21T00:00:00.000Z'),
+          ('org_globex', 'Globex', 'globex',
+           '2026-06-21T00:00:00.000Z', '2026-06-21T00:00:00.000Z');
+
+        DROP TABLE channel_org_mappings;
+        CREATE TABLE channel_org_mappings (
+          channel TEXT NOT NULL,
+          channel_user_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          org_id TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          PRIMARY KEY (channel, channel_user_id),
+          FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+          FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE
+        );
+        INSERT INTO channel_org_mappings (
+          channel, channel_user_id, user_id, org_id, created_at
+        ) VALUES (
+          'telegram', 'tg_123', 'user_1', 'org_acme',
+          '2026-06-21T00:00:00.000Z'
+        );
+      `);
+
+      migrateDatabase(db);
+      db.exec(`
+        INSERT INTO channel_org_mappings (
+          org_id, channel, channel_user_id, user_id, created_at
+        ) VALUES (
+          'org_globex', 'telegram', 'tg_123', 'user_1',
+          '2026-06-22T00:00:00.000Z'
+        );
+      `);
+
+      const rows = db
+        .prepare(
+          `SELECT org_id, channel, channel_user_id
+           FROM channel_org_mappings ORDER BY org_id ASC`
+        )
+        .all();
+      expect(rows).toEqual([
+        {
+          channel: "telegram",
+          channel_user_id: "tg_123",
+          org_id: "org_acme",
+        },
+        {
+          channel: "telegram",
+          channel_user_id: "tg_123",
+          org_id: "org_globex",
+        },
+      ]);
+      expect(db.prepare("PRAGMA foreign_key_check").all()).toEqual([]);
+    } finally {
+      db.close();
+    }
+  });
+
+  test("recovers channel mappings stranded by an interrupted legacy rebuild", () => {
+    const db = new Database(":memory:");
+
+    try {
+      migrateDatabase(db);
+      db.exec(`
+        INSERT INTO users (
+          id, email, password_hash, is_platform_admin, created_at, updated_at
+        ) VALUES (
+          'user_1', 'user@example.com', 'hash', 0,
+          '2026-06-21T00:00:00.000Z', '2026-06-21T00:00:00.000Z'
+        );
+        INSERT INTO organizations (
+          id, name, slug, created_at, updated_at
+        ) VALUES (
+          'org_acme', 'Acme', 'acme',
+          '2026-06-21T00:00:00.000Z', '2026-06-21T00:00:00.000Z'
+        );
+        INSERT INTO channel_org_mappings (
+          org_id, channel, channel_user_id, user_id, created_at
+        ) VALUES (
+          'org_acme', 'telegram', 'already_copied', 'user_1',
+          '2026-06-21T00:00:00.000Z'
+        );
+
+        CREATE TABLE channel_org_mappings_legacy (
+          channel TEXT NOT NULL,
+          channel_user_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          org_id TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          PRIMARY KEY (channel, channel_user_id)
+        );
+        INSERT INTO channel_org_mappings_legacy (
+          channel, channel_user_id, user_id, org_id, created_at
+        ) VALUES
+          ('telegram', 'already_copied', 'user_1', 'org_acme',
+           '2026-06-21T00:00:00.000Z'),
+          ('whatsapp', 'stranded', 'user_1', 'org_acme',
+           '2026-06-22T00:00:00.000Z');
+      `);
+
+      migrateDatabase(db);
+
+      const channelUserIds = db
+        .prepare(
+          `SELECT channel_user_id FROM channel_org_mappings
+           ORDER BY channel_user_id ASC`
+        )
+        .all() as Array<{ channel_user_id: string }>;
+      expect(channelUserIds).toEqual([
+        { channel_user_id: "already_copied" },
+        { channel_user_id: "stranded" },
+      ]);
+      expect(
+        db
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE name = 'channel_org_mappings_legacy'"
+          )
+          .get()
+      ).toBeNull();
+    } finally {
+      db.close();
+    }
+  });
+
+  test("rolls back a failed channel mapping rebuild and succeeds on retry", () => {
+    const db = new Database(":memory:");
+
+    try {
+      migrateDatabase(db);
+      db.exec(`
+        INSERT INTO users (
+          id, email, password_hash, is_platform_admin, created_at, updated_at
+        ) VALUES (
+          'user_1', 'user@example.com', 'hash', 0,
+          '2026-06-21T00:00:00.000Z', '2026-06-21T00:00:00.000Z'
+        );
+        INSERT INTO organizations (
+          id, name, slug, created_at, updated_at
+        ) VALUES (
+          'org_acme', 'Acme', 'acme',
+          '2026-06-21T00:00:00.000Z', '2026-06-21T00:00:00.000Z'
+        );
+
+        DROP TABLE channel_org_mappings;
+        CREATE TABLE channel_org_mappings (
+          channel TEXT NOT NULL,
+          channel_user_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          org_id TEXT,
+          created_at TEXT NOT NULL,
+          PRIMARY KEY (channel, channel_user_id)
+        );
+        INSERT INTO channel_org_mappings (
+          channel, channel_user_id, user_id, org_id, created_at
+        ) VALUES (
+          'telegram', 'tg_123', 'user_1', NULL,
+          '2026-06-21T00:00:00.000Z'
+        );
+      `);
+
+      expect(() => migrateDatabase(db)).toThrow();
+      expect(
+        db
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE name = 'channel_org_mappings'"
+          )
+          .get()
+      ).not.toBeNull();
+      expect(
+        db
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE name = 'channel_org_mappings_legacy'"
+          )
+          .get()
+      ).toBeNull();
+      expect(
+        db.prepare("SELECT org_id FROM channel_org_mappings").get()
+      ).toEqual({ org_id: null });
+
+      db.prepare(
+        "UPDATE channel_org_mappings SET org_id = 'org_acme' WHERE channel_user_id = 'tg_123'"
+      ).run();
+      migrateDatabase(db);
+
+      expect(
+        db.prepare("SELECT org_id FROM channel_org_mappings").get()
+      ).toEqual({ org_id: "org_acme" });
     } finally {
       db.close();
     }
   });
 });
 
-describe("llm_usage_daily capability rebuild", () => {
-  test("preserves pre-capability rows as chat usage and keeps indexes", () => {
+describe("llm_usage_daily dimension rebuild", () => {
+  test("preserves legacy rows with safe dimension defaults and keeps indexes", () => {
     const db = new Database(":memory:");
 
     try {
@@ -955,17 +1173,28 @@ describe("llm_usage_daily capability rebuild", () => {
 
       const rows = db
         .prepare(
-          `SELECT org_id, capability, request_count
+          `SELECT org_id, capability, channel, request_count
            FROM llm_usage_daily ORDER BY day ASC`
         )
         .all() as Array<{
+        channel: string;
         org_id: string;
         capability: string;
         request_count: number;
       }>;
       expect(rows).toEqual([
-        { capability: "chat.completion", org_id: "org_a", request_count: 3 },
-        { capability: "chat.completion", org_id: "org_b", request_count: 1 },
+        {
+          capability: "chat.completion",
+          channel: "unknown",
+          org_id: "org_a",
+          request_count: 3,
+        },
+        {
+          capability: "chat.completion",
+          channel: "unknown",
+          org_id: "org_b",
+          request_count: 1,
+        },
       ]);
 
       const legacyTable = db
@@ -991,7 +1220,8 @@ describe("llm_usage_daily capability rebuild", () => {
       db.exec(`
         INSERT INTO llm_usage_daily VALUES
           ('2026-08-01', 'org_a', 'user_1', 'p1', 'openai', 'cred_1', 'gpt-x',
-           'image.generation', 1, 0, 0, 0.02, '2026-08-01T00:00:00.000Z');
+           'image.generation', 'web', 1, 0, 0, 0.02,
+           '2026-08-01T00:00:00.000Z');
       `);
       const count = db
         .prepare(
@@ -1007,6 +1237,333 @@ describe("llm_usage_daily capability rebuild", () => {
         .prepare("SELECT COUNT(*) AS n FROM llm_usage_daily")
         .get() as { n: number };
       expect(total.n).toBe(3);
+    } finally {
+      db.close();
+    }
+  });
+
+  test("adds channel without collapsing existing capability rows", () => {
+    const db = new Database(":memory:");
+
+    try {
+      db.exec(`
+        CREATE TABLE llm_usage_daily (
+          day TEXT NOT NULL,
+          org_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          profile_id TEXT NOT NULL,
+          provider_type TEXT NOT NULL,
+          provider_credential_id TEXT NOT NULL,
+          model_id TEXT NOT NULL,
+          capability TEXT NOT NULL,
+          request_count INTEGER NOT NULL DEFAULT 0,
+          input_tokens INTEGER NOT NULL DEFAULT 0,
+          output_tokens INTEGER NOT NULL DEFAULT 0,
+          estimated_cost_usd REAL NOT NULL DEFAULT 0,
+          updated_at TEXT NOT NULL,
+          PRIMARY KEY (
+            day, org_id, user_id, profile_id,
+            provider_type, provider_credential_id, model_id, capability
+          )
+        );
+
+        INSERT INTO llm_usage_daily VALUES
+          ('2026-08-01', 'org_a', 'user_1', 'p1', 'openai', 'cred_1', 'gpt-x',
+           'chat.completion', 2, 200, 40, 0.4,
+           '2026-08-01T00:00:00.000Z'),
+          ('2026-08-01', 'org_a', 'user_1', 'p1', 'openai', 'cred_1', 'gpt-x',
+           'image.generation', 1, 0, 0, 0.02,
+           '2026-08-01T00:00:00.000Z');
+      `);
+
+      migrateDatabase(db);
+
+      const rows = db
+        .prepare(
+          `SELECT capability, channel, request_count
+           FROM llm_usage_daily ORDER BY capability ASC`
+        )
+        .all();
+      expect(rows).toEqual([
+        {
+          capability: "chat.completion",
+          channel: "unknown",
+          request_count: 2,
+        },
+        {
+          capability: "image.generation",
+          channel: "unknown",
+          request_count: 1,
+        },
+      ]);
+
+      const primaryKey = (
+        db.prepare("PRAGMA table_info(llm_usage_daily)").all() as Array<{
+          name: string;
+          pk: number;
+        }>
+      )
+        .filter((column) => column.pk > 0)
+        .sort((left, right) => left.pk - right.pk)
+        .map((column) => column.name);
+      expect(primaryKey.at(-1)).toBe("channel");
+    } finally {
+      db.close();
+    }
+  });
+
+  test("rebuilds a table with both dimensions but a stale primary key", () => {
+    const db = new Database(":memory:");
+
+    try {
+      db.exec(`
+        CREATE TABLE llm_usage_daily (
+          day TEXT NOT NULL,
+          org_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          profile_id TEXT NOT NULL,
+          provider_type TEXT NOT NULL,
+          provider_credential_id TEXT NOT NULL,
+          model_id TEXT NOT NULL,
+          capability TEXT NOT NULL,
+          channel TEXT NOT NULL,
+          request_count INTEGER NOT NULL DEFAULT 0,
+          input_tokens INTEGER NOT NULL DEFAULT 0,
+          output_tokens INTEGER NOT NULL DEFAULT 0,
+          estimated_cost_usd REAL NOT NULL DEFAULT 0,
+          updated_at TEXT NOT NULL,
+          PRIMARY KEY (
+            day, org_id, user_id, profile_id,
+            provider_type, provider_credential_id, model_id, capability
+          )
+        );
+
+        INSERT INTO llm_usage_daily VALUES (
+          '2026-08-01', 'org_a', 'user_1', 'p1', 'openai', 'cred_1', 'gpt-x',
+          'chat.completion', 'whatsapp', 2, 200, 40, 0.4,
+          '2026-08-01T00:00:00.000Z'
+        );
+      `);
+
+      migrateDatabase(db);
+
+      const primaryKey = (
+        db.prepare("PRAGMA table_info(llm_usage_daily)").all() as Array<{
+          name: string;
+          pk: number;
+        }>
+      )
+        .filter((column) => column.pk > 0)
+        .sort((left, right) => left.pk - right.pk)
+        .map((column) => column.name);
+      expect(primaryKey).toEqual([
+        "day",
+        "org_id",
+        "user_id",
+        "profile_id",
+        "provider_type",
+        "provider_credential_id",
+        "model_id",
+        "capability",
+        "channel",
+      ]);
+
+      db.prepare(`
+        INSERT INTO llm_usage_daily (
+          day, org_id, user_id, profile_id, provider_type,
+          provider_credential_id, model_id, capability, channel,
+          request_count, input_tokens, output_tokens, estimated_cost_usd,
+          updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(
+          day, org_id, user_id, profile_id,
+          provider_type, provider_credential_id, model_id, capability, channel
+        ) DO UPDATE SET
+          request_count = llm_usage_daily.request_count + excluded.request_count
+      `).run(
+        "2026-08-01",
+        "org_a",
+        "user_1",
+        "p1",
+        "openai",
+        "cred_1",
+        "gpt-x",
+        "chat.completion",
+        "whatsapp",
+        1,
+        0,
+        0,
+        0,
+        "2026-08-02T00:00:00.000Z"
+      );
+
+      expect(
+        db
+          .prepare(
+            "SELECT channel, request_count FROM llm_usage_daily WHERE org_id = 'org_a'"
+          )
+          .get()
+      ).toEqual({ channel: "whatsapp", request_count: 3 });
+    } finally {
+      db.close();
+    }
+  });
+
+  test("recovers usage rows and indexes stranded by an interrupted rebuild", () => {
+    const db = new Database(":memory:");
+
+    try {
+      migrateDatabase(db);
+      db.exec(`
+        INSERT INTO llm_usage_daily (
+          day, org_id, user_id, profile_id, provider_type,
+          provider_credential_id, model_id, capability, channel,
+          request_count, input_tokens, output_tokens, estimated_cost_usd,
+          updated_at
+        ) VALUES (
+          '2026-08-01', 'org_a', 'user_1', 'p1', 'openai', 'cred_1', 'gpt-x',
+          'chat.completion', 'unknown', 3, 300, 60, 0.5,
+          '2026-08-01T00:00:00.000Z'
+        );
+
+        DROP INDEX llm_usage_daily_org_day;
+        DROP INDEX llm_usage_daily_day;
+        CREATE TABLE llm_usage_daily_legacy (
+          day TEXT NOT NULL,
+          org_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          profile_id TEXT NOT NULL,
+          provider_type TEXT NOT NULL,
+          provider_credential_id TEXT NOT NULL,
+          model_id TEXT NOT NULL,
+          capability TEXT NOT NULL,
+          request_count INTEGER NOT NULL DEFAULT 0,
+          input_tokens INTEGER NOT NULL DEFAULT 0,
+          output_tokens INTEGER NOT NULL DEFAULT 0,
+          estimated_cost_usd REAL NOT NULL DEFAULT 0,
+          updated_at TEXT NOT NULL,
+          PRIMARY KEY (
+            day, org_id, user_id, profile_id,
+            provider_type, provider_credential_id, model_id, capability
+          )
+        );
+        CREATE INDEX llm_usage_daily_org_day
+          ON llm_usage_daily_legacy (org_id, day);
+        CREATE INDEX llm_usage_daily_day ON llm_usage_daily_legacy (day);
+        INSERT INTO llm_usage_daily_legacy VALUES
+          ('2026-08-01', 'org_a', 'user_1', 'p1', 'openai', 'cred_1', 'gpt-x',
+           'chat.completion', 3, 300, 60, 0.5,
+           '2026-08-01T00:00:00.000Z'),
+          ('2026-08-02', 'org_b', 'user_2', 'p2', 'chatgpt', 'cred_2', 'gpt-y',
+           'image.generation', 1, 0, 0, 0.02,
+           '2026-08-02T00:00:00.000Z');
+      `);
+
+      migrateDatabase(db);
+
+      const rows = db
+        .prepare(
+          `SELECT day, capability, channel FROM llm_usage_daily
+           ORDER BY day ASC`
+        )
+        .all();
+      expect(rows).toEqual([
+        {
+          capability: "chat.completion",
+          channel: "unknown",
+          day: "2026-08-01",
+        },
+        {
+          capability: "image.generation",
+          channel: "unknown",
+          day: "2026-08-02",
+        },
+      ]);
+      expect(
+        db
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE name = 'llm_usage_daily_legacy'"
+          )
+          .get()
+      ).toBeNull();
+      const indexes = db
+        .prepare(
+          `SELECT name FROM sqlite_master
+           WHERE type = 'index' AND tbl_name = 'llm_usage_daily'
+             AND name LIKE 'llm_usage_daily%'`
+        )
+        .all() as Array<{ name: string }>;
+      expect(indexes.map((index) => index.name).sort()).toEqual([
+        "llm_usage_daily_day",
+        "llm_usage_daily_org_day",
+      ]);
+    } finally {
+      db.close();
+    }
+  });
+
+  test("rolls back a failed usage rebuild and succeeds on retry", () => {
+    const db = new Database(":memory:");
+
+    try {
+      migrateDatabase(db);
+      db.exec(`
+        DROP TABLE llm_usage_daily;
+        CREATE TABLE llm_usage_daily (
+          day TEXT NOT NULL,
+          org_id TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          profile_id TEXT NOT NULL,
+          provider_type TEXT NOT NULL,
+          provider_credential_id TEXT NOT NULL,
+          model_id TEXT NOT NULL,
+          capability TEXT,
+          request_count INTEGER NOT NULL DEFAULT 0,
+          input_tokens INTEGER NOT NULL DEFAULT 0,
+          output_tokens INTEGER NOT NULL DEFAULT 0,
+          estimated_cost_usd REAL NOT NULL DEFAULT 0,
+          updated_at TEXT NOT NULL,
+          PRIMARY KEY (
+            day, org_id, user_id, profile_id,
+            provider_type, provider_credential_id, model_id, capability
+          )
+        );
+        CREATE INDEX llm_usage_daily_org_day
+          ON llm_usage_daily (org_id, day);
+        CREATE INDEX llm_usage_daily_day ON llm_usage_daily (day);
+        INSERT INTO llm_usage_daily VALUES (
+          '2026-08-01', 'org_a', 'user_1', 'p1', 'openai', 'cred_1', 'gpt-x',
+          NULL, 3, 300, 60, 0.5, '2026-08-01T00:00:00.000Z'
+        );
+      `);
+
+      expect(() => migrateDatabase(db)).toThrow();
+      expect(
+        db
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE name = 'llm_usage_daily'"
+          )
+          .get()
+      ).not.toBeNull();
+      expect(
+        db
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE name = 'llm_usage_daily_legacy'"
+          )
+          .get()
+      ).toBeNull();
+      expect(
+        db.prepare("SELECT capability FROM llm_usage_daily").get()
+      ).toEqual({ capability: null });
+
+      db.prepare(
+        "UPDATE llm_usage_daily SET capability = 'chat.completion' WHERE capability IS NULL"
+      ).run();
+      migrateDatabase(db);
+
+      expect(
+        db.prepare("SELECT capability, channel FROM llm_usage_daily").get()
+      ).toEqual({ capability: "chat.completion", channel: "unknown" });
     } finally {
       db.close();
     }
@@ -1057,6 +1614,49 @@ describe("migration SQL hardening", () => {
           "canonical"
         )
       ).toThrow("Unsupported profile join target");
+    } finally {
+      db.close();
+    }
+  });
+});
+
+describe("task owner migration", () => {
+  test("adds a nullable canonical owner to legacy tasks", () => {
+    const db = new Database(":memory:");
+
+    try {
+      db.exec(`
+        CREATE TABLE tasks (
+          id TEXT PRIMARY KEY NOT NULL,
+          title TEXT NOT NULL,
+          description TEXT DEFAULT '' NOT NULL,
+          prompt TEXT NOT NULL,
+          profile_id TEXT NOT NULL,
+          org_id TEXT,
+          status TEXT NOT NULL DEFAULT 'backlog',
+          position INTEGER NOT NULL DEFAULT 0,
+          session_id TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+        INSERT INTO tasks (
+          id, title, description, prompt, profile_id, org_id, status,
+          position, session_id, created_at, updated_at
+        ) VALUES (
+          'task_legacy_owner', 'Legacy', '', 'Run', 'profile_legacy',
+          'org_legacy', 'backlog', 0, NULL,
+          '2026-08-31T00:00:00.000Z', '2026-08-31T00:00:00.000Z'
+        );
+      `);
+
+      migrateDatabase(db);
+
+      const row = db
+        .prepare(
+          "SELECT created_by_user_id FROM tasks WHERE id = 'task_legacy_owner'"
+        )
+        .get() as { created_by_user_id: string | null };
+      expect(row.created_by_user_id).toBeNull();
     } finally {
       db.close();
     }

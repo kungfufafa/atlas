@@ -1,5 +1,7 @@
 import type {
+  AgentChannel,
   LlmUsageAuthKind,
+  LlmUsageChannelFilter,
   LlmUsageReportGroupBy,
   LlmUsageReportResponse,
   LlmUsageReportRow,
@@ -27,13 +29,15 @@ export interface UsageReportAccess {
 }
 
 export interface UsageReportOptions {
+  channel?: LlmUsageChannelFilter;
   from?: string;
   groupBy: LlmUsageReportGroupBy;
-  limit?: number;
+  /** Null is reserved for trusted exports that intentionally need all rows. */
+  limit?: number | null;
   to?: string;
 }
 
-const MAX_ROWS = 100;
+const MAX_ROWS = 1000;
 const DEFAULT_ROWS = 50;
 
 /**
@@ -64,6 +68,7 @@ export class UsageReportService {
     const userId = scope === "user" ? (access.userId ?? undefined) : undefined;
 
     const emptyReport: LlmUsageReportResponse = {
+      channel: options.channel ?? null,
       from: options.from ?? null,
       groupBy: options.groupBy,
       rows: [],
@@ -80,13 +85,17 @@ export class UsageReportService {
       return emptyReport;
     }
 
-    const limit = Math.min(
-      MAX_ROWS,
-      Math.max(1, Math.floor(options.limit ?? DEFAULT_ROWS))
-    );
+    const limit =
+      options.limit === null
+        ? undefined
+        : Math.min(
+            MAX_ROWS,
+            Math.max(1, Math.floor(options.limit ?? DEFAULT_ROWS))
+          );
 
     if (options.groupBy === "auth") {
       const providerRows = await this.db.aggregateLlmUsage({
+        channel: options.channel,
         from: options.from,
         groupBy: "provider",
         orgId,
@@ -97,6 +106,7 @@ export class UsageReportService {
     }
 
     const rows = await this.db.aggregateLlmUsage({
+      channel: options.channel,
       from: options.from,
       groupBy: options.groupBy as LlmUsageGroupBy,
       limit,
@@ -117,7 +127,8 @@ export class UsageReportService {
         label: await this.resolveLabel(
           options.groupBy,
           row.key,
-          credentialInfo
+          credentialInfo,
+          orgId
         ),
       }))
     );
@@ -230,7 +241,8 @@ export class UsageReportService {
   private async resolveLabel(
     groupBy: LlmUsageReportGroupBy,
     key: string,
-    credentialInfo: Map<string, { label: string; type: string }> | null
+    credentialInfo: Map<string, { label: string; type: string }> | null,
+    orgId?: string
   ): Promise<string> {
     if (key === UNKNOWN_USAGE_DIMENSION) {
       return "Unknown";
@@ -244,6 +256,17 @@ export class UsageReportService {
     if (groupBy === "user") {
       const user = await this.db.getUserById(key);
       return user?.name?.trim() || user?.email || key;
+    }
+
+    if (groupBy === "profile") {
+      const profile = orgId
+        ? await this.db.getProfileForOrg(key, orgId)
+        : await this.db.getProfile(key);
+      return profile?.name ?? key;
+    }
+
+    if (groupBy === "channel") {
+      return CHANNEL_LABELS[key as AgentChannel] ?? key;
     }
 
     if (groupBy === "provider") {
@@ -267,6 +290,17 @@ const CAPABILITY_LABELS: Record<string, string> = {
   "chat.completion": "Chat",
   "image.generation": "Image generation",
   "image.understanding": "Image parsing",
+};
+
+const CHANNEL_LABELS: Record<AgentChannel, string> = {
+  automation: "Automation",
+  cli: "CLI",
+  discord: "Discord",
+  subagent: "Sub-agent",
+  task: "Task",
+  telegram: "Telegram",
+  web: "Web",
+  whatsapp: "WhatsApp",
 };
 
 const AUTH_KIND_LABELS: Record<LlmUsageAuthKind, string> = {

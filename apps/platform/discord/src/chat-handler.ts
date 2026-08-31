@@ -17,10 +17,7 @@ import type {
   AgentQuestionnaire,
   SendMessageInput,
 } from "@atlas/core/contract";
-import {
-  addDiscordAllowedUserId,
-  clearDiscordPairingAssertion,
-} from "@atlas/core/discord-config";
+import { addDiscordAllowedUserId } from "@atlas/core/discord-config";
 import {
   filterProfilesForChatAccess,
   formatProfileSelectionPrompt,
@@ -228,30 +225,55 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       isGuild,
       parentResolution
     );
+    const sessionKey = resolveDiscordSessionKey(
+      conversationKey,
+      userId,
+      isGuild
+    );
 
     let isAuthorized = false;
-    await withChatLock(conversationKey, async () => {
+    let fileConfig = authStore.getConfig();
+    await withChatLock(sessionKey, async () => {
       await authStore.reload();
       isAuthorized = authStore.isAuthorized(userId);
-      if (isAuthorized) {
-        await bindPendingChannelPrincipal(userId);
-        if (isThread && groupDecision?.reason === "claim-thread") {
-          await trackOwnedThread(channelId);
-          console.log(
-            isChannelDebugEnabled()
-              ? `[discord] claimed thread ${channelId}`
-              : "[discord] claimed thread"
-          );
-        }
-        return;
-      }
+      fileConfig = authStore.getConfig();
 
+      if (
+        isAuthorized &&
+        isThread &&
+        groupDecision?.reason === "claim-thread"
+      ) {
+        await trackOwnedThread(channelId);
+        console.log(
+          isChannelDebugEnabled()
+            ? `[discord] claimed thread ${channelId}`
+            : "[discord] claimed thread"
+        );
+      }
+    });
+
+    const isExplicitPairingAttempt = Boolean(
+      !isGuild &&
+        text &&
+        fileConfig?.handshakeCode &&
+        looksLikeHandshakeAttempt(text)
+    );
+
+    if (isExplicitPairingAttempt && text) {
+      await withChatLock(sessionKey, async () => {
+        await handlePairing(text, userId, channelOrgKey, sessionKey, messenger);
+      });
+      return;
+    }
+
+    // Thread creation runs outside the agent-stream lock so parallel parent mentions
+    // can each open a thread. Agent work locks per conversation/thread key below.
+    if (!isAuthorized) {
       console.log(
         isChannelDebugEnabled()
           ? `[discord] unauthorized ${userId}`
           : "[discord] unauthorized"
       );
-      const fileConfig = authStore.getConfig();
       if (
         fileConfig?.accessMode === "allowlist" ||
         fileConfig?.accessMode === "denylist"
@@ -278,10 +300,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         return;
       }
 
-      await handlePairing(text, userId, messenger);
-    });
-
-    if (!isAuthorized) {
+      await withChatLock(sessionKey, async () => {
+        await handlePairing(text, userId, channelOrgKey, sessionKey, messenger);
+      });
       return;
     }
 
@@ -319,11 +340,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
 
     if (text && (command === "/org" || command === "/profile")) {
-      await withChatLock(conversationKey, async () => {
+      await withChatLock(sessionKey, async () => {
         await handleTextCommand(
           text,
           command,
-          conversationKey,
+          sessionKey,
           channelOrgKey,
           isThread,
           messenger,
@@ -338,12 +359,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
-    const attachmentInput = await tryBuildAttachmentInput(message, messenger);
-    if (attachmentInput === "reject") {
-      return;
-    }
+    const hasAttachments = hasDiscordAttachments(message);
 
-    if (!(text || attachmentInput)) {
+    if (!(text || hasAttachments)) {
       await messenger.send(UNSUPPORTED_MEDIA_REPLY);
       return;
     }
@@ -351,7 +369,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     if (
       text?.startsWith("/") &&
       !isAttachOnlyCommand(text) &&
-      !attachmentInput
+      !hasAttachments
     ) {
       await messenger.send(
         "Use slash commands from Discord's command menu for session control."
@@ -365,12 +383,13 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         : (text ?? "");
     const messageText = strippedText.trim();
 
-    if (!(messageText || attachmentInput)) {
+    if (!(messageText || hasAttachments)) {
       return;
     }
 
     let replyChannel = channel;
     let replyConversationKey = conversationKey;
+    let replySessionKey = sessionKey;
     let replyMessenger = messenger;
     let replyIsThread = isThread;
 
@@ -386,6 +405,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       if (thread) {
         replyChannel = thread as unknown as typeof replyChannel;
         replyConversationKey = `g:${channelId}:t:${thread.id}`;
+        replySessionKey = resolveDiscordSessionKey(
+          replyConversationKey,
+          userId,
+          true
+        );
         replyMessenger = createDiscordMessenger(
           thread as unknown as Parameters<typeof createDiscordMessenger>[0]
         );
@@ -407,20 +431,15 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       `textBytes=${Buffer.byteLength(messageText, "utf8")}`
     );
 
-    await withChatLock(replyConversationKey, async () => {
+    await withChatLock(replySessionKey, async () => {
       await handleChatMessage(
         replyChannel,
-        replyConversationKey,
+        replySessionKey,
         replyMessenger,
-        messageText || attachmentInput?.message || "",
+        messageText,
         isGuild,
         replyIsThread,
-        attachmentInput
-          ? {
-              documents: attachmentInput.documents,
-              images: attachmentInput.images,
-            }
-          : undefined,
+        hasAttachments ? message : undefined,
         userId
       );
     });
@@ -578,6 +597,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         ? `g:${threadParentId ?? channelId}:t:${interaction.channel!.id}`
         : channelId
       : channelId;
+    const sessionKey = resolveDiscordSessionKey(
+      conversationKey,
+      userId,
+      isGuild
+    );
 
     const messenger = createInteractionMessenger(
       (content) => interaction.reply({ content: content.slice(0, 2000) }),
@@ -621,7 +645,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       }
 
       if (interaction.commandName === "stop") {
-        if (stopActiveStream(conversationKey)) {
+        if (stopActiveStream(sessionKey)) {
           await messenger.send("Stopping…");
         } else {
           await messenger.send("Nothing to stop.");
@@ -630,7 +654,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       }
 
       if (interaction.commandName === "close") {
-        await handleCloseThread(interaction, conversationKey, messenger);
+        await handleCloseThread(interaction, sessionKey, messenger);
         return;
       }
 
@@ -645,17 +669,17 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
       switch (interaction.commandName) {
         case "clear": {
-          stopActiveStream(conversationKey);
-          pendingQuestionnaires.delete(conversationKey);
-          const session = await resolveSession(conversationKey, userId);
+          stopActiveStream(sessionKey);
+          pendingQuestionnaires.delete(sessionKey);
+          const session = await resolveSession(sessionKey, userId);
           await session.clear();
-          await clearSessionArtifactState(conversationKey);
+          await clearSessionArtifactState(sessionKey);
           await messenger.send("History cleared.");
           return;
         }
         case "compact": {
-          stopActiveStream(conversationKey);
-          const session = await resolveSession(conversationKey, userId);
+          stopActiveStream(sessionKey);
+          const session = await resolveSession(sessionKey, userId);
           const result = await session.compact({ force: true });
           await messenger.send(
             `Compacted (${result.action}). Messages: ${result.messagesAfter}.`
@@ -663,14 +687,14 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           return;
         }
         case "new": {
-          stopActiveStream(conversationKey);
-          pendingQuestionnaires.delete(conversationKey);
-          await createAndBindSession(conversationKey, undefined, userId);
+          stopActiveStream(sessionKey);
+          pendingQuestionnaires.delete(sessionKey);
+          await createAndBindSession(sessionKey, undefined, userId);
           await messenger.send("Started a new conversation.");
           return;
         }
         case "status":
-          await replyStatus(messenger, conversationKey);
+          await replyStatus(messenger, sessionKey, userId);
           return;
         default:
           await messenger.send("Unknown command. Try /help");
@@ -692,6 +716,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   async function handlePairing(
     text: string,
     userId: string,
+    channelOrgKey: string,
+    sessionKey: string,
     messenger: DiscordMessenger
   ): Promise<void> {
     const command = parseTextCommand(text);
@@ -718,42 +744,68 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
-    const result = await authStore.tryPair(text, userId);
-    await messenger.send(result.message);
-    if (result.ok) {
-      await bindPendingChannelPrincipal(userId, result.pairingAssertion);
+    try {
+      const result = await authStore.tryPair(
+        text,
+        userId,
+        ({ channelUserId, pairingAssertion, pairingUserId }) =>
+          bindPairingPrincipal({
+            channelOrgKey,
+            channelUserId,
+            pairingAssertion,
+            pairingUserId,
+            sessionKey,
+          })
+      );
+      await messenger.send(result.message);
+    } catch (error) {
+      console.error("Failed to bind Discord channel principal:", error);
+      await messenger.send(
+        "Could not link this chat. The pairing code is still active; try again."
+      );
     }
   }
 
-  async function bindPendingChannelPrincipal(
-    channelUserId: string,
-    pairingAssertion?: string | null
-  ): Promise<void> {
-    const assertion =
-      pairingAssertion?.trim() ||
-      authStore.getConfig()?.handshakeAssertion?.trim() ||
-      "";
-    if (!assertion) {
-      return;
-    }
+  async function bindPairingPrincipal(input: {
+    channelOrgKey: string;
+    channelUserId: string;
+    pairingAssertion: string;
+    pairingUserId: string;
+    sessionKey: string;
+  }): Promise<void> {
     const orgId =
-      getOrgSelection(orgStore, channelUserId)?.orgId ??
       fixedWorkspaceId ??
+      getOrgSelection(orgStore, input.channelOrgKey)?.orgId ??
       undefined;
     if (!orgId) {
-      return;
+      throw new Error(
+        "Discord pairing requires an authoritative workspace context."
+      );
     }
-    try {
-      await client.bindChannelPrincipal({
-        channel: "discord",
-        channelUserId,
-        pairingAssertion: assertion,
-      });
-      await clearDiscordPairingAssertion(orgId);
-      await authStore.reload();
-    } catch (error) {
-      console.error("Failed to bind Discord channel principal:", error);
+    const principal = await client.bindChannelPrincipal({
+      channel: "discord",
+      channelUserId: input.channelUserId,
+      expectedUserId: input.pairingUserId,
+      pairingAssertion: input.pairingAssertion,
+    });
+    if (principal.orgId !== orgId || principal.userId !== input.pairingUserId) {
+      throw new Error(
+        "Discord pairing principal did not match the pending authorization."
+      );
     }
+
+    const invalidatedSessionKeys = new Set(
+      sessionStore.deleteByChannelUserId(input.channelUserId)
+    );
+    if (sessionStore.get(input.sessionKey)) {
+      sessionStore.delete(input.sessionKey);
+      invalidatedSessionKeys.add(input.sessionKey);
+    }
+    for (const invalidatedSessionKey of invalidatedSessionKeys) {
+      stopActiveStream(invalidatedSessionKey);
+      pendingQuestionnaires.delete(invalidatedSessionKey);
+    }
+    await sessionStore.save();
   }
 
   async function handlePairingSlash(
@@ -798,7 +850,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
   async function tryBuildAttachmentInput(
     message: Message,
-    messenger: DiscordMessenger
+    messenger: DiscordMessenger,
+    sessionId: string
   ): Promise<SendMessageInput | "reject" | null> {
     if (!hasDiscordAttachments(message)) {
       return null;
@@ -806,7 +859,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     try {
       const result = await buildDiscordAttachmentInput(message, {
-        transcribeAudio: (input) => client.transcribeAudio(input),
+        transcribeAudio: (input) =>
+          client.transcribeAudio({ ...input, sessionId }),
       });
 
       if (!result) {
@@ -832,8 +886,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     attachUserText: string,
     isGuild: boolean,
     isThread: boolean,
-    attachments?: Pick<SendMessageInput, "documents" | "images">,
-    authorUserId?: string
+    attachmentMessage: Message | undefined,
+    authorUserId: string
   ): Promise<void> {
     const session = await resolveSession(conversationKey, authorUserId);
     const profileId = sessionStore.get(conversationKey)?.profileId;
@@ -853,12 +907,19 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
+    const attachmentInput = attachmentMessage
+      ? await tryBuildAttachmentInput(attachmentMessage, messenger, session.id)
+      : null;
+    if (attachmentInput === "reject") {
+      return;
+    }
+
     // Forward free text to the agent — do not gate Discord replies on questionnaire parsing.
     const streamInput = withGroupContext(
       {
-        documents: attachments?.documents,
-        images: attachments?.images,
-        message: attachUserText,
+        documents: attachmentInput?.documents,
+        images: attachmentInput?.images,
+        message: attachUserText || attachmentInput?.message || "",
       },
       isGuild,
       isThread
@@ -922,6 +983,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
                   messenger,
                   profileId,
                   result: event.result,
+                  sessionId: session.id,
                 });
                 if (path) {
                   uploadedArtifactPaths.add(path);
@@ -1114,7 +1176,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       ? orgs.find((org) => org.id === currentOrgId)
       : undefined;
     const arg = text.trim().split(/\s+/).slice(1).join(" ");
-    const currentProfileId = await resolveSessionProfileId(conversationKey);
+    const currentProfileId = await resolveSessionProfileId(
+      conversationKey,
+      userId
+    );
 
     if (!arg) {
       const profiles = await listSelectableProfiles();
@@ -1229,7 +1294,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
   async function replyStatus(
     messenger: DiscordMessenger,
-    chatId: string
+    chatId: string,
+    channelUserId?: string
   ): Promise<void> {
     try {
       const health = await client.health();
@@ -1241,7 +1307,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       if (health.providerConfigured) {
         const models = await client.getModels();
         const profiles = await listSelectableProfiles();
-        const profileId = await resolveSessionProfileId(chatId);
+        const profileId = await resolveSessionProfileId(chatId, channelUserId);
         const profile = profiles.find((entry) => entry.id === profileId);
         const modelLabel = profile?.model?.includes("::")
           ? profile.model.slice(profile.model.indexOf("::") + 2)
@@ -1261,11 +1327,14 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
   async function resolveSession(
     chatId: string,
-    channelUserId?: string
+    channelUserId: string
   ): Promise<RemoteChatSession> {
     const existing = sessionStore.get(chatId);
+    const normalizedChannelUserId = channelUserId?.trim() ?? "";
+    const belongsToCurrentSender =
+      existing?.channelUserId?.trim() === normalizedChannelUserId;
 
-    if (existing) {
+    if (existing && belongsToCurrentSender) {
       const hot = sessionStore.getHotSession<RemoteChatSession>(chatId);
       if (hot) {
         return hot;
@@ -1287,20 +1356,25 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
   async function createAndBindSession(
     chatId: string,
-    profileId?: string,
-    channelUserId?: string
+    profileId: string | undefined,
+    channelUserId: string
   ): Promise<RemoteChatSession> {
     pendingQuestionnaires.delete(chatId);
+    const principalUserId = channelUserId.trim();
+    if (!principalUserId) {
+      throw new Error("Discord channel user identity is required.");
+    }
     const resolvedProfileId =
-      profileId ?? (await resolveSessionProfileId(chatId));
+      profileId ?? (await resolveSessionProfileId(chatId, principalUserId));
     const session = await client.createSession("discord", {
       externalPrincipal: {
-        channelUserId: channelUserId ?? chatId,
+        channelUserId: principalUserId,
       },
       profileId: resolvedProfileId,
     });
 
     sessionStore.set(chatId, {
+      channelUserId: principalUserId,
       profileId: resolvedProfileId,
       sessionId: session.id,
       updatedAt: new Date().toISOString(),
@@ -1311,7 +1385,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     return session;
   }
 
-  async function resolveSessionProfileId(chatId: string): Promise<string> {
+  async function resolveSessionProfileId(
+    chatId: string,
+    channelUserId?: string
+  ): Promise<string> {
     const profiles = await listSelectableProfiles();
     const storedProfileId = sessionStore.get(chatId)?.profileId;
 
@@ -1326,7 +1403,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     // New thread sessions inherit the parent channel's /profile selection.
     const parentChannelId = parentChannelIdFromConversationKey(chatId);
     if (parentChannelId) {
-      const parentProfileId = sessionStore.get(parentChannelId)?.profileId;
+      const parentSessionKey = channelUserId
+        ? resolveDiscordSessionKey(parentChannelId, channelUserId, true)
+        : parentChannelId;
+      const parentProfileId = sessionStore.get(parentSessionKey)?.profileId;
       if (parentProfileId) {
         const match = profiles.find(
           (profile) => profile.id === parentProfileId
@@ -1349,12 +1429,25 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
 
     sessionStore.set(conversationKey, {
+      channelUserId: existing.channelUserId,
       profileId: existing.profileId,
       sessionId: existing.sessionId,
       updatedAt: new Date().toISOString(),
     });
     await sessionStore.save();
   }
+}
+
+export function resolveDiscordSessionKey(
+  conversationKey: string,
+  channelUserId: string,
+  isGuild: boolean
+): string {
+  if (!isGuild) {
+    return conversationKey;
+  }
+
+  return `${conversationKey}:sender:${encodeURIComponent(channelUserId.trim())}`;
 }
 
 function withGroupContext(

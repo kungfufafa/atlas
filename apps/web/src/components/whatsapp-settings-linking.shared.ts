@@ -10,7 +10,7 @@ export function formatWhatsAppDevicePairingCode(code: string): string {
 }
 
 export function shouldShowWhatsAppChatAccessSection(
-  accessMode: ChannelAccessMode
+  _accessMode: ChannelAccessMode
 ): boolean {
-  return accessMode === "pairing";
+  return true;
 }

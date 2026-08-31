@@ -111,23 +111,103 @@ describe("verifyAndPairTelegramUser concurrency", () => {
     });
   });
 
-  test("keeps the pairing assertion until bind succeeds", async () => {
+  test("binds before atomically consuming the pairing state", async () => {
     await withTempHomedir("atlas-tg-pair-assert-", async (homeDir) => {
       await writeChannelIniConfig(homeDir, "telegram", {
         botToken: "1234567890:TEST",
         handshakeAssertion: "assert_keep",
         handshakeCode: "AABBCCDD",
+        handshakeUserId: "user_admin",
       });
 
-      const result = await verifyAndPairTelegramUser("AABBCCDD", 111);
-      expect(result).toMatchObject({
-        ok: true,
-        pairingAssertion: "assert_keep",
-      });
+      const bindings: unknown[] = [];
+      const result = await verifyAndPairTelegramUser(
+        "AABBCCDD",
+        111,
+        undefined,
+        async (input) => {
+          bindings.push(input);
+        }
+      );
+      expect(result.ok).toBe(true);
+      expect(bindings).toEqual([
+        {
+          channelUserId: "111",
+          pairingAssertion: "assert_keep",
+          pairingUserId: "user_admin",
+        },
+      ]);
       const saved = await loadTelegramConfigFile();
       expect(saved?.handshakeCode).toBeNull();
-      expect(saved?.handshakeAssertion).toBe("assert_keep");
+      expect(saved?.handshakeAssertion).toBeNull();
+      expect(saved?.handshakeUserId).toBeNull();
       expect(saved?.pairedUserIds).toEqual([111]);
+    });
+  });
+
+  test("keeps pairing state retryable when canonical bind fails", async () => {
+    await withTempHomedir("atlas-tg-pair-bind-fail-", async (homeDir) => {
+      await writeChannelIniConfig(homeDir, "telegram", {
+        botToken: "1234567890:TEST",
+        handshakeAssertion: "assert_retry",
+        handshakeCode: "AABBCCDD",
+        handshakeUserId: "user_admin",
+      });
+
+      await expect(
+        verifyAndPairTelegramUser("AABBCCDD", 111, undefined, async () => {
+          throw new Error("network down");
+        })
+      ).rejects.toThrow("network down");
+
+      const saved = await loadTelegramConfigFile();
+      expect(saved?.handshakeCode).toBe("AABBCCDD");
+      expect(saved?.handshakeAssertion).toBe("assert_retry");
+      expect(saved?.handshakeUserId).toBe("user_admin");
+      expect(saved?.pairedUserIds).toEqual([]);
+    });
+  });
+
+  test("rebinds an already authorized sender only with the exact fresh code", async () => {
+    await withTempHomedir("atlas-tg-pair-rebind-", async (homeDir) => {
+      await writeChannelIniConfig(homeDir, "telegram", {
+        botToken: "1234567890:TEST",
+        handshakeAssertion: "assert_rebind",
+        handshakeCode: "AABBCCDD",
+        handshakeUserId: "user_new",
+        pairedUserIds: [111],
+      });
+
+      const bindings: unknown[] = [];
+      const wrongCode = await verifyAndPairTelegramUser(
+        "DEADBEEF",
+        111,
+        undefined,
+        async (input) => {
+          bindings.push(input);
+        }
+      );
+      expect(wrongCode.ok).toBe(true);
+      expect(bindings).toEqual([]);
+      expect((await loadTelegramConfigFile())?.handshakeCode).toBe("AABBCCDD");
+
+      const result = await verifyAndPairTelegramUser(
+        "AABBCCDD",
+        111,
+        undefined,
+        async (input) => {
+          bindings.push(input);
+        }
+      );
+      expect(result.ok).toBe(true);
+      expect(bindings).toEqual([
+        {
+          channelUserId: "111",
+          pairingAssertion: "assert_rebind",
+          pairingUserId: "user_new",
+        },
+      ]);
+      expect((await loadTelegramConfigFile())?.handshakeCode).toBeNull();
     });
   });
 });

@@ -1,9 +1,10 @@
-import { spawn } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { closeSync, existsSync, mkdirSync, openSync } from "node:fs";
-import { readFile, rm, writeFile } from "node:fs/promises";
+import { open as openFile, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { WorkerLogsResponse, WorkerProcessInfo } from "@atlas/core";
 import {
+  createWorkspaceWorkerAuthToken,
   getUserConfigDir,
   isProcessAlive,
   listConfiguredChannelWorkspaceIds,
@@ -11,6 +12,7 @@ import {
   readRuntimeServerUrl,
   readWorkerDesiredState,
   setWorkerDesiredRunning,
+  WORKSPACE_WORKER_AUTH_TOKEN_ENV,
 } from "@atlas/core";
 
 const WORKER_SCRIPTS: Record<string, string> = {
@@ -32,6 +34,8 @@ const WORKSPACE_WORKER_ENV_BLOCKLIST = [
   "ATLAS_DISCORD_PROFILE_ID",
   "ATLAS_TELEGRAM_PROFILE_ID",
   "ATLAS_WHATSAPP_PROFILE_ID",
+  "ATLAS_LOCAL_AUTH_TOKEN",
+  "atlas_LOCAL_AUTH_TOKEN",
   "DISCORD_ALLOWED_USER_IDS",
   "DISCORD_BLOCKED_USER_IDS",
   "DISCORD_BOT_TOKEN",
@@ -39,6 +43,39 @@ const WORKSPACE_WORKER_ENV_BLOCKLIST = [
   "TELEGRAM_BLOCKED_USER_IDS",
   "TELEGRAM_BOT_TOKEN",
   "WHATSAPP_PHONE_NUMBER",
+] as const;
+const WORKSPACE_WORKER_ENV_ALLOWLIST = [
+  "ALL_PROXY",
+  "COMSPEC",
+  // Propagate the host privacy opt-out, but never its telemetry DSN credential.
+  "DO_NOT_TRACK",
+  "HOME",
+  "HTTP_PROXY",
+  "HTTPS_PROXY",
+  "LANG",
+  "LC_ALL",
+  "LC_CTYPE",
+  "LOGNAME",
+  "NODE_EXTRA_CA_CERTS",
+  "NO_PROXY",
+  "PATH",
+  "PATHEXT",
+  "SHELL",
+  "SSL_CERT_DIR",
+  "SSL_CERT_FILE",
+  "SystemRoot",
+  "TEMP",
+  "TMP",
+  "TMPDIR",
+  "TZ",
+  "USER",
+  "WHATSAPP_VERBOSE_LOGS",
+  "WINDIR",
+  "__CF_USER_TEXT_ENCODING",
+  "all_proxy",
+  "http_proxy",
+  "https_proxy",
+  "no_proxy",
 ] as const;
 const WORKSPACE_WORKERS = ["telegram", "discord", "whatsapp"] as const;
 type WorkspaceWorkerName = (typeof WORKSPACE_WORKERS)[number];
@@ -50,6 +87,21 @@ interface NativeWorkerProcessState {
   startedAt: number;
   workspaceId?: string;
 }
+
+interface NativeProcessResources {
+  cpuPercent: number | null;
+  memoryMb: number | null;
+}
+
+export interface LinuxCpuSample {
+  aggregateTicks: number;
+  cpuCount: number;
+  processStartTicks: number;
+  processTicks: number;
+}
+
+const MAX_NATIVE_CPU_SAMPLES = 256;
+const linuxCpuSamples = new Map<number, LinuxCpuSample>();
 
 function promisifyPm2<T>(
   // pm2's typed callbacks expect a non-null Error and a specific payload
@@ -213,7 +265,8 @@ export class WorkerManagerService {
   private async startNativeProcess(
     processName: string,
     script: string,
-    workspaceId?: string
+    workspaceId?: string,
+    workspaceChannel?: WorkspaceWorkerName
   ): Promise<void> {
     await this.stopNativeProcess(processName);
 
@@ -226,7 +279,7 @@ export class WorkerManagerService {
       const child = spawn(execPath, ["run", script], {
         cwd: this.projectRoot,
         detached: true,
-        env: this.workerProcessEnv(workspaceId),
+        env: await this.workerProcessEnv(workspaceId, workspaceChannel),
         stdio: ["ignore", outFd, errFd],
       });
 
@@ -257,13 +310,14 @@ export class WorkerManagerService {
     if (this.isPm2Injected) {
       await this.withPm2(async (pm2) => {
         const script = this.resolveWorkerScript(name);
+        const env = await this.workerProcessEnv();
         await this.removeWorkerFromPm2(pm2, name);
         await promisifyPm2<void>((cb) =>
           pm2.start(
             {
               args: ["run", script],
               cwd: this.projectRoot,
-              env: this.workerProcessEnv(),
+              env,
               name,
               script: "bun",
             },
@@ -288,13 +342,14 @@ export class WorkerManagerService {
     if (this.isPm2Injected) {
       await this.withPm2(async (pm2) => {
         const script = this.resolveWorkerScript(name);
+        const env = await this.workerProcessEnv(workspaceId, name);
         await this.removeWorkerFromPm2(pm2, processName);
         await promisifyPm2<void>((cb) =>
           pm2.start(
             {
               args: ["run", script],
               cwd: this.projectRoot,
-              env: this.workerProcessEnv(workspaceId),
+              env,
               name: processName,
               script: "bun",
             },
@@ -306,7 +361,7 @@ export class WorkerManagerService {
     }
 
     const script = this.resolveWorkerScript(name);
-    await this.startNativeProcess(processName, script, workspaceId);
+    await this.startNativeProcess(processName, script, workspaceId, name);
   }
 
   async restartWorkspaceWorker(
@@ -460,11 +515,15 @@ export class WorkerManagerService {
 
     const state = await this.readNativeProcessState(name);
     const alive = state ? isProcessAlive(state.pid) : false;
+    const resources =
+      alive && state
+        ? await readNativeProcessResources(state.pid)
+        : { cpuPercent: null, memoryMb: null };
 
     return {
-      cpuPercent: null,
+      cpuPercent: resources.cpuPercent,
       managed: true,
-      memoryMb: null,
+      memoryMb: resources.memoryMb,
       status: alive ? "online" : "stopped",
       uptimeSeconds:
         alive && state?.startedAt
@@ -525,11 +584,15 @@ export class WorkerManagerService {
 
     const state = await this.readNativeProcessState(processName);
     const alive = state ? isProcessAlive(state.pid) : false;
+    const resources =
+      alive && state
+        ? await readNativeProcessResources(state.pid)
+        : { cpuPercent: null, memoryMb: null };
 
     return {
-      cpuPercent: null,
+      cpuPercent: resources.cpuPercent,
       managed: true,
-      memoryMb: null,
+      memoryMb: resources.memoryMb,
       status: alive ? "online" : "stopped",
       uptimeSeconds:
         alive && state?.startedAt
@@ -561,55 +624,20 @@ export class WorkerManagerService {
         const outPath = desc?.pm2_env?.pm_out_log_path as string | undefined;
         const errPath = desc?.pm2_env?.pm_err_log_path as string | undefined;
 
-        let [stdout, stderr] = await Promise.all([
+        const [stdout, stderr] = await Promise.all([
           outPath ? readLastLines(outPath, lines) : "",
           errPath ? readLastLines(errPath, lines) : "",
         ]);
-
-        if (!(stdout || stderr) && processName !== name) {
-          const fallbackDesc = await promisifyPm2<Pm2ProcessDescription[]>(
-            (cb) => pm2.describe(name, cb)
-          ).catch(() => []);
-          const fallback = fallbackDesc[0];
-          const fbOut = fallback?.pm2_env?.pm_out_log_path as
-            | string
-            | undefined;
-          const fbErr = fallback?.pm2_env?.pm_err_log_path as
-            | string
-            | undefined;
-          if (fbOut || fbErr) {
-            const [fallbackOut, fallbackErr] = await Promise.all([
-              fbOut ? readLastLines(fbOut, lines) : "",
-              fbErr ? readLastLines(fbErr, lines) : "",
-            ]);
-            if (fallbackOut || fallbackErr) {
-              stdout = fallbackOut;
-              stderr = fallbackErr;
-            }
-          }
-        }
 
         return { stderr, stdout, worker: name };
       });
     }
 
     const { outPath, errPath } = this.getLogPaths(processName);
-    let [stdout, stderr] = await Promise.all([
+    const [stdout, stderr] = await Promise.all([
       readLastLines(outPath, lines),
       readLastLines(errPath, lines),
     ]);
-
-    if (!(stdout || stderr) && processName !== name) {
-      const fallbackPaths = this.getLogPaths(name);
-      const [fallbackOut, fallbackErr] = await Promise.all([
-        readLastLines(fallbackPaths.outPath, lines),
-        readLastLines(fallbackPaths.errPath, lines),
-      ]);
-      if (fallbackOut || fallbackErr) {
-        stdout = fallbackOut;
-        stderr = fallbackErr;
-      }
-    }
 
     return { stderr, stdout, worker: name };
   }
@@ -657,11 +685,17 @@ export class WorkerManagerService {
     }
   }
 
-  private workerProcessEnv(orgId?: string): Record<string, string> {
-    const env: Record<string, string> = {
-      ...(process.env as Record<string, string>),
-      NODE_ENV: process.env.NODE_ENV ?? "development",
-    };
+  private async workerProcessEnv(
+    orgId?: string,
+    channel?: WorkspaceWorkerName
+  ): Promise<Record<string, string>> {
+    const hostEnv = process.env as Record<string, string | undefined>;
+    const env: Record<string, string> = orgId
+      ? pickAllowedEnvironment(hostEnv, WORKSPACE_WORKER_ENV_ALLOWLIST)
+      : { ...(hostEnv as Record<string, string>) };
+    env.NODE_ENV = process.env.NODE_ENV ?? "development";
+    delete env[WORKSPACE_WORKER_AUTH_TOKEN_ENV];
+    delete env.ATLAS_WORKSPACE_ID;
 
     const serverUrl =
       process.env.ATLAS_SERVER_URL?.trim() ||
@@ -679,14 +713,174 @@ export class WorkerManagerService {
     }
 
     if (orgId) {
+      if (!channel) {
+        throw new Error("Workspace worker channel is required.");
+      }
       env.ATLAS_WORKSPACE_ID = orgId;
       for (const key of WORKSPACE_WORKER_ENV_BLOCKLIST) {
         delete env[key];
       }
+      env[WORKSPACE_WORKER_AUTH_TOKEN_ENV] =
+        await createWorkspaceWorkerAuthToken({ channel, orgId });
     }
 
     return env;
   }
+}
+
+async function readNativeProcessResources(
+  pid: number
+): Promise<NativeProcessResources> {
+  if (!(Number.isSafeInteger(pid) && pid > 0)) {
+    return { cpuPercent: null, memoryMb: null };
+  }
+
+  const procResources = await readLinuxProcResources(pid);
+  if (procResources) {
+    return procResources;
+  }
+
+  return readPsResources(pid);
+}
+
+async function readLinuxProcResources(
+  pid: number
+): Promise<NativeProcessResources | null> {
+  try {
+    const [processStat, processStatus, systemStat] = await Promise.all([
+      readFile(`/proc/${pid}/stat`, "utf8"),
+      readFile(`/proc/${pid}/status`, "utf8"),
+      readFile("/proc/stat", "utf8"),
+    ]);
+    const closingNameIndex = processStat.lastIndexOf(")");
+    if (closingNameIndex < 0) {
+      return null;
+    }
+    const processFields = processStat
+      .slice(closingNameIndex + 1)
+      .trim()
+      .split(/\s+/);
+    const userTicks = Number(processFields[11]);
+    const systemTicks = Number(processFields[12]);
+    const startedAtTicks = Number(processFields[19]);
+    const cpuLine = systemStat.split("\n")[0]?.trim().split(/\s+/) ?? [];
+    const aggregateTicks = cpuLine
+      .slice(1, 9)
+      .reduce((sum, value) => sum + Number(value), 0);
+    const cpuCount = Math.max(
+      1,
+      systemStat.split("\n").filter((line) => /^cpu\d+\s/.test(line)).length
+    );
+    const processTicks = userTicks + systemTicks;
+    const cpuPercent = sampleLinuxCpuPercent(pid, {
+      aggregateTicks,
+      cpuCount,
+      processStartTicks: startedAtTicks,
+      processTicks,
+    });
+    const residentKb = Number(
+      /^VmRSS:\s+(\d+)\s+kB$/m.exec(processStatus)?.[1]
+    );
+    const memoryMb = Number.isFinite(residentKb)
+      ? roundResourceValue(residentKb / 1024)
+      : null;
+
+    return { cpuPercent, memoryMb };
+  } catch {
+    return null;
+  }
+}
+
+function sampleLinuxCpuPercent(
+  pid: number,
+  current: LinuxCpuSample
+): number | null {
+  const previous = linuxCpuSamples.get(pid);
+  linuxCpuSamples.delete(pid);
+  linuxCpuSamples.set(pid, current);
+  while (linuxCpuSamples.size > MAX_NATIVE_CPU_SAMPLES) {
+    const oldestPid = linuxCpuSamples.keys().next().value;
+    if (typeof oldestPid !== "number") {
+      break;
+    }
+    linuxCpuSamples.delete(oldestPid);
+  }
+
+  if (!previous) {
+    return null;
+  }
+
+  return calculateSampledCpuPercent(previous, current);
+}
+
+export function calculateSampledCpuPercent(
+  previous: LinuxCpuSample,
+  current: LinuxCpuSample
+): number | null {
+  if (
+    previous.processStartTicks !== current.processStartTicks ||
+    !Number.isFinite(current.processTicks) ||
+    !Number.isFinite(current.aggregateTicks)
+  ) {
+    return null;
+  }
+
+  const processTickDelta = current.processTicks - previous.processTicks;
+  const systemTickDelta =
+    current.aggregateTicks / current.cpuCount -
+    previous.aggregateTicks / previous.cpuCount;
+  if (processTickDelta < 0 || systemTickDelta <= 0) {
+    return null;
+  }
+
+  return roundResourceValue((processTickDelta / systemTickDelta) * 100);
+}
+
+function readPsResources(pid: number): Promise<NativeProcessResources> {
+  return new Promise((resolve) => {
+    try {
+      execFile(
+        "ps",
+        ["-o", "%cpu=", "-o", "rss=", "-p", String(pid)],
+        { encoding: "utf8", maxBuffer: 64 * 1024, timeout: 2000 },
+        (error, stdout) => {
+          if (error) {
+            resolve({ cpuPercent: null, memoryMb: null });
+            return;
+          }
+          const [cpuRaw, residentKbRaw] = stdout.trim().split(/\s+/);
+          const cpu = Number(cpuRaw);
+          const residentKb = Number(residentKbRaw);
+          resolve({
+            cpuPercent: Number.isFinite(cpu) ? roundResourceValue(cpu) : null,
+            memoryMb: Number.isFinite(residentKb)
+              ? roundResourceValue(residentKb / 1024)
+              : null,
+          });
+        }
+      );
+    } catch {
+      resolve({ cpuPercent: null, memoryMb: null });
+    }
+  });
+}
+
+function roundResourceValue(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function pickAllowedEnvironment(
+  source: Record<string, string | undefined>,
+  keys: readonly string[]
+): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const key of keys) {
+    const value = source[key];
+    if (value !== undefined) {
+      result[key] = value;
+    }
+  }
+  return result;
 }
 
 function validateWorkspaceId(orgId: string): string {
@@ -705,14 +899,53 @@ function workspaceWorkerProcessName(
 }
 
 async function readLastLines(path: string, lineCount: number): Promise<string> {
+  const normalizedLineCount =
+    Number.isInteger(lineCount) && lineCount > 0
+      ? Math.min(lineCount, 2000)
+      : 200;
+  const maxTailBytes = 4 * 1024 * 1024;
+  const chunkBytes = 64 * 1024;
+  let handle: Awaited<ReturnType<typeof openFile>> | undefined;
   try {
-    const content = await readFile(path, "utf8");
+    handle = await openFile(path, "r");
+    const { size } = await handle.stat();
+    let position = size;
+    let bufferedBytes = 0;
+    let newlineCount = 0;
+    const chunks: Buffer[] = [];
+
+    while (
+      position > 0 &&
+      bufferedBytes < maxTailBytes &&
+      newlineCount <= normalizedLineCount
+    ) {
+      const bytesToRead = Math.min(
+        chunkBytes,
+        position,
+        maxTailBytes - bufferedBytes
+      );
+      position -= bytesToRead;
+      const buffer = Buffer.allocUnsafe(bytesToRead);
+      const { bytesRead } = await handle.read(buffer, 0, bytesToRead, position);
+      const chunk = buffer.subarray(0, bytesRead);
+      chunks.unshift(chunk);
+      bufferedBytes += bytesRead;
+      for (const byte of chunk) {
+        if (byte === 10) {
+          newlineCount += 1;
+        }
+      }
+    }
+
+    const content = Buffer.concat(chunks, bufferedBytes).toString("utf8");
     const trimmed = content.endsWith("\n") ? content.slice(0, -1) : content;
     const allLines = trimmed.split("\n");
-    const lastLines = allLines.slice(-lineCount);
+    const lastLines = allLines.slice(-normalizedLineCount);
     return lastLines.join("\n");
   } catch {
     return "";
+  } finally {
+    await handle?.close().catch(() => undefined);
   }
 }
 

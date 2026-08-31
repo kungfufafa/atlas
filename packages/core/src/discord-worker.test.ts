@@ -70,6 +70,21 @@ describe("resolveDiscordWorkerStatus", () => {
       paired: true,
       running: true,
     });
+
+    expect(
+      resolveDiscordWorkerStatus(
+        {
+          allowedUserIds: [],
+          botTokenMasked: "••••1234",
+          configured: true,
+          handshakeCode: null,
+          pairedUserIds: ["123456789012345678"],
+          profileId: "default",
+        },
+        true,
+        false
+      )
+    ).toMatchObject({ connected: false, ok: false, running: true });
   });
 });
 

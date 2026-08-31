@@ -19,6 +19,7 @@ import {
   type WASocket,
 } from "@whiskeysockets/baileys";
 import { inspectInboundWhatsAppMedia } from "./inbound-message";
+import { BoundedWorkQueue } from "./inbound-work-queue";
 
 export const WHATSAPP_DOCUMENT_INGEST_MAX_BYTES = MAX_DOCUMENT_INGEST_BYTES;
 export const WHATSAPP_IMAGE_MAX_BYTES = MAX_IMAGE_BYTES;
@@ -46,6 +47,23 @@ export const PAIRING_MEDIA_REPLY =
   "Send the chat access code as text to authorize this chat.";
 
 export type WhatsAppMediaDownload = (message: WAMessage) => Promise<Buffer>;
+
+const MAX_CONCURRENT_MEDIA_DOWNLOADS = 2;
+const MAX_QUEUED_MEDIA_DOWNLOADS = 20;
+const MEDIA_DOWNLOAD_QUEUE_WAIT_MS = 30_000;
+const MEDIA_DOWNLOAD_TIMEOUT_MS = 60_000;
+const mediaDownloadQueue = new BoundedWorkQueue({
+  maxConcurrent: MAX_CONCURRENT_MEDIA_DOWNLOADS,
+  maxQueued: MAX_QUEUED_MEDIA_DOWNLOADS,
+  maxWaitMs: MEDIA_DOWNLOAD_QUEUE_WAIT_MS,
+});
+
+class MediaDownloadTimeoutError extends Error {
+  constructor() {
+    super("WhatsApp media download timed out.");
+    this.name = "MediaDownloadTimeoutError";
+  }
+}
 
 export type WhatsAppMediaBuildResult =
   | { kind: "input"; input: SendMessageInput }
@@ -377,21 +395,130 @@ export async function downloadWhatsAppMedia(
     throw new Error("WhatsApp is not connected.");
   }
 
-  const buffer = await downloadMediaMessage(
-    inbound,
-    "buffer",
-    {},
-    {
-      logger: createSilentBaileysLogger(),
-      reuploadRequest: (message) => socket.updateMediaMessage(message),
-    }
-  );
+  return mediaDownloadQueue.run(async () => {
+    const controller = new AbortController();
+    const pendingStream = downloadMediaMessage(
+      inbound,
+      "stream",
+      {
+        options: {
+          maxContentLength: WHATSAPP_DOCUMENT_INGEST_MAX_BYTES,
+          signal: controller.signal,
+          timeout: MEDIA_DOWNLOAD_TIMEOUT_MS,
+        },
+      },
+      {
+        logger: createSilentBaileysLogger(),
+        reuploadRequest: (message) => socket.updateMediaMessage(message),
+      }
+    );
+    const stream = await resolveMediaStreamWithTimeout(
+      pendingStream,
+      MEDIA_DOWNLOAD_TIMEOUT_MS,
+      () => controller.abort()
+    );
 
-  if (!Buffer.isBuffer(buffer)) {
-    throw new Error("Could not download that file.");
+    try {
+      return await collectBoundedMediaStream(
+        stream,
+        WHATSAPP_DOCUMENT_INGEST_MAX_BYTES,
+        MEDIA_DOWNLOAD_TIMEOUT_MS
+      );
+    } catch (error) {
+      controller.abort();
+      stream.destroy();
+      throw error;
+    }
+  });
+}
+
+export async function collectBoundedMediaStream(
+  stream: AsyncIterable<unknown>,
+  maxBytes: number,
+  timeoutMs = MEDIA_DOWNLOAD_TIMEOUT_MS
+): Promise<Buffer> {
+  if (!(Number.isFinite(timeoutMs) && timeoutMs > 0)) {
+    throw new Error("WhatsApp media timeout must be greater than zero.");
   }
 
-  return buffer;
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const collect = collectMediaStream(stream, maxBytes);
+  const timeoutResult = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => {
+      destroyMediaStream(stream);
+      reject(new MediaDownloadTimeoutError());
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([collect, timeoutResult]);
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+  }
+}
+
+async function collectMediaStream(
+  stream: AsyncIterable<unknown>,
+  maxBytes: number
+): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  let totalBytes = 0;
+
+  for await (const chunk of stream) {
+    if (!(Buffer.isBuffer(chunk) || typeof chunk === "string")) {
+      throw new Error("WhatsApp returned an invalid media chunk.");
+    }
+    const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    totalBytes += bytes.byteLength;
+    if (totalBytes > maxBytes) {
+      throw new Error("WhatsApp media exceeds the download limit.");
+    }
+    chunks.push(bytes);
+  }
+
+  if (totalBytes === 0) {
+    throw new Error("Could not download that file.");
+  }
+  return Buffer.concat(chunks, totalBytes);
+}
+
+async function resolveMediaStreamWithTimeout<T extends AsyncIterable<unknown>>(
+  pendingStream: Promise<T>,
+  timeoutMs: number,
+  onTimeout: () => void
+): Promise<T> {
+  let timedOut = false;
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const timeoutResult = new Promise<never>((_, reject) => {
+    timeout = setTimeout(() => {
+      timedOut = true;
+      onTimeout();
+      reject(new MediaDownloadTimeoutError());
+    }, timeoutMs);
+  });
+  try {
+    return await Promise.race([pendingStream, timeoutResult]);
+  } catch (error) {
+    if (timedOut) {
+      void pendingStream
+        .then((stream) => destroyMediaStream(stream))
+        .catch(() => undefined);
+    }
+    throw error;
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+  }
+}
+
+function destroyMediaStream(stream: AsyncIterable<unknown>): void {
+  const destroy = (stream as { destroy?: (error?: Error) => void }).destroy;
+  if (typeof destroy === "function") {
+    destroy.call(stream, new MediaDownloadTimeoutError());
+  }
 }
 
 function inferImageMediaType(mimetype: string, filename: string): string {

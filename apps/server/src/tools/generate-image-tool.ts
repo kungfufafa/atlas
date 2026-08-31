@@ -60,7 +60,12 @@ export interface GenerateImageToolDeps {
     inputTokens: number,
     outputTokens: number,
     instance: ProviderInstance,
-    attribution: { orgId: string; profileId: string; userId?: string }
+    attribution: {
+      channel: ToolContext["channel"];
+      orgId: string;
+      profileId: string;
+      userId?: string;
+    }
   ) => void;
 }
 
@@ -238,6 +243,7 @@ export async function runGenerateImageTool(
     result.usage?.outputTokens ?? 0,
     selection.instance,
     {
+      channel: context.channel,
       orgId,
       profileId,
       ...(context.userId?.trim() ? { userId: context.userId.trim() } : {}),

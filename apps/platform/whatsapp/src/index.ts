@@ -1,4 +1,5 @@
 import { createClient } from "@atlas/client";
+import { loadOrCreateWhatsAppOutboundAuthToken } from "@atlas/core";
 import {
   ChannelOrgStore,
   getChannelOrgSelectionPath,
@@ -9,7 +10,7 @@ import {
 } from "@atlas/core/ensure-server";
 import { installErrorHandlers } from "@atlas/core/error-tracking";
 import { installErrorTrackingSink } from "@atlas/core/error-tracking-sentry";
-import { loadLocalAuthToken } from "@atlas/core/local-auth";
+import { loadPlatformWorkerAuthToken } from "@atlas/core/local-auth";
 import { resolveWebPublicUrl } from "@atlas/core/runtime";
 import { syncWhatsAppOwnerPairing } from "@atlas/core/whatsapp-config";
 import {
@@ -34,6 +35,7 @@ await installErrorTrackingSink();
 
 let spawnedChild: Bun.Subprocess | null = null;
 let socketHandle: {
+  start: () => Promise<void>;
   stop: () => Promise<void>;
   socket: {
     sendMessage: (jid: string, content: { text: string }) => Promise<unknown>;
@@ -85,11 +87,11 @@ try {
   spawnedChild = child;
 
   const client = createClient({
-    authToken:
-      (await loadLocalAuthToken("whatsapp@atlas.internal")) ?? undefined,
+    authToken: await loadPlatformWorkerAuthToken("whatsapp", workspaceId),
     baseUrl: serverUrl,
     clientOrigin: resolveWebPublicUrl(),
     orgId: workspaceId,
+    tokenAuth: Boolean(workspaceId),
   });
   const health = await client.health();
 
@@ -97,6 +99,10 @@ try {
     console.warn(
       "Server has no provider configured. Chat runs in offline mode until an API key is set."
     );
+  }
+
+  if (workspaceId) {
+    await client.listProfiles();
   }
 
   const sessionStore = new SessionStore();
@@ -156,7 +162,11 @@ try {
 
   socketHandle = socket;
 
+  const outboundAuthorizationToken =
+    await loadOrCreateWhatsAppOutboundAuthToken(workspaceId);
+
   outboundServer = await startWhatsAppOutboundServer({
+    authorizationToken: outboundAuthorizationToken,
     getSendHandle: () => {
       const activeSocket = socketHandle?.socket;
 
@@ -165,6 +175,24 @@ try {
       }
 
       return {
+        invalidate: () => {
+          const currentHandle = socketHandle;
+          if (!currentHandle || currentHandle.socket !== activeSocket) {
+            return true;
+          }
+
+          bridgeConnected = false;
+          persistWorkerHeartbeat();
+          void currentHandle.start().catch((error) => {
+            console.error(
+              "WhatsApp socket restart after outbound timeout failed.",
+              {
+                errorType: error instanceof Error ? error.name : typeof error,
+              }
+            );
+          });
+          return currentHandle.socket !== activeSocket;
+        },
         sendMessage: (jid, content) => activeSocket.sendMessage(jid, content),
       };
     },

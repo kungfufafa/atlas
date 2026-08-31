@@ -237,7 +237,12 @@ describe("generate_image tool persistence (U4)", () => {
       model: string;
       input: number;
       output: number;
-      attribution: { orgId: string; profileId: string; userId?: string };
+      attribution: {
+        channel: string;
+        orgId: string;
+        profileId: string;
+        userId?: string;
+      };
     }> = [];
 
     const result = await runGenerateImageTool(
@@ -307,6 +312,7 @@ describe("generate_image tool persistence (U4)", () => {
     expect(usage).toEqual([
       {
         attribution: {
+          channel: "web",
           orgId: "org_1",
           profileId: "profile_1",
           userId: "user_1",
@@ -325,7 +331,12 @@ describe("generate_image tool persistence (U4)", () => {
       model: string;
       input: number;
       output: number;
-      attribution: { orgId: string; profileId: string; userId?: string };
+      attribution: {
+        channel: string;
+        orgId: string;
+        profileId: string;
+        userId?: string;
+      };
     }> = [];
 
     const result = await runGenerateImageTool(
@@ -357,7 +368,11 @@ describe("generate_image tool persistence (U4)", () => {
     expect("error" in result).toBe(false);
     expect(usage).toEqual([
       {
-        attribution: { orgId: "org_1", profileId: "profile_1" },
+        attribution: {
+          channel: "web",
+          orgId: "org_1",
+          profileId: "profile_1",
+        },
         input: 0,
         model: "flux-1-schnell",
         output: 0,

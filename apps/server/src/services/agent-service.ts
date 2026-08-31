@@ -44,6 +44,7 @@ import type {
   DocumentAttachment,
   EmailSettingsResponse,
   ErrorTrackingSettingsResponse,
+  ExternalPrincipalInput,
   GenerateImageRequest,
   GenerateImageResponse,
   ImageAttachment,
@@ -141,6 +142,7 @@ import {
   getProfileSoulDir,
   getResolvedSoulStatus,
   initSoulDirectory,
+  isChannelGuestUserId,
   isEmailConfigComplete,
   isProviderConfigured,
   isServiceAccountUserId,
@@ -212,6 +214,7 @@ import {
   mergeWorkspaceSettings,
   type StoredProfileRecord,
   type StoredSessionRecord,
+  type StoredTaskRecord,
   type StoredTaskRunRecord,
   UNKNOWN_USAGE_DIMENSION,
   WORKSPACE_SETTINGS_ID,
@@ -268,6 +271,7 @@ import {
   transcribeAudio,
 } from "./audio-transcription";
 import type { AutomationRunner } from "./automation-runner";
+import { resolveExecutableToolsForPrincipal } from "./channel-guest-tool-policy";
 import {
   createChatCapabilityAwareProvider,
   resolveChatCapabilityPolicy,
@@ -363,13 +367,14 @@ interface StoredSession {
   orgRole: OrgRole | null;
   profileId: string;
   session: AgentChatSession;
+  userId: string | null;
 }
 
 export type { SubAgentRunInput, SubAgentRunResult };
 
 export interface SessionAccessOptions {
   excludeSuperAgent?: boolean;
-  externalPrincipal?: { channelUserId: string };
+  externalPrincipal?: ExternalPrincipalInput;
   isPlatformAdmin?: boolean;
   model?: string | null;
   orgRole?: OrgRole | null;
@@ -379,7 +384,10 @@ export interface SessionActor {
   isPlatformAdmin?: boolean;
   orgRole?: OrgRole | null;
   userId: string;
+  workspaceWorkerChannel?: "discord" | "telegram" | "whatsapp";
 }
+
+export type SessionAccessIntent = "invoke" | "manage" | "read";
 
 function providerBaseUrlChanged(
   instance: ProviderInstance,
@@ -508,6 +516,7 @@ export class AgentService {
    * undefined when no provider is configured (nothing to attribute).
    */
   private buildUsageAttribution(options: {
+    channel: AgentChannel;
     orgId: string;
     userId?: string | null;
     profileId: string;
@@ -532,6 +541,7 @@ export class AgentService {
     return {
       dimensions: {
         capability: PROVIDER_CAPABILITY_IDS.chatCompletion,
+        channel: options.channel,
         modelId,
         orgId: options.orgId,
         profileId: options.profileId || UNKNOWN_USAGE_DIMENSION,
@@ -550,6 +560,7 @@ export class AgentService {
    */
   private recordCapabilityUsageDaily(options: {
     capability: string;
+    channel?: AgentChannel;
     instance: ProviderInstance;
     modelId: string;
     orgId: string;
@@ -572,6 +583,7 @@ export class AgentService {
       .incrementLlmUsageDaily(
         {
           capability: options.capability,
+          channel: options.channel ?? UNKNOWN_USAGE_DIMENSION,
           modelId: options.modelId,
           orgId: options.orgId,
           profileId: options.profileId?.trim() || UNKNOWN_USAGE_DIMENSION,
@@ -688,6 +700,44 @@ export class AgentService {
     record: StoredSessionRecord,
     actor: SessionActor
   ): Promise<boolean> {
+    return this.canActorAccessSessionRecord(orgId, record, actor, "manage");
+  }
+
+  private async canActorAccessSessionRecord(
+    orgId: string,
+    record: StoredSessionRecord,
+    actor: SessionActor,
+    intent: SessionAccessIntent
+  ): Promise<boolean> {
+    const channel = parseAgentChannel(record.channel);
+    if (!channel) {
+      return false;
+    }
+
+    if (actor.workspaceWorkerChannel) {
+      const isMatchingExternalChannel =
+        (channel === "discord" ||
+          channel === "telegram" ||
+          channel === "whatsapp") &&
+        channel === actor.workspaceWorkerChannel;
+      const persistedUserId = record.userId?.trim();
+      if (
+        !(isMatchingExternalChannel && persistedUserId) ||
+        isServiceAccountUserId(persistedUserId)
+      ) {
+        return false;
+      }
+
+      const [member, profile] = await Promise.all([
+        this.db.getOrgMember(orgId, persistedUserId),
+        this.db.getProfileForOrg(record.profileId, orgId),
+      ]);
+      if (!(member && profile) || profile.isSuper) {
+        return false;
+      }
+      return intent === "read" || member.role !== "viewer";
+    }
+
     const actorUserId = actor.userId.trim();
     if (!actorUserId) {
       return false;
@@ -698,11 +748,35 @@ export class AgentService {
       this.resolveIsPlatformAdmin(actorUserId),
     ]);
     const ownsSession = Boolean(record.userId) && record.userId === actorUserId;
-    return (
-      isPlatformAdmin ||
-      orgRole === "admin" ||
-      (orgRole === "member" && ownsSession)
-    );
+
+    // Sending/streaming a turn must never impersonate another user's persisted
+    // principal (and its per-user OAuth connections), including for admins.
+    if (intent === "invoke") {
+      return (
+        ownsSession &&
+        (isPlatformAdmin || orgRole === "admin" || orgRole === "member")
+      );
+    }
+
+    if (isPlatformAdmin || orgRole === "admin") {
+      return true;
+    }
+    if (!ownsSession) {
+      return false;
+    }
+    return intent === "read" || orgRole === "member";
+  }
+
+  async canAccessSession(
+    orgId: string,
+    sessionId: string,
+    actor: SessionActor,
+    intent: SessionAccessIntent = "read"
+  ): Promise<boolean> {
+    const record = await this.getSessionRecordForOrg(orgId, sessionId);
+    return record
+      ? this.canActorAccessSessionRecord(orgId, record, actor, intent)
+      : false;
   }
 
   setAutomationTools(tools: ToolDefinition[]): void {
@@ -1190,22 +1264,46 @@ export class AgentService {
   async transcribeAudioForOrg(
     orgId: string,
     input: TranscribeAudioRequest,
-    attribution?: { userId?: string | null }
+    attribution?: {
+      allowPersistedSessionPrincipal?: boolean;
+      expectedChannel?: AgentChannel;
+      userId?: string | null;
+    }
   ): Promise<TranscribeAudioResponse> {
     const config = await this.getOrgUserConfig(orgId);
-    return this.transcribeAudioWithConfig(input, config, {
+    const resolvedAttribution = await this.resolveCapabilityAttribution(
       orgId,
-      userId: attribution?.userId,
+      input.sessionId,
+      attribution
+    );
+    return this.transcribeAudioWithConfig(input, config, {
+      channel: resolvedAttribution.channel,
+      orgId,
+      profileId: resolvedAttribution.profileId,
+      userId: resolvedAttribution.userId,
     });
   }
 
   async generateImageForOrg(
     orgId: string,
     input: GenerateImageRequest,
-    attribution?: { userId?: string | null }
+    attribution?: {
+      allowPersistedSessionPrincipal?: boolean;
+      expectedChannel?: AgentChannel;
+      userId?: string | null;
+    }
   ): Promise<GenerateImageResponse> {
     const config = await this.getOrgUserConfig(orgId);
-    return this.generateImageWithConfig(input, config, orgId, attribution);
+    const resolvedAttribution = await this.resolveCapabilityAttribution(
+      orgId,
+      input.sessionId,
+      attribution
+    );
+    return this.generateImageWithConfig(input, config, orgId, {
+      channel: resolvedAttribution.channel,
+      profileId: resolvedAttribution.profileId,
+      userId: resolvedAttribution.userId,
+    });
   }
 
   async setUserTimezone(timezone: string | undefined): Promise<string> {
@@ -2180,6 +2278,7 @@ export class AgentService {
         recordTurnUsage: this.turnUsageRecorderFor(
           orgId,
           this.buildUsageAttribution({
+            channel: "automation",
             orgId,
             profileId,
             userConfig,
@@ -2289,6 +2388,7 @@ export class AgentService {
         recordTurnUsage: this.turnUsageRecorderFor(
           input.orgId,
           this.buildUsageAttribution({
+            channel: "subagent",
             orgId: input.orgId,
             profileId: input.profileId,
             userConfig,
@@ -2394,11 +2494,12 @@ export class AgentService {
   async runTaskPrompt(
     taskId: string,
     profileId: string,
-    prompt: string
+    prompt: string,
+    principal: CanonicalPrincipal
   ): Promise<string> {
     const task = await this.db.getTask(taskId);
 
-    if (!task?.orgId) {
+    if (!task?.orgId || task.profileId !== profileId) {
       throw new Error("Task not found.");
     }
 
@@ -2409,9 +2510,12 @@ export class AgentService {
     const sessionId = await this.ensureTaskSession(
       taskId,
       profileId,
-      task.orgId
+      task.orgId,
+      principal
     );
-    const session = await this.resolveSession(task.orgId, sessionId);
+    const session = await this.resolveSession(task.orgId, sessionId, {
+      userId: principal.userId,
+    });
 
     if (!session) {
       throw new Error("Session not found.");
@@ -2423,18 +2527,26 @@ export class AgentService {
   async ensureTaskSession(
     taskId: string,
     profileId: string,
-    orgId: string
+    orgId: string,
+    principal?: CanonicalPrincipal
   ): Promise<string> {
     const record = await this.db.getTask(taskId);
 
-    if (!record) {
+    if (!record || record.orgId !== orgId || record.profileId !== profileId) {
       throw new Error("Task not found.");
     }
+
+    const actor = await this.resolveTaskPrincipal(record, principal);
 
     if (record.sessionId) {
       const existing = await this.db.getSession(record.sessionId);
 
-      if (existing) {
+      if (
+        existing?.channel === "task" &&
+        existing.orgId === orgId &&
+        existing.profileId === profileId &&
+        existing.userId === actor.userId
+      ) {
         return record.sessionId;
       }
     }
@@ -2443,9 +2555,10 @@ export class AgentService {
       orgId,
       "task",
       profileId,
-      undefined,
+      actor.userId,
       {
-        orgRole: "member",
+        isPlatformAdmin: actor.isPlatformAdmin,
+        orgRole: actor.orgRole,
       }
     );
 
@@ -2458,13 +2571,53 @@ export class AgentService {
     return sessionId;
   }
 
+  private async resolveTaskPrincipal(
+    task: StoredTaskRecord,
+    explicit?: CanonicalPrincipal
+  ): Promise<CanonicalPrincipal> {
+    const ownerId = task.createdByUserId?.trim();
+    const orgId = task.orgId?.trim();
+    if (!(ownerId && orgId)) {
+      throw new AtlasApiError(
+        "Task has no canonical owner and cannot be run.",
+        403
+      );
+    }
+
+    if (explicit) {
+      const actor = runAsPrincipal(explicit, (value) => value);
+      if (actor.orgId !== orgId || actor.userId !== ownerId) {
+        throw new AtlasApiError("Only the task owner can run this task.", 403);
+      }
+    }
+
+    let actor: CanonicalPrincipal;
+    try {
+      actor = await this.identityService.resolveForUser(orgId, ownerId);
+    } catch (error) {
+      if (error instanceof PrincipalRequiredError) {
+        throw new AtlasApiError(error.message, 403);
+      }
+      throw error;
+    }
+    if (actor.orgRole === "viewer" && !actor.isPlatformAdmin) {
+      throw new AtlasApiError("Viewers cannot run tasks.", 403);
+    }
+    return actor;
+  }
+
   async getTaskChatMessages(
     taskId: string,
-    orgId?: string
+    orgId: string,
+    actor: SessionActor
   ): Promise<{ sessionId: string; messages: ChatMessage[] } | null> {
     const record = await this.db.getTask(taskId);
 
-    if (!record || (orgId && record.orgId !== orgId)) {
+    if (
+      !record ||
+      record.orgId !== orgId ||
+      !(await this.canReadTaskRecord(record, orgId, actor))
+    ) {
       return null;
     }
 
@@ -2488,6 +2641,10 @@ export class AgentService {
       sessionId = await this.ensureTaskSession(taskId, record.profileId, orgId);
     }
 
+    if (!(await this.canAccessSession(orgId, sessionId, actor, "read"))) {
+      return null;
+    }
+
     let messages = await loadSessionHistory(this.db, sessionId);
 
     if (messages.length === 0) {
@@ -2501,6 +2658,47 @@ export class AgentService {
     }
 
     return { messages, sessionId };
+  }
+
+  async canReadTask(
+    taskId: string,
+    orgId: string,
+    actor: SessionActor
+  ): Promise<boolean> {
+    const record = await this.db.getTask(taskId);
+    return record?.orgId === orgId
+      ? this.canReadTaskRecord(record, orgId, actor)
+      : false;
+  }
+
+  private async canReadTaskRecord(
+    record: StoredTaskRecord,
+    orgId: string,
+    actor: SessionActor
+  ): Promise<boolean> {
+    if (record.sessionId) {
+      const linkedSession = await this.db.getSession(record.sessionId);
+      if (linkedSession) {
+        return this.canAccessSession(orgId, record.sessionId, actor, "read");
+      }
+    }
+
+    if (actor.workspaceWorkerChannel) {
+      return false;
+    }
+    const actorUserId = actor.userId.trim();
+    if (!actorUserId) {
+      return false;
+    }
+    const [orgRole, isPlatformAdmin] = await Promise.all([
+      this.resolveOrgRole(orgId, actorUserId),
+      this.resolveIsPlatformAdmin(actorUserId),
+    ]);
+    return (
+      isPlatformAdmin ||
+      orgRole === "admin" ||
+      (Boolean(orgRole) && record.createdByUserId === actorUserId)
+    );
   }
 
   private async seedTaskSessionFromRun(
@@ -2536,12 +2734,12 @@ export class AgentService {
     return this.automationRunner.run(automationId, options);
   }
 
-  async runTask(taskId: string) {
+  async runTask(taskId: string, principal?: CanonicalPrincipal) {
     if (!this.taskRunner) {
       throw new Error("Task runner is not configured.");
     }
 
-    return this.taskRunner.run(taskId);
+    return this.taskRunner.run(taskId, principal);
   }
 
   get providerConfigured(): boolean {
@@ -2577,6 +2775,7 @@ export class AgentService {
       const principal = await this.identityService.resolveForChannelSession({
         authUserId: userId ?? "",
         channel,
+        channelUserAliases: access?.externalPrincipal?.channelUserAliases,
         channelUserId: access?.externalPrincipal?.channelUserId,
         isPlatformAdmin: access?.isPlatformAdmin === true,
         orgId,
@@ -2585,6 +2784,9 @@ export class AgentService {
       principalUserId = principal.userId;
       sessionOrgRole = principal.orgRole;
       sessionIsPlatformAdmin = principal.isPlatformAdmin;
+      if (sessionOrgRole === "viewer" && !sessionIsPlatformAdmin) {
+        throw new AtlasApiError("Viewer access is read-only", 403);
+      }
     } else if (
       principalUserId &&
       isServiceAccountUserId(principalUserId) &&
@@ -2643,6 +2845,7 @@ export class AgentService {
       orgRole: sessionOrgRole,
       profileId: resolvedProfileId,
       session,
+      userId: principalUserId,
     });
 
     return sessionId;
@@ -2688,6 +2891,12 @@ export class AgentService {
     const record = await this.getSessionRecordForOrg(orgId, sessionId);
 
     if (!record) {
+      return null;
+    }
+    if (
+      actor &&
+      !(await this.canActorAccessSessionRecord(orgId, record, actor, "read"))
+    ) {
       return null;
     }
     const modelOverride = await this.resolveApprovedStoredSessionModelOverride(
@@ -2759,6 +2968,12 @@ export class AgentService {
     const record = await this.getSessionRecordForOrg(orgId, sessionId);
 
     if (!record) {
+      return null;
+    }
+    if (
+      actor &&
+      !(await this.canActorAccessSessionRecord(orgId, record, actor, "manage"))
+    ) {
       return null;
     }
     const modelOverride = await this.resolveApprovedStoredSessionModelOverride(
@@ -2845,6 +3060,7 @@ export class AgentService {
       orgRole: branchOrgRole,
       profileId: record.profileId,
       session,
+      userId: branchUserId,
     });
 
     return { sessionId: nextSessionId };
@@ -2853,11 +3069,29 @@ export class AgentService {
   async listSessions(
     orgId: string,
     profileId: string,
-    channel: AgentChannel
+    channel: AgentChannel,
+    actor: SessionActor
   ): Promise<ListSessionsResponse> {
     await this.requireProfile(orgId, profileId);
 
-    const sessions = await this.db.listSessionSummaries(profileId, channel);
+    if (actor.workspaceWorkerChannel) {
+      return { sessions: [] };
+    }
+    const actorUserId = actor.userId.trim();
+    const [orgRole, isPlatformAdmin] = await Promise.all([
+      this.resolveOrgRole(orgId, actorUserId),
+      this.resolveIsPlatformAdmin(actorUserId),
+    ]);
+    if (!(isPlatformAdmin || orgRole)) {
+      return { sessions: [] };
+    }
+    const ownerUserId =
+      isPlatformAdmin || orgRole === "admin" ? undefined : actorUserId;
+    const sessions = await this.db.listSessionSummaries(
+      profileId,
+      channel,
+      ownerUserId
+    );
 
     return {
       sessions: sessions.map((session) => ({
@@ -2885,10 +3119,20 @@ export class AgentService {
     return this.skillPostTurnReviewService;
   }
 
-  async purgeSession(orgId: string, sessionId: string): Promise<boolean> {
+  async purgeSession(
+    orgId: string,
+    sessionId: string,
+    actor?: SessionActor
+  ): Promise<boolean> {
     const record = await this.getSessionRecordForOrg(orgId, sessionId);
 
     if (!record) {
+      return false;
+    }
+    if (
+      actor &&
+      !(await this.canActorAccessSessionRecord(orgId, record, actor, "manage"))
+    ) {
       return false;
     }
 
@@ -2915,12 +3159,42 @@ export class AgentService {
     if (!record) {
       return null;
     }
+    if (
+      actor &&
+      !(await this.canActorAccessSessionRecord(orgId, record, actor, "invoke"))
+    ) {
+      return null;
+    }
     const modelOverride = await this.resolveApprovedStoredSessionModelOverride(
       orgId,
       record
     );
 
-    const actorUserId = actor?.userId?.trim() || record.userId || null;
+    const channel = parseAgentChannel(record.channel);
+
+    if (!channel) {
+      return null;
+    }
+
+    const isExternalChannel =
+      channel === "telegram" || channel === "whatsapp" || channel === "discord";
+    const recordedUserId = record.userId?.trim() || null;
+    if (
+      isExternalChannel &&
+      (!recordedUserId || isServiceAccountUserId(recordedUserId))
+    ) {
+      throw new PrincipalRequiredError(
+        "Channel session is missing a canonical user principal. Re-pair the channel."
+      );
+    }
+
+    // A local-token worker authenticates transport to Atlas; it is never the
+    // actor for a channel turn. External channel sessions are created only
+    // after resolving the sender to a canonical Atlas user, so every later
+    // turn must retain that persisted principal and its current workspace role.
+    const actorUserId = isExternalChannel
+      ? recordedUserId
+      : actor?.userId?.trim() || recordedUserId;
     const orgRole = await this.resolveOrgRole(orgId, actorUserId);
     const isPlatformAdmin = await this.resolveIsPlatformAdmin(actorUserId);
     const profile = await this.db.getProfileForOrg(record.profileId, orgId);
@@ -2943,16 +3217,11 @@ export class AgentService {
       stored &&
       stored.profileId === record.profileId &&
       stored.modelOverride === modelOverride &&
+      stored.userId === actorUserId &&
       stored.orgRole === orgRole &&
       stored.isPlatformAdmin === isPlatformAdmin
     ) {
       return stored.session;
-    }
-
-    const channel = parseAgentChannel(record.channel);
-
-    if (!channel) {
-      return null;
     }
 
     const session = await this.buildChatSession(
@@ -2984,6 +3253,7 @@ export class AgentService {
       orgRole,
       profileId: record.profileId,
       session,
+      userId: actorUserId,
     });
 
     return session;
@@ -3041,10 +3311,17 @@ export class AgentService {
 
   async beginSessionTurn(
     orgId: string,
-    sessionId: string
+    sessionId: string,
+    actor?: SessionActor
   ): Promise<boolean | null> {
     const record = await this.getSessionRecordForOrg(orgId, sessionId);
     if (!record) {
+      return null;
+    }
+    if (
+      actor &&
+      !(await this.canActorAccessSessionRecord(orgId, record, actor, "invoke"))
+    ) {
       return null;
     }
 
@@ -3052,10 +3329,20 @@ export class AgentService {
     return sessionTurnRegistry.beginTurn(sessionId, orgId).started;
   }
 
-  async clearSession(orgId: string, sessionId: string): Promise<boolean> {
+  async clearSession(
+    orgId: string,
+    sessionId: string,
+    actor?: SessionActor
+  ): Promise<boolean> {
     const record = await this.getSessionRecordForOrg(orgId, sessionId);
 
     if (!record) {
+      return false;
+    }
+    if (
+      actor &&
+      !(await this.canActorAccessSessionRecord(orgId, record, actor, "manage"))
+    ) {
       return false;
     }
 
@@ -3076,9 +3363,16 @@ export class AgentService {
   async compactSession(
     orgId: string,
     sessionId: string,
-    options: { force?: boolean } = {}
+    options: { force?: boolean } = {},
+    actor?: SessionActor
   ): Promise<CompactionResponse | null> {
-    const session = await this.resolveSession(orgId, sessionId);
+    if (
+      actor &&
+      !(await this.canAccessSession(orgId, sessionId, actor, "invoke"))
+    ) {
+      return null;
+    }
+    const session = await this.resolveSession(orgId, sessionId, actor);
 
     if (!session) {
       return null;
@@ -3123,6 +3417,85 @@ export class AgentService {
 
     const profile = await this.db.getProfile(record.profileId);
     return profile?.orgId === orgId ? record : null;
+  }
+
+  private async resolveCapabilityAttribution(
+    orgId: string,
+    sessionId: string | null | undefined,
+    actor?: {
+      allowPersistedSessionPrincipal?: boolean;
+      expectedChannel?: AgentChannel;
+      userId?: string | null;
+    }
+  ): Promise<{
+    channel: AgentChannel | typeof UNKNOWN_USAGE_DIMENSION;
+    profileId: string;
+    userId: string;
+  }> {
+    const actorUserId = actor?.userId?.trim() || UNKNOWN_USAGE_DIMENSION;
+    const normalizedSessionId = sessionId?.trim();
+    if (!normalizedSessionId) {
+      if (actor?.expectedChannel) {
+        throw new PrincipalRequiredError(
+          "A canonical session principal is required for channel capability usage."
+        );
+      }
+      return {
+        channel: UNKNOWN_USAGE_DIMENSION,
+        profileId: UNKNOWN_USAGE_DIMENSION,
+        userId: actorUserId,
+      };
+    }
+
+    const record = await this.getSessionRecordForOrg(
+      orgId,
+      normalizedSessionId
+    );
+    if (!record) {
+      throw new AtlasApiError("Session not found", 404);
+    }
+
+    const sessionUserId = record.userId?.trim();
+    if (!sessionUserId || isServiceAccountUserId(sessionUserId)) {
+      throw new PrincipalRequiredError(
+        "Session is missing a canonical user principal."
+      );
+    }
+    if (
+      !actor?.allowPersistedSessionPrincipal &&
+      actorUserId !== sessionUserId
+    ) {
+      throw new AtlasApiError("Session not found", 404);
+    }
+
+    const channel = parseAgentChannel(record.channel);
+    if (actor?.expectedChannel && channel !== actor.expectedChannel) {
+      throw new AtlasApiError("Session not found", 404);
+    }
+    if (actor?.allowPersistedSessionPrincipal) {
+      const isExternalChannel =
+        channel === "discord" ||
+        channel === "telegram" ||
+        channel === "whatsapp";
+      const [member, profile] = await Promise.all([
+        this.db.getOrgMember(orgId, sessionUserId),
+        this.db.getProfileForOrg(record.profileId, orgId),
+      ]);
+      if (
+        !(isExternalChannel && member) ||
+        member.role === "viewer" ||
+        !profile ||
+        profile.isSuper
+      ) {
+        throw new AtlasApiError("Session not found", 404);
+      }
+    }
+
+    return {
+      channel: channel ?? UNKNOWN_USAGE_DIMENSION,
+      profileId: record.profileId,
+      userId: sessionUserId,
+    };
   }
 
   async draftAutomation(orgId: string, prompt: string, channel: AgentChannel) {
@@ -3959,7 +4332,12 @@ export class AgentService {
   private async transcribeAudioWithConfig(
     input: TranscribeAudioRequest,
     config: UserConfig | null,
-    attribution?: { orgId?: string | null; userId?: string | null }
+    attribution?: {
+      channel?: AgentChannel | typeof UNKNOWN_USAGE_DIMENSION;
+      orgId?: string | null;
+      profileId?: string | null;
+      userId?: string | null;
+    }
   ): Promise<TranscribeAudioResponse> {
     const data = input.data?.trim();
     const mediaType = input.mediaType?.trim();
@@ -3995,9 +4373,14 @@ export class AgentService {
       // is the Atlas-observed signal.
       this.recordCapabilityUsageDaily({
         capability: PROVIDER_CAPABILITY_IDS.audioTranscription,
+        channel:
+          attribution?.channel === UNKNOWN_USAGE_DIMENSION
+            ? undefined
+            : attribution?.channel,
         instance: selection.instance,
         modelId: selection.model,
         orgId,
+        profileId: attribution?.profileId,
         userId: attribution?.userId,
       });
     }
@@ -4008,7 +4391,11 @@ export class AgentService {
     input: GenerateImageRequest,
     config: UserConfig | null,
     orgId?: string | null,
-    attribution?: { userId?: string | null }
+    attribution?: {
+      channel?: AgentChannel | typeof UNKNOWN_USAGE_DIMENSION;
+      profileId?: string | null;
+      userId?: string | null;
+    }
   ): Promise<GenerateImageResponse> {
     const prompt = input.prompt?.trim();
     if (!prompt) {
@@ -4041,9 +4428,14 @@ export class AgentService {
     if (orgId) {
       this.recordCapabilityUsageDaily({
         capability: PROVIDER_CAPABILITY_IDS.imageGeneration,
+        channel:
+          attribution?.channel === UNKNOWN_USAGE_DIMENSION
+            ? undefined
+            : attribution?.channel,
         instance: selection.instance,
         modelId: result.model,
         orgId,
+        profileId: attribution?.profileId,
         usage,
         userId: attribution?.userId,
       });
@@ -5214,6 +5606,7 @@ export class AgentService {
   ): Promise<AgentChatSession> {
     let userConfig = await this.getOrgUserConfig(orgId);
     const profile = await this.requireProfile(orgId, profileId);
+    const isGuestPrincipal = isChannelGuestUserId(userId);
     const selectedModel = modelOverride ?? profile.model;
     const decodedSelection = decodeStoredModelSelection(selectedModel);
     const selectedProviderId =
@@ -5230,16 +5623,18 @@ export class AgentService {
     const toolConfigurationVersion =
       this.sessionInvalidationVersions.get(orgId) ?? 0;
     const includeSkillManageTools = channel === "web" || channel === "cli";
-    let tools = await this.resolveProfileTools(
-      profile,
-      {
-        includeSkillManageTools,
-        sessionId,
-        userId,
-      },
-      userConfig
+    let tools = await resolveExecutableToolsForPrincipal(userId, () =>
+      this.resolveProfileTools(
+        profile,
+        {
+          includeSkillManageTools,
+          sessionId,
+          userId,
+        },
+        userConfig
+      )
     );
-    if (channel === "discord") {
+    if (channel === "discord" && !isGuestPrincipal) {
       tools = [...tools, ...createSendDiscordArtifactTools()];
     }
     const knowledgeBaseSearchAvailable = tools.some(
@@ -5262,13 +5657,14 @@ export class AgentService {
     // keeps whatever they configured.
     const tokenOptimizerEnabled = (await this.db.getWorkspaceSettings(orgId))
       ?.tokenOptimizerEnabled;
-    const resolvedSystemPrompt = appendRuntimeProfileRules(
-      profile.isSuper,
-      systemPrompt
-    );
+    const resolvedSystemPrompt = isGuestPrincipal
+      ? systemPrompt
+      : appendRuntimeProfileRules(profile.isSuper, systemPrompt);
     const initialHistory = await loadSessionHistory(this.db, sessionId);
     const userTimezone = userConfig?.timezone ?? DEFAULT_TIMEZONE;
-    const userContext = await this.loadUserContextForUser(orgId, userId);
+    const userContext = isGuestPrincipal
+      ? undefined
+      : await this.loadUserContextForUser(orgId, userId);
     const compaction = this.resolveCompactionConfig(
       profile,
       userConfig,
@@ -5310,6 +5706,7 @@ export class AgentService {
           );
           this.recordCapabilityUsageDaily({
             capability: PROVIDER_CAPABILITY_IDS.imageUnderstanding,
+            channel,
             instance,
             modelId: model,
             orgId,
@@ -5320,15 +5717,16 @@ export class AgentService {
         },
         registry: this.providerAdapterRegistry,
       });
-    const forbidProfileSkillMarkdownWrites =
-      await this.shouldForbidProfileSkillMarkdownWrites(profile.id);
+    const forbidProfileSkillMarkdownWrites = isGuestPrincipal
+      ? true
+      : await this.shouldForbidProfileSkillMarkdownWrites(profile.id);
     const expandLearnCommand = shouldExpandLearnCommand(channel, tools);
     let forceSkillWriteProposal = false;
 
     const session = harness.createChatSession({
       channel,
       compaction,
-      enableToolLoop: true,
+      enableToolLoop: tools.length > 0,
       initialHistory,
       preprocessHistoryForTurn: async (messages) => {
         if (primarySupportsVision !== false) {
@@ -5399,7 +5797,7 @@ export class AgentService {
       resolvePromptContext: async (context) => {
         const parts: string[] = [];
 
-        if (userId && context?.userMessage?.trim()) {
+        if (!isGuestPrincipal && userId && context?.userMessage?.trim()) {
           try {
             const memories = await this.memoryService.searchVisibleMemories(
               orgId,
@@ -5446,7 +5844,7 @@ export class AgentService {
           parts.push(todoContext.trim());
         }
 
-        if (this.composioService && userId) {
+        if (!isGuestPrincipal && this.composioService && userId) {
           const composioContext =
             await this.composioService.formatProfileConnectionsContext(
               orgId,
@@ -5459,7 +5857,11 @@ export class AgentService {
           }
         }
 
-        if (this.skillsService && context?.userMessage?.trim()) {
+        if (
+          !isGuestPrincipal &&
+          this.skillsService &&
+          context?.userMessage?.trim()
+        ) {
           const skillContext =
             await this.skillsService.formatMatchedSkillsForPrompt(
               orgId,
@@ -5514,6 +5916,7 @@ export class AgentService {
         recordTurnUsage: this.turnUsageRecorderFor(
           orgId,
           this.buildUsageAttribution({
+            channel,
             modelSelection: selectedModel,
             orgId,
             profileId,
@@ -5665,12 +6068,16 @@ export class AgentService {
     usageContext?: import("./skills-service").SkillUsageRecordingContext,
     userId?: string | null
   ): Promise<{ systemPrompt: string; soulActive: boolean }> {
+    const isGuestPrincipal = isChannelGuestUserId(userId);
     const stack = await resolveSoulStackForProfile(orgId, profileId);
     let systemPrompt = stack
-      ? composeSoulSystemPrompt(stack, { profilePrompt })
+      ? composeSoulSystemPrompt(stack, {
+          includeMemory: !isGuestPrincipal,
+          profilePrompt,
+        })
       : profilePrompt;
 
-    if (this.skillsService) {
+    if (!isGuestPrincipal && this.skillsService) {
       const skillsCatalog = await this.skillsService.composeCatalogForProfile(
         orgId,
         profileId,
@@ -5692,13 +6099,15 @@ export class AgentService {
       }
     }
 
-    const kbCatalog = await composeKnowledgeBaseCatalog(orgId, profileId);
+    const kbCatalog = isGuestPrincipal
+      ? ""
+      : await composeKnowledgeBaseCatalog(orgId, profileId);
 
     if (kbCatalog.trim()) {
       systemPrompt = `${systemPrompt.trim()}\n\n${kbCatalog.trim()}`;
     }
 
-    if (orgRole !== "viewer") {
+    if (!isGuestPrincipal && orgRole !== "viewer") {
       const orgMemorySummary =
         await this.getOrgMemoryService().getSummary(orgId);
       systemPrompt = appendOrgMemorySection(
@@ -5708,24 +6117,26 @@ export class AgentService {
       );
     }
 
-    try {
-      const activeMemories = await this.memoryService.listVisibleMemories(
-        orgId,
-        {
-          limit: 10,
-          profileId,
-          userId,
-        }
-      );
-      if (activeMemories.length > 0) {
-        const memLines = activeMemories.map(
-          (m) =>
-            `- [${m.scope.toUpperCase()}${m.subject ? `: ${m.subject}` : ""}] ${m.content}`
+    if (!isGuestPrincipal) {
+      try {
+        const activeMemories = await this.memoryService.listVisibleMemories(
+          orgId,
+          {
+            limit: 10,
+            profileId,
+            userId,
+          }
         );
-        systemPrompt = `${systemPrompt.trim()}\n\n## Active Scoped Memories\n${memLines.join("\n")}`;
+        if (activeMemories.length > 0) {
+          const memLines = activeMemories.map(
+            (m) =>
+              `- [${m.scope.toUpperCase()}${m.subject ? `: ${m.subject}` : ""}] ${m.content}`
+          );
+          systemPrompt = `${systemPrompt.trim()}\n\n## Active Scoped Memories\n${memLines.join("\n")}`;
+        }
+      } catch {
+        // Non-blocking
       }
-    } catch {
-      // Non-blocking
     }
 
     return {
