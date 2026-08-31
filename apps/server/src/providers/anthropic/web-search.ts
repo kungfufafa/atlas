@@ -30,6 +30,25 @@ import {
 const MAX_PAUSE_CONTINUATIONS = 5;
 const WEB_SEARCH_MAX_USES = 5;
 
+function filterAnthropicProviderContent(
+  providerContent: unknown[] | undefined,
+  allowedToolUseIds: Set<string>
+): unknown[] | undefined {
+  if (!providerContent?.length) {
+    return providerContent;
+  }
+
+  const filtered = providerContent.filter((block) => {
+    const record = readRecord(block);
+    if (record.type !== "tool_use") {
+      return true;
+    }
+    return typeof record.id === "string" && allowedToolUseIds.has(record.id);
+  });
+
+  return filtered.length > 0 ? filtered : undefined;
+}
+
 export function buildAnthropicTools(
   tools: LlmToolDefinition[] | undefined,
   webSearch: boolean
@@ -83,8 +102,15 @@ export async function toAnthropicMessages(
     }
 
     if (remainingToolCalls.length !== rawMessage.toolCalls.length) {
+      const allowedToolUseIds = new Set(
+        remainingToolCalls.map((call) => call.id)
+      );
       normalizedMessages.push({
         ...rawMessage,
+        providerContent: filterAnthropicProviderContent(
+          rawMessage.providerContent,
+          allowedToolUseIds
+        ),
         toolCalls: remainingToolCalls,
       });
       continue;

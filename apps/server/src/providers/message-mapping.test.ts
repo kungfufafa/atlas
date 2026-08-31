@@ -107,6 +107,56 @@ describe("provider user content mapping", () => {
     ]);
   });
 
+  test("toAnthropicMessages strips unmatched tool_use from providerContent replay", async () => {
+    const result = await toAnthropicMessages([
+      { content: "Look this up", role: "user" },
+      {
+        content: "",
+        providerContent: [
+          { thinking: "need both", type: "thinking" },
+          {
+            id: "call_keep",
+            input: { q: "keep" },
+            name: "lookup",
+            type: "tool_use",
+          },
+          {
+            id: "call_drop",
+            input: { q: "drop" },
+            name: "lookup",
+            type: "tool_use",
+          },
+        ],
+        providerContentProvenance: {
+          protocol: "anthropic-messages",
+          provider: "anthropic",
+        },
+        role: "assistant",
+        toolCalls: [
+          { arguments: { q: "keep" }, id: "call_keep", name: "lookup" },
+          { arguments: { q: "drop" }, id: "call_drop", name: "lookup" },
+        ],
+      },
+      {
+        content: '{"result":"ok"}',
+        role: "tool",
+        toolCallId: "call_keep",
+      },
+      { content: "Summarize", role: "user" },
+    ]);
+
+    const assistant = result.find((message) => message.role === "assistant");
+    expect(assistant?.content).toEqual([
+      { thinking: "need both", type: "thinking" },
+      {
+        id: "call_keep",
+        input: { q: "keep" },
+        name: "lookup",
+        type: "tool_use",
+      },
+    ]);
+  });
+
   test("toAnthropicMessages drops assistant tool_use without tool results", async () => {
     const result = await toAnthropicMessages([
       { content: "Look this up", role: "user" },
