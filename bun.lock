@@ -139,7 +139,7 @@
         "@atlas/core": "workspace:*",
         "@atlas/db": "workspace:*",
         "@composio/core": "^0.14.1",
-        "@countrystatecity/timezones": "^1.0.5",
+        "@countrystatecity/timezones": "^1.0.9",
         "@google/genai": "^2.7.0",
         "@hono/zod-openapi": "^1.4.0",
         "@modelcontextprotocol/sdk": "^1.29.0",
@@ -504,7 +504,7 @@
 
     "@composio/json-schema-to-zod": ["@composio/json-schema-to-zod@0.2.1", "", { "peerDependencies": { "zod": ">=3.25.76 <5" } }, "sha512-ezIaQoXdqWJXFaI8+gTShpj8YZcRdSnLkA1hgzx1+kn2Bi1SXOtXjghoQDy2ZBYIOCefRXGmyaPl52+idjS9wA=="],
 
-    "@countrystatecity/timezones": ["@countrystatecity/timezones@1.0.5", "", {}, "sha512-jtOTk/KCJ/Rn+lhvM5+ASpDJ1cMcBU/D7bP5ymEf8Ib/gpJOFfHGE9Djfur+8DxZteBp3lGuhzfpak1SQPnMQg=="],
+    "@countrystatecity/timezones": ["@countrystatecity/timezones@1.0.9", "", {}, "sha512-rihRHZrEpoHumDQcJFDUf0pvpxmafNZNreGkylPX5XikHrM+04MuOVQmrOTP0+gOTw4FLd4sIPAyZ6TWzmHIKg=="],
 
     "@crosscopy/clipboard": ["@crosscopy/clipboard@0.3.6", "", { "optionalDependencies": { "@crosscopy/clipboard-darwin-arm64": "0.3.6", "@crosscopy/clipboard-darwin-x64": "0.3.6", "@crosscopy/clipboard-linux-x64-gnu": "0.3.6", "@crosscopy/clipboard-win32-x64-msvc": "0.3.6" } }, "sha512-h/LlfI5t/xsxLr63g3Os0mjoeITj7/8x8Goy5PZ+f4bk3DDgc1r5VXO462U3e8/+LjHixtvS9sTk/MoKEwSutw=="],
 
