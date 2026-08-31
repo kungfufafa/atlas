@@ -80,7 +80,7 @@
     "mailparser": "^3.9.11",
     "marked": "^18.0.6",
     "nanoid": "^5.1.11",
-    "nodemailer": "^9.0.1",
+    "nodemailer": "^9.0.6",
     "pptxgenjs": "^4.0.1",
     "rehype-parse": "^9.0.1",
     "rehype-remark": "^10.0.1",
