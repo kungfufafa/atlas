@@ -14,9 +14,9 @@
   },
   "dependencies": {
     "@paper-design/shaders-react": "0.0.77",
-    "fumadocs-core": "^16.0.0",
+    "fumadocs-core": "^16.15.4",
     "fumadocs-mdx": "^14.0.0",
-    "fumadocs-ui": "^16.0.0",
+    "fumadocs-ui": "^16.15.4",
     "hugeicons-react": "^0.4.0",
     "next": "^16.3.3",
     "react": "^19.0.0",
