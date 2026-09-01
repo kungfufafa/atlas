@@ -25,6 +25,10 @@ export default function ChatSessionScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
+          headerTitleStyle: {
+            fontFamily: "InstrumentSans_600SemiBold",
+            fontSize: 17,
+          },
           title: session
             ? displaySessionTitle(session.title)
             : (profile?.name ?? "Chat"),

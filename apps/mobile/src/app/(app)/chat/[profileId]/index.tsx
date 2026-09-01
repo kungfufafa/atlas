@@ -1,9 +1,10 @@
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { ChatThread } from "@/features/chat/chat-thread";
 import { useProfilesQuery } from "@/hooks/use-profiles";
 
 export default function NewChatScreen() {
   const params = useLocalSearchParams<{ profileId: string }>();
+  const router = useRouter();
   const profileId = String(params.profileId);
   const profilesQuery = useProfilesQuery();
   const profile = (profilesQuery.data ?? []).find(
@@ -15,10 +16,23 @@ export default function NewChatScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: profile?.name ?? "New chat",
+          headerTitleStyle: {
+            fontFamily: "InstrumentSans_600SemiBold",
+            fontSize: 17,
+          },
+          title: "Chat",
         }}
       />
-      <ChatThread profileId={profileId} />
+      <ChatThread
+        onSelectProfile={(selectedProfileId) => {
+          if (selectedProfileId !== profileId) {
+            router.replace(`/chat/${selectedProfileId}`);
+          }
+        }}
+        profileId={profileId}
+        profileName={profile?.name}
+        profiles={profilesQuery.data ?? []}
+      />
     </>
   );
 }

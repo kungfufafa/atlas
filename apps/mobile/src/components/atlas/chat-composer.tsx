@@ -87,11 +87,13 @@ function ChatComposer({
   isSending,
   onSend,
   onStop,
+  sticky = true,
 }: {
   disabled?: boolean;
   isSending: boolean;
   onSend: (input: ChatSendInput) => void;
   onStop: () => void;
+  sticky?: boolean;
 }) {
   const { resolved } = useAppTheme();
   const colors = NAV_THEME[resolved].colors;
@@ -99,6 +101,7 @@ function ChatComposer({
   const [images, setImages] = useState<ImageAttachment[]>([]);
   const [documents, setDocuments] = useState<DocumentAttachment[]>([]);
   const attachmentCount = images.length + documents.length;
+  const canAttach = !disabled && attachmentCount < MAX_ATTACHMENTS_PER_MESSAGE;
   const canSend = !disabled && (text.trim().length > 0 || attachmentCount > 0);
 
   const submit = () => {
@@ -163,115 +166,127 @@ function ChatComposer({
     ]);
   };
 
-  return (
-    <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
-      {attachmentCount > 0 ? (
-        <View className="flex-row flex-wrap gap-2 px-4 pt-2">
-          {images.map((image, index) => (
-            <Pressable
-              accessibilityLabel={`Remove photo ${index + 1}`}
-              accessibilityRole="button"
-              className="rounded-full bg-secondary px-2.5 py-1"
-              key={`image-${index}`}
-              onPress={() => {
-                setImages((current) =>
-                  current.filter((_, currentIndex) => currentIndex !== index)
-                );
-              }}
-            >
-              <Text className="text-muted-foreground text-xs">Photo ×</Text>
-            </Pressable>
-          ))}
-          {documents.map((document, index) => (
-            <Pressable
-              accessibilityLabel={`Remove ${document.filename}`}
-              accessibilityRole="button"
-              className="rounded-full bg-secondary px-2.5 py-1"
-              key={`${document.filename}-${index}`}
-              onPress={() => {
-                setDocuments((current) =>
-                  current.filter((_, currentIndex) => currentIndex !== index)
-                );
-              }}
-            >
-              <Text className="text-muted-foreground text-xs">
-                {document.filename} ×
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
-      <View className="flex-row items-end gap-2 bg-background px-3 pt-2 pb-2">
-        <Pressable
-          accessibilityLabel="Attach"
-          accessibilityRole="button"
-          className="mb-0.5 h-9 w-9 items-center justify-center"
-          disabled={disabled || attachmentCount >= MAX_ATTACHMENTS_PER_MESSAGE}
-          onPress={() => {
-            void pickAttachmentKind()
-              .then(async (kind) => {
-                if (kind === "photo") {
-                  await attachPhoto();
-                  return;
-                }
-                if (kind === "file") {
-                  await attachFile();
-                }
-              })
-              .catch((error: unknown) => {
-                Alert.alert(
-                  "Could not attach",
-                  error instanceof Error ? error.message : ""
-                );
-              });
-          }}
-        >
-          <HugeiconsIcon
-            color={colors.text}
-            icon={Attachment01Icon}
-            size={20}
-          />
-        </Pressable>
-        <View className="min-h-9 flex-1 flex-row items-end rounded-3xl bg-secondary px-3 py-1">
-          <TextInput
-            className="max-h-32 min-h-7 flex-1 py-1 native:text-base text-foreground"
-            editable={!disabled}
-            multiline
-            onChangeText={setText}
-            placeholder="Do anything..."
-            placeholderClassName="text-muted-foreground"
-            textAlignVertical="center"
-            value={text}
-          />
+  const content = (
+    <View className="bg-background px-4 py-3">
+      <View className="rounded-xl border border-border bg-card p-2.5 shadow-sm">
+        {attachmentCount > 0 ? (
+          <View className="mb-2 flex-row flex-wrap gap-2 border-border border-b pb-2">
+            {images.map((_, index) => (
+              <Pressable
+                accessibilityLabel={`Remove photo ${index + 1}`}
+                accessibilityRole="button"
+                className="rounded-full bg-secondary px-2.5 py-1"
+                key={`image-${index}`}
+                onPress={() => {
+                  setImages((current) =>
+                    current.filter((_, currentIndex) => currentIndex !== index)
+                  );
+                }}
+              >
+                <Text className="text-muted-foreground text-xs">Photo ×</Text>
+              </Pressable>
+            ))}
+            {documents.map((document, index) => (
+              <Pressable
+                accessibilityLabel={`Remove ${document.filename}`}
+                accessibilityRole="button"
+                className="rounded-full bg-secondary px-2.5 py-1"
+                key={`${document.filename}-${index}`}
+                onPress={() => {
+                  setDocuments((current) =>
+                    current.filter((_, currentIndex) => currentIndex !== index)
+                  );
+                }}
+              >
+                <Text className="text-muted-foreground text-xs">
+                  {document.filename} ×
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+        <TextInput
+          accessibilityLabel="Message"
+          className="max-h-32 min-h-11 px-1 py-1.5 font-sans text-base text-foreground leading-6"
+          editable={!disabled}
+          multiline
+          onChangeText={setText}
+          placeholder="Do anything..."
+          placeholderClassName="text-muted-foreground"
+          textAlignVertical="center"
+          value={text}
+        />
+        <View className="mt-1.5 flex-row items-center justify-between">
+          <Pressable
+            accessibilityLabel="Attach"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !canAttach }}
+            className={cn(
+              "h-11 w-11 items-center justify-center rounded-full bg-secondary",
+              !canAttach && "opacity-40"
+            )}
+            disabled={!canAttach}
+            onPress={() => {
+              void pickAttachmentKind()
+                .then(async (kind) => {
+                  if (kind === "photo") {
+                    await attachPhoto();
+                    return;
+                  }
+                  if (kind === "file") {
+                    await attachFile();
+                  }
+                })
+                .catch((error: unknown) => {
+                  Alert.alert(
+                    "Could not attach",
+                    error instanceof Error ? error.message : ""
+                  );
+                });
+            }}
+          >
+            <HugeiconsIcon
+              color={colors.text}
+              icon={Attachment01Icon}
+              size={18}
+            />
+          </Pressable>
           {isSending && !disabled ? (
             <Pressable
               accessibilityLabel="Stop"
               accessibilityRole="button"
-              className="mb-0.5 h-7 w-7 items-center justify-center rounded-full bg-destructive"
+              className="h-11 w-11 items-center justify-center rounded-full bg-destructive"
               onPress={onStop}
             >
-              <HugeiconsIcon color="#fff" icon={Cancel01Icon} size={12} />
+              <HugeiconsIcon color="#fff" icon={Cancel01Icon} size={14} />
             </Pressable>
           ) : (
             <Pressable
               accessibilityLabel="Send"
               accessibilityRole="button"
+              accessibilityState={{ disabled: !canSend }}
               className={cn(
-                "mb-0.5 h-7 w-7 items-center justify-center rounded-full",
-                canSend ? "bg-primary" : "opacity-0"
+                "h-11 w-11 items-center justify-center rounded-full bg-primary",
+                !canSend && "opacity-40"
               )}
               disabled={!canSend}
               onPress={submit}
             >
-              <HugeiconsIcon
-                color={colors.background}
-                icon={SentIcon}
-                size={14}
-              />
+              <HugeiconsIcon color="#fff" icon={SentIcon} size={15} />
             </Pressable>
           )}
         </View>
       </View>
+    </View>
+  );
+
+  if (!sticky) {
+    return content;
+  }
+
+  return (
+    <KeyboardStickyView offset={{ closed: 0, opened: 0 }}>
+      {content}
     </KeyboardStickyView>
   );
 }

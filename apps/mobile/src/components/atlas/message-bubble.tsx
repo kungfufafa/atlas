@@ -19,13 +19,16 @@ function MessageBubble({
       <View
         className={cn(
           "gap-2",
-          isUser ? "max-w-[95%] items-end" : "w-full items-stretch"
+          isUser ? "max-w-[88%] items-end" : "w-full items-stretch"
         )}
       >
         {item.content.trim() ? (
           isUser ? (
             <View className="rounded-lg bg-secondary px-4 py-3">
-              <Text className="text-foreground" selectable>
+              <Text
+                className="text-foreground text-sm leading-[22px]"
+                selectable
+              >
                 {item.content}
                 {item.attachmentCount
                   ? `\n${item.attachmentCount} attachment${item.attachmentCount === 1 ? "" : "s"}`
@@ -33,7 +36,10 @@ function MessageBubble({
               </Text>
             </View>
           ) : (
-            <MarkdownView text={item.content} />
+            <MarkdownView
+              text={item.content}
+              textClassName="text-sm leading-[22px]"
+            />
           )
         ) : item.streaming ? (
           <Text className="px-1 text-muted-foreground text-sm">Thinking…</Text>

@@ -1,5 +1,5 @@
 import { Alert, View } from "react-native";
-import { Text } from "@/components/ui/text";
+import { Text, TextClassContext } from "@/components/ui/text";
 import {
   parseMarkdownBlocks,
   parseMarkdownInline,
@@ -13,7 +13,7 @@ function InlineText({ className, text }: { className?: string; text: string }) {
       {parseMarkdownInline(text).map((part, index) => {
         if (part.type === "bold") {
           return (
-            <Text className="font-semibold" key={index} selectable>
+            <Text className="font-heading" key={index} selectable>
               {part.text}
             </Text>
           );
@@ -62,57 +62,71 @@ function InlineText({ className, text }: { className?: string; text: string }) {
   );
 }
 
-function MarkdownView({ text }: { text: string }) {
+function MarkdownView({
+  text,
+  textClassName,
+}: {
+  text: string;
+  textClassName?: string;
+}) {
   const blocks = parseMarkdownBlocks(text);
 
   return (
-    <View className="gap-2">
-      {blocks.map((block, index) => {
-        if (block.type === "code") {
-          return (
-            <Text
-              className="font-mono text-xs"
-              key={`code-${index}`}
-              selectable
-            >
-              {block.text}
-            </Text>
-          );
-        }
-        if (block.type === "heading") {
-          return (
-            <InlineText
-              className={cn(
-                "font-semibold",
-                block.level === 1 ? "text-lg" : "text-base"
-              )}
-              key={`h-${index}`}
-              text={block.text}
-            />
-          );
-        }
-        if (block.type === "quote") {
-          return (
-            <View className="border-border border-l-2 pl-2" key={`q-${index}`}>
-              <InlineText className="text-muted-foreground" text={block.text} />
-            </View>
-          );
-        }
-        if (block.type === "list") {
-          return (
-            <View className="gap-1" key={`l-${index}`}>
-              {block.items.map((item, itemIndex) => (
+    <TextClassContext.Provider value={textClassName}>
+      <View className="gap-2">
+        {blocks.map((block, index) => {
+          if (block.type === "code") {
+            return (
+              <Text
+                className="font-mono text-xs"
+                key={`code-${index}`}
+                selectable
+              >
+                {block.text}
+              </Text>
+            );
+          }
+          if (block.type === "heading") {
+            return (
+              <InlineText
+                className={cn(
+                  "font-heading",
+                  block.level === 1 ? "text-lg" : "text-base"
+                )}
+                key={`h-${index}`}
+                text={block.text}
+              />
+            );
+          }
+          if (block.type === "quote") {
+            return (
+              <View
+                className="border-border border-l-2 pl-2"
+                key={`q-${index}`}
+              >
                 <InlineText
-                  key={`li-${itemIndex}`}
-                  text={`${block.ordered ? `${itemIndex + 1}.` : "•"} ${item}`}
+                  className="text-muted-foreground"
+                  text={block.text}
                 />
-              ))}
-            </View>
-          );
-        }
-        return <InlineText key={`p-${index}`} text={block.text} />;
-      })}
-    </View>
+              </View>
+            );
+          }
+          if (block.type === "list") {
+            return (
+              <View className="gap-1" key={`l-${index}`}>
+                {block.items.map((item, itemIndex) => (
+                  <InlineText
+                    key={`li-${itemIndex}`}
+                    text={`${block.ordered ? `${itemIndex + 1}.` : "•"} ${item}`}
+                  />
+                ))}
+              </View>
+            );
+          }
+          return <InlineText key={`p-${index}`} text={block.text} />;
+        })}
+      </View>
+    </TextClassContext.Provider>
   );
 }
 
