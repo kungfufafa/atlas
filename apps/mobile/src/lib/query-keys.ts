@@ -17,6 +17,7 @@ export const queryKeys = {
   orgMemoryProposals: (orgId: string) =>
     ["org-memory-proposals", orgId] as const,
   profile: (profileId: string) => ["profile", profileId] as const,
+  profileAvatar: (profileId: string) => ["profile-avatar", profileId] as const,
   profileHistory: (profileId: string) =>
     ["profile-history", profileId] as const,
   profiles: ["profiles"] as const,

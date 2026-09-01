@@ -25,6 +25,7 @@ import {
   assertDocumentSize,
   compressImageAttachment,
 } from "@/lib/compress-image";
+import { resolvePickedImageMediaType } from "@/lib/image-media-type";
 import { assertPickedDocumentSize } from "@/lib/picked-file-size";
 import { NAV_THEME } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -132,7 +133,10 @@ function ChatComposer({
     const compressed = await compressImageAttachment({
       data: asset.base64,
       height: asset.height,
-      mediaType: asset.mimeType ?? "image/jpeg",
+      mediaType: resolvePickedImageMediaType(
+        asset.base64,
+        asset.mimeType ?? "image/jpeg"
+      ),
       uri: asset.uri,
       width: asset.width,
     });

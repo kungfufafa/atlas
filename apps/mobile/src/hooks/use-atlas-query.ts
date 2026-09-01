@@ -65,7 +65,12 @@ export function useServerQueryClient(): ServerQueryClient {
 export function useAtlasQuery<T>(
   queryKey: QueryKey,
   queryFn: (client: AtlasClient) => Promise<T>,
-  options?: { enabled?: boolean; refetchInterval?: number }
+  options?: {
+    enabled?: boolean;
+    gcTime?: number;
+    refetchInterval?: number;
+    staleTime?: number;
+  }
 ) {
   const client = useReadyAtlasClient();
   const orgKey = useOrgKey();
@@ -73,6 +78,7 @@ export function useAtlasQuery<T>(
 
   return useQuery({
     enabled: Boolean(client) && (options?.enabled ?? true),
+    ...(options?.gcTime === undefined ? {} : { gcTime: options.gcTime }),
     queryFn: () => {
       if (!client) {
         throw new Error("Not connected.");
@@ -81,6 +87,7 @@ export function useAtlasQuery<T>(
     },
     queryKey: [...serverQueryKey, "org", orgKey],
     refetchInterval: options?.refetchInterval,
+    staleTime: options?.staleTime,
   });
 }
 

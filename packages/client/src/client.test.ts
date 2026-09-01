@@ -659,6 +659,40 @@ test("readProfileArtifactContent fetches artifact bytes with inline query", asyn
   expect(new TextDecoder().decode(result.data)).toBe("# Report");
 });
 
+test("getProfileAvatar fetches authenticated avatar bytes", async () => {
+  const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
+    [];
+  const client = createClient({
+    authToken: "local-auth-token",
+    baseUrl: "http://localhost:4310",
+    fetch: async (input, init) => {
+      fetchCalls.push({ init, input });
+      return new Response(new Uint8Array([137, 80, 78, 71]), {
+        headers: {
+          "Content-Type": "image/png",
+        },
+      });
+    },
+    orgId: "org_test",
+  });
+
+  const result = await client.getProfileAvatar(
+    "profile / one",
+    "2026-09-01T09:00:00.000Z"
+  );
+
+  expect(fetchCalls[0]!.input.toString()).toBe(
+    "http://localhost:4310/v1/profiles/profile%20%2F%20one/avatar?v=2026-09-01T09%3A00%3A00.000Z"
+  );
+  expect(fetchCalls[0]!.init?.cache).toBe("no-store");
+  const headers = new Headers(fetchCalls[0]!.init?.headers);
+  expect(headers.get("Authorization")).toBe("Bearer local-auth-token");
+  expect(headers.get("X-Org-Id")).toBe("org_test");
+  expect(headers.get("Content-Type")).toBeNull();
+  expect(result.contentType).toBe("image/png");
+  expect(Array.from(new Uint8Array(result.data))).toEqual([137, 80, 78, 71]);
+});
+
 test("listProfileArtifacts scopes complete folder metadata separately from pagination", async () => {
   const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
     [];

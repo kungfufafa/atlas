@@ -931,6 +931,23 @@ export class AtlasClient {
     });
   }
 
+  async getProfileAvatar(
+    profileId: string,
+    revision?: string
+  ): Promise<{ contentType: string; data: ArrayBuffer }> {
+    const version = revision ? `?v=${encodeURIComponent(revision)}` : "";
+    const response = await this.fetchRaw(
+      `/v1/profiles/${encodeURIComponent(profileId)}/avatar${version}`,
+      { cache: "no-store" }
+    );
+
+    return {
+      contentType:
+        response.headers.get("Content-Type") ?? "application/octet-stream",
+      data: await response.arrayBuffer(),
+    };
+  }
+
   async uploadProfileAvatar(
     profileId: string,
     attachment: ImageAttachment

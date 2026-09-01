@@ -552,18 +552,20 @@ export class ProfileService {
     profileId: string,
     attachment: ImageAttachment
   ): Promise<ProfileResponse> {
-    const profile = await this.requireProfile(orgId, profileId);
+    return withProfileSoulMutationLock(orgId, profileId, async () => {
+      const profile = await this.requireProfile(orgId, profileId);
 
-    await validateDecodedImageAttachments([attachment]);
-    await saveProfileAvatar(orgId, profileId, attachment);
+      await validateDecodedImageAttachments([attachment]);
+      await saveProfileAvatar(orgId, profileId, attachment);
 
-    const now = new Date().toISOString();
-    await this.db.upsertProfile({
-      ...profile,
-      updatedAt: now,
+      const now = new Date().toISOString();
+      await this.db.upsertProfile({
+        ...profile,
+        updatedAt: now,
+      });
+
+      return this.getProfile(orgId, profileId);
     });
-
-    return this.getProfile(orgId, profileId);
   }
 
   async getProfileAvatar(
@@ -594,17 +596,19 @@ export class ProfileService {
   }
 
   async deleteProfileAvatar(orgId: string, profileId: string): Promise<void> {
-    const profile = await this.requireProfile(orgId, profileId);
-    const removed = await deleteProfileAvatar(orgId, profileId);
+    await withProfileSoulMutationLock(orgId, profileId, async () => {
+      const profile = await this.requireProfile(orgId, profileId);
+      const removed = await deleteProfileAvatar(orgId, profileId);
 
-    if (!removed) {
-      throw new AtlasApiError("Profile avatar not found.", 404);
-    }
+      if (!removed) {
+        throw new AtlasApiError("Profile avatar not found.", 404);
+      }
 
-    const now = new Date().toISOString();
-    await this.db.upsertProfile({
-      ...profile,
-      updatedAt: now,
+      const now = new Date().toISOString();
+      await this.db.upsertProfile({
+        ...profile,
+        updatedAt: now,
+      });
     });
   }
 

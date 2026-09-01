@@ -66,3 +66,26 @@ test("invalidates only the server that started a mutation", async () => {
   expect(queryClient.getQueryState(serverAKey)?.isInvalidated).toBe(true);
   expect(queryClient.getQueryState(serverBKey)?.isInvalidated).toBe(false);
 });
+
+test("removes only the active server's matching cached resource", () => {
+  const queryClient = new QueryClient();
+  const serverAKey = [
+    ...withServerScope(["profile-avatar", "profile-1"], "server-a"),
+    "org",
+    "org-1",
+  ];
+  const serverBKey = [
+    ...withServerScope(["profile-avatar", "profile-1"], "server-b"),
+    "org",
+    "org-1",
+  ];
+  queryClient.setQueryData(serverAKey, "avatar-a");
+  queryClient.setQueryData(serverBKey, "avatar-b");
+
+  createServerQueryClient(queryClient, "server-a").removeQueries({
+    queryKey: ["profile-avatar", "profile-1"],
+  });
+
+  expect(queryClient.getQueryData(serverAKey)).toBeUndefined();
+  expect(queryClient.getQueryData(serverBKey)).toBe("avatar-b");
+});

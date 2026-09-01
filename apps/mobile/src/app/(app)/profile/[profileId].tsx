@@ -1,11 +1,14 @@
-import type { ProfileChangeEvent } from "@atlas/core/contract";
-import { Chat01Icon } from "@hugeicons/core-free-icons";
+import type { ImageAttachment, ProfileChangeEvent } from "@atlas/core/contract";
+import { Camera01Icon, Chat01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
+import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
+import * as ImagePicker from "expo-image-picker";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
 import { ActionCluster } from "@/components/atlas/action-cluster";
 import { ListRow } from "@/components/atlas/list-row";
+import { ProfileAvatar } from "@/components/atlas/profile-avatar";
 import { QueryState } from "@/components/atlas/query-state";
 import { Screen } from "@/components/atlas/screen";
 import { SectionHeading } from "@/components/atlas/section-heading";
@@ -33,6 +36,10 @@ import {
 } from "@/hooks/use-workspace";
 import { confirmDestructive } from "@/lib/confirm";
 import { showMutationError } from "@/lib/mutation-error";
+import {
+  profileAvatarResizeActions,
+  shouldPreserveAvatarTransparency,
+} from "@/lib/profile-avatar";
 import { queryKeys } from "@/lib/query-keys";
 import { isWorkspaceAdmin } from "@/lib/roles";
 import { shareBinaryFile } from "@/lib/share-file";
@@ -45,7 +52,11 @@ const SOUL_FILES = [
   { key: "memory", label: "Memory" },
 ] as const;
 
+const PROFILE_AVATAR_JPEG_QUALITY = 0.82;
+const PROFILE_AVATAR_PNG_QUALITY = 1;
+
 type SoulKey = (typeof SOUL_FILES)[number]["key"];
+type IdentityOperation = "avatar" | "name";
 
 function HistoryValue({
   event,
@@ -92,9 +103,13 @@ export default function ProfileScreen() {
   const [soulDrafts, setSoulDrafts] = useState<Record<string, string>>({});
   const [openSoul, setOpenSoul] = useState<SoulKey | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [openHistoryEventId, setOpenHistoryEventId] = useState<string | null>(
     null
   );
+  const identityOperationRef = useRef<IdentityOperation | null>(null);
+  const [identityOperation, setIdentityOperation] =
+    useState<IdentityOperation | null>(null);
   const historyQuery = useProfileHistoryQuery(profileId, admin && historyOpen);
 
   useEffect(() => {
@@ -118,6 +133,12 @@ export default function ProfileScreen() {
 
   const saveProfile = useAtlasMutation((atlas, nextName: string) =>
     atlas.updateProfile(profileId, { name: nextName })
+  );
+  const uploadAvatar = useAtlasMutation((atlas, attachment: ImageAttachment) =>
+    atlas.uploadProfileAvatar(profileId, attachment)
+  );
+  const removeAvatar = useAtlasMutation((atlas) =>
+    atlas.deleteProfileAvatar(profileId)
   );
   const saveSoul = useAtlasMutation(
     (atlas, input: { content: string; fileKey: string }) =>
@@ -170,6 +191,95 @@ export default function ProfileScreen() {
       queryKey: queryKeys.profileHistory(profileId),
     });
   };
+  const invalidateAvatarMetadata = async () => {
+    await Promise.all([
+      uploadAvatar.queryClient.invalidateQueries({
+        queryKey: queryKeys.profile(profileId),
+      }),
+      uploadAvatar.queryClient.invalidateQueries({
+        queryKey: queryKeys.profiles,
+      }),
+      uploadAvatar.queryClient.invalidateQueries({
+        queryKey: queryKeys.profileHistory(profileId),
+      }),
+    ]);
+  };
+  const beginIdentityOperation = (operation: IdentityOperation): boolean => {
+    if (identityOperationRef.current) {
+      return false;
+    }
+    identityOperationRef.current = operation;
+    setIdentityOperation(operation);
+    return true;
+  };
+  const finishIdentityOperation = () => {
+    identityOperationRef.current = null;
+    setIdentityOperation(null);
+  };
+  const pickAvatar = async () => {
+    if (!beginIdentityOperation("avatar")) {
+      return;
+    }
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        base64: false,
+        mediaTypes: ["images"],
+      });
+      const asset = result.assets?.[0];
+      if (!asset) {
+        return;
+      }
+
+      const preserveTransparency = shouldPreserveAvatarTransparency(
+        asset.mimeType
+      );
+      const outputFormat = preserveTransparency
+        ? SaveFormat.PNG
+        : SaveFormat.JPEG;
+      const outputMediaType = preserveTransparency ? "image/png" : "image/jpeg";
+      const normalizedAvatar = await manipulateAsync(
+        asset.uri,
+        profileAvatarResizeActions(asset.width, asset.height),
+        {
+          base64: true,
+          compress: preserveTransparency
+            ? PROFILE_AVATAR_PNG_QUALITY
+            : PROFILE_AVATAR_JPEG_QUALITY,
+          format: outputFormat,
+        }
+      );
+      if (!normalizedAvatar.base64) {
+        throw new Error("Could not process the selected profile photo.");
+      }
+
+      await uploadAvatar.mutateAsync({
+        data: normalizedAvatar.base64,
+        mediaType: outputMediaType,
+      });
+      await invalidateAvatarMetadata();
+      await uploadAvatar.queryClient.invalidateQueries({
+        queryKey: queryKeys.profileAvatar(profileId),
+      });
+    } catch (error) {
+      showMutationError("Could not update profile photo", error);
+    } finally {
+      finishIdentityOperation();
+    }
+  };
+  const avatarBusy =
+    identityOperation === "avatar" ||
+    uploadAvatar.isPending ||
+    removeAvatar.isPending;
+  const identityBusy =
+    identityOperation !== null ||
+    saveProfile.isPending ||
+    uploadAvatar.isPending ||
+    removeAvatar.isPending;
+  const profileActionBusy =
+    identityBusy ||
+    cloneProfile.isPending ||
+    deleteProfile.isPending ||
+    exporting;
   const isToolBusy = assignTool.isPending || unassignTool.isPending;
   const isSkillBusy = assignSkill.isPending || unassignSkill.isPending;
   const isMcpBusy = assignMcp.isPending || unassignMcp.isPending;
@@ -229,28 +339,121 @@ export default function ProfileScreen() {
         >
           <Screen>
             <ScrollView keyboardShouldPersistTaps="handled">
-              {admin ? (
-                <View className="flex-row items-center gap-2 border-border border-b px-4 py-3">
-                  <Input
-                    className="min-w-0 flex-1"
-                    onChangeText={setName}
-                    value={name}
-                  />
-                  <Button
-                    disabled={saveProfile.isPending || !nameTrimmed}
-                    onPress={() => {
-                      void saveProfile
-                        .mutateAsync(nameTrimmed)
-                        .then(() => invalidateProfile())
-                        .catch((error: unknown) => {
-                          showMutationError("Could not save agent", error);
-                        });
+              {profileQuery.data ? (
+                <View className="flex-row items-center gap-4 border-border border-b bg-card px-4 py-5">
+                  <Pressable
+                    accessibilityLabel={
+                      avatarBusy
+                        ? "Updating profile photo"
+                        : "Change profile photo"
+                    }
+                    accessibilityRole="button"
+                    accessibilityState={{
+                      busy: avatarBusy,
+                      disabled: !admin || profileActionBusy,
                     }}
-                    size="sm"
-                    variant="outline"
+                    disabled={!admin || profileActionBusy}
+                    onPress={() => {
+                      void pickAvatar();
+                    }}
                   >
-                    <Text>{saveProfile.isPending ? "Saving…" : "Save"}</Text>
-                  </Button>
+                    <ProfileAvatar profile={profileQuery.data} size="xl" />
+                    {admin ? (
+                      <View className="absolute right-0 bottom-0 h-8 w-8 items-center justify-center rounded-full border-2 border-card bg-primary">
+                        {avatarBusy ? (
+                          <ActivityIndicator color="#fff" size="small" />
+                        ) : (
+                          <HugeiconsIcon
+                            color="#fff"
+                            icon={Camera01Icon}
+                            size={16}
+                          />
+                        )}
+                      </View>
+                    ) : null}
+                  </Pressable>
+                  <View className="min-w-0 flex-1 gap-2">
+                    {admin ? (
+                      <>
+                        <Input onChangeText={setName} value={name} />
+                        <View className="flex-row flex-wrap gap-2">
+                          <Button
+                            disabled={
+                              saveProfile.isPending ||
+                              profileActionBusy ||
+                              !nameTrimmed ||
+                              nameTrimmed === profileQuery.data.name
+                            }
+                            onPress={() => {
+                              if (!beginIdentityOperation("name")) {
+                                return;
+                              }
+                              void (async () => {
+                                try {
+                                  await saveProfile.mutateAsync(nameTrimmed);
+                                  await invalidateProfile();
+                                } catch (error) {
+                                  showMutationError(
+                                    "Could not save agent",
+                                    error
+                                  );
+                                } finally {
+                                  finishIdentityOperation();
+                                }
+                              })();
+                            }}
+                            size="sm"
+                            variant="outline"
+                          >
+                            <Text>
+                              {saveProfile.isPending ? "Saving…" : "Save"}
+                            </Text>
+                          </Button>
+                          {profileQuery.data.hasAvatar ? (
+                            <Button
+                              disabled={profileActionBusy}
+                              onPress={() => {
+                                confirmDestructive({
+                                  confirmLabel: "Remove",
+                                  onConfirm: () => {
+                                    if (!beginIdentityOperation("avatar")) {
+                                      return;
+                                    }
+                                    void (async () => {
+                                      try {
+                                        await removeAvatar.mutateAsync(
+                                          undefined
+                                        );
+                                        await invalidateAvatarMetadata();
+                                      } catch (error) {
+                                        showMutationError(
+                                          "Could not remove profile photo",
+                                          error
+                                        );
+                                      } finally {
+                                        finishIdentityOperation();
+                                      }
+                                    })();
+                                  },
+                                  title: "Remove profile photo",
+                                });
+                              }}
+                              size="sm"
+                              variant="ghost"
+                            >
+                              <Text className="text-destructive">
+                                Remove photo
+                              </Text>
+                            </Button>
+                          ) : null}
+                        </View>
+                      </>
+                    ) : (
+                      <Text className="font-heading text-xl">
+                        {profileQuery.data.name}
+                      </Text>
+                    )}
+                  </View>
                 </View>
               ) : null}
 
@@ -518,30 +721,36 @@ export default function ProfileScreen() {
                 <View className="gap-3 px-4 py-4">
                   <ActionCluster>
                     <Button
+                      disabled={profileActionBusy}
                       onPress={() => {
                         const sourceServerId = activeServer?.id ?? null;
                         if (!(client && isCurrentServer(sourceServerId))) {
                           return;
                         }
-                        void client
-                          .exportProfilePack(profileId)
-                          .then((file) => {
+
+                        setExporting(true);
+                        void (async () => {
+                          try {
+                            const file =
+                              await client.exportProfilePack(profileId);
                             if (isCurrentServer(sourceServerId)) {
-                              return shareBinaryFile(file.filename, file.data);
+                              await shareBinaryFile(file.filename, file.data);
                             }
-                          })
-                          .catch((error: unknown) => {
+                          } catch (error) {
                             showMutationError("Export failed", error);
-                          });
+                          } finally {
+                            setExporting(false);
+                          }
+                        })();
                       }}
                       size="sm"
                       variant="outline"
                     >
-                      <Text>Export pack</Text>
+                      <Text>{exporting ? "Exporting…" : "Export pack"}</Text>
                     </Button>
                     {profileQuery.data?.isSuper ? null : (
                       <Button
-                        disabled={cloneProfile.isPending}
+                        disabled={profileActionBusy}
                         onPress={() => {
                           void cloneProfile
                             .mutateAsync(undefined)
@@ -567,7 +776,7 @@ export default function ProfileScreen() {
                   {profileQuery.data?.isSuper ||
                   profileQuery.data?.isDefault ? null : (
                     <Button
-                      disabled={deleteProfile.isPending}
+                      disabled={profileActionBusy}
                       onPress={() => {
                         confirmDestructive({
                           message: profileQuery.data?.name,

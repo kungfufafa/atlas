@@ -201,6 +201,29 @@ describe("profile service avatar", () => {
     const unchanged = await service.getProfile(ORG_ID, profileId);
     expect(unchanged.profile.hasAvatar).toBe(false);
   });
+
+  test("serializes avatar uploads with profile updates", async () => {
+    tempConfigDir = await mkdtemp(
+      path.join(os.tmpdir(), "atlas-profile-avatar-lock-")
+    );
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
+
+    const service = new ProfileService(createInMemoryDatabaseAdapter());
+    const created = await service.createProfile(ORG_ID, { name: "Avatar Bot" });
+    const profileId = created.profile.id;
+
+    await Promise.all([
+      service.uploadProfileAvatar(ORG_ID, profileId, {
+        data: tinyPngBase64,
+        mediaType: "image/png",
+      }),
+      service.updateProfile(ORG_ID, profileId, { name: "Renamed Bot" }),
+    ]);
+
+    const updated = await service.getProfile(ORG_ID, profileId);
+    expect(updated.profile.hasAvatar).toBe(true);
+    expect(updated.profile.name).toBe("Renamed Bot");
+  });
 });
 
 describe("profile service createProfile", () => {

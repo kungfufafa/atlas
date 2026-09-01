@@ -51,7 +51,7 @@
         {
           "cameraPermission": false,
           "microphonePermission": false,
-          "photosPermission": "Allow Atlas to attach photos to chats."
+          "photosPermission": "Allow Atlas to attach photos to chats and agent profiles."
         }
       ],
       "expo-document-picker"

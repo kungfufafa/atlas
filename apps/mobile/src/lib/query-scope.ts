@@ -10,12 +10,16 @@ export const SERVER_QUERY_SCOPE = "__atlas_server_scope__";
 const UNCONNECTED_SERVER_SCOPE = "none";
 
 type InvalidateQueries = QueryClient["invalidateQueries"];
+type RemoveQueries = QueryClient["removeQueries"];
 
 export interface ServerQueryClient {
   getQueryData: <T>(queryKey: QueryKey) => T | undefined;
   invalidateQueries: (
     ...args: Parameters<InvalidateQueries>
   ) => ReturnType<InvalidateQueries>;
+  removeQueries: (
+    ...args: Parameters<RemoveQueries>
+  ) => ReturnType<RemoveQueries>;
   setQueryData: <T>(queryKey: QueryKey, data: T) => void;
 }
 
@@ -82,6 +86,8 @@ export function createServerQueryClient(
         scopeInvalidateFilters(filters, serverKey),
         options
       ),
+    removeQueries: (filters) =>
+      queryClient.removeQueries(scopeInvalidateFilters(filters, serverKey)),
     setQueryData: <T>(queryKey: QueryKey, data: T) => {
       queryClient.setQueryData(withServerScope(queryKey, serverKey), data);
     },
