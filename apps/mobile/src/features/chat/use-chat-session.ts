@@ -53,6 +53,13 @@ interface ChatSendOptions {
   initialMessages?: ChatListItem[];
 }
 
+function latestRelatedQuestions(items: readonly ChatListItem[]): string[] {
+  const lastAssistant = [...items]
+    .reverse()
+    .find((item) => item.role === "assistant");
+  return lastAssistant?.relatedQuestions ?? [];
+}
+
 export function useChatSession(profileId: string, sessionId?: string) {
   const client = useReadyAtlasClient();
   const orgKey = useOrgKey();
@@ -64,10 +71,30 @@ export function useChatSession(profileId: string, sessionId?: string) {
     () => isCurrentServer(sourceServerId),
     [isCurrentServer, sourceServerId]
   );
-  const [messages, setMessages] = useState<ChatListItem[]>([]);
-  const [todos, setTodos] = useState<AgentTodo[]>([]);
-  const [relatedQuestions, setRelatedQuestions] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(Boolean(sessionId));
+  const [initialSessionState] = useState(() => {
+    const cached = sessionId
+      ? queryClient.getQueryData<SessionMessagesResponse>(
+          queryKeys.sessionMessages(profileId, sessionId, orgKey)
+        )
+      : undefined;
+    const cachedMessages = cached
+      ? chatMessagesToListItems(cached.messages)
+      : [];
+    return {
+      isLoading: Boolean(sessionId && !cached),
+      messages: cachedMessages,
+      relatedQuestions: latestRelatedQuestions(cachedMessages),
+      todos: cached?.todos ?? [],
+    };
+  });
+  const [messages, setMessages] = useState<ChatListItem[]>(
+    initialSessionState.messages
+  );
+  const [todos, setTodos] = useState<AgentTodo[]>(initialSessionState.todos);
+  const [relatedQuestions, setRelatedQuestions] = useState<string[]>(
+    initialSessionState.relatedQuestions
+  );
+  const [isLoading, setIsLoading] = useState(initialSessionState.isLoading);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<string | undefined>(
@@ -104,10 +131,7 @@ export function useChatSession(profileId: string, sessionId?: string) {
         : storedItems;
       setMessages(items);
       setTodos(response.todos);
-      const lastAssistant = [...items]
-        .reverse()
-        .find((item) => item.role === "assistant");
-      setRelatedQuestions(lastAssistant?.relatedQuestions ?? []);
+      setRelatedQuestions(latestRelatedQuestions(items));
     },
     []
   );
@@ -158,10 +182,12 @@ export function useChatSession(profileId: string, sessionId?: string) {
       }
       cacheSessionMessages(id, stored);
       applySessionMessages(stored, failedTurn);
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.sessions(profileId),
-      });
-      await queryClient.invalidateQueries({ queryKey: ["sessions-all"] });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.sessions(profileId),
+        }),
+        queryClient.invalidateQueries({ queryKey: ["sessions-all"] }),
+      ]);
     },
     [
       applySessionMessages,
@@ -461,6 +487,8 @@ export function useChatSession(profileId: string, sessionId?: string) {
       const abort = new AbortController();
       abortRef.current = abort;
       let completedSessionId: string | null = null;
+      let createdSessionId: string | null = null;
+      let sessionListsRefreshed = false;
 
       try {
         let session = sessionRef.current;
@@ -471,10 +499,7 @@ export function useChatSession(profileId: string, sessionId?: string) {
           }
           sessionRef.current = session;
           setActiveSessionId(session.id);
-          await queryClient.invalidateQueries({
-            queryKey: queryKeys.sessions(profileId),
-          });
-          await queryClient.invalidateQueries({ queryKey: ["sessions-all"] });
+          createdSessionId = session.id;
         }
 
         if (!belongsToActiveServer()) {
@@ -500,6 +525,7 @@ export function useChatSession(profileId: string, sessionId?: string) {
           return;
         }
         await refreshSession(session.id, { clearFailedTurn: true });
+        sessionListsRefreshed = true;
       } catch (caught) {
         if (!belongsToActiveServer()) {
           return;
@@ -544,6 +570,20 @@ export function useChatSession(profileId: string, sessionId?: string) {
           abortRef.current = null;
           sendingRef.current = false;
           setIsSending(false);
+          if (createdSessionId && !sessionListsRefreshed) {
+            try {
+              await Promise.all([
+                queryClient.invalidateQueries({
+                  queryKey: queryKeys.sessions(profileId),
+                }),
+                queryClient.invalidateQueries({
+                  queryKey: ["sessions-all"],
+                }),
+              ]);
+            } catch {
+              // The failed turn is already visible and can refresh on the next list visit.
+            }
+          }
         }
       }
     },

@@ -1,7 +1,6 @@
 import { Stack, useLocalSearchParams } from "expo-router";
 import { ChatThread } from "@/features/chat/chat-thread";
 import { displaySessionTitle } from "@/features/chat/sessions";
-import { useProfilesQuery } from "@/hooks/use-profiles";
 import { useSessionsQuery } from "@/hooks/use-sessions";
 
 export default function ChatSessionScreen() {
@@ -12,12 +11,8 @@ export default function ChatSessionScreen() {
   const profileId = String(params.profileId);
   const sessionId = String(params.sessionId);
   const sessionsQuery = useSessionsQuery(profileId);
-  const profilesQuery = useProfilesQuery();
   const session = (sessionsQuery.data ?? []).find(
     (item) => item.id === sessionId
-  );
-  const profile = (profilesQuery.data ?? []).find(
-    (item) => item.id === profileId
   );
 
   return (
@@ -29,9 +24,9 @@ export default function ChatSessionScreen() {
             fontFamily: "InstrumentSans_600SemiBold",
             fontSize: 17,
           },
-          title: session
+          title: session?.title?.trim()
             ? displaySessionTitle(session.title)
-            : (profile?.name ?? "Chat"),
+            : "Chat",
         }}
       />
       <ChatThread profileId={profileId} sessionId={sessionId} />

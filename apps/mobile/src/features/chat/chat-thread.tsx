@@ -13,6 +13,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import type { ChatListItem } from "@/features/chat/chat-items";
 import { pendingApprovalFromMessages } from "@/features/chat/chat-items";
+import { nextSessionIdForNavigation } from "@/features/chat/chat-navigation";
 import { useChatSession } from "@/features/chat/use-chat-session";
 import { useNetwork } from "@/features/network/network-context";
 import { useWorkspaceAccess } from "@/hooks/use-workspace-access";
@@ -158,6 +159,7 @@ export function ChatThread({
   const { canMutate } = useWorkspaceAccess();
   const { isOffline } = useNetwork();
   const listRef = useRef<FlashListRef<ChatListItem>>(null);
+  const scrollFrameRef = useRef<number | null>(null);
   const {
     activeSessionId,
     decideApproval,
@@ -175,20 +177,35 @@ export function ChatThread({
   const showWelcome = !sessionId && messages.length === 0 && !isSending;
 
   useEffect(() => {
-    if (activeSessionId && activeSessionId !== sessionId) {
-      router.replace(`/chat/${profileId}/${activeSessionId}`);
+    const nextSessionId = nextSessionIdForNavigation({
+      activeSessionId,
+      currentSessionId: sessionId,
+      isSending,
+    });
+    if (nextSessionId) {
+      router.replace(`/chat/${profileId}/${nextSessionId}`);
     }
-  }, [activeSessionId, profileId, router, sessionId]);
+  }, [activeSessionId, isSending, profileId, router, sessionId]);
 
   useEffect(() => {
     if (messages.length === 0) {
       return;
     }
-    requestAnimationFrame(() => {
+    if (scrollFrameRef.current !== null) {
+      cancelAnimationFrame(scrollFrameRef.current);
+    }
+    scrollFrameRef.current = requestAnimationFrame(() => {
+      scrollFrameRef.current = null;
       const scrollView = listRef.current?.getNativeScrollRef?.();
-      scrollView?.scrollToEnd({ animated: true });
+      scrollView?.scrollToEnd({ animated: !isSending });
     });
-  }, [messages]);
+    return () => {
+      if (scrollFrameRef.current !== null) {
+        cancelAnimationFrame(scrollFrameRef.current);
+        scrollFrameRef.current = null;
+      }
+    };
+  }, [isSending, messages]);
 
   if (isLoading) {
     return <Spinner className="flex-1 bg-background" />;
