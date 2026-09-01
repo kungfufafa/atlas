@@ -15,13 +15,24 @@ import {
   isAbortError,
 } from "@/features/chat/chat-items";
 import {
+  appendFailedTurnIfNeeded,
   appendOutgoingMessages,
   buildStreamHandlers,
   createReplayAwareHandlers,
   finalizeStreamingMessages,
+  findFailedRetryPrompt,
+  markStreamingTurnFailed,
   materializedToolCallIds,
+  messagesWithoutFailedTurn,
+  resolveFailedRetryInput,
   seedStreamingStateForActiveTurn,
 } from "@/features/chat/chat-stream";
+import {
+  clearFailedChatTurn,
+  type FailedChatTurnScope,
+  readFailedChatTurn,
+  storeFailedChatTurn,
+} from "@/features/chat/failed-turn";
 import { useNetwork } from "@/features/network/network-context";
 import { useServer } from "@/features/server/server-context";
 import {
@@ -35,6 +46,11 @@ export interface ChatSendInput {
   documents?: DocumentAttachment[];
   images?: ImageAttachment[];
   message: string;
+}
+
+interface ChatSendOptions {
+  clearFailedTurn?: boolean;
+  initialMessages?: ChatListItem[];
 }
 
 export function useChatSession(profileId: string, sessionId?: string) {
@@ -65,9 +81,27 @@ export function useChatSession(profileId: string, sessionId?: string) {
   const messagesRef = useRef<ChatListItem[]>([]);
   messagesRef.current = messages;
 
+  const getFailedTurnScope = useCallback(
+    (id: string): FailedChatTurnScope | null =>
+      sourceServerId
+        ? {
+            orgId: orgKey,
+            serverId: sourceServerId,
+            sessionId: id,
+          }
+        : null,
+    [orgKey, sourceServerId]
+  );
+
   const applySessionMessages = useCallback(
-    (response: SessionMessagesResponse) => {
-      const items = chatMessagesToListItems(response.messages);
+    (
+      response: SessionMessagesResponse,
+      failedTurn: Awaited<ReturnType<typeof readFailedChatTurn>> = null
+    ) => {
+      const storedItems = chatMessagesToListItems(response.messages);
+      const items = failedTurn
+        ? appendFailedTurnIfNeeded(storedItems, failedTurn)
+        : storedItems;
       setMessages(items);
       setTodos(response.todos);
       const lastAssistant = [...items]
@@ -101,7 +135,7 @@ export function useChatSession(profileId: string, sessionId?: string) {
   );
 
   const refreshSession = useCallback(
-    async (id: string) => {
+    async (id: string, options: { clearFailedTurn?: boolean } = {}) => {
       if (!client) {
         return;
       }
@@ -109,8 +143,21 @@ export function useChatSession(profileId: string, sessionId?: string) {
       if (!belongsToActiveServer()) {
         return;
       }
+      const failedTurnScope = getFailedTurnScope(id);
+      let failedTurn: Awaited<ReturnType<typeof readFailedChatTurn>> = null;
+
+      if (failedTurnScope) {
+        if (options.clearFailedTurn) {
+          await clearFailedChatTurn(failedTurnScope);
+        } else {
+          failedTurn = await readFailedChatTurn(failedTurnScope);
+        }
+      }
+      if (!belongsToActiveServer()) {
+        return;
+      }
       cacheSessionMessages(id, stored);
-      applySessionMessages(stored);
+      applySessionMessages(stored, failedTurn);
       await queryClient.invalidateQueries({
         queryKey: queryKeys.sessions(profileId),
       });
@@ -121,6 +168,7 @@ export function useChatSession(profileId: string, sessionId?: string) {
       belongsToActiveServer,
       cacheSessionMessages,
       client,
+      getFailedTurnScope,
       profileId,
       queryClient,
     ]
@@ -164,7 +212,7 @@ export function useChatSession(profileId: string, sessionId?: string) {
         if (!belongsToActiveServer()) {
           return false;
         }
-        await refreshSession(id);
+        await refreshSession(id, { clearFailedTurn: true });
         return true;
       } catch (caught) {
         if (!belongsToActiveServer()) {
@@ -232,41 +280,55 @@ export function useChatSession(profileId: string, sessionId?: string) {
     setActiveSessionId(sessionId);
     sessionRef.current = client.createChatSession(sessionId, "web");
 
-    const cached = queryClient.getQueryData<SessionMessagesResponse>(
-      getSessionMessagesKey(sessionId)
-    );
-    if (cached) {
-      applySessionMessages(cached);
-      setIsLoading(false);
-    }
+    const loadSession = async (): Promise<void> => {
+      const cached = queryClient.getQueryData<SessionMessagesResponse>(
+        getSessionMessagesKey(sessionId)
+      );
+      const failedTurnScope = getFailedTurnScope(sessionId);
+      const storedFailedTurn = failedTurnScope
+        ? await readFailedChatTurn(failedTurnScope)
+        : null;
 
-    if (isOffline) {
-      if (!cached) {
+      if (cancelled || !belongsToActiveServer()) {
+        return;
+      }
+
+      if (cached) {
+        applySessionMessages(cached, storedFailedTurn);
         setIsLoading(false);
       }
-      return () => {
-        cancelled = true;
-        abortRef.current?.abort();
-      };
-    }
 
-    void client
-      .getSessionMessages(sessionId)
-      .then(async (response) => {
-        if (cancelled || !belongsToActiveServer()) {
-          return;
-        }
-        cacheSessionMessages(sessionId, response);
-        applySessionMessages(response);
-        setIsLoading(false);
-        await reconnectRef.current(sessionId);
-      })
-      .catch((caught: unknown) => {
-        if (!cancelled && belongsToActiveServer()) {
-          setError(formatError(caught));
+      if (isOffline) {
+        if (!cached) {
+          setMessages(
+            storedFailedTurn
+              ? appendFailedTurnIfNeeded([], storedFailedTurn)
+              : []
+          );
           setIsLoading(false);
         }
-      });
+        return;
+      }
+
+      const response = await client.getSessionMessages(sessionId);
+      const failedTurn = failedTurnScope
+        ? await readFailedChatTurn(failedTurnScope)
+        : null;
+      if (cancelled || !belongsToActiveServer()) {
+        return;
+      }
+      cacheSessionMessages(sessionId, response);
+      applySessionMessages(response, failedTurn);
+      setIsLoading(false);
+      await reconnectRef.current(sessionId);
+    };
+
+    void loadSession().catch((caught: unknown) => {
+      if (!cancelled && belongsToActiveServer()) {
+        setError(formatError(caught));
+        setIsLoading(false);
+      }
+    });
 
     return () => {
       cancelled = true;
@@ -278,6 +340,7 @@ export function useChatSession(profileId: string, sessionId?: string) {
     cacheSessionMessages,
     client,
     getSessionMessagesKey,
+    getFailedTurnScope,
     isOffline,
     queryClient,
     sessionId,
@@ -364,7 +427,7 @@ export function useChatSession(profileId: string, sessionId?: string) {
   );
 
   const send = useCallback(
-    async (input: ChatSendInput) => {
+    async (input: ChatSendInput, options: ChatSendOptions = {}) => {
       if (isOffline) {
         setError("You're offline. Reconnect before sending a message.");
         return;
@@ -387,11 +450,17 @@ export function useChatSession(profileId: string, sessionId?: string) {
       setRelatedQuestions([]);
       setIsSending(true);
       setMessages((current) =>
-        appendOutgoingMessages(current, trimmed, attachmentCount)
+        appendOutgoingMessages(
+          options.initialMessages ?? current,
+          trimmed,
+          attachmentCount,
+          { documents: input.documents, images: input.images }
+        )
       );
 
       const abort = new AbortController();
       abortRef.current = abort;
+      let completedSessionId: string | null = null;
 
       try {
         let session = sessionRef.current;
@@ -411,6 +480,10 @@ export function useChatSession(profileId: string, sessionId?: string) {
         if (!belongsToActiveServer()) {
           return;
         }
+        const failedTurnScope = getFailedTurnScope(session.id);
+        if (options.clearFailedTurn && failedTurnScope) {
+          await clearFailedChatTurn(failedTurnScope);
+        }
         await session.sendStream(
           {
             documents: input.documents,
@@ -421,13 +494,25 @@ export function useChatSession(profileId: string, sessionId?: string) {
           handlers(),
           { signal: abort.signal }
         );
+        completedSessionId = session.id;
 
         if (!belongsToActiveServer()) {
           return;
         }
-        await refreshSession(session.id);
+        await refreshSession(session.id, { clearFailedTurn: true });
       } catch (caught) {
         if (!belongsToActiveServer()) {
+          return;
+        }
+        if (completedSessionId) {
+          setMessages((current) => finalizeStreamingMessages(current));
+          const completedTurnScope = getFailedTurnScope(completedSessionId);
+          if (completedTurnScope) {
+            await clearFailedChatTurn(completedTurnScope);
+          }
+          setError(
+            `Message sent, but chat history could not refresh: ${formatError(caught)}`
+          );
           return;
         }
         if (isAbortError(caught)) {
@@ -440,10 +525,20 @@ export function useChatSession(profileId: string, sessionId?: string) {
           }
           return;
         }
-        setError(formatError(caught));
-        setMessages((current) =>
-          current.filter((message) => !message.streaming)
-        );
+        const message = formatError(caught);
+        setError(null);
+        setMessages((current) => markStreamingTurnFailed(current, message));
+
+        const liveSession = sessionRef.current;
+        const failedTurnScope = liveSession
+          ? getFailedTurnScope(liveSession.id)
+          : null;
+        if (failedTurnScope && trimmed && attachmentCount === 0) {
+          await storeFailedChatTurn(failedTurnScope, {
+            error: message,
+            text: trimmed,
+          });
+        }
       } finally {
         if (belongsToActiveServer()) {
           abortRef.current = null;
@@ -456,11 +551,52 @@ export function useChatSession(profileId: string, sessionId?: string) {
       belongsToActiveServer,
       client,
       handlers,
+      getFailedTurnScope,
       isOffline,
       profileId,
       queryClient,
       refreshSession,
     ]
+  );
+
+  const retry = useCallback(
+    async (failedMessage: ChatListItem) => {
+      if (isOffline) {
+        setError("You're offline. Reconnect before retrying this message.");
+        return;
+      }
+      if (!(belongsToActiveServer() && client)) {
+        setError("Not connected.");
+        return;
+      }
+      if (sendingRef.current) {
+        return;
+      }
+
+      const prompt = findFailedRetryPrompt(messagesRef.current, failedMessage);
+      const retryInput = resolveFailedRetryInput(prompt);
+
+      if (retryInput.status === "missing") {
+        setError("Could not find a prompt to retry.");
+        return;
+      }
+
+      if (retryInput.status === "attachments_unavailable") {
+        setError(
+          "Original attachments are no longer available. Attach them again to retry."
+        );
+        return;
+      }
+
+      await send(retryInput.input, {
+        clearFailedTurn: true,
+        initialMessages: messagesWithoutFailedTurn(
+          messagesRef.current,
+          failedMessage
+        ),
+      });
+    },
+    [belongsToActiveServer, client, isOffline, send]
   );
 
   return {
@@ -471,6 +607,7 @@ export function useChatSession(profileId: string, sessionId?: string) {
     isSending,
     messages,
     relatedQuestions,
+    retry,
     send,
     stop,
     todos,

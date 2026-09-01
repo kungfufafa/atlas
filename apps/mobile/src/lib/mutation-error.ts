@@ -1,6 +1,11 @@
 import { formatError } from "@atlas/client";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 
 export function showMutationError(title: string, error: unknown): void {
-  Alert.alert(title, formatError(error));
+  const message = formatError(error);
+  if (Platform.OS === "web") {
+    globalThis.alert(`${title}\n\n${message}`);
+    return;
+  }
+  Alert.alert(title, message);
 }

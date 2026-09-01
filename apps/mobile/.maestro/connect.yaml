@@ -1,5 +1,13 @@
 appId: app.atlas.mobile
 ---
-- launchApp
-- assertVisible: "Connect to your self-hosted server"
-- tapOn: "Continue"
+- launchApp:
+    clearState: true
+- assertVisible: "Welcome to Atlas"
+- tapOn: "Connect a server"
+- assertVisible: "Connect your Atlas"
+- assertVisible: "Server URL"
+- assertVisible: "Check and continue"
+- tapOn: "Server URL"
+- inputText: "http://atlas.example.com"
+- tapOn: "Check and continue"
+- assertVisible: "Enter an Atlas URL. Remote servers must use HTTPS, for example https://atlas.example.com."

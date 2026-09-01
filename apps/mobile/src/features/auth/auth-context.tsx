@@ -2,6 +2,7 @@ import type { AtlasClient } from "@atlas/client";
 import { formatError } from "@atlas/client";
 import type {
   AuthUserResponse,
+  OrgRole,
   SetupAuthRequest,
   UserOrgSummary,
 } from "@atlas/core/contract";
@@ -35,6 +36,7 @@ import { isInvalidSessionError } from "@/lib/session-auth";
 export interface AuthContextValue {
   acceptInvite: (token: string, password?: string) => Promise<void>;
   activeOrg: UserOrgSummary | null;
+  applyActiveOrgRole: (role: OrgRole | null) => Promise<void>;
   applyUser: (nextUser: AuthUserResponse) => void;
   client: AtlasClient | null;
   isAuthenticated: boolean;
@@ -42,6 +44,7 @@ export interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   orgs: UserOrgSummary[];
+  refreshAuth: () => Promise<void>;
   setup: (request: SetupAuthRequest) => Promise<void>;
   switchOrg: (orgId: string) => Promise<void>;
   user: AuthUserResponse | null;
@@ -255,6 +258,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [activeClient, activeServer, applyUser, isCurrentServer]
   );
 
+  const refreshAuth = useCallback(async () => {
+    if (!(activeClient && activeServer)) {
+      throw new Error("Not connected.");
+    }
+
+    const sourceServerId = activeServer.id;
+    const [nextUser, orgList] = await Promise.all([
+      activeClient.getMe(),
+      activeClient.listUserOrgs(),
+    ]);
+    if (!isCurrentServer(sourceServerId)) {
+      throw new Error("The active server changed. Please try again.");
+    }
+    applyUser(nextUser);
+    setOrgs(orgList.orgs);
+    void saveCachedAuthSession(sourceServerId, {
+      orgs: orgList.orgs,
+      user: nextUser,
+    });
+    queryClient.clear();
+  }, [activeClient, activeServer, applyUser, isCurrentServer]);
+
+  const applyActiveOrgRole = useCallback(
+    async (role: OrgRole | null): Promise<void> => {
+      if (!isCurrentServer(activeServerId)) {
+        return;
+      }
+      const activeOrgId = user?.activeOrgId ?? user?.orgId ?? null;
+      if (!activeOrgId) {
+        return;
+      }
+      const nextOrgs = role
+        ? orgs.map((org) => (org.id === activeOrgId ? { ...org, role } : org))
+        : orgs.filter((org) => org.id !== activeOrgId);
+      setOrgs(nextOrgs);
+      queryClient.clear();
+      if (activeServerId) {
+        await clearCachedAuthSession(activeServerId).catch(() => {
+          // In-memory authorization is still reduced when storage is unavailable.
+        });
+      }
+    },
+    [activeServerId, isCurrentServer, orgs, user]
+  );
+
   const logout = useCallback(async () => {
     const sourceServerId = activeServer?.id ?? null;
     let storageError: unknown;
@@ -335,6 +383,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       acceptInvite,
       activeOrg,
+      applyActiveOrgRole,
       applyUser,
       client: activeClient,
       isAuthenticated: visibleUser !== null,
@@ -342,6 +391,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       orgs: visibleOrgs,
+      refreshAuth,
       setup,
       switchOrg,
       user: visibleUser,
@@ -349,11 +399,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [
       acceptInvite,
       activeOrg,
+      applyActiveOrgRole,
       applyUser,
       activeClient,
       isLoadingActiveServer,
       login,
       logout,
+      refreshAuth,
       visibleOrgs,
       setup,
       switchOrg,

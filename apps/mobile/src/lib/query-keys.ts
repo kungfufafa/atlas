@@ -17,6 +17,8 @@ export const queryKeys = {
   orgMemoryProposals: (orgId: string) =>
     ["org-memory-proposals", orgId] as const,
   profile: (profileId: string) => ["profile", profileId] as const,
+  profileHistory: (profileId: string) =>
+    ["profile-history", profileId] as const,
   profiles: ["profiles"] as const,
   providers: ["providers"] as const,
   sessionMessages: (profileId: string, sessionId: string, orgId: string) =>
@@ -34,4 +36,5 @@ export const queryKeys = {
   timezone: ["timezone"] as const,
   tool: (id: string) => ["tool", id] as const,
   tools: ["tools"] as const,
+  userContext: ["user-context"] as const,
 };

@@ -1,11 +1,16 @@
 import { expect, test } from "bun:test";
 import type { ChatListItem } from "./chat-items";
 import {
+  appendFailedTurnIfNeeded,
   appendOutgoingMessages,
   buildStreamHandlers,
   createReplayAwareHandlers,
   finalizeStreamingMessages,
+  findFailedRetryPrompt,
+  markStreamingTurnFailed,
   materializedToolCallIds,
+  messagesWithoutFailedTurn,
+  resolveFailedRetryInput,
   seedStreamingStateForActiveTurn,
 } from "./chat-stream";
 
@@ -16,6 +21,176 @@ test("appends a user message and a streaming assistant placeholder", () => {
   expect(next[0]?.content).toBe("Hello");
   expect(next[1]?.role).toBe("assistant");
   expect(next[1]?.streaming).toBe(true);
+});
+
+test("retains attachment payloads for an in-memory retry", () => {
+  const documents = [
+    {
+      data: "document-data",
+      filename: "brief.pdf",
+      mediaType: "application/pdf",
+    },
+  ];
+  const images = [{ data: "image-data", mediaType: "image/png" }];
+  const next = appendOutgoingMessages([], "Review this", 2, {
+    documents,
+    images,
+  });
+  const prompt = next[0];
+
+  expect(resolveFailedRetryInput(prompt)).toEqual({
+    input: {
+      documents: [
+        {
+          data: "document-data",
+          filename: "brief.pdf",
+          mediaType: "application/pdf",
+        },
+      ],
+      images: [{ data: "image-data", mediaType: "image/png" }],
+      message: "Review this",
+    },
+    status: "ready",
+  });
+  expect(prompt?.retryAttachments?.documents).not.toBe(documents);
+  expect(prompt?.retryAttachments?.documents?.[0]).not.toBe(documents[0]);
+  expect(prompt?.retryAttachments?.images).not.toBe(images);
+  expect(prompt?.retryAttachments?.images?.[0]).not.toBe(images[0]);
+});
+
+test("marks the last streaming assistant failed and settles pending work", () => {
+  const next = markStreamingTurnFailed(
+    [
+      { content: "Try", id: "user", role: "user" },
+      {
+        content: "Partial",
+        id: "assistant-one",
+        role: "assistant",
+        streaming: true,
+      },
+      {
+        content: "bash",
+        id: "tool",
+        role: "tool",
+        tool: "bash",
+        toolStatus: "running",
+      },
+      {
+        content: "",
+        id: "assistant-two",
+        role: "assistant",
+        streaming: true,
+        thinkingStreaming: true,
+      },
+    ],
+    "Rate limited"
+  );
+
+  expect(next[1]).toMatchObject({
+    content: "Partial",
+    streaming: false,
+  });
+  expect(next[1]?.failed).toBeUndefined();
+  expect(next[2]).toMatchObject({
+    content: "bash stopped",
+    toolStatus: "done",
+  });
+  expect(next[3]).toMatchObject({
+    content: "Rate limited",
+    failed: true,
+    streaming: false,
+    thinkingStreaming: false,
+  });
+});
+
+test("appends a failure after a pending tool has replaced the stream shell", () => {
+  const next = markStreamingTurnFailed(
+    [
+      { content: "Try", id: "user", role: "user" },
+      { content: "", id: "assistant", role: "assistant" },
+      {
+        content: "bash",
+        id: "tool",
+        role: "tool",
+        tool: "bash",
+        toolStatus: "running",
+      },
+    ],
+    "Connection failed"
+  );
+
+  expect(next[2]).toMatchObject({
+    content: "bash stopped",
+    toolStatus: "done",
+  });
+  expect(next[3]).toMatchObject({
+    content: "Connection failed",
+    failed: true,
+    role: "assistant",
+  });
+});
+
+test("restores a failed turn after reload without duplicating its prompt", () => {
+  const next = appendFailedTurnIfNeeded(
+    [{ content: "Retry me", historyIndex: 2, id: "user", role: "user" }],
+    { error: "429", text: "Retry me" }
+  );
+
+  expect(next).toHaveLength(2);
+  expect(next[0]?.id).toBe("user");
+  expect(next[1]).toMatchObject({
+    content: "429",
+    failed: true,
+    role: "assistant",
+  });
+});
+
+test("finds and removes only the optimistic failed turn before retry", () => {
+  const kept = {
+    content: "Earlier",
+    historyIndex: 0,
+    id: "kept",
+    role: "user" as const,
+  };
+  const prompt = { content: "Retry me", id: "prompt", role: "user" as const };
+  const failed = {
+    content: "429",
+    failed: true,
+    id: "failed",
+    role: "assistant" as const,
+  };
+  const messages = [kept, prompt, failed];
+
+  expect(findFailedRetryPrompt(messages, failed)).toBe(prompt);
+  expect(messagesWithoutFailedTurn(messages, failed)).toEqual([kept]);
+});
+
+test("keeps a persisted prompt while removing its failed marker", () => {
+  const prompt = {
+    content: "Retry me",
+    historyIndex: 2,
+    id: "prompt",
+    role: "user" as const,
+  };
+  const failed = {
+    content: "429",
+    failed: true,
+    id: "failed",
+    role: "assistant" as const,
+  };
+
+  expect(messagesWithoutFailedTurn([prompt, failed], failed)).toEqual([prompt]);
+});
+
+test("reports when original retry attachments are no longer available", () => {
+  expect(
+    resolveFailedRetryInput({
+      attachmentCount: 1,
+      content: "Review this",
+      id: "prompt",
+      role: "user",
+    })
+  ).toEqual({ status: "attachments_unavailable" });
 });
 
 test("streams assistant text onto the placeholder", () => {

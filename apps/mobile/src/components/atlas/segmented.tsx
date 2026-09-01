@@ -12,7 +12,7 @@ function Segmented<T extends string>({
   value: T;
 }) {
   return (
-    <View className="mx-4 mb-3 flex-row rounded-full bg-secondary p-1">
+    <View className="mx-4 mb-3 flex-row border-border border-b">
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -20,16 +20,17 @@ function Segmented<T extends string>({
             accessibilityRole="tab"
             accessibilityState={{ selected }}
             className={cn(
-              "min-h-9 flex-1 items-center justify-center rounded-full py-2",
-              selected && "bg-primary"
+              "-mb-px min-h-11 flex-1 items-center justify-center border-b-2 px-3 py-2.5",
+              selected ? "border-foreground" : "border-transparent"
             )}
             key={option.value}
             onPress={() => onChange(option.value)}
           >
             <Text
-              className={
-                selected ? "font-medium text-primary-foreground" : "font-medium"
-              }
+              className={cn(
+                "font-medium text-sm",
+                selected ? "text-foreground" : "text-muted-foreground"
+              )}
             >
               {option.label}
             </Text>

@@ -2,6 +2,8 @@ import type { Artifact } from "@atlas/core/artifact-types";
 import type {
   ApprovalRequest,
   ChatMessage,
+  DocumentAttachment,
+  ImageAttachment,
   MessageContentPart,
 } from "@atlas/core/contract";
 import { extractThinkingFromAssistantMessage } from "@atlas/core/thinking-content";
@@ -15,13 +17,23 @@ export interface ChatArtifact {
   type?: string;
 }
 
+export interface ChatRetryAttachments {
+  documents?: DocumentAttachment[];
+  images?: ImageAttachment[];
+}
+
 export interface ChatListItem {
   approval?: ApprovalRequest;
   artifacts?: ChatArtifact[];
   attachmentCount?: number;
   content: string;
+  /** Client-only failed-turn marker; rolled-back turns are absent from history. */
+  failed?: boolean;
+  historyIndex?: number;
   id: string;
   relatedQuestions?: string[];
+  /** Client-only attachment bytes retained while an optimistic turn is mounted. */
+  retryAttachments?: ChatRetryAttachments;
   role: "assistant" | "tool" | "user";
   streaming?: boolean;
   thinking?: string;
@@ -139,6 +151,7 @@ export function chatMessagesToListItems(
     if (message.role === "user") {
       items.push({
         content: userContentToText(message.content),
+        historyIndex: index,
         id: `history-${index}`,
         role: "user",
       });
@@ -157,6 +170,7 @@ export function chatMessagesToListItems(
       items.push({
         ...(message.approval ? { approval: message.approval } : {}),
         content: message.content,
+        historyIndex: index,
         id: `history-${index}`,
         relatedQuestions: message.relatedQuestions,
         role: "assistant",
@@ -169,6 +183,7 @@ export function chatMessagesToListItems(
     items.push({
       artifacts: artifactsFromToolResult(toolResult),
       content: `${message.name} completed`,
+      historyIndex: index,
       id: message.toolCallId || `history-${index}`,
       role: "tool",
       tool: message.name,

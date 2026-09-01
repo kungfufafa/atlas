@@ -1,15 +1,18 @@
+import type { KnowledgeBaseDuplicateAction } from "@atlas/core/contract";
 import * as DocumentPicker from "expo-document-picker";
 import { useNavigation, useRouter } from "expo-router";
-import { useCallback, useLayoutEffect, useState } from "react";
-import { Alert, ScrollView } from "react-native";
+import { useCallback, useLayoutEffect, useMemo, useState } from "react";
+import { Alert, Platform, ScrollView } from "react-native";
 import { EmptyState } from "@/components/atlas/empty-state";
 import { HeaderAddButton } from "@/components/atlas/header-add-button";
 import { ListRow } from "@/components/atlas/list-row";
+import { ProfileSelector } from "@/components/atlas/profile-selector";
 import { QueryState } from "@/components/atlas/query-state";
 import { Screen } from "@/components/atlas/screen";
 import { Segmented } from "@/components/atlas/segmented";
 import { RequireWorkspaceAdmin } from "@/components/atlas/workspace-guard";
 import { formatBytes } from "@/features/chat/chat-items";
+import { useActiveProfileSelection } from "@/hooks/use-active-profile-selection";
 import { useAtlasMutation, useReadyAtlasClient } from "@/hooks/use-atlas-query";
 import { useProfilesQuery } from "@/hooks/use-profiles";
 import {
@@ -19,7 +22,14 @@ import {
 import { assertDocumentSize } from "@/lib/compress-image";
 import { displayFileKind, fileBasename, fileFolder } from "@/lib/file-display";
 import { isKnowledgeBaseFilename } from "@/lib/kb-files";
+import {
+  formatKnowledgeBaseDuplicatePrompt,
+  type KnowledgeBaseDuplicateContext,
+  type KnowledgeBaseDuplicateDecision,
+  uploadKnowledgeBaseDocumentWithDuplicateResolution,
+} from "@/lib/knowledge-upload";
 import { assertPickedDocumentSize } from "@/lib/picked-file-size";
+import { filterProfileScopedItems } from "@/lib/profile-selection";
 import { queryKeys } from "@/lib/query-keys";
 
 type FilesTab = "artifacts" | "knowledge";
@@ -39,6 +49,48 @@ function fileSubtitle(parts: Array<string | null | undefined>): string {
   return parts.filter((part): part is string => Boolean(part)).join(" · ");
 }
 
+function decideKnowledgeBaseDuplicate(
+  context: KnowledgeBaseDuplicateContext
+): Promise<KnowledgeBaseDuplicateDecision> {
+  const message = formatKnowledgeBaseDuplicatePrompt(context);
+  if (Platform.OS === "web") {
+    return Promise.resolve(globalThis.confirm(message) ? "replace" : "skip");
+  }
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const settle = (decision: KnowledgeBaseDuplicateDecision) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      resolve(decision);
+    };
+
+    Alert.alert(
+      "Document already exists",
+      message,
+      [
+        {
+          onPress: () => settle("cancel"),
+          style: "cancel",
+          text: "Cancel",
+        },
+        { onPress: () => settle("skip"), text: "Skip" },
+        {
+          onPress: () => settle("replace"),
+          style: "destructive",
+          text: "Replace",
+        },
+      ],
+      {
+        cancelable: true,
+        onDismiss: () => settle("cancel"),
+      }
+    );
+  });
+}
+
 export default function FilesScreen() {
   const router = useRouter();
   const navigation = useNavigation();
@@ -47,26 +99,53 @@ export default function FilesScreen() {
   const artifactsQuery = useAllArtifactsQuery();
   const knowledgeQuery = useAllKnowledgeQuery();
   const profilesQuery = useProfilesQuery();
-  const profile =
-    profilesQuery.data?.find((item) => item.isDefault) ??
-    profilesQuery.data?.[0];
+  const profiles = profilesQuery.data ?? [];
+  const { isLoading, selectProfile, selectedProfileId } =
+    useActiveProfileSelection(profilesQuery.data);
+  const selectedProfile = profiles.find(
+    (profile) => profile.id === selectedProfileId
+  );
+  const artifacts = useMemo(
+    () =>
+      filterProfileScopedItems(artifactsQuery.data ?? [], selectedProfileId),
+    [artifactsQuery.data, selectedProfileId]
+  );
+  const knowledge = useMemo(
+    () =>
+      filterProfileScopedItems(knowledgeQuery.data ?? [], selectedProfileId),
+    [knowledgeQuery.data, selectedProfileId]
+  );
   const upload = useAtlasMutation(
-    (atlas, input: { data: string; filename: string; mediaType: string }) =>
-      atlas.uploadKnowledgeBaseDocument(profile?.id ?? "", {
-        data: input.data,
-        filename: input.filename,
-        mediaType: input.mediaType,
-      })
+    (
+      atlas,
+      input: {
+        data: string;
+        filename: string;
+        mediaType: string;
+        onDuplicate?: KnowledgeBaseDuplicateAction;
+        profileId: string;
+      }
+    ) =>
+      atlas.uploadKnowledgeBaseDocument(
+        input.profileId,
+        {
+          data: input.data,
+          filename: input.filename,
+          mediaType: input.mediaType,
+        },
+        input.onDuplicate
+      )
   );
 
   const uploadKnowledge = useCallback(() => {
     if (upload.isPending) {
       return;
     }
-    if (!profile) {
+    if (!selectedProfile) {
       Alert.alert("No active profile found.");
       return;
     }
+    const uploadProfileId = selectedProfile.id;
     void DocumentPicker.getDocumentAsync({
       copyToCacheDirectory: true,
     }).then(async (result) => {
@@ -82,16 +161,22 @@ export default function FilesScreen() {
         await assertPickedDocumentSize(asset);
         const data = await fileToBase64(asset.uri);
         assertDocumentSize(data);
-        await upload.mutateAsync({
-          data,
-          filename: asset.name,
-          mediaType: asset.mimeType ?? "application/octet-stream",
+        await uploadKnowledgeBaseDocumentWithDuplicateResolution(asset.name, {
+          decideDuplicate: decideKnowledgeBaseDuplicate,
+          upload: (onDuplicate) =>
+            upload.mutateAsync({
+              data,
+              filename: asset.name,
+              mediaType: asset.mimeType ?? "application/octet-stream",
+              onDuplicate,
+              profileId: uploadProfileId,
+            }),
         });
         await upload.queryClient.invalidateQueries({
           queryKey: queryKeys.knowledgeAll,
         });
         await upload.queryClient.invalidateQueries({
-          queryKey: queryKeys.knowledge(profile.id),
+          queryKey: queryKeys.knowledge(uploadProfileId),
         });
       } catch (error) {
         Alert.alert(
@@ -100,12 +185,12 @@ export default function FilesScreen() {
         );
       }
     });
-  }, [client, profile, upload]);
+  }, [client, selectedProfile, upload]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight:
-        tab === "knowledge"
+        tab === "knowledge" && selectedProfile
           ? () => (
               <HeaderAddButton
                 accessibilityLabel="Upload knowledge"
@@ -115,7 +200,7 @@ export default function FilesScreen() {
             )
           : undefined,
     });
-  }, [navigation, tab, uploadKnowledge, upload.isPending]);
+  }, [navigation, selectedProfile, tab, uploadKnowledge, upload.isPending]);
 
   return (
     <RequireWorkspaceAdmin>
@@ -126,8 +211,8 @@ export default function FilesScreen() {
         }
         loading={
           tab === "artifacts"
-            ? artifactsQuery.isLoading || profilesQuery.isLoading
-            : knowledgeQuery.isLoading || profilesQuery.isLoading
+            ? artifactsQuery.isLoading || profilesQuery.isLoading || isLoading
+            : knowledgeQuery.isLoading || profilesQuery.isLoading || isLoading
         }
         onRetry={() => {
           void profilesQuery.refetch();
@@ -139,6 +224,12 @@ export default function FilesScreen() {
         }}
       >
         <Screen>
+          <ProfileSelector
+            disabled={upload.isPending}
+            onSelect={selectProfile}
+            profiles={profiles}
+            selectedProfileId={selectedProfileId}
+          />
           <Segmented
             onChange={setTab}
             options={[
@@ -149,10 +240,16 @@ export default function FilesScreen() {
           />
           <ScrollView className="flex-1">
             {tab === "artifacts" ? (
-              (artifactsQuery.data ?? []).length === 0 ? (
-                <EmptyState message="No files yet." />
+              artifacts.length === 0 ? (
+                <EmptyState
+                  message={
+                    selectedProfile
+                      ? `No files for ${selectedProfile.name}.`
+                      : "No profiles available."
+                  }
+                />
               ) : (
-                (artifactsQuery.data ?? []).map((item) => (
+                artifacts.map((item) => (
                   <ListRow
                     key={`${item.profileId}:${item.path}`}
                     onPress={() =>
@@ -162,7 +259,6 @@ export default function FilesScreen() {
                       })
                     }
                     subtitle={fileSubtitle([
-                      item.profileName,
                       fileFolder(item.filename),
                       displayFileKind(item.filename, item.mimeType),
                       formatBytes(item.sizeBytes),
@@ -171,10 +267,16 @@ export default function FilesScreen() {
                   />
                 ))
               )
-            ) : (knowledgeQuery.data ?? []).length === 0 ? (
-              <EmptyState message="No knowledge documents." />
+            ) : knowledge.length === 0 ? (
+              <EmptyState
+                message={
+                  selectedProfile
+                    ? `No knowledge documents for ${selectedProfile.name}.`
+                    : "No profiles available."
+                }
+              />
             ) : (
-              (knowledgeQuery.data ?? []).map((item) => (
+              knowledge.map((item) => (
                 <ListRow
                   key={`${item.profileId}:${item.id}`}
                   onPress={() =>
@@ -187,7 +289,6 @@ export default function FilesScreen() {
                     })
                   }
                   subtitle={fileSubtitle([
-                    item.profileName,
                     displayFileKind(item.filename, item.mediaType),
                     item.status === "ready"
                       ? formatBytes(item.sizeBytes)

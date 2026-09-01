@@ -1,8 +1,9 @@
+import type { ProfileChangeEvent } from "@atlas/core/contract";
 import { Chat01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { ActionCluster } from "@/components/atlas/action-cluster";
 import { ListRow } from "@/components/atlas/list-row";
 import { QueryState } from "@/components/atlas/query-state";
@@ -14,16 +15,23 @@ import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/auth-context";
+import {
+  formatProfileChangeField,
+  formatProfileChangeMetadata,
+  formatProfileChangeValue,
+} from "@/features/profiles/profile-history";
 import { useServer } from "@/features/server/server-context";
 import { useAppTheme } from "@/features/theme/theme-provider";
 import { useAtlasMutation, useReadyAtlasClient } from "@/hooks/use-atlas-query";
 import {
   useMcpQuery,
+  useProfileHistoryQuery,
   useProfileQuery,
   useSkillsQuery,
   useSoulQuery,
   useToolsQuery,
 } from "@/hooks/use-workspace";
+import { confirmDestructive } from "@/lib/confirm";
 import { showMutationError } from "@/lib/mutation-error";
 import { queryKeys } from "@/lib/query-keys";
 import { isWorkspaceAdmin } from "@/lib/roles";
@@ -38,6 +46,29 @@ const SOUL_FILES = [
 ] as const;
 
 type SoulKey = (typeof SOUL_FILES)[number]["key"];
+
+function HistoryValue({
+  event,
+  label,
+  value,
+}: {
+  event: ProfileChangeEvent;
+  label: "After" | "Before";
+  value: string | null;
+}) {
+  return (
+    <View className="gap-1.5">
+      <Text className="font-medium text-muted-foreground text-xs uppercase">
+        {label}
+      </Text>
+      <View className="rounded-lg border border-border bg-muted/35 p-3">
+        <Text className="font-mono text-xs" selectable>
+          {formatProfileChangeValue(value, event.field)}
+        </Text>
+      </View>
+    </View>
+  );
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -60,6 +91,11 @@ export default function ProfileScreen() {
   const [name, setName] = useState("");
   const [soulDrafts, setSoulDrafts] = useState<Record<string, string>>({});
   const [openSoul, setOpenSoul] = useState<SoulKey | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [openHistoryEventId, setOpenHistoryEventId] = useState<string | null>(
+    null
+  );
+  const historyQuery = useProfileHistoryQuery(profileId, admin && historyOpen);
 
   useEffect(() => {
     if (profileQuery.data?.name) {
@@ -105,6 +141,12 @@ export default function ProfileScreen() {
   const unassignMcp = useAtlasMutation((atlas, serverId: string) =>
     atlas.unassignMcpServer(profileId, serverId)
   );
+  const cloneProfile = useAtlasMutation((atlas) =>
+    atlas.cloneProfile(profileId)
+  );
+  const deleteProfile = useAtlasMutation((atlas) =>
+    atlas.deleteProfile(profileId)
+  );
 
   const assignedToolIds = new Set(
     (profileQuery.data?.tools ?? []).map((tool) => tool.id)
@@ -123,6 +165,9 @@ export default function ProfileScreen() {
     });
     await saveProfile.queryClient.invalidateQueries({
       queryKey: queryKeys.profiles,
+    });
+    await saveProfile.queryClient.invalidateQueries({
+      queryKey: queryKeys.profileHistory(profileId),
     });
   };
   const isToolBusy = assignTool.isPending || unassignTool.isPending;
@@ -247,9 +292,15 @@ export default function ProfileScreen() {
                                   fileKey: file.key,
                                 })
                                 .then(() =>
-                                  saveSoul.queryClient.invalidateQueries({
-                                    queryKey: queryKeys.soul(profileId),
-                                  })
+                                  Promise.all([
+                                    saveSoul.queryClient.invalidateQueries({
+                                      queryKey: queryKeys.soul(profileId),
+                                    }),
+                                    saveSoul.queryClient.invalidateQueries({
+                                      queryKey:
+                                        queryKeys.profileHistory(profileId),
+                                    }),
+                                  ])
                                 )
                                 .catch((error: unknown) => {
                                   showMutationError(
@@ -367,7 +418,104 @@ export default function ProfileScreen() {
               })}
 
               {admin ? (
-                <View className="px-4 py-4">
+                <>
+                  <SectionHeading title="History" />
+                  <ListRow
+                    onPress={() => {
+                      setHistoryOpen((current) => !current);
+                      setOpenHistoryEventId(null);
+                    }}
+                    showChevron={false}
+                    title="Change history"
+                    value={historyOpen ? "Hide" : "View"}
+                  />
+                  {historyOpen ? (
+                    historyQuery.isLoading ? (
+                      <View className="border-border border-b px-4 py-3">
+                        <Text className="text-muted-foreground text-sm">
+                          Loading history…
+                        </Text>
+                      </View>
+                    ) : historyQuery.isError && !historyQuery.data ? (
+                      <View className="gap-2 border-border border-b px-4 py-3">
+                        <Text className="text-destructive text-sm">
+                          Could not load history.
+                        </Text>
+                        <Button
+                          className="self-start"
+                          onPress={() => void historyQuery.refetch()}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <Text>Retry</Text>
+                        </Button>
+                      </View>
+                    ) : historyQuery.data?.length ? (
+                      <>
+                        {historyQuery.data.map((event) => {
+                          const eventOpen = openHistoryEventId === event.id;
+                          return (
+                            <View key={event.id}>
+                              <ListRow
+                                onPress={() =>
+                                  setOpenHistoryEventId((current) =>
+                                    current === event.id ? null : event.id
+                                  )
+                                }
+                                showChevron={false}
+                                subtitle={formatProfileChangeMetadata(event)}
+                                title={formatProfileChangeField(event.field)}
+                                value={eventOpen ? "Hide" : "View"}
+                              />
+                              {eventOpen ? (
+                                <View className="gap-3 border-border border-b px-4 py-4">
+                                  <HistoryValue
+                                    event={event}
+                                    label="Before"
+                                    value={event.beforeValue}
+                                  />
+                                  <HistoryValue
+                                    event={event}
+                                    label="After"
+                                    value={event.afterValue}
+                                  />
+                                </View>
+                              ) : null}
+                            </View>
+                          );
+                        })}
+                        {historyQuery.hasNextPage ? (
+                          <View className="border-border border-b px-4 py-3">
+                            <Button
+                              disabled={historyQuery.isFetchingNextPage}
+                              onPress={() => void historyQuery.fetchNextPage()}
+                              size="sm"
+                              variant="outline"
+                            >
+                              <Text>
+                                {historyQuery.isFetchingNextPage
+                                  ? "Loading…"
+                                  : historyQuery.isFetchNextPageError
+                                    ? "Retry loading more"
+                                    : "Load more"}
+                              </Text>
+                            </Button>
+                          </View>
+                        ) : null}
+                      </>
+                    ) : (
+                      <View className="border-border border-b px-4 py-3">
+                        <Text className="text-muted-foreground text-sm">
+                          No changes yet.
+                        </Text>
+                      </View>
+                    )
+                  ) : null}
+                </>
+              ) : null}
+
+              {admin ? (
+                <View className="gap-3 px-4 py-4">
                   <ActionCluster>
                     <Button
                       onPress={() => {
@@ -383,10 +531,7 @@ export default function ProfileScreen() {
                             }
                           })
                           .catch((error: unknown) => {
-                            Alert.alert(
-                              "Export failed",
-                              error instanceof Error ? error.message : ""
-                            );
+                            showMutationError("Export failed", error);
                           });
                       }}
                       size="sm"
@@ -394,7 +539,65 @@ export default function ProfileScreen() {
                     >
                       <Text>Export pack</Text>
                     </Button>
+                    {profileQuery.data?.isSuper ? null : (
+                      <Button
+                        disabled={cloneProfile.isPending}
+                        onPress={() => {
+                          void cloneProfile
+                            .mutateAsync(undefined)
+                            .then(async (response) => {
+                              await cloneProfile.queryClient.invalidateQueries({
+                                queryKey: queryKeys.profiles,
+                              });
+                              router.replace(`/profile/${response.profile.id}`);
+                            })
+                            .catch((error: unknown) => {
+                              showMutationError("Could not clone agent", error);
+                            });
+                        }}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <Text>
+                          {cloneProfile.isPending ? "Cloning…" : "Clone"}
+                        </Text>
+                      </Button>
+                    )}
                   </ActionCluster>
+                  {profileQuery.data?.isSuper ||
+                  profileQuery.data?.isDefault ? null : (
+                    <Button
+                      disabled={deleteProfile.isPending}
+                      onPress={() => {
+                        confirmDestructive({
+                          message: profileQuery.data?.name,
+                          onConfirm: () => {
+                            void deleteProfile
+                              .mutateAsync(undefined)
+                              .then(async () => {
+                                await deleteProfile.queryClient.invalidateQueries(
+                                  { queryKey: queryKeys.profiles }
+                                );
+                                router.replace("/(app)/(tabs)/agents");
+                              })
+                              .catch((error: unknown) => {
+                                showMutationError(
+                                  "Could not delete agent",
+                                  error
+                                );
+                              });
+                          },
+                          title: "Delete agent",
+                        });
+                      }}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Text>
+                        {deleteProfile.isPending ? "Deleting…" : "Delete agent"}
+                      </Text>
+                    </Button>
+                  )}
                 </View>
               ) : null}
             </ScrollView>

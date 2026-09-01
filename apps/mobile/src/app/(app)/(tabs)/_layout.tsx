@@ -39,7 +39,7 @@ export default function TabsLayout() {
             backgroundColor: colors.card,
             borderTopColor: colors.border,
             borderTopWidth: 1,
-            height: 49 + bottomInset,
+            height: 54 + bottomInset,
             paddingBottom: bottomInset,
             paddingTop: 4,
           },
@@ -65,23 +65,24 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="work"
-          options={{
-            href: canMutate ? undefined : null,
-            tabBarIcon: ({ color, size }) => (
-              <HugeiconsIcon color={color} icon={Task01Icon} size={size} />
-            ),
-            title: "Work",
-          }}
-        />
-        <Tabs.Screen
           name="agents"
           options={{
             href: canAccessProfiles ? undefined : null,
             tabBarIcon: ({ color, size }) => (
               <HugeiconsIcon color={color} icon={UserSquareIcon} size={size} />
             ),
-            title: "Agents",
+            title: "Profiles",
+          }}
+        />
+        <Tabs.Screen
+          name="work"
+          options={{
+            href: canMutate ? undefined : null,
+            tabBarIcon: ({ color, size }) => (
+              <HugeiconsIcon color={color} icon={Task01Icon} size={size} />
+            ),
+            tabBarLabel: "Work",
+            title: "Agent work",
           }}
         />
         <Tabs.Screen

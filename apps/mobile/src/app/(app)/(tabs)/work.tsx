@@ -1,6 +1,6 @@
 import { useNavigation, useRouter } from "expo-router";
-import { useLayoutEffect, useState } from "react";
-import { Alert, ScrollView } from "react-native";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { Pressable, ScrollView, View } from "react-native";
 import { EmptyState } from "@/components/atlas/empty-state";
 import { HeaderAddButton } from "@/components/atlas/header-add-button";
 import { InlineForm } from "@/components/atlas/inline-form";
@@ -12,13 +12,16 @@ import { RequireWorkspaceMutation } from "@/components/atlas/workspace-guard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Text } from "@/components/ui/text";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/auth-context";
 import { collapseSessionText } from "@/features/chat/sessions";
 import { useAtlasMutation } from "@/hooks/use-atlas-query";
 import { useProfilesQuery } from "@/hooks/use-profiles";
 import { useAutomationsQuery, useTasksQuery } from "@/hooks/use-workspace";
+import { showMutationError } from "@/lib/mutation-error";
 import { queryKeys } from "@/lib/query-keys";
 import { canMutateWorkspace } from "@/lib/roles";
+import { cn } from "@/lib/utils";
 
 type WorkTab = "automations" | "tasks";
 
@@ -30,7 +33,7 @@ export default function WorkScreen() {
     activeOrg,
     isPlatformAdmin: user?.isPlatformAdmin,
   });
-  const [tab, setTab] = useState<WorkTab>("tasks");
+  const [tab, setTab] = useState<WorkTab>("automations");
   const [creating, setCreating] = useState(false);
   const automationsQuery = useAutomationsQuery();
   const tasksQuery = useTasksQuery();
@@ -39,67 +42,97 @@ export default function WorkScreen() {
     profilesQuery.data?.find((profile) => profile.isDefault) ??
     profilesQuery.data?.[0];
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [prompt, setPrompt] = useState("");
+  const [profileId, setProfileId] = useState("");
+
+  useEffect(() => {
+    const profiles = profilesQuery.data ?? [];
+    if (profiles.some((profile) => profile.id === profileId)) {
+      return;
+    }
+    setProfileId(defaultProfile?.id ?? "");
+  }, [defaultProfile?.id, profileId, profilesQuery.data]);
 
   const createTask = useAtlasMutation(
-    (client, input: { prompt: string; title: string }) =>
+    (
+      client,
+      input: {
+        description: string;
+        profileId: string;
+        prompt: string;
+        title: string;
+      }
+    ) =>
       client.createTask({
-        profileId: defaultProfile?.id,
+        description: input.description || undefined,
+        profileId: input.profileId,
         prompt: input.prompt,
         title: input.title,
       })
   );
   const createAutomation = useAtlasMutation(
-    (client, input: { prompt: string; title: string }) =>
+    (
+      client,
+      input: {
+        description: string;
+        profileId: string;
+        prompt: string;
+        title: string;
+      }
+    ) =>
       client.createAutomation({
-        description: input.title,
+        description: input.description,
         name: input.title,
-        profileId: defaultProfile?.id,
+        profileId: input.profileId,
         prompt: input.prompt,
         trigger: { type: "manual" },
       })
   );
 
   const submit = async () => {
-    if (!(title.trim() && prompt.trim())) {
+    if (!(title.trim() && prompt.trim() && profileId)) {
       return;
     }
+    const input = {
+      description: description.trim(),
+      profileId,
+      prompt: prompt.trim(),
+      title: title.trim(),
+    };
     try {
       if (tab === "tasks") {
-        const task = await createTask.mutateAsync({
-          prompt: prompt.trim(),
-          title: title.trim(),
-        });
+        const task = await createTask.mutateAsync(input);
         await createTask.queryClient.invalidateQueries({
           queryKey: queryKeys.tasks,
         });
         setTitle("");
+        setDescription("");
         setPrompt("");
         setCreating(false);
         router.push(`/task/${task.id}`);
       } else {
-        const automation = await createAutomation.mutateAsync({
-          prompt: prompt.trim(),
-          title: title.trim(),
-        });
+        const automation = await createAutomation.mutateAsync(input);
         await createAutomation.queryClient.invalidateQueries({
           queryKey: queryKeys.automations,
         });
         setTitle("");
+        setDescription("");
         setPrompt("");
         setCreating(false);
         router.push(`/automation/${automation.id}`);
       }
     } catch (error) {
-      Alert.alert(
-        "Could not create",
-        error instanceof Error ? error.message : ""
-      );
+      showMutationError("Could not create", error);
     }
   };
 
-  const loading = automationsQuery.isLoading || tasksQuery.isLoading;
-  const error = automationsQuery.error ?? tasksQuery.error;
+  const loading =
+    automationsQuery.isLoading ||
+    tasksQuery.isLoading ||
+    profilesQuery.isLoading;
+  const error =
+    automationsQuery.error ?? tasksQuery.error ?? profilesQuery.error;
   const isCreatePending = createTask.isPending || createAutomation.isPending;
 
   useLayoutEffect(() => {
@@ -134,8 +167,8 @@ export default function WorkScreen() {
             <Segmented
               onChange={setTab}
               options={[
-                { label: "Tasks", value: "tasks" },
                 { label: "Automations", value: "automations" },
+                { label: "Tasks", value: "tasks" },
               ]}
               value={tab}
             />
@@ -149,12 +182,47 @@ export default function WorkScreen() {
                   value={title}
                 />
                 <Input
+                  onChangeText={setDescription}
+                  placeholder="Description (optional)"
+                  value={description}
+                />
+                <Textarea
+                  className="min-h-28"
                   onChangeText={setPrompt}
-                  placeholder="Prompt"
+                  placeholder="Agent prompt"
                   value={prompt}
                 />
+                <Text className="font-heading text-sm">Run as profile</Text>
+                <View
+                  accessibilityRole="radiogroup"
+                  className="flex-row flex-wrap gap-2"
+                >
+                  {(profilesQuery.data ?? []).map((profile) => {
+                    const selected = profile.id === profileId;
+                    return (
+                      <Pressable
+                        accessibilityRole="radio"
+                        accessibilityState={{ checked: selected }}
+                        className={cn(
+                          "min-h-11 justify-center rounded-full border border-border px-3",
+                          selected && "border-foreground bg-accent"
+                        )}
+                        disabled={isCreatePending}
+                        key={profile.id}
+                        onPress={() => setProfileId(profile.id)}
+                      >
+                        <Text className="text-sm">{profile.name}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
                 <Button
-                  disabled={isCreatePending || !title.trim() || !prompt.trim()}
+                  disabled={
+                    isCreatePending ||
+                    !profileId ||
+                    !title.trim() ||
+                    !prompt.trim()
+                  }
                   onPress={() => {
                     void submit();
                   }}

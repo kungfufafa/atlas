@@ -37,7 +37,10 @@ test("turns stored messages into list items including tools", () => {
 
   expect(items.map((item) => item.role)).toEqual(["user", "tool", "assistant"]);
   expect(items[1]?.tool).toBe("write_file");
+  expect(items[0]?.historyIndex).toBe(0);
+  expect(items[1]?.historyIndex).toBe(2);
   expect(items[1]?.artifacts?.[0]?.filename).toBe("notes.md");
+  expect(items[2]?.historyIndex).toBe(3);
   expect(items[2]?.content).toBe("Done.");
 });
 

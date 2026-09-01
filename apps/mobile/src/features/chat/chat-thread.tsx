@@ -20,15 +20,47 @@ import { cn } from "@/lib/utils";
 function ChatRow({
   grouped,
   item,
+  onRetry,
   profileId,
+  retryDisabled,
 }: {
   grouped: boolean;
   item: ChatListItem;
+  onRetry?: (message: ChatListItem) => void;
   profileId: string;
+  retryDisabled: boolean;
 }) {
   return (
     <View className={cn("w-full", grouped ? "mt-1" : "mt-2.5")}>
-      {item.role === "tool" ? (
+      {item.failed ? (
+        <View
+          accessibilityRole="alert"
+          className="max-w-[90%] gap-2 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2.5"
+        >
+          <View className="gap-1">
+            <Text className="font-medium text-destructive text-xs">Failed</Text>
+            <Text className="text-destructive text-sm">
+              {item.content || "The model did not respond."}
+            </Text>
+          </View>
+          {onRetry ? (
+            <Pressable
+              accessibilityLabel="Retry failed message"
+              accessibilityRole="button"
+              className={cn(
+                "h-9 flex-row items-center self-start rounded-lg border border-destructive/30 bg-background px-3",
+                retryDisabled && "opacity-50"
+              )}
+              disabled={retryDisabled}
+              onPress={() => onRetry(item)}
+            >
+              <Text className="font-medium text-destructive text-sm">
+                Retry
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : item.role === "tool" ? (
         <ToolCall item={item} profileId={profileId} />
       ) : (
         <MessageBubble item={item} profileId={profileId} />
@@ -57,6 +89,7 @@ export function ChatThread({
     isSending,
     messages,
     relatedQuestions,
+    retry,
     send,
     stop,
     todos,
@@ -111,7 +144,9 @@ export function ChatThread({
               item.role !== "tool"
             }
             item={item}
+            onRetry={canMutate ? retry : undefined}
             profileId={profileId}
+            retryDisabled={isOffline || isSending}
           />
         )}
       />

@@ -25,12 +25,8 @@ function ListRow({
   const color = NAV_THEME[resolved].colors.text;
   const chevron = showChevron ?? Boolean(onPress && !right);
 
-  return (
-    <Pressable
-      className="flex-row items-center border-border border-b px-4 py-3"
-      disabled={!onPress}
-      onPress={onPress}
-    >
+  const content = (
+    <>
       <View className="min-w-0 flex-1 pr-3">
         <Text className="font-heading" numberOfLines={1}>
           {title}
@@ -53,6 +49,23 @@ function ListRow({
       {chevron ? (
         <HugeiconsIcon color={color} icon={ArrowRight01Icon} size={16} />
       ) : null}
+    </>
+  );
+
+  if (!onPress) {
+    return (
+      <View className="flex-row items-center border-border border-b px-4 py-3">
+        {content}
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      className="flex-row items-center border-border border-b px-4 py-3"
+      onPress={onPress}
+    >
+      {content}
     </Pressable>
   );
 }

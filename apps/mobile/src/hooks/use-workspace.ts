@@ -1,10 +1,20 @@
 import type {
   ArtifactFile,
   KnowledgeBaseDocument,
+  ListProfileChangeHistoryResponse,
   SessionSummary,
 } from "@atlas/core/contract";
-import { useQuery } from "@tanstack/react-query";
+import {
+  type InfiniteData,
+  useInfiniteQuery,
+  useQuery,
+} from "@tanstack/react-query";
 import { mergeSessionsByRecency } from "@/features/chat/sessions";
+import {
+  getNextProfileHistoryOffset,
+  mergeProfileHistoryPages,
+  PROFILE_HISTORY_PAGE_SIZE,
+} from "@/features/profiles/profile-history";
 import {
   useAtlasQuery,
   useOrgKey,
@@ -229,6 +239,40 @@ export function useProfileQuery(profileId: string) {
   });
 }
 
+export function useProfileHistoryQuery(profileId: string, enabled = true) {
+  const client = useReadyAtlasClient();
+  const orgKey = useOrgKey();
+  const queryKey = useServerQueryKey(queryKeys.profileHistory(profileId));
+  const query = useInfiniteQuery<
+    ListProfileChangeHistoryResponse,
+    Error,
+    InfiniteData<ListProfileChangeHistoryResponse, number>,
+    readonly unknown[],
+    number
+  >({
+    enabled: Boolean(client) && enabled,
+    getNextPageParam: (_lastPage, pages) => getNextProfileHistoryOffset(pages),
+    initialPageParam: 0,
+    queryFn: async ({
+      pageParam,
+    }): Promise<ListProfileChangeHistoryResponse> => {
+      if (!client) {
+        throw new Error("Not connected.");
+      }
+      return client.listProfileChangeHistory(profileId, {
+        limit: PROFILE_HISTORY_PAGE_SIZE,
+        offset: pageParam,
+      });
+    },
+    queryKey: [...queryKey, "org", orgKey],
+  });
+
+  return {
+    ...query,
+    data: query.data ? mergeProfileHistoryPages(query.data.pages) : undefined,
+  };
+}
+
 export function useSoulQuery(profileId: string) {
   return useAtlasQuery(queryKeys.soul(profileId), (client) =>
     client.getProfileSoulStack(profileId)
@@ -274,6 +318,12 @@ export function useIntegrationsQuery() {
 
 export function useTimezoneQuery() {
   return useAtlasQuery(queryKeys.timezone, (client) => client.getTimezone());
+}
+
+export function useUserContextQuery() {
+  return useAtlasQuery(queryKeys.userContext, (client) =>
+    client.getUserContext({ includeContent: true })
+  );
 }
 
 export function useOrgMemoryQuery(orgId: string | null | undefined) {

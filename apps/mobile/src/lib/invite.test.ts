@@ -1,5 +1,18 @@
 import { expect, test } from "bun:test";
-import { tokenFromInviteInput } from "./invite";
+import {
+  inviteAcceptPath,
+  inviteAcceptUrl,
+  tokenFromInviteInput,
+} from "./invite";
+
+test("builds a portable invite path and server URL", () => {
+  expect(inviteAcceptPath("token with spaces")).toBe(
+    "/invite?token=token+with+spaces"
+  );
+  expect(inviteAcceptUrl("https://atlas.example/", "abc")).toBe(
+    "https://atlas.example/invite?token=abc"
+  );
+});
 
 test("keeps a bare invite token", () => {
   expect(tokenFromInviteInput(" abc123 ")).toBe("abc123");
