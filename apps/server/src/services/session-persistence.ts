@@ -27,6 +27,54 @@ export function wrapPersistedSession(
 ): AgentChatSession {
   let lastPersistedRevision = session.getHistoryRevision();
 
+  async function persistAfterSend(
+    send: () => Promise<string>,
+    userMessage: string
+  ): Promise<string> {
+    const turnId = options.onBeginTurn?.(sessionId, userMessage);
+    const before = session.getHistory().length;
+    const revisionBefore = session.getHistoryRevision();
+    const historySnapshot = session.getHistory().slice();
+    let reply: string;
+    try {
+      reply = options.runTurn
+        ? await options.runTurn(turnId, send)
+        : await send();
+    } catch (error) {
+      await notifySendRejected(
+        options.onSendRejected,
+        sessionId,
+        error,
+        turnId
+      );
+      throw error;
+    }
+    try {
+      await persistSessionHistory(
+        db,
+        sessionId,
+        session,
+        before,
+        revisionBefore,
+        lastPersistedRevision,
+        options.beforePersist
+      );
+    } catch (error) {
+      const history = session.getHistory();
+      history.splice(0, history.length, ...historySnapshot);
+      await notifySendRejected(
+        options.onSendRejected,
+        sessionId,
+        error,
+        turnId
+      );
+      throw error;
+    }
+    options.onSendResolved?.(sessionId, turnId);
+    lastPersistedRevision = session.getHistoryRevision();
+    return reply;
+  }
+
   return {
     clear() {
       session.clear();
@@ -51,68 +99,16 @@ export function wrapPersistedSession(
     getHistory: () => session.getHistory(),
     getHistoryRevision: () => session.getHistoryRevision(),
     async send(message, sendOptions) {
-      const turnId = options.onBeginTurn?.(sessionId, readUserMessage(message));
-      const before = session.getHistory().length;
-      const revisionBefore = session.getHistoryRevision();
-      let reply: string;
-      try {
-        const send = () => session.send(message, sendOptions);
-        reply = options.runTurn
-          ? await options.runTurn(turnId, send)
-          : await send();
-      } catch (error) {
-        await notifySendRejected(
-          options.onSendRejected,
-          sessionId,
-          error,
-          turnId
-        );
-        throw error;
-      }
-      options.onSendResolved?.(sessionId, turnId);
-      await persistSessionHistory(
-        db,
-        sessionId,
-        session,
-        before,
-        revisionBefore,
-        lastPersistedRevision,
-        options.beforePersist
+      return persistAfterSend(
+        () => session.send(message, sendOptions),
+        readUserMessage(message)
       );
-      lastPersistedRevision = session.getHistoryRevision();
-      return reply;
     },
     async sendStream(message, handlers, streamOptions) {
-      const turnId = options.onBeginTurn?.(sessionId, readUserMessage(message));
-      const before = session.getHistory().length;
-      const revisionBefore = session.getHistoryRevision();
-      let reply: string;
-      try {
-        const send = () => session.sendStream(message, handlers, streamOptions);
-        reply = options.runTurn
-          ? await options.runTurn(turnId, send)
-          : await send();
-      } catch (error) {
-        await notifySendRejected(
-          options.onSendRejected,
-          sessionId,
-          error,
-          turnId
-        );
-        throw error;
-      }
-      options.onSendResolved?.(sessionId, turnId);
-      await persistSessionHistory(
-        db,
-        sessionId,
-        session,
-        before,
-        revisionBefore,
-        lastPersistedRevision,
-        options.beforePersist
+      return persistAfterSend(
+        () => session.sendStream(message, handlers, streamOptions),
+        readUserMessage(message)
       );
-      lastPersistedRevision = session.getHistoryRevision();
-      return reply;
     },
   };
 }
