@@ -17,6 +17,7 @@ export type CreateMinimalHonoAppOverrides = {
   authService?: AuthService;
   automationService?: ServerOptions["automationService"] | object;
   composioService?: ServerOptions["composioService"];
+  corsAllowedOrigins?: ServerOptions["corsAllowedOrigins"];
   dataImportBodyReadTimeoutMs?: ServerOptions["dataImportBodyReadTimeoutMs"];
   databaseAdapter?: DatabaseAdapter;
   mcpService?: ServerOptions["mcpService"] | object;
@@ -46,6 +47,7 @@ export function createMinimalHonoApp(
     automationService: (overrides.automationService ??
       {}) as ServerOptions["automationService"],
     composioService: overrides.composioService,
+    corsAllowedOrigins: overrides.corsAllowedOrigins,
     databaseAdapter,
     dataImportBodyReadTimeoutMs: overrides.dataImportBodyReadTimeoutMs,
     mcpService: (overrides.mcpService ?? {}) as ServerOptions["mcpService"],

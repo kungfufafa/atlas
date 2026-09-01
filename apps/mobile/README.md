@@ -27,6 +27,19 @@ API — like Bitwarden, you point it at your own Atlas URL from Sign in
 - iOS simulator: `http://127.0.0.1:4310`
 - Phone on LAN: `http://192.168.x.x:4310`
 
+### Expo Web
+
+Browser builds need the Atlas server to allow the exact origin serving Expo.
+For the default local Expo Web URL, start or redeploy the server with:
+
+```bash
+ATLAS_CORS_ORIGINS=http://localhost:8081 bun run dev:server
+```
+
+For Docker, pass the same setting with `-e`. Multiple browser origins can be
+separated by commas. Do not use a wildcard; native Android and iOS builds do
+not need CORS.
+
 ## Servers and security
 
 You can save and switch among Atlas installations from **Account → Server**.

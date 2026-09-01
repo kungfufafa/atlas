@@ -18,6 +18,8 @@ export interface ServerOptions {
   authService?: AuthService | null;
   automationService: AutomationService;
   composioService?: ComposioService | null;
+  /** Exact browser origins allowed to call the API across origins. */
+  corsAllowedOrigins?: readonly string[];
   databaseAdapter?: DatabaseAdapter | null;
   /** Optional request-body deadline override, primarily for embedded servers. */
   dataImportBodyReadTimeoutMs?: number;

@@ -3,6 +3,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { tryServeStaticWeb } from "../static-web";
 import { createAuthMiddleware } from "./auth-middleware";
 import type { ServerOptions } from "./context";
+import { createCorsMiddleware } from "./cors";
 import { serializeHttpOpenApiSpec } from "./openapi";
 import { createOrgContextMiddleware } from "./org-middleware";
 import { registerArtifactPreviewRoutes } from "./routes/artifact-preview";
@@ -105,6 +106,10 @@ export function createHonoApp(options: ServerOptions) {
     const finalResponse = c.res;
     c.res = applySecurityHeaders(finalResponse);
   });
+
+  if (options.corsAllowedOrigins?.length) {
+    app.use("*", createCorsMiddleware(options.corsAllowedOrigins));
+  }
 
   app.use("*", createAuthMiddleware(options));
   registerInternalAutomationRoutes(app, options);

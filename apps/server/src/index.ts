@@ -40,6 +40,7 @@ import {
   UNKNOWN_USAGE_DIMENSION,
 } from "@atlas/db";
 import { createHonoApp } from "./http/app";
+import { parseCorsAllowedOrigins } from "./http/cors";
 import { disableBunIdleTimeoutForSse } from "./http/sse-idle-timeout";
 import { estimateUsageCostUsd } from "./providers/pricing";
 import { runFirstBootSeed } from "./seed";
@@ -90,6 +91,9 @@ const projectRoot = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 const host = process.env.ATLAS_HOST ?? DEFAULT_SERVER_HOST;
 const requestedPort = parsePort(process.env.ATLAS_PORT);
 const canFallbackToNextPort = process.env.ATLAS_PORT == null;
+const corsAllowedOrigins = parseCorsAllowedOrigins(
+  process.env.ATLAS_CORS_ORIGINS
+);
 
 const existingServerUrl = await findRunningAtlasServerUrl(host, requestedPort);
 
@@ -320,6 +324,7 @@ const app = createHonoApp({
   authService,
   automationService,
   composioService,
+  corsAllowedOrigins,
   databaseAdapter: database.adapter,
   mcpService,
   onDataRestored: async () => {
