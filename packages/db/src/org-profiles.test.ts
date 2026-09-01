@@ -105,6 +105,7 @@ describe("seedOrgDefaultProfile", () => {
     await upsertSkill(db, "update-profile-memory");
     await upsertSkill(db, "archive-profile-memory");
     await upsertSkill(db, "save-artifact");
+    await upsertSkill(db, "composio-integrations");
     await upsertSkill(db, "create-profile");
 
     const profile = await seedOrgDefaultProfile(db, "org_a");
@@ -117,6 +118,7 @@ describe("seedOrgDefaultProfile", () => {
     expect(skillNames).toContain("update-profile-memory");
     expect(skillNames).toContain("archive-profile-memory");
     expect(skillNames).toContain("save-artifact");
+    expect(skillNames).not.toContain("composio-integrations");
     expect(skillNames).not.toContain("create-profile");
   });
 });
@@ -162,6 +164,7 @@ describe("seedOrgSuperAgentProfile", () => {
     await upsertSkill(db, "create-profile");
     await upsertSkill(db, "coding-agent");
     await upsertSkill(db, "agent-browser");
+    await upsertSkill(db, "composio-integrations");
 
     const profile = await seedOrgSuperAgentProfile(db, "org_a");
     const skillNames = (await db.listSkillsForProfile(profile.id)).map(
@@ -172,6 +175,7 @@ describe("seedOrgSuperAgentProfile", () => {
     expect(skillNames).toContain("create-profile");
     expect(skillNames).toContain("coding-agent");
     expect(skillNames).not.toContain("agent-browser");
+    expect(skillNames).not.toContain("composio-integrations");
   });
 
   test("is idempotent for the same org", async () => {

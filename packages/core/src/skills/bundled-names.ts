@@ -4,7 +4,6 @@ export const DEFAULT_BUNDLED_SKILL_NAMES = [
   "update-profile-memory",
   "archive-profile-memory",
   "save-artifact",
-  "composio-integrations",
 ] as const;
 
 export const SUPER_AGENT_BUNDLED_SKILL_NAMES = [
@@ -21,7 +20,10 @@ export const RUNTIME_ONLY_BUNDLED_SKILL_NAMES = [
 ] as const;
 
 /** Bundled skills that install/sync but are never auto-assigned (manual opt-in). */
-export const OPT_IN_BUNDLED_SKILL_NAMES = ["agent-browser"] as const;
+export const OPT_IN_BUNDLED_SKILL_NAMES = [
+  "agent-browser",
+  "composio-integrations",
+] as const;
 
 export const BUNDLED_SKILL_NAMES = [
   ...DEFAULT_BUNDLED_SKILL_NAMES,
