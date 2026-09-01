@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { ProfileSummary } from "./contract";
 import {
   filterProfilesForChatAccess,
+  formatProfileSelectionPrompt,
   resolveProfileInput,
   resolveProfileInScopes,
   slugifyProfileName,
@@ -99,6 +100,15 @@ describe("filterProfilesForChatAccess", () => {
         orgRole: "member",
       }).map((profile) => profile.id)
     ).toEqual(["profile_b", "profile_a", "super_agent"]);
+  });
+});
+
+describe("formatProfileSelectionPrompt", () => {
+  test("requires the profile command instead of implying a bare reply", () => {
+    const prompt = formatProfileSelectionPrompt(profiles, "profile_a");
+
+    expect(prompt).toContain("Switch with /profile 2");
+    expect(prompt).not.toContain("reply with");
   });
 });
 

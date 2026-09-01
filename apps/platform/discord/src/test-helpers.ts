@@ -83,9 +83,11 @@ export function createMockClient(
     }>;
     onSendStream?: (
       input: unknown,
-      handlers?: StreamHandlers
+      handlers?: StreamHandlers,
+      streamOptions?: { signal?: AbortSignal }
     ) => Promise<string>;
     artifactContentBytes?: Uint8Array;
+    failCreateSession?: Error;
     failPublishShare?: boolean;
     failReadArtifact?: boolean;
   } = {}
@@ -101,10 +103,14 @@ export function createMockClient(
   };
   const createdSessionProfileIds: string[] = [];
 
-  const sendStream = async (input: unknown, handlers?: StreamHandlers) => {
+  const sendStream = async (
+    input: unknown,
+    handlers?: StreamHandlers,
+    streamOptions?: { signal?: AbortSignal }
+  ) => {
     calls.sendStream += 1;
     if (options.onSendStream) {
-      return options.onSendStream(input, handlers);
+      return options.onSendStream(input, handlers, streamOptions);
     }
     return "Agent reply";
   };
@@ -138,6 +144,9 @@ export function createMockClient(
     createChatSession: () => session,
     createSession: async (_channel: string, input?: { profileId?: string }) => {
       calls.createSession += 1;
+      if (options.failCreateSession) {
+        throw options.failCreateSession;
+      }
       if (input?.profileId) {
         createdSessionProfileIds.push(input.profileId);
       }
@@ -256,6 +265,7 @@ export function createDmMessage(options: {
   }>;
 }): MockDmMessage {
   const sentMessages: string[] = [];
+  const sentMessageById: Map<string, number> = new Map();
   let fileSendCalls = 0;
   const channelId = options.channelId ?? "dm_channel_1";
 
@@ -265,15 +275,22 @@ export function createDmMessage(options: {
     isTextBased: () => true,
     isThread: () => false,
     messages: {
-      fetch: async () => ({
-        edit: async () => {},
+      fetch: async (messageId: string) => ({
+        edit: async (text: string) => {
+          const index = sentMessageById.get(messageId);
+          if (index !== undefined) {
+            sentMessages[index] = text.slice(0, 2000);
+          }
+        },
       }),
     },
     parentId: null,
     send: async (payload: string | { files: unknown[] }) => {
       if (typeof payload === "string") {
         sentMessages.push(payload);
-        return { id: String(sentMessages.length) };
+        const id = String(sentMessages.length);
+        sentMessageById.set(id, sentMessages.length - 1);
+        return { id };
       }
 
       fileSendCalls += 1;
@@ -543,10 +560,12 @@ export function createSlashInteraction(options: {
   /** Resolved USER option for commands like /allow. Pass `null` for missing. */
   userOption?: { id: string; username?: string } | null;
 }): {
+  fileSendCalls: number;
   interaction: import("discord.js").ChatInputCommandInteraction;
   replies: string[];
 } {
   const replies: string[] = [];
+  let fileSendCalls = 0;
   const userId = options.userId ?? "424242424242424242";
   const channelId = options.channelId ?? "guild_channel_1";
   const threadId = options.threadId ?? "thread_1";
@@ -562,14 +581,20 @@ export function createSlashInteraction(options: {
           archived: false,
           id: threadId,
           isDMBased: () => false,
+          isTextBased: () => true,
           isThread: () => true,
           parentId: fetchParentId,
         }),
         id: threadId,
         isDMBased: () => false,
+        isTextBased: () => true,
         isThread: () => true,
         parentId,
         partial: parentId === null,
+        send: async (_payload: { files: unknown[] }) => {
+          fileSendCalls += 1;
+          return { id: `file_${fileSendCalls}` };
+        },
         setArchived: async (value: boolean) => {
           channel.archived = value;
           return channel;
@@ -578,8 +603,13 @@ export function createSlashInteraction(options: {
     : {
         id: channelId,
         isDMBased: () => false,
+        isTextBased: () => true,
         isThread: () => false,
         parentId: null,
+        send: async (_payload: { files: unknown[] }) => {
+          fileSendCalls += 1;
+          return { id: `file_${fileSendCalls}` };
+        },
       };
 
   const interaction = {
@@ -610,7 +640,13 @@ export function createSlashInteraction(options: {
     user: { id: userId },
   } as unknown as import("discord.js").ChatInputCommandInteraction;
 
-  return { interaction, replies };
+  return {
+    get fileSendCalls() {
+      return fileSendCalls;
+    },
+    interaction,
+    replies,
+  };
 }
 
 export async function writeDiscordConfigIni(

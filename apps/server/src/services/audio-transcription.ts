@@ -1,5 +1,6 @@
 import {
   AtlasApiError,
+  decodeBase64AttachmentData,
   PROVIDER_CAPABILITY_IDS,
   type ProviderInstance,
   type UserConfig,
@@ -19,9 +20,16 @@ import {
 } from "./provider-instance-helpers";
 
 const AUDIO_TRANSCRIPTION = PROVIDER_CAPABILITY_IDS.audioTranscription;
+export const MAX_AUDIO_TRANSCRIPTION_BYTES = 25 * 1024 * 1024;
 
 export const TRANSCRIPTION_MODEL_REQUIRED_MESSAGE =
   "Configure an audio transcription model in Settings before sending voice messages.";
+
+export function decodeAudioTranscriptionData(data: string): Buffer {
+  return Buffer.from(
+    decodeBase64AttachmentData(data, "Audio", MAX_AUDIO_TRANSCRIPTION_BYTES)
+  );
+}
 
 export function resolveTranscriptionProviderSelection(
   userConfig: UserConfig | null | undefined,

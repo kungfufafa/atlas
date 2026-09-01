@@ -120,13 +120,14 @@ WhatsApp works in **private chats** and **groups**.
 - in a group, Atlas responds only when someone mentions the connected account, replies to an Atlas message, or sends a supported `/command`
 - each private chat and each group keeps its own Atlas session
 - `/org` in a group changes only that group's workspace selection
+- `/profile` changes only that private chat or group's reply profile
 - replying to another group message while mentioning Atlas includes that quoted text in the agent turn
 - chat access codes work only in private chats
 - allowlists and denylists match the sender **phone number**. If WhatsApp identifies the chat as a LID (`…@lid`) instead of `…@s.whatsapp.net`, Atlas resolves the phone from the message (or a saved mapping) before checking the list. The linked owner account is still recognized by its paired LID.
 
 These rules let Atlas participate without interrupting ordinary group conversation. A group sender must still be allowed by the workspace's **Access mode**.
 
-If you change the reply profile, new messages use that profile. Starting a new conversation with `/new` gives you a fresh session.
+**Integrations → WhatsApp → Reply as** sets the default profile. Use `/profile` inside a private chat or group to override that default for that conversation. Starting a new conversation with `/new` preserves the conversation's selected profile while giving it a fresh session.
 
 ### Knowledge base answers
 
@@ -169,9 +170,11 @@ Useful WhatsApp commands:
 
 | Command | What it does |
 | --- | --- |
+| `/start` | Shows welcome and pairing help |
 | `/help` | Shows available WhatsApp commands |
 | `/status` | Shows server and model status |
 | `/org` | Lists or switches the active organization |
+| `/profile` | Lists or switches the profile for this chat |
 | `/clear` | Clears the current chat history |
 | `/new` | Starts a fresh conversation |
 | `/compact` | Compacts the current conversation history |

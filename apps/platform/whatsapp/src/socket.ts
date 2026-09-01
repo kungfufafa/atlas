@@ -215,7 +215,7 @@ export async function createWhatsAppSocket(
 
         const me = state.creds.me;
 
-        for (const msg of m.messages) {
+        await dispatchWhatsAppMessagesConcurrently(m.messages, async (msg) => {
           const remoteJid = msg.key.remoteJid ?? null;
           const messageId = msg.key.id?.trim();
           const text = extractInboundText(msg.message);
@@ -263,10 +263,10 @@ export async function createWhatsAppSocket(
               shouldHandle: Boolean(inbound),
             })
           ) {
-            continue;
+            return;
           }
           if (!(remoteJid && inbound)) {
-            continue;
+            return;
           }
 
           console.log("WhatsApp message received.", {
@@ -285,7 +285,7 @@ export async function createWhatsAppSocket(
               errorType: getSafeWhatsAppErrorType(error),
             });
           }
-        }
+        });
       });
     },
     async stop() {
@@ -298,6 +298,13 @@ export async function createWhatsAppSocket(
   };
 
   return handle;
+}
+
+export async function dispatchWhatsAppMessagesConcurrently<T>(
+  messages: readonly T[],
+  handleMessage: (message: T) => Promise<void>
+): Promise<void> {
+  await Promise.allSettled(messages.map((message) => handleMessage(message)));
 }
 
 export function whatsAppReconnectDelayMs(attempt: number): number {

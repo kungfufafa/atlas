@@ -1,5 +1,11 @@
 import type { SendMessageInput } from "@atlas/core/contract";
 import {
+  createDownloadDeadline,
+  EmptyDownloadError,
+  throwIfSignalAborted,
+  waitForAbortable,
+} from "@atlas/core/download-deadline";
+import {
   isSupportedDocumentMediaType,
   isSupportedImageMediaType,
   MAX_ATTACHMENTS_PER_MESSAGE,
@@ -48,6 +54,10 @@ export function hasDiscordAttachments(message: Message): boolean {
 export async function buildDiscordAttachmentInput(
   message: Message,
   options?: {
+    caption?: string;
+    idleTimeoutMs?: number;
+    overallTimeoutMs?: number;
+    signal?: AbortSignal;
     transcribeAudio?: (input: {
       data: string;
       filename: string;
@@ -87,8 +97,11 @@ export async function buildDiscordAttachmentInput(
     let bytes: ArrayBuffer;
 
     try {
-      bytes = await downloadDiscordAttachment(attachment, maxBytes);
+      bytes = await downloadDiscordAttachment(attachment, maxBytes, options);
     } catch (error) {
+      if (options?.signal?.aborted) {
+        throwIfSignalAborted(options.signal);
+      }
       if (error instanceof OversizedDiscordFileError) {
         return {
           kind: "reject",
@@ -115,17 +128,23 @@ export async function buildDiscordAttachmentInput(
       }
 
       try {
-        const { text } = await options.transcribeAudio({
+        const transcription = options.transcribeAudio({
           data,
           filename: classified.filename,
           mediaType: classified.mediaType,
         });
+        const { text } = options.signal
+          ? await waitForAbortable(transcription, options.signal)
+          : await transcription;
         const transcript = text.trim();
         if (!transcript) {
           return { kind: "reject", message: AUDIO_TRANSCRIBE_FAILED_REPLY };
         }
         transcripts.push(transcript);
       } catch (error) {
+        if (options.signal?.aborted) {
+          throwIfSignalAborted(options.signal);
+        }
         return {
           kind: "reject",
           message:
@@ -158,7 +177,7 @@ export async function buildDiscordAttachmentInput(
     return { kind: "reject", message: UNSUPPORTED_MEDIA_REPLY };
   }
 
-  const caption = message.content?.trim() ?? "";
+  const caption = options?.caption?.trim() ?? message.content?.trim() ?? "";
   const messageText = [...transcripts, caption].filter(Boolean).join("\n\n");
 
   return {
@@ -249,25 +268,100 @@ function classifyDiscordAttachment(
 
 async function downloadDiscordAttachment(
   attachment: Attachment,
-  maxBytes: number
+  maxBytes: number,
+  options: {
+    idleTimeoutMs?: number;
+    overallTimeoutMs?: number;
+    signal?: AbortSignal;
+  } = {}
 ): Promise<ArrayBuffer> {
   if (attachment.size > maxBytes) {
     throw new OversizedDiscordFileError();
   }
 
-  const response = await fetch(attachment.url);
-
-  if (!response.ok) {
-    throw new Error(`Failed to download file (${response.status}).`);
+  if (attachment.size === 0) {
+    throw new EmptyDownloadError();
   }
 
-  const bytes = await response.arrayBuffer();
+  const deadline = createDownloadDeadline(options);
 
-  if (bytes.byteLength > maxBytes) {
+  try {
+    deadline.resetIdle();
+    const response = await waitForAbortable(
+      fetch(attachment.url, { signal: deadline.signal }),
+      deadline.signal
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to download file (${response.status}).`);
+    }
+
+    assertDiscordContentLength(response, maxBytes);
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new EmptyDownloadError();
+    }
+
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    while (true) {
+      deadline.resetIdle();
+      let result: Awaited<ReturnType<typeof reader.read>>;
+      try {
+        result = await waitForAbortable(reader.read(), deadline.signal);
+      } catch (error) {
+        void reader.cancel(error).catch(() => undefined);
+        throw error;
+      }
+      const { done, value } = result;
+      if (done) {
+        break;
+      }
+      if (!value?.byteLength) {
+        continue;
+      }
+
+      total += value.byteLength;
+      if (total > maxBytes) {
+        await reader.cancel().catch(() => undefined);
+        throw new OversizedDiscordFileError();
+      }
+      chunks.push(value);
+    }
+
+    if (total === 0) {
+      throw new EmptyDownloadError();
+    }
+
+    const merged = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) {
+      merged.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+
+    return merged.buffer;
+  } finally {
+    deadline.dispose();
+  }
+}
+
+function assertDiscordContentLength(
+  response: Response,
+  maxBytes: number
+): void {
+  const rawLength = response.headers.get("content-length")?.trim();
+  if (!(rawLength && /^\d+$/.test(rawLength))) {
+    return;
+  }
+
+  const contentLength = Number(rawLength);
+  if (contentLength === 0) {
+    throw new EmptyDownloadError();
+  }
+  if (contentLength > maxBytes) {
     throw new OversizedDiscordFileError();
   }
-
-  return bytes;
 }
 
 function inferAudioMediaTypeFromName(filename: string): string {

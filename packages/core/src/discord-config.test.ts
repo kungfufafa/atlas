@@ -181,4 +181,45 @@ describe("verifyAndPairDiscordUser concurrency", () => {
       );
     });
   });
+
+  test("clears pairing fields when switching away from pairing mode", async () => {
+    await withTempHomedir("atlas-dc-open-mode-clear-", async (homeDir) => {
+      await writeChannelIniConfig(homeDir, "discord", {
+        botToken: "discord-bot-token",
+        handshakeAssertion: "assert_keep",
+        handshakeCode: "AABBCCDD",
+      });
+
+      await saveDiscordConfig({
+        accessMode: "allowlist",
+        botToken: "discord-bot-token",
+      });
+
+      const saved = await loadDiscordConfigFile();
+      expect(saved?.accessMode).toBe("allowlist");
+      expect(saved?.handshakeCode).toBeNull();
+      expect(saved?.handshakeAssertion).toBeNull();
+      expect(saved?.handshakeUserId).toBeNull();
+    });
+  });
+
+  test("keeps pairing fields while staying in pairing mode", async () => {
+    await withTempHomedir("atlas-dc-pair-mode-keep-", async (homeDir) => {
+      await writeChannelIniConfig(homeDir, "discord", {
+        botToken: "discord-bot-token",
+        handshakeAssertion: "assert_keep",
+        handshakeCode: "AABBCCDD",
+      });
+
+      await saveDiscordConfig({
+        accessMode: "pairing",
+        botToken: "discord-bot-token",
+      });
+
+      const saved = await loadDiscordConfigFile();
+      expect(saved?.accessMode).toBe("pairing");
+      expect(saved?.handshakeCode).toBe("AABBCCDD");
+      expect(saved?.handshakeAssertion).toBe("assert_keep");
+    });
+  });
 });

@@ -784,6 +784,15 @@ export class AtlasClient {
     );
   }
 
+  getSessionAttachmentUrl(
+    sessionId: string,
+    attachmentId: string,
+    inline = false
+  ): string {
+    const query = inline ? "?inline=1" : "";
+    return `${this.baseUrl}/v1/sessions/${encodeURIComponent(sessionId)}/attachments/${encodeURIComponent(attachmentId)}${query}`;
+  }
+
   async getSessionStatus(sessionId: string): Promise<SessionStatusResponse> {
     return this.request<SessionStatusResponse>(
       `/v1/sessions/${encodeURIComponent(sessionId)}/status`

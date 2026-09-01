@@ -1,4 +1,11 @@
+import type { Transform } from "node:stream";
 import type { SendMessageInput } from "@atlas/core/contract";
+import {
+  createDownloadDeadline,
+  EmptyDownloadError,
+  throwIfSignalAborted,
+  waitForAbortable,
+} from "@atlas/core/download-deadline";
 import {
   extractInboundDocumentText,
   isSpreadsheetDocumentMediaType,
@@ -45,7 +52,24 @@ export const DOWNLOAD_FAILED_REPLY = "Could not download that file. Try again.";
 export const PAIRING_MEDIA_REPLY =
   "Send the chat access code as text to authorize this chat.";
 
-export type WhatsAppMediaDownload = (message: WAMessage) => Promise<Buffer>;
+export class OversizedWhatsAppMediaError extends Error {
+  constructor() {
+    super("File is too large.");
+    this.name = "OversizedWhatsAppMediaError";
+  }
+}
+
+export interface WhatsAppMediaDownloadOptions {
+  idleTimeoutMs?: number;
+  maxBytes: number;
+  overallTimeoutMs?: number;
+  signal?: AbortSignal;
+}
+
+export type WhatsAppMediaDownload = (
+  message: WAMessage,
+  options?: WhatsAppMediaDownloadOptions
+) => Promise<Buffer>;
 
 export type WhatsAppMediaBuildResult =
   | { kind: "input"; input: SendMessageInput }
@@ -58,6 +82,7 @@ export interface WhatsAppSavedInboundDocument {
 }
 
 export interface WhatsAppMediaInputOptions {
+  downloadOverallTimeoutMs?: number;
   extractDocumentText?: typeof extractInboundDocumentText;
   imageMaxBytes?: number;
   ingestMaxBytes?: number;
@@ -67,6 +92,7 @@ export interface WhatsAppMediaInputOptions {
     filename: string;
     mediaType: string;
   }) => Promise<WhatsAppSavedInboundDocument>;
+  signal?: AbortSignal;
 }
 
 export function resolveWhatsAppDocumentHandling(
@@ -126,8 +152,22 @@ export async function buildWhatsAppMediaInput(
   let bytes: Buffer;
 
   try {
-    bytes = await download(inbound);
-  } catch {
+    bytes = await downloadWhatsAppMediaWithinDeadline(download, inbound, {
+      maxBytes: media.kind === "image" ? imageMaxBytes : ingestMaxBytes,
+      overallTimeoutMs: options.downloadOverallTimeoutMs,
+      signal: options.signal,
+    });
+  } catch (error) {
+    if (options.signal?.aborted) {
+      throwIfSignalAborted(options.signal);
+    }
+    if (error instanceof OversizedWhatsAppMediaError) {
+      return {
+        kind: "reject",
+        message:
+          media.kind === "image" ? OVERSIZED_IMAGE_REPLY : OVERSIZED_FILE_REPLY,
+      };
+    }
     return { kind: "reject", message: DOWNLOAD_FAILED_REPLY };
   }
 
@@ -171,6 +211,7 @@ export async function buildWhatsAppMediaInput(
       filename: media.filename,
       mediaType,
       saveInboundDocument: options.saveInboundDocument,
+      signal: options.signal,
     });
   }
 
@@ -269,6 +310,7 @@ async function buildExtractedWhatsAppDocumentInput(input: {
   filename: string;
   mediaType: string;
   saveInboundDocument?: WhatsAppMediaInputOptions["saveInboundDocument"];
+  signal?: AbortSignal;
 }): Promise<WhatsAppMediaBuildResult> {
   const saveInboundDocument = input.saveInboundDocument;
   if (saveInboundDocument) {
@@ -281,12 +323,18 @@ async function buildExtractedWhatsAppDocumentInput(input: {
   let extracted: { text: string; truncated: boolean } | null = null;
 
   try {
-    extracted = await input.extractDocumentText({
+    const extraction = input.extractDocumentText({
       bytes: input.bytes,
       filename: input.filename,
       mediaType: input.mediaType,
     });
+    extracted = input.signal
+      ? await waitForAbortable(extraction, input.signal)
+      : await extraction;
   } catch {
+    if (input.signal?.aborted) {
+      throwIfSignalAborted(input.signal);
+    }
     extracted = null;
   }
 
@@ -315,16 +363,23 @@ async function buildSavedWhatsAppDocumentInput(input: {
   saveInboundDocument: NonNullable<
     WhatsAppMediaInputOptions["saveInboundDocument"]
   >;
+  signal?: AbortSignal;
 }): Promise<WhatsAppMediaBuildResult> {
   let saved: WhatsAppSavedInboundDocument;
 
   try {
-    saved = await input.saveInboundDocument({
+    const saving = input.saveInboundDocument({
       bytes: input.bytes,
       filename: input.filename,
       mediaType: input.mediaType,
     });
+    saved = input.signal
+      ? await waitForAbortable(saving, input.signal)
+      : await saving;
   } catch {
+    if (input.signal?.aborted) {
+      throwIfSignalAborted(input.signal);
+    }
     return { kind: "reject", message: SAVE_FAILED_DOCUMENT_REPLY };
   }
 
@@ -371,27 +426,112 @@ function formatMegabytes(bytes: number): string {
 
 export async function downloadWhatsAppMedia(
   inbound: WAMessage,
-  socket: WASocket | null
+  socket: WASocket | null,
+  options: WhatsAppMediaDownloadOptions = {
+    maxBytes: WHATSAPP_DOCUMENT_INGEST_MAX_BYTES,
+  }
 ): Promise<Buffer> {
   if (!socket) {
     throw new Error("WhatsApp is not connected.");
   }
 
-  const buffer = await downloadMediaMessage(
-    inbound,
-    "buffer",
-    {},
-    {
-      logger: createSilentBaileysLogger(),
-      reuploadRequest: (message) => socket.updateMediaMessage(message),
-    }
-  );
+  const deadline = createDownloadDeadline(options);
+  let stream: Transform | null = null;
 
-  if (!Buffer.isBuffer(buffer)) {
-    throw new Error("Could not download that file.");
+  try {
+    deadline.resetIdle();
+    stream = await waitForAbortable(
+      downloadMediaMessage(
+        inbound,
+        "stream",
+        { options: { signal: deadline.signal } },
+        {
+          logger: createSilentBaileysLogger(),
+          reuploadRequest: (message) => socket.updateMediaMessage(message),
+        }
+      ),
+      deadline.signal
+    );
+
+    return await collectWhatsAppMediaStream(stream, options.maxBytes, deadline);
+  } finally {
+    deadline.dispose();
   }
+}
 
-  return buffer;
+export async function readWhatsAppMediaStream(
+  stream: Transform,
+  options: WhatsAppMediaDownloadOptions
+): Promise<Buffer> {
+  const deadline = createDownloadDeadline(options);
+  try {
+    deadline.resetIdle();
+    return await collectWhatsAppMediaStream(stream, options.maxBytes, deadline);
+  } finally {
+    deadline.dispose();
+  }
+}
+
+async function collectWhatsAppMediaStream(
+  stream: Transform,
+  maxBytes: number,
+  deadline: ReturnType<typeof createDownloadDeadline>
+): Promise<Buffer> {
+  const destroyOnAbort = (): void => {
+    stream.destroy(deadline.signal.reason);
+  };
+  deadline.signal.addEventListener("abort", destroyOnAbort, { once: true });
+
+  try {
+    const chunks: Buffer[] = [];
+    let total = 0;
+    for await (const value of stream) {
+      deadline.throwIfAborted();
+      deadline.resetIdle();
+      const chunk = Buffer.isBuffer(value) ? value : Buffer.from(value);
+      if (chunk.byteLength === 0) {
+        continue;
+      }
+
+      total += chunk.byteLength;
+      if (total > maxBytes) {
+        const error = new OversizedWhatsAppMediaError();
+        stream.destroy(error);
+        throw error;
+      }
+      chunks.push(chunk);
+    }
+
+    deadline.throwIfAborted();
+    if (total === 0) {
+      throw new EmptyDownloadError();
+    }
+
+    return Buffer.concat(chunks, total);
+  } finally {
+    deadline.signal.removeEventListener("abort", destroyOnAbort);
+  }
+}
+
+export async function downloadWhatsAppMediaWithinDeadline(
+  download: WhatsAppMediaDownload,
+  inbound: WAMessage,
+  options: Omit<WhatsAppMediaDownloadOptions, "idleTimeoutMs">
+): Promise<Buffer> {
+  const deadline = createDownloadDeadline({
+    idleTimeoutMs: 0,
+    overallTimeoutMs: options.overallTimeoutMs,
+    signal: options.signal,
+  });
+
+  try {
+    return await waitForAbortable(
+      download(inbound, { ...options, signal: deadline.signal }),
+      deadline.signal
+    );
+  } finally {
+    deadline.dispose();
+  }
 }
 
 function inferImageMediaType(mimetype: string, filename: string): string {

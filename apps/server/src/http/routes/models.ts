@@ -55,6 +55,10 @@ import { createRoute, z } from "@hono/zod-openapi";
 import { toPublicSubscriptionApiError } from "../../providers/subscription";
 import { installAgentBrowser } from "../../services/agent-browser-service";
 import {
+  decodeAudioTranscriptionData,
+  MAX_AUDIO_TRANSCRIPTION_BYTES,
+} from "../../services/audio-transcription";
+import {
   getExternalModelCatalog,
   isExternalModelCatalogId,
 } from "../../services/external-model-catalog-service";
@@ -72,9 +76,15 @@ import {
   getRequestAuth,
   json,
   readJson,
+  readJsonWithLimit,
   readOptionalJson,
 } from "../shared";
 import type { HonoApp } from "../types";
+
+const AUDIO_TRANSCRIPTION_JSON_OVERHEAD_BYTES = 64 * 1024;
+const MAX_AUDIO_TRANSCRIPTION_BODY_BYTES =
+  Math.ceil((MAX_AUDIO_TRANSCRIPTION_BYTES * 4) / 3) +
+  AUDIO_TRANSCRIPTION_JSON_OVERHEAD_BYTES;
 
 export function registerModelRoutes(
   app: HonoApp,
@@ -170,8 +180,12 @@ export function registerModelRoutes(
     .passthrough()
     .openapi("GenerateImageResponse");
   const transcribeAudioRequestSchema = z
-    .object({})
-    .passthrough()
+    .object({
+      data: z.string().min(1),
+      filename: z.string().trim().min(1).optional(),
+      mediaType: z.string().trim().min(1),
+    })
+    .strict()
     .openapi("TranscribeAudioRequest");
   const transcribeAudioResponseSchema = z
     .object({})
@@ -1610,9 +1624,21 @@ export function registerModelRoutes(
     requireNotViewerFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const auth = getRequestAuth(c);
-    const body = await readJson<TranscribeAudioRequest>(c.req.raw);
 
     try {
+      const rawBody = await readJsonWithLimit<unknown>(
+        c.req.raw,
+        MAX_AUDIO_TRANSCRIPTION_BODY_BYTES,
+        { maxTotalMs: 5 * 60 * 1000 }
+      );
+      const parsedBody = transcribeAudioRequestSchema.safeParse(rawBody);
+
+      if (!parsedBody.success) {
+        return errorResponse("Invalid audio transcription request.", 400);
+      }
+
+      const body: TranscribeAudioRequest = parsedBody.data;
+      decodeAudioTranscriptionData(body.data);
       return json<TranscribeAudioResponse>(
         await agent.transcribeAudioForOrg(orgId, body, {
           userId: auth.user.id,

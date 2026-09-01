@@ -621,6 +621,7 @@ function buildSavedWhatsAppConfig(
   const phoneNumber = resolvePhoneNumber(input, existing);
   const pairedJid = existing?.pairedJid ?? null;
   const accessMode = input.accessMode ?? existing?.accessMode ?? "pairing";
+  const isPairingMode = accessMode === "pairing";
   const allowedNumbers =
     input.allowedNumbers === undefined
       ? (existing?.allowedNumbers ?? [])
@@ -638,9 +639,11 @@ function buildSavedWhatsAppConfig(
     outboundToken: existing?.outboundToken ?? null,
     pairedJid,
     pairedLid: existing?.pairedLid ?? null,
-    pairingAssertion: existing?.pairingAssertion ?? null,
+    pairingAssertion: isPairingMode
+      ? (existing?.pairingAssertion ?? null)
+      : null,
     pairingCode: resolvePairingCode(existing, accessMode),
-    pairingUserId: existing?.pairingUserId ?? null,
+    pairingUserId: isPairingMode ? (existing?.pairingUserId ?? null) : null,
     phoneNumber,
     profileId: resolveProfileId(input, existing),
   };
@@ -844,7 +847,7 @@ export async function clearWhatsAppPairingAssertion(
     {
       ...config,
       pairingAssertion: null,
-      pairingUserId: config.pairingCode ? config.pairingUserId : null,
+      pairingUserId: null,
     },
     orgId
   );

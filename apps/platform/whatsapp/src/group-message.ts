@@ -26,6 +26,7 @@ const SUPPORTED_GROUP_COMMANDS = new Set([
   "/help",
   "/new",
   "/org",
+  "/profile",
   "/start",
   "/status",
   "/stop",

@@ -141,6 +141,46 @@ describe("normalizeUserContent", () => {
     ]);
   });
 
+  test("canonicalizes document media types from the filename", () => {
+    const result = normalizeUserContent("summarize", undefined, [
+      {
+        data: "SGVsbG8=",
+        filename: "REPORT.PDF",
+        mediaType: "application/octet-stream",
+      },
+    ]);
+
+    expect(result).toEqual([
+      { text: "summarize", type: "text" },
+      {
+        data: "SGVsbG8=",
+        filename: "REPORT.PDF",
+        mediaType: "application/pdf",
+        type: "document",
+      },
+    ]);
+  });
+
+  test("strips document MIME parameters when no extension is available", () => {
+    const result = normalizeUserContent("read", undefined, [
+      {
+        data: "SGVsbG8=",
+        filename: "README",
+        mediaType: "text/plain; charset=utf-8",
+      },
+    ]);
+
+    expect(result).toEqual([
+      { text: "read", type: "text" },
+      {
+        data: "SGVsbG8=",
+        filename: "README",
+        mediaType: "text/plain",
+        type: "document",
+      },
+    ]);
+  });
+
   test("allows document-only message", () => {
     const result = normalizeUserContent("", undefined, [
       {

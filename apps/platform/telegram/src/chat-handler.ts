@@ -13,6 +13,7 @@ import {
 } from "@atlas/core/channel-org";
 import { ChannelRateLimiter } from "@atlas/core/channel-rate-limiter";
 import type { SendMessageInput } from "@atlas/core/contract";
+import { waitForAbortable } from "@atlas/core/download-deadline";
 import {
   filterProfilesForChatAccess,
   formatProfileSelectionPrompt,
@@ -93,6 +94,12 @@ const NO_CODE_PROMPT =
   "This bot is not linked yet.\n\n" +
   "Open Atlas Integrations → Telegram, save your bot token, and copy the pairing code. " +
   "Then send that code here.";
+
+const TELEGRAM_EARLY_ACK_FALLBACK = "On it.";
+const TELEGRAM_LIVE_REPLY_STATUS_INTERVAL_MS = 900;
+const TELEGRAM_LIVE_REPLY_PREVIEW_LENGTH = 280;
+const TELEGRAM_LIVE_WORKING_LABEL = "🤖 Working...";
+const TELEGRAM_LIVE_TOOL_LABEL = "🛠️ Running a tool...";
 
 export interface ChatHandlerDeps {
   authStore: TelegramAuthStore;
@@ -228,16 +235,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         }
 
         if (!text) {
-          const imageInput = await tryBuildImageInput(ctx, telegram);
-
-          if (imageInput) {
-            await telegram.send(
-              "Send your pairing code as text to link this chat."
-            );
-            return;
-          }
-
-          if (hasTelegramDocument(ctx) || hasTelegramAudio(ctx)) {
+          if (
+            ctx.message?.photo?.length ||
+            hasTelegramDocument(ctx) ||
+            hasTelegramAudio(ctx)
+          ) {
             await telegram.send(
               "Send your pairing code as text to link this chat."
             );
@@ -293,65 +295,96 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         return;
       }
 
-      const imageInput = await tryBuildImageInput(ctx, telegram);
+      const signal = registerActiveStream(conversationKey);
+      try {
+        const imageInput = await tryBuildImageInput(ctx, telegram, signal);
 
-      if (imageInput) {
+        if (imageInput === "reject") {
+          return;
+        }
+
+        if (imageInput) {
+          await handleChatMessage(
+            ctx,
+            withGroupContext(imageInput, isGroup),
+            conversationKey,
+            telegram,
+            "",
+            signal
+          );
+          return;
+        }
+
+        const documentInput = await tryBuildDocumentInput(
+          ctx,
+          telegram,
+          signal
+        );
+
+        if (documentInput === "reject") {
+          return;
+        }
+
+        if (documentInput) {
+          await handleChatMessage(
+            ctx,
+            withGroupContext(documentInput, isGroup),
+            conversationKey,
+            telegram,
+            "",
+            signal
+          );
+          return;
+        }
+
+        const audioInput = await tryBuildAudioInput(ctx, telegram, signal);
+
+        if (audioInput === "reject") {
+          return;
+        }
+
+        if (audioInput) {
+          await handleChatMessage(
+            ctx,
+            withGroupContext(audioInput, isGroup),
+            conversationKey,
+            telegram,
+            "",
+            signal
+          );
+          return;
+        }
+
+        if (hasTelegramDocument(ctx)) {
+          return;
+        }
+
+        if (!text) {
+          await telegram.send(UNSUPPORTED_MEDIA_REPLY);
+          return;
+        }
+
+        const messageText = isGroup
+          ? stripBotMention(text, botInfo?.username)
+          : text;
+
         await handleChatMessage(
           ctx,
-          withGroupContext(imageInput, isGroup),
+          withGroupContext({ message: messageText }, isGroup),
           conversationKey,
           telegram,
-          ""
+          messageText,
+          signal
         );
-        return;
+      } catch (error) {
+        if (isAbortError(error)) {
+          await telegram.send("Stopped.");
+        } else {
+          await telegram.send(formatError(error));
+        }
+      } finally {
+        clearActiveStream(conversationKey, signal);
       }
-
-      const documentInput = await tryBuildDocumentInput(ctx, telegram);
-
-      if (documentInput) {
-        await handleChatMessage(
-          ctx,
-          withGroupContext(documentInput, isGroup),
-          conversationKey,
-          telegram,
-          ""
-        );
-        return;
-      }
-
-      const audioInput = await tryBuildAudioInput(ctx, telegram);
-
-      if (audioInput) {
-        await handleChatMessage(
-          ctx,
-          withGroupContext(audioInput, isGroup),
-          conversationKey,
-          telegram,
-          ""
-        );
-        return;
-      }
-
-      if (hasTelegramDocument(ctx)) {
-        return;
-      }
-
-      if (!text) {
-        await telegram.send(UNSUPPORTED_MEDIA_REPLY);
-        return;
-      }
-
-      const messageText = isGroup
-        ? stripBotMention(text, botInfo?.username)
-        : text;
-
-      await handleChatMessage(
-        ctx,
-        withGroupContext({ message: messageText }, isGroup),
-        conversationKey,
-        telegram,
-        messageText
-      );
     });
   }
 
@@ -528,22 +561,27 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
   async function tryBuildImageInput(
     ctx: Context,
-    telegram: TelegramRichMessenger
-  ): Promise<SendMessageInput | null> {
+    telegram: TelegramRichMessenger,
+    signal: AbortSignal
+  ): Promise<SendMessageInput | "reject" | null> {
     try {
-      return await buildTelegramImageInput(ctx);
+      return await buildTelegramImageInput(ctx, { signal });
     } catch (error) {
+      if (isAbortError(error)) {
+        throw error;
+      }
       await telegram.send(formatError(error));
-      return null;
+      return "reject";
     }
   }
 
   async function tryBuildDocumentInput(
     ctx: Context,
-    telegram: TelegramRichMessenger
-  ): Promise<SendMessageInput | null> {
+    telegram: TelegramRichMessenger,
+    signal: AbortSignal
+  ): Promise<SendMessageInput | "reject" | null> {
     try {
-      const result = await buildTelegramDocumentInput(ctx);
+      const result = await buildTelegramDocumentInput(ctx, { signal });
 
       if (!result) {
         return null;
@@ -551,29 +589,36 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
       if (result.kind === "reject") {
         await telegram.send(result.message);
-        return null;
+        return "reject";
       }
 
       return result.input;
-    } catch {
+    } catch (error) {
+      if (isAbortError(error)) {
+        throw error;
+      }
       await telegram.send(DOWNLOAD_FAILED_REPLY);
-      return null;
+      return "reject";
     }
   }
 
   async function tryBuildAudioInput(
     ctx: Context,
-    telegram: TelegramRichMessenger
-  ): Promise<SendMessageInput | null> {
+    telegram: TelegramRichMessenger,
+    signal: AbortSignal
+  ): Promise<SendMessageInput | "reject" | null> {
     if (!hasTelegramAudio(ctx)) {
       return null;
     }
 
     try {
-      return await buildTelegramAudioInput(ctx, client);
+      return await buildTelegramAudioInput(ctx, client, { signal });
     } catch (error) {
+      if (isAbortError(error)) {
+        throw error;
+      }
       await telegram.send(formatTelegramAudioError(error));
-      return null;
+      return "reject";
     }
   }
 
@@ -582,33 +627,40 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     input: SendMessageInput,
     conversationKey: string,
     telegram: TelegramRichMessenger,
-    attachUserText: string
+    attachUserText: string,
+    signal: AbortSignal
   ): Promise<void> {
-    const session = await resolveSession(
-      conversationKey,
-      String(ctx.from?.id ?? "")
-    );
-    const profileId = sessionStore.get(conversationKey)?.profileId;
-
-    if (profileId) {
-      await maybeSendRequestedTelegramArtifactAttachment({
-        attachUserText,
-        client,
-        conversationKey,
-        ctx,
-        messenger: telegram,
-        profileId,
-        sessionStore,
-      });
-    }
-
     const typingLoop = createTypingLoop(ctx);
     const todoStatus = new TelegramTodoStatusMessage(telegram);
-    const signal = registerActiveStream(conversationKey);
+    const liveReply = createTelegramLiveReply(telegram);
     let reply = "";
+    let earlyAck = false;
+    let profileId: string | undefined;
+    let session: RemoteChatSession | undefined;
     const streamedArtifacts = new Map<string, ChannelArtifactRef>();
 
     try {
+      session = await waitForAbortable(
+        resolveSession(conversationKey, String(ctx.from?.id ?? "")),
+        signal
+      );
+      profileId = sessionStore.get(conversationKey)?.profileId;
+
+      if (profileId) {
+        await waitForAbortable(
+          maybeSendRequestedTelegramArtifactAttachment({
+            attachUserText,
+            client,
+            conversationKey,
+            ctx,
+            messenger: telegram,
+            profileId,
+            sessionStore,
+          }),
+          signal
+        );
+      }
+
       typingLoop.start();
 
       reply = await session.sendStream(
@@ -622,9 +674,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           },
           onChunk: (delta) => {
             reply += delta;
+            liveReply.updateFromReply(reply);
           },
           onThinking: () => {
             typingLoop.ping();
+            liveReply.updateWorking();
           },
           onTodosUpdated: (todos) => {
             typingLoop.ping();
@@ -635,6 +689,18 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           },
           onToolStart: () => {
             typingLoop.ping();
+            if (liveReply.hasStatusMessage()) {
+              liveReply.updateTooling();
+              return;
+            }
+
+            if (reply.trim()) {
+              return;
+            }
+
+            const earlyText = reply.trim() || TELEGRAM_EARLY_ACK_FALLBACK;
+            liveReply.postStatus(earlyText);
+            earlyAck = true;
           },
         },
         { signal }
@@ -643,39 +709,55 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       await todoStatus.complete();
 
       if (signal.aborted) {
-        if (reply.trim()) {
-          await replyAsChat(telegram, reply);
+        const finalReply = reply.trim();
+        if (finalReply) {
+          if (!(await liveReply.replaceWithFinal(finalReply))) {
+            await replyAsChat(telegram, finalReply);
+          }
+          await telegram.send("Stopped.");
+        } else if (!(await liveReply.replaceWithFinal("Stopped."))) {
+          await telegram.send("Stopped.");
         }
-
-        await telegram.send("Stopped.");
         return;
       }
     } catch (error) {
       if (isAbortError(error)) {
         await todoStatus.stop();
-        if (reply.trim()) {
-          await replyAsChat(telegram, reply);
+        const finalReply = reply.trim();
+        if (finalReply) {
+          if (!(await liveReply.replaceWithFinal(finalReply))) {
+            await replyAsChat(telegram, finalReply);
+          }
+          await telegram.send("Stopped.");
+        } else if (!(await liveReply.replaceWithFinal("Stopped."))) {
+          await telegram.send("Stopped.");
         }
-
-        await telegram.send("Stopped.");
         return;
       }
 
       await todoStatus.fail();
-      await telegram.send(formatError(error));
+      if (!(await liveReply.replaceWithError(formatError(error)))) {
+        await telegram.send(formatError(error));
+      }
       return;
     } finally {
-      clearActiveStream(conversationKey);
       typingLoop.stop();
     }
 
-    if (reply.trim()) {
-      await replyAsChat(telegram, reply);
+    const finalReply = reply.trim();
+    if (finalReply) {
+      if (!(await liveReply.replaceWithFinal(finalReply))) {
+        await replyAsChat(telegram, finalReply);
+      }
+    } else if (liveReply.hasStatusMessage() || earlyAck) {
+      if (!(await liveReply.replaceWithFinal("(empty reply)"))) {
+        await telegram.send("(empty reply)");
+      }
     } else {
       await telegram.send("(empty reply)");
     }
 
-    if (profileId) {
+    if (profileId && session) {
       await deliverTelegramTurnArtifactShares({
         client,
         conversationKey,
@@ -687,6 +769,123 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         streamedArtifacts: [...streamedArtifacts.values()],
       });
     }
+  }
+
+  function createTelegramLiveReply(messenger: TelegramRichMessenger) {
+    let statusMessageId: number | null = null;
+    let lastStatusText = "";
+    let lastStatusAt = 0;
+    let statusChain = Promise.resolve();
+    let statusRequested = false;
+
+    function requestStatus(status: string) {
+      const now = Date.now();
+      const normalized = status.trim();
+
+      if (!normalized || normalized === lastStatusText) {
+        return;
+      }
+
+      if (now - lastStatusAt < TELEGRAM_LIVE_REPLY_STATUS_INTERVAL_MS) {
+        return;
+      }
+
+      lastStatusAt = now;
+      lastStatusText = normalized;
+      statusRequested = true;
+      statusChain = statusChain
+        .then(() => sendStatus(normalized))
+        .catch(() => {});
+    }
+
+    async function sendStatus(status: string): Promise<void> {
+      if (!status) {
+        return;
+      }
+
+      try {
+        if (statusMessageId === null) {
+          const message = await messenger.send(status);
+          statusMessageId = message?.message_id ?? null;
+          return;
+        }
+
+        await messenger.edit(statusMessageId, status);
+      } catch {
+        // Status updates are best-effort only.
+      }
+    }
+
+    async function replaceWithFinal(replyText: string): Promise<boolean> {
+      await statusChain;
+      if (statusMessageId === null) {
+        return false;
+      }
+
+      const chunks = splitTelegramMessage(replyText);
+      if (chunks.length === 0) {
+        return true;
+      }
+
+      try {
+        await messenger.edit(statusMessageId, chunks[0] ?? "");
+        for (const chunk of chunks.slice(1)) {
+          await replyAsChat(messenger, chunk);
+        }
+        return true;
+      } catch {
+        statusMessageId = null;
+        return false;
+      }
+    }
+
+    function makeReplyPreview(reply: string): string {
+      const trimmed = reply.trim();
+      if (!trimmed) {
+        return TELEGRAM_LIVE_WORKING_LABEL;
+      }
+
+      const preview = trimmed.slice(0, TELEGRAM_LIVE_REPLY_PREVIEW_LENGTH);
+      const suffix =
+        trimmed.length > TELEGRAM_LIVE_REPLY_PREVIEW_LENGTH ? "…" : "";
+
+      return `${TELEGRAM_LIVE_WORKING_LABEL}\n\n${preview}${suffix}`;
+    }
+
+    async function replaceWithError(errorText: string): Promise<boolean> {
+      await statusChain;
+      if (statusMessageId === null) {
+        return false;
+      }
+
+      try {
+        await messenger.edit(statusMessageId, `⚠️ ${errorText}`);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    return {
+      hasStatusMessage: (): boolean => statusRequested,
+      postStatus: (statusText: string): void => {
+        requestStatus(statusText);
+      },
+      replaceWithError,
+      replaceWithFinal,
+      updateFromReply: (reply: string): void => {
+        if (!statusMessageId) {
+          return;
+        }
+        requestStatus(makeReplyPreview(reply));
+      },
+      updateTooling: (): void => {
+        requestStatus(TELEGRAM_LIVE_TOOL_LABEL);
+      },
+      updateWorking: (): void => {
+        requestStatus(TELEGRAM_LIVE_WORKING_LABEL);
+      },
+    };
   }
 
   async function ensureOrgReady(
@@ -1043,7 +1242,18 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     await sessionStore.save();
   }
 
-  return (ctx: Context) => client.isolateOrgId(() => handleMessage(ctx));
+  return (ctx: Context) =>
+    client.isolateOrgId(async () => {
+      try {
+        await handleMessage(ctx);
+      } catch (error) {
+        if (!ctx.chat) {
+          return;
+        }
+        const telegram = createTelegramRichMessenger(ctx);
+        await telegram.send(formatError(error)).catch(() => undefined);
+      }
+    });
 }
 
 function withGroupContext(

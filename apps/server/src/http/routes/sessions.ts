@@ -15,7 +15,10 @@ import {
   type SendMessageResponse,
   type SessionMessagesResponse,
   type SessionStatusResponse,
+  sanitizeArtifactShareFilename,
   type UpdateSessionRequest,
+  validateCombinedAttachmentCount,
+  validateDocumentAttachments,
 } from "@atlas/core";
 import { createRoute, z } from "@hono/zod-openapi";
 import { resolveRequestClientOrigin } from "../../services/composio-callback-url";
@@ -47,6 +50,28 @@ const MAX_SESSION_MESSAGE_BODY_BYTES =
       4) /
       3
   ) + ATTACHMENT_JSON_OVERHEAD_BYTES;
+const SAFE_ATTACHMENT_MEDIA_TYPES = new Set([
+  "application/pdf",
+  "application/vnd.ms-excel",
+  "application/vnd.ms-excel.sheet.binary.macroenabled.12",
+  "application/vnd.ms-excel.sheet.macroenabled.12",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "image/gif",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "text/csv",
+  "text/markdown",
+  "text/plain",
+]);
+
+function safeAttachmentMediaType(mediaType: string): string {
+  const normalized = mediaType.split(";", 1)[0]?.trim().toLowerCase() ?? "";
+  return SAFE_ATTACHMENT_MEDIA_TYPES.has(normalized)
+    ? normalized
+    : "application/octet-stream";
+}
 
 export function registerSessionRoutes(
   app: HonoApp,
@@ -166,11 +191,30 @@ export function registerSessionRoutes(
   const updateSessionRequestSchema = z
     .object({ model: z.string().trim().min(1).nullable() })
     .openapi("UpdateSessionRequest");
+  const imageAttachmentSchema = z
+    .object({
+      data: z.string().min(1),
+      mediaType: z.string().trim().min(1),
+    })
+    .strict();
+  const documentAttachmentSchema = z
+    .object({
+      data: z.string().min(1),
+      filename: z.string().trim().min(1),
+      mediaType: z.string(),
+    })
+    .strict();
   const sendMessageRequestSchema = z
     .object({
       clientOrigin: z.string().optional(),
-      documents: z.array(z.object({}).passthrough()).optional(),
-      images: z.array(z.object({}).passthrough()).optional(),
+      documents: z
+        .array(documentAttachmentSchema)
+        .max(MAX_ATTACHMENTS_PER_MESSAGE)
+        .optional(),
+      images: z
+        .array(imageAttachmentSchema)
+        .max(MAX_ATTACHMENTS_PER_MESSAGE)
+        .optional(),
       message: z.string(),
       policy: z
         .enum(["auto", "fast", "standard", "research", "agent"])
@@ -178,11 +222,18 @@ export function registerSessionRoutes(
       relatedQuestions: z.boolean().optional(),
       stream: z.boolean().optional(),
     })
+    .strict()
     .openapi("SendMessageRequest");
   const sendMessageResponseSchema = z
     .object({ reply: z.string() })
     .openapi("SendMessageResponse");
   const sessionIdParamSchema = z.object({
+    sessionId: z.string().openapi({ param: { in: "path", name: "sessionId" } }),
+  });
+  const sessionAttachmentParamSchema = z.object({
+    attachmentId: z
+      .string()
+      .openapi({ param: { in: "path", name: "attachmentId" } }),
     sessionId: z.string().openapi({ param: { in: "path", name: "sessionId" } }),
   });
   const sessionListQuerySchema = z.object({
@@ -191,6 +242,9 @@ export function registerSessionRoutes(
   });
   const streamQuerySchema = z.object({
     stream: z.enum(["true", "false"]).optional(),
+  });
+  const attachmentQuerySchema = z.object({
+    inline: z.enum(["1"]).optional(),
   });
 
   app.openAPIRegistry.registerPath(
@@ -341,6 +395,26 @@ export function registerSessionRoutes(
         },
       },
       summary: "Get session messages",
+      tags: ["Chat"],
+    })
+  );
+  app.openAPIRegistry.registerPath(
+    createRoute({
+      method: "get",
+      operationId: "getSessionAttachment",
+      path: "/v1/sessions/{sessionId}/attachments/{attachmentId}",
+      request: {
+        params: sessionAttachmentParamSchema,
+        query: attachmentQuerySchema,
+      },
+      responses: {
+        200: { description: "Attachment bytes" },
+        404: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Error",
+        },
+      },
+      summary: "Download a session attachment",
       tags: ["Chat"],
     })
   );
@@ -615,6 +689,43 @@ export function registerSessionRoutes(
     });
   });
 
+  app.get("/v1/sessions/:sessionId/attachments/:attachmentId", async (c) => {
+    const orgId = requireActiveOrgIdFromContext(c);
+    const sessionId = decodeURIComponent(c.req.param("sessionId"));
+    const attachmentId = decodeURIComponent(c.req.param("attachmentId"));
+    const attachment = await agent.getSessionAttachment(
+      orgId,
+      sessionId,
+      attachmentId
+    );
+
+    if (!attachment) {
+      return errorResponse("Attachment not found", 404);
+    }
+
+    const fallbackFilename = `${attachment.kind}-${attachmentId}`;
+    const filename = sanitizeArtifactShareFilename(
+      attachment.filename ?? fallbackFilename
+    );
+    const contentType = safeAttachmentMediaType(attachment.mediaType);
+    const inline =
+      c.req.query("inline") === "1" &&
+      attachment.kind === "image" &&
+      contentType.startsWith("image/");
+
+    return new Response(attachment.bytes as unknown as BodyInit, {
+      headers: {
+        "Cache-Control": "private, no-store",
+        "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${filename}"`,
+        "Content-Length": String(attachment.bytes.byteLength),
+        "Content-Security-Policy": "sandbox; default-src 'none'",
+        "Content-Type": contentType,
+        "Referrer-Policy": "no-referrer",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
+  });
+
   app.get("/v1/sessions/:sessionId/status", async (c) => {
     const orgId = requireActiveOrgIdFromContext(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
@@ -688,10 +799,25 @@ export function registerSessionRoutes(
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
     let body: SendMessageRequest;
     try {
-      body = await readJsonWithLimit<SendMessageRequest>(
+      const rawBody = await readJsonWithLimit<unknown>(
         c.req.raw,
-        MAX_SESSION_MESSAGE_BODY_BYTES
+        MAX_SESSION_MESSAGE_BODY_BYTES,
+        { maxTotalMs: 10 * 60 * 1000 }
       );
+      const parsedBody = sendMessageRequestSchema.safeParse(rawBody);
+
+      if (!parsedBody.success) {
+        return errorResponse("Invalid message request.", 400);
+      }
+
+      body = parsedBody.data;
+      validateCombinedAttachmentCount(
+        body.images?.length ?? 0,
+        body.documents?.length ?? 0
+      );
+      if (body.documents?.length) {
+        validateDocumentAttachments(body.documents);
+      }
       if (body.images?.length) {
         await validateDecodedImageAttachments(body.images);
       }

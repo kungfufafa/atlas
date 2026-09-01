@@ -204,6 +204,7 @@ import {
   withProfileSoulMutationLock,
   writeSoulFile,
 } from "@atlas/core";
+import { readAttachmentBytes } from "@atlas/core/attachments/store";
 import { canAccessSuperAgentProfile } from "@atlas/core/profiles";
 import {
   appendRuntimeProfileRules,
@@ -260,9 +261,10 @@ import { AgentQuestionnaireState } from "./agent-questionnaire-state";
 import { AgentTodoState } from "./agent-todo-state";
 import {
   createAttachmentLoader,
-  createAttachmentSaver,
+  createTurnAttachmentSaver,
 } from "./attachment-service";
 import {
+  decodeAudioTranscriptionData,
   resolveTranscriptionProviderSelection,
   TRANSCRIPTION_MODEL_REQUIRED_MESSAGE,
   transcribeAudio,
@@ -1350,17 +1352,7 @@ export class AgentService {
       throw new AtlasApiError("Audio data and media type are required.", 400);
     }
 
-    let bytes: Buffer;
-
-    try {
-      bytes = Buffer.from(data, "base64");
-    } catch {
-      throw new AtlasApiError("Audio data must be valid base64.", 400);
-    }
-
-    if (bytes.length === 0) {
-      throw new AtlasApiError("Audio data is empty.", 400);
-    }
+    const bytes = decodeAudioTranscriptionData(data);
 
     const selection = resolveTranscriptionProviderSelection(
       this.userConfig,
@@ -2750,6 +2742,51 @@ export class AgentService {
     };
   }
 
+  async getSessionAttachment(
+    orgId: string,
+    sessionId: string,
+    attachmentId: string
+  ): Promise<{
+    bytes: Buffer;
+    filename: string | null;
+    kind: "image" | "document";
+    mediaType: string;
+  } | null> {
+    const sessionRecord = await this.getSessionRecordForOrg(orgId, sessionId);
+
+    if (!sessionRecord) {
+      return null;
+    }
+
+    const attachment = await this.db.getAttachment(attachmentId);
+
+    if (
+      !attachment ||
+      attachment.orgId !== orgId ||
+      attachment.profileId !== sessionRecord.profileId ||
+      !(await this.sessionReferencesAttachment(sessionId, attachmentId))
+    ) {
+      return null;
+    }
+
+    const bytes = await readAttachmentBytes(
+      orgId,
+      sessionRecord.profileId,
+      attachmentId
+    );
+
+    if (!bytes || bytes.byteLength !== attachment.sizeBytes) {
+      return null;
+    }
+
+    return {
+      bytes,
+      filename: attachment.filename,
+      kind: attachment.kind,
+      mediaType: attachment.mediaType,
+    };
+  }
+
   async branchSession(
     orgId: string,
     sessionId: string,
@@ -3105,6 +3142,33 @@ export class AgentService {
     this.agentQuestionnaireState.clearSession(sessionId);
     await this.db.deleteSession(sessionId);
     return true;
+  }
+
+  private async sessionReferencesAttachment(
+    sessionId: string,
+    attachmentId: string
+  ): Promise<boolean> {
+    const storedMessages = await this.db.listMessagesForSession(sessionId);
+    const messages = storedMessages.map(
+      (message) => message.payload as ChatMessage
+    );
+    const liveSession = this.sessions.get(sessionId)?.session;
+
+    if (liveSession) {
+      messages.push(...liveSession.getHistory());
+    }
+
+    return messages.some((message) => {
+      if (message.role !== "user" || !Array.isArray(message.content)) {
+        return false;
+      }
+
+      return message.content.some(
+        (part) =>
+          (part.type === "image_ref" || part.type === "document_ref") &&
+          part.attachmentId === attachmentId
+      );
+    });
   }
 
   private async getSessionRecordForOrg(
@@ -3966,10 +4030,7 @@ export class AgentService {
     if (!(data && mediaType)) {
       throw new AtlasApiError("Audio data and media type are required.", 400);
     }
-    const bytes = Buffer.from(data, "base64");
-    if (bytes.length === 0) {
-      throw new AtlasApiError("Audio data is empty.", 400);
-    }
+    const bytes = decodeAudioTranscriptionData(data);
     const selection = resolveTranscriptionProviderSelection(
       config,
       process.env,
@@ -5279,7 +5340,7 @@ export class AgentService {
       userConfig,
       selectedModel
     );
-    const saveAttachment = createAttachmentSaver(this.db, {
+    const turnAttachments = createTurnAttachmentSaver(this.db, {
       channel,
       orgId,
       profileId,
@@ -5365,7 +5426,7 @@ export class AgentService {
         );
         content = await persistInlineAttachmentsInContent(
           content,
-          saveAttachment
+          turnAttachments.save
         );
 
         if (!messageContentHasImages(content)) {
@@ -5533,8 +5594,23 @@ export class AgentService {
     return wrapPersistedSession(sessionId, session, this.db, {
       beforePersist: () => this.requireActiveOrganizationForTurn(orgId),
       onBeginTurn: (id, userMessage) => {
+        const attachmentTurnId = turnAttachments.beginTurn();
         this.superAgentSessionState.beginTurn(id, userMessage);
         void this.agentQuestionnaireState.clear(id);
+        return attachmentTurnId;
+      },
+      onSendRejected: (_id, _error, turnId) =>
+        turnId ? turnAttachments.rollbackTurn(turnId) : Promise.resolve(),
+      onSendResolved: (_id, turnId) => {
+        if (turnId) {
+          turnAttachments.commitTurn(turnId);
+        }
+      },
+      runTurn: (turnId, operation) => {
+        if (!turnId) {
+          throw new Error("Attachment turn was not initialized.");
+        }
+        return turnAttachments.runTurn(turnId, operation);
       },
     });
   }

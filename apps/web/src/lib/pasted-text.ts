@@ -51,6 +51,7 @@ export function wordCountFromPastedFilename(filename: string): number | null {
 export interface DisplayDocument {
   filename: string;
   mediaType: string;
+  url?: string;
 }
 
 export function documentDisplayFromContentPart(

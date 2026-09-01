@@ -35,6 +35,7 @@ import {
   deriveChatStatus,
   finalizeStreamingMessages,
   isAbortError,
+  removeUnacceptedOutgoingMessages,
 } from "@/lib/chat-stream";
 import { client, formatError } from "@/lib/client";
 import {
@@ -48,6 +49,16 @@ import {
 import { NAV_ITEM_ICONS, SETUP_PATH } from "@/lib/navigation";
 import { queryKeys } from "@/lib/query-keys";
 import { TASK_STATUS_BADGE } from "@/lib/task-board";
+
+function taskAttachmentHistoryOptions(sessionId: string | null | undefined) {
+  return sessionId
+    ? {
+        resolveAttachmentUrl: (attachmentId: string, inline: boolean) =>
+          client.getSessionAttachmentUrl(sessionId, attachmentId, inline),
+      }
+    : undefined;
+}
+
 import {
   DEFAULT_THINKING_EFFORT,
   shouldBlockThinkingEffortChange,
@@ -107,7 +118,7 @@ function TaskRunHistoryView({
   onClose: () => void;
   onModelChange: (selection: string | null) => void;
   onNavigateSetup: () => void;
-  onSendMessage: (text: string, files: FileUIPart[]) => void;
+  onSendMessage: (text: string, files: FileUIPart[]) => Promise<void>;
   onStop: () => void;
   onThinkingEffortChange: (effort: ThinkingEffort) => void;
   profileLabel: string;
@@ -206,7 +217,7 @@ function TaskRunHistoryView({
           </p>
         </div>
       ) : (
-        <PromptInputProvider>
+        <PromptInputProvider key={`${task.id}:${sessionId ?? "pending"}`}>
           <ChatComposer
             availableSkills={availableSkills}
             busy={busy}
@@ -262,7 +273,13 @@ export function TaskRunHistoryPanel({
   // Prefetch can resolve before mount; seed from cached query data so the
   // data!==syncedData sync is not skipped when both start as the same reference.
   const [messages, setMessages] = useState<ChatListItem[]>(() =>
-    data ? chatMessagesToListItems(data.messages) : []
+    data
+      ? chatMessagesToListItems(
+          data.messages,
+          [],
+          taskAttachmentHistoryOptions(data.sessionId || task.sessionId)
+        )
+      : []
   );
   const [sessionId, setSessionId] = useState<string | null>(
     () => data?.sessionId || task.sessionId
@@ -334,7 +351,13 @@ export function TaskRunHistoryPanel({
     setSyncedData(data);
     if (data) {
       setSessionId(data.sessionId || task.sessionId);
-      setMessages(chatMessagesToListItems(data.messages));
+      setMessages(
+        chatMessagesToListItems(
+          data.messages,
+          [],
+          taskAttachmentHistoryOptions(data.sessionId || task.sessionId)
+        )
+      );
       setError(null);
 
       if (!task.sessionId && data.sessionId) {
@@ -396,72 +419,118 @@ export function TaskRunHistoryPanel({
   );
 
   const sendMessage = useCallback(
-    async (text: string, files: FileUIPart[] = []) => {
-      if ((!text.trim() && files.length === 0) || busy || !sessionId) {
-        return;
+    (text: string, files: FileUIPart[] = []): Promise<void> => {
+      if (!text.trim() && files.length === 0) {
+        return Promise.resolve();
       }
+      if (busy || !sessionId) {
+        return Promise.reject(
+          new Error(
+            busy
+              ? "Wait for the current response to finish."
+              : "This task chat is not available yet."
+          )
+        );
+      }
+
+      let readinessSettled = false;
+      let turnAccepted = false;
+      let resolveReadiness!: () => void;
+      let rejectReadiness!: (error: unknown) => void;
+      const readiness = new Promise<void>((resolve, reject) => {
+        resolveReadiness = () => {
+          if (!readinessSettled) {
+            readinessSettled = true;
+            resolve();
+          }
+        };
+        rejectReadiness = (error) => {
+          if (!readinessSettled) {
+            readinessSettled = true;
+            reject(error);
+          }
+        };
+      });
+      const acceptTurn = () => {
+        turnAccepted = true;
+        resolveReadiness();
+      };
 
       setBusy(true);
       setError(null);
 
-      const images = filePartsToImageAttachments(files);
-      const documents = filePartsToDocumentAttachments(files);
-      const displayDocuments = filePartsToDisplayDocuments(files);
-      const displayImages = images.map((image) => ({
-        mediaType: image.mediaType,
-        url: `data:${image.mediaType};base64,${image.data}`,
-      }));
-      const useImageAttachments = activeModelSupportsVision === false;
+      void (async () => {
+        try {
+          const images = filePartsToImageAttachments(files);
+          const documents = filePartsToDocumentAttachments(files);
+          const displayDocuments = filePartsToDisplayDocuments(files);
+          const displayImages = images.map((image) => ({
+            mediaType: image.mediaType,
+            url: `data:${image.mediaType};base64,${image.data}`,
+          }));
+          const useImageAttachments = activeModelSupportsVision === false;
+          const chatSession = client.createChatSession(sessionId, "task");
 
-      const chatSession = client.createChatSession(sessionId, "task");
-      appendOutgoingMessages(
-        setMessages,
-        text,
-        useImageAttachments ? [] : displayImages,
-        displayDocuments.length > 0 ? displayDocuments : undefined,
-        {
-          imageAttachments:
-            useImageAttachments && displayImages.length > 0
-              ? displayImages
-              : undefined,
-          thinkingEnabled: thinkingEffortVisible,
-        }
-      );
+          appendOutgoingMessages(
+            setMessages,
+            text,
+            useImageAttachments ? [] : displayImages,
+            displayDocuments.length > 0 ? displayDocuments : undefined,
+            {
+              imageAttachments:
+                useImageAttachments && displayImages.length > 0
+                  ? displayImages
+                  : undefined,
+              thinkingEnabled: thinkingEffortVisible,
+            }
+          );
 
-      const abortController = new AbortController();
-      streamAbortRef.current = abortController;
-      setCanStop(true);
+          const abortController = new AbortController();
+          streamAbortRef.current = abortController;
+          setCanStop(true);
 
-      try {
-        await chatSession.sendStream(
-          {
-            documents: documents.length > 0 ? documents : undefined,
-            images: images.length > 0 ? images : undefined,
-            message: text,
-          },
-          buildStreamHandlers(setMessages),
-          { signal: abortController.signal }
-        );
+          await chatSession.sendStream(
+            {
+              documents: documents.length > 0 ? documents : undefined,
+              images: images.length > 0 ? images : undefined,
+              message: text,
+            },
+            buildStreamHandlers(setMessages, {
+              onAccepted: acceptTurn,
+            }),
+            { signal: abortController.signal }
+          );
+          acceptTurn();
 
-        setMessages((current) => finalizeStreamingMessages(current));
-        void queryClient.invalidateQueries({
-          queryKey: queryKeys.tasks.messages(task.id),
-        });
-      } catch (err) {
-        if (isAbortError(err)) {
           setMessages((current) => finalizeStreamingMessages(current));
-          return;
-        }
+          void queryClient.invalidateQueries({
+            queryKey: queryKeys.tasks.messages(task.id),
+          });
+        } catch (err) {
+          rejectReadiness(err);
+          if (isAbortError(err)) {
+            setMessages((current) =>
+              turnAccepted
+                ? finalizeStreamingMessages(current)
+                : removeUnacceptedOutgoingMessages(current)
+            );
+            return;
+          }
 
-        setError(formatError(err));
-        setMessages((current) =>
-          current.filter((message) => !message.streaming)
-        );
-      } finally {
-        streamAbortRef.current = null;
-        setCanStop(false);
-        setBusy(false);
-      }
+          setError(formatError(err));
+          setMessages((current) =>
+            turnAccepted
+              ? current.filter((message) => !message.streaming)
+              : removeUnacceptedOutgoingMessages(current)
+          );
+        } finally {
+          streamAbortRef.current = null;
+          setCanStop(false);
+          setBusy(false);
+        }
+      })();
+
+      return readiness;
     },
     [
       activeModelSupportsVision,
@@ -495,7 +564,7 @@ export function TaskRunHistoryPanel({
       onClose={onClose}
       onModelChange={handleModelChange}
       onNavigateSetup={() => navigate(SETUP_PATH)}
-      onSendMessage={(text, files) => void sendMessage(text, files)}
+      onSendMessage={sendMessage}
       onStop={stopStreaming}
       onThinkingEffortChange={handleThinkingEffortChange}
       profileLabel={profileLabel}

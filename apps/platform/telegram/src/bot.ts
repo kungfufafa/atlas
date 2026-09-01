@@ -1,5 +1,5 @@
 import { inspect } from "node:util";
-import { Bot } from "grammy";
+import { Bot, type Context } from "grammy";
 import { type ChatHandlerDeps, createChatHandler } from "./chat-handler";
 import type { TelegramBridgeConfig } from "./config";
 import type { TelegramBotInfo } from "./group-message";
@@ -7,6 +7,14 @@ import type { TelegramBotInfo } from "./group-message";
 /** grammY errors can contain the token-bearing Bot API request URL. */
 export function redactBotToken(text: string, botToken: string): string {
   return botToken ? text.replaceAll(botToken, "<redacted>") : text;
+}
+
+export function dispatchTelegramUpdate(
+  handler: (ctx: Context) => Promise<void>,
+  ctx: Context,
+  onError: (error: unknown) => void
+): void {
+  void handler(ctx).catch(onError);
 }
 
 export async function createBot(
@@ -29,14 +37,21 @@ export async function createBot(
     getBotInfo: () => deps.getBotInfo?.() ?? initializedBotInfo,
   });
 
-  bot.on("message", handleMessage);
-
-  bot.catch((error) => {
+  const reportError = (error: unknown): void => {
     console.error(
       "Telegram bot error:",
       redactBotToken(inspect(error), config.botToken)
     );
+  };
+
+  // grammY's default long-polling loop awaits middleware for each update.
+  // Detach message work here; per-conversation locks in the handler retain
+  // ordering while unrelated chats can download and run concurrently.
+  bot.on("message", (ctx) => {
+    dispatchTelegramUpdate(handleMessage, ctx, reportError);
   });
+
+  bot.catch(reportError);
 
   return bot;
 }

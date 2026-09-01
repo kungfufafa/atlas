@@ -137,7 +137,27 @@ export async function writePrivateBytesFile(
   content: Buffer
 ): Promise<void> {
   await ensureDir(dirname(path));
-  await writeFile(path, content, { mode: PRIVATE_FILE_MODE });
+  const tempPath = `${path}.${randomUUID()}.atlas-tmp`;
+  let renamed = false;
+
+  try {
+    await writeFile(tempPath, content, { mode: PRIVATE_FILE_MODE });
+    const handle = await open(tempPath, "r+");
+
+    try {
+      await handle.sync();
+    } finally {
+      await handle.close();
+    }
+
+    await rename(tempPath, path);
+    renamed = true;
+    await chmod(path, PRIVATE_FILE_MODE);
+  } finally {
+    if (!renamed) {
+      await unlink(tempPath).catch(() => undefined);
+    }
+  }
 }
 
 export async function readDirectoryEntries(path: string): Promise<Dirent[]> {

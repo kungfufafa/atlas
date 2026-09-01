@@ -2,6 +2,7 @@ import { afterEach, describe, expect, spyOn, test } from "bun:test";
 import type { Message } from "discord.js";
 import {
   buildDiscordAttachmentInput,
+  DOWNLOAD_FAILED_REPLY,
   OVERSIZED_FILE_REPLY,
   UNSUPPORTED_DOCUMENT_TYPES_REPLY,
 } from "./attachments";
@@ -150,6 +151,7 @@ describe("buildDiscordAttachmentInput", () => {
         ],
       }),
       {
+        caption: "Please summarize",
         transcribeAudio: async () => ({ text: "Transcribed voice message" }),
       }
     );
@@ -158,7 +160,7 @@ describe("buildDiscordAttachmentInput", () => {
       input: {
         documents: undefined,
         images: undefined,
-        message: "Transcribed voice message",
+        message: "Transcribed voice message\n\nPlease summarize",
       },
       kind: "input",
     });
@@ -200,5 +202,109 @@ describe("buildDiscordAttachmentInput", () => {
       message: OVERSIZED_FILE_REPLY,
     });
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  test("rejects zero-byte bodies and oversized Content-Length headers", async () => {
+    fetchSpy = spyOn(globalThis, "fetch");
+    const message = createMessage({
+      attachments: [{ contentType: "application/pdf", name: "report.pdf" }],
+    });
+
+    fetchSpy.mockResolvedValueOnce(
+      new Response(null, { headers: { "content-length": "0" } })
+    );
+    await expect(buildDiscordAttachmentInput(message)).resolves.toEqual({
+      kind: "reject",
+      message: DOWNLOAD_FAILED_REPLY,
+    });
+
+    fetchSpy.mockResolvedValueOnce(
+      new Response("x", {
+        headers: { "content-length": String(5 * 1024 * 1024 + 1) },
+      })
+    );
+    await expect(buildDiscordAttachmentInput(message)).resolves.toEqual({
+      kind: "reject",
+      message: OVERSIZED_FILE_REPLY,
+    });
+  });
+
+  test("cancels a streamed body as soon as its actual bytes exceed the cap", async () => {
+    let cancelled = false;
+    const body = new ReadableStream<Uint8Array>({
+      cancel: () => {
+        cancelled = true;
+      },
+      start(controller) {
+        controller.enqueue(new Uint8Array(3 * 1024 * 1024));
+        controller.enqueue(new Uint8Array(3 * 1024 * 1024));
+      },
+    });
+    fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(new Response(body));
+
+    const result = await buildDiscordAttachmentInput(
+      createMessage({
+        attachments: [
+          { contentType: "application/pdf", name: "report.pdf", size: 1 },
+        ],
+      })
+    );
+
+    expect(result).toEqual({
+      kind: "reject",
+      message: OVERSIZED_FILE_REPLY,
+    });
+    expect(cancelled).toBe(true);
+  });
+
+  test("returns a terminal download error when a body stalls", async () => {
+    let cancelled = false;
+    const body = new ReadableStream<Uint8Array>({
+      cancel: () => {
+        cancelled = true;
+      },
+    });
+    fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(new Response(body));
+
+    const result = await buildDiscordAttachmentInput(
+      createMessage({
+        attachments: [{ contentType: "application/pdf", name: "report.pdf" }],
+      }),
+      { idleTimeoutMs: 5, overallTimeoutMs: 100 }
+    );
+
+    expect(result).toEqual({ kind: "reject", message: DOWNLOAD_FAILED_REPLY });
+    expect(cancelled).toBe(true);
+  });
+
+  test("propagates caller cancellation during attachment preprocessing", async () => {
+    const body = new ReadableStream<Uint8Array>();
+    fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(new Response(body));
+    const controller = new AbortController();
+    const pending = buildDiscordAttachmentInput(
+      createMessage({
+        attachments: [{ contentType: "application/pdf", name: "report.pdf" }],
+      }),
+      { signal: controller.signal }
+    );
+
+    controller.abort(new DOMException("Stopped", "AbortError"));
+
+    await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+  });
+
+  test("bounds the initial CDN request with the overall deadline", async () => {
+    fetchSpy = spyOn(globalThis, "fetch").mockImplementation(
+      async () => await new Promise<Response>(() => {})
+    );
+
+    const result = await buildDiscordAttachmentInput(
+      createMessage({
+        attachments: [{ contentType: "application/pdf", name: "report.pdf" }],
+      }),
+      { idleTimeoutMs: 100, overallTimeoutMs: 5 }
+    );
+
+    expect(result).toEqual({ kind: "reject", message: DOWNLOAD_FAILED_REPLY });
   });
 });

@@ -1,6 +1,14 @@
 import type { SendMessageInput } from "@atlas/core/contract";
+import {
+  throwIfSignalAborted,
+  waitForAbortable,
+} from "@atlas/core/download-deadline";
 import type { WAMessage } from "@whiskeysockets/baileys";
-import type { WhatsAppMediaDownload } from "./attachments";
+import {
+  downloadWhatsAppMediaWithinDeadline,
+  OversizedWhatsAppMediaError,
+  type WhatsAppMediaDownload,
+} from "./attachments";
 import { inspectInboundWhatsAppMedia } from "./inbound-message";
 
 export const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
@@ -20,10 +28,16 @@ export type WhatsAppAudioTranscribe = (input: {
   mediaType: string;
 }) => Promise<{ text: string }>;
 
+export interface WhatsAppAudioInputOptions {
+  downloadOverallTimeoutMs?: number;
+  signal?: AbortSignal;
+}
+
 export async function buildWhatsAppAudioInput(
   inbound: WAMessage,
   download: WhatsAppMediaDownload,
-  transcribe: WhatsAppAudioTranscribe
+  transcribe: WhatsAppAudioTranscribe,
+  options: WhatsAppAudioInputOptions = {}
 ): Promise<
   | { kind: "input"; input: SendMessageInput }
   | { kind: "reject"; message: string }
@@ -39,8 +53,18 @@ export async function buildWhatsAppAudioInput(
 
   let bytes: Buffer;
   try {
-    bytes = await download(inbound);
-  } catch {
+    bytes = await downloadWhatsAppMediaWithinDeadline(download, inbound, {
+      maxBytes: MAX_AUDIO_BYTES,
+      overallTimeoutMs: options.downloadOverallTimeoutMs,
+      signal: options.signal,
+    });
+  } catch (error) {
+    if (options.signal?.aborted) {
+      throwIfSignalAborted(options.signal);
+    }
+    if (error instanceof OversizedWhatsAppMediaError) {
+      return { kind: "reject", message: OVERSIZED_AUDIO_REPLY };
+    }
     return { kind: "reject", message: AUDIO_DOWNLOAD_FAILED_REPLY };
   }
 
@@ -53,11 +77,14 @@ export async function buildWhatsAppAudioInput(
   }
 
   try {
-    const { text } = await transcribe({
+    const transcription = transcribe({
       data: bytes.toString("base64"),
       filename: media.filename,
       mediaType: inferAudioMediaType(media.mimetype, media.filename),
     });
+    const { text } = options.signal
+      ? await waitForAbortable(transcription, options.signal)
+      : await transcription;
     const transcript = text.trim();
     if (!transcript) {
       return { kind: "reject", message: AUDIO_TRANSCRIBE_FAILED_REPLY };
@@ -65,6 +92,9 @@ export async function buildWhatsAppAudioInput(
 
     return { input: { message: transcript }, kind: "input" };
   } catch (error) {
+    if (options.signal?.aborted) {
+      throwIfSignalAborted(options.signal);
+    }
     if (error instanceof Error && error.message.trim()) {
       return { kind: "reject", message: error.message };
     }

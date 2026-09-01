@@ -69,6 +69,7 @@ import {
   deriveChatStatus,
   finalizeStreamingMessages,
   isAbortError,
+  removeUnacceptedOutgoingMessages,
 } from "@/lib/chat-stream";
 import {
   isActiveTurnConflictError,
@@ -97,6 +98,7 @@ import {
 } from "@/lib/thinking-settings";
 import {
   appendFailedTurnIfNeeded,
+  buildChatAttachmentScopeKey,
   canSelectSessionModel,
   findFailedRetryPrompt,
   findRetryCheckpoint,
@@ -104,6 +106,7 @@ import {
   isSupersededChatTurn,
   markStreamingTurnFailed,
   messagesWithoutFailedTurn,
+  resolveFailedRetryPayload,
   shouldResetChatOnWorkspaceChange,
 } from "@/pages/chat/chat-page.shared";
 
@@ -118,6 +121,18 @@ interface QueuedSend {
   id: string;
   options: SendMessageOptions;
   text: string;
+}
+
+interface SendReadiness {
+  reject: (error: unknown) => void;
+  resolve: () => void;
+}
+
+function sessionAttachmentHistoryOptions(sessionId: string) {
+  return {
+    resolveAttachmentUrl: (attachmentId: string, inline: boolean) =>
+      client.getSessionAttachmentUrl(sessionId, attachmentId, inline),
+  };
 }
 
 export function useChatPage() {
@@ -595,7 +610,11 @@ export function useChatPage() {
         }
         localStorage.setItem(sessionStorageKey(nextProfileId), sessionId);
         const nextSession = client.createChatSession(sessionId, channel);
-        let listItems = chatMessagesToListItems(storedMessages, messageMeta);
+        let listItems = chatMessagesToListItems(
+          storedMessages,
+          messageMeta,
+          sessionAttachmentHistoryOptions(sessionId)
+        );
         const storedFailedTurn =
           channel === "web" ? readFailedChatTurn(sessionId) : null;
 
@@ -652,7 +671,8 @@ export function useChatPage() {
             }
             let refreshedItems = chatMessagesToListItems(
               refreshed.messages,
-              refreshed.messageMeta
+              refreshed.messageMeta,
+              sessionAttachmentHistoryOptions(sessionId)
             );
             const failedAfterReconnect = readFailedChatTurn(sessionId);
 
@@ -873,7 +893,8 @@ export function useChatPage() {
       text: string,
       files: FileUIPart[] = [],
       options: SendMessageOptions = {},
-      queueItem?: QueuedSend
+      queueItem?: QueuedSend,
+      readiness?: SendReadiness
     ) => {
       const generation = ++streamGenerationRef.current;
       isSendingRef.current = true;
@@ -904,6 +925,7 @@ export function useChatPage() {
             ? displayImages
             : undefined,
         questionnaireAnswers: options.questionnaireAnswers,
+        retryFiles: files,
         thinkingEnabled: showThinking,
       };
 
@@ -916,6 +938,7 @@ export function useChatPage() {
       );
 
       let activeSession = options.sessionOverride ?? sessionRef.current;
+      let pendingNewSession = false;
       let shouldDrainQueue = true;
 
       if (!activeSession) {
@@ -925,17 +948,15 @@ export function useChatPage() {
             profileId,
           });
           if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+            readiness?.reject(
+              new DOMException("The chat changed before sending.", "AbortError")
+            );
             return;
           }
-          localStorage.setItem(sessionStorageKey(profileId), activeSession.id);
-          activeSessionIdRef.current = activeSession.id;
-          setSessionChannel("web");
-          sessionRef.current = activeSession;
-          setSession(activeSession);
-          setCanUpdateSessionModel(true);
-          syncChatUrl(profileId, activeSession.id);
+          pendingNewSession = true;
         } catch (err) {
           if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
+            readiness?.reject(err);
             return;
           }
           setError(formatError(err));
@@ -952,16 +973,37 @@ export function useChatPage() {
               ...current,
             ]);
           }
+          streamAbortRef.current = null;
+          isSendingRef.current = false;
+          setCanStop(false);
+          setBusy(false);
+          setTurnStartedAt(null);
+          readiness?.reject(err);
           return;
         }
       }
+
+      const turnSession = activeSession;
+      const acceptTurn = () => {
+        if (pendingNewSession) {
+          pendingNewSession = false;
+          localStorage.setItem(sessionStorageKey(profileId), turnSession.id);
+          activeSessionIdRef.current = turnSession.id;
+          setSessionChannel("web");
+          sessionRef.current = turnSession;
+          setSession(turnSession);
+          setCanUpdateSessionModel(true);
+          syncChatUrl(profileId, turnSession.id);
+        }
+        readiness?.resolve();
+      };
 
       const abortController = new AbortController();
       streamAbortRef.current = abortController;
       setCanStop(true);
 
       try {
-        await activeSession.sendStream(
+        await turnSession.sendStream(
           {
             documents: documents.length > 0 ? documents : undefined,
             images: images.length > 0 ? images : undefined,
@@ -969,12 +1011,14 @@ export function useChatPage() {
             relatedQuestions: true,
           },
           buildStreamHandlers(setMessages, {
+            onAccepted: acceptTurn,
             onContextUsage: setContextUsage,
             onQuestionnaireUpdated: setAgentQuestionnaire,
             onTodosUpdated: setAgentTodos,
           }),
           { signal: abortController.signal }
         );
+        acceptTurn();
         if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
           return;
         }
@@ -987,12 +1031,18 @@ export function useChatPage() {
           todos,
           questionnaire,
           contextUsage: nextContextUsage,
-        } = await client.getSessionMessages(activeSession.id);
+        } = await client.getSessionMessages(turnSession.id);
         if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
           return;
         }
-        clearFailedChatTurn(activeSession.id);
-        setMessages(chatMessagesToListItems(storedMessages, messageMeta));
+        clearFailedChatTurn(turnSession.id);
+        setMessages(
+          chatMessagesToListItems(
+            storedMessages,
+            messageMeta,
+            sessionAttachmentHistoryOptions(activeSession.id)
+          )
+        );
         setAgentTodos(todos);
         setAgentQuestionnaire(questionnaire);
         setContextUsage(nextContextUsage ?? null);
@@ -1000,6 +1050,7 @@ export function useChatPage() {
         setCanUpdateSessionModel(canUpdateModel);
         setLastSuccessfulTurnAt(Date.now());
       } catch (err) {
+        readiness?.reject(err);
         if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
           return;
         }
@@ -1018,38 +1069,25 @@ export function useChatPage() {
         }
 
         if (message.includes("Session not found") && profileId) {
-          try {
-            const nextSession = await client.createSession("web", {
-              model: sessionModel ?? undefined,
-              profileId,
-            });
-            if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
-              return;
-            }
-            localStorage.setItem(sessionStorageKey(profileId), nextSession.id);
-            activeSessionIdRef.current = nextSession.id;
-            setSessionChannel("web");
-            sessionRef.current = nextSession;
-            setSession(nextSession);
-            setCanUpdateSessionModel(true);
-            setError(
-              "Chat session expired. Started a new session — please send again."
-            );
-            setMessages((current) =>
-              current.filter((message) => !message.streaming)
-            );
-            setAgentQuestionnaire(null);
-            return;
-          } catch (retryErr) {
-            if (isSupersededChatTurn(streamGenerationRef.current, generation)) {
-              return;
-            }
-            setError(formatError(retryErr));
-            setMessages((current) =>
-              current.filter((message) => !message.streaming)
-            );
-            return;
+          shouldDrainQueue = false;
+          localStorage.removeItem(sessionStorageKey(profileId));
+          activeSessionIdRef.current = null;
+          sessionRef.current = null;
+          setError("Chat session expired. Send again to start a new session.");
+          setMessages(removeUnacceptedOutgoingMessages);
+          setAgentQuestionnaire(null);
+          if (queueItem) {
+            messageQueueRef.current.unshift(queueItem);
+            setQueuedMessages((current) => [
+              {
+                attachmentCount: queueItem.files.length,
+                id: queueItem.id,
+                text: queueItem.text,
+              },
+              ...current,
+            ]);
           }
+          return;
         }
 
         setError(null);
@@ -1135,7 +1173,29 @@ export function useChatPage() {
         return;
       }
 
-      await executeSend(text, files, options);
+      await new Promise<void>((resolve, reject) => {
+        let settled = false;
+        const readiness: SendReadiness = {
+          reject: (error) => {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            reject(error);
+          },
+          resolve: () => {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            resolve();
+          },
+        };
+
+        void executeSend(text, files, options, undefined, readiness).catch(
+          readiness.reject
+        );
+      });
     },
     [executeSend, profileId, readOnlySession, workspaceReadOnly]
   );
@@ -1148,18 +1208,17 @@ export function useChatPage() {
 
       if (message.failed) {
         const prompt = findFailedRetryPrompt(messages, message);
+        const retryPayload = resolveFailedRetryPayload(prompt);
 
-        if (!prompt?.content.trim()) {
+        if (retryPayload.status === "missing") {
           setError("Could not find a prompt to retry.");
           return;
         }
 
-        if (
-          prompt.images?.length ||
-          prompt.imageAttachments?.length ||
-          prompt.documents?.length
-        ) {
-          setError("Retry is available for text-only prompts.");
+        if (retryPayload.status === "attachments_unavailable") {
+          setError(
+            "Original attachments are no longer available. Attach them again to retry."
+          );
           return;
         }
 
@@ -1171,7 +1230,7 @@ export function useChatPage() {
             clearFailedChatTurn(session.id);
           }
 
-          await sendMessage(prompt.content, [], {
+          await sendMessage(retryPayload.text, retryPayload.files, {
             initialMessages: messagesWithoutFailedTurn(messages, message),
             sessionOverride: session ?? undefined,
           });
@@ -1270,6 +1329,12 @@ export function useChatPage() {
   );
 
   const isEmptyState = messages.length === 0 && !busy;
+  const attachmentScopeKey = buildChatAttachmentScopeKey({
+    draftKey: location.key,
+    orgId: activeOrg?.id,
+    profileId,
+    sessionId: session?.id,
+  });
   const composerDisabled =
     !profileId ||
     readOnlySession ||
@@ -1281,6 +1346,7 @@ export function useChatPage() {
     activeProfile,
     agentQuestionnaire,
     agentTodos,
+    attachmentScopeKey,
     availableSkills,
     branchingMessageId,
     busy,

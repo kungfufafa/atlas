@@ -5,6 +5,7 @@ import {
   buildTelegramDocumentInput,
   downloadTelegramFile,
   OVERSIZED_FILE_REPLY,
+  OversizedTelegramFileError,
   UNSUPPORTED_DOCUMENT_TYPES_REPLY,
 } from "./attachments";
 import { downloadTelegramImage } from "./images";
@@ -264,5 +265,79 @@ describe("downloadTelegramFile", () => {
     } finally {
       fetchSpy.mockRestore();
     }
+  });
+
+  test("rejects zero-byte and oversized declared response bodies", async () => {
+    const ctx = {
+      api: {
+        getFile: async () => ({ file_path: "documents/report.pdf" }),
+        token: "test-token",
+      },
+    } as unknown as Context;
+    const fetchSpy = spyOn(globalThis, "fetch");
+
+    try {
+      fetchSpy.mockResolvedValueOnce(
+        new Response(null, { headers: { "content-length": "0" } })
+      );
+      await expect(downloadTelegramFile(ctx, "file-1", 8)).rejects.toThrow(
+        "empty"
+      );
+
+      fetchSpy.mockResolvedValueOnce(
+        new Response("x", { headers: { "content-length": "9" } })
+      );
+      await expect(
+        downloadTelegramFile(ctx, "file-1", 8)
+      ).rejects.toBeInstanceOf(OversizedTelegramFileError);
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  test("aborts a stalled response after the idle deadline", async () => {
+    let cancelled = false;
+    const body = new ReadableStream<Uint8Array>({
+      cancel: () => {
+        cancelled = true;
+      },
+    });
+    const fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(body)
+    );
+    const ctx = {
+      api: {
+        getFile: async () => ({ file_path: "documents/report.pdf" }),
+        token: "test-token",
+      },
+    } as unknown as Context;
+
+    try {
+      await expect(
+        downloadTelegramFile(ctx, "file-1", 8, {
+          idleTimeoutMs: 5,
+          overallTimeoutMs: 100,
+        })
+      ).rejects.toThrow("stalled");
+      expect(cancelled).toBe(true);
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  test("bounds Telegram metadata lookup with the overall deadline", async () => {
+    const ctx = {
+      api: {
+        getFile: async () => await new Promise<never>(() => {}),
+        token: "test-token",
+      },
+    } as unknown as Context;
+
+    await expect(
+      downloadTelegramFile(ctx, "file-1", 8, {
+        idleTimeoutMs: 100,
+        overallTimeoutMs: 5,
+      })
+    ).rejects.toThrow("complete in time");
   });
 });

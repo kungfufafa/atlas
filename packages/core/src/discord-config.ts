@@ -374,8 +374,13 @@ function resolveBlockedUserIdsInput(
 
 function resolveHandshakeCode(
   existing: DiscordConfigFile | null,
-  allowedUserIds: string[]
+  allowedUserIds: string[],
+  accessMode: ChannelAccessMode
 ): string | null {
+  if (accessMode !== "pairing") {
+    return null;
+  }
+
   const pairedUserIds = existing?.pairedUserIds ?? [];
   const handshakeCode = existing?.handshakeCode ?? null;
 
@@ -400,14 +405,18 @@ function buildSavedDiscordConfig(
   const blockedUserIds = resolveBlockedUserIdsInput(input, existing);
   const accessMode = input.accessMode ?? existing?.accessMode ?? "pairing";
 
+  const isPairingMode = accessMode === "pairing";
+
   return {
     accessMode,
     allowedUserIds,
     blockedUserIds,
     botToken,
-    handshakeAssertion: existing?.handshakeAssertion ?? null,
-    handshakeCode: resolveHandshakeCode(existing, allowedUserIds),
-    handshakeUserId: existing?.handshakeUserId ?? null,
+    handshakeAssertion: isPairingMode
+      ? (existing?.handshakeAssertion ?? null)
+      : null,
+    handshakeCode: resolveHandshakeCode(existing, allowedUserIds, accessMode),
+    handshakeUserId: isPairingMode ? (existing?.handshakeUserId ?? null) : null,
     pairedUserIds: existing?.pairedUserIds ?? [],
     profileId: resolveDiscordProfileId(input, existing),
   };
@@ -587,7 +596,7 @@ export async function clearDiscordPairingAssertion(
     {
       ...config,
       handshakeAssertion: null,
-      handshakeUserId: config.handshakeCode ? config.handshakeUserId : null,
+      handshakeUserId: null,
     },
     orgId
   );

@@ -206,6 +206,7 @@ export function createMockClient(
     >;
     messages?: ChatMessage[];
     artifactContentBytes?: Uint8Array;
+    failCreateSession?: Error;
     failPublishShare?: boolean;
     failReadArtifact?: boolean;
   } = {}
@@ -376,6 +377,9 @@ export function createMockClient(
       }
     ) => {
       calls.createSession += 1;
+      if (options.failCreateSession) {
+        throw options.failCreateSession;
+      }
       lastCreateSessionProfileId = input?.profileId;
       lastCreateSessionExternalPrincipal = input?.externalPrincipal;
       createSessionOrgIds.push(currentOrgId());

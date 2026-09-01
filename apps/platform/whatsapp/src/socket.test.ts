@@ -3,6 +3,7 @@ import {
   claimInboundDelivery,
   createInboundMessageDedupe,
   detachWhatsAppSocketListeners,
+  dispatchWhatsAppMessagesConcurrently,
   extractDisconnectStatusCode,
   isSupportedUpsertType,
   shouldRequestDevicePairingCode,
@@ -11,6 +12,28 @@ import {
 } from "./socket";
 
 describe("WhatsApp socket helpers", () => {
+  test("dispatches independent items without waiting for an earlier item", async () => {
+    const started: number[] = [];
+    let releaseFirst!: () => void;
+    const firstBlocked = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    const pending = dispatchWhatsAppMessagesConcurrently(
+      [1, 2],
+      async (item) => {
+        started.push(item);
+        if (item === 1) {
+          await firstBlocked;
+        }
+      }
+    );
+
+    await Bun.sleep(0);
+    expect(started).toEqual([1, 2]);
+    releaseFirst();
+    await pending;
+  });
+
   test("removes every bridge listener before retiring a socket", () => {
     const removed: string[] = [];
     detachWhatsAppSocketListeners({

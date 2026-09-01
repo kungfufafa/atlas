@@ -5,6 +5,7 @@ import type {
 } from "../contract";
 import {
   decodeBase64AttachmentData,
+  normalizeDocumentMediaType,
   normalizeImageMediaType,
 } from "../message-content";
 
@@ -133,17 +134,21 @@ export async function persistInlineAttachmentsInContent(
       const bytes = Buffer.from(
         decodeBase64AttachmentData(part.data, "document")
       );
+      const mediaType = normalizeDocumentMediaType(
+        part.mediaType,
+        part.filename
+      );
       const saved = await save({
         bytes,
         filename: part.filename,
         kind: "document",
-        mediaType: part.mediaType,
+        mediaType,
       });
 
       result.push({
         attachmentId: saved.attachmentId,
         filename: part.filename,
-        mediaType: part.mediaType,
+        mediaType,
         size: saved.size,
         type: "document_ref",
       });
@@ -201,7 +206,7 @@ export async function rehydrateAttachmentRefsInContent(
       result.push({
         data: loaded.bytes.toString("base64"),
         filename: part.filename,
-        mediaType: loaded.mediaType,
+        mediaType: normalizeDocumentMediaType(loaded.mediaType, part.filename),
         type: "document",
       });
       continue;

@@ -2,6 +2,7 @@ import { MAX_IMAGE_BYTES } from "@atlas/core/message-content";
 import { readFileAsDataUrl } from "@/lib/read-file-as-data-url";
 
 export const COMPRESS_IMAGE_OVER_BYTES = 1024 * 1024;
+export const MAX_SOURCE_IMAGE_BYTES = 25 * 1024 * 1024;
 const MAX_DIMENSION = 2048;
 const QUALITY_STEPS = [0.85, 0.7, 0.55, 0.4] as const;
 const SCALE_STEPS = [1, 0.75, 0.5, 0.35] as const;
@@ -137,6 +138,12 @@ export async function compressImageFileForUpload(
   file: File,
   maxBytes = COMPRESS_IMAGE_OVER_BYTES
 ): Promise<File> {
+  if (file.type.startsWith("image/") && file.size > MAX_SOURCE_IMAGE_BYTES) {
+    throw new Error(
+      `Images selected for compression must be at most ${MAX_SOURCE_IMAGE_BYTES / (1024 * 1024)} MB.`
+    );
+  }
+
   if (!file.type.startsWith("image/") || file.size <= maxBytes) {
     return file;
   }

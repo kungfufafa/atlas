@@ -124,7 +124,10 @@ export function normalizeUserContent(
     parts.push({
       data: document.data,
       filename: document.filename,
-      mediaType: document.mediaType,
+      mediaType: normalizeDocumentMediaType(
+        document.mediaType,
+        document.filename
+      ),
       type: "document",
     });
   }
@@ -210,7 +213,7 @@ export function normalizeDocumentMediaType(
   mediaType: string,
   filename: string
 ): string {
-  const trimmed = mediaType.trim().toLowerCase();
+  const trimmed = mediaType.split(";", 1)[0]?.trim().toLowerCase() ?? "";
 
   if (ALLOWED_DOCUMENT_MEDIA_TYPES.has(trimmed)) {
     return trimmed;

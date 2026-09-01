@@ -7,11 +7,13 @@ import {
 } from "@/lib/chat-history";
 import {
   appendFailedTurnIfNeeded,
+  buildChatAttachmentScopeKey,
   canSelectSessionModel,
   findFailedRetryPrompt,
   isSupersededChatTurn,
   markStreamingTurnFailed,
   messagesWithoutFailedTurn,
+  resolveFailedRetryPayload,
   resolveProfileIdForWorkspaceProfiles,
   shouldResetChatOnWorkspaceChange,
 } from "./chat-page.shared";
@@ -82,6 +84,27 @@ describe("workspace chat reset", () => {
   test("treats a bumped stream generation as a superseded turn", () => {
     expect(isSupersededChatTurn(1, 1)).toBe(false);
     expect(isSupersededChatTurn(2, 1)).toBe(true);
+  });
+
+  test("isolates attachment drafts across orgs, profiles, sessions, and draft routes", () => {
+    const scope = (overrides: {
+      draftKey?: string;
+      orgId?: string;
+      profileId?: string;
+      sessionId?: string;
+    }) =>
+      buildChatAttachmentScopeKey({
+        draftKey: overrides.draftKey ?? "draft-a",
+        orgId: overrides.orgId ?? "org-a",
+        profileId: overrides.profileId ?? "profile-a",
+        sessionId: overrides.sessionId,
+      });
+    const baseline = scope({});
+
+    expect(scope({ orgId: "org-b" })).not.toBe(baseline);
+    expect(scope({ profileId: "profile-b" })).not.toBe(baseline);
+    expect(scope({ sessionId: "session-a" })).not.toBe(baseline);
+    expect(scope({ draftKey: "draft-b" })).not.toBe(baseline);
   });
 
   test("keeps the current profile when it still exists after a workspace change", () => {
@@ -157,6 +180,98 @@ describe("failed chat turns", () => {
     ]);
   });
 
+  test("removes the complete optimistic turn when tools ran before failure", () => {
+    const failed = assistant("Provider failed", {
+      failed: true,
+      id: "failed",
+    });
+    const kept = assistant("Earlier answer", { historyIndex: 1 });
+    const messages: ChatListItem[] = [
+      user("earlier", { historyIndex: 0 }),
+      kept,
+      user("retry with file", {
+        retryFiles: [
+          {
+            filename: "notes.md",
+            mediaType: "text/markdown",
+            type: "file",
+            url: "data:text/markdown;base64,IyBOb3Rlcw==",
+          },
+        ],
+      }),
+      assistant("", { thinking: "Checking", thinkingStreaming: false }),
+      {
+        content: "done",
+        id: "tool",
+        role: "tool",
+        tool: "read_file",
+        toolStatus: "done",
+      },
+      failed,
+    ];
+
+    expect(messagesWithoutFailedTurn(messages, failed)).toEqual([
+      user("earlier", { historyIndex: 0 }),
+      kept,
+    ]);
+  });
+
+  test("reuses in-memory attachments for failed-turn retry", () => {
+    const retryFile = {
+      filename: "notes.md",
+      mediaType: "text/markdown",
+      type: "file" as const,
+      url: "data:text/markdown;base64,IyBOb3Rlcw==",
+    };
+    const prompt = user("", {
+      documents: [{ filename: "notes.md", mediaType: "text/markdown" }],
+      retryFiles: [retryFile],
+    });
+    const failedMessages = markStreamingTurnFailed(
+      [prompt, assistant("", { id: "stream", streaming: true })],
+      "Provider failed after acceptance"
+    );
+    const failedMessage = failedMessages[1]!;
+    const failedPrompt = findFailedRetryPrompt(failedMessages, failedMessage);
+    const retryPayload = resolveFailedRetryPayload(failedPrompt);
+
+    expect(retryPayload).toEqual({
+      files: [retryFile],
+      status: "ready",
+      text: "",
+    });
+    if (retryPayload.status === "ready") {
+      expect(retryPayload.files).not.toBe(failedPrompt?.retryFiles);
+    }
+    expect(messagesWithoutFailedTurn(failedMessages, failedMessage)).toEqual(
+      []
+    );
+    expect(
+      resolveFailedRetryPayload(
+        user("summarize", {
+          documents: [{ filename: "lost.md", mediaType: "text/markdown" }],
+        })
+      )
+    ).toEqual({ status: "attachments_unavailable" });
+    expect(
+      resolveFailedRetryPayload(
+        user("describe", {
+          imageAttachments: [
+            {
+              description: "A diagram",
+              mediaType: "image/png",
+            },
+          ],
+        })
+      )
+    ).toEqual({ status: "attachments_unavailable" });
+    expect(resolveFailedRetryPayload(user("retry text"))).toEqual({
+      files: [],
+      status: "ready",
+      text: "retry text",
+    });
+  });
+
   test("round-trips failed-turn storage and rejects malformed payloads", () => {
     const store = new Map<string, string>();
     const previousLocalStorage = globalThis.localStorage;
@@ -174,14 +289,26 @@ describe("failed chat turns", () => {
     });
 
     try {
-      storeFailedChatTurn("session-failed", {
+      const failedTurnWithRetrySnapshot = {
         error: "Rate limit",
+        retryFiles: [
+          {
+            filename: "secret.md",
+            mediaType: "text/markdown",
+            type: "file",
+            url: "data:text/markdown;base64,c2VjcmV0",
+          },
+        ],
         text: "hello",
-      });
+      };
+      storeFailedChatTurn("session-failed", failedTurnWithRetrySnapshot);
       expect(readFailedChatTurn("session-failed")).toEqual({
         error: "Rate limit",
         text: "hello",
       });
+      expect(store.get("atlas:failed-chat-turn:session-failed")).toBe(
+        JSON.stringify({ error: "Rate limit", text: "hello" })
+      );
 
       clearFailedChatTurn("session-failed");
       expect(readFailedChatTurn("session-failed")).toBeNull();

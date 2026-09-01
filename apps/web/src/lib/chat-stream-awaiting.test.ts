@@ -125,3 +125,27 @@ describe("buildStreamHandlers onThinking after tools", () => {
     expect(isAwaitingModelResponse(messages)).toBe(false);
   });
 });
+
+describe("buildStreamHandlers acceptance", () => {
+  test("reports acceptance when the server resolves the message policy", () => {
+    let accepted = false;
+    let messages: ChatListItem[] = [
+      assistant({ id: "pending", streaming: true }),
+    ];
+    const handlers = buildStreamHandlers(
+      (updater) => {
+        messages = typeof updater === "function" ? updater(messages) : updater;
+      },
+      {
+        onAccepted: () => {
+          accepted = true;
+        },
+      }
+    );
+
+    handlers.onPolicyResolved?.("auto");
+
+    expect(accepted).toBe(true);
+    expect(messages[0]?.policy).toBe("auto");
+  });
+});

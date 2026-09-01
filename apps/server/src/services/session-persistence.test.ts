@@ -32,6 +32,8 @@ describe("wrapPersistedSession", () => {
       { content: string; role: "user" } | { content: string; role: "assistant" }
     > = [];
     let appendCalls = 0;
+    let resolvedCalls = 0;
+    let rejectedCalls = 0;
     let replaceCalls = 0;
     let providerCompleted = false;
     const session = {
@@ -62,6 +64,12 @@ describe("wrapPersistedSession", () => {
         expect(providerCompleted).toBe(true);
         throw new Error("Organization not found.");
       },
+      onSendRejected: async () => {
+        rejectedCalls += 1;
+      },
+      onSendResolved: () => {
+        resolvedCalls += 1;
+      },
     });
 
     await expect(persisted.send("hello")).rejects.toThrow(
@@ -69,6 +77,55 @@ describe("wrapPersistedSession", () => {
     );
     expect(appendCalls).toBe(0);
     expect(replaceCalls).toBe(0);
+    expect(rejectedCalls).toBe(0);
+    expect(resolvedCalls).toBe(1);
+  });
+
+  test("notifies rejection for underlying send and stream failures", async () => {
+    const providerError = new Error("provider failed");
+    const session = {
+      getHistory: () => [],
+      getHistoryRevision: () => 0,
+      send: () => Promise.reject(providerError),
+      sendStream: () => Promise.reject(providerError),
+    } as unknown as AgentChatSession;
+    const db = {} as DatabaseAdapter;
+    const rejectedModes: string[] = [];
+    const persisted = wrapPersistedSession("session_failure", session, db, {
+      onSendRejected: async (_sessionId, error) => {
+        expect(error).toBe(providerError);
+        rejectedModes.push("rejected");
+      },
+    });
+
+    await expect(persisted.send("hello")).rejects.toBe(providerError);
+    await expect(persisted.sendStream("hello", {})).rejects.toBe(providerError);
+    expect(rejectedModes).toEqual(["rejected", "rejected"]);
+  });
+
+  test("releases rejection cleanup after the underlying send succeeds", async () => {
+    const history = [
+      { content: "hello", role: "user" as const },
+      { content: "reply", role: "assistant" as const },
+    ];
+    const session = {
+      getHistory: () => history,
+      getHistoryRevision: () => 0,
+      send: () => Promise.resolve("reply"),
+    } as unknown as AgentChatSession;
+    let committed = 0;
+    const db = {
+      appendMessagesForSession: () => Promise.resolve(),
+      listMessagesForSession: () => Promise.resolve([]),
+    } as unknown as DatabaseAdapter;
+    const persisted = wrapPersistedSession("session_success", session, db, {
+      onSendResolved: () => {
+        committed += 1;
+      },
+    });
+
+    await expect(persisted.send("hello")).resolves.toBe("reply");
+    expect(committed).toBe(1);
   });
 
   test("revalidates after reading existing history and immediately before append", async () => {

@@ -5,7 +5,7 @@ import { readJsonWithLimit, readOptionalJson } from "./shared";
 const URL = "http://localhost:4310/test";
 
 describe("readJsonWithLimit", () => {
-  test("enforces an absolute body-read deadline without awaiting a hanging cancel", async () => {
+  test("enforces an idle body-read deadline without awaiting a hanging cancel", async () => {
     let cancelled = false;
     const body = new ReadableStream<Uint8Array>({
       cancel: () => {
@@ -30,6 +30,49 @@ describe("readJsonWithLimit", () => {
 
     expect(cancelled).toBe(true);
     expect(Date.now() - startedAt).toBeLessThan(1000);
+  });
+
+  test("allows a slow upload while every chunk arrives before the idle deadline", async () => {
+    const chunks = ["{", '"ok"', ":", "true", "}"];
+    let index = 0;
+    const body = new ReadableStream<Uint8Array>({
+      async pull(controller) {
+        await Bun.sleep(15);
+        const chunk = chunks[index];
+
+        if (chunk === undefined) {
+          controller.close();
+          return;
+        }
+
+        controller.enqueue(new TextEncoder().encode(chunk));
+        index += 1;
+      },
+    });
+    const request = new Request(URL, { body, method: "POST" });
+    const startedAt = Date.now();
+
+    await expect(
+      readJsonWithLimit(request, 1024, { timeoutMs: 30 })
+    ).resolves.toEqual({ ok: true });
+    expect(Date.now() - startedAt).toBeGreaterThan(30);
+  });
+
+  test("enforces a hard total deadline even while chunks keep arriving", async () => {
+    const body = new ReadableStream<Uint8Array>({
+      async pull(controller) {
+        await Bun.sleep(10);
+        controller.enqueue(new TextEncoder().encode(" "));
+      },
+    });
+    const request = new Request(URL, { body, method: "POST" });
+
+    await expect(
+      readJsonWithLimit(request, 1024, {
+        maxTotalMs: 45,
+        timeoutMs: 30,
+      })
+    ).rejects.toMatchObject({ status: 408 });
   });
 
   test("rejects streamed bodies over the limit even when cancellation fails", async () => {

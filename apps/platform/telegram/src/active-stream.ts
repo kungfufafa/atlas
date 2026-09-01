@@ -15,8 +15,11 @@ export function registerActiveStream(chatId: string): AbortSignal {
   return controller.signal;
 }
 
-export function clearActiveStream(chatId: string): void {
-  activeByChat.delete(chatId);
+export function clearActiveStream(chatId: string, signal: AbortSignal): void {
+  const controller = activeByChat.get(chatId);
+  if (controller?.signal === signal) {
+    activeByChat.delete(chatId);
+  }
 }
 
 export function stopActiveStream(chatId: string): boolean {

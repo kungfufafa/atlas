@@ -14,11 +14,12 @@ function createCancellableSession(): {
     getContextUsage: () => null,
     sendStream: (
       _input: unknown,
-      _handlers: unknown,
+      handlers: { onPolicyResolved?: (policy: "standard") => void },
       options?: { signal?: AbortSignal }
     ) =>
       new Promise<string>((_resolve, reject) => {
         signal = options?.signal;
+        handlers.onPolicyResolved?.("standard");
 
         if (!signal) {
           return;
@@ -50,6 +51,49 @@ function createChattyThenStalledSession(): AgentChatSession {
           { once: true }
         );
       }),
+  } as unknown as AgentChatSession;
+}
+
+/** Mirrors the real agent, which resolves policy before contacting a provider. */
+function createPolicyThenSilentSession(): AgentChatSession {
+  return {
+    getContextUsage: () => null,
+    sendStream: (
+      _input: unknown,
+      handlers: { onPolicyResolved: (policy: "standard") => void },
+      options?: { signal?: AbortSignal }
+    ) =>
+      new Promise<string>((_resolve, reject) => {
+        handlers.onPolicyResolved("standard");
+        options?.signal?.addEventListener(
+          "abort",
+          () => reject(options.signal?.reason),
+          { once: true }
+        );
+      }),
+  } as unknown as AgentChatSession;
+}
+
+function createDelayedPolicyThenSilentSession(
+  delayMs: number
+): AgentChatSession {
+  return {
+    getContextUsage: () => null,
+    sendStream: async (
+      _input: unknown,
+      handlers: { onPolicyResolved: (policy: "standard") => void },
+      options?: { signal?: AbortSignal }
+    ) => {
+      await Bun.sleep(delayMs);
+      handlers.onPolicyResolved("standard");
+      return new Promise<string>((_resolve, reject) => {
+        options?.signal?.addEventListener(
+          "abort",
+          () => reject(options.signal?.reason),
+          { once: true }
+        );
+      });
+    },
   } as unknown as AgentChatSession;
 }
 
@@ -219,6 +263,54 @@ describe("streamMessage timeout", () => {
     // The point of the whole change: the session comes back on the short
     // deadline instead of being held for the long one.
     expect(heldMs).toBeLessThan(2500);
+  });
+
+  test("policy bookkeeping does not disarm the first-token deadline", async () => {
+    const sessionId = `session_policy_timeout_test_${Date.now()}`;
+    const session = createPolicyThenSilentSession();
+
+    expect(sessionTurnRegistry.beginTurn(sessionId).started).toBe(true);
+    const response = streamMessage(
+      sessionId,
+      session,
+      { message: "hi" },
+      undefined,
+      undefined,
+      5000,
+      50
+    );
+
+    const body = await new Response(response.body).text();
+    await waitForTurnToEnd(sessionId);
+
+    expect(body).toContain('"type":"policy_resolved"');
+    expect(body).toContain("sent nothing for");
+    expect(sessionTurnRegistry.isActive(sessionId)).toBe(false);
+  });
+
+  test("the first-token deadline starts after preprocessing resolves policy", async () => {
+    const sessionId = `session_delayed_policy_test_${Date.now()}`;
+    const session = createDelayedPolicyThenSilentSession(80);
+
+    expect(sessionTurnRegistry.beginTurn(sessionId).started).toBe(true);
+    const startedAt = Bun.nanoseconds();
+    const response = streamMessage(
+      sessionId,
+      session,
+      { message: "hi" },
+      undefined,
+      undefined,
+      1000,
+      40
+    );
+
+    const body = await new Response(response.body).text();
+    const heldMs = (Bun.nanoseconds() - startedAt) / 1e6;
+    await waitForTurnToEnd(sessionId);
+
+    expect(body).toContain('"type":"policy_resolved"');
+    expect(body).toContain("sent nothing for");
+    expect(heldMs).toBeGreaterThanOrEqual(100);
   });
 
   test("a provider that has produced output keeps the full stream deadline", async () => {

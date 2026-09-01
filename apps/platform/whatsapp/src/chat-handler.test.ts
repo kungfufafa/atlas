@@ -29,6 +29,28 @@ const BOT_ME = {
   lid: "236283431522503:0@lid",
 };
 
+function createProfileSummary(input: {
+  id: string;
+  isDefault?: boolean;
+  isSuper?: boolean;
+  name: string;
+}): ProfileSummary {
+  const now = new Date().toISOString();
+  return {
+    createdAt: now,
+    hasAvatar: false,
+    id: input.id,
+    isDefault: input.isDefault ?? false,
+    isSuper: input.isSuper ?? false,
+    mcpServerCount: 0,
+    model: null,
+    name: input.name,
+    soulActive: false,
+    toolCount: 0,
+    updatedAt: now,
+  };
+}
+
 function groupInbound(options: {
   jid?: string;
   mentionedJids?: string[];
@@ -64,6 +86,8 @@ function createMockSocket(options?: { failDocumentSend?: boolean }) {
     quoted?: unknown;
     text?: string;
   }> = [];
+  const sentIndexById = new Map<string, number>();
+  let nextMessageId = 1;
 
   const socket = {
     end: () => {},
@@ -75,6 +99,7 @@ function createMockSocket(options?: { failDocumentSend?: boolean }) {
       jid: string,
       content: {
         document?: unknown;
+        edit?: { id?: string | null };
         fileName?: string;
         image?: unknown;
         mimetype?: string;
@@ -86,6 +111,18 @@ function createMockSocket(options?: { failDocumentSend?: boolean }) {
         throw new Error("WhatsApp document send failed");
       }
 
+      const editedMessageId = content.edit?.id?.trim();
+      if (editedMessageId) {
+        const index = sentIndexById.get(editedMessageId);
+        if (index !== undefined) {
+          const previous = sent[index];
+          if (previous) {
+            sent[index] = { ...previous, text: content.text };
+          }
+        }
+        return { key: content.edit };
+      }
+
       sent.push({
         document: content.document,
         fileName: content.fileName,
@@ -95,6 +132,10 @@ function createMockSocket(options?: { failDocumentSend?: boolean }) {
         quoted: sendOptions?.quoted,
         text: content.text,
       });
+      const id = String(nextMessageId);
+      nextMessageId += 1;
+      sentIndexById.set(id, sent.length - 1);
+      return { key: { fromMe: true, id, remoteJid: jid } };
     },
     sendPresenceUpdate: async () => {},
   };
@@ -106,6 +147,20 @@ beforeEach(() => {
   resetActiveStreamsForTests();
   resetChatLocksForTests();
 });
+
+async function waitForCondition(
+  condition: () => boolean,
+  message: string
+): Promise<void> {
+  const deadline = Date.now() + 2000;
+  while (Date.now() < deadline) {
+    if (condition()) {
+      return;
+    }
+    await Bun.sleep(10);
+  }
+  throw new Error(message);
+}
 
 interface GroupHarness {
   clientMock: ReturnType<typeof createMockClient>;
@@ -936,6 +991,71 @@ describe("createChatHandler", () => {
     });
   });
 
+  test("replaces live work updates with one terminal reply", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client } = createMockClient({
+        steps: [
+          { type: "thinking" },
+          { type: "tool_start" },
+          { delta: "Finished.", type: "chunk" },
+          { reply: "Finished.", type: "resolve" },
+        ],
+        streaming: true,
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({ jid: PAIRED_JID, text: "do the work" });
+
+      expect(sent.map((message) => message.text)).toEqual(["Finished."]);
+
+      const errorClient = createMockClient({
+        steps: [
+          { type: "thinking" },
+          { message: "tool failed", type: "error" },
+        ],
+        streaming: true,
+      });
+      const errorSocket = createMockSocket();
+      const errorSessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "error-chat-sessions.json")
+      );
+      const errorHandler = createChatHandler({
+        authStore,
+        client: errorClient.client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => errorSocket.socket as any,
+        orgStore,
+        sessionStore: errorSessionStore,
+      });
+
+      await errorHandler({ jid: PAIRED_JID, text: "fail the work" });
+
+      expect(errorSocket.sent.map((message) => message.text)).toEqual([
+        "⚠️ tool failed",
+      ]);
+    });
+  });
+
   test("/stop aborts an in-flight stream without waiting for the chat lock", async () => {
     await withTempHome(async (homeDir) => {
       await writeWhatsAppConfigIni(homeDir, {
@@ -946,6 +1066,8 @@ describe("createChatHandler", () => {
       const authStore = new WhatsAppAuthStore();
       await authStore.reload();
       const { client, calls, getStreamControl } = createMockClient({
+        autoComplete: false,
+        steps: [{ type: "thinking" }],
         streaming: true,
       });
       const sessionStore = new SessionStore(
@@ -976,6 +1098,56 @@ describe("createChatHandler", () => {
       await chatPromise;
 
       expect(calls.sendStream).toBe(1);
+      expect(sent.map((message) => message.text)).toEqual(["Stopped."]);
+    });
+  });
+
+  test("/stop cancels media preprocessing before the agent turn", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      let downloadStarted = false;
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        downloadMedia: async () => {
+          downloadStarted = true;
+          return await new Promise<Buffer>(() => {});
+        },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      const pending = handleMessage({
+        inbound: {
+          key: { fromMe: false, id: "image-stall", remoteJid: PAIRED_JID },
+          message: { imageMessage: { mimetype: "image/jpeg" } },
+        },
+        jid: PAIRED_JID,
+        text: "",
+      });
+      await waitForCondition(
+        () => downloadStarted,
+        "Expected the media download to start"
+      );
+      await handleMessage({ jid: PAIRED_JID, text: "/stop" });
+      await pending;
+
+      expect(calls.sendStream).toBe(0);
       expect(sent.map((message) => message.text)).toEqual(["Stopped."]);
     });
   });
@@ -1973,6 +2145,84 @@ describe("createChatHandler group chats", () => {
       expect(clientMock.calls.createSession).toBe(1);
       expect(sent).toHaveLength(sentCount);
     });
+  });
+
+  test("/profile lists selectable profiles without Super Agent", async () => {
+    const profiles = [
+      createProfileSummary({
+        id: "default",
+        isDefault: true,
+        name: "Default Agent",
+      }),
+      createProfileSummary({ id: "research", name: "Research" }),
+      createProfileSummary({
+        id: "super_agent",
+        isSuper: true,
+        name: "Super Agent",
+      }),
+    ];
+
+    await withGroupHarness(
+      { profiles },
+      async ({ clientMock, handleMessage, sent }) => {
+        await handleMessage(groupInbound({ text: "/profile" }));
+
+        const reply = sent.at(-1)?.text ?? "";
+        expect(reply).toContain("Default Agent");
+        expect(reply).toContain("Research");
+        expect(reply).not.toContain("Super Agent");
+        expect(reply).not.toContain("super_agent");
+        expect(clientMock.calls.createSession).toBe(0);
+      }
+    );
+  });
+
+  test("/profile override survives /new and stays scoped to its group", async () => {
+    const profiles = [
+      createProfileSummary({
+        id: "default",
+        isDefault: true,
+        name: "Default Agent",
+      }),
+      createProfileSummary({ id: "research", name: "Research" }),
+    ];
+
+    await withGroupHarness(
+      { profiles },
+      async ({ clientMock, handleMessage, sessionStore }) => {
+        await handleMessage(groupInbound({ text: "/profile research" }));
+
+        expect(clientMock.calls.profileIds).toEqual(["research"]);
+        expect(sessionStore.get(GROUP_JID)).toMatchObject({
+          profileId: "research",
+          profileOverride: true,
+        });
+
+        await handleMessage(groupInbound({ text: "/new" }));
+
+        expect(clientMock.calls.profileIds).toEqual(["research", "research"]);
+        expect(sessionStore.get(GROUP_JID)).toMatchObject({
+          profileId: "research",
+          profileOverride: true,
+        });
+
+        await handleMessage(
+          groupInbound({ jid: OTHER_GROUP_JID, text: "/new" })
+        );
+
+        expect(clientMock.calls.profileIds).toEqual([
+          "research",
+          "research",
+          "default",
+        ]);
+        expect(sessionStore.get(OTHER_GROUP_JID)).toMatchObject({
+          profileId: "default",
+        });
+        expect(
+          sessionStore.get(OTHER_GROUP_JID)?.profileOverride
+        ).toBeUndefined();
+      }
+    );
   });
 
   test("handles /attach from the current group without crossing group state", async () => {

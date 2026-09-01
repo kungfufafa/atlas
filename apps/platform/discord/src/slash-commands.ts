@@ -15,12 +15,14 @@ const COMMAND_NAMES = [
   "new",
   "close",
   "status",
+  "attach",
   "allow",
 ] as const;
 
 export function buildSlashCommands(): SlashCommandBuilder[] {
   const descriptions: Record<(typeof COMMAND_NAMES)[number], string> = {
     allow: "Add a Discord user to the bot allowed list",
+    attach: "Send the latest saved artifact",
     clear: "Clear chat history",
     close: "Close this bot conversation thread",
     compact: "Compact conversation history",

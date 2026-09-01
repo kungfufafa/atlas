@@ -85,6 +85,36 @@ describe("attachment content helpers", () => {
     ]);
   });
 
+  test("canonicalizes document media types when persisting refs", async () => {
+    let savedMediaType = "";
+
+    const result = await persistInlineAttachmentsInContent(
+      [
+        {
+          data: Buffer.from("pdf").toString("base64"),
+          filename: "report.PDF",
+          mediaType: "application/octet-stream",
+          type: "document",
+        },
+      ],
+      async (input) => {
+        savedMediaType = input.mediaType;
+        return { attachmentId: "att_doc", size: input.bytes.byteLength };
+      }
+    );
+
+    expect(savedMediaType).toBe("application/pdf");
+    expect(result).toEqual([
+      {
+        attachmentId: "att_doc",
+        filename: "report.PDF",
+        mediaType: "application/pdf",
+        size: 3,
+        type: "document_ref",
+      },
+    ]);
+  });
+
   test("rehydrateAttachmentRefsInContent restores inline provider parts", async () => {
     const pngBase64 = Buffer.from("png").toString("base64");
     const pdfBase64 = Buffer.from("pdf").toString("base64");
@@ -111,7 +141,10 @@ describe("attachment content helpers", () => {
           return { bytes: Buffer.from("png"), mediaType: "image/png" };
         }
 
-        return { bytes: Buffer.from("pdf"), mediaType: "application/pdf" };
+        return {
+          bytes: Buffer.from("pdf"),
+          mediaType: "application/octet-stream",
+        };
       }
     );
 

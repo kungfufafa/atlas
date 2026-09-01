@@ -14,7 +14,14 @@ import type {
   PropsWithChildren,
   RefObject,
 } from "react";
-import { useCallback, useContext, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   type AttachmentsContext,
   LocalAttachmentsContext,
@@ -80,28 +87,43 @@ export const PromptInputProvider = ({
   const [attachmentFiles, setAttachmentFiles] = useState<
     (FileUIPart & { id: string })[]
   >([]);
+  const [pendingAttachmentCount, setPendingAttachmentCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const openRef = useRef<() => void>(() => {});
+  const pendingReadsRef = useRef(new Set<AbortController>());
 
-  const add = useCallback((files: File[] | FileList) => {
+  const add = useCallback(async (files: File[] | FileList): Promise<void> => {
     const incoming = [...files];
     if (incoming.length === 0) {
       return;
     }
 
-    void (async () => {
+    const readController = new AbortController();
+    pendingReadsRef.current.add(readController);
+    setPendingAttachmentCount((current) => current + incoming.length);
+
+    try {
       const nextAttachments = await Promise.all(
         incoming.map(async (file) => ({
           filename: file.name,
           id: nanoid(),
           mediaType: file.type,
           type: "file" as const,
-          url: await readFileAsDataUrl(file),
+          url: await readFileAsDataUrl(file, readController.signal),
         }))
       );
 
+      readController.signal.throwIfAborted();
       setAttachmentFiles((prev) => [...prev, ...nextAttachments]);
-    })();
+    } catch (error) {
+      readController.abort();
+      throw error;
+    } finally {
+      pendingReadsRef.current.delete(readController);
+      setPendingAttachmentCount((current) =>
+        Math.max(0, current - incoming.length)
+      );
+    }
   }, []);
 
   const remove = useCallback((id: string) => {
@@ -109,8 +131,15 @@ export const PromptInputProvider = ({
   }, []);
 
   const clear = useCallback(() => {
+    for (const controller of pendingReadsRef.current) {
+      controller.abort();
+    }
+    pendingReadsRef.current.clear();
+    setPendingAttachmentCount(0);
     setAttachmentFiles([]);
   }, []);
+
+  useEffect(() => clear, [clear]);
 
   const openFileDialog = useCallback(() => {
     openRef.current?.();
@@ -123,9 +152,17 @@ export const PromptInputProvider = ({
       fileInputRef,
       files: attachmentFiles,
       openFileDialog,
+      pendingCount: pendingAttachmentCount,
       remove,
     }),
-    [attachmentFiles, add, remove, clear, openFileDialog]
+    [
+      attachmentFiles,
+      add,
+      remove,
+      clear,
+      openFileDialog,
+      pendingAttachmentCount,
+    ]
   );
 
   const __registerFileInput = useCallback(
@@ -200,7 +237,7 @@ export type PromptInputProps = Omit<
   /** Rainbow rim glow while the agent is streaming. */
   rimActive?: boolean;
   onError?: (err: {
-    code: "max_files" | "max_file_size" | "accept";
+    code: "accept" | "file_read" | "max_files" | "max_file_size" | "processing";
     message: string;
   }) => void;
   onSubmit: (
@@ -280,6 +317,14 @@ export const PromptInput = ({
     async (event) => {
       event.preventDefault();
 
+      if (attachmentsCtx.pendingCount > 0) {
+        onError?.({
+          code: "processing",
+          message: "Wait for attachments to finish preparing before sending.",
+        });
+        return;
+      }
+
       const form = event.currentTarget;
       const text = usingProvider
         ? controller!.textInput.value
@@ -288,18 +333,19 @@ export const PromptInput = ({
             return (formData.get("message") as string) || "";
           })();
 
-      if (!usingProvider) {
-        form.reset();
-      }
-
       try {
         const convertedFiles: FileUIPart[] = await Promise.all(
           files.map(async ({ id: _id, ...item }) => {
             if (item.url?.startsWith("blob:")) {
               const dataUrl = await convertBlobUrlToDataUrl(item.url);
+              if (!dataUrl) {
+                throw new Error(
+                  `Could not read ${item.filename ?? "the selected attachment"}.`
+                );
+              }
               return {
                 ...item,
-                url: dataUrl ?? item.url,
+                url: dataUrl,
               };
             }
             return item;
@@ -314,6 +360,8 @@ export const PromptInput = ({
             clear();
             if (usingProvider) {
               controller!.textInput.clear();
+            } else {
+              form.reset();
             }
           } catch {
             // Don't clear on error - user may want to retry
@@ -322,13 +370,30 @@ export const PromptInput = ({
           clear();
           if (usingProvider) {
             controller!.textInput.clear();
+          } else {
+            form.reset();
           }
         }
-      } catch {
+      } catch (error) {
+        onError?.({
+          code: "file_read",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Could not read the selected attachments.",
+        });
         // Don't clear on error - user may want to retry
       }
     },
-    [usingProvider, controller, files, onSubmit, clear]
+    [
+      attachmentsCtx.pendingCount,
+      usingProvider,
+      controller,
+      files,
+      onSubmit,
+      clear,
+      onError,
+    ]
   );
 
   return (
@@ -448,7 +513,7 @@ export const PromptInputTextarea = ({
 
       if (files.length > 0) {
         event.preventDefault();
-        attachments.add(files);
+        void attachments.add(files);
         return;
       }
 
@@ -458,7 +523,7 @@ export const PromptInputTextarea = ({
 
         if (countWords(normalized) > longPasteWordThreshold) {
           event.preventDefault();
-          attachments.add([createPastedTextFile(normalized)]);
+          void attachments.add([createPastedTextFile(normalized)]);
         }
       }
     },

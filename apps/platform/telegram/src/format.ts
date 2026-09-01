@@ -274,6 +274,7 @@ export function formatHelpText(options?: {
 /new — start a new conversation
 ${orgLine}/profile — choose or switch bot profile
 /status — server and model status
+/attach — send the latest file saved in this conversation
 
 Send text, a photo, or a supported document (pdf, docx, txt, csv — max 5 MB) to chat with the agent.`;
 }

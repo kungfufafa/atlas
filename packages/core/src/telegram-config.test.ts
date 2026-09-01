@@ -130,4 +130,46 @@ describe("verifyAndPairTelegramUser concurrency", () => {
       expect(saved?.pairedUserIds).toEqual([111]);
     });
   });
+
+  test("clears pairing fields when switching away from pairing mode", async () => {
+    await withTempHomedir("atlas-tg-open-mode-clear-", async (homeDir) => {
+      await writeChannelIniConfig(homeDir, "telegram", {
+        botToken: "1234567890:TEST",
+        handshakeAssertion: "assert_keep",
+        handshakeCode: "AABBCCDD",
+      });
+
+      await saveTelegramConfig({
+        accessMode: "open",
+        botToken: "1234567890:TEST",
+      });
+
+      const saved = await loadTelegramConfigFile();
+      expect(saved?.accessMode).toBe("open");
+      expect(saved?.handshakeCode).toBeNull();
+      expect(saved?.handshakeAssertion).toBeNull();
+      expect(saved?.handshakeUserId).toBeNull();
+    });
+  });
+
+  test("keeps pairing fields while remaining in pairing mode", async () => {
+    await withTempHomedir("atlas-tg-pair-mode-keep-", async (homeDir) => {
+      await writeChannelIniConfig(homeDir, "telegram", {
+        botToken: "1234567890:TEST",
+        handshakeAssertion: "assert_keep",
+        handshakeCode: "AABBCCDD",
+      });
+
+      await saveTelegramConfig({
+        accessMode: "pairing",
+        botToken: "1234567890:TEST",
+      });
+
+      const saved = await loadTelegramConfigFile();
+      expect(saved?.accessMode).toBe("pairing");
+      expect(saved?.handshakeCode).toBe("AABBCCDD");
+      expect(saved?.handshakeAssertion).toBe("assert_keep");
+      expect(saved?.handshakeUserId).toBeNull();
+    });
+  });
 });

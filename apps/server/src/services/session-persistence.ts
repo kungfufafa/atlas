@@ -9,7 +9,20 @@ export function wrapPersistedSession(
   db: DatabaseAdapter,
   options: {
     beforePersist?: () => Promise<void>;
-    onBeginTurn?: (sessionId: string, userMessage: string) => void;
+    onBeginTurn?: (
+      sessionId: string,
+      userMessage: string
+    ) => string | undefined;
+    onSendRejected?: (
+      sessionId: string,
+      error: unknown,
+      turnId: string | undefined
+    ) => Promise<void>;
+    onSendResolved?: (sessionId: string, turnId: string | undefined) => void;
+    runTurn?: (
+      turnId: string | undefined,
+      operation: () => Promise<string>
+    ) => Promise<string>;
   } = {}
 ): AgentChatSession {
   let lastPersistedRevision = session.getHistoryRevision();
@@ -38,10 +51,25 @@ export function wrapPersistedSession(
     getHistory: () => session.getHistory(),
     getHistoryRevision: () => session.getHistoryRevision(),
     async send(message, sendOptions) {
-      options.onBeginTurn?.(sessionId, readUserMessage(message));
+      const turnId = options.onBeginTurn?.(sessionId, readUserMessage(message));
       const before = session.getHistory().length;
       const revisionBefore = session.getHistoryRevision();
-      const reply = await session.send(message, sendOptions);
+      let reply: string;
+      try {
+        const send = () => session.send(message, sendOptions);
+        reply = options.runTurn
+          ? await options.runTurn(turnId, send)
+          : await send();
+      } catch (error) {
+        await notifySendRejected(
+          options.onSendRejected,
+          sessionId,
+          error,
+          turnId
+        );
+        throw error;
+      }
+      options.onSendResolved?.(sessionId, turnId);
       await persistSessionHistory(
         db,
         sessionId,
@@ -55,10 +83,25 @@ export function wrapPersistedSession(
       return reply;
     },
     async sendStream(message, handlers, streamOptions) {
-      options.onBeginTurn?.(sessionId, readUserMessage(message));
+      const turnId = options.onBeginTurn?.(sessionId, readUserMessage(message));
       const before = session.getHistory().length;
       const revisionBefore = session.getHistoryRevision();
-      const reply = await session.sendStream(message, handlers, streamOptions);
+      let reply: string;
+      try {
+        const send = () => session.sendStream(message, handlers, streamOptions);
+        reply = options.runTurn
+          ? await options.runTurn(turnId, send)
+          : await send();
+      } catch (error) {
+        await notifySendRejected(
+          options.onSendRejected,
+          sessionId,
+          error,
+          turnId
+        );
+        throw error;
+      }
+      options.onSendResolved?.(sessionId, turnId);
       await persistSessionHistory(
         db,
         sessionId,
@@ -72,6 +115,25 @@ export function wrapPersistedSession(
       return reply;
     },
   };
+}
+
+async function notifySendRejected(
+  callback:
+    | ((
+        sessionId: string,
+        error: unknown,
+        turnId: string | undefined
+      ) => Promise<void>)
+    | undefined,
+  sessionId: string,
+  error: unknown,
+  turnId: string | undefined
+): Promise<void> {
+  try {
+    await callback?.(sessionId, error, turnId);
+  } catch {
+    // Cleanup is compensating work and must not replace the original failure.
+  }
 }
 
 function readUserMessage(

@@ -6,6 +6,7 @@ interface TextAttachmentPreviewProps {
   className?: string;
   filename: string;
   onRemove?: () => void;
+  url?: string;
   wordCount?: number;
 }
 
@@ -14,18 +15,20 @@ export function TextAttachmentPreview({
   wordCount,
   onRemove,
   className,
+  url,
 }: TextAttachmentPreviewProps) {
   const resolvedWordCount =
     wordCount ?? wordCountFromPastedFilename(filename) ?? undefined;
+  const downloadable = Boolean(url && !onRemove);
 
-  return (
-    <div
-      className={cn(
-        "relative inline-flex max-w-full shrink-0 items-center rounded-lg border border-border bg-muted px-3 py-2",
-        onRemove ? "pr-8" : undefined,
-        className
-      )}
-    >
+  const attachmentClassName = cn(
+    "relative inline-flex max-w-full shrink-0 items-center rounded-lg border border-border bg-muted px-3 py-2",
+    onRemove ? "pr-8" : undefined,
+    downloadable ? "transition-colors hover:bg-muted/70" : undefined,
+    className
+  );
+  const content = (
+    <>
       <div className="min-w-0">
         <p className="font-medium text-foreground text-xs">Pasted text</p>
         {resolvedWordCount == null ? null : (
@@ -44,6 +47,14 @@ export function TextAttachmentPreview({
           <Cancel01Icon className="size-3" />
         </button>
       ) : null}
-    </div>
+    </>
+  );
+
+  return downloadable ? (
+    <a className={attachmentClassName} download={filename} href={url}>
+      {content}
+    </a>
+  ) : (
+    <div className={attachmentClassName}>{content}</div>
   );
 }

@@ -53,6 +53,7 @@ These commands are available in Telegram:
 | `/org` | Choose or switch organization |
 | `/profile` | Choose or switch profile |
 | `/status` | Show server and model status |
+| `/attach` | Send the latest file saved in this conversation |
 
 ## Supported message types
 
@@ -91,7 +92,7 @@ When the agent saves a file (spreadsheet, document, deck, or other artifact), At
 - Anyone who can read the Telegram message can open the link until the share is revoked from the web app.
 - Set **Web Public URL** in Atlas settings (or `ATLAS_WEB_PUBLIC_URL`) so channel footers include absolute links.
 
-To get the latest saved file again later, ask in plain language — for example, “send the file” or “attach it”. If the file is too large for Telegram, use the share link instead.
+To get the latest saved file again later, send `/attach` or ask in plain language — for example, “send the file” or “attach it”. `/attach` sends the file without starting a new agent turn. If the file is too large for Telegram, use the share link instead.
 
 ## Next steps
 

@@ -21,6 +21,7 @@ import {
   addDiscordAllowedUserId,
   clearDiscordPairingAssertion,
 } from "@atlas/core/discord-config";
+import { waitForAbortable } from "@atlas/core/download-deadline";
 import {
   filterProfilesForChatAccess,
   formatProfileSelectionPrompt,
@@ -108,6 +109,11 @@ const GROUP_MESSAGE_PREFIX =
 /** Posted when tools start before the model wrote any status text. */
 const DISCORD_EARLY_ACK_FALLBACK = "On it.";
 
+const DISCORD_LIVE_REPLY_STATUS_INTERVAL_MS = 900;
+const DISCORD_LIVE_REPLY_PREVIEW_LENGTH = 280;
+const DISCORD_LIVE_WORKING_LABEL = "🤖 Working...";
+const DISCORD_LIVE_TOOL_LABEL = "🛠️ Running a tool...";
+
 const LINK_IN_PRIVATE_REPLY =
   "Link your account in a private DM with this bot first.";
 
@@ -151,10 +157,25 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
   return {
     handleMessage: (message: Message) =>
-      client.isolateOrgId(() => handleMessage(message)),
+      client.isolateOrgId(() => handleMessageWithTerminalError(message)),
     handleSlashCommand: (interaction: ChatInputCommandInteraction) =>
       client.isolateOrgId(() => handleSlashCommand(interaction)),
   };
+
+  async function handleMessageWithTerminalError(
+    message: Message
+  ): Promise<void> {
+    try {
+      await handleMessage(message);
+    } catch (error) {
+      try {
+        const channel = getMessageChannel(message);
+        await createDiscordMessenger(channel).send(formatError(error));
+      } catch {
+        // The channel itself is unavailable, so there is nowhere to reply.
+      }
+    }
+  }
 
   async function handleMessage(message: Message): Promise<void> {
     if (message.author.bot) {
@@ -338,98 +359,173 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
-    const attachmentInput = await tryBuildAttachmentInput(message, messenger);
-    if (attachmentInput === "reject") {
-      return;
-    }
-
-    if (!(text || attachmentInput)) {
-      await messenger.send(UNSUPPORTED_MEDIA_REPLY);
-      return;
-    }
-
-    if (
-      text?.startsWith("/") &&
-      !isAttachOnlyCommand(text) &&
-      !attachmentInput
-    ) {
-      await messenger.send(
-        "Use slash commands from Discord's command menu for session control."
-      );
-      return;
-    }
-
     const strippedText =
       isGuild && botInfo && text
         ? stripBotMention(text, botInfo, mentionedBotRoleIds)
         : (text ?? "");
     const messageText = strippedText.trim();
+    type RoutedTurn = {
+      attachmentInput: SendMessageInput | null;
+      replyChannel: TextBasedChannel;
+      replyConversationKey: string;
+      replyMessenger: DiscordMessenger;
+      signal: AbortSignal;
+    };
 
-    if (!(messageText || attachmentInput)) {
+    const routedTurn = await withChatLock<RoutedTurn | null>(
+      conversationKey,
+      async () => {
+        const signal = registerActiveStream(conversationKey);
+        let transferredToThread = false;
+
+        try {
+          const attachmentInput = await tryBuildAttachmentInput(
+            message,
+            messenger,
+            messageText,
+            signal
+          );
+          if (attachmentInput === "reject") {
+            return null;
+          }
+
+          if (!(text || attachmentInput)) {
+            await messenger.send(UNSUPPORTED_MEDIA_REPLY);
+            return null;
+          }
+
+          if (
+            text?.startsWith("/") &&
+            !isAttachOnlyCommand(text) &&
+            !attachmentInput
+          ) {
+            await messenger.send(
+              "Use slash commands from Discord's command menu for session control."
+            );
+            return null;
+          }
+
+          if (!(messageText || attachmentInput)) {
+            return null;
+          }
+
+          const shouldRouteToThread =
+            isGuild &&
+            !isThread &&
+            (groupDecision?.reason === "bot-mention" ||
+              groupDecision?.reason === "reply-to-bot");
+
+          if (shouldRouteToThread) {
+            const thread = await createGuildThread(message, messageText);
+            if (thread) {
+              const replyConversationKey = `g:${channelId}:t:${thread.id}`;
+              const replyChannel = thread as unknown as TextBasedChannel;
+              const replyMessenger = createDiscordMessenger(
+                thread as unknown as Parameters<
+                  typeof createDiscordMessenger
+                >[0]
+              );
+              clearActiveStream(conversationKey, signal);
+              const threadSignal = registerActiveStream(replyConversationKey);
+              transferredToThread = true;
+              console.log(
+                isChannelDebugEnabled()
+                  ? `[discord] thread created ${thread.id}`
+                  : "[discord] thread created"
+              );
+              return {
+                attachmentInput,
+                replyChannel,
+                replyConversationKey,
+                replyMessenger,
+                signal: threadSignal,
+              };
+            }
+
+            console.log(
+              "[discord] thread create failed, falling back to channel"
+            );
+          }
+
+          await runDiscordTurn({
+            attachmentInput,
+            replyChannel: channel,
+            replyConversationKey: conversationKey,
+            replyIsThread: isThread,
+            replyMessenger: messenger,
+            signal,
+          });
+          return null;
+        } catch (error) {
+          await messenger
+            .send(isAbortError(error) ? "Stopped." : formatError(error))
+            .catch(() => undefined);
+          return null;
+        } finally {
+          if (!transferredToThread) {
+            clearActiveStream(conversationKey, signal);
+          }
+        }
+      }
+    );
+
+    if (!routedTurn) {
       return;
     }
 
-    let replyChannel = channel;
-    let replyConversationKey = conversationKey;
-    let replyMessenger = messenger;
-    let replyIsThread = isThread;
-
-    const shouldRouteToThread =
-      isGuild &&
-      !isThread &&
-      (groupDecision?.reason === "bot-mention" ||
-        groupDecision?.reason === "reply-to-bot");
-
-    if (shouldRouteToThread) {
-      const thread = await createGuildThread(message, messageText);
-
-      if (thread) {
-        replyChannel = thread as unknown as typeof replyChannel;
-        replyConversationKey = `g:${channelId}:t:${thread.id}`;
-        replyMessenger = createDiscordMessenger(
-          thread as unknown as Parameters<typeof createDiscordMessenger>[0]
-        );
-        replyIsThread = true;
-        console.log(
-          isChannelDebugEnabled()
-            ? `[discord] thread created ${thread.id}`
-            : "[discord] thread created"
-        );
-      } else {
-        console.log("[discord] thread create failed, falling back to channel");
-      }
+    try {
+      await withChatLock(routedTurn.replyConversationKey, async () => {
+        await runDiscordTurn({
+          ...routedTurn,
+          replyIsThread: true,
+        });
+      });
+    } catch (error) {
+      await routedTurn.replyMessenger
+        .send(isAbortError(error) ? "Stopped." : formatError(error))
+        .catch(() => undefined);
+    } finally {
+      clearActiveStream(routedTurn.replyConversationKey, routedTurn.signal);
     }
 
-    console.log(
-      "[discord] chat start",
-      ...(isChannelDebugEnabled() ? [replyConversationKey] : []),
-      `messageId=${message.id ?? "unknown"}`,
-      `textBytes=${Buffer.byteLength(messageText, "utf8")}`
-    );
+    async function runDiscordTurn(input: {
+      attachmentInput: SendMessageInput | null;
+      replyChannel: TextBasedChannel;
+      replyConversationKey: string;
+      replyIsThread: boolean;
+      replyMessenger: DiscordMessenger;
+      signal: AbortSignal;
+    }): Promise<void> {
+      console.log(
+        "[discord] chat start",
+        ...(isChannelDebugEnabled() ? [input.replyConversationKey] : []),
+        `messageId=${message.id ?? "unknown"}`,
+        `textBytes=${Buffer.byteLength(messageText, "utf8")}`
+      );
 
-    await withChatLock(replyConversationKey, async () => {
       await handleChatMessage(
-        replyChannel,
-        replyConversationKey,
-        replyMessenger,
-        messageText || attachmentInput?.message || "",
+        input.replyChannel,
+        input.replyConversationKey,
+        input.replyMessenger,
+        input.attachmentInput?.message ?? messageText,
         isGuild,
-        replyIsThread,
-        attachmentInput
+        input.replyIsThread,
+        input.attachmentInput
           ? {
-              documents: attachmentInput.documents,
-              images: attachmentInput.images,
+              documents: input.attachmentInput.documents,
+              images: input.attachmentInput.images,
             }
           : undefined,
-        userId
+        userId,
+        input.signal
       );
-    });
 
-    console.log(
-      isChannelDebugEnabled()
-        ? `[discord] chat done ${replyConversationKey}`
-        : "[discord] chat done"
-    );
+      console.log(
+        isChannelDebugEnabled()
+          ? `[discord] chat done ${input.replyConversationKey}`
+          : "[discord] chat done"
+      );
+    }
   }
 
   async function createGuildThread(
@@ -550,6 +646,40 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     await messenger.send(`Added <@${result.userId}> to the allowed list.`);
   }
 
+  async function handleAttachCommand(
+    interaction: ChatInputCommandInteraction,
+    messenger: DiscordMessenger,
+    conversationKey: string,
+    userId: string
+  ): Promise<void> {
+    const channel = interaction.channel;
+    if (!channel?.isTextBased()) {
+      await messenger.send("This command is unavailable in this channel.");
+      return;
+    }
+
+    await resolveSession(conversationKey, userId);
+    const profileId = sessionStore.get(conversationKey)?.profileId;
+    if (!profileId) {
+      await messenger.send("No profile is available for this conversation.");
+      return;
+    }
+
+    const sent = await maybeSendRequestedDiscordArtifactAttachment({
+      attachUserText: "/attach",
+      channel,
+      client,
+      conversationKey,
+      messenger,
+      profileId,
+      sessionStore,
+    });
+
+    if (sent) {
+      await messenger.send("Attached the latest saved artifact.");
+    }
+  }
+
   async function handleSlashCommand(
     interaction: ChatInputCommandInteraction
   ): Promise<void> {
@@ -644,6 +774,15 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       }
 
       switch (interaction.commandName) {
+        case "attach": {
+          await handleAttachCommand(
+            interaction,
+            messenger,
+            conversationKey,
+            userId
+          );
+          return;
+        }
         case "clear": {
           stopActiveStream(conversationKey);
           pendingQuestionnaires.delete(conversationKey);
@@ -798,7 +937,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
   async function tryBuildAttachmentInput(
     message: Message,
-    messenger: DiscordMessenger
+    messenger: DiscordMessenger,
+    caption: string,
+    signal: AbortSignal
   ): Promise<SendMessageInput | "reject" | null> {
     if (!hasDiscordAttachments(message)) {
       return null;
@@ -806,6 +947,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     try {
       const result = await buildDiscordAttachmentInput(message, {
+        caption,
+        signal,
         transcribeAudio: (input) => client.transcribeAudio(input),
       });
 
@@ -819,7 +962,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       }
 
       return result.input;
-    } catch {
+    } catch (error) {
+      if (isAbortError(error)) {
+        throw error;
+      }
       await messenger.send("Could not download that file. Try again.");
       return "reject";
     }
@@ -833,49 +979,60 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     isGuild: boolean,
     isThread: boolean,
     attachments?: Pick<SendMessageInput, "documents" | "images">,
-    authorUserId?: string
+    authorUserId?: string,
+    signal?: AbortSignal
   ): Promise<void> {
-    const session = await resolveSession(conversationKey, authorUserId);
-    const profileId = sessionStore.get(conversationKey)?.profileId;
-
-    // `/attach` remains a non-LLM shortcut. Natural-language sends use the
-    // send_discord_artifact tool from the agent turn.
-    if (profileId && isAttachOnlyCommand(attachUserText)) {
-      await maybeSendRequestedDiscordArtifactAttachment({
-        attachUserText,
-        channel,
-        client,
-        conversationKey,
-        messenger,
-        profileId,
-        sessionStore,
-      });
-      return;
-    }
-
-    // Forward free text to the agent — do not gate Discord replies on questionnaire parsing.
-    const streamInput = withGroupContext(
-      {
-        documents: attachments?.documents,
-        images: attachments?.images,
-        message: attachUserText,
-      },
-      isGuild,
-      isThread
-    );
-
-    const signal = registerActiveStream(conversationKey);
+    const activeSignal = signal ?? registerActiveStream(conversationKey);
+    const ownsSignal = signal === undefined;
     const typingLoop = createTypingLoop(messenger);
     const todoStatus = new DiscordTodoStatusMessage(messenger);
     const questionnaireStatus = new DiscordQuestionnaireMessage(messenger);
+    const liveReply = createDiscordLiveReply(messenger);
     let reply = "";
-    let earlyAck: Promise<void> | undefined;
+    let earlyAck = false;
     let postedQuestionnaire = false;
     const pendingArtifactUploads: Promise<unknown>[] = [];
     const uploadedArtifactPaths = new Set<string>();
     const streamedArtifacts = new Map<string, ChannelArtifactRef>();
+    let profileId: string | undefined;
+    let session: RemoteChatSession | undefined;
 
     try {
+      session = await waitForAbortable(
+        resolveSession(conversationKey, authorUserId),
+        activeSignal
+      );
+      profileId = sessionStore.get(conversationKey)?.profileId;
+
+      // `/attach` remains a non-LLM shortcut. Natural-language sends use the
+      // send_discord_artifact tool from the agent turn.
+      if (profileId && isAttachOnlyCommand(attachUserText)) {
+        await waitForAbortable(
+          maybeSendRequestedDiscordArtifactAttachment({
+            attachUserText,
+            channel,
+            client,
+            conversationKey,
+            messenger,
+            profileId,
+            sessionStore,
+          }),
+          activeSignal
+        );
+        return;
+      }
+
+      // Forward free text to the agent — do not gate Discord replies on questionnaire parsing.
+      const streamInput = withGroupContext(
+        {
+          documents: attachments?.documents,
+          images: attachments?.images,
+          message: attachUserText,
+        },
+        isGuild,
+        isThread
+      );
+
       typingLoop.start();
 
       reply = await session.sendStream(
@@ -889,6 +1046,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           },
           onChunk: (delta) => {
             reply += delta;
+            liveReply.updateFromReply(reply);
           },
           onQuestionnaireUpdated: (questionnaire) => {
             typingLoop.ping();
@@ -903,6 +1061,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           },
           onThinking: () => {
             typingLoop.ping();
+            liveReply.updateWorking();
           },
           onTodosUpdated: (todos) => {
             typingLoop.ping();
@@ -932,56 +1091,86 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           onToolStart: () => {
             typingLoop.ping();
             if (earlyAck) {
+              liveReply.updateTooling();
+              return;
+            }
+
+            if (liveReply.hasStatusMessage()) {
+              liveReply.updateTooling();
+              earlyAck = true;
+              return;
+            }
+
+            if (reply.trim()) {
+              liveReply.postStatus(reply);
+              earlyAck = true;
               return;
             }
 
             const earlyText = reply.trim() || DISCORD_EARLY_ACK_FALLBACK;
-            reply = "";
-            earlyAck = replyAsChat(messenger, earlyText);
+            liveReply.postStatus(earlyText);
+            earlyAck = true;
           },
         },
-        { signal }
+        { signal: activeSignal }
       );
 
       await Promise.all(pendingArtifactUploads);
-      await earlyAck;
       await todoStatus.complete();
 
-      if (signal.aborted) {
+      if (activeSignal.aborted) {
         if (reply.trim()) {
-          await replyAsChat(messenger, reply);
+          if (!(await liveReply.replaceWithFinal(reply))) {
+            await replyAsChat(messenger, reply);
+          }
+          await messenger.send("Stopped.");
+        } else if (!(await liveReply.replaceWithFinal("Stopped."))) {
+          await messenger.send("Stopped.");
         }
-
-        await messenger.send("Stopped.");
         return;
       }
     } catch (error) {
-      await earlyAck;
       if (isAbortError(error)) {
         await todoStatus.stop();
         if (reply.trim()) {
-          await replyAsChat(messenger, reply);
+          if (!(await liveReply.replaceWithFinal(reply))) {
+            await replyAsChat(messenger, reply);
+          }
+          await messenger.send("Stopped.");
+        } else if (!(await liveReply.replaceWithFinal("Stopped."))) {
+          await messenger.send("Stopped.");
         }
-
-        await messenger.send("Stopped.");
         return;
       }
 
       await todoStatus.fail();
-      await messenger.send(formatError(error));
+      if (!(await liveReply.replaceWithError(formatError(error)))) {
+        await messenger.send(formatError(error));
+      }
       return;
     } finally {
-      clearActiveStream(conversationKey);
+      if (ownsSignal) {
+        clearActiveStream(conversationKey, activeSignal);
+      }
       typingLoop.stop();
     }
 
     if (reply.trim()) {
-      await replyAsChat(messenger, reply);
-    } else if (!(postedQuestionnaire || earlyAck)) {
+      if (!(await liveReply.replaceWithFinal(reply))) {
+        await replyAsChat(messenger, reply);
+      }
+    } else if (liveReply.hasStatusMessage() || earlyAck) {
+      const terminalText = postedQuestionnaire
+        ? "Waiting for your answers."
+        : "(empty reply)";
+      if (!(await liveReply.replaceWithFinal(terminalText))) {
+        await messenger.send(terminalText);
+      }
+    } else if (!postedQuestionnaire) {
       await messenger.send("(empty reply)");
     }
 
-    if (profileId) {
+    if (profileId && session) {
       await deliverDiscordTurnArtifactShares({
         channel,
         client,
@@ -994,6 +1183,132 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         streamedArtifacts: [...streamedArtifacts.values()],
       });
     }
+  }
+
+  function createDiscordLiveReply(messenger: DiscordMessenger) {
+    let statusMessageId: string | null = null;
+    let lastStatusText = "";
+    let lastStatusAt = 0;
+    let statusChain = Promise.resolve();
+    let statusSupportsPreview = false;
+    let statusRequested = false;
+
+    function requestStatus(
+      status: string,
+      options: { allowPreview?: boolean } = {}
+    ) {
+      const now = Date.now();
+      const normalized = status.trim();
+
+      if (!normalized || normalized === lastStatusText) {
+        return;
+      }
+
+      if (now - lastStatusAt < DISCORD_LIVE_REPLY_STATUS_INTERVAL_MS) {
+        return;
+      }
+
+      lastStatusAt = now;
+      lastStatusText = normalized;
+      statusRequested = true;
+      if (options.allowPreview !== undefined) {
+        statusSupportsPreview = options.allowPreview;
+      }
+      statusChain = statusChain
+        .then(() => sendStatus(normalized))
+        .catch(() => {});
+    }
+
+    async function sendStatus(status: string): Promise<void> {
+      if (!status) {
+        return;
+      }
+
+      try {
+        if (statusMessageId === null) {
+          const message = await messenger.send(status);
+          statusMessageId = message?.id ?? null;
+          return;
+        }
+
+        await messenger.edit(statusMessageId, status);
+      } catch {
+        // Status updates are best-effort only.
+      }
+    }
+
+    async function replaceWithFinal(finalText: string): Promise<boolean> {
+      await statusChain;
+      if (statusMessageId === null) {
+        return false;
+      }
+
+      const chunks = splitDiscordMessage(finalText);
+      if (chunks.length === 0) {
+        return false;
+      }
+
+      try {
+        await messenger.edit(statusMessageId, chunks[0] ?? "");
+        for (const chunk of chunks.slice(1)) {
+          await replyAsChat(messenger, chunk);
+        }
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function makeReplyPreview(reply: string): string {
+      const trimmed = reply.trim();
+      if (!trimmed) {
+        return DISCORD_LIVE_WORKING_LABEL;
+      }
+
+      const preview = trimmed.slice(0, DISCORD_LIVE_REPLY_PREVIEW_LENGTH);
+      const suffix =
+        trimmed.length > DISCORD_LIVE_REPLY_PREVIEW_LENGTH ? "…" : "";
+
+      return `${DISCORD_LIVE_WORKING_LABEL}\n\n${preview}${suffix}`;
+    }
+
+    async function replaceWithError(errorText: string): Promise<boolean> {
+      await statusChain;
+      if (statusMessageId === null) {
+        return false;
+      }
+
+      try {
+        await messenger.edit(statusMessageId, `⚠️ ${errorText}`);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    return {
+      hasStatusMessage: (): boolean => statusRequested,
+      postStatus: (statusText: string): void => {
+        requestStatus(statusText, { allowPreview: false });
+      },
+      replaceWithError,
+      replaceWithFinal,
+      updateFromReply: (reply: string): void => {
+        if (!statusMessageId) {
+          return;
+        }
+
+        requestStatus(statusSupportsPreview ? makeReplyPreview(reply) : reply, {
+          allowPreview: false,
+        });
+      },
+      updateTooling: (): void => {
+        requestStatus(DISCORD_LIVE_TOOL_LABEL, { allowPreview: true });
+      },
+      updateWorking: (): void => {
+        requestStatus(DISCORD_LIVE_WORKING_LABEL, { allowPreview: true });
+      },
+    };
   }
 
   async function ensureOrgReady(
@@ -1482,10 +1797,10 @@ async function hydrateThreadParentId(
  * hung agent turn cannot queue follow-ups forever; after the wait budget the
  * next message proceeds (concurrent with the wedged run).
  */
-export async function withChatLock(
+export async function withChatLock<T>(
   chatId: string,
-  fn: () => Promise<void>
-): Promise<void> {
+  fn: () => Promise<T>
+): Promise<T> {
   const previous = chatLocks.get(chatId) ?? Promise.resolve();
   let release!: () => void;
   const gate = new Promise<void>((resolve) => {
@@ -1519,7 +1834,7 @@ export async function withChatLock(
   }
 
   try {
-    await fn();
+    return await fn();
   } finally {
     release();
     if (chatLocks.get(chatId) === gate) {

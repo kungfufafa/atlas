@@ -40,8 +40,9 @@ Optional env vars:
 | `/org` | Choose or switch organization |
 | `/profile` | Choose or switch bot profile |
 | `/status` | Server and model status |
+| `/attach` | Send the latest file saved in this conversation |
 
-Send plain text, a photo (optional caption), or a document (pdf, docx, txt, csv — max 5 MB) to chat with the agent.
+Send plain text, a photo (optional caption), or a document (pdf, docx, txt, csv — max 5 MB) to chat with the agent. Use `/attach` to send the latest file saved in the conversation again without starting an agent turn.
 
 **Stopping a reply:** While the bot is working on an answer, send `/stop`. Any text already generated is sent first, then the bot replies `Stopped.`. If nothing is in progress, you get `Nothing to stop.`
 

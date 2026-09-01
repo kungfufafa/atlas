@@ -7,6 +7,7 @@ import type { Context } from "grammy";
 import {
   downloadTelegramFile,
   OversizedTelegramFileError,
+  type TelegramDownloadOptions,
 } from "./attachments";
 
 export interface TelegramImageInput {
@@ -15,7 +16,8 @@ export interface TelegramImageInput {
 }
 
 export async function buildTelegramImageInput(
-  ctx: Context
+  ctx: Context,
+  options: TelegramDownloadOptions = {}
 ): Promise<TelegramImageInput | null> {
   const photos = ctx.message?.photo;
 
@@ -23,7 +25,7 @@ export async function buildTelegramImageInput(
     const largest = photos[photos.length - 1]!;
 
     return {
-      images: [await downloadTelegramImage(ctx, largest.file_id)],
+      images: [await downloadTelegramImage(ctx, largest.file_id, options)],
       message: ctx.message?.caption?.trim() ?? "",
     };
   }
@@ -32,7 +34,7 @@ export async function buildTelegramImageInput(
 
   if (document?.mime_type?.startsWith("image/")) {
     return {
-      images: [await downloadTelegramImage(ctx, document.file_id)],
+      images: [await downloadTelegramImage(ctx, document.file_id, options)],
       message: ctx.message?.caption?.trim() ?? "",
     };
   }
@@ -42,10 +44,16 @@ export async function buildTelegramImageInput(
 
 export async function downloadTelegramImage(
   ctx: Context,
-  fileId: string
+  fileId: string,
+  options: TelegramDownloadOptions = {}
 ): Promise<ImageAttachment> {
   try {
-    const downloaded = await downloadTelegramFile(ctx, fileId, MAX_IMAGE_BYTES);
+    const downloaded = await downloadTelegramFile(
+      ctx,
+      fileId,
+      MAX_IMAGE_BYTES,
+      options
+    );
     const mediaType = inferMediaType(
       downloaded.filePath,
       downloaded.contentType

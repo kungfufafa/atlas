@@ -1,9 +1,11 @@
 import type { AtlasClient } from "@atlas/client";
 import type { SendMessageInput } from "@atlas/core/contract";
+import { waitForAbortable } from "@atlas/core/download-deadline";
 import type { Context } from "grammy";
 import {
   downloadTelegramFile,
   OversizedTelegramFileError,
+  type TelegramDownloadOptions,
 } from "./attachments";
 
 export const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
@@ -17,7 +19,8 @@ export function hasTelegramAudio(ctx: Context): boolean {
 
 export async function buildTelegramAudioInput(
   ctx: Context,
-  client: AtlasClient
+  client: AtlasClient,
+  options: TelegramDownloadOptions = {}
 ): Promise<SendMessageInput | null> {
   const voice = ctx.message?.voice;
   const audio = ctx.message?.audio;
@@ -27,7 +30,12 @@ export async function buildTelegramAudioInput(
     return null;
   }
 
-  const downloaded = await downloadTelegramFile(ctx, fileId, MAX_AUDIO_BYTES);
+  const downloaded = await downloadTelegramFile(
+    ctx,
+    fileId,
+    MAX_AUDIO_BYTES,
+    options
+  );
   const filename = inferAudioFilename(
     downloaded.filePath,
     Boolean(voice),
@@ -39,11 +47,14 @@ export async function buildTelegramAudioInput(
     Boolean(voice)
   );
 
-  const { text } = await client.transcribeAudio({
+  const transcription = client.transcribeAudio({
     data: Buffer.from(downloaded.bytes).toString("base64"),
     filename,
     mediaType,
   });
+  const { text } = options.signal
+    ? await waitForAbortable(transcription, options.signal)
+    : await transcription;
 
   const caption = ctx.message?.caption?.trim() ?? "";
   const message = caption ? `${text}\n\n${caption}` : text;

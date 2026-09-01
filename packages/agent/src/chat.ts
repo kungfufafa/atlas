@@ -568,45 +568,49 @@ async function sendMessage(
       usesNativeWebSearch: providerOptions?.webSearch === true,
     }
   );
+  const historyBeforeTurn = [...history];
   history.push({ content: userContent, role: "user" });
-
-  if (options.runCompaction) {
-    await options.runCompaction(false);
-  }
-
-  const promptContext = options.resolvePromptContext
-    ? await options.resolvePromptContext({ userMessage })
-    : "";
-  let effectiveSystemPrompt = promptContext.trim()
-    ? `${systemPrompt}\n\n${promptContext.trim()}`
-    : systemPrompt;
-  const hasDocumentAttachments =
-    messageContentHasDocuments(userContent) ||
-    messagesIncludeUserDocuments(history);
-  if (
-    hasDocumentAttachments &&
-    !effectiveSystemPrompt.includes("untrusted document data")
-  ) {
-    effectiveSystemPrompt = `${effectiveSystemPrompt}\n\n${UNTRUSTED_DOCUMENT_GUIDANCE}`;
-  }
-  const baseToolContext =
-    input.clientOrigin?.trim() && options.toolContext
-      ? { ...options.toolContext, clientOrigin: input.clientOrigin.trim() }
-      : input.clientOrigin?.trim()
-        ? { clientOrigin: input.clientOrigin.trim() }
-        : options.toolContext;
-  const effectiveToolContext = {
-    ...(options.signal
-      ? { ...baseToolContext, signal: options.signal }
-      : baseToolContext),
-    runId: baseToolContext?.runId ?? nanoid(),
-  };
-
-  metrics.executionActive.inc();
-  metrics.executionTotal.inc({ policy: resolvedPolicy });
-  const executionStartMs = Date.now();
+  let executionStarted = false;
+  let executionStartMs = 0;
 
   try {
+    if (options.runCompaction) {
+      await options.runCompaction(false);
+    }
+
+    const promptContext = options.resolvePromptContext
+      ? await options.resolvePromptContext({ userMessage })
+      : "";
+    let effectiveSystemPrompt = promptContext.trim()
+      ? `${systemPrompt}\n\n${promptContext.trim()}`
+      : systemPrompt;
+    const hasDocumentAttachments =
+      messageContentHasDocuments(userContent) ||
+      messagesIncludeUserDocuments(history);
+    if (
+      hasDocumentAttachments &&
+      !effectiveSystemPrompt.includes("untrusted document data")
+    ) {
+      effectiveSystemPrompt = `${effectiveSystemPrompt}\n\n${UNTRUSTED_DOCUMENT_GUIDANCE}`;
+    }
+    const baseToolContext =
+      input.clientOrigin?.trim() && options.toolContext
+        ? { ...options.toolContext, clientOrigin: input.clientOrigin.trim() }
+        : input.clientOrigin?.trim()
+          ? { clientOrigin: input.clientOrigin.trim() }
+          : options.toolContext;
+    const effectiveToolContext = {
+      ...(options.signal
+        ? { ...baseToolContext, signal: options.signal }
+        : baseToolContext),
+      runId: baseToolContext?.runId ?? nanoid(),
+    };
+
+    executionStartMs = Date.now();
+    metrics.executionActive.inc();
+    executionStarted = true;
+    metrics.executionTotal.inc({ policy: resolvedPolicy });
+
     const reply = await runConversation(
       dependencies.provider,
       localTools,
@@ -657,43 +661,32 @@ async function sendMessage(
     if (error instanceof AwaitingApprovalError) {
       return "Waiting for approval to continue.";
     }
-    const durationMs = Date.now() - executionStartMs;
-    metrics.executionDurationMs.observe(durationMs, {
-      policy: resolvedPolicy,
-    });
-    const failure = classifyFailure(error);
-    if (failure.code === "CANCELLED") {
-      metrics.executionCancelledTotal.inc();
-    } else {
-      metrics.executionFailureTotal.inc({ failure_code: failure.code });
+    if (executionStarted) {
+      const durationMs = Date.now() - executionStartMs;
+      metrics.executionDurationMs.observe(durationMs, {
+        policy: resolvedPolicy,
+      });
+      const failure = classifyFailure(error);
+      if (failure.code === "CANCELLED") {
+        metrics.executionCancelledTotal.inc();
+      } else {
+        metrics.executionFailureTotal.inc({ failure_code: failure.code });
+      }
     }
-    rollbackFailedSend(history);
+    restoreFailedSend(history, historyBeforeTurn);
     throw error;
   } finally {
-    metrics.executionActive.dec();
+    if (executionStarted) {
+      metrics.executionActive.dec();
+    }
   }
 }
 
-function rollbackFailedSend(history: ChatMessage[]): void {
-  while (history.length > 0) {
-    const last = history.at(-1);
-
-    if (last?.role === "tool") {
-      history.pop();
-      continue;
-    }
-
-    if (last?.role === "assistant" && (last.toolCalls?.length ?? 0) > 0) {
-      history.pop();
-      continue;
-    }
-
-    if (last?.role === "user") {
-      history.pop();
-    }
-
-    break;
-  }
+function restoreFailedSend(
+  history: ChatMessage[],
+  historyBeforeTurn: readonly ChatMessage[]
+): void {
+  history.splice(0, history.length, ...historyBeforeTurn);
 }
 
 async function runConversation(

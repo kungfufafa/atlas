@@ -32,8 +32,12 @@ const CSRF_HEADER_NAME = "x-csrf-token";
 export const TOKEN_AUTH_MODE_HEADER = "x-atlas-auth-mode";
 const SESSION_COOKIE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
 const DEFAULT_JSON_BODY_READ_TIMEOUT_MS = 30_000;
+const DEFAULT_JSON_BODY_TOTAL_TIMEOUT_MS = 30_000;
 
 export interface ReadJsonWithLimitOptions {
+  /** Hard cap for the complete body transfer. */
+  maxTotalMs?: number;
+  /** Maximum idle time between body chunks. */
   timeoutMs?: number;
 }
 
@@ -445,16 +449,35 @@ export async function readJsonWithLimit<T>(
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];
   let totalBytes = 0;
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  const readDeadline = new Promise<never>((_resolve, reject) => {
-    timeoutId = setTimeout(() => {
+  const idleTimeoutMs = options.timeoutMs ?? DEFAULT_JSON_BODY_READ_TIMEOUT_MS;
+  let totalTimeoutId: ReturnType<typeof setTimeout> | undefined;
+  const totalDeadline = new Promise<never>((_resolve, reject) => {
+    totalTimeoutId = setTimeout(() => {
       reject(new AtlasApiError("Request body read timed out.", 408));
-    }, options.timeoutMs ?? DEFAULT_JSON_BODY_READ_TIMEOUT_MS);
+    }, options.maxTotalMs ?? DEFAULT_JSON_BODY_TOTAL_TIMEOUT_MS);
   });
 
   try {
     while (true) {
-      const { done, value } = await Promise.race([reader.read(), readDeadline]);
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+      const idleDeadline = new Promise<never>((_resolve, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new AtlasApiError("Request body read timed out.", 408));
+        }, idleTimeoutMs);
+      });
+      const { done, value } = await (async () => {
+        try {
+          return await Promise.race([
+            reader.read(),
+            idleDeadline,
+            totalDeadline,
+          ]);
+        } finally {
+          if (timeoutId !== undefined) {
+            clearTimeout(timeoutId);
+          }
+        }
+      })();
       if (done) {
         break;
       }
@@ -468,8 +491,8 @@ export async function readJsonWithLimit<T>(
     void reader.cancel().catch(() => undefined);
     throw error;
   } finally {
-    if (timeoutId !== undefined) {
-      clearTimeout(timeoutId);
+    if (totalTimeoutId !== undefined) {
+      clearTimeout(totalTimeoutId);
     }
     try {
       reader.releaseLock();
@@ -763,12 +786,21 @@ export function streamMessage(
         }
       );
 
-      // Anything the provider produces clears the first-token deadline. The
-      // keepalive below deliberately does not go through here: it is the
-      // server's own ping and says nothing about whether the provider is alive.
       let sawProviderOutput = false;
+      let armFirstTokenDeadline = () => undefined;
       const send = (event: StreamEvent) => {
-        sawProviderOutput = true;
+        if (event.type === "policy_resolved") {
+          armFirstTokenDeadline();
+        }
+
+        if (
+          event.type === "chunk" ||
+          event.type === "thinking" ||
+          event.type === "tool_input_delta" ||
+          event.type === "tool_start"
+        ) {
+          sawProviderOutput = true;
+        }
         publish(event);
       };
 
@@ -804,6 +836,40 @@ export function streamMessage(
           );
         });
 
+      const firstTokenDeadline =
+        firstTokenTimeoutMs > 0
+          ? (() => {
+              let armed = false;
+              let rejectDeadline: (error: Error) => void = () => undefined;
+              const promise = new Promise<never>((_resolve, reject) => {
+                rejectDeadline = reject;
+              });
+              armFirstTokenDeadline = () => {
+                if (armed || sawProviderOutput) {
+                  return;
+                }
+
+                armed = true;
+                deadlines.push(
+                  setTimeout(() => {
+                    if (sawProviderOutput) {
+                      return;
+                    }
+
+                    timedOut = true;
+                    rejectDeadline(
+                      new Error(
+                        `The provider accepted the request but sent nothing for ${Math.round(firstTokenTimeoutMs / 1000)}s. Try another model or check provider settings.`
+                      )
+                    );
+                    turnAbort.abort();
+                  }, firstTokenTimeoutMs)
+                );
+              };
+              return promise;
+            })()
+          : null;
+
       try {
         const raced: Promise<string>[] = [
           session.sendStream(input, buildAgentStreamHandlers(send), {
@@ -815,14 +881,8 @@ export function streamMessage(
           ),
         ];
 
-        if (firstTokenTimeoutMs > 0) {
-          raced.push(
-            failAfter(
-              firstTokenTimeoutMs,
-              `The provider accepted the request but sent nothing for ${Math.round(firstTokenTimeoutMs / 1000)}s. Try another model or check provider settings.`,
-              () => !sawProviderOutput
-            )
-          );
+        if (firstTokenDeadline) {
+          raced.push(firstTokenDeadline);
         }
 
         const reply = await Promise.race(raced);

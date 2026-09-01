@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { OrgRole } from "@atlas/core";
 import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { AgentService } from "../../services/agent-service";
+import { createAttachmentSaver } from "../../services/attachment-service";
 import { AuthService } from "../../services/auth-service";
 import { setupTestConfigDir } from "../../test-config-dir";
 import { createMinimalHonoApp } from "../test-app-helpers";
@@ -144,6 +145,21 @@ async function patchModel(
   );
 }
 
+async function createWebSession(
+  app: Awaited<ReturnType<typeof createScenario>>["app"],
+  session: Awaited<ReturnType<typeof loginUserSession>>
+): Promise<string> {
+  const response = await app.fetch(
+    new Request("http://localhost:4310/v1/sessions", {
+      body: JSON.stringify({ channel: "web", profileId: PROFILE_ID }),
+      headers: session.headers({ "X-CSRF-Token": session.csrfToken }),
+      method: "POST",
+    })
+  );
+  expect(response.status).toBe(201);
+  return ((await response.json()) as { sessionId: string }).sessionId;
+}
+
 async function readModelAccess(
   app: Awaited<ReturnType<typeof createScenario>>["app"],
   session: Awaited<ReturnType<typeof loginUserSession>>,
@@ -162,6 +178,151 @@ async function readModelAccess(
 }
 
 describe("session model route", () => {
+  test("rejects malformed and excessive attachments before starting a turn", async () => {
+    const { app } = await createScenario();
+    const owner = await loginUserSession(
+      app,
+      "owner@example.com",
+      PASSWORD,
+      ORG_ID
+    );
+    const sessionId = await createWebSession(app, owner);
+    const requests = [
+      { images: "not-an-array", message: "bad shape" },
+      {
+        documents: [
+          {
+            data: "YWJj",
+            filename: "malware.bin",
+            mediaType: "application/octet-stream",
+          },
+        ],
+        message: "bad document",
+      },
+      {
+        documents: Array.from({ length: 6 }, (_, index) => ({
+          data: "YWJj",
+          filename: `document-${index}.txt`,
+          mediaType: "text/plain",
+        })),
+        message: "too many",
+      },
+    ];
+
+    for (const requestBody of requests) {
+      const response = await app.fetch(
+        new Request(`http://localhost:4310/v1/sessions/${sessionId}/messages`, {
+          body: JSON.stringify(requestBody),
+          headers: owner.headers({ "X-CSRF-Token": owner.csrfToken }),
+          method: "POST",
+        })
+      );
+      expect(response.status).toBe(400);
+
+      const status = await app.fetch(
+        new Request(`http://localhost:4310/v1/sessions/${sessionId}/status`, {
+          headers: owner.headers(),
+        })
+      );
+      expect(await status.json()).toMatchObject({ active: false });
+    }
+  });
+
+  test("serves only referenced session attachments and supports safe image previews", async () => {
+    const { app, db } = await createScenario();
+    const owner = await loginUserSession(
+      app,
+      "owner@example.com",
+      PASSWORD,
+      ORG_ID
+    );
+    const sourceSessionId = await createWebSession(app, owner);
+    const unrelatedSessionId = await createWebSession(app, owner);
+    const save = createAttachmentSaver(db, {
+      channel: "web",
+      orgId: ORG_ID,
+      profileId: PROFILE_ID,
+      sessionId: sourceSessionId,
+    });
+    const saved = await save({
+      bytes: Buffer.from("image bytes"),
+      filename: 'preview\r\n".png',
+      kind: "image",
+      mediaType: "image/png",
+    });
+    const referencedMessage = {
+      content: [
+        {
+          attachmentId: saved.attachmentId,
+          mediaType: "image/png",
+          size: saved.size,
+          type: "image_ref" as const,
+        },
+      ],
+      role: "user" as const,
+    };
+    await db.replaceMessagesForSession(sourceSessionId, [
+      {
+        createdAt: new Date().toISOString(),
+        id: "attachment-message",
+        payload: referencedMessage,
+        seq: 0,
+        sessionId: sourceSessionId,
+      },
+    ]);
+
+    const download = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/sessions/${sourceSessionId}/attachments/${saved.attachmentId}`,
+        { headers: owner.headers() }
+      )
+    );
+    expect(download.status).toBe(200);
+    expect(download.headers.get("Content-Disposition")).toStartWith(
+      "attachment;"
+    );
+    expect(download.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(await download.text()).toBe("image bytes");
+
+    const preview = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/sessions/${sourceSessionId}/attachments/${saved.attachmentId}?inline=1`,
+        { headers: owner.headers() }
+      )
+    );
+    expect(preview.headers.get("Content-Disposition")).toStartWith("inline;");
+    expect(preview.headers.get("Content-Type")).toBe("image/png");
+
+    const unrelated = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/sessions/${unrelatedSessionId}/attachments/${saved.attachmentId}`,
+        { headers: owner.headers() }
+      )
+    );
+    expect(unrelated.status).toBe(404);
+
+    const branch = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/sessions/${sourceSessionId}/branch`,
+        {
+          body: JSON.stringify({ messageIndex: 0 }),
+          headers: owner.headers({ "X-CSRF-Token": owner.csrfToken }),
+          method: "POST",
+        }
+      )
+    );
+    const { sessionId: branchSessionId } = (await branch.json()) as {
+      sessionId: string;
+    };
+    const branchAttachment = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/sessions/${branchSessionId}/attachments/${saved.attachmentId}`,
+        { headers: owner.headers() }
+      )
+    );
+    expect(branchAttachment.status).toBe(200);
+  });
+
   test("rejects corrupt image pixels before starting a session turn", async () => {
     const { app } = await createScenario();
     const owner = await loginUserSession(

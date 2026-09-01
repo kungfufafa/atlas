@@ -9,12 +9,22 @@ import {
 import { ProviderCapabilityError } from "../providers/capabilities/errors";
 import { ProviderAdapterRegistry } from "../providers/capabilities/registry";
 import {
+  decodeAudioTranscriptionData,
   resolveTranscriptionProviderSelection,
   transcribeAudio,
 } from "./audio-transcription";
 
 const capabilityId = PROVIDER_CAPABILITY_IDS.audioTranscription;
 const createdAt = "2026-01-01T00:00:00.000Z";
+
+describe("decodeAudioTranscriptionData", () => {
+  test("strictly decodes canonical base64", () => {
+    expect(decodeAudioTranscriptionData("YXVkaW8=").toString()).toBe("audio");
+    expect(() => decodeAudioTranscriptionData("not base64!")).toThrow(
+      "valid base64"
+    );
+  });
+});
 
 function createManifest(options: {
   implementation?: "available" | "unavailable";

@@ -10,6 +10,19 @@ describe("chat document accept", () => {
     );
   });
 
+  test("includes and recognizes Markdown documents", () => {
+    expect(DOCUMENT_ACCEPT).toContain(".md");
+    expect(DOCUMENT_ACCEPT).toContain("text/markdown");
+    expect(
+      isDocumentFilePart({
+        filename: "notes.md",
+        mediaType: "text/markdown",
+        type: "file",
+        url: "data:text/markdown;base64,YWJj",
+      })
+    ).toBe(true);
+  });
+
   test("recognizes xlsx file parts", () => {
     expect(
       isDocumentFilePart({

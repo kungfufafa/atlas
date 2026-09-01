@@ -132,7 +132,8 @@ export function formatHelpText(options?: {
 /compact — compact conversation history
 /new — start a new conversation
 /close — close this bot conversation thread
-/allow — add a Discord user to the allowed list (admin)
+/attach — send the latest saved artifact
+/allow user — add a Discord user to the allowed list (admin)
 ${orgLine}/profile — choose or switch bot profile (send as text)
 /status — server and model status
 

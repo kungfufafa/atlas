@@ -6,7 +6,9 @@ import type {
   SessionMessageMeta,
 } from "@atlas/core/contract";
 import { extractThinkingFromAssistantMessage } from "@atlas/core/thinking-content";
+import type { FileUIPart } from "ai";
 import {
+  type AttachmentUrlResolver,
   stripImageDescriptionsFromDisplayText,
   userContentToDisplayDocuments,
   userContentToDisplayImageAttachments,
@@ -17,6 +19,7 @@ import {
   WEB_SEARCH_TOOL_NAME,
 } from "@/lib/chat-stream-web-search";
 import { createClientId } from "@/lib/client-id";
+import type { DisplayDocument } from "@/lib/pasted-text";
 
 export interface RequestedChatSession {
   profileId: string;
@@ -309,7 +312,7 @@ export interface ChatListItem {
   citations?: import("@atlas/core").Citation[];
   content: string;
   createdAt?: string;
-  documents?: Array<{ filename: string; mediaType: string }>;
+  documents?: DisplayDocument[];
   /** Client-only failed-turn marker; server history omits rolled-back turns. */
   failed?: boolean;
   historyIndex?: number;
@@ -324,6 +327,8 @@ export interface ChatListItem {
   policy?: import("@atlas/core").ExecutionPolicy;
   questionnaireAnswers?: AgentQuestionAnswer[];
   relatedQuestions?: string[];
+  /** Client-only attachment bytes retained until this optimistic turn hydrates. */
+  retryFiles?: FileUIPart[];
   role: "user" | "assistant" | "tool";
   sources?: import("@atlas/core").SourceItem[];
   streaming?: boolean;
@@ -357,7 +362,7 @@ export function storeFailedChatTurn(
   try {
     localStorage.setItem(
       `${FAILED_CHAT_TURN_STORAGE_PREFIX}${sessionId}`,
-      JSON.stringify(turn)
+      JSON.stringify({ error: turn.error, text: turn.text })
     );
   } catch {
     // Retry remains available in memory when storage is unavailable.
@@ -451,7 +456,8 @@ function parseToolResult(content: string): unknown {
 
 export function chatMessagesToListItems(
   messages: ChatMessage[],
-  messageMeta: SessionMessageMeta[] = []
+  messageMeta: SessionMessageMeta[] = [],
+  options: { resolveAttachmentUrl?: AttachmentUrlResolver } = {}
 ): ChatListItem[] {
   const toolInputs = new Map<string, Record<string, unknown>>();
 
@@ -481,9 +487,18 @@ export function chatMessagesToListItems(
     if (message.role === "user") {
       const content = message.content;
       const text = stripImageDescriptionsFromDisplayText(content);
-      const images = userContentToDisplayImages(content);
-      const imageAttachments = userContentToDisplayImageAttachments(content);
-      const documents = userContentToDisplayDocuments(content);
+      const images = userContentToDisplayImages(
+        content,
+        options.resolveAttachmentUrl
+      );
+      const imageAttachments = userContentToDisplayImageAttachments(
+        content,
+        options.resolveAttachmentUrl
+      );
+      const documents = userContentToDisplayDocuments(
+        content,
+        options.resolveAttachmentUrl
+      );
       const questionnaireAnswers =
         typeof content === "string"
           ? parseAgentQuestionnaireAnswersMessage(content)

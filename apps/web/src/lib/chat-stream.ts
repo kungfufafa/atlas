@@ -5,7 +5,7 @@ import type {
   AgentTodo,
   ChatContextUsage,
 } from "@atlas/core/contract";
-import type { ChatStatus } from "ai";
+import type { ChatStatus, FileUIPart } from "ai";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import type { ChatListItem } from "@/lib/chat-history";
@@ -583,6 +583,7 @@ export function awaitingModelLabel(
 export function buildStreamHandlers(
   setMessages: Dispatch<SetStateAction<ChatListItem[]>>,
   options: {
+    onAccepted?: () => void;
     onTodosUpdated?: (todos: AgentTodo[]) => void;
     onQuestionnaireUpdated?: (questionnaire: AgentQuestionnaire | null) => void;
     onContextUsage?: (usage: ChatContextUsage) => void;
@@ -723,6 +724,7 @@ export function buildStreamHandlers(
       });
     },
     onPolicyResolved: (policy) => {
+      options.onAccepted?.();
       setMessages((current) => {
         const next = [...current];
         const last = next[next.length - 1];
@@ -884,6 +886,7 @@ type OutgoingMessageOptions = {
     description?: string | null;
   }>;
   questionnaireAnswers?: AgentQuestionAnswer[];
+  retryFiles?: FileUIPart[];
 };
 
 function buildOutgoingUserMessage(
@@ -904,6 +907,10 @@ function buildOutgoingUserMessage(
     questionnaireAnswers:
       options.questionnaireAnswers && options.questionnaireAnswers.length > 0
         ? options.questionnaireAnswers
+        : undefined,
+    retryFiles:
+      options.retryFiles && options.retryFiles.length > 0
+        ? options.retryFiles.map((file) => ({ ...file }))
         : undefined,
     role: "user",
   };
@@ -931,6 +938,23 @@ export function appendOutgoingMessages(
     buildOutgoingUserMessage(text, images, documents, options),
     buildStreamingAssistantMessage(options.thinkingEnabled),
   ]);
+}
+
+export function removeUnacceptedOutgoingMessages(
+  messages: ChatListItem[]
+): ChatListItem[] {
+  const assistantMessage = messages.at(-1);
+  const userMessage = messages.at(-2);
+
+  if (
+    assistantMessage?.role !== "assistant" ||
+    !assistantMessage.streaming ||
+    userMessage?.role !== "user"
+  ) {
+    return messages;
+  }
+
+  return messages.slice(0, -2);
 }
 
 /** Visible 28px face with a 40px interaction target. */

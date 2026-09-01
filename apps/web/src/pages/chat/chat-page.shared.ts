@@ -2,6 +2,19 @@ import type { ChatListItem, FailedChatTurn } from "@/lib/chat-history";
 import { resolveHistoryProfileId } from "@/lib/chat-history";
 import { createClientId } from "@/lib/client-id";
 
+export function buildChatAttachmentScopeKey(input: {
+  draftKey: string;
+  orgId?: string | null;
+  profileId?: string | null;
+  sessionId?: string | null;
+}): string {
+  return JSON.stringify([
+    input.orgId ?? "no-org",
+    input.profileId ?? "no-profile",
+    input.sessionId ?? `draft:${input.draftKey}`,
+  ]);
+}
+
 export function shouldResetChatOnWorkspaceChange(
   previousOrgId: string | null | undefined,
   nextOrgId: string | null | undefined
@@ -185,6 +198,44 @@ export function findFailedRetryPrompt(
   );
 }
 
+export type FailedRetryPayloadResolution =
+  | { status: "attachments_unavailable" }
+  | { status: "missing" }
+  | {
+      files: NonNullable<ChatListItem["retryFiles"]>;
+      status: "ready";
+      text: string;
+    };
+
+export function resolveFailedRetryPayload(
+  prompt: ChatListItem | null
+): FailedRetryPayloadResolution {
+  if (!prompt) {
+    return { status: "missing" };
+  }
+
+  const files = prompt.retryFiles ?? [];
+  const hasDisplayAttachments = Boolean(
+    prompt.images?.length ||
+      prompt.imageAttachments?.length ||
+      prompt.documents?.length
+  );
+
+  if (hasDisplayAttachments && files.length === 0) {
+    return { status: "attachments_unavailable" };
+  }
+
+  if (!prompt.content.trim() && files.length === 0) {
+    return { status: "missing" };
+  }
+
+  return {
+    files: [...files],
+    status: "ready",
+    text: prompt.content,
+  };
+}
+
 export function messagesWithoutFailedTurn(
   messages: ChatListItem[],
   failedMessage: ChatListItem
@@ -198,10 +249,13 @@ export function messagesWithoutFailedTurn(
   }
 
   let start = failedIndex;
-  const previous = messages[failedIndex - 1];
+  const promptIndex = messages
+    .slice(0, failedIndex)
+    .findLastIndex((message) => message.role === "user");
+  const prompt = messages[promptIndex];
 
-  if (previous?.role === "user" && typeof previous.historyIndex !== "number") {
-    start = failedIndex - 1;
+  if (prompt && typeof prompt.historyIndex !== "number") {
+    start = promptIndex;
   }
 
   return [...messages.slice(0, start), ...messages.slice(failedIndex + 1)];

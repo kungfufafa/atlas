@@ -6,8 +6,31 @@ import {
   stripMarkdownForWhatsApp,
 } from "./format";
 
-test("WhatsApp help includes the attachment shortcut", () => {
-  expect(formatHelpText()).toContain("/attach");
+test("WhatsApp help includes entry and profile commands", () => {
+  const help = formatHelpText();
+
+  expect(help).toContain("/start");
+  expect(help).toContain("/profile");
+  expect(help).toContain("/attach");
+});
+
+test("workspace-locked help hides only the org command", () => {
+  const help = formatHelpText({ workspaceLocked: true });
+
+  expect(help).not.toContain("/org");
+  for (const command of [
+    "/start",
+    "/help",
+    "/stop",
+    "/clear",
+    "/compact",
+    "/new",
+    "/attach",
+    "/profile",
+    "/status",
+  ]) {
+    expect(help).toContain(command);
+  }
 });
 
 describe("stripMarkdownForWhatsApp", () => {

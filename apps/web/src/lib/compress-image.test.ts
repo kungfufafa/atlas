@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test";
 import {
   COMPRESS_IMAGE_OVER_BYTES,
   compressImageFileForUpload,
+  MAX_SOURCE_IMAGE_BYTES,
+  prepareChatUploadFiles,
   scaleImageDimensions,
 } from "./compress-image";
 
@@ -24,6 +26,16 @@ describe("compressImageFileForUpload", () => {
     );
 
     expect(await compressImageFileForUpload(file)).toBe(file);
+  });
+
+  test("rejects absurd source images before browser decoding", async () => {
+    const file = new File(
+      [new Uint8Array(MAX_SOURCE_IMAGE_BYTES + 1)],
+      "huge.png",
+      { type: "image/png" }
+    );
+
+    await expect(prepareChatUploadFiles([file])).rejects.toBeInstanceOf(Error);
   });
 });
 

@@ -828,6 +828,42 @@ describe("createChatHandler security", () => {
     });
   });
 
+  test("sends a terminal error when the server cannot create a session", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        allowedUserIds: [4242],
+        botToken: "1234567890:TEST",
+      });
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        failCreateSession: new Error("session server unavailable"),
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        orgStore,
+        sessionStore,
+      });
+      const { ctx, replies } = createMessageContext({
+        text: "hello",
+        userId: 4242,
+      });
+
+      await handleMessage(ctx);
+
+      expect(calls.sendStream).toBe(0);
+      expect(replies).toEqual(["session server unavailable"]);
+    });
+  });
+
   test("blocks agent access until pairing succeeds", async () => {
     await withTempHome(async (homeDir) => {
       await writeTelegramConfigIni(homeDir, {
@@ -1202,6 +1238,62 @@ describe("createChatHandler security", () => {
       } finally {
         getStreamControl()?.complete();
         await chatPromise.catch(() => undefined);
+      }
+    });
+  });
+
+  test("/stop cancels attachment preprocessing before the agent turn", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeTelegramConfigIni(homeDir, {
+        allowedUserIds: [4242],
+        botToken: "1234567890:TEST",
+      });
+
+      const authStore = new TelegramAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "telegram", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { botToken: "1234567890:TEST", profileId: "default" },
+        orgStore,
+        sessionStore,
+      });
+      const chatAttempt = createMessageContext({ userId: 4242 });
+      const stopAttempt = createMessageContext({
+        text: "/stop",
+        userId: 4242,
+      });
+      const stalledBody = new ReadableStream<Uint8Array>();
+      const fetchSpy = spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response(stalledBody)
+      );
+      const mutableContext = chatAttempt.ctx as unknown as {
+        api: { getFile: () => Promise<{ file_path: string }>; token: string };
+        message: { photo: Array<{ file_id: string }> };
+      };
+      mutableContext.api.getFile = async () => ({ file_path: "photo.jpg" });
+      mutableContext.api.token = "1234567890:TEST";
+      mutableContext.message.photo = [{ file_id: "photo-1" }];
+
+      try {
+        const pending = handleMessage(chatAttempt.ctx);
+        await waitForCondition(
+          () => fetchSpy.mock.calls.length === 1,
+          "Expected the attachment download to start"
+        );
+        await handleMessage(stopAttempt.ctx);
+        await pending;
+
+        expect(calls.sendStream).toBe(0);
+        expect(chatAttempt.replies).toEqual(["Stopped."]);
+      } finally {
+        fetchSpy.mockRestore();
       }
     });
   });
@@ -1612,6 +1704,7 @@ describe("createChatHandler security", () => {
       expect(calls.sendStream).toBe(0);
       expect(replies.join("\n")).toContain("/help");
       expect(replies.join("\n")).toContain("/start");
+      expect(replies.join("\n")).toContain("/attach");
     });
   });
 
@@ -2438,6 +2531,7 @@ describe("createChatHandler document attachments", () => {
 
       expect(calls.sendStream).toBe(0);
       expect(replies.join("\n")).toContain("/help");
+      expect(replies.join("\n")).toContain("/attach");
     });
   });
 });

@@ -126,9 +126,30 @@ describe("chatMessagesToListItems", () => {
         content: "[Image]\nLegacy description only.",
         role: "user",
       },
+      {
+        content: [
+          {
+            attachmentId: "attachment-2",
+            mediaType: "image/jpeg",
+            size: 120,
+            type: "image_ref",
+          },
+          {
+            attachmentId: "attachment-3",
+            filename: "notes.md",
+            mediaType: "text/markdown",
+            size: 42,
+            type: "document_ref",
+          },
+        ],
+        role: "user",
+      },
     ];
 
-    const items = chatMessagesToListItems(messages);
+    const items = chatMessagesToListItems(messages, [], {
+      resolveAttachmentUrl: (attachmentId, inline) =>
+        `/attachments/${attachmentId}${inline ? "?inline=1" : ""}`,
+    });
 
     expect(items[0]).toMatchObject({
       content: "What is this?",
@@ -136,6 +157,7 @@ describe("chatMessagesToListItems", () => {
         {
           description: "A red square.",
           mediaType: "image/png",
+          url: "/attachments/attachment-1?inline=1",
         },
       ],
     });
@@ -156,6 +178,23 @@ describe("chatMessagesToListItems", () => {
         { description: "Legacy description only.", mediaType: "image/unknown" },
       ],
     });
+    expect(items[3]).toMatchObject({
+      content: "",
+      documents: [
+        {
+          filename: "notes.md",
+          mediaType: "text/markdown",
+          url: "/attachments/attachment-3",
+        },
+      ],
+      images: [
+        {
+          mediaType: "image/jpeg",
+          url: "/attachments/attachment-2?inline=1",
+        },
+      ],
+    });
+    expect(items[3]?.retryFiles).toBeUndefined();
   });
 
   test("derives artifact refs from persisted write_file tool messages after hydration", () => {

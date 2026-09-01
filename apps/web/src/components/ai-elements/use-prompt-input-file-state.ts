@@ -2,13 +2,19 @@ import type { FileUIPart } from "ai";
 import { nanoid } from "nanoid";
 import type { ChangeEventHandler, RefObject } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AttachmentCapacityTracker } from "@/components/ai-elements/attachment-capacity";
 import type {
   AttachmentsContext,
   PromptInputControllerProps,
 } from "@/components/ai-elements/prompt-input-context";
 import { useOptionalPromptInputController } from "@/components/ai-elements/prompt-input-context";
 
-type FileErrorCode = "max_files" | "max_file_size" | "accept";
+type FileErrorCode =
+  | "accept"
+  | "file_read"
+  | "max_files"
+  | "max_file_size"
+  | "processing";
 
 export type UsePromptInputFileStateOptions = {
   accept?: string;
@@ -26,7 +32,7 @@ export type UsePromptInputFileStateResult = {
   files: (FileUIPart & { id: string })[];
   inputRef: RefObject<HTMLInputElement | null>;
   formRef: RefObject<HTMLFormElement | null>;
-  add: (fileList: File[] | FileList) => void;
+  add: (fileList: File[] | FileList) => Promise<void>;
   remove: (id: string) => void;
   clearAttachments: () => void;
   clear: () => void;
@@ -51,9 +57,15 @@ export function usePromptInputFileState({
   const formRef = useRef<HTMLFormElement | null>(null);
 
   const [items, setItems] = useState<(FileUIPart & { id: string })[]>([]);
+  const [pendingCount, setPendingCount] = useState(0);
   const files = usingProvider ? controller.attachments.files : items;
 
   const filesRef = useRef(files);
+  const capacityTrackerRef = useRef<AttachmentCapacityTracker | null>(null);
+  if (!capacityTrackerRef.current) {
+    capacityTrackerRef.current = new AttachmentCapacityTracker(files.length);
+  }
+  const capacityTracker = capacityTrackerRef.current;
 
   useEffect(() => {
     filesRef.current = files;
@@ -94,81 +106,6 @@ export function usePromptInputFileState({
     [accept]
   );
 
-  const addLocal = useCallback(
-    (fileList: File[] | FileList) => {
-      void (async () => {
-        let incoming = [...fileList];
-
-        if (prepareFiles) {
-          try {
-            incoming = await prepareFiles(incoming);
-          } catch (error) {
-            onError?.({
-              code: "max_file_size",
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Could not process the selected files.",
-            });
-            return;
-          }
-        }
-
-        const accepted = incoming.filter((f) => matchesAccept(f));
-        if (incoming.length && accepted.length === 0) {
-          onError?.({
-            code: "accept",
-            message: "No files match the accepted types.",
-          });
-          return;
-        }
-        const withinSize = (f: File) =>
-          maxFileSize ? f.size <= maxFileSize : true;
-        const sized = accepted.filter(withinSize);
-        if (accepted.length > 0 && sized.length === 0) {
-          onError?.({
-            code: "max_file_size",
-            message: "All files exceed the maximum size.",
-          });
-          return;
-        }
-
-        const remainingCapacity =
-          typeof maxFiles === "number"
-            ? Math.max(0, maxFiles - filesRef.current.length)
-            : undefined;
-        const capped =
-          typeof remainingCapacity === "number"
-            ? sized.slice(0, remainingCapacity)
-            : sized;
-        if (
-          typeof remainingCapacity === "number" &&
-          sized.length > remainingCapacity
-        ) {
-          onError?.({
-            code: "max_files",
-            message: "Too many files. Some were not added.",
-          });
-        }
-
-        setItems((prev) => {
-          const next: (FileUIPart & { id: string })[] = [];
-          for (const file of capped) {
-            next.push({
-              filename: file.name,
-              id: nanoid(),
-              mediaType: file.type,
-              type: "file",
-              url: URL.createObjectURL(file),
-            });
-          }
-          return [...prev, ...next];
-        });
-      })();
-    },
-    [matchesAccept, maxFiles, maxFileSize, onError, prepareFiles]
-  );
-
   const removeLocal = useCallback(
     (id: string) =>
       setItems((prev) => {
@@ -181,92 +118,136 @@ export function usePromptInputFileState({
     []
   );
 
-  const addWithProviderValidation = useCallback(
-    (fileList: File[] | FileList) => {
-      void (async () => {
-        let incoming = [...fileList];
+  const add = useCallback(
+    async (fileList: File[] | FileList): Promise<void> => {
+      const incoming = [...fileList];
+      const acceptedByType = incoming.filter((file) => matchesAccept(file));
+      const rejectedTypeCount = incoming.length - acceptedByType.length;
 
-        if (prepareFiles) {
-          try {
-            incoming = await prepareFiles(incoming);
-          } catch (error) {
-            onError?.({
-              code: "max_file_size",
-              message:
-                error instanceof Error
-                  ? error.message
-                  : "Could not process the selected files.",
-            });
-            return;
-          }
-        }
+      if (rejectedTypeCount > 0) {
+        onError?.({
+          code: "accept",
+          message: `${rejectedTypeCount} file${rejectedTypeCount === 1 ? "" : "s"} did not match the accepted types.`,
+        });
+      }
+      if (acceptedByType.length === 0) {
+        return;
+      }
 
-        const accepted = incoming.filter((f) => matchesAccept(f));
-        if (incoming.length && accepted.length === 0) {
-          onError?.({
-            code: "accept",
-            message: "No files match the accepted types.",
-          });
+      const { overflowCount, reservation } = capacityTracker.reserve(
+        acceptedByType.length,
+        maxFiles
+      );
+      if (overflowCount > 0) {
+        onError?.({
+          code: "max_files",
+          message: `${overflowCount} file${overflowCount === 1 ? " was" : "s were"} not added because the attachment limit was reached.`,
+        });
+      }
+      if (!reservation) {
+        return;
+      }
+
+      const candidates = acceptedByType.slice(0, reservation.count);
+      setPendingCount(capacityTracker.pendingCount);
+
+      try {
+        const prepared = prepareFiles
+          ? await prepareFiles(candidates)
+          : candidates;
+        if (!capacityTracker.isActive(reservation)) {
           return;
         }
-        const withinSize = (f: File) =>
-          maxFileSize ? f.size <= maxFileSize : true;
-        const sized = accepted.filter(withinSize);
-        if (accepted.length > 0 && sized.length === 0) {
+
+        const acceptedAfterPreparation = prepared
+          .slice(0, reservation.count)
+          .filter((file) => matchesAccept(file));
+        const sized = acceptedAfterPreparation.filter((file) =>
+          maxFileSize ? file.size <= maxFileSize : true
+        );
+        const rejectedSizeCount =
+          acceptedAfterPreparation.length - sized.length;
+        if (rejectedSizeCount > 0) {
           onError?.({
             code: "max_file_size",
-            message: "All files exceed the maximum size.",
+            message: `${rejectedSizeCount} file${rejectedSizeCount === 1 ? "" : "s"} exceeded the maximum size.`,
           });
+        }
+        if (sized.length === 0) {
           return;
         }
 
-        const currentCount = files.length;
-        const capacity =
-          typeof maxFiles === "number"
-            ? Math.max(0, maxFiles - currentCount)
-            : undefined;
-        const capped =
-          typeof capacity === "number" ? sized.slice(0, capacity) : sized;
-        if (typeof capacity === "number" && sized.length > capacity) {
-          onError?.({
-            code: "max_files",
-            message: "Too many files. Some were not added.",
-          });
+        if (usingProvider) {
+          await controller.attachments.add(sized);
+        } else {
+          const next = sized.map((file) => ({
+            filename: file.name,
+            id: nanoid(),
+            mediaType: file.type,
+            type: "file" as const,
+            url: URL.createObjectURL(file),
+          }));
+          setItems((previous) => [...previous, ...next]);
         }
 
-        if (capped.length > 0) {
-          controller?.attachments.add(capped);
+        capacityTracker.commit(reservation, sized.length);
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          onError?.({
+            code: "file_read",
+            message:
+              error instanceof Error
+                ? error.message
+                : "Could not process the selected files.",
+          });
         }
-      })();
+      } finally {
+        capacityTracker.release(reservation);
+        setPendingCount(capacityTracker.pendingCount);
+      }
     },
     [
+      capacityTracker,
+      controller,
       matchesAccept,
       maxFileSize,
       maxFiles,
       onError,
       prepareFiles,
-      files.length,
-      controller,
+      usingProvider,
     ]
   );
 
-  const clearAttachments = useCallback(
-    () =>
-      usingProvider
-        ? controller?.attachments.clear()
-        : setItems((prev) => {
-            for (const file of prev) {
-              if (file.url) {
-                URL.revokeObjectURL(file.url);
-              }
-            }
-            return [];
-          }),
-    [usingProvider, controller]
-  );
+  const clearAttachments = useCallback(() => {
+    capacityTracker.clear();
+    setPendingCount(0);
+    if (usingProvider) {
+      controller?.attachments.clear();
+    } else {
+      setItems((prev) => {
+        for (const file of prev) {
+          if (file.url) {
+            URL.revokeObjectURL(file.url);
+          }
+        }
+        return [];
+      });
+    }
+  }, [capacityTracker, usingProvider, controller]);
 
-  const add = usingProvider ? addWithProviderValidation : addLocal;
-  const remove = usingProvider ? controller.attachments.remove : removeLocal;
+  const remove = useCallback(
+    (id: string) => {
+      if (filesRef.current.some((file) => file.id === id)) {
+        capacityTracker.removeCommitted();
+      }
+      if (usingProvider) {
+        controller.attachments.remove(id);
+      } else {
+        removeLocal(id);
+      }
+    },
+    [capacityTracker, controller, removeLocal, usingProvider]
+  );
   const openFileDialog = usingProvider
     ? controller.attachments.openFileDialog
     : openFileDialogLocal;
@@ -307,7 +288,7 @@ export function usePromptInputFileState({
         e.preventDefault();
       }
       if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-        add(e.dataTransfer.files);
+        void add(e.dataTransfer.files);
       }
     };
     form.addEventListener("dragover", onDragOver);
@@ -333,7 +314,7 @@ export function usePromptInputFileState({
         e.preventDefault();
       }
       if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-        add(e.dataTransfer.files);
+        void add(e.dataTransfer.files);
       }
     };
     document.addEventListener("dragover", onDragOver);
@@ -360,7 +341,7 @@ export function usePromptInputFileState({
   const handleChange: ChangeEventHandler<HTMLInputElement> = useCallback(
     (event) => {
       if (event.currentTarget.files) {
-        add(event.currentTarget.files);
+        void add(event.currentTarget.files);
       }
       event.currentTarget.value = "";
     },
@@ -374,9 +355,10 @@ export function usePromptInputFileState({
       fileInputRef: inputRef,
       files: files.map((item) => ({ ...item, id: item.id })),
       openFileDialog,
+      pendingCount,
       remove,
     }),
-    [files, add, remove, clearAttachments, openFileDialog]
+    [files, add, remove, clearAttachments, openFileDialog, pendingCount]
   );
 
   return {

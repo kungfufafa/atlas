@@ -59,6 +59,9 @@ describe("WhatsApp group message helpers", () => {
   test("allows only supported slash commands", () => {
     expect(parseSupportedWhatsAppGroupCommand("/status now")).toBe("/status");
     expect(parseSupportedWhatsAppGroupCommand("/attach")).toBe("/attach");
+    expect(parseSupportedWhatsAppGroupCommand("/profile research")).toBe(
+      "/profile"
+    );
     expect(parseSupportedWhatsAppGroupCommand("/unknown")).toBeNull();
     expect(
       explainWhatsAppGroupMessageHandling({
@@ -67,6 +70,13 @@ describe("WhatsApp group message helpers", () => {
         text: "/help",
       }).shouldHandle
     ).toBe(true);
+    expect(
+      explainWhatsAppGroupMessageHandling({
+        mentionedJids: [],
+        quotedParticipant: null,
+        text: "/profile research",
+      })
+    ).toEqual({ reason: "slash-command", shouldHandle: true });
     expect(
       explainWhatsAppGroupMessageHandling({
         mentionedJids: [],

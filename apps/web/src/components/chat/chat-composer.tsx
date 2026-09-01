@@ -53,6 +53,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Spinner } from "@/components/ui/spinner";
 import {
   Tooltip,
   TooltipContent,
@@ -102,7 +103,7 @@ interface ChatComposerBaseProps {
   error: string | null;
   footerClassName?: string;
   onStop?: () => void;
-  onSubmit: (text: string, files: FileUIPart[]) => void;
+  onSubmit: (text: string, files: FileUIPart[]) => Promise<void> | void;
   onSubmitQuestionnaire?: (answers: AgentQuestionAnswer[]) => void;
   placeholder?: string;
   questionnaire?: AgentQuestionnaire | null;
@@ -241,7 +242,7 @@ export function ChatComposer(props: ChatComposerProps) {
               }
               onSubmit={({ text, files }) => {
                 setAttachmentError(null);
-                onSubmit(text.trim(), files);
+                return onSubmit(text.trim(), files);
               }}
               prepareFiles={prepareChatUploadFiles}
               rimActive={busy}
@@ -295,7 +296,7 @@ export function ChatComposer(props: ChatComposerProps) {
             }
             onSubmit={({ text, files }) => {
               setAttachmentError(null);
-              onSubmit(text.trim(), files);
+              return onSubmit(text.trim(), files);
             }}
             prepareFiles={isMinimal ? undefined : prepareChatUploadFiles}
             rimActive={busy}
@@ -695,7 +696,8 @@ function ChatComposerSubmitButton({
   const attachments = usePromptInputAttachments();
   const hasContent =
     controller.textInput.value.trim().length > 0 ||
-    attachments.files.length > 0;
+    attachments.files.length > 0 ||
+    attachments.pendingCount > 0;
   const { showStop, showSubmit } = composerActions({ canStop, hasContent });
 
   const stopButton = showStop ? (
@@ -734,7 +736,7 @@ function ChatComposerSubmitButton({
       <PromptInputSubmit
         aria-label={busy ? "Queue message" : "Send message"}
         className={composerSubmitButtonClassName}
-        disabled={disabled}
+        disabled={disabled || attachments.pendingCount > 0}
         status={chatStatus}
       >
         <ArrowUp02Icon className="size-3.5" />
@@ -750,7 +752,7 @@ function ChatAttachmentHeader({
 }) {
   const attachments = usePromptInputAttachments();
 
-  if (attachments.files.length === 0) {
+  if (attachments.files.length === 0 && attachments.pendingCount === 0) {
     return null;
   }
 
@@ -759,6 +761,16 @@ function ChatAttachmentHeader({
   return (
     <PromptInputHeader className="pb-0">
       <div className="flex w-full flex-wrap gap-2 border-border/60 border-b pb-3">
+        {attachments.pendingCount > 0 ? (
+          <div
+            className="flex items-center gap-2 rounded-lg border border-border bg-muted px-3 py-2 text-muted-foreground text-xs"
+            role="status"
+          >
+            <Spinner className="size-3.5" />
+            Preparing {attachments.pendingCount} attachment
+            {attachments.pendingCount === 1 ? "" : "s"}…
+          </div>
+        ) : null}
         {attachments.files.map((file) => {
           const filename = file.filename ?? "Document";
           const mediaType = file.mediaType ?? "";

@@ -142,7 +142,7 @@ Replies in server channels are visible to everyone in that channel. Atlas prefix
 
 ## Discord commands
 
-Session control uses Discord slash commands. Org and profile switching use text commands.
+Session control, artifact delivery, and allowlist administration use Discord slash commands. Org and profile switching use text commands.
 
 | Command | Type | What it does |
 | --- | --- | --- |
@@ -154,6 +154,8 @@ Session control uses Discord slash commands. Org and profile switching use text 
 | `/new` | Slash | Start a new conversation (same Discord thread) |
 | `/close` | Slash | Close (archive) this bot conversation thread |
 | `/status` | Slash | Show server and model status |
+| `/attach` | Slash | Send the latest saved artifact |
+| `/allow user` | Slash | Add a Discord user to the allowed list (paired bot owner only) |
 | `/org` | Text | Choose or switch organization |
 | `/profile` | Text | Choose or switch profile |
 
@@ -173,7 +175,7 @@ When the agent saves a file (spreadsheet, document, deck, or other artifact), At
 - Anyone who can read the Discord message can open the link until the share is revoked from the web app.
 - Set **Web Public URL** in Atlas settings (or `ATLAS_WEB_PUBLIC_URL`) so channel footers include absolute links.
 
-To get the latest saved file again later, type `/attach`, or ask in plain language — for example, “send the file” or “attach the PDF”. If the file is too large for Discord, use the share link instead.
+To get the latest saved file again later, choose `/attach` from Discord's command menu. Sending `/attach` as exact text also remains supported. You can also ask in plain language — for example, “send the file” or “attach the PDF”. If the file is too large for Discord, use the share link instead.
 
 ## Configuration notes
 

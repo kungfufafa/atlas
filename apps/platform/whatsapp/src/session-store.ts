@@ -10,6 +10,8 @@ export interface ChatSessionRecord {
   artifactShareUrls?: Record<string, string>;
   deliverableArtifacts?: DeliverableChannelArtifact[];
   profileId: string;
+  /** True when /profile overrides the integration's configured reply profile. */
+  profileOverride?: boolean;
   sessionId: string;
   updatedAt: string;
 }

@@ -46,6 +46,19 @@ test("chat stream request includes cookie CSRF protection", async () => {
   }
 });
 
+test("session attachment URLs encode identifiers and opt into safe image preview", () => {
+  const client = createClient({ baseUrl: "http://localhost:4310" });
+
+  expect(client.getSessionAttachmentUrl("session/one", "attachment two")).toBe(
+    "http://localhost:4310/v1/sessions/session%2Fone/attachments/attachment%20two"
+  );
+  expect(
+    client.getSessionAttachmentUrl("session/one", "attachment two", true)
+  ).toBe(
+    "http://localhost:4310/v1/sessions/session%2Fone/attachments/attachment%20two?inline=1"
+  );
+});
+
 test("automation run requests disable Bun fetch idle timeout", async () => {
   const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
     [];

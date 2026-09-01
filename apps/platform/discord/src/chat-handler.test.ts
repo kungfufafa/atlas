@@ -97,6 +97,69 @@ describe("createChatHandler guild auth silence", () => {
       expect(reloadCalls.length).toBeGreaterThanOrEqual(1);
     });
   });
+
+  test("queues a same-conversation follow-up without aborting the active turn", async () => {
+    await withTempHome(async (homeDir) => {
+      let releaseFirst!: () => void;
+      const firstGate = new Promise<void>((resolve) => {
+        releaseFirst = resolve;
+      });
+      const signals: AbortSignal[] = [];
+      let entered = 0;
+      const { handleMessage } = await createPairedHandler(homeDir, {
+        onSendStream: async (_input, _handlers, streamOptions) => {
+          entered += 1;
+          if (streamOptions?.signal) {
+            signals.push(streamOptions.signal);
+          }
+          if (entered === 1) {
+            await firstGate;
+          }
+          return "done";
+        },
+      });
+      const first = createDmMessage({
+        channelId: "dm_serialized",
+        content: "first",
+      });
+      const second = createDmMessage({
+        channelId: "dm_serialized",
+        content: "second",
+      });
+
+      const firstTurn = handleMessage(first.message);
+      await waitForCondition(
+        () => entered === 1,
+        "first turn never reached onSendStream"
+      );
+      const secondTurn = handleMessage(second.message);
+      await Bun.sleep(20);
+
+      expect(entered).toBe(1);
+      expect(signals[0]?.aborted).toBe(false);
+
+      releaseFirst();
+      await Promise.all([firstTurn, secondTurn]);
+      expect(entered).toBe(2);
+    });
+  });
+
+  test("sends a terminal error when the server cannot create a session", async () => {
+    await withTempHome(async (homeDir) => {
+      const { handleMessage, calls } = await createPairedHandler(homeDir, {
+        failCreateSession: new Error("session server unavailable"),
+      });
+      const dm = createDmMessage({
+        content: "hello",
+        userId: "424242424242424242",
+      });
+
+      await handleMessage(dm.message);
+
+      expect(calls.sendStream).toBe(0);
+      expect(dm.sentMessages).toEqual(["session server unavailable"]);
+    });
+  });
 });
 
 /**
@@ -138,6 +201,9 @@ async function createPairedHandler(
     artifactContentBytes?: Parameters<
       typeof createMockClient
     >[0]["artifactContentBytes"];
+    failCreateSession?: Parameters<
+      typeof createMockClient
+    >[0]["failCreateSession"];
     failPublishShare?: Parameters<
       typeof createMockClient
     >[0]["failPublishShare"];
@@ -980,6 +1046,72 @@ describe("createChatHandler artifact delivery", () => {
     });
   });
 
+  test("native /attach completes its reply when no artifact is available", async () => {
+    await withTempHome(async (homeDir) => {
+      const { calls, handleSlashCommand } = await createPairedHandler(homeDir);
+      const attach = createSlashInteraction({ commandName: "attach" });
+
+      await handleSlashCommand(attach.interaction);
+
+      expect(attach.fileSendCalls).toBe(0);
+      expect(attach.replies).toEqual([
+        "No saved artifact to attach. Ask me to send a file from Artifacts, or save one first.",
+      ]);
+      expect(calls.sendStream).toBe(0);
+    });
+  });
+
+  test("native /attach uses the current thread session and profile", async () => {
+    await withTempHome(async (homeDir) => {
+      const artifact = {
+        filename: "thread-report.pdf",
+        mimeType: "application/pdf",
+        path: "thread-report.pdf",
+        sizeBytes: 8,
+        updatedAt: "2026-08-08T12:51:00.000Z",
+      };
+      const { calls, handleSlashCommand, orgStore, sessionStore } =
+        await createPairedHandler(homeDir, {
+          artifactContentBytes: new TextEncoder().encode("%PDF-1.4"),
+          listedArtifacts: [artifact],
+          profiles: [
+            { id: "default", isDefault: true, name: "Default" },
+            { id: "support", name: "Support" },
+          ],
+        });
+      const conversationKey = "g:guild_channel_1:t:thread_attach";
+      sessionStore.set(conversationKey, {
+        profileId: "support",
+        sessionId: "session_test",
+        updatedAt: new Date().toISOString(),
+      });
+      await sessionStore.save();
+      const attach = createSlashInteraction({
+        commandName: "attach",
+        inThread: true,
+        parentId: "guild_channel_1",
+        threadId: "thread_attach",
+      });
+
+      await handleSlashCommand(attach.interaction);
+
+      expect(attach.fileSendCalls).toBe(1);
+      expect(attach.replies).toEqual(["Attached the latest saved artifact."]);
+      expect(calls.createSession).toBe(0);
+      expect(calls.sendStream).toBe(0);
+      expect(sessionStore.get(conversationKey)?.profileId).toBe("support");
+      expect(
+        sessionStore
+          .getDeliverableArtifacts(conversationKey)
+          .map((entry) => entry.path)
+      ).toEqual([artifact.path]);
+      expect(sessionStore.getDeliverableArtifacts("guild_channel_1")).toEqual(
+        []
+      );
+      expect(orgStore.get("g:guild_channel_1")?.orgId).toBe("org_test");
+    });
+  });
+
   test("returns a clear error when /attach targets an unsupported type", async () => {
     await withTempHome(async (homeDir) => {
       const { handleMessage, sessionStore } = await createPairedHandler(
@@ -1055,7 +1187,7 @@ describe("createChatHandler early ack", () => {
     });
   }
 
-  test("posts the streamed status before tools, then the final outcome", async () => {
+  test("replaces the streamed tool status with the final outcome", async () => {
     await withTempHome(async (homeDir) => {
       const { handleMessage } = await setupAckHandler(
         homeDir,
@@ -1082,13 +1214,11 @@ describe("createChatHandler early ack", () => {
       });
       await handleMessage(dm.message);
 
-      expect(dm.sentMessages[0]).toBe("Checking the repo first.");
-      expect(dm.sentMessages.at(-1)).toBe("Done — branch is clean.");
-      expect(dm.sentMessages).toHaveLength(2);
+      expect(dm.sentMessages).toEqual(["Done — branch is clean."]);
     });
   });
 
-  test("posts a fallback ack when tools start with no streamed text", async () => {
+  test("replaces the fallback tool ack with the final outcome", async () => {
     await withTempHome(async (homeDir) => {
       const { handleMessage } = await setupAckHandler(
         homeDir,
@@ -1113,8 +1243,27 @@ describe("createChatHandler early ack", () => {
       });
       await handleMessage(dm.message);
 
-      expect(dm.sentMessages[0]).toBe("On it.");
-      expect(dm.sentMessages.at(-1)).toBe("All set.");
+      expect(dm.sentMessages).toEqual(["All set."]);
+    });
+  });
+
+  test("replaces a working status with the terminal error", async () => {
+    await withTempHome(async (homeDir) => {
+      const { handleMessage } = await setupAckHandler(
+        homeDir,
+        async (_input, handlers) => {
+          handlers?.onThinking?.("Checking");
+          throw new Error("tool failed");
+        }
+      );
+      const dm = createDmMessage({
+        content: "fail the thing",
+        userId: "424242424242424242",
+      });
+
+      await handleMessage(dm.message);
+
+      expect(dm.sentMessages).toEqual(["⚠️ tool failed"]);
     });
   });
 
@@ -2314,6 +2463,7 @@ describe("createChatHandler inbound files", () => {
             name: "voice-message.ogg",
           },
         ],
+        content: "Please summarize",
         userId: "424242424242424242",
       });
       await handleMessage(dm.message);
@@ -2323,7 +2473,7 @@ describe("createChatHandler inbound files", () => {
       expect(lastInput).toEqual({
         documents: undefined,
         images: undefined,
-        message: "Transcribed voice message",
+        message: "Transcribed voice message\n\nPlease summarize",
       });
     });
   });

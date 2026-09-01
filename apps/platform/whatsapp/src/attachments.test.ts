@@ -1,12 +1,16 @@
 import { describe, expect, test } from "bun:test";
+import { PassThrough } from "node:stream";
 import type { WAMessage } from "@whiskeysockets/baileys";
 import {
   buildWhatsAppMediaInput,
+  DOWNLOAD_FAILED_REPLY,
   formatExtractedWhatsAppDocumentMessage,
   formatSavedWhatsAppDocumentMessage,
   mergeWhatsAppUserMessage,
   OVERSIZED_FILE_REPLY,
   OVERSIZED_IMAGE_REPLY,
+  OversizedWhatsAppMediaError,
+  readWhatsAppMediaStream,
   resolveWhatsAppDocumentHandling,
   SAVE_FAILED_DOCUMENT_REPLY,
   savedWorkspaceDocumentHint,
@@ -505,5 +509,61 @@ describe("resolveWhatsAppDocumentHandling", () => {
     expect(resolveWhatsAppDocumentHandling(6, limits)).toBe("extract");
     expect(resolveWhatsAppDocumentHandling(25, limits)).toBe("extract");
     expect(resolveWhatsAppDocumentHandling(26, limits)).toBe("reject");
+  });
+});
+
+describe("bounded WhatsApp media downloads", () => {
+  test("destroys a stream as soon as its actual bytes exceed the cap", async () => {
+    const stream = new PassThrough();
+    const download = readWhatsAppMediaStream(stream, {
+      idleTimeoutMs: 100,
+      maxBytes: 8,
+      overallTimeoutMs: 100,
+    });
+
+    stream.write(Buffer.alloc(6));
+    stream.end(Buffer.alloc(6));
+
+    await expect(download).rejects.toBeInstanceOf(OversizedWhatsAppMediaError);
+    expect(stream.destroyed).toBe(true);
+  });
+
+  test("rejects zero-byte streams", async () => {
+    const stream = new PassThrough();
+    stream.end();
+
+    await expect(
+      readWhatsAppMediaStream(stream, {
+        idleTimeoutMs: 100,
+        maxBytes: 8,
+        overallTimeoutMs: 100,
+      })
+    ).rejects.toThrow("empty");
+  });
+
+  test("destroys a stream that stalls past its idle deadline", async () => {
+    const stream = new PassThrough();
+
+    await expect(
+      readWhatsAppMediaStream(stream, {
+        idleTimeoutMs: 5,
+        maxBytes: 8,
+        overallTimeoutMs: 100,
+      })
+    ).rejects.toThrow("stalled");
+    expect(stream.destroyed).toBe(true);
+  });
+
+  test("bounds injected downloader implementations with an overall deadline", async () => {
+    const result = await buildWhatsAppMediaInput(
+      createDocumentMessage({
+        fileName: "report.pdf",
+        mimeType: "application/pdf",
+      }),
+      async () => await new Promise<Buffer>(() => {}),
+      { downloadOverallTimeoutMs: 5 }
+    );
+
+    expect(result).toEqual({ kind: "reject", message: DOWNLOAD_FAILED_REPLY });
   });
 });

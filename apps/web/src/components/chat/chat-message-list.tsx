@@ -59,7 +59,7 @@ import {
 } from "@/lib/chat-stream-web-search";
 import { client } from "@/lib/client";
 import { formatElapsedSeconds, useElapsedSeconds } from "@/lib/elapsed-time";
-import { isPastedTextDocument } from "@/lib/pasted-text";
+import { type DisplayDocument, isPastedTextDocument } from "@/lib/pasted-text";
 import { cn } from "@/lib/utils";
 
 /** Top/bottom inset as Virtuoso Header/Footer — never put padding on the scroller. */
@@ -774,7 +774,8 @@ function UserMessageContent({ message }: { message: ChatListItem }) {
           {pastedTextDocuments.map((document) => (
             <TextAttachmentPreview
               filename={document.filename}
-              key={`${document.filename}-${document.mediaType}`}
+              key={`${document.filename}-${document.mediaType}-${document.url ?? "inline"}`}
+              url={document.url}
             />
           ))}
         </div>
@@ -782,18 +783,10 @@ function UserMessageContent({ message }: { message: ChatListItem }) {
       {otherDocuments.length ? (
         <div className="flex flex-wrap gap-2">
           {otherDocuments.map((document) => (
-            <div
-              className="inline-flex max-w-full items-center gap-2 rounded-md border border-border bg-muted px-3 py-2"
-              key={`${document.filename}-${document.mediaType}`}
-            >
-              <File01Icon
-                aria-hidden
-                className="size-4 shrink-0 text-muted-foreground"
-              />
-              <span className="truncate text-foreground text-sm">
-                {document.filename}
-              </span>
-            </div>
+            <DocumentAttachmentChip
+              document={document}
+              key={`${document.filename}-${document.mediaType}-${document.url ?? "inline"}`}
+            />
           ))}
         </div>
       ) : null}
@@ -803,5 +796,31 @@ function UserMessageContent({ message }: { message: ChatListItem }) {
         </p>
       ) : null}
     </div>
+  );
+}
+
+function DocumentAttachmentChip({ document }: { document: DisplayDocument }) {
+  const className = cn(
+    "inline-flex max-w-full items-center gap-2 rounded-md border border-border bg-muted px-3 py-2",
+    document.url ? "transition-colors hover:bg-muted/70" : undefined
+  );
+  const content = (
+    <>
+      <File01Icon
+        aria-hidden
+        className="size-4 shrink-0 text-muted-foreground"
+      />
+      <span className="truncate text-foreground text-sm">
+        {document.filename}
+      </span>
+    </>
+  );
+
+  return document.url ? (
+    <a className={className} download={document.filename} href={document.url}>
+      {content}
+    </a>
+  ) : (
+    <div className={className}>{content}</div>
   );
 }

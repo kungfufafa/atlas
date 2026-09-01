@@ -13,6 +13,7 @@ import type { ChatPageState } from "@/pages/chat/use-chat-page";
 export function ChatPageContent(state: ChatPageState) {
   const {
     session,
+    attachmentScopeKey,
     messages,
     profileId,
     profiles,
@@ -80,10 +81,7 @@ export function ChatPageContent(state: ChatPageState) {
   ) : null;
 
   const composer = (
-    <PromptInputProvider
-      initialInput={composerDraft}
-      key={composerDraft || "empty"}
-    >
+    <>
       {skillReviewBanner}
       {readOnlyBanner}
       <ChatComposer
@@ -104,19 +102,20 @@ export function ChatPageContent(state: ChatPageState) {
         onModelChange={handleModelChange}
         onNavigateSetup={navigateSetup}
         onStop={stopStreaming}
-        onSubmit={(text, files) => {
+        onSubmit={async (text, files) => {
+          await sendMessage(text, files);
           setComposerDraft("");
-          void sendMessage(text, files);
         }}
         onSubmitQuestionnaire={(answers) => {
-          setComposerDraft("");
           void sendMessage(
             formatAgentQuestionnaireAnswersMessage(answers),
             [],
             {
               questionnaireAnswers: answers,
             }
-          );
+          )
+            .then(() => setComposerDraft(""))
+            .catch(() => undefined);
         }}
         onThinkingEffortChange={handleThinkingEffortChange}
         primarySupportsVision={activeModelSupportsVision}
@@ -136,71 +135,84 @@ export function ChatPageContent(state: ChatPageState) {
         thinkingEffortVisible={thinkingEffortVisible}
         todos={agentTodos}
       />
-    </PromptInputProvider>
+    </>
   );
 
   if (isEmptyState) {
     return (
-      <ChatAttachmentPanelProvider key={session?.id ?? "new"}>
-        <ChatPageColumn centered>
-          <div className="mx-auto mb-12 flex w-full max-w-3xl flex-col gap-1">
-            <ChatWelcome
-              onProfileSwitch={handleProfileSwitch}
-              profile={activeProfile}
-              profileId={profileId}
-              profileSwitchDisabled={busy}
-              profiles={profiles}
-            />
-            {composer}
-          </div>
-        </ChatPageColumn>
-      </ChatAttachmentPanelProvider>
+      <PromptInputProvider
+        initialInput={composerDraft}
+        key={`${attachmentScopeKey}:${composerDraft || "empty"}`}
+      >
+        <ChatAttachmentPanelProvider key={session?.id ?? "new"}>
+          <ChatPageColumn centered>
+            <div className="mx-auto mb-12 flex w-full max-w-3xl flex-col gap-1">
+              <ChatWelcome
+                onProfileSwitch={handleProfileSwitch}
+                profile={activeProfile}
+                profileId={profileId}
+                profileSwitchDisabled={busy}
+                profiles={profiles}
+              />
+              {composer}
+            </div>
+          </ChatPageColumn>
+        </ChatAttachmentPanelProvider>
+      </PromptInputProvider>
     );
   }
 
   return (
-    <ChatAttachmentPanelProvider key={session?.id ?? "new"}>
-      <ArtifactStreamingPanelBridge messages={messages} profileId={profileId} />
-      <ChatPageColumn>
-        <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col">
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            <ChatMessageList
-              actionsDisabled={busy || readOnlySession || workspaceReadOnly}
-              branchingMessageId={branchingMessageId}
-              messages={messages}
-              modelLabel={
-                currentModelSelection
-                  ? renderModelLabel(currentModelSelection)
-                  : null
-              }
-              onBranchMessage={
-                workspaceReadOnly
-                  ? undefined
-                  : (message) => void handleBranchMessage(message)
-              }
-              onRetryMessage={
-                workspaceReadOnly
-                  ? undefined
-                  : (message) => void handleTryAgainMessage(message)
-              }
-              onSuggestedQuestion={
-                workspaceReadOnly
-                  ? undefined
-                  : (question) => void sendMessage(question)
-              }
-              profileId={profileId}
-              sessionId={session?.id ?? null}
-              showThinking={showThinking}
-              streamActive={busy}
-              turnStartedAt={turnStartedAt}
-            />
-          </div>
+    <PromptInputProvider
+      initialInput={composerDraft}
+      key={`${attachmentScopeKey}:${composerDraft || "empty"}`}
+    >
+      <ChatAttachmentPanelProvider key={session?.id ?? "new"}>
+        <ArtifactStreamingPanelBridge
+          messages={messages}
+          profileId={profileId}
+        />
+        <ChatPageColumn>
+          <div className="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <ChatMessageList
+                actionsDisabled={busy || readOnlySession || workspaceReadOnly}
+                branchingMessageId={branchingMessageId}
+                messages={messages}
+                modelLabel={
+                  currentModelSelection
+                    ? renderModelLabel(currentModelSelection)
+                    : null
+                }
+                onBranchMessage={
+                  workspaceReadOnly
+                    ? undefined
+                    : (message) => void handleBranchMessage(message)
+                }
+                onRetryMessage={
+                  workspaceReadOnly
+                    ? undefined
+                    : (message) => void handleTryAgainMessage(message)
+                }
+                onSuggestedQuestion={
+                  workspaceReadOnly
+                    ? undefined
+                    : (question) => void sendMessage(question)
+                }
+                profileId={profileId}
+                sessionId={session?.id ?? null}
+                showThinking={showThinking}
+                streamActive={busy}
+                turnStartedAt={turnStartedAt}
+              />
+            </div>
 
-          <div className="sticky bottom-0 z-10 mt-auto w-full shrink-0 bg-background/95 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/85">
-            {composer}
+            <div className="sticky bottom-0 z-10 mt-auto w-full shrink-0 bg-background/95 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/85">
+              {composer}
+            </div>
           </div>
-        </div>
-      </ChatPageColumn>
-    </ChatAttachmentPanelProvider>
+        </ChatPageColumn>
+      </ChatAttachmentPanelProvider>
+    </PromptInputProvider>
   );
 }

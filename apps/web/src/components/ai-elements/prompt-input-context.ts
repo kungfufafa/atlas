@@ -3,11 +3,12 @@ import type { RefObject } from "react";
 import { createContext, useContext } from "react";
 
 export interface AttachmentsContext {
-  add: (files: File[] | FileList) => void;
+  add: (files: File[] | FileList) => Promise<void>;
   clear: () => void;
   fileInputRef: RefObject<HTMLInputElement | null>;
   files: (FileUIPart & { id: string })[];
   openFileDialog: () => void;
+  pendingCount: number;
   remove: (id: string) => void;
 }
 

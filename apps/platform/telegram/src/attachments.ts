@@ -1,5 +1,10 @@
 import type { SendMessageInput } from "@atlas/core/contract";
 import {
+  createDownloadDeadline,
+  EmptyDownloadError,
+  waitForAbortable,
+} from "@atlas/core/download-deadline";
+import {
   isSupportedDocumentMediaType,
   MAX_DOCUMENT_BYTES,
   normalizeDocumentMediaType,
@@ -29,6 +34,12 @@ export interface DownloadedTelegramFile {
   filePath: string;
 }
 
+export interface TelegramDownloadOptions {
+  idleTimeoutMs?: number;
+  overallTimeoutMs?: number;
+  signal?: AbortSignal;
+}
+
 function buildTelegramFileDownloadUrl(token: string, filePath: string): URL {
   const path = ["file", `bot${token}`, ...filePath.split("/").filter(Boolean)]
     .map(encodeURIComponent)
@@ -39,48 +50,78 @@ function buildTelegramFileDownloadUrl(token: string, filePath: string): URL {
 export async function downloadTelegramFile(
   ctx: Context,
   fileId: string,
-  maxBytes: number
+  maxBytes: number,
+  options: TelegramDownloadOptions = {}
 ): Promise<DownloadedTelegramFile> {
-  const file = await ctx.api.getFile(fileId);
+  const deadline = createDownloadDeadline(options);
 
-  if (!file.file_path) {
-    throw new Error("Telegram did not return a file path.");
+  try {
+    deadline.resetIdle();
+    const file = await waitForAbortable(
+      Promise.resolve(ctx.api.getFile(fileId)),
+      deadline.signal
+    );
+
+    if (!file.file_path) {
+      throw new Error("Telegram did not return a file path.");
+    }
+
+    if (file.file_size === 0) {
+      throw new EmptyDownloadError();
+    }
+
+    if (file.file_size !== undefined && file.file_size > maxBytes) {
+      throw new OversizedTelegramFileError();
+    }
+
+    const url = buildTelegramFileDownloadUrl(ctx.api.token, file.file_path);
+    deadline.resetIdle();
+    const response = await waitForAbortable(
+      fetch(url, { signal: deadline.signal }),
+      deadline.signal
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to download file (${response.status}).`);
+    }
+
+    assertTelegramContentLength(response, maxBytes);
+
+    const bytes = await readResponseBodyCapped(response, maxBytes, deadline);
+
+    return {
+      bytes,
+      contentType: response.headers.get("content-type"),
+      filePath: file.file_path,
+    };
+  } finally {
+    deadline.dispose();
   }
-
-  if (file.file_size !== undefined && file.file_size > maxBytes) {
-    throw new OversizedTelegramFileError();
-  }
-
-  const url = buildTelegramFileDownloadUrl(ctx.api.token, file.file_path);
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error(`Failed to download file (${response.status}).`);
-  }
-
-  const bytes = await readResponseBodyCapped(response, maxBytes);
-
-  return {
-    bytes,
-    contentType: response.headers.get("content-type"),
-    filePath: file.file_path,
-  };
 }
 
 async function readResponseBodyCapped(
   response: Response,
-  maxBytes: number
+  maxBytes: number,
+  deadline: ReturnType<typeof createDownloadDeadline>
 ): Promise<ArrayBuffer> {
   const reader = response.body?.getReader();
   if (!reader) {
-    return new ArrayBuffer(0);
+    throw new EmptyDownloadError();
   }
 
   const chunks: Uint8Array[] = [];
   let total = 0;
 
   while (true) {
-    const { done, value } = await reader.read();
+    deadline.resetIdle();
+    let result: Awaited<ReturnType<typeof reader.read>>;
+    try {
+      result = await waitForAbortable(reader.read(), deadline.signal);
+    } catch (error) {
+      void reader.cancel(error).catch(() => undefined);
+      throw error;
+    }
+    const { done, value } = result;
     if (done) {
       break;
     }
@@ -96,6 +137,10 @@ async function readResponseBodyCapped(
     chunks.push(value);
   }
 
+  if (total === 0) {
+    throw new EmptyDownloadError();
+  }
+
   const merged = new Uint8Array(total);
   let offset = 0;
   for (const chunk of chunks) {
@@ -105,13 +150,32 @@ async function readResponseBodyCapped(
   return merged.buffer;
 }
 
+function assertTelegramContentLength(
+  response: Response,
+  maxBytes: number
+): void {
+  const rawLength = response.headers.get("content-length")?.trim();
+  if (!(rawLength && /^\d+$/.test(rawLength))) {
+    return;
+  }
+
+  const contentLength = Number(rawLength);
+  if (contentLength === 0) {
+    throw new EmptyDownloadError();
+  }
+  if (contentLength > maxBytes) {
+    throw new OversizedTelegramFileError();
+  }
+}
+
 export type TelegramDocumentBuildResult =
   | { kind: "input"; input: SendMessageInput }
   | { kind: "reject"; message: string }
   | null;
 
 export async function buildTelegramDocumentInput(
-  ctx: Context
+  ctx: Context,
+  options: TelegramDownloadOptions = {}
 ): Promise<TelegramDocumentBuildResult> {
   const document = ctx.message?.document;
 
@@ -144,7 +208,8 @@ export async function buildTelegramDocumentInput(
     const downloaded = await downloadTelegramFile(
       ctx,
       document.file_id,
-      MAX_DOCUMENT_BYTES
+      MAX_DOCUMENT_BYTES,
+      options
     );
 
     const data = Buffer.from(downloaded.bytes).toString("base64");

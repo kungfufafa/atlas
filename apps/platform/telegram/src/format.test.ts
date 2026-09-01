@@ -1,11 +1,27 @@
 import { describe, expect, test } from "bun:test";
 import {
+  formatHelpText,
   prepareTelegramReply,
   renderTelegramRichText,
   splitIntoChatBubbles,
   splitTelegramMessage,
   stripMarkdownForTelegram,
 } from "./format";
+
+describe("formatHelpText", () => {
+  test("lists the artifact attachment command", () => {
+    expect(formatHelpText()).toContain(
+      "/attach — send the latest file saved in this conversation"
+    );
+  });
+
+  test("keeps the attachment command when workspace switching is locked", () => {
+    const helpText = formatHelpText({ workspaceLocked: true });
+
+    expect(helpText).not.toContain("/org —");
+    expect(helpText).toContain("/attach —");
+  });
+});
 
 describe("stripMarkdownForTelegram", () => {
   test("removes bold and inline code", () => {

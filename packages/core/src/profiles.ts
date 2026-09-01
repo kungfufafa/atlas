@@ -239,9 +239,7 @@ export function formatProfileSelectionPrompt(
     : undefined;
 
   return [
-    orgName
-      ? `Choose a profile in ${orgName} (reply with a number, id, or name):`
-      : "Choose a profile (reply with a number, id, or name):",
+    orgName ? `Choose a profile in ${orgName}:` : "Choose a profile:",
     "",
     ...sorted.map((profile, index) => formatProfileListLine(profile, index)),
     "",
