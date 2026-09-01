@@ -245,7 +245,7 @@ export default function ProvidersScreen() {
                     autoCapitalize="none"
                     autoCorrect={false}
                     onChangeText={setApiKey}
-                    placeholder="API key"
+                    placeholder={selected?.apiKey.placeholder ?? "API key"}
                     secureTextEntry
                     value={apiKey}
                   />

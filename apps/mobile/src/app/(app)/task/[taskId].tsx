@@ -9,6 +9,7 @@ import { Screen } from "@/components/atlas/screen";
 import { SectionHeading } from "@/components/atlas/section-heading";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/auth-context";
@@ -167,25 +168,34 @@ export default function TaskDetailScreen() {
             </View>
             {canMutate && editing ? (
               <View className="gap-3 border-border border-y px-4 py-4">
-                <Input
-                  editable={!busy}
-                  onChangeText={setDraftTitle}
-                  placeholder="Task title"
-                  value={draftTitle}
-                />
-                <Input
-                  editable={!busy}
-                  onChangeText={setDraftDescription}
-                  placeholder="Description"
-                  value={draftDescription}
-                />
-                <Textarea
-                  className="min-h-32"
-                  editable={!busy}
-                  onChangeText={setDraftPrompt}
-                  placeholder="Agent prompt"
-                  value={draftPrompt}
-                />
+                <View className="gap-2">
+                  <Label>Title</Label>
+                  <Input
+                    accessibilityLabel="Title"
+                    editable={!busy}
+                    onChangeText={setDraftTitle}
+                    value={draftTitle}
+                  />
+                </View>
+                <View className="gap-2">
+                  <Label>Description (optional)</Label>
+                  <Input
+                    accessibilityLabel="Description"
+                    editable={!busy}
+                    onChangeText={setDraftDescription}
+                    value={draftDescription}
+                  />
+                </View>
+                <View className="gap-2">
+                  <Label>Agent prompt</Label>
+                  <Textarea
+                    accessibilityLabel="Agent prompt"
+                    className="min-h-32"
+                    editable={!busy}
+                    onChangeText={setDraftPrompt}
+                    value={draftPrompt}
+                  />
+                </View>
                 <Text className="font-heading text-sm">Run as profile</Text>
                 <View
                   accessibilityRole="radiogroup"

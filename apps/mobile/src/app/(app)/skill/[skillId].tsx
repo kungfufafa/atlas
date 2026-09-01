@@ -7,6 +7,7 @@ import { Screen } from "@/components/atlas/screen";
 import { RequireWorkspaceAdmin } from "@/components/atlas/workspace-guard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import { useAtlasMutation } from "@/hooks/use-atlas-query";
@@ -55,12 +56,23 @@ export default function SkillDetailScreen() {
           <Screen padded>
             <ScrollView keyboardShouldPersistTaps="handled">
               <View className="gap-3 pb-8">
-                <Input onChangeText={setDescription} value={description} />
-                <Textarea
-                  className="min-h-40"
-                  onChangeText={setBody}
-                  value={body}
-                />
+                <View className="gap-2">
+                  <Label>Description</Label>
+                  <Input
+                    accessibilityLabel="Description"
+                    onChangeText={setDescription}
+                    value={description}
+                  />
+                </View>
+                <View className="gap-2">
+                  <Label>Instructions</Label>
+                  <Textarea
+                    accessibilityLabel="Instructions"
+                    className="min-h-40"
+                    onChangeText={setBody}
+                    value={body}
+                  />
+                </View>
                 <ActionCluster>
                   <Button
                     disabled={!canSave}

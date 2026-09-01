@@ -6,6 +6,7 @@ import { QueryState } from "@/components/atlas/query-state";
 import { Screen } from "@/components/atlas/screen";
 import { RequireWorkspaceAdmin } from "@/components/atlas/workspace-guard";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import { useAtlasMutation } from "@/hooks/use-atlas-query";
@@ -59,16 +60,24 @@ export default function ToolPlaygroundScreen() {
                 <Text className="text-muted-foreground">
                   {query.data?.description}
                 </Text>
-                <Textarea
-                  className="min-h-32 font-mono"
-                  onChangeText={setParametersJson}
-                  value={parametersJson}
-                />
-                <Textarea
-                  onChangeText={setPrompt}
-                  placeholder="Suggest params"
-                  value={prompt}
-                />
+                <View className="gap-2">
+                  <Label>Parameters (JSON)</Label>
+                  <Textarea
+                    accessibilityLabel="Parameters (JSON)"
+                    className="min-h-32 font-mono"
+                    onChangeText={setParametersJson}
+                    value={parametersJson}
+                  />
+                </View>
+                <View className="gap-2">
+                  <Label>Describe test (optional)</Label>
+                  <Textarea
+                    accessibilityLabel="Describe test"
+                    onChangeText={setPrompt}
+                    placeholder="e.g. convert sample.mp4 to sample.mp3"
+                    value={prompt}
+                  />
+                </View>
                 <ActionCluster>
                   <Button
                     disabled={run.isPending}

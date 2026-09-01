@@ -15,6 +15,7 @@ import { Text } from "@/components/ui/text";
 import { formatAuthError, useAuth } from "@/features/auth/auth-context";
 import { useServer } from "@/features/server/server-context";
 import { useHealthQuery } from "@/hooks/use-health";
+import { AUTH_PLACEHOLDERS } from "@/lib/auth-placeholders";
 
 const schema = z.object({
   email: z
@@ -95,7 +96,7 @@ export default function LoginScreen() {
                   autoComplete="email"
                   keyboardType="email-address"
                   onChangeText={field.onChange}
-                  placeholder="you@example.com"
+                  placeholder={AUTH_PLACEHOLDERS.email}
                   value={field.value}
                 />
               )}
@@ -115,7 +116,7 @@ export default function LoginScreen() {
                 <PasswordInput
                   autoComplete="password"
                   onChangeText={field.onChange}
-                  placeholder="Password"
+                  placeholder={AUTH_PLACEHOLDERS.password}
                   value={field.value}
                 />
               )}

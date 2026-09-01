@@ -11,6 +11,7 @@ import { Text } from "@/components/ui/text";
 import { formatAuthError, useAuth } from "@/features/auth/auth-context";
 import { useServer } from "@/features/server/server-context";
 import { useHealthQuery } from "@/hooks/use-health";
+import { AUTH_PLACEHOLDERS } from "@/lib/auth-placeholders";
 import { tokenFromInviteInput } from "@/lib/invite";
 
 export default function InviteScreen() {
@@ -139,7 +140,7 @@ export default function InviteScreen() {
           autoCapitalize="none"
           autoCorrect={false}
           onChangeText={setTokenInput}
-          placeholder="Token or invite URL"
+          placeholder={AUTH_PLACEHOLDERS.invite}
           value={tokenInput}
         />
       </View>
@@ -159,7 +160,7 @@ export default function InviteScreen() {
             <Label>Password</Label>
             <PasswordInput
               onChangeText={setPassword}
-              placeholder="Password"
+              placeholder={AUTH_PLACEHOLDERS.password}
               value={password}
             />
           </View>
@@ -167,7 +168,7 @@ export default function InviteScreen() {
             <Label>Confirm password</Label>
             <PasswordInput
               onChangeText={setConfirmPassword}
-              placeholder="Password"
+              placeholder={AUTH_PLACEHOLDERS.password}
               value={confirmPassword}
             />
           </View>

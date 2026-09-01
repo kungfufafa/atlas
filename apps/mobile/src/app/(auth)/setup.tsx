@@ -25,6 +25,7 @@ import { mobileSetupProviders } from "@/features/setup/mobile-providers";
 import { useServerQueryClient } from "@/hooks/use-atlas-query";
 import { useHealthQuery } from "@/hooks/use-health";
 import { useTimezoneQuery, useUserContextQuery } from "@/hooks/use-workspace";
+import { AUTH_PLACEHOLDERS } from "@/lib/auth-placeholders";
 import { queryKeys } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 
@@ -300,7 +301,11 @@ export default function SetupScreen() {
       {step === 1 ? (
         <>
           <Field label="Your name">
-            <Input onChangeText={setName} value={name} />
+            <Input
+              onChangeText={setName}
+              placeholder={AUTH_PLACEHOLDERS.name}
+              value={name}
+            />
           </Field>
           <Field label="Email">
             <Input
@@ -308,6 +313,7 @@ export default function SetupScreen() {
               autoCorrect={false}
               keyboardType="email-address"
               onChangeText={setEmail}
+              placeholder={AUTH_PLACEHOLDERS.email}
               value={email}
             />
           </Field>
@@ -317,7 +323,7 @@ export default function SetupScreen() {
               autoComplete="new-password"
               autoCorrect={false}
               onChangeText={setPassword}
-              placeholder="Password"
+              placeholder={AUTH_PLACEHOLDERS.password}
               value={password}
             />
           </Field>
@@ -327,7 +333,7 @@ export default function SetupScreen() {
               autoComplete="new-password"
               autoCorrect={false}
               onChangeText={setConfirmPassword}
-              placeholder="Password"
+              placeholder={AUTH_PLACEHOLDERS.password}
               value={confirmPassword}
             />
           </Field>
@@ -344,6 +350,7 @@ export default function SetupScreen() {
                   setWorkspaceSlug(slugifySetupWorkspaceName(value));
                 }
               }}
+              placeholder={AUTH_PLACEHOLDERS.workspaceName}
               value={workspaceName}
             />
           </Field>
@@ -355,6 +362,7 @@ export default function SetupScreen() {
                 setSlugEdited(true);
                 setWorkspaceSlug(value);
               }}
+              placeholder={AUTH_PLACEHOLDERS.workspaceSlug}
               value={workspaceSlug}
             />
           </Field>
@@ -400,7 +408,7 @@ export default function SetupScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 onChangeText={setModel}
-                placeholder={`Model (default: ${selectedProvider?.fallbackModelId})`}
+                placeholder="Select a model"
                 value={model}
               />
             </Field>

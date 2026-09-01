@@ -9,6 +9,7 @@ import { Screen } from "@/components/atlas/screen";
 import { SectionHeading } from "@/components/atlas/section-heading";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/features/auth/auth-context";
@@ -200,25 +201,34 @@ export default function AutomationDetailScreen() {
             </View>
             {canMutate && editing ? (
               <View className="gap-3 border-border border-y px-4 py-4">
-                <Input
-                  editable={!busy}
-                  onChangeText={setDraftName}
-                  placeholder="Automation name"
-                  value={draftName}
-                />
-                <Input
-                  editable={!busy}
-                  onChangeText={setDraftDescription}
-                  placeholder="Description"
-                  value={draftDescription}
-                />
-                <Textarea
-                  className="min-h-32"
-                  editable={!busy}
-                  onChangeText={setDraftPrompt}
-                  placeholder="Prompt"
-                  value={draftPrompt}
-                />
+                <View className="gap-2">
+                  <Label>Name</Label>
+                  <Input
+                    accessibilityLabel="Name"
+                    editable={!busy}
+                    onChangeText={setDraftName}
+                    value={draftName}
+                  />
+                </View>
+                <View className="gap-2">
+                  <Label>Description (optional)</Label>
+                  <Input
+                    accessibilityLabel="Description"
+                    editable={!busy}
+                    onChangeText={setDraftDescription}
+                    value={draftDescription}
+                  />
+                </View>
+                <View className="gap-2">
+                  <Label>Prompt</Label>
+                  <Textarea
+                    accessibilityLabel="Prompt"
+                    className="min-h-32"
+                    editable={!busy}
+                    onChangeText={setDraftPrompt}
+                    value={draftPrompt}
+                  />
+                </View>
                 <Text className="font-heading text-sm">Run as profile</Text>
                 <View
                   accessibilityRole="radiogroup"

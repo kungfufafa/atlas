@@ -189,7 +189,7 @@ export default function WorkScreen() {
                 <Textarea
                   className="min-h-28"
                   onChangeText={setPrompt}
-                  placeholder="Agent prompt"
+                  placeholder={tab === "tasks" ? "Agent prompt" : "Prompt"}
                   value={prompt}
                 />
                 <Text className="font-heading text-sm">Run as profile</Text>

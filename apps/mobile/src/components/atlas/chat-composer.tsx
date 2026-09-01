@@ -238,7 +238,7 @@ function ChatComposer({
             editable={!disabled}
             multiline
             onChangeText={setText}
-            placeholder="Message"
+            placeholder="Do anything..."
             placeholderClassName="text-muted-foreground"
             textAlignVertical="center"
             value={text}

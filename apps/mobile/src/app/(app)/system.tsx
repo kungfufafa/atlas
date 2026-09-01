@@ -260,7 +260,7 @@ export default function SystemScreen() {
                   <Input
                     autoCapitalize="none"
                     onChangeText={setModulePath}
-                    placeholder="echo.js"
+                    placeholder="Module path (echo.js)"
                     value={modulePath}
                   />
                   <Button
@@ -311,13 +311,13 @@ export default function SystemScreen() {
                 <InlineForm>
                   <Input
                     onChangeText={setMcpName}
-                    placeholder="Name"
+                    placeholder="server name"
                     value={mcpName}
                   />
                   <Input
                     autoCapitalize="none"
                     onChangeText={setMcpUrl}
-                    placeholder="https://mcp.example.com"
+                    placeholder="https://example.com/mcp"
                     value={mcpUrl}
                   />
                   <Button
@@ -368,18 +368,20 @@ export default function SystemScreen() {
                 <InlineForm>
                   <Input
                     onChangeText={setSkillName}
-                    placeholder="Name"
+                    placeholder="weather"
                     value={skillName}
                   />
                   <Input
                     onChangeText={setSkillDescription}
-                    placeholder="Description"
+                    placeholder="Get weather forecasts. Use when the user asks about weather."
                     value={skillDescription}
                   />
                   <Textarea
                     className="min-h-28"
                     onChangeText={setSkillBody}
-                    placeholder="Skill body"
+                    placeholder={
+                      "# Skill instructions\n\nDescribe when the agent should use this skill and what steps to follow."
+                    }
                     value={skillBody}
                   />
                   <Button
@@ -418,7 +420,7 @@ export default function SystemScreen() {
                   <Input
                     autoCapitalize="none"
                     onChangeText={setInstallUrl}
-                    placeholder="https://.../SKILL.md"
+                    placeholder="https://github.com/org/repo/blob/main/skills/example/SKILL.md"
                     value={installUrl}
                   />
                   <ActionCluster>

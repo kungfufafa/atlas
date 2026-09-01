@@ -17,6 +17,7 @@ import { Screen } from "@/components/atlas/screen";
 import { RequireWorkspaceAdmin } from "@/components/atlas/workspace-guard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
 import { useAuth } from "@/features/auth/auth-context";
 import { useServer } from "@/features/server/server-context";
@@ -275,28 +276,48 @@ export default function MembersScreen() {
                     </Button>
                   </View>
                   {createMode === "add" ? (
-                    <Input
-                      autoCapitalize="words"
-                      onChangeText={setName}
-                      placeholder="Name"
-                      value={name}
-                    />
+                    <View className="gap-2">
+                      <Label>Name</Label>
+                      <Input
+                        accessibilityLabel="Name"
+                        autoCapitalize="words"
+                        onChangeText={setName}
+                        placeholder="Jane Doe"
+                        value={name}
+                      />
+                    </View>
                   ) : null}
-                  <Input
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    keyboardType="email-address"
-                    onChangeText={setEmail}
-                    placeholder="Invite email"
-                    value={email}
-                  />
-                  {createMode === "add" ? (
+                  <View className="gap-2">
+                    <Label>
+                      {createMode === "invite" ? "Invite email" : "Email"}
+                    </Label>
                     <Input
-                      keyboardType="phone-pad"
-                      onChangeText={setPhone}
-                      placeholder="Phone (optional)"
-                      value={phone}
+                      accessibilityLabel={
+                        createMode === "invite" ? "Invite email" : "Email"
+                      }
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="email-address"
+                      onChangeText={setEmail}
+                      placeholder={
+                        createMode === "invite"
+                          ? "colleague@example.com"
+                          : "jane@example.com"
+                      }
+                      value={email}
                     />
+                  </View>
+                  {createMode === "add" ? (
+                    <View className="gap-2">
+                      <Label>Phone (optional)</Label>
+                      <Input
+                        accessibilityLabel="Phone"
+                        keyboardType="phone-pad"
+                        onChangeText={setPhone}
+                        placeholder="+1234567890"
+                        value={phone}
+                      />
+                    </View>
                   ) : null}
                   <Button
                     disabled={

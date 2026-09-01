@@ -8,7 +8,7 @@ const Textarea = React.forwardRef<
 >(({ className, placeholderClassName, ...props }, ref) => (
   <TextInput
     className={cn(
-      "min-h-[44px] rounded-lg border border-input bg-background px-3 py-2 native:text-base text-foreground placeholder:text-muted-foreground",
+      "min-h-[44px] rounded-lg border border-input bg-background px-3 py-2 native:text-lg text-base text-foreground placeholder:text-muted-foreground",
       props.editable === false && "opacity-50",
       className
     )}

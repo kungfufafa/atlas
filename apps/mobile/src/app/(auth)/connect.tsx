@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
 import { useServer } from "@/features/server/server-context";
+import { AUTH_PLACEHOLDERS } from "@/lib/auth-placeholders";
 import { confirmInsecureConnection } from "@/lib/confirm";
 import { checkAtlasServer } from "@/lib/server-health";
 import {
@@ -144,7 +145,7 @@ export default function ConnectScreen() {
           editable={!isSubmitting}
           keyboardType="url"
           onChangeText={setUrl}
-          placeholder="atlas.example.com"
+          placeholder={AUTH_PLACEHOLDERS.serverUrl}
           value={url}
         />
       </View>
