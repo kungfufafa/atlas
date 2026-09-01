@@ -1,6 +1,5 @@
 import type { ProfileSummary } from "@atlas/core/contract";
 import type { FlashListRef } from "@shopify/flash-list";
-import { useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -13,7 +12,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Text } from "@/components/ui/text";
 import type { ChatListItem } from "@/features/chat/chat-items";
 import { pendingApprovalFromMessages } from "@/features/chat/chat-items";
-import { nextSessionIdForNavigation } from "@/features/chat/chat-navigation";
+import { settledSessionIdToPersist } from "@/features/chat/chat-navigation";
 import { useChatSession } from "@/features/chat/use-chat-session";
 import { useNetwork } from "@/features/network/network-context";
 import { useWorkspaceAccess } from "@/hooks/use-workspace-access";
@@ -143,18 +142,19 @@ function ChatWelcome({
 
 export function ChatThread({
   onSelectProfile,
+  onSessionReady,
   profileId,
   profileName,
   profiles = [],
   sessionId,
 }: {
   onSelectProfile?: (profileId: string) => void;
+  onSessionReady?: (sessionId: string) => void;
   profileId: string;
   profileName?: string;
   profiles?: readonly Pick<ProfileSummary, "id" | "name">[];
   sessionId?: string;
 }) {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { canMutate } = useWorkspaceAccess();
   const { isOffline } = useNetwork();
@@ -177,15 +177,15 @@ export function ChatThread({
   const showWelcome = !sessionId && messages.length === 0 && !isSending;
 
   useEffect(() => {
-    const nextSessionId = nextSessionIdForNavigation({
+    const settledSessionId = settledSessionIdToPersist({
       activeSessionId,
       currentSessionId: sessionId,
       isSending,
     });
-    if (nextSessionId) {
-      router.replace(`/chat/${profileId}/${nextSessionId}`);
+    if (settledSessionId) {
+      onSessionReady?.(settledSessionId);
     }
-  }, [activeSessionId, isSending, profileId, router, sessionId]);
+  }, [activeSessionId, isSending, onSessionReady, sessionId]);
 
   useEffect(() => {
     if (messages.length === 0) {

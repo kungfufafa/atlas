@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test";
-import { nextSessionIdForNavigation } from "@/features/chat/chat-navigation";
+import { settledSessionIdToPersist } from "@/features/chat/chat-navigation";
 
 test("keeps a newly created chat mounted while its first turn is streaming", () => {
   expect(
-    nextSessionIdForNavigation({
+    settledSessionIdToPersist({
       activeSessionId: "created-session",
       currentSessionId: undefined,
       isSending: true,
@@ -11,9 +11,9 @@ test("keeps a newly created chat mounted while its first turn is streaming", () 
   ).toBeNull();
 });
 
-test("opens the created session after its first turn settles", () => {
+test("persists the created session after its first turn settles", () => {
   expect(
-    nextSessionIdForNavigation({
+    settledSessionIdToPersist({
       activeSessionId: "created-session",
       currentSessionId: undefined,
       isSending: false,
@@ -21,9 +21,9 @@ test("opens the created session after its first turn settles", () => {
   ).toBe("created-session");
 });
 
-test("does not replace a route that already shows the active session", () => {
+test("does not persist a session id already present in route state", () => {
   expect(
-    nextSessionIdForNavigation({
+    settledSessionIdToPersist({
       activeSessionId: "current-session",
       currentSessionId: "current-session",
       isSending: false,

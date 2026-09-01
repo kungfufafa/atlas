@@ -4,7 +4,7 @@ interface SessionNavigationState {
   isSending: boolean;
 }
 
-export function nextSessionIdForNavigation({
+export function settledSessionIdToPersist({
   activeSessionId,
   currentSessionId,
   isSending,
