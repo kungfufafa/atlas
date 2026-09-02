@@ -2,6 +2,7 @@ import { readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { inferArtifactMimeType } from "../artifact-mime";
 import type { ToolContext, ToolDefinition } from "../contract";
+import { isChannelGuestUserId } from "../identity/principal";
 import { nanoid } from "../ids";
 import type {
   RetryPolicy,
@@ -451,6 +452,14 @@ export async function executeProtectedTool<Input = unknown, Output = unknown>(
 
   try {
     context.signal?.throwIfAborted();
+
+    if (isChannelGuestUserId(context.userId)) {
+      const error = new Error(
+        `Channel guest principals cannot execute tool "${tool.name}".`
+      );
+      (error as { code?: string }).code = "PERMISSION_DENIED";
+      throw error;
+    }
 
     // 1. Server-side Action Risk Evaluation
     const { evaluateActionRisk, computeActionHash } = await import(

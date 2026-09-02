@@ -300,6 +300,52 @@ describe("executeProtectedTool", () => {
     expect(attempts).toBe(1);
   });
 
+  test("blocks mutating tools for channel guest principals", async () => {
+    let attempts = 0;
+    const tool: ToolDefinition<{ content: string; path: string }, string> = {
+      description: "Write a file",
+      name: "write_file",
+      async run() {
+        attempts += 1;
+        return "written";
+      },
+    };
+
+    const result = await executeProtectedTool(
+      tool,
+      { content: "data", path: "output.txt" },
+      { userId: "user_channel_guest_0123456789abcdef" }
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("PERMISSION_DENIED");
+    expect(attempts).toBe(0);
+  });
+
+  test("also blocks read-only tools for channel guest principals", async () => {
+    let attempts = 0;
+    const tool: ToolDefinition<Record<string, never>, number> = {
+      description: "Calculate",
+      name: "calculator",
+      async run() {
+        attempts += 1;
+        return 42;
+      },
+    };
+
+    const result = await executeProtectedTool(
+      tool,
+      {},
+      {
+        userId: "user_channel_guest_0123456789abcdef",
+      }
+    );
+
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("PERMISSION_DENIED");
+    expect(attempts).toBe(0);
+  });
+
   test("caps an explicit safe retry policy at two retries", async () => {
     let attempts = 0;
     const tool: ToolDefinition<Record<string, never>, never> = {

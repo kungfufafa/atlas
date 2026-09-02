@@ -6,7 +6,10 @@ import {
   isComposioConfiguredAsync,
   metrics,
 } from "@atlas/core";
-import type { UpdateWebPublicUrlRequest } from "@atlas/core/contract";
+import type {
+  SystemStatusResponse,
+  UpdateWebPublicUrlRequest,
+} from "@atlas/core/contract";
 import { createRoute, z } from "@hono/zod-openapi";
 import { defaultExecutionQueue } from "../../services/backpressure-queue";
 import {
@@ -20,7 +23,7 @@ import {
   requireActiveOrgIdFromContext,
   requirePlatformAdminFromContext,
 } from "../org-guards";
-import { errorResponse, readJson } from "../shared";
+import { errorResponse, getRequestAuth, readJson } from "../shared";
 import type { HonoApp } from "../types";
 
 const DOCS_HTML = `<!doctype html>
@@ -42,6 +45,23 @@ const DOCS_HTML = `<!doctype html>
   </body>
 </html>
 `;
+
+export function redactWhatsAppPairingSecrets(
+  status: SystemStatusResponse
+): SystemStatusResponse {
+  if (!status.whatsappWorker) {
+    return status;
+  }
+
+  return {
+    ...status,
+    whatsappWorker: {
+      ...status.whatsappWorker,
+      devicePairingCode: null,
+      qrCode: null,
+    },
+  };
+}
 
 export function registerSystemRoutes(
   app: HonoApp,
@@ -293,10 +313,15 @@ export function registerSystemRoutes(
 
   // Safe debug bundle diagnostics export (Tenant isolated)
   app.get("/v1/system/diagnostics/debug-bundle/:sessionId", async (c) => {
+    const auth = getRequestAuth(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
 
-    const session = await agent.getSessionMessages(orgId, sessionId);
+    const session = await agent.getSessionMessages(orgId, sessionId, {
+      isPlatformAdmin: auth.isPlatformAdmin,
+      orgRole: auth.orgRole,
+      userId: auth.user.id,
+    });
     if (!session) {
       return errorResponse("Session not found", 404);
     }
@@ -321,7 +346,10 @@ export function registerSystemRoutes(
 
   app.openapi(systemStatusRoute, async (c) => {
     const orgId = requireActiveOrgIdFromContext(c);
-    return c.json(await systemStatus.getStatus(orgId), 200);
+    return c.json(
+      redactWhatsAppPairingSecrets(await systemStatus.getStatus(orgId)),
+      200
+    );
   });
 
   app.openapi(getWebPublicUrlRoute, async (c) => {

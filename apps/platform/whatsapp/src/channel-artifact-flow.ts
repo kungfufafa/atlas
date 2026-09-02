@@ -73,10 +73,20 @@ export async function maybeSendRequestedWhatsAppArtifactAttachment(input: {
     return true;
   }
 
+  const sessionId = input.sessionStore.get(input.conversationKey)?.sessionId;
+  if (!sessionId) {
+    await input.sendText(
+      input.jid,
+      "Could not verify the conversation for this saved file."
+    );
+    return true;
+  }
+
   await deliverResolvedWhatsAppArtifacts({
     ...input,
     artifacts: [artifact],
     explicitShare: isExplicitWhatsAppShareIntent(input.attachUserText),
+    sessionId,
   });
   return true;
 }
@@ -106,6 +116,7 @@ export async function deliverWhatsAppTurnArtifactShares(input: {
     ...input,
     artifacts,
     explicitShare: isExplicitWhatsAppShareIntent(input.shareUserText ?? ""),
+    sessionId: input.session.id,
   });
 }
 
@@ -117,6 +128,7 @@ async function deliverResolvedWhatsAppArtifacts(input: {
   getSocket: () => WASocket | null;
   jid: string;
   profileId: string;
+  sessionId: string;
   sendText: (jid: string, text: string) => Promise<void>;
   sessionStore: SessionStore;
 }): Promise<void> {
@@ -139,7 +151,8 @@ async function deliverResolvedWhatsAppArtifacts(input: {
     try {
       const { data } = await input.client.readProfileArtifactContent(
         input.profileId,
-        artifact.path
+        artifact.path,
+        { sessionId: input.sessionId }
       );
       const result = await sendWhatsAppArtifact(input.getSocket(), input.jid, {
         bytes: new Uint8Array(data),
@@ -178,7 +191,8 @@ async function deliverResolvedWhatsAppArtifacts(input: {
     publish: async (path) => {
       const response = await input.client.publishProfileArtifactShare(
         input.profileId,
-        path
+        path,
+        { sessionId: input.sessionId }
       );
       webPublicUrlConfigured = response.webPublicUrlConfigured;
       return response;

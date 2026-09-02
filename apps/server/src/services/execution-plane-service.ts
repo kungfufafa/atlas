@@ -1,4 +1,5 @@
 import {
+  AtlasApiError,
   acquireLease,
   applyApprovalDecision,
   assertExactStepResume,
@@ -344,10 +345,21 @@ export class ExecutionPlaneService {
     approvalId: string;
     decision: "approved" | "denied";
     principal: CanonicalPrincipal;
+    sessionId: string;
   }) {
     const stored = await this.db.getActionApproval(input.approvalId);
-    if (!stored) {
-      throw new Error("Approval not found.");
+    if (
+      !stored ||
+      stored.orgId !== input.principal.orgId ||
+      stored.sessionId !== input.sessionId
+    ) {
+      throw new AtlasApiError("Approval not found.", 404);
+    }
+    if (stored.principalUserId !== input.principal.userId) {
+      throw new AtlasApiError(
+        "Only the canonical principal can decide this approval.",
+        403
+      );
     }
     const decided = applyApprovalDecision(
       {

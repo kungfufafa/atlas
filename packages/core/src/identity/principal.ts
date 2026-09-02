@@ -1,6 +1,8 @@
 import type { ChannelType, OrgRole } from "../contract";
 import { LOCAL_CLIENT_USER_ID } from "../local-auth";
 
+export const CHANNEL_GUEST_USER_ID_PREFIX = "user_channel_guest_";
+
 /**
  * Channel-native identity. Never used as ToolContext.userId.
  * Mapped to CanonicalPrincipal via channel_org_mappings before any
@@ -33,6 +35,13 @@ export function isServiceAccountUserId(
   userId: string | null | undefined
 ): boolean {
   return (userId ?? "").trim() === LOCAL_CLIENT_USER_ID;
+}
+
+/** Internal, non-login principal created for an authorized channel sender. */
+export function isChannelGuestUserId(
+  userId: string | null | undefined
+): boolean {
+  return (userId ?? "").trim().startsWith(CHANNEL_GUEST_USER_ID_PREFIX);
 }
 
 export function normalizeChannelUserId(channelUserId: string): string {

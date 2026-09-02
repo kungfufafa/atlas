@@ -1,6 +1,7 @@
-import { createHash, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { join } from "node:path";
 import { nanoid } from "nanoid";
+import type { ChannelType } from "./contract";
 import { readTextOrNull, writePrivateTextFile } from "./fs";
 import {
   getUserConfigDir,
@@ -13,6 +14,19 @@ export const LOCAL_CLIENT_EMAIL = "local-client@atlas.internal";
 export const LOCAL_CLIENT_USER_ID = "user_local_client";
 const LOCAL_AUTH_TOKEN_PREFIX = "tc_local_";
 const LOCAL_AUTH_TOKEN_FILENAME = "local-auth-token";
+const WORKSPACE_WORKER_AUTH_TOKEN_PREFIX = "tc_worker_v1_";
+export const WORKSPACE_WORKER_AUTH_TOKEN_ENV = "ATLAS_WORKSPACE_AUTH_TOKEN";
+const WORKSPACE_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+const WORKSPACE_WORKER_CHANNELS = new Set<ChannelType>([
+  "telegram",
+  "whatsapp",
+  "discord",
+]);
+
+export interface WorkspaceWorkerAuthClaim {
+  channel: ChannelType;
+  orgId: string;
+}
 
 export class LocalAuthTokenManagedExternallyError extends Error {
   constructor() {
@@ -76,6 +90,122 @@ function compareTokenHash(token: string, expectedHashHex: string): boolean {
     actualHash.length === expectedHash.length &&
     timingSafeEqual(actualHash, expectedHash)
   );
+}
+
+function workspaceWorkerTokenSignature(
+  payload: string,
+  signingSecret: string
+): Buffer {
+  return createHmac("sha256", signingSecret).update(payload).digest();
+}
+
+function normalizeWorkspaceWorkerClaim(
+  claim: WorkspaceWorkerAuthClaim
+): WorkspaceWorkerAuthClaim {
+  const orgId = claim.orgId.trim();
+  if (!WORKSPACE_ID_PATTERN.test(orgId)) {
+    throw new Error("Invalid workspace id for worker credential.");
+  }
+  if (!WORKSPACE_WORKER_CHANNELS.has(claim.channel)) {
+    throw new Error("Invalid channel for worker credential.");
+  }
+  return { channel: claim.channel, orgId };
+}
+
+export function isWorkspaceWorkerAuthToken(token: string): boolean {
+  return token.startsWith(WORKSPACE_WORKER_AUTH_TOKEN_PREFIX);
+}
+
+/**
+ * Mint a bearer credential that is cryptographically restricted to one
+ * workspace and one bridge channel. The host local token is only used as the
+ * signing key and is never embedded in the worker credential.
+ */
+export async function createWorkspaceWorkerAuthToken(
+  claim: WorkspaceWorkerAuthClaim
+): Promise<string> {
+  const normalized = normalizeWorkspaceWorkerClaim(claim);
+  const payload = Buffer.from(
+    JSON.stringify({ ...normalized, version: 1 })
+  ).toString("base64url");
+  const signingSecret = await resolveLocalAuthToken();
+  const signature = workspaceWorkerTokenSignature(
+    payload,
+    signingSecret
+  ).toString("base64url");
+  return `${WORKSPACE_WORKER_AUTH_TOKEN_PREFIX}${payload}.${signature}`;
+}
+
+export async function verifyWorkspaceWorkerAuthToken(
+  token: string
+): Promise<WorkspaceWorkerAuthClaim | null> {
+  if (!(token.length <= 4096 && isWorkspaceWorkerAuthToken(token))) {
+    return null;
+  }
+
+  const encoded = token.slice(WORKSPACE_WORKER_AUTH_TOKEN_PREFIX.length);
+  const [payload, signature, extra] = encoded.split(".");
+  if (!(payload && signature) || extra !== undefined) {
+    return null;
+  }
+
+  const signingSecret = await resolveLocalAuthToken();
+  const expected = workspaceWorkerTokenSignature(payload, signingSecret);
+  let actual: Buffer;
+  try {
+    actual = Buffer.from(signature, "base64url");
+  } catch {
+    return null;
+  }
+  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString()) as {
+      channel?: unknown;
+      orgId?: unknown;
+      version?: unknown;
+    };
+    if (
+      parsed.version !== 1 ||
+      typeof parsed.channel !== "string" ||
+      typeof parsed.orgId !== "string"
+    ) {
+      return null;
+    }
+    return normalizeWorkspaceWorkerClaim({
+      channel: parsed.channel as ChannelType,
+      orgId: parsed.orgId,
+    });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Workspace workers must fail closed when their scoped token was not injected;
+ * legacy/global workers keep using the host local credential.
+ */
+export async function loadPlatformWorkerAuthToken(
+  channel: ChannelType,
+  workspaceId: string | undefined,
+  env: Record<string, string | undefined> = process.env
+): Promise<string> {
+  if (!WORKSPACE_WORKER_CHANNELS.has(channel)) {
+    throw new Error("Invalid platform worker channel.");
+  }
+  if (workspaceId) {
+    const token = env[WORKSPACE_WORKER_AUTH_TOKEN_ENV]?.trim();
+    if (!token) {
+      throw new Error(
+        `${WORKSPACE_WORKER_AUTH_TOKEN_ENV} is required for a workspace worker.`
+      );
+    }
+    return token;
+  }
+
+  return resolveLocalAuthToken();
 }
 
 function envManagedLocalAuthToken(): string | undefined {

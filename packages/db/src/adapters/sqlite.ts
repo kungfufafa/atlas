@@ -1,7 +1,11 @@
 import { Database } from "bun:sqlite";
 import { chmodSync } from "node:fs";
 import type { AgentQuestionnaire, ChatMessage } from "@atlas/core";
-import { getUserMessageText, PRIVATE_FILE_MODE } from "@atlas/core";
+import {
+  CHANNEL_GUEST_USER_ID_PREFIX,
+  getUserMessageText,
+  PRIVATE_FILE_MODE,
+} from "@atlas/core";
 import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
 import { LLM_USAGE_STATS_ID, WORKSPACE_SETTINGS_ID } from "../constants";
 import { ensureDatabaseDirectory, resolveDatabasePath } from "../database-url";
@@ -153,6 +157,7 @@ interface AttachmentRow {
 
 interface TaskRow {
   created_at: string;
+  created_by_user_id: string | null;
   description: string;
   id: string;
   org_id: string | null;
@@ -946,7 +951,10 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     FROM sessions s
     INNER JOIN profiles p ON p.id = s.profile_id
     LEFT JOIN session_messages m ON m.session_id = s.id
-    WHERE s.profile_id = ? AND s.channel = ? AND p.is_importing = 0
+    WHERE s.profile_id = ?
+      AND s.channel = ?
+      AND (? IS NULL OR s.user_id = ?)
+      AND p.is_importing = 0
     GROUP BY s.id
     HAVING COUNT(m.id) > 0
     ORDER BY updated_at DESC, s.created_at DESC
@@ -962,8 +970,8 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   `);
   const getTaskStmt = db.prepare("SELECT * FROM tasks WHERE id = ?");
   const upsertTaskStmt = db.prepare(`
-    INSERT INTO tasks (id, title, description, prompt, profile_id, org_id, status, position, session_id, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO tasks (id, title, description, prompt, profile_id, org_id, status, position, session_id, created_by_user_id, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       title = excluded.title,
       description = excluded.description,
@@ -973,7 +981,15 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       status = excluded.status,
       position = excluded.position,
       session_id = excluded.session_id,
+      created_by_user_id = excluded.created_by_user_id,
       updated_at = excluded.updated_at
+  `);
+  const claimTaskOwnerStmt = db.prepare(`
+    UPDATE tasks
+    SET created_by_user_id = ?, updated_at = ?
+    WHERE id = ?
+      AND org_id = ?
+      AND (created_by_user_id IS NULL OR trim(created_by_user_id) = '')
   `);
   const deleteTaskStmt = db.prepare("DELETE FROM tasks WHERE id = ?");
 
@@ -1218,13 +1234,13 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   const incrementLlmUsageDailyStmt = db.prepare(`
     INSERT INTO llm_usage_daily (
       day, org_id, user_id, profile_id, provider_type,
-      provider_credential_id, model_id, capability,
+      provider_credential_id, model_id, capability, channel,
       request_count, input_tokens, output_tokens, estimated_cost_usd, updated_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(
       day, org_id, user_id, profile_id,
-      provider_type, provider_credential_id, model_id, capability
+      provider_type, provider_credential_id, model_id, capability, channel
     ) DO UPDATE SET
       request_count = llm_usage_daily.request_count + excluded.request_count,
       input_tokens = llm_usage_daily.input_tokens + excluded.input_tokens,
@@ -1584,7 +1600,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   `);
   const countUsersStmt = db.prepare("SELECT COUNT(*) as count FROM users");
   const countHumanUsersStmt = db.prepare(
-    "SELECT COUNT(*) as count FROM users WHERE id != ?"
+    "SELECT COUNT(*) as count FROM users WHERE id != ? AND id NOT GLOB ?"
   );
 
   const createBrowserSessionStmt = db.prepare(`
@@ -1982,22 +1998,22 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   `);
 
   const upsertChannelOrgMappingStmt = db.prepare(`
-    INSERT INTO channel_org_mappings (channel, channel_user_id, user_id, org_id, created_at)
+    INSERT INTO channel_org_mappings (org_id, channel, channel_user_id, user_id, created_at)
     VALUES (?, ?, ?, ?, ?)
-    ON CONFLICT(channel, channel_user_id) DO UPDATE SET
-      user_id = excluded.user_id,
-      org_id = excluded.org_id
+    ON CONFLICT(org_id, channel, channel_user_id) DO UPDATE SET
+      user_id = excluded.user_id
   `);
   const getChannelOrgMappingStmt = db.prepare(`
     SELECT * FROM channel_org_mappings
-    WHERE channel = ? AND channel_user_id = ?
+    WHERE org_id = ? AND channel = ? AND channel_user_id = ?
     LIMIT 1
   `);
   const listChannelOrgMappingsForOrgStmt = db.prepare(`
     SELECT * FROM channel_org_mappings WHERE org_id = ?
   `);
   const deleteChannelOrgMappingStmt = db.prepare(`
-    DELETE FROM channel_org_mappings WHERE channel = ? AND channel_user_id = ?
+    DELETE FROM channel_org_mappings
+    WHERE org_id = ? AND channel = ? AND channel_user_id = ?
   `);
   const upsertExecutionRunStmt = db.prepare(`
     INSERT INTO execution_runs (
@@ -2163,6 +2179,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     aggregateLlmUsage(options) {
       const columnByGroup: Record<string, string> = {
         capability: "capability",
+        channel: "channel",
         credential: "provider_credential_id",
         model: "model_id",
         profile: "profile_id",
@@ -2174,6 +2191,10 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
 
       const filters: string[] = [];
       const params: (string | number)[] = [];
+      if (options.channel) {
+        filters.push("channel = ?");
+        params.push(options.channel);
+      }
       if (options.orgId) {
         filters.push("org_id = ?");
         params.push(options.orgId);
@@ -2207,7 +2228,10 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
            FROM llm_usage_daily
            ${where}
            GROUP BY ${column}
-           ORDER BY (SUM(input_tokens) + SUM(output_tokens)) DESC
+           ORDER BY SUM(estimated_cost_usd) DESC,
+             (SUM(input_tokens) + SUM(output_tokens)) DESC,
+             SUM(request_count) DESC,
+             ${column} ASC
            ${limitClause}`
         )
         .all(...params) as Array<{
@@ -2417,6 +2441,11 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       return result.changes === 1;
     },
 
+    async claimTaskOwner(taskId, orgId, userId, updatedAt) {
+      const result = claimTaskOwnerStmt.run(userId, updatedAt, taskId, orgId);
+      return result.changes > 0;
+    },
+
     async compareAndSwapComposioUserConnection(record, expectedOAuthStateHash) {
       const result = compareAndSwapComposioUserConnectionStmt.run(
         record.status,
@@ -2436,7 +2465,10 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     },
 
     async countHumanUsers() {
-      const row = countHumanUsersStmt.get(LOCAL_CLIENT_USER_ID) as {
+      const row = countHumanUsersStmt.get(
+        LOCAL_CLIENT_USER_ID,
+        `${CHANNEL_GUEST_USER_ID_PREFIX}*`
+      ) as {
         count: number;
       };
       return row.count;
@@ -2699,8 +2731,12 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       const result = deleteAutomationRunStmt.run(automationId, runId);
       return result.changes > 0;
     },
-    async deleteChannelOrgMapping(channel, channelUserId) {
-      const result = deleteChannelOrgMappingStmt.run(channel, channelUserId);
+    async deleteChannelOrgMapping(orgId, channel, channelUserId) {
+      const result = deleteChannelOrgMappingStmt.run(
+        orgId,
+        channel,
+        channelUserId
+      );
       return result.changes > 0;
     },
 
@@ -2845,8 +2881,8 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       ) as BrowserSessionRow | null;
       return row ? toBrowserSessionRecord(row) : null;
     },
-    async getChannelOrgMapping(channel, channelUserId) {
-      const row = getChannelOrgMappingStmt.get(channel, channelUserId) as
+    async getChannelOrgMapping(orgId, channel, channelUserId) {
+      const row = getChannelOrgMappingStmt.get(orgId, channel, channelUserId) as
         | Record<string, unknown>
         | undefined;
       return row ? toChannelOrgMappingRecord(row) : null;
@@ -3290,6 +3326,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         dimensions.providerCredentialId,
         dimensions.modelId,
         dimensions.capability,
+        dimensions.channel,
         delta.requestCount,
         delta.inputTokens,
         delta.outputTokens,
@@ -3709,9 +3746,9 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       ).map(toOutboxRecord);
     },
 
-    async listSessionSummaries(profileId, channel) {
+    async listSessionSummaries(profileId, channel, userId) {
       return listSessionSummariesStmt
-        .all(profileId, channel)
+        .all(profileId, channel, userId ?? null, userId ?? null)
         .map((row) => toSessionSummaryRecord(row as SessionSummaryRow));
     },
 
@@ -4493,10 +4530,10 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     },
     async upsertChannelOrgMapping(record) {
       upsertChannelOrgMappingStmt.run(
+        record.orgId,
         record.channel,
         record.channelUserId,
         record.userId,
-        record.orgId,
         record.createdAt
       );
     },
@@ -4734,6 +4771,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         record.status,
         record.position,
         record.sessionId ?? null,
+        record.createdByUserId ?? null,
         existing?.createdAt ?? record.createdAt,
         record.updatedAt
       );
@@ -5303,6 +5341,7 @@ function toAttachmentRecord(row: AttachmentRow): StoredAttachmentRecord {
 function toTaskRecord(row: TaskRow): StoredTaskRecord {
   return {
     createdAt: row.created_at,
+    createdByUserId: row.created_by_user_id,
     description: row.description,
     id: row.id,
     orgId: row.org_id ?? null,

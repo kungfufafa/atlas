@@ -54,6 +54,29 @@ describe("composeSoulSystemPrompt", () => {
     expect(prompt).toContain("# Profile Instructions");
     expect(prompt).toContain("Always respond in pirate speak.");
   });
+
+  test("can compose a public prompt without profile memory", () => {
+    const prompt = composeSoulSystemPrompt(
+      {
+        directory: "/profile",
+        files: {
+          instructions: "Answer clearly.",
+          memory: "PRIVATE_MEMORY_MARKER",
+          soul: "Public identity.",
+          style: "Warm and concise.",
+        },
+        loaded: ["SOUL.md", "STYLE.md", "INSTRUCTIONS.md", "MEMORY.md"],
+      },
+      { includeMemory: false, profilePrompt: "Public profile prompt." }
+    );
+
+    expect(prompt).toContain("Public identity.");
+    expect(prompt).toContain("Warm and concise.");
+    expect(prompt).toContain("Answer clearly.");
+    expect(prompt).toContain("Public profile prompt.");
+    expect(prompt).not.toContain("PRIVATE_MEMORY_MARKER");
+    expect(prompt).not.toContain("# Continuity (MEMORY.md)");
+  });
 });
 
 describe("default seed compose integration", () => {

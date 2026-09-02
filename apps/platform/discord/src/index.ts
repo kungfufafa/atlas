@@ -15,7 +15,7 @@ import {
 } from "@atlas/core/ensure-server";
 import { installErrorHandlers } from "@atlas/core/error-tracking";
 import { installErrorTrackingSink } from "@atlas/core/error-tracking-sentry";
-import { loadLocalAuthToken } from "@atlas/core/local-auth";
+import { loadPlatformWorkerAuthToken } from "@atlas/core/local-auth";
 import { resolveWebPublicUrl } from "@atlas/core/runtime";
 import { DiscordAuthStore } from "./auth-store";
 import { createBot } from "./bot";
@@ -60,11 +60,11 @@ try {
   spawnedChild = child;
 
   const client = createClient({
-    authToken:
-      (await loadLocalAuthToken("discord@atlas.internal")) ?? undefined,
+    authToken: await loadPlatformWorkerAuthToken("discord", workspaceId),
     baseUrl: serverUrl,
     clientOrigin: resolveWebPublicUrl(),
     orgId: workspaceId,
+    tokenAuth: Boolean(workspaceId),
   });
   const health = await client.health();
 
@@ -75,7 +75,11 @@ try {
   }
 
   try {
-    await client.listUserOrgs();
+    if (workspaceId) {
+      await client.listProfiles();
+    } else {
+      await client.listUserOrgs();
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(

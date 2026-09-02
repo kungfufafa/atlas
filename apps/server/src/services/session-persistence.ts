@@ -61,6 +61,14 @@ export function wrapPersistedSession(
       );
     } catch (error) {
       const history = session.getHistory();
+      if (!Array.isArray(history)) {
+        throw new Error(
+          "Session history cannot be restored after persistence failure.",
+          {
+            cause: error,
+          }
+        );
+      }
       history.splice(0, history.length, ...historySnapshot);
       await notifySendRejected(
         options.onSendRejected,

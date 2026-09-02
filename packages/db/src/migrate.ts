@@ -256,6 +256,12 @@ function migrateTasksTable(db: Database): void {
       ALTER TABLE tasks ADD COLUMN session_id TEXT REFERENCES sessions (id) ON DELETE SET NULL;
     `);
   }
+
+  if (!columnNames.has("created_by_user_id")) {
+    db.exec(`
+      ALTER TABLE tasks ADD COLUMN created_by_user_id TEXT REFERENCES users (id) ON DELETE SET NULL;
+    `);
+  }
 }
 
 function migrateUsersTable(db: Database): void {
@@ -354,35 +360,85 @@ function migrateLlmTurnUsageTable(db: Database): void {
 
 /**
  * Multi-tenant LLM usage rollup at day grain. Every LLM turn is attributed to
- * the workspace/user/profile that consumed it, plus the provider identity that
- * served it. `provider_credential_id` keeps the shared-key case honest: one API
- * key used across workspaces shows up under one credential id, while the
- * per-workspace/user rows underneath split the consumption for chargeback.
+ * the workspace/user/profile and channel that consumed it, plus the provider
+ * identity that served it. `provider_credential_id` keeps the shared-key case
+ * honest: one API key used across workspaces shows up under one credential id,
+ * while the per-workspace/user rows underneath split the consumption for
+ * chargeback.
  *
  * Unknown dimensions are stored as the sentinel "unknown" (never NULL) so the
  * composite primary key stays intact and aggregation never drops rows.
  */
 function migrateLlmUsageDailyTable(db: Database): void {
-  // `capability` was added after the first cut and participates in the primary
-  // key, so SQLite requires a rebuild. Historical rows predate capability
-  // tracking and were all chat turns; keep them under the chat capability.
+  // `capability` and `channel` were added after the first cut and participate
+  // in the primary key, so SQLite requires a rebuild. Preserve historical
+  // rows under safe sentinel values for any dimension that did not exist yet.
   const columns = db
     .prepare("PRAGMA table_info(llm_usage_daily)")
-    .all() as Array<{ name: string }>;
-  const needsCapabilityRebuild =
+    .all() as Array<{ name: string; pk: number }>;
+  const primaryKey = columns
+    .filter((column) => column.pk > 0)
+    .sort((left, right) => left.pk - right.pk)
+    .map((column) => column.name);
+  const expectedPrimaryKey = [
+    "day",
+    "org_id",
+    "user_id",
+    "profile_id",
+    "provider_type",
+    "provider_credential_id",
+    "model_id",
+    "capability",
+    "channel",
+  ];
+  const needsRebuild =
     columns.length > 0 &&
-    !columns.some((column) => column.name === "capability");
+    primaryKey.join("\u0000") !== expectedPrimaryKey.join("\u0000");
+  const legacyColumns = db
+    .prepare("PRAGMA table_info(llm_usage_daily_legacy)")
+    .all() as Array<{ name: string }>;
+  const hasStrandedLegacyTable = legacyColumns.length > 0;
 
-  if (needsCapabilityRebuild) {
-    // Renaming keeps the old indexes attached under their original names,
-    // which would block CREATE INDEX for the rebuilt table; drop them first.
+  if (needsRebuild && hasStrandedLegacyTable) {
+    throw new Error(
+      "Cannot rebuild llm_usage_daily while both legacy table shapes exist."
+    );
+  }
+
+  if (!(needsRebuild || hasStrandedLegacyTable)) {
+    createLlmUsageDailyTable(db);
+    createLlmUsageDailyIndexes(db);
+    return;
+  }
+
+  const rebuild = db.transaction((): void => {
+    let sourceColumns = legacyColumns;
+
+    if (needsRebuild) {
+      db.exec("ALTER TABLE llm_usage_daily RENAME TO llm_usage_daily_legacy;");
+      sourceColumns = columns;
+    }
+
+    // A renamed table keeps its index names. A previous non-transactional
+    // migration may also have left those indexes attached to the stranded
+    // legacy table, so release the names before creating the replacement.
     db.exec(`
-      ALTER TABLE llm_usage_daily RENAME TO llm_usage_daily_legacy;
       DROP INDEX IF EXISTS llm_usage_daily_org_day;
       DROP INDEX IF EXISTS llm_usage_daily_day;
     `);
-  }
+    createLlmUsageDailyTable(db);
+    copyLegacyLlmUsageDailyRows(db, sourceColumns);
+    db.exec("DROP TABLE llm_usage_daily_legacy;");
+    createLlmUsageDailyIndexes(db);
+  });
 
+  // SQLite journals DDL with DML inside the same transaction. An exception or
+  // process interruption therefore restores the original canonical table
+  // instead of stranding it under the `_legacy` name.
+  rebuild.immediate();
+}
+
+function createLlmUsageDailyTable(db: Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS llm_usage_daily (
       day TEXT NOT NULL,
@@ -393,6 +449,7 @@ function migrateLlmUsageDailyTable(db: Database): void {
       provider_credential_id TEXT NOT NULL,
       model_id TEXT NOT NULL,
       capability TEXT NOT NULL DEFAULT 'chat.completion',
+      channel TEXT NOT NULL DEFAULT 'unknown',
       request_count INTEGER NOT NULL DEFAULT 0,
       input_tokens INTEGER NOT NULL DEFAULT 0,
       output_tokens INTEGER NOT NULL DEFAULT 0,
@@ -400,31 +457,85 @@ function migrateLlmUsageDailyTable(db: Database): void {
       updated_at TEXT NOT NULL,
       PRIMARY KEY (
         day, org_id, user_id, profile_id,
-        provider_type, provider_credential_id, model_id, capability
+        provider_type, provider_credential_id, model_id, capability, channel
       )
     );
+  `);
+}
+
+function createLlmUsageDailyIndexes(db: Database): void {
+  db.exec(`
     CREATE INDEX IF NOT EXISTS llm_usage_daily_org_day
       ON llm_usage_daily (org_id, day);
     CREATE INDEX IF NOT EXISTS llm_usage_daily_day
       ON llm_usage_daily (day);
   `);
+}
 
-  if (needsCapabilityRebuild) {
-    db.exec(`
-      INSERT INTO llm_usage_daily (
-        day, org_id, user_id, profile_id, provider_type,
-        provider_credential_id, model_id, capability,
-        request_count, input_tokens, output_tokens, estimated_cost_usd,
-        updated_at
-      )
-      SELECT
-        day, org_id, user_id, profile_id, provider_type,
-        provider_credential_id, model_id, 'chat.completion',
-        request_count, input_tokens, output_tokens, estimated_cost_usd,
-        updated_at
-      FROM llm_usage_daily_legacy;
-      DROP TABLE llm_usage_daily_legacy;
-    `);
+function copyLegacyLlmUsageDailyRows(
+  db: Database,
+  sourceColumns: Array<{ name: string }>
+): void {
+  const sourceColumnNames = new Set(sourceColumns.map((column) => column.name));
+  const capabilityValue = sourceColumnNames.has("capability")
+    ? "legacy.capability"
+    : "'chat.completion'";
+  const channelValue = sourceColumnNames.has("channel")
+    ? "legacy.channel"
+    : "'unknown'";
+
+  const copyRowsSql = `
+    INSERT INTO llm_usage_daily (
+      day, org_id, user_id, profile_id, provider_type,
+      provider_credential_id, model_id, capability, channel,
+      request_count, input_tokens, output_tokens, estimated_cost_usd,
+      updated_at
+    )
+    SELECT
+      legacy.day, legacy.org_id, legacy.user_id, legacy.profile_id,
+      legacy.provider_type, legacy.provider_credential_id, legacy.model_id,
+      ${capabilityValue}, ${channelValue}, legacy.request_count,
+      legacy.input_tokens, legacy.output_tokens, legacy.estimated_cost_usd,
+      legacy.updated_at
+    FROM llm_usage_daily_legacy AS legacy
+    WHERE NOT EXISTS (
+      SELECT 1
+      FROM llm_usage_daily AS current
+      WHERE current.day = legacy.day
+        AND current.org_id = legacy.org_id
+        AND current.user_id = legacy.user_id
+        AND current.profile_id = legacy.profile_id
+        AND current.provider_type = legacy.provider_type
+        AND current.provider_credential_id = legacy.provider_credential_id
+        AND current.model_id = legacy.model_id
+        AND current.capability = ${capabilityValue}
+        AND current.channel = ${channelValue}
+    );
+  `;
+  db.prepare(copyRowsSql).run();
+
+  const strandedRow = db
+    .prepare(
+      `SELECT COUNT(*) AS count
+       FROM llm_usage_daily_legacy AS legacy
+       WHERE NOT EXISTS (
+         SELECT 1
+         FROM llm_usage_daily AS current
+         WHERE current.day = legacy.day
+           AND current.org_id = legacy.org_id
+           AND current.user_id = legacy.user_id
+           AND current.profile_id = legacy.profile_id
+           AND current.provider_type = legacy.provider_type
+           AND current.provider_credential_id = legacy.provider_credential_id
+           AND current.model_id = legacy.model_id
+           AND current.capability = ${capabilityValue}
+           AND current.channel = ${channelValue}
+       )`
+    )
+    .get() as { count: number };
+
+  if (strandedRow.count > 0) {
+    throw new Error("LLM usage migration did not copy every legacy row.");
   }
 }
 
@@ -786,23 +897,101 @@ function assertProfileJoinTarget(
   }
 }
 
+function migrateChannelOrgMappingsTable(db: Database): void {
+  const columns = db
+    .prepare("PRAGMA table_info(channel_org_mappings)")
+    .all() as Array<{ name: string; pk: number }>;
+  const primaryKey = columns
+    .filter((column) => column.pk > 0)
+    .sort((left, right) => left.pk - right.pk)
+    .map((column) => column.name);
+  const expectedPrimaryKey = ["org_id", "channel", "channel_user_id"];
+  const needsRebuild =
+    columns.length > 0 &&
+    primaryKey.join("\u0000") !== expectedPrimaryKey.join("\u0000");
+  const legacyColumns = db
+    .prepare("PRAGMA table_info(channel_org_mappings_legacy)")
+    .all() as Array<{ name: string }>;
+  const hasStrandedLegacyTable = legacyColumns.length > 0;
+
+  if (needsRebuild && hasStrandedLegacyTable) {
+    throw new Error(
+      "Cannot rebuild channel_org_mappings while both legacy table shapes exist."
+    );
+  }
+
+  if (!(needsRebuild || hasStrandedLegacyTable)) {
+    createChannelOrgMappingsTable(db);
+    return;
+  }
+
+  const rebuild = db.transaction((): void => {
+    if (needsRebuild) {
+      db.exec(`
+        ALTER TABLE channel_org_mappings
+          RENAME TO channel_org_mappings_legacy;
+      `);
+    }
+
+    createChannelOrgMappingsTable(db);
+    copyLegacyChannelOrgMappings(db);
+    db.exec("DROP TABLE channel_org_mappings_legacy;");
+  });
+
+  rebuild.immediate();
+}
+
+function copyLegacyChannelOrgMappings(db: Database): void {
+  const missingRowsSql = `
+    FROM channel_org_mappings_legacy AS legacy
+    WHERE NOT EXISTS (
+      SELECT 1
+      FROM channel_org_mappings AS current
+      WHERE current.org_id = legacy.org_id
+        AND current.channel = legacy.channel
+        AND current.channel_user_id = legacy.channel_user_id
+    )
+  `;
+
+  db.prepare(`
+    INSERT INTO channel_org_mappings (
+      org_id, channel, channel_user_id, user_id, created_at
+    )
+    SELECT
+      legacy.org_id, legacy.channel, legacy.channel_user_id,
+      legacy.user_id, legacy.created_at
+    ${missingRowsSql};
+  `).run();
+
+  const strandedRow = db
+    .prepare(`SELECT COUNT(*) AS count ${missingRowsSql}`)
+    .get() as { count: number };
+  if (strandedRow.count > 0) {
+    throw new Error("Channel mapping migration did not copy every legacy row.");
+  }
+}
+
+function createChannelOrgMappingsTable(db: Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS channel_org_mappings (
+      org_id TEXT NOT NULL,
+      channel TEXT NOT NULL,
+      channel_user_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY (org_id, channel, channel_user_id),
+      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+      FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE
+    );
+  `);
+}
+
 function migrateTenantOrgScope(db: Database): void {
   for (const tableName of TENANT_ORG_ID_TABLES) {
     addOrgIdColumnIfMissing(db, tableName);
   }
 
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS channel_org_mappings (
-      channel TEXT NOT NULL,
-      channel_user_id TEXT NOT NULL,
-      user_id TEXT NOT NULL,
-      org_id TEXT NOT NULL,
-      created_at TEXT NOT NULL,
-      PRIMARY KEY (channel, channel_user_id),
-      FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
-      FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE
-    );
-  `);
+  migrateChannelOrgMappingsTable(db);
 
   db.exec(`
     DROP INDEX IF EXISTS tools_name_unique;

@@ -3,6 +3,7 @@ import { PassThrough } from "node:stream";
 import type { WAMessage } from "@whiskeysockets/baileys";
 import {
   buildWhatsAppMediaInput,
+  collectBoundedMediaStream,
   DOWNLOAD_FAILED_REPLY,
   formatExtractedWhatsAppDocumentMessage,
   formatSavedWhatsAppDocumentMessage,
@@ -23,6 +24,43 @@ const tinyJpegBytes = Buffer.from(
   "/9j/4AAQSkZJRgABAgAAAQABAAD//gAQTGF2YzYyLjI4LjEwMQD/2wBDAAgEBAQEBAUFBQUFBQYGBgYGBgYGBgYGBgYHBwcICAgHBwcGBgcHCAgICAkJCQgICAgJCQoKCgwMCwsODg4RERT/xABLAAEBAAAAAAAAAAAAAAAAAAAABwEBAAAAAAAAAAAAAAAAAAAAABABAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/AABEIAAIAAgMBIgACEQADEQD/2gAMAwEAAhEDEQA/AL+AD//Z",
   "base64"
 );
+
+async function* mediaChunks(chunks: Buffer[]): AsyncGenerator<Buffer> {
+  for (const chunk of chunks) {
+    yield chunk;
+  }
+}
+
+describe("collectBoundedMediaStream", () => {
+  test("collects chunks without exceeding the configured byte limit", async () => {
+    await expect(
+      collectBoundedMediaStream(
+        mediaChunks([Buffer.from("hello"), Buffer.from(" world")]),
+        11
+      )
+    ).resolves.toEqual(Buffer.from("hello world"));
+  });
+
+  test("aborts collection as soon as the byte limit is exceeded", async () => {
+    await expect(
+      collectBoundedMediaStream(
+        mediaChunks([Buffer.alloc(6), Buffer.alloc(6)]),
+        10
+      )
+    ).rejects.toThrow("exceeds the download limit");
+  });
+
+  test("times out a stalled media stream", async () => {
+    async function* stalledStream() {
+      await new Promise<void>(() => undefined);
+      yield Buffer.from("never");
+    }
+
+    await expect(
+      collectBoundedMediaStream(stalledStream(), 1024, 5)
+    ).rejects.toThrow("timed out");
+  });
+});
 
 function createDocumentMessage(options: {
   caption?: string;

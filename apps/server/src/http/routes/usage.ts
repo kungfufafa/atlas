@@ -1,4 +1,8 @@
-import type { LlmUsageReportGroupBy } from "@atlas/core";
+import {
+  AtlasApiError,
+  type LlmUsageChannelFilter,
+  type LlmUsageReportGroupBy,
+} from "@atlas/core";
 import {
   type UsageReportAccess,
   UsageReportService,
@@ -15,6 +19,8 @@ import type { HonoApp } from "../types";
 const GROUP_BY_VALUES: LlmUsageReportGroupBy[] = [
   "workspace",
   "user",
+  "profile",
+  "channel",
   "provider",
   "model",
   "credential",
@@ -22,20 +28,99 @@ const GROUP_BY_VALUES: LlmUsageReportGroupBy[] = [
   "auth",
 ];
 
+const CHANNEL_VALUES: LlmUsageChannelFilter[] = [
+  "web",
+  "cli",
+  "telegram",
+  "whatsapp",
+  "discord",
+  "automation",
+  "task",
+  "subagent",
+  "unknown",
+];
+
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const CSV_FORMULA_PREFIX_PATTERN = /^[\u0000-\u0020]*[+\-=@]/;
 
-function parseGroupBy(value: string | undefined): LlmUsageReportGroupBy {
-  return GROUP_BY_VALUES.includes(value as LlmUsageReportGroupBy)
-    ? (value as LlmUsageReportGroupBy)
-    : "workspace";
+export interface UsageReportQuery {
+  channel?: LlmUsageChannelFilter;
+  from?: string;
+  groupBy: LlmUsageReportGroupBy;
+  limit?: number;
+  to?: string;
 }
 
-function parseDate(value: string | undefined): string | undefined {
-  return value && DATE_PATTERN.test(value) ? value : undefined;
+export function parseUsageReportQuery(input: {
+  channel?: string;
+  from?: string;
+  groupBy?: string;
+  limit?: string;
+  to?: string;
+}): UsageReportQuery {
+  const groupBy = input.groupBy ?? "workspace";
+  if (!GROUP_BY_VALUES.includes(groupBy as LlmUsageReportGroupBy)) {
+    throw new AtlasApiError("Invalid usage groupBy filter.", 400);
+  }
+
+  if (
+    input.channel !== undefined &&
+    !CHANNEL_VALUES.includes(input.channel as LlmUsageChannelFilter)
+  ) {
+    throw new AtlasApiError("Invalid usage channel filter.", 400);
+  }
+
+  const from = parseUsageDate(input.from, "from");
+  const to = parseUsageDate(input.to, "to");
+  if (from && to && from > to) {
+    throw new AtlasApiError(
+      "Usage from date must be on or before the to date.",
+      400
+    );
+  }
+
+  let limit: number | undefined;
+  if (input.limit !== undefined) {
+    limit = Number(input.limit);
+    if (!(Number.isSafeInteger(limit) && limit > 0)) {
+      throw new AtlasApiError("Invalid usage limit.", 400);
+    }
+  }
+
+  return {
+    channel: input.channel as LlmUsageChannelFilter | undefined,
+    from,
+    groupBy: groupBy as LlmUsageReportGroupBy,
+    limit,
+    to,
+  };
 }
 
-function csvField(value: string | number): string {
-  const text = String(value);
+function parseUsageDate(
+  value: string | undefined,
+  field: "from" | "to"
+): string | undefined {
+  if (value === undefined) {
+    return;
+  }
+  const timestamp = DATE_PATTERN.test(value)
+    ? Date.parse(`${value}T00:00:00.000Z`)
+    : Number.NaN;
+  const isValid =
+    Number.isFinite(timestamp) &&
+    new Date(timestamp).toISOString().slice(0, 10) === value;
+  if (!isValid) {
+    throw new AtlasApiError(`Invalid usage ${field} date.`, 400);
+  }
+  return value;
+}
+
+export function csvField(value: string | number): string {
+  const source = String(value);
+  const text =
+    typeof value === "string" && CSV_FORMULA_PREFIX_PATTERN.test(source)
+      ? `'${source}`
+      : source;
   return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
@@ -68,20 +153,16 @@ export function registerUsageRoutes(
     const auth = getRequestAuth(c);
     const service = new UsageReportService(db);
 
-    const limitRaw = Number(c.req.query("limit"));
-    const limit =
-      Number.isFinite(limitRaw) && limitRaw > 0 ? limitRaw : undefined;
+    const query = parseUsageReportQuery({
+      channel: c.req.query("channel"),
+      from: c.req.query("from"),
+      groupBy: c.req.query("groupBy"),
+      limit: c.req.query("limit"),
+      to: c.req.query("to"),
+    });
 
     return service
-      .getReport(
-        {
-          from: parseDate(c.req.query("from")),
-          groupBy: parseGroupBy(c.req.query("groupBy")),
-          limit,
-          to: parseDate(c.req.query("to")),
-        },
-        accessFromContext(auth)
-      )
+      .getReport(query, accessFromContext(auth))
       .then((report) => json(report));
   });
 
@@ -91,13 +172,17 @@ export function registerUsageRoutes(
       throw new Error("Database adapter is not configured.");
     }
     const auth = getRequestAuth(c);
-    const groupBy = parseGroupBy(c.req.query("groupBy"));
+    const query = parseUsageReportQuery({
+      channel: c.req.query("channel"),
+      from: c.req.query("from"),
+      groupBy: c.req.query("groupBy"),
+      to: c.req.query("to"),
+    });
+    const { groupBy } = query;
     const report = await new UsageReportService(db).getReport(
       {
-        from: parseDate(c.req.query("from")),
-        groupBy,
-        limit: 1000,
-        to: parseDate(c.req.query("to")),
+        ...query,
+        limit: null,
       },
       accessFromContext(auth)
     );

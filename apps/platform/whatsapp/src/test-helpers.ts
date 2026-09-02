@@ -11,6 +11,7 @@ import {
 import { ChannelOrgStore } from "@atlas/core/channel-org";
 import type {
   ChatMessage,
+  ExternalPrincipalInput,
   ProfileSummary,
   UserOrgSummary,
 } from "@atlas/core/contract";
@@ -79,12 +80,18 @@ export function createMockClient(
     failPublishShare?: boolean;
     failReadArtifact?: boolean;
     failCreateSession?: Error;
+    failBindChannelPrincipal?: Error;
+    boundPrincipalUserId?: string;
   } = {}
 ) {
   const calls = {
+    bindChannelPrincipal: 0,
+    bindExpectedUserIds: [] as string[],
+    bindPairingAssertions: [] as string[],
     compact: 0,
     createSession: 0,
     createSessionOrgIds: [] as Array<string | null>,
+    externalPrincipalAliases: [] as string[][],
     externalPrincipalIds: [] as string[],
     listProfiles: 0,
     listUserOrgs: 0,
@@ -94,6 +101,7 @@ export function createMockClient(
     sendStream: 0,
     setOrgId: 0,
     transcribeAudio: 0,
+    transcribeInputs: [] as unknown[],
   };
   const orgIds: string[] = [];
   let lastStreamInput: unknown;
@@ -223,15 +231,26 @@ export function createMockClient(
   const currentOrgId = () => orgIdScope.getStore()?.orgId ?? activeOrgId;
 
   const client = {
-    bindChannelPrincipal: async () => ({
-      orgId: currentOrgId() ?? "org_test",
-      userId: "user_test",
-    }),
+    bindChannelPrincipal: async (input: {
+      expectedUserId?: string;
+      pairingAssertion?: string;
+    }) => {
+      calls.bindChannelPrincipal += 1;
+      calls.bindExpectedUserIds.push(input.expectedUserId ?? "");
+      calls.bindPairingAssertions.push(input.pairingAssertion ?? "");
+      if (options.failBindChannelPrincipal) {
+        throw options.failBindChannelPrincipal;
+      }
+      return {
+        orgId: currentOrgId() ?? "org_test",
+        userId: options.boundPrincipalUserId ?? "user_test",
+      };
+    },
     createChatSession: () => session,
     createSession: async (
       _channel: unknown,
       sessionOptions: {
-        externalPrincipal?: { channelUserId: string };
+        externalPrincipal?: ExternalPrincipalInput;
         profileId?: string;
       } = {}
     ) => {
@@ -239,6 +258,9 @@ export function createMockClient(
       calls.createSessionOrgIds.push(currentOrgId());
       calls.externalPrincipalIds.push(
         sessionOptions.externalPrincipal?.channelUserId ?? ""
+      );
+      calls.externalPrincipalAliases.push(
+        sessionOptions.externalPrincipal?.channelUserAliases ?? []
       );
       calls.profileIds.push(sessionOptions.profileId ?? "default");
       if (options.failCreateSession) {
@@ -303,8 +325,9 @@ export function createMockClient(
       }
       orgIds.push(next ?? "");
     },
-    transcribeAudio: async () => {
+    transcribeAudio: async (input: unknown) => {
       calls.transcribeAudio += 1;
+      calls.transcribeInputs.push(input);
       return { text: "Transcribed voice message" };
     },
   } as unknown as AtlasClient;
@@ -342,6 +365,9 @@ export async function writeWhatsAppConfigIni(
     phoneNumber: string;
     profileId?: string;
     pairingCode?: string | null;
+    pairingAssertion?: string | null;
+    pairingExpiresAt?: string | null;
+    pairingUserId?: string | null;
     pairedJid?: string | null;
     pairedLid?: string | null;
     accessMode?: string;
@@ -372,6 +398,18 @@ export async function writeWhatsAppConfigIni(
 
   if (config.pairingCode) {
     lines.push(`pairing_code=${config.pairingCode}`);
+  }
+
+  if (config.pairingAssertion) {
+    lines.push(`pairing_assertion=${config.pairingAssertion}`);
+  }
+
+  if (config.pairingExpiresAt) {
+    lines.push(`pairing_expires_at=${config.pairingExpiresAt}`);
+  }
+
+  if (config.pairingUserId) {
+    lines.push(`pairing_user_id=${config.pairingUserId}`);
   }
 
   if (config.pairedJid) {

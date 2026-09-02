@@ -4,10 +4,14 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+  createWorkspaceWorkerAuthToken,
   LocalAuthTokenManagedExternallyError,
   loadLocalAuthToken,
+  loadPlatformWorkerAuthToken,
   rotateLocalAuthToken,
   verifyLocalAuthToken,
+  verifyWorkspaceWorkerAuthToken,
+  WORKSPACE_WORKER_AUTH_TOKEN_ENV,
 } from "./local-auth";
 import {
   getUserConfigDir,
@@ -26,6 +30,7 @@ describe("loadLocalAuthToken", () => {
 
     delete process.env.ATLAS_CONFIG_DIR;
     delete process.env.ATLAS_LOCAL_AUTH_TOKEN;
+    delete process.env.ATLAS_WORKSPACE_AUTH_TOKEN;
     delete process.env.atlas_LOCAL_AUTH_TOKEN;
   });
 
@@ -128,5 +133,48 @@ describe("loadLocalAuthToken", () => {
     await expect(rotateLocalAuthToken()).rejects.toBeInstanceOf(
       LocalAuthTokenManagedExternallyError
     );
+  });
+
+  test("signs and verifies workspace and channel scoped worker tokens", async () => {
+    configDir = await mkdtemp(join(tmpdir(), "atlas-worker-auth-"));
+    process.env.ATLAS_CONFIG_DIR = configDir;
+
+    const token = await createWorkspaceWorkerAuthToken({
+      channel: "whatsapp",
+      orgId: "org_alpha",
+    });
+    expect(token).toStartWith("tc_worker_v1_");
+    await expect(verifyWorkspaceWorkerAuthToken(token)).resolves.toEqual({
+      channel: "whatsapp",
+      orgId: "org_alpha",
+    });
+    await expect(verifyLocalAuthToken(token)).resolves.toBeNull();
+
+    const separator = token.lastIndexOf(".");
+    const signature = token.slice(separator + 1);
+    const replacement = signature.startsWith("A") ? "B" : "A";
+    const tampered = `${token.slice(0, separator + 1)}${replacement}${signature.slice(1)}`;
+    await expect(verifyWorkspaceWorkerAuthToken(tampered)).resolves.toBeNull();
+  });
+
+  test("workspace worker token loading fails closed without injected scope", async () => {
+    configDir = await mkdtemp(join(tmpdir(), "atlas-worker-auth-"));
+    process.env.ATLAS_CONFIG_DIR = configDir;
+    await expect(
+      loadPlatformWorkerAuthToken("telegram", "org_alpha", {})
+    ).rejects.toThrow(WORKSPACE_WORKER_AUTH_TOKEN_ENV);
+
+    const scoped = await createWorkspaceWorkerAuthToken({
+      channel: "telegram",
+      orgId: "org_alpha",
+    });
+    await expect(
+      loadPlatformWorkerAuthToken("telegram", "org_alpha", {
+        [WORKSPACE_WORKER_AUTH_TOKEN_ENV]: scoped,
+      })
+    ).resolves.toBe(scoped);
+
+    const legacy = await loadPlatformWorkerAuthToken("telegram", undefined, {});
+    expect(legacy).toStartWith("tc_local_");
   });
 });

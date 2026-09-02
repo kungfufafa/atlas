@@ -166,6 +166,7 @@ registerGenerateImageTool(
         .incrementLlmUsageDaily(
           {
             capability: PROVIDER_CAPABILITY_IDS.imageGeneration,
+            channel: attribution.channel ?? UNKNOWN_USAGE_DIMENSION,
             modelId,
             orgId: attribution.orgId,
             profileId: attribution.profileId || UNKNOWN_USAGE_DIMENSION,
@@ -234,7 +235,7 @@ agent.setAutomationRunHistoryTools(
 agent.setAutomationRunner(automationRunner);
 
 const taskService = new TaskService(database.adapter);
-const taskRunner = new TaskRunner(taskService, agent);
+const taskRunner = new TaskRunner(taskService, agent, agent.identityService);
 taskService.setTaskRunner(taskRunner);
 agent.setTaskRunner(taskRunner);
 

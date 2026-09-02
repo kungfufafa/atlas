@@ -36,7 +36,11 @@ describe("AgentService long-lived channel runtime", () => {
   const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
 
   afterEach(async () => {
-    process.env.ATLAS_CONFIG_DIR = previousConfigDir;
+    if (previousConfigDir === undefined) {
+      delete process.env.ATLAS_CONFIG_DIR;
+    } else {
+      process.env.ATLAS_CONFIG_DIR = previousConfigDir;
+    }
 
     if (tempConfigDir) {
       await rm(tempConfigDir, { force: true, recursive: true });
@@ -343,7 +347,7 @@ describe("AgentService branching", () => {
       service.resolveSession(ORG_ID, sessionId, {
         userId: "user_member",
       })
-    ).rejects.toMatchObject({ status: 403 });
+    ).resolves.toBeNull();
 
     const cached = await service.resolveSession(ORG_ID, sessionId, {
       userId: "user_admin",
@@ -397,7 +401,7 @@ describe("AgentService branching", () => {
     });
     await db.upsertChannelOrgMapping({
       channel: "whatsapp",
-      channelUserId: "wa_member",
+      channelUserId: "628111111111@s.whatsapp.net",
       createdAt: now,
       orgId: ORG_ID,
       userId: "user_member",
@@ -423,12 +427,135 @@ describe("AgentService branching", () => {
         "profile_super",
         LOCAL_CLIENT_USER_ID,
         {
-          externalPrincipal: { channelUserId: "wa_member" },
+          externalPrincipal: {
+            channelUserId: "628111111111@s.whatsapp.net",
+          },
           isPlatformAdmin: false,
           orgRole: "admin",
         }
       )
     ).rejects.toMatchObject({ status: 403 });
+  });
+
+  test("proves a WhatsApp LID alias before persisting the channel principal", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await db.upsertOrganization({
+      createdAt: now,
+      id: ORG_ID,
+      name: "Test Org",
+      slug: "test-org",
+      updatedAt: now,
+    });
+    await db.createUser({
+      createdAt: now,
+      email: "member@example.com",
+      id: "user_member",
+      name: "Member",
+      passwordHash: "x",
+      updatedAt: now,
+    });
+    await db.createUser({
+      createdAt: now,
+      email: "local-client@atlas.internal",
+      id: LOCAL_CLIENT_USER_ID,
+      name: "Local client",
+      passwordHash: "x",
+      updatedAt: now,
+    });
+    await db.upsertOrgMember({
+      createdAt: now,
+      orgId: ORG_ID,
+      role: "member",
+      userId: "user_member",
+    });
+    await db.upsertOrgMember({
+      createdAt: now,
+      orgId: ORG_ID,
+      role: "admin",
+      userId: LOCAL_CLIENT_USER_ID,
+    });
+    await db.upsertChannelOrgMapping({
+      channel: "whatsapp",
+      channelUserId: "628111111111@s.whatsapp.net",
+      createdAt: now,
+      orgId: ORG_ID,
+      userId: "user_member",
+    });
+    await db.upsertProfile(createDefaultProfile());
+    const service = new AgentService(null, null, db);
+    const sessionId = await service.createSession(
+      ORG_ID,
+      "whatsapp",
+      "profile_default",
+      LOCAL_CLIENT_USER_ID,
+      {
+        externalPrincipal: {
+          channelUserAliases: ["628111111111@s.whatsapp.net"],
+          channelUserId: "154352568283178@lid",
+        },
+        orgRole: "admin",
+      }
+    );
+
+    const canonicalSession = await service.resolveSession(ORG_ID, sessionId);
+    const workerSession = await service.resolveSession(ORG_ID, sessionId, {
+      orgRole: "admin",
+      userId: LOCAL_CLIENT_USER_ID,
+      workspaceWorkerChannel: "whatsapp",
+    });
+
+    expect((await db.getSession(sessionId))?.userId).toBe("user_member");
+    expect(
+      await db.getChannelOrgMapping(ORG_ID, "whatsapp", "154352568283178@lid")
+    ).toMatchObject({ userId: "user_member" });
+    expect(workerSession).toBe(canonicalSession);
+  });
+
+  test("does not resolve another member's live session", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await db.upsertOrganization({
+      createdAt: now,
+      id: ORG_ID,
+      name: "Test Org",
+      slug: "test-org",
+      updatedAt: now,
+    });
+    for (const userId of ["user_a", "user_b"]) {
+      await db.createUser({
+        createdAt: now,
+        email: `${userId}@example.com`,
+        id: userId,
+        passwordHash: "x",
+        updatedAt: now,
+      });
+      await db.upsertOrgMember({
+        createdAt: now,
+        orgId: ORG_ID,
+        role: "member",
+        userId,
+      });
+    }
+    await db.upsertProfile(createDefaultProfile());
+    const service = new AgentService(null, null, db);
+    const sessionId = await service.createSession(
+      ORG_ID,
+      "web",
+      "profile_default",
+      "user_a",
+      { orgRole: "member" }
+    );
+
+    const asUserA = await service.resolveSession(ORG_ID, sessionId, {
+      userId: "user_a",
+    });
+    const asUserB = await service.resolveSession(ORG_ID, sessionId, {
+      userId: "user_b",
+    });
+
+    expect(asUserA).not.toBeNull();
+    expect(asUserB).toBeNull();
   });
 });
 

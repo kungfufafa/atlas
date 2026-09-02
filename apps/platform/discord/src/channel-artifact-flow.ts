@@ -25,6 +25,7 @@ export async function uploadDiscordArtifactFromToolResult(input: {
   messenger: DiscordMessenger;
   profileId: string;
   result: unknown;
+  sessionId: string;
 }): Promise<string | null> {
   const artifact = parseSendDiscordArtifactResult(input.result);
   if (!artifact) {
@@ -34,7 +35,8 @@ export async function uploadDiscordArtifactFromToolResult(input: {
   try {
     const { data } = await input.client.readProfileArtifactContent(
       input.profileId,
-      artifact.path
+      artifact.path,
+      { sessionId: input.sessionId }
     );
     const result = await sendDiscordArtifactAttachment(input.channel, {
       bytes: new Uint8Array(data),
@@ -104,13 +106,17 @@ export async function maybeSendRequestedDiscordArtifactAttachment(input: {
   const registry = input.sessionStore.getDeliverableArtifacts(
     input.conversationKey
   );
+  const sessionId = input.sessionStore.get(input.conversationKey)?.sessionId;
   let listed: Awaited<
     ReturnType<AtlasClient["listProfileArtifacts"]>
   >["artifacts"] = [];
 
   if (registry.length === 0) {
     try {
-      const response = await input.client.listProfileArtifacts(input.profileId);
+      const response = await input.client.listProfileArtifacts(
+        input.profileId,
+        { sessionId }
+      );
       listed = response.artifacts;
     } catch (error) {
       console.warn(
@@ -141,7 +147,8 @@ export async function maybeSendRequestedDiscordArtifactAttachment(input: {
   try {
     const { data } = await input.client.readProfileArtifactContent(
       input.profileId,
-      artifact.path
+      artifact.path,
+      { sessionId }
     );
     const result = await sendDiscordArtifactAttachment(input.channel, {
       bytes: new Uint8Array(data),
@@ -194,7 +201,8 @@ export async function deliverDiscordTurnArtifactShares(input: {
     publish: async (path) => {
       const response = await input.client.publishProfileArtifactShare(
         input.profileId,
-        path
+        path,
+        { sessionId: input.session.id }
       );
       webPublicUrlConfigured = response.webPublicUrlConfigured;
       return response;
@@ -231,6 +239,7 @@ export async function deliverDiscordTurnArtifactShares(input: {
       channel: input.channel,
       client: input.client,
       profileId: input.profileId,
+      sessionId: input.session.id,
     });
 
     if (!(uploaded || artifact.shareUrl || artifact.sharePath)) {
@@ -256,6 +265,7 @@ async function tryUploadDiscordArtifact(input: {
   channel: TextBasedChannel;
   client: AtlasClient;
   profileId: string;
+  sessionId: string;
   artifact: DeliverableChannelArtifact;
 }): Promise<boolean> {
   if (input.artifact.sizeBytes > DISCORD_ARTIFACT_ATTACHMENT_MAX_BYTES) {
@@ -265,7 +275,8 @@ async function tryUploadDiscordArtifact(input: {
   try {
     const { data } = await input.client.readProfileArtifactContent(
       input.profileId,
-      input.artifact.path
+      input.artifact.path,
+      { sessionId: input.sessionId }
     );
     const bytes = new Uint8Array(data);
     if (bytes.byteLength > DISCORD_ARTIFACT_ATTACHMENT_MAX_BYTES) {

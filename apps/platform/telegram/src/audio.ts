@@ -20,6 +20,7 @@ export function hasTelegramAudio(ctx: Context): boolean {
 export async function buildTelegramAudioInput(
   ctx: Context,
   client: AtlasClient,
+  sessionId: string,
   options: TelegramDownloadOptions = {}
 ): Promise<SendMessageInput | null> {
   const voice = ctx.message?.voice;
@@ -51,6 +52,7 @@ export async function buildTelegramAudioInput(
     data: Buffer.from(downloaded.bytes).toString("base64"),
     filename,
     mediaType,
+    sessionId,
   });
   const { text } = options.signal
     ? await waitForAbortable(transcription, options.signal)

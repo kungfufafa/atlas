@@ -18,19 +18,18 @@ import {
 } from "../org-guards";
 import { json, readJson } from "../shared";
 import type { HonoApp } from "../types";
+import { getWorkspaceWorkerSessionArtifactPaths } from "../workspace-worker-artifacts";
 
 export function registerArtifactShareRoutes(
   app: HonoApp,
   options: ServerOptions
 ): void {
-  if (!(options.databaseAdapter && options.authService)) {
+  const { authService, databaseAdapter } = options;
+  if (!(databaseAdapter && authService)) {
     return;
   }
 
-  const service = new ArtifactShareService(
-    options.databaseAdapter,
-    options.authService
-  );
+  const service = new ArtifactShareService(databaseAdapter, authService);
 
   app.post("/v1/profiles/:profileId/artifacts/shares", async (c) => {
     const auth = requireNotViewerFromContext(c);
@@ -40,6 +39,20 @@ export function registerArtifactShareRoutes(
 
     if (!body.path?.trim()) {
       return json({ error: "path is required" }, 400);
+    }
+    const sourcePath = body.path.trim();
+    if (auth.workspaceWorker) {
+      const sessionId = c.req.query("sessionId")?.trim();
+      if (!sessionId) {
+        return json({ error: "Not found" }, 404);
+      }
+      const allowedPaths = await getWorkspaceWorkerSessionArtifactPaths(
+        databaseAdapter,
+        sessionId
+      );
+      if (!allowedPaths.has(sourcePath)) {
+        return json({ error: "Not found" }, 404);
+      }
     }
 
     const clientOrigin = resolveRequestClientOrigin(
@@ -52,7 +65,7 @@ export function registerArtifactShareRoutes(
         orgId,
         profileId,
         request: c.req.raw,
-        sourcePath: body.path.trim(),
+        sourcePath,
         userId: auth.user.id,
         ...(clientOrigin ? { clientOrigin } : {}),
       }),

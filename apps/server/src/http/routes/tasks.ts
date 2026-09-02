@@ -1,4 +1,5 @@
 import type {
+  CanonicalPrincipal,
   CreateTaskRequest,
   DraftTaskPromptRequest,
   DraftTaskPromptResponse,
@@ -9,6 +10,7 @@ import type {
   TaskResponse,
   UpdateTaskRequest,
 } from "@atlas/core";
+import { isServiceAccountUserId } from "@atlas/core";
 import { createRoute, z } from "@hono/zod-openapi";
 import type { ServerOptions } from "../context";
 import {
@@ -20,6 +22,15 @@ import type { HonoApp } from "../types";
 
 export function registerTaskRoutes(app: HonoApp, options: ServerOptions): void {
   const { agent, taskService } = options;
+  const sessionActorFromContext = (auth: {
+    isPlatformAdmin: boolean;
+    orgRole?: "admin" | "member" | "viewer";
+    user: { id: string };
+  }) => ({
+    isPlatformAdmin: auth.isPlatformAdmin,
+    orgRole: auth.orgRole,
+    userId: auth.user.id,
+  });
   const errorSchema = z
     .object({ error: z.string() })
     .openapi("ApiErrorResponse");
@@ -173,6 +184,10 @@ export function registerTaskRoutes(app: HonoApp, options: ServerOptions): void {
           content: { "application/json": { schema: errorSchema } },
           description: "Error",
         },
+        403: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Error",
+        },
         404: {
           content: { "application/json": { schema: errorSchema } },
           description: "Error",
@@ -213,6 +228,10 @@ export function registerTaskRoutes(app: HonoApp, options: ServerOptions): void {
         200: {
           content: { "application/json": { schema: runTaskSchema } },
           description: "Task run",
+        },
+        403: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Error",
         },
         404: {
           content: { "application/json": { schema: errorSchema } },
@@ -307,10 +326,16 @@ export function registerTaskRoutes(app: HonoApp, options: ServerOptions): void {
     const body = await readJson<CreateTaskRequest>(c.req.raw);
 
     try {
-      const task = await taskService.create(orgId, body, body.profileId, {
-        isPlatformAdmin: auth.isPlatformAdmin,
-        orgRole: auth.orgRole,
-      });
+      const task = await taskService.create(
+        orgId,
+        body,
+        body.profileId,
+        {
+          isPlatformAdmin: auth.isPlatformAdmin,
+          orgRole: auth.orgRole,
+        },
+        isServiceAccountUserId(auth.user.id) ? undefined : auth.user.id
+      );
       return json<TaskResponse>({ task }, 201);
     } catch (error) {
       if (error instanceof Error) {
@@ -347,6 +372,16 @@ export function registerTaskRoutes(app: HonoApp, options: ServerOptions): void {
     const orgId = requireActiveOrgIdFromContext(c);
     const taskId = decodeURIComponent(c.req.param("taskId"));
     const body = await readJson<UpdateTaskRequest>(c.req.raw);
+    const principal: CanonicalPrincipal | undefined = isServiceAccountUserId(
+      auth.user.id
+    )
+      ? undefined
+      : {
+          isPlatformAdmin: auth.isPlatformAdmin === true,
+          orgId,
+          orgRole: auth.orgRole ?? "member",
+          userId: auth.user.id,
+        };
 
     try {
       const task = await taskService.update(taskId, orgId, body, {
@@ -354,6 +389,7 @@ export function registerTaskRoutes(app: HonoApp, options: ServerOptions): void {
           isPlatformAdmin: auth.isPlatformAdmin,
           orgRole: auth.orgRole,
         },
+        principal,
       });
       return json<TaskResponse>({ task });
     } catch (error) {
@@ -389,10 +425,20 @@ export function registerTaskRoutes(app: HonoApp, options: ServerOptions): void {
   });
 
   app.post("/v1/tasks/:taskId/run", async (c) => {
-    requireNotViewerFromContext(c);
+    const auth = requireNotViewerFromContext(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const taskId = decodeURIComponent(c.req.param("taskId"));
     const task = await taskService.get(taskId, orgId);
+    const principal: CanonicalPrincipal | undefined = isServiceAccountUserId(
+      auth.user.id
+    )
+      ? undefined
+      : {
+          isPlatformAdmin: auth.isPlatformAdmin === true,
+          orgId,
+          orgRole: auth.orgRole ?? "member",
+          userId: auth.user.id,
+        };
 
     if (!task) {
       return errorResponse("Task not found.", 404);
@@ -403,11 +449,11 @@ export function registerTaskRoutes(app: HonoApp, options: ServerOptions): void {
         taskId,
         orgId,
         { status: "in_progress" },
-        { triggerRun: false }
+        { principal, triggerRun: false }
       );
     }
 
-    const result = await agent.runTask(taskId);
+    const result = await agent.runTask(taskId, principal);
     if (result.skipped) {
       return errorResponse(result.error ?? "Task run skipped.", 409);
     }
@@ -422,10 +468,23 @@ export function registerTaskRoutes(app: HonoApp, options: ServerOptions): void {
   });
 
   app.get("/v1/tasks/:taskId/runs", async (c) => {
+    const auth = c.get("auth");
     const orgId = requireActiveOrgIdFromContext(c);
     const taskId = decodeURIComponent(c.req.param("taskId"));
 
     try {
+      if (
+        !(
+          auth &&
+          (await agent.canReadTask(
+            taskId,
+            orgId,
+            sessionActorFromContext(auth)
+          ))
+        )
+      ) {
+        return errorResponse("Task not found.", 404);
+      }
       const runs = await taskService.listRuns(taskId, orgId);
       return json<ListTaskRunsResponse>({ runs });
     } catch (error) {
@@ -443,7 +502,15 @@ export function registerTaskRoutes(app: HonoApp, options: ServerOptions): void {
     }
 
     const orgId = requireActiveOrgIdFromContext(c);
-    const result = await agent.getTaskChatMessages(taskId, orgId);
+    const auth = c.get("auth");
+    if (!auth) {
+      return errorResponse("Task not found.", 404);
+    }
+    const result = await agent.getTaskChatMessages(
+      taskId,
+      orgId,
+      sessionActorFromContext(auth)
+    );
     if (!result) {
       return errorResponse("Task not found.", 404);
     }

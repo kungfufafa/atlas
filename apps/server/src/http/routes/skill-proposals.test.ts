@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createInMemoryDatabaseAdapter } from "@atlas/db";
+import { AgentService } from "../../services/agent-service";
 import { SkillProposalService } from "../../services/skill-proposal-service";
 import { SkillsService } from "../../services/skills-service";
 import { setupTestConfigDir } from "../../test-config-dir";
@@ -26,8 +27,9 @@ function createApp() {
     databaseAdapter,
     skillsService
   );
+  const agent = new AgentService(null, null, databaseAdapter);
   return {
-    ...createMinimalHonoApp({ databaseAdapter, skillProposalService }),
+    ...createMinimalHonoApp({ agent, databaseAdapter, skillProposalService }),
     skillProposalService,
     skillsService,
   };
@@ -115,6 +117,20 @@ describe("skill proposal routes (v1)", () => {
       memberProvisioned.temporaryPassword,
       orgId
     );
+    const memberUser = await databaseAdapter.getUserByEmail("member@org.com");
+    expect(memberUser).not.toBeNull();
+    await databaseAdapter.upsertSession({
+      agentQuestionnaire: null,
+      agentTodos: [],
+      channel: "web",
+      createdAt: new Date().toISOString(),
+      id: sessionId,
+      modelOverride: null,
+      orgId,
+      profileId,
+      title: null,
+      userId: memberUser!.id,
+    });
     const memberListResp = await app.fetch(
       new Request(`${BASE}/v1/orgs/${orgId}/skill-proposals`, {
         headers: memberSession.headers({}, orgId),
@@ -150,6 +166,84 @@ describe("skill proposal routes (v1)", () => {
     expect(memberSessionBody.proposals).toHaveLength(1);
     expect(memberSessionBody.proposals[0]?.skillName).toBe("rollback-notes");
     expect(memberSessionBody.proposals[0]?.sessionId).toBe(sessionId);
+
+    const secondMemberResp = await app.fetch(
+      new Request(`${BASE}/v1/orgs/${orgId}/members`, {
+        body: JSON.stringify({
+          email: "member-b@org.com",
+          name: "Member B",
+          role: "member",
+        }),
+        headers: adminSession.headers(
+          { "X-CSRF-Token": adminSession.csrfToken },
+          orgId
+        ),
+        method: "POST",
+      })
+    );
+    const secondMemberProvisioned = (await secondMemberResp.json()) as {
+      temporaryPassword: string;
+    };
+    const secondMemberSession = await loginUserSession(
+      app,
+      "member-b@org.com",
+      secondMemberProvisioned.temporaryPassword,
+      orgId
+    );
+    const secondMemberUser =
+      await databaseAdapter.getUserByEmail("member-b@org.com");
+    expect(secondMemberUser).not.toBeNull();
+    const secondMemberSessionId = "sess_member_b";
+    await databaseAdapter.upsertSession({
+      agentQuestionnaire: null,
+      agentTodos: [],
+      channel: "web",
+      createdAt: new Date().toISOString(),
+      id: secondMemberSessionId,
+      modelOverride: null,
+      orgId,
+      profileId,
+      title: null,
+      userId: secondMemberUser!.id,
+    });
+    await skillProposalService.stageProposal({
+      action: "create",
+      content: sampleSkillMarkdown
+        .replace("deploy-notes", "member-b-notes")
+        .replace("Notes about deploy process.", "Member B private notes."),
+      orgId,
+      profileId,
+      sessionId: secondMemberSessionId,
+    });
+
+    const secondMemberUrl = `${BASE}/v1/orgs/${orgId}/skill-proposals?sessionId=${secondMemberSessionId}`;
+    expect(
+      (
+        await app.fetch(
+          new Request(secondMemberUrl, {
+            headers: memberSession.headers({}, orgId),
+          })
+        )
+      ).status
+    ).toBe(404);
+    expect(
+      (
+        await app.fetch(
+          new Request(secondMemberUrl, {
+            headers: secondMemberSession.headers({}, orgId),
+          })
+        )
+      ).status
+    ).toBe(200);
+    expect(
+      (
+        await app.fetch(
+          new Request(secondMemberUrl, {
+            headers: adminSession.headers({}, orgId),
+          })
+        )
+      ).status
+    ).toBe(200);
   });
 
   test("admin can reject a pending proposal", async () => {

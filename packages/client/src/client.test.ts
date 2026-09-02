@@ -294,6 +294,37 @@ test("knowledge base duplicate errors retain the existing document", async () =>
   }
 });
 
+test("channel principal binding sends the asserted expected user", async () => {
+  const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
+    [];
+  const client = createClient({
+    authToken: "worker-token",
+    baseUrl: "http://localhost:4310",
+    fetch: async (input, init) => {
+      fetchCalls.push({ init, input });
+      return Response.json({ orgId: "org_test", userId: "user_1" });
+    },
+    orgId: "org_test",
+  });
+
+  await client.bindChannelPrincipal({
+    channel: "whatsapp",
+    channelUserId: "628111111111@s.whatsapp.net",
+    expectedUserId: "user_1",
+    pairingAssertion: "assertion_1",
+  });
+
+  expect(String(fetchCalls[0]?.input)).toBe(
+    "http://localhost:4310/v1/channel-principals"
+  );
+  expect(JSON.parse(String(fetchCalls[0]?.init?.body))).toEqual({
+    channel: "whatsapp",
+    channelUserId: "628111111111@s.whatsapp.net",
+    expectedUserId: "user_1",
+    pairingAssertion: "assertion_1",
+  });
+});
+
 test("capability mapping helpers use the generic workspace endpoints", async () => {
   const fetchCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> =
     [];
@@ -646,11 +677,12 @@ test("readProfileArtifactContent fetches artifact bytes with inline query", asyn
     "weekly/report.md",
     {
       inline: true,
+      sessionId: "session_1",
     }
   );
 
   expect(fetchCalls[0]!.input.toString()).toBe(
-    "http://localhost:4310/v1/profiles/profile_1/artifacts/content?path=weekly%2Freport.md&inline=1"
+    "http://localhost:4310/v1/profiles/profile_1/artifacts/content?path=weekly%2Freport.md&inline=1&sessionId=session_1"
   );
   const headers = new Headers(fetchCalls[0]!.init?.headers);
   expect(headers.get("Authorization")).toBe("Bearer local-auth-token");
@@ -716,10 +748,11 @@ test("listProfileArtifacts scopes complete folder metadata separately from pagin
     folder: "reports/weekly",
     limit: 30,
     offset: 60,
+    sessionId: "session_1",
   });
 
   expect(fetchCalls[0]?.input.toString()).toBe(
-    "http://localhost:4310/v1/profiles/profile_1/artifacts?folder=reports%2Fweekly&limit=30&offset=60"
+    "http://localhost:4310/v1/profiles/profile_1/artifacts?folder=reports%2Fweekly&limit=30&offset=60&sessionId=session_1"
   );
 });
 
@@ -1004,11 +1037,13 @@ test("publishProfileArtifactShare includes clientOrigin when configured", async 
     },
   });
 
-  await client.publishProfileArtifactShare("profile_1", "report.md");
+  await client.publishProfileArtifactShare("profile_1", "report.md", {
+    sessionId: "session_1",
+  });
 
   expect(fetchCalls).toHaveLength(1);
   expect(fetchCalls[0]!.input.toString()).toBe(
-    "http://127.0.0.1:4310/v1/profiles/profile_1/artifacts/shares"
+    "http://127.0.0.1:4310/v1/profiles/profile_1/artifacts/shares?sessionId=session_1"
   );
   expect(JSON.parse(fetchCalls[0]!.init?.body as string)).toEqual({
     clientOrigin: "https://atlas.example.com",

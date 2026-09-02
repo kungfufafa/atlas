@@ -23,7 +23,7 @@ import {
   resolveProfileInput,
 } from "@atlas/core/profiles";
 import {
-  clearWhatsAppPairingAssertion,
+  isWhatsAppPairingCodeActive,
   normalizePairingCode,
   normalizeWhatsAppUserJid,
   syncWhatsAppOwnerPairing,
@@ -57,6 +57,12 @@ import {
 } from "./channel-artifact-flow";
 import type { WhatsAppBridgeConfig } from "./config";
 import {
+  isWhatsAppDeliveryRetryableError,
+  isWhatsAppInboundReplaySafeError,
+  WhatsAppDeliveryRetryableError,
+  WhatsAppInboundReplaySafeError,
+} from "./delivery-error";
+import {
   formatError,
   formatHelpText,
   prepareWhatsAppReply,
@@ -82,6 +88,57 @@ const rateLimiter = new ChannelRateLimiter();
 const MAX_MESSAGE_LENGTH = 2000;
 const MAX_QUOTED_CONTEXT_LENGTH = 4000;
 const LOCK_TIMEOUT_MS = 120_000;
+const DEFAULT_SEND_TIMEOUT_MS = 30_000;
+const DEFAULT_SEND_RETRY_ATTEMPTS = 3;
+const DEFAULT_SEND_RETRY_BASE_DELAY_MS = 250;
+const MAX_SEND_RETRY_ATTEMPTS = 5;
+const MAX_SEND_RETRY_DELAY_MS = 5000;
+const TRANSIENT_SEND_ERROR_CODES = new Set([
+  "EAI_AGAIN",
+  "ECONNABORTED",
+  "ECONNREFUSED",
+  "ECONNRESET",
+  "EHOSTUNREACH",
+  "ENETDOWN",
+  "ENETUNREACH",
+  "ENOTFOUND",
+  "EPIPE",
+  "ERR_SOCKET_CLOSED",
+  "ETIMEDOUT",
+  "WHATSAPP_SOCKET_UNAVAILABLE",
+]);
+const TRANSIENT_SEND_MESSAGE =
+  /\b(?:connection (?:closed|reset)|disconnected|network|rate.?limit|restart required|socket (?:closed|disconnected|hang up)|temporar(?:y|ily)|try again)\b/i;
+
+export { WhatsAppDeliveryRetryableError };
+
+class WhatsAppSendTimeoutError extends Error {
+  readonly code = "WHATSAPP_SEND_TIMEOUT";
+
+  constructor() {
+    super("WhatsApp send timed out.");
+    this.name = "TimeoutError";
+  }
+}
+
+class WhatsAppSocketUnavailableError extends Error {
+  readonly code = "WHATSAPP_SOCKET_UNAVAILABLE";
+
+  constructor() {
+    super("WhatsApp is not connected.");
+    this.name = "NetworkError";
+  }
+}
+
+export class WhatsAppChatBusyError extends Error {
+  readonly code = "WHATSAPP_CHAT_BUSY";
+  readonly retryable = true;
+
+  constructor() {
+    super("WhatsApp chat is busy processing another message.");
+    this.name = "TimeoutError";
+  }
+}
 
 const GROUP_MESSAGE_PREFIX =
   "[WhatsApp group — your reply is visible to everyone in this group.]\n";
@@ -108,6 +165,12 @@ const PAIRING_PROMPT =
   "Send the chat access code shown in Integrations \u2192 WhatsApp. " +
   "You only need to authorize this chat once.";
 
+const PAIRING_BIND_ERROR_REPLY =
+  "Atlas could not finish authorizing this chat. The chat access code is still active; try again.";
+
+const IDENTITY_LINK_REQUIRED_REPLY =
+  "This WhatsApp sender is permitted but is not linked to an Atlas user yet. Ask a workspace admin to generate a chat access code, then send it here.";
+
 export interface ChatHandlerDeps {
   authStore: WhatsAppAuthStore;
   client: AtlasClient;
@@ -116,6 +179,9 @@ export interface ChatHandlerDeps {
   fixedWorkspaceId?: string;
   getSocket: () => WASocket | null;
   orgStore: ChannelOrgStore;
+  sendRetryAttempts?: number;
+  sendRetryBaseDelayMs?: number;
+  sendTimeoutMs?: number;
   sessionStore: SessionStore;
 }
 
@@ -128,6 +194,15 @@ type NormalizedWhatsAppHandlerInput = WhatsAppInboundChat & {
   inbound?: WAMessage | null;
 };
 
+interface WhatsAppSessionPrincipal {
+  channelUserAliases: string[];
+  channelUserId: string;
+}
+
+interface InboundReplayBoundary {
+  replayUnsafe: boolean;
+}
+
 export function createChatHandler(deps: ChatHandlerDeps) {
   const {
     client,
@@ -138,12 +213,43 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     getSocket,
     fixedWorkspaceId,
     downloadMedia,
+    sendRetryAttempts = DEFAULT_SEND_RETRY_ATTEMPTS,
+    sendRetryBaseDelayMs = DEFAULT_SEND_RETRY_BASE_DELAY_MS,
+    sendTimeoutMs = DEFAULT_SEND_TIMEOUT_MS,
   } = deps;
+  if (!(Number.isFinite(sendTimeoutMs) && sendTimeoutMs > 0)) {
+    throw new RangeError("WhatsApp send timeout must be greater than zero.");
+  }
+  if (
+    !(
+      Number.isInteger(sendRetryAttempts) &&
+      sendRetryAttempts > 0 &&
+      sendRetryAttempts <= MAX_SEND_RETRY_ATTEMPTS
+    )
+  ) {
+    throw new RangeError(
+      `WhatsApp send retry attempts must be between 1 and ${MAX_SEND_RETRY_ATTEMPTS}.`
+    );
+  }
+  if (
+    !(
+      Number.isFinite(sendRetryBaseDelayMs) &&
+      sendRetryBaseDelayMs >= 0 &&
+      sendRetryBaseDelayMs <= MAX_SEND_RETRY_DELAY_MS
+    )
+  ) {
+    throw new RangeError(
+      `WhatsApp send retry delay must be between 0 and ${MAX_SEND_RETRY_DELAY_MS} milliseconds.`
+    );
+  }
   const helpText = formatHelpText({
     workspaceLocked: Boolean(fixedWorkspaceId),
   });
 
-  async function handleMessage(data: WhatsAppHandlerInput): Promise<void> {
+  async function handleMessage(
+    data: WhatsAppHandlerInput,
+    replayBoundary: InboundReplayBoundary
+  ): Promise<void> {
     const inboundChat = normalizeInboundChat(data);
     const { jid, text, fromMe, senderPn, inbound } = inboundChat;
     const trimmed = text.trim();
@@ -184,6 +290,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
 
     if (!isGroup && trimmed && isStopCommand(trimmed)) {
+      replayBoundary.replayUnsafe = true;
       if (!stopActiveStream(conversationKey)) {
         await sendText(jid, "Nothing to stop.");
       }
@@ -192,6 +299,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
 
     if (isGroup && isStopCommand(trimmed)) {
+      replayBoundary.replayUnsafe = true;
       await authStore.reload();
       for (const senderJid of inboundChat.senderJids) {
         await authStore.rememberSenderPn(senderJid, senderPn);
@@ -212,13 +320,18 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         return;
       }
 
-      if (!stopActiveStream(conversationKey)) {
+      const senderSessionKey = resolveWhatsAppSessionKey(
+        conversationKey,
+        inboundChat.senderJid
+      );
+      if (!stopActiveStream(senderSessionKey)) {
         await sendText(jid, "Nothing to stop.");
       }
       return;
     }
 
     if (trimmed.length > MAX_MESSAGE_LENGTH) {
+      replayBoundary.replayUnsafe = true;
       await sendText(
         jid,
         "Message is too long (maximum 2,000 characters). Please shorten your message."
@@ -229,6 +342,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     const rateLimitKey = isGroup
       ? `${conversationKey}:${inboundChat.senderJid}`
       : conversationKey;
+    // The limiter mutates its sliding window. From this point onward, replaying
+    // the whole handler could consume the same inbound message more than once.
+    replayBoundary.replayUnsafe = true;
     if (!rateLimiter.isAllowed(rateLimitKey)) {
       if (rateLimiter.shouldSendCooldownNotice(rateLimitKey)) {
         await sendText(
@@ -242,7 +358,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     await withChatLock(conversationKey, async () => {
       await authStore.reload();
       const fileConfig = authStore.getConfig();
-      const senderJids = isGroup ? inboundChat.senderJids : [conversationKey];
+      const senderJids = isGroup
+        ? inboundChat.senderJids
+        : [conversationKey, ...inboundChat.senderJids].filter(
+            (senderJid, index, values) => values.indexOf(senderJid) === index
+          );
       for (const senderJid of senderJids) {
         await authStore.rememberSenderPn(senderJid, senderPn);
       }
@@ -267,8 +387,24 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       const principalChannelUserId = isGroup
         ? inboundChat.senderJid
         : conversationKey;
-      if (authorized && !isGroup) {
-        await bindPendingChannelPrincipal(principalChannelUserId);
+      const sessionPrincipal: WhatsAppSessionPrincipal = {
+        channelUserAliases: senderJids.filter(
+          (senderJid) => senderJid !== principalChannelUserId
+        ),
+        channelUserId: principalChannelUserId,
+      };
+
+      const isExactActivePairingCode = Boolean(
+        !isGroup &&
+          fileConfig?.pairingCode &&
+          isWhatsAppPairingCodeActive(fileConfig) &&
+          normalizePairingCode(trimmed) ===
+            normalizePairingCode(fileConfig.pairingCode)
+      );
+      if (isExactActivePairingCode) {
+        replayBoundary.replayUnsafe = true;
+        await handlePairing(jid, trimmed);
+        return;
       }
 
       if (!authorized) {
@@ -306,9 +442,15 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           return;
         }
 
+        replayBoundary.replayUnsafe = true;
         await handlePairing(jid, trimmed);
         return;
       }
+
+      const sessionKey = resolveWhatsAppSessionKey(
+        conversationKey,
+        principalChannelUserId
+      );
 
       const messageText = isGroup
         ? stripWhatsAppBotMention({
@@ -341,11 +483,12 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       }
 
       if (pureAttachIntent && !trimmed.startsWith("/") && !media) {
+        replayBoundary.replayUnsafe = true;
         await handleAttachRequest(
-          conversationKey,
+          sessionKey,
           jid,
           messageText,
-          principalChannelUserId
+          sessionPrincipal
         );
         return;
       }
@@ -353,13 +496,14 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       const attachCommandHasInstructions =
         command === "/attach" && !isAttachOnlyCommand(messageText);
       if (trimmed.startsWith("/") && !attachCommandHasInstructions) {
+        replayBoundary.replayUnsafe = true;
         try {
           await handleCommand(
-            conversationKey,
+            sessionKey,
             channelOrgKey,
             jid,
             trimmed,
-            principalChannelUserId
+            sessionPrincipal
           );
         } catch (error) {
           await sendText(
@@ -370,12 +514,23 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         return;
       }
 
-      const signal = registerActiveStream(conversationKey);
+      const signal = registerActiveStream(sessionKey);
       try {
+        const mayPersistInboundDocument =
+          fromMe ||
+          senderJids.some((senderJid) =>
+            authStore.isPairedIdentity(senderJid, { senderPn })
+          );
+        if (mayPersistInboundDocument && media) {
+          replayBoundary.replayUnsafe = true;
+        }
+
         const mediaInput = await tryBuildMediaInput(
+          sessionKey,
           jid,
           channelOrgKey,
           inbound,
+          mayPersistInboundDocument,
           signal
         );
         if (mediaInput === "reject") {
@@ -383,8 +538,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         }
 
         if (mediaInput) {
+          replayBoundary.replayUnsafe = true;
           await handleChatMessage(
-            conversationKey,
+            sessionKey,
             jid,
             withInboundGroupContext(
               {
@@ -403,7 +559,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
               inboundChat
             ),
             inbound,
-            principalChannelUserId,
+            sessionPrincipal,
             messageText,
             signal
           );
@@ -411,14 +567,34 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         }
 
         if (media?.kind === "audio") {
-          const audioInput = await tryBuildAudioInput(jid, inbound, signal);
+          let preparedSession: RemoteChatSession;
+          try {
+            preparedSession = await waitForAbortable(
+              resolveSession(sessionKey, sessionPrincipal),
+              signal
+            );
+          } catch (error) {
+            if (isAbortError(error)) {
+              throw error;
+            }
+            await sendText(jid, formatSessionOpenError(jid, error));
+            return;
+          }
+
+          replayBoundary.replayUnsafe = true;
+          const audioInput = await tryBuildAudioInput(
+            jid,
+            inbound,
+            preparedSession.id,
+            signal
+          );
           if (audioInput === "reject") {
             return;
           }
 
           if (audioInput) {
             await handleChatMessage(
-              conversationKey,
+              sessionKey,
               jid,
               withInboundGroupContext(
                 {
@@ -430,9 +606,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
                 inboundChat
               ),
               inbound,
-              principalChannelUserId,
+              sessionPrincipal,
               messageText,
-              signal
+              signal,
+              preparedSession
             );
             return;
           }
@@ -447,12 +624,13 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           return;
         }
 
+        replayBoundary.replayUnsafe = true;
         await handleChatMessage(
-          conversationKey,
+          sessionKey,
           jid,
           withInboundGroupContext({ message: messageText }, inboundChat),
           inbound,
-          principalChannelUserId,
+          sessionPrincipal,
           messageText,
           signal
         );
@@ -462,7 +640,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           isAbortError(error) ? "Stopped." : formatError(error)
         );
       } finally {
-        clearActiveStream(conversationKey, signal);
+        clearActiveStream(sessionKey, signal);
       }
     });
   }
@@ -515,49 +693,70 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
-    const result = await authStore.tryPair(text, chatKey(jid));
-    await sendText(jid, result.message);
-    if (result.ok) {
-      await bindPendingChannelPrincipal(chatKey(jid), result.pairingAssertion);
-    }
-  }
-
-  async function bindPendingChannelPrincipal(
-    channelUserId: string,
-    pairingAssertion?: string | null
-  ): Promise<void> {
-    const assertion =
-      pairingAssertion?.trim() ||
-      authStore.getConfig()?.pairingAssertion?.trim() ||
-      "";
-    if (!assertion) {
-      return;
-    }
-    const orgId = fixedWorkspaceId ?? orgStore.get(channelUserId)?.orgId;
-    if (!orgId) {
-      return;
-    }
+    const channelUserId = chatKey(jid);
+    let result: { message: string; ok: boolean };
     try {
-      await client.bindChannelPrincipal({
-        channel: "whatsapp",
+      result = await authStore.tryPair(
+        text,
         channelUserId,
-        pairingAssertion: assertion,
-      });
-      await clearWhatsAppPairingAssertion(orgId);
-      await authStore.reload();
+        async ({ pairingAssertion, pairingUserId }) => {
+          await bindPendingChannelPrincipal(
+            channelUserId,
+            pairingAssertion,
+            pairingUserId
+          );
+        }
+      );
     } catch (error) {
       console.error("Failed to bind WhatsApp channel principal.", {
         errorType: getSafeWhatsAppErrorType(error),
       });
+      await sendText(jid, PAIRING_BIND_ERROR_REPLY);
+      return;
     }
+
+    await sendText(jid, result.message);
+  }
+
+  async function bindPendingChannelPrincipal(
+    channelUserId: string,
+    pairingAssertion: string,
+    pairingUserId: string
+  ): Promise<void> {
+    const assertion = pairingAssertion.trim();
+    const expectedUserId = pairingUserId.trim();
+    const orgId = fixedWorkspaceId ?? orgStore.get(channelUserId)?.orgId;
+    if (!orgId) {
+      throw new Error(
+        "WhatsApp pairing requires an authoritative workspace context."
+      );
+    }
+    const principal = await client.bindChannelPrincipal({
+      channel: "whatsapp",
+      channelUserId,
+      expectedUserId,
+      pairingAssertion: assertion,
+    });
+    if (principal.orgId !== orgId || principal.userId !== expectedUserId) {
+      throw new Error(
+        "WhatsApp pairing principal did not match the pending authorization."
+      );
+    }
+
+    const invalidatedSessionKeys =
+      sessionStore.deleteByChannelUserId(channelUserId);
+    for (const sessionKey of invalidatedSessionKeys) {
+      stopActiveStream(sessionKey);
+    }
+    await sessionStore.save();
   }
 
   async function handleCommand(
-    conversationKey: string,
+    sessionKey: string,
     channelOrgKey: string,
     sendJid: string,
     text: string,
-    channelUserId: string
+    principal: WhatsAppSessionPrincipal
   ): Promise<void> {
     const command = parseCommand(text);
 
@@ -568,24 +767,19 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         return;
 
       case "/clear": {
-        const session = await resolveSession(conversationKey, channelUserId);
+        const session = await resolveSession(sessionKey, principal);
         await session.clear();
-        await clearSessionArtifactState(conversationKey);
+        await clearSessionArtifactState(sessionKey);
         await sendText(sendJid, "History cleared.");
         return;
       }
 
       case "/attach":
-        await handleAttachRequest(
-          conversationKey,
-          sendJid,
-          text,
-          channelUserId
-        );
+        await handleAttachRequest(sessionKey, sendJid, text, principal);
         return;
 
       case "/compact": {
-        const session = await resolveSession(conversationKey, channelUserId);
+        const session = await resolveSession(sessionKey, principal);
         const result = await session.compact({ force: true });
         await sendText(
           sendJid,
@@ -595,26 +789,21 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       }
 
       case "/new": {
-        await createAndBindSession(conversationKey, undefined, channelUserId);
+        await createAndBindSession(sessionKey, undefined, principal);
         await sendText(sendJid, "Started a new conversation.");
         return;
       }
 
       case "/status":
-        await replyStatus(sendJid);
+        await replyStatus(sendJid, sessionKey);
         return;
 
       case "/profile":
-        await handleProfileCommand(
-          conversationKey,
-          sendJid,
-          text,
-          channelUserId
-        );
+        await handleProfileCommand(sessionKey, sendJid, text, principal);
         return;
 
       case "/org":
-        await handleOrgCommand(conversationKey, channelOrgKey, sendJid, text);
+        await handleOrgCommand(sessionKey, channelOrgKey, sendJid, text);
         return;
 
       default:
@@ -623,15 +812,15 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   }
 
   async function handleAttachRequest(
-    conversationKey: string,
+    sessionKey: string,
     sendJid: string,
     attachUserText: string,
-    channelUserId: string
+    principal: WhatsAppSessionPrincipal
   ): Promise<void> {
     let profileId: string;
     try {
-      await resolveSession(conversationKey, channelUserId);
-      const storedProfileId = sessionStore.get(conversationKey)?.profileId;
+      await resolveSession(sessionKey, principal);
+      const storedProfileId = sessionStore.get(sessionKey)?.profileId;
       if (!storedProfileId) {
         throw new Error("WhatsApp session has no profile mapping.");
       }
@@ -649,7 +838,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     await maybeSendRequestedWhatsAppArtifactAttachment({
       attachUserText,
       client,
-      conversationKey,
+      conversationKey: sessionKey,
       getSocket,
       jid: sendJid,
       profileId,
@@ -658,10 +847,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     });
   }
 
-  async function clearSessionArtifactState(
-    conversationKey: string
-  ): Promise<void> {
-    sessionStore.updateArtifactState(conversationKey, {
+  async function clearSessionArtifactState(sessionKey: string): Promise<void> {
+    sessionStore.updateArtifactState(sessionKey, {
       artifactShareUrls: {},
       deliverableArtifacts: [],
     });
@@ -713,7 +900,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   }
 
   async function handleOrgCommand(
-    conversationKey: string,
+    sessionKey: string,
     channelOrgKey: string,
     sendJid: string,
     text: string
@@ -757,7 +944,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     client.setOrgId(picked.id);
 
     if (previousOrgId && previousOrgId !== picked.id) {
-      sessionStore.delete(conversationKey);
+      sessionStore.delete(sessionKey);
       await sessionStore.save();
     }
 
@@ -765,10 +952,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   }
 
   async function handleProfileCommand(
-    conversationKey: string,
+    sessionKey: string,
     sendJid: string,
     text: string,
-    channelUserId: string
+    principal: WhatsAppSessionPrincipal
   ): Promise<void> {
     const profiles = await listSelectableProfiles();
     if (profiles.length === 0) {
@@ -777,7 +964,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
 
     const arg = text.trim().split(/\s+/).slice(1).join(" ");
-    const currentProfileId = (await resolveProfileSelection(conversationKey))
+    const currentProfileId = (await resolveProfileSelection(sessionKey))
       .profileId;
 
     if (!arg) {
@@ -802,16 +989,18 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       return;
     }
 
-    await createAndBindSession(conversationKey, picked.id, channelUserId, {
+    await createAndBindSession(sessionKey, picked.id, principal, {
       profileOverride: true,
     });
     await sendText(sendJid, formatProfileSwitchConfirmation(picked.name));
   }
 
   async function tryBuildMediaInput(
+    sessionKey: string,
     jid: string,
     channelOrgKey: string,
     inbound: WAMessage | null | undefined,
+    mayPersistInboundDocument: boolean,
     signal: AbortSignal
   ): Promise<SendMessageInput | "reject" | null> {
     if (!inbound?.message) {
@@ -829,23 +1018,26 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         downloadMedia
           ? downloadMedia(message, options)
           : downloadWhatsAppMedia(message, getSocket(), options),
-      {
-        saveInboundDocument: async (file) => {
-          const orgId = fixedWorkspaceId ?? orgStore.get(channelOrgKey)?.orgId;
-          if (!orgId) {
-            throw new Error("WhatsApp workspace is not selected.");
-          }
+      mayPersistInboundDocument
+        ? {
+            saveInboundDocument: async (file) => {
+              const orgId =
+                fixedWorkspaceId ?? orgStore.get(channelOrgKey)?.orgId;
+              if (!orgId) {
+                throw new Error("WhatsApp workspace is not selected.");
+              }
 
-          const profileId = await resolveProfileId(jid);
-          return saveInboundWorkspaceDocument({
-            bytes: file.bytes,
-            filename: file.filename,
-            orgId,
-            profileId,
-          });
-        },
-        signal,
-      }
+              const profileId = await resolveProfileId(sessionKey);
+              return saveInboundWorkspaceDocument({
+                bytes: file.bytes,
+                filename: file.filename,
+                orgId,
+                profileId,
+              });
+            },
+            signal,
+          }
+        : { signal }
     );
 
     if (!result) {
@@ -863,6 +1055,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   async function tryBuildAudioInput(
     jid: string,
     inbound: WAMessage | null | undefined,
+    sessionId: string,
     signal: AbortSignal
   ): Promise<SendMessageInput | "reject" | null> {
     if (!inbound?.message) {
@@ -875,7 +1068,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         downloadMedia
           ? downloadMedia(message, options)
           : downloadWhatsAppMedia(message, getSocket(), options),
-      (input) => client.transcribeAudio(input),
+      (input) => client.transcribeAudio({ ...input, sessionId }),
       { signal }
     );
 
@@ -888,13 +1081,14 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   }
 
   async function handleChatMessage(
-    conversationKey: string,
+    sessionKey: string,
     jid: string,
     input: SendMessageInput,
     inbound: WAMessage | null | undefined,
-    channelUserId: string,
+    principal: WhatsAppSessionPrincipal,
     artifactIntentText: string,
-    signal: AbortSignal
+    signal: AbortSignal,
+    preparedSession?: RemoteChatSession
   ): Promise<void> {
     const typingLoop = createTypingLoop(getSocket(), jid);
     const todoStatus = new WhatsAppTodoStatusMessage(getSocket(), jid);
@@ -906,11 +1100,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     let session: RemoteChatSession | undefined;
 
     try {
-      session = await waitForAbortable(
-        resolveSession(conversationKey, channelUserId),
-        signal
-      );
-      profileId = sessionStore.get(conversationKey)?.profileId;
+      session =
+        preparedSession ??
+        (await waitForAbortable(resolveSession(sessionKey, principal), signal));
+      profileId = sessionStore.get(sessionKey)?.profileId;
       typingLoop.start();
 
       reply = await session.sendStream(
@@ -984,10 +1177,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       }
 
       await todoStatus.fail();
-      const errorText =
-        session || !isWhatsAppGroupChat(jid)
-          ? formatError(error)
-          : GROUP_SESSION_ERROR_REPLY;
+      const errorText = session
+        ? formatError(error)
+        : formatSessionOpenError(jid, error);
       if (!(await liveReply.replaceWithError(errorText))) {
         await sendText(jid, errorText);
       }
@@ -1011,7 +1203,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     if (profileId && session) {
       await deliverWhatsAppTurnArtifactShares({
         client,
-        conversationKey,
+        conversationKey: sessionKey,
         getSocket,
         jid,
         profileId,
@@ -1136,7 +1328,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     };
   }
 
-  async function replyStatus(jid: string): Promise<void> {
+  async function replyStatus(jid: string, sessionKey: string): Promise<void> {
     try {
       const health = await client.health();
       const lines = [
@@ -1146,7 +1338,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
       if (health.providerConfigured) {
         const models = await client.getModels();
-        const profileId = await resolveProfileId(jid);
+        const profileId = await resolveProfileId(sessionKey);
         const profiles = await client.listProfiles();
         const profile = profiles.profiles.find(
           (entry) => entry.id === profileId
@@ -1198,39 +1390,49 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   }
 
   async function resolveSession(
-    jid: string,
-    channelUserId: string
+    sessionKey: string,
+    principal: WhatsAppSessionPrincipal
   ): Promise<RemoteChatSession> {
-    const selection = await resolveProfileSelection(jid);
+    const selection = await resolveProfileSelection(sessionKey);
     const { profileId } = selection;
-    const existing = sessionStore.get(jid);
+    const existing = sessionStore.get(sessionKey);
+    const normalizedChannelUserId = chatKey(principal.channelUserId);
+    const existingChannelUserId = existing?.channelUserId
+      ? chatKey(existing.channelUserId)
+      : null;
+    const belongsToCurrentSender = existingChannelUserId
+      ? existingChannelUserId === normalizedChannelUserId
+      : sessionKey === normalizedChannelUserId;
 
-    if (existing && existing.profileId === profileId) {
-      const hot = sessionStore.getHotSession<RemoteChatSession>(jid);
+    if (
+      existing &&
+      existing.profileId === profileId &&
+      belongsToCurrentSender
+    ) {
+      const hot = sessionStore.getHotSession<RemoteChatSession>(sessionKey);
       if (hot) {
         return hot;
       }
-
       const session = client.createChatSession(existing.sessionId, "whatsapp");
 
       try {
         await session.getMessages();
-        sessionStore.setHotSession(jid, session);
+        sessionStore.setHotSession(sessionKey, session);
         return session;
       } catch {
         // Session missing on server; create a new one below
       }
     }
 
-    return createAndBindSession(jid, profileId, channelUserId, {
+    return createAndBindSession(sessionKey, profileId, principal, {
       profileOverride: selection.profileOverride,
     });
   }
 
   async function createAndBindSession(
-    jid: string,
-    profileId?: string,
-    channelUserId?: string,
+    sessionKey: string,
+    profileId: string | undefined,
+    principal: WhatsAppSessionPrincipal,
     options?: { profileOverride?: boolean }
   ): Promise<RemoteChatSession> {
     const selection = profileId
@@ -1238,21 +1440,28 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           profileId,
           profileOverride: options?.profileOverride === true,
         }
-      : await resolveProfileSelection(jid);
+      : await resolveProfileSelection(sessionKey);
     const resolvedProfileId = selection.profileId;
-    const principalUserId = channelUserId?.trim() || jid;
+    const principalUserId = principal.channelUserId.trim();
+    if (!principalUserId) {
+      throw new Error("WhatsApp channel user identity is required.");
+    }
     const session = await client.createSession("whatsapp", {
-      externalPrincipal: { channelUserId: principalUserId },
+      externalPrincipal: {
+        channelUserAliases: principal.channelUserAliases,
+        channelUserId: principalUserId,
+      },
       profileId: resolvedProfileId,
     });
 
-    sessionStore.set(jid, {
+    sessionStore.set(sessionKey, {
+      channelUserId: principalUserId,
       profileId: resolvedProfileId,
       profileOverride: selection.profileOverride || undefined,
       sessionId: session.id,
       updatedAt: new Date().toISOString(),
     });
-    sessionStore.setHotSession(jid, session);
+    sessionStore.setHotSession(sessionKey, session);
     await sessionStore.save();
 
     return session;
@@ -1263,12 +1472,6 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     text: string,
     options?: { quoted?: WAMessage | null; raw?: boolean }
   ): Promise<void> {
-    const socket = getSocket();
-    if (!socket) {
-      console.error("WhatsApp is not connected; dropping outbound text.");
-      return;
-    }
-
     const prepared = options?.raw ? text.trim() : prepareWhatsAppReply(text);
     if (!prepared) {
       return;
@@ -1276,16 +1479,184 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     const chunks = splitWhatsAppMessage(prepared);
     for (const [index, chunk] of chunks.entries()) {
-      await socket.sendMessage(
+      await sendChunkWithRetry({
+        chunk,
+        getSocket,
         jid,
-        { text: chunk },
-        index === 0 && options?.quoted ? { quoted: options.quoted } : undefined
-      );
+        quoted: index === 0 ? options?.quoted : undefined,
+        retryAttempts: sendRetryAttempts,
+        retryBaseDelayMs: sendRetryBaseDelayMs,
+        timeoutMs: sendTimeoutMs,
+      });
     }
   }
 
   return (data: WhatsAppHandlerInput) =>
-    client.isolateOrgId(() => handleMessage(data));
+    client.isolateOrgId(async () => {
+      const replayBoundary: InboundReplayBoundary = { replayUnsafe: false };
+      try {
+        await handleMessage(data, replayBoundary);
+      } catch (error) {
+        if (
+          replayBoundary.replayUnsafe ||
+          isWhatsAppDeliveryRetryableError(error) ||
+          isWhatsAppInboundReplaySafeError(error)
+        ) {
+          throw error;
+        }
+
+        throw new WhatsAppInboundReplaySafeError(
+          "WhatsApp inbound handling failed before the delivery boundary.",
+          { cause: error }
+        );
+      }
+    });
+}
+
+interface SendChunkWithRetryInput {
+  chunk: string;
+  getSocket: () => WASocket | null;
+  jid: string;
+  quoted?: WAMessage | null;
+  retryAttempts: number;
+  retryBaseDelayMs: number;
+  timeoutMs: number;
+}
+
+async function sendChunkWithRetry(
+  input: SendChunkWithRetryInput
+): Promise<void> {
+  let lastError: unknown = new WhatsAppSocketUnavailableError();
+
+  for (let attempt = 1; attempt <= input.retryAttempts; attempt += 1) {
+    const socket = input.getSocket();
+
+    try {
+      if (!socket) {
+        throw new WhatsAppSocketUnavailableError();
+      }
+
+      await withSendTimeout(
+        socket.sendMessage(
+          input.jid,
+          { text: input.chunk },
+          input.quoted ? { quoted: input.quoted } : undefined
+        ),
+        input.timeoutMs
+      );
+      return;
+    } catch (error) {
+      lastError = error;
+      const canRetry =
+        attempt < input.retryAttempts &&
+        !(error instanceof WhatsAppSendTimeoutError) &&
+        isTransientWhatsAppSendError(error);
+      if (!canRetry) {
+        break;
+      }
+
+      console.warn("WhatsApp outbound chunk retry scheduled.", {
+        attempt,
+        errorType: getSafeWhatsAppErrorType(error),
+        maxAttempts: input.retryAttempts,
+      });
+      await waitForRetryDelay(
+        calculateSendRetryDelayMs(input.retryBaseDelayMs, attempt)
+      );
+    }
+  }
+
+  throw new WhatsAppDeliveryRetryableError(
+    "WhatsApp disconnected before outbound text was delivered.",
+    { cause: lastError }
+  );
+}
+
+export function isTransientWhatsAppSendError(error: unknown): boolean {
+  if (error instanceof WhatsAppSendTimeoutError) {
+    // The original promise may still complete, so retrying would risk sending
+    // the same chunk twice.
+    return false;
+  }
+  if (!(error && typeof error === "object")) {
+    return false;
+  }
+
+  const record = error as Record<string, unknown>;
+  const code = typeof record.code === "string" ? record.code : null;
+  if (code && TRANSIENT_SEND_ERROR_CODES.has(code.toUpperCase())) {
+    return true;
+  }
+
+  const statusCode = readWhatsAppSendStatusCode(record);
+  if (
+    statusCode === 408 ||
+    statusCode === 425 ||
+    statusCode === 429 ||
+    statusCode === 515 ||
+    (statusCode !== null && statusCode >= 500 && statusCode < 600)
+  ) {
+    return true;
+  }
+
+  const message = typeof record.message === "string" ? record.message : "";
+  if (TRANSIENT_SEND_MESSAGE.test(message)) {
+    return true;
+  }
+
+  return record.cause ? isTransientWhatsAppSendError(record.cause) : false;
+}
+
+function readWhatsAppSendStatusCode(
+  error: Record<string, unknown>
+): number | null {
+  if (typeof error.statusCode === "number") {
+    return error.statusCode;
+  }
+
+  const output = error.output;
+  if (!(output && typeof output === "object")) {
+    return null;
+  }
+  const statusCode = (output as Record<string, unknown>).statusCode;
+  return typeof statusCode === "number" ? statusCode : null;
+}
+
+function calculateSendRetryDelayMs(
+  baseDelayMs: number,
+  attempt: number
+): number {
+  return Math.min(MAX_SEND_RETRY_DELAY_MS, baseDelayMs * 2 ** (attempt - 1));
+}
+
+async function waitForRetryDelay(delayMs: number): Promise<void> {
+  if (delayMs <= 0) {
+    return;
+  }
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, delayMs);
+  });
+}
+
+async function withSendTimeout<T>(
+  delivery: Promise<T>,
+  timeoutMs: number
+): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const timeoutResult = new Promise<never>((_, reject) => {
+    timeout = setTimeout(
+      () => reject(new WhatsAppSendTimeoutError()),
+      timeoutMs
+    );
+  });
+
+  try {
+    return await Promise.race([delivery, timeoutResult]);
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+  }
 }
 
 function normalizeInboundChat(
@@ -1377,6 +1748,19 @@ function chatKey(jid: string): string {
   return normalizeWhatsAppUserJid(jid);
 }
 
+export function resolveWhatsAppSessionKey(
+  conversationJid: string,
+  channelUserId: string
+): string {
+  const conversationKey = chatKey(conversationJid);
+  if (!isWhatsAppGroupChat(conversationKey)) {
+    return conversationKey;
+  }
+
+  const senderKey = chatKey(channelUserId);
+  return `group:${encodeURIComponent(conversationKey)}:sender:${encodeURIComponent(senderKey)}`;
+}
+
 function parseCommand(text: string): string {
   const token = text.trim().split(/\s+/)[0]?.toLowerCase() ?? "";
   return token;
@@ -1400,6 +1784,25 @@ function looksLikePairingCodeAttempt(text: string): boolean {
   return trimmed === trimmed.toUpperCase() && /^[A-Z0-9-]{4,12}$/.test(trimmed);
 }
 
+function isMissingChannelPrincipalError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    /(?:canonical (?:user )?(?:mapping|principal)|re-pair the channel)/i.test(
+      error.message
+    )
+  );
+}
+
+function formatSessionOpenError(jid: string, error: unknown): string {
+  if (isWhatsAppGroupChat(jid)) {
+    return GROUP_SESSION_ERROR_REPLY;
+  }
+  if (isMissingChannelPrincipalError(error)) {
+    return IDENTITY_LINK_REQUIRED_REPLY;
+  }
+  return formatError(error);
+}
+
 export function resetChatLocksForTests(): void {
   chatLocks.clear();
   rateLimiter.reset();
@@ -1407,8 +1810,13 @@ export function resetChatLocksForTests(): void {
 
 export async function withChatLock(
   jid: string,
-  fn: () => Promise<void>
+  fn: () => Promise<void>,
+  timeoutMs = LOCK_TIMEOUT_MS
 ): Promise<void> {
+  if (!(Number.isSafeInteger(timeoutMs) && timeoutMs > 0)) {
+    throw new RangeError("WhatsApp chat lock timeout must be positive.");
+  }
+
   const previous = chatLocks.get(jid) ?? Promise.resolve();
   let release!: () => void;
   const current = new Promise<void>((resolve) => {
@@ -1419,26 +1827,32 @@ export async function withChatLock(
     () => current
   );
   chatLocks.set(jid, chain);
+  void chain.then(() => {
+    if (chatLocks.get(jid) === chain) {
+      chatLocks.delete(jid);
+    }
+  });
 
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  const timeoutPromise = new Promise<void>((_, reject) => {
+  const timeoutPromise = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(
-      () => reject(new Error("Chat lock timeout")),
-      LOCK_TIMEOUT_MS
+      () => reject(new WhatsAppChatBusyError()),
+      timeoutMs
     );
   });
 
   try {
-    await Promise.race([previous, timeoutPromise]).catch(() => {});
+    await Promise.race([previous.catch(() => undefined), timeoutPromise]);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutId = undefined;
+    }
     await fn();
   } finally {
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
     release();
-    if (chatLocks.get(jid) === chain) {
-      chatLocks.delete(jid);
-    }
   }
 }
 

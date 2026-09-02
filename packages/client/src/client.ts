@@ -99,6 +99,7 @@ import type {
   ListTimezonesResponse,
   ListToolsResponse,
   ListUserOrgsResponse,
+  LlmUsageChannelFilter,
   LlmUsageReportGroupBy,
   LlmUsageReportResponse,
   MarkAutomationRunsReadResponse,
@@ -221,6 +222,7 @@ import type {
   VisionSettings,
   VisionSettingsResponse,
   WebPublicUrlSettingsResponse,
+  WhatsAppPairingStatusResponse,
   WhatsAppSettingsResponse,
   WorkerLogsResponse,
 } from "@atlas/core/contract";
@@ -337,12 +339,16 @@ export class AtlasClient {
   }
 
   async getUsageReport(params: {
+    channel?: LlmUsageChannelFilter;
     groupBy: LlmUsageReportGroupBy;
     from?: string;
     to?: string;
     limit?: number;
   }): Promise<LlmUsageReportResponse> {
     const search = new URLSearchParams({ groupBy: params.groupBy });
+    if (params.channel) {
+      search.set("channel", params.channel);
+    }
     if (params.from) {
       search.set("from", params.from);
     }
@@ -1253,7 +1259,12 @@ export class AtlasClient {
 
   async listProfileArtifacts(
     profileId: string,
-    options: { folder?: string; limit?: number; offset?: number } = {}
+    options: {
+      folder?: string;
+      limit?: number;
+      offset?: number;
+      sessionId?: string;
+    } = {}
   ): Promise<ListArtifactsResponse> {
     const query = new URLSearchParams();
     if (options.folder !== undefined) {
@@ -1264,6 +1275,9 @@ export class AtlasClient {
     }
     if (options.offset !== undefined) {
       query.set("offset", String(options.offset));
+    }
+    if (options.sessionId) {
+      query.set("sessionId", options.sessionId);
     }
     const suffix = query.size > 0 ? `?${query.toString()}` : "";
     return this.request<ListArtifactsResponse>(
@@ -1309,15 +1323,22 @@ export class AtlasClient {
 
   async publishProfileArtifactShare(
     profileId: string,
-    path: string
+    path: string,
+    options: { sessionId?: string } = {}
   ): Promise<PublishArtifactShareResponse> {
     const body: PublishArtifactShareRequest = { path };
     if (this.clientOrigin) {
       body.clientOrigin = this.clientOrigin;
     }
 
+    const query = new URLSearchParams();
+    if (options.sessionId) {
+      query.set("sessionId", options.sessionId);
+    }
+    const suffix = query.size > 0 ? `?${query.toString()}` : "";
+
     return this.request<PublishArtifactShareResponse>(
-      `/v1/profiles/${encodeURIComponent(profileId)}/artifacts/shares`,
+      `/v1/profiles/${encodeURIComponent(profileId)}/artifacts/shares${suffix}`,
       {
         body: JSON.stringify(body),
         method: "POST",
@@ -1348,7 +1369,11 @@ export class AtlasClient {
   async readProfileArtifactContent(
     profileId: string,
     artifactPath: string,
-    options: { inline?: boolean; render?: "markdown" } = {}
+    options: {
+      inline?: boolean;
+      render?: "markdown";
+      sessionId?: string;
+    } = {}
   ): Promise<{ contentType: string; data: ArrayBuffer }> {
     const query = new URLSearchParams({ path: artifactPath });
     if (options.inline) {
@@ -1356,6 +1381,9 @@ export class AtlasClient {
     }
     if (options.render) {
       query.set("render", options.render);
+    }
+    if (options.sessionId) {
+      query.set("sessionId", options.sessionId);
     }
 
     const response = await this.fetchRaw(
@@ -2034,6 +2062,7 @@ export class AtlasClient {
   async bindChannelPrincipal(input: {
     channel: "telegram" | "whatsapp" | "discord";
     channelUserId: string;
+    expectedUserId?: string;
     pairingAssertion?: string;
     userId?: string;
   }): Promise<{ userId: string; orgId: string }> {
@@ -2041,6 +2070,7 @@ export class AtlasClient {
       body: JSON.stringify({
         channel: input.channel,
         channelUserId: input.channelUserId,
+        expectedUserId: input.expectedUserId,
         pairingAssertion: input.pairingAssertion,
       }),
       method: "POST",
@@ -2328,6 +2358,12 @@ export class AtlasClient {
 
   async getWhatsAppSettings(): Promise<WhatsAppSettingsResponse> {
     return this.request<WhatsAppSettingsResponse>("/v1/settings/whatsapp");
+  }
+
+  async getWhatsAppPairingStatus(): Promise<WhatsAppPairingStatusResponse> {
+    return this.request<WhatsAppPairingStatusResponse>(
+      "/v1/settings/whatsapp/pairing-status"
+    );
   }
 
   async setWhatsAppSettings(

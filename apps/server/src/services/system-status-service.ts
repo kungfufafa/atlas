@@ -148,7 +148,9 @@ export class SystemStatusService {
     const heartbeat = await getWhatsAppWorkerStatus(orgId);
     return {
       ...heartbeat,
+      devicePairingCode: null,
       process: processStatus ?? undefined,
+      qrCode: null,
       running: isOnline || heartbeat.running,
     };
   }

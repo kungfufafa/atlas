@@ -48,6 +48,27 @@ describe("send_whatsapp", () => {
     expect(result.ok).toBe(false);
   });
 
+  test("does not let an internal channel guest relay outbound messages", async () => {
+    let sendCalls = 0;
+    const result = await runSendWhatsApp(
+      { text: "relay this", to: "6289500000001" },
+      {
+        orgId: "org_finance",
+        userId: "user_channel_guest_0123456789abcdef",
+      },
+      async () => {
+        sendCalls += 1;
+        return { ok: true };
+      }
+    );
+
+    expect(result).toEqual({
+      error: "Channel guest principals cannot send outbound WhatsApp messages.",
+      ok: false,
+    });
+    expect(sendCalls).toBe(0);
+  });
+
   test("fails when the destination is not a phone number", async () => {
     const result = await runSendWhatsApp(
       { text: "hi", to: "236283431522503@lid" },

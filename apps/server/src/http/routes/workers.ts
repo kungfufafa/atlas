@@ -190,8 +190,9 @@ export function registerWorkerRoutes(
 
     const orgId = getRequestAuth(c).activeOrgId?.trim();
     const linesParam = c.req.query("lines");
+    const parsedLines = linesParam ? Number.parseInt(linesParam, 10) : 200;
     const lines = Math.min(
-      Math.max(1, linesParam ? Number.parseInt(linesParam, 10) : 200),
+      Math.max(1, Number.isFinite(parsedLines) ? parsedLines : 200),
       2000
     );
 

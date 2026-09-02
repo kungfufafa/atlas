@@ -4,6 +4,7 @@ import {
   type ChangePasswordRequest,
   type CreateOrganizationRequest,
   type CreateOrganizationResponse,
+  isChannelGuestUserId,
   type ListUserOrgsResponse,
   LocalAuthTokenManagedExternallyError,
   normalizeSetupEmail,
@@ -510,7 +511,7 @@ export function registerAuthRoutes(app: HonoApp, options: ServerOptions): void {
     const user = await databaseAdapter.getUserByEmail(
       normalizeSetupEmail(body.email ?? "")
     );
-    if (!user) {
+    if (!user || isChannelGuestUserId(user.id)) {
       return errorResponse("Invalid credentials", 401);
     }
 

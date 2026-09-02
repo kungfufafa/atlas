@@ -45,6 +45,16 @@ export interface UpdateDiscordSettingsInput {
   profileId?: string;
 }
 
+export interface DiscordPairingPrincipalInput {
+  channelUserId: string;
+  pairingAssertion: string;
+  pairingUserId: string;
+}
+
+export type DiscordPairingPrincipalBinder = (
+  input: DiscordPairingPrincipalInput
+) => Promise<void>;
+
 export function getDiscordConfigDir(orgId?: string | null): string {
   return orgId === undefined
     ? getWorkspaceChannelDir("discord")
@@ -520,11 +530,9 @@ function runSerializedDiscordPair<T>(
 export async function verifyAndPairDiscordUser(
   handshakeInput: string,
   userId: string,
-  orgId?: string | null
-): Promise<
-  | { ok: true; message: string; pairingAssertion: string | null }
-  | { ok: false; message: string }
-> {
+  orgId?: string | null,
+  bindPrincipal?: DiscordPairingPrincipalBinder
+): Promise<{ ok: true; message: string } | { ok: false; message: string }> {
   return runSerializedDiscordPair(orgId, async () => {
     const config = await loadDiscordConfigFile(orgId);
 
@@ -535,15 +543,19 @@ export async function verifyAndPairDiscordUser(
       };
     }
 
-    if (isDiscordUserAuthorized(userId, config)) {
+    const expected = config.handshakeCode;
+    const matchesCurrentCode = Boolean(
+      expected &&
+        normalizeHandshakeInput(handshakeInput) ===
+          normalizeHandshakeInput(expected)
+    );
+
+    if (isDiscordUserAuthorized(userId, config) && !matchesCurrentCode) {
       return {
         message: "This chat is already linked.",
         ok: true,
-        pairingAssertion: config.handshakeAssertion ?? null,
       };
     }
-
-    const expected = config.handshakeCode;
 
     if (!expected) {
       return {
@@ -553,10 +565,7 @@ export async function verifyAndPairDiscordUser(
       };
     }
 
-    if (
-      normalizeHandshakeInput(handshakeInput) !==
-      normalizeHandshakeInput(expected)
-    ) {
+    if (!matchesCurrentCode) {
       return {
         message:
           "Invalid pairing code. Copy it from Integrations → Discord and try again.",
@@ -565,13 +574,33 @@ export async function verifyAndPairDiscordUser(
     }
 
     const pairedUserIds = [...new Set([...config.pairedUserIds, userId])];
-    const pairingAssertion = config.handshakeAssertion ?? null;
+    const pairingAssertion = config.handshakeAssertion?.trim() ?? "";
+    const pairingUserId = config.handshakeUserId?.trim() ?? "";
+
+    if (bindPrincipal) {
+      if (!(pairingAssertion && pairingUserId)) {
+        return {
+          message:
+            "That pairing code is no longer valid. Generate a new one in Integrations → Discord.",
+          ok: false,
+        };
+      }
+
+      // The external identity is committed only after the authoritative
+      // server binding succeeds. Failed binds leave the code retryable.
+      await bindPrincipal({
+        channelUserId: userId,
+        pairingAssertion,
+        pairingUserId,
+      });
+    }
 
     await writeDiscordConfigFile(
       {
         ...config,
-        handshakeAssertion: pairingAssertion,
+        handshakeAssertion: null,
         handshakeCode: null,
+        handshakeUserId: null,
         pairedUserIds,
       },
       orgId
@@ -580,7 +609,6 @@ export async function verifyAndPairDiscordUser(
     return {
       message: "Linked successfully. You can chat with Atlas now.",
       ok: true,
-      pairingAssertion,
     };
   });
 }

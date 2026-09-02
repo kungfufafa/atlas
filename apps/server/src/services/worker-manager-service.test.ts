@@ -1,9 +1,25 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { mkdir, mkdtemp, rm, unlink, writeFile } from "node:fs/promises";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { readWorkerDesiredState, setWorkerDesiredRunning } from "@atlas/core";
-import { WorkerManagerService } from "./worker-manager-service";
+import {
+  readWorkerDesiredState,
+  setWorkerDesiredRunning,
+  verifyWorkspaceWorkerAuthToken,
+  WORKSPACE_WORKER_AUTH_TOKEN_ENV,
+  type WorkerProcessInfo,
+} from "@atlas/core";
+import {
+  calculateSampledCpuPercent,
+  WorkerManagerService,
+} from "./worker-manager-service";
 
 function createMockPm2() {
   const mockPm2 = {
@@ -26,10 +42,49 @@ function createMockPm2() {
   return mockPm2 as unknown as typeof import("pm2");
 }
 
+async function readCapturedEnvironment(
+  filePath: string
+): Promise<Record<string, string>> {
+  const deadline = Date.now() + 2000;
+  while (Date.now() < deadline) {
+    try {
+      return JSON.parse(await readFile(filePath, "utf8")) as Record<
+        string,
+        string
+      >;
+    } catch {
+      await new Promise<void>((resolve) => setTimeout(resolve, 20));
+    }
+  }
+  throw new Error("Timed out waiting for the native worker environment.");
+}
+
+async function readWorkspaceWorkerStatusAfterStartup(
+  service: WorkerManagerService,
+  worker: "whatsapp",
+  workspaceId: string
+): Promise<WorkerProcessInfo | null> {
+  let status = await service.getWorkspaceWorkerStatus(worker, workspaceId);
+  if (process.platform !== "linux") {
+    return status;
+  }
+
+  const deadline = Date.now() + 2000;
+  while ((status?.memoryMb ?? 0) <= 0 && Date.now() < deadline) {
+    await new Promise<void>((resolve) => setTimeout(resolve, 20));
+    status = await service.getWorkspaceWorkerStatus(worker, workspaceId);
+  }
+  return status;
+}
+
 const projectRoot = "/tmp/test-project";
 let configDir: string | null = null;
+let previousDoNotTrack: string | undefined;
+let previousErrorTrackingDsn: string | undefined;
 
 beforeEach(async () => {
+  previousDoNotTrack = process.env.DO_NOT_TRACK;
+  previousErrorTrackingDsn = process.env.ATLAS_ERROR_TRACKING_DSN;
   configDir = await mkdtemp(join(tmpdir(), "atlas-worker-manager-"));
   process.env.ATLAS_CONFIG_DIR = configDir;
 });
@@ -41,7 +96,21 @@ afterEach(async () => {
   }
 
   delete process.env.ATLAS_CONFIG_DIR;
+  delete process.env.ATLAS_LOCAL_AUTH_TOKEN;
+  delete process.env.CODEX_HOME;
+  delete process.env.OPENAI_API_KEY;
+  delete process.env.TELEGRAM_BOT_TOKEN;
+  restoreEnvironment("DO_NOT_TRACK", previousDoNotTrack);
+  restoreEnvironment("ATLAS_ERROR_TRACKING_DSN", previousErrorTrackingDsn);
 });
+
+function restoreEnvironment(key: string, value: string | undefined): void {
+  if (value === undefined) {
+    delete process.env[key];
+    return;
+  }
+  process.env[key] = value;
+}
 
 describe("WorkerManagerService", () => {
   describe("isValidWorker", () => {
@@ -76,6 +145,12 @@ describe("WorkerManagerService", () => {
       const mockPm2 = createMockPm2();
       const service = new WorkerManagerService(projectRoot, mockPm2);
       process.env.TELEGRAM_BOT_TOKEN = "host-wide-token";
+      process.env.ATLAS_LOCAL_AUTH_TOKEN = "tc_local_host_secret";
+      process.env.ATLAS_ERROR_TRACKING_DSN =
+        "https://worker-secret@example.com/1";
+      process.env.CODEX_HOME = "/tmp/host-codex-secrets";
+      process.env.DO_NOT_TRACK = "1";
+      process.env.OPENAI_API_KEY = "sk-host-secret";
 
       await service.startWorkspaceWorker("telegram", "workspace-a");
 
@@ -86,6 +161,19 @@ describe("WorkerManagerService", () => {
       const opts = (mockPm2.start as ReturnType<typeof mock>).mock.calls[0][0];
       expect(opts.name).toBe("telegram--workspace-a");
       expect(opts.env.ATLAS_WORKSPACE_ID).toBe("workspace-a");
+      expect(opts.env.ATLAS_LOCAL_AUTH_TOKEN).toBeUndefined();
+      expect(opts.env.ATLAS_ERROR_TRACKING_DSN).toBeUndefined();
+      expect(opts.env.CODEX_HOME).toBeUndefined();
+      expect(opts.env.DO_NOT_TRACK).toBe("1");
+      expect(opts.env.OPENAI_API_KEY).toBeUndefined();
+      expect(opts.env[WORKSPACE_WORKER_AUTH_TOKEN_ENV]).toStartWith(
+        "tc_worker_v1_"
+      );
+      await expect(
+        verifyWorkspaceWorkerAuthToken(
+          opts.env[WORKSPACE_WORKER_AUTH_TOKEN_ENV]
+        )
+      ).resolves.toEqual({ channel: "telegram", orgId: "workspace-a" });
       expect(opts.env.TELEGRAM_BOT_TOKEN).toBeUndefined();
       expect(opts.args).toContain("apps/platform/telegram/src/index.ts");
     });
@@ -93,6 +181,7 @@ describe("WorkerManagerService", () => {
     test("starts telegram worker with correct script path", async () => {
       const mockPm2 = createMockPm2();
       const service = new WorkerManagerService(projectRoot, mockPm2);
+      process.env.ATLAS_LOCAL_AUTH_TOKEN = "tc_local_host_secret";
 
       await service.startWorker("telegram");
 
@@ -110,6 +199,8 @@ describe("WorkerManagerService", () => {
       expect(opts.args).toContain("apps/platform/telegram/src/index.ts");
       expect(opts.interpreter).toBeUndefined();
       expect(opts.name).toBe("telegram");
+      expect(opts.env.ATLAS_LOCAL_AUTH_TOKEN).toBe("tc_local_host_secret");
+      expect(opts.env[WORKSPACE_WORKER_AUTH_TOKEN_ENV]).toBeUndefined();
       expect(await readWorkerDesiredState()).toEqual({
         automation: true,
         discord: false,
@@ -643,6 +734,66 @@ describe("WorkerManagerService", () => {
       expect(clearedLogs.stderr).toBe("");
     });
 
+    test("never falls back to legacy logs for an empty workspace log", async () => {
+      const service = new WorkerManagerService(projectRoot);
+      const logDir = join(configDir!, "logs", "workers");
+      await mkdir(logDir, { recursive: true });
+      await writeFile(join(logDir, "whatsapp.out.log"), "other workspace\n");
+
+      const logs = await service.getWorkerLogs("whatsapp", 5, "org_empty");
+
+      expect(logs.stdout).toBe("");
+      expect(logs.stderr).toBe("");
+    });
+
+    test("normalizes invalid log line counts", async () => {
+      const service = new WorkerManagerService(projectRoot);
+      const logDir = join(configDir!, "logs", "workers");
+      await mkdir(logDir, { recursive: true });
+      const lines = Array.from({ length: 250 }, (_, index) => `line-${index}`);
+      await writeFile(
+        join(logDir, "telegram.out.log"),
+        `${lines.join("\n")}\n`
+      );
+
+      const logs = await service.getWorkerLogs("telegram", Number.NaN);
+
+      expect(logs.stdout.split("\n")).toHaveLength(200);
+      expect(logs.stdout.startsWith("line-50\n")).toBe(true);
+    });
+
+    test("passes the host privacy opt-out without its telemetry DSN", async () => {
+      const tmpProject = await mkdtemp(
+        join(tmpdir(), "atlas-native-env-test-")
+      );
+      const scriptPath = join(
+        tmpProject,
+        "apps/platform/whatsapp/src/index.ts"
+      );
+      const capturedEnvPath = join(tmpProject, "captured-env.json");
+      await mkdir(join(tmpProject, "apps/platform/whatsapp/src"), {
+        recursive: true,
+      });
+      await writeFile(
+        scriptPath,
+        `await Bun.write(${JSON.stringify(capturedEnvPath)}, JSON.stringify({ doNotTrack: process.env.DO_NOT_TRACK, dsn: process.env.ATLAS_ERROR_TRACKING_DSN })); setInterval(() => undefined, 1000);`
+      );
+      process.env.ATLAS_ERROR_TRACKING_DSN =
+        "https://worker-secret@example.com/1";
+      process.env.DO_NOT_TRACK = "yes";
+
+      const service = new WorkerManagerService(tmpProject);
+      try {
+        await service.startWorkspaceWorker("whatsapp", "org_privacy");
+        const capturedEnv = await readCapturedEnvironment(capturedEnvPath);
+
+        expect(capturedEnv).toEqual({ doNotTrack: "yes" });
+      } finally {
+        await service.stopWorkspaceWorker("whatsapp", "org_privacy");
+        await rm(tmpProject, { force: true, recursive: true });
+      }
+    });
+
     test("starts, restarts and stops a workspace worker natively", async () => {
       const tmpProject = await mkdtemp(join(tmpdir(), "atlas-native-ws-test-"));
       const scriptPath = join(
@@ -655,32 +806,39 @@ describe("WorkerManagerService", () => {
       await writeFile(scriptPath, "setTimeout(() => {}, 10000);");
 
       const service = new WorkerManagerService(tmpProject);
-      await service.startWorkspaceWorker("whatsapp", "org_test");
+      try {
+        await service.startWorkspaceWorker("whatsapp", "org_test");
 
-      const statusRunning = await service.getWorkspaceWorkerStatus(
-        "whatsapp",
-        "org_test"
-      );
-      expect(statusRunning?.managed).toBe(true);
-      expect(statusRunning?.status).toBe("online");
+        const statusRunning = await readWorkspaceWorkerStatusAfterStartup(
+          service,
+          "whatsapp",
+          "org_test"
+        );
+        expect(statusRunning?.managed).toBe(true);
+        expect(statusRunning?.status).toBe("online");
+        if (process.platform === "linux") {
+          expect(statusRunning?.memoryMb).toBeGreaterThan(0);
+        }
 
-      await service.restartWorkspaceWorker("whatsapp", "org_test");
-      const statusRestarted = await service.getWorkspaceWorkerStatus(
-        "whatsapp",
-        "org_test"
-      );
-      expect(statusRestarted?.status).toBe("online");
+        await service.restartWorkspaceWorker("whatsapp", "org_test");
+        const statusRestarted = await service.getWorkspaceWorkerStatus(
+          "whatsapp",
+          "org_test"
+        );
+        expect(statusRestarted?.status).toBe("online");
 
-      await service.stopWorkspaceWorker("whatsapp", "org_test");
+        await service.stopWorkspaceWorker("whatsapp", "org_test");
 
-      const statusStopped = await service.getWorkspaceWorkerStatus(
-        "whatsapp",
-        "org_test"
-      );
-      expect(statusStopped?.managed).toBe(true);
-      expect(statusStopped?.status).toBe("stopped");
-
-      await rm(tmpProject, { force: true, recursive: true });
+        const statusStopped = await service.getWorkspaceWorkerStatus(
+          "whatsapp",
+          "org_test"
+        );
+        expect(statusStopped?.managed).toBe(true);
+        expect(statusStopped?.status).toBe("stopped");
+      } finally {
+        await service.stopWorkspaceWorker("whatsapp", "org_test");
+        await rm(tmpProject, { force: true, recursive: true });
+      }
     });
 
     test("starts and stops a worker natively", async () => {
@@ -709,5 +867,24 @@ describe("WorkerManagerService", () => {
 
       await rm(tmpProject, { force: true, recursive: true });
     });
+  });
+
+  test("calculates native CPU from successive samples instead of process lifetime", () => {
+    expect(
+      calculateSampledCpuPercent(
+        {
+          aggregateTicks: 10_000,
+          cpuCount: 4,
+          processStartTicks: 100,
+          processTicks: 500,
+        },
+        {
+          aggregateTicks: 10_400,
+          cpuCount: 4,
+          processStartTicks: 100,
+          processTicks: 525,
+        }
+      )
+    ).toBe(25);
   });
 });

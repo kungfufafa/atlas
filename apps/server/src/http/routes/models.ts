@@ -16,6 +16,7 @@ import {
   type ErrorTrackingSettingsResponse,
   type GenerateImageRequest,
   type GenerateImageResponse,
+  getWhatsAppWorkerStatus,
   type ImageGenerationSettingsResponse,
   isSubscriptionProvider,
   type ListProvidersResponse,
@@ -49,6 +50,7 @@ import {
   type UpdateVisionRequest,
   type UpdateWhatsAppSettingsRequest,
   type VisionSettingsResponse,
+  type WhatsAppPairingStatusResponse,
   type WhatsAppSettingsResponse,
 } from "@atlas/core";
 import { createRoute, z } from "@hono/zod-openapi";
@@ -241,6 +243,12 @@ export function registerModelRoutes(
     .object({})
     .passthrough()
     .openapi("WhatsAppSettingsResponse");
+  const whatsappPairingStatusSchema = z
+    .object({
+      devicePairingCode: z.string().nullable(),
+      qrCode: z.string().nullable(),
+    })
+    .openapi("WhatsAppPairingStatusResponse");
   const discoverModelsRequestSchema = z
     .object({
       apiKey: z.string().optional(),
@@ -1302,6 +1310,27 @@ export function registerModelRoutes(
   );
   app.openAPIRegistry.registerPath(
     createRoute({
+      method: "get",
+      operationId: "getWhatsAppPairingStatus",
+      path: "/v1/settings/whatsapp/pairing-status",
+      responses: {
+        200: {
+          content: {
+            "application/json": { schema: whatsappPairingStatusSchema },
+          },
+          description: "WhatsApp device pairing secrets",
+        },
+        403: {
+          content: { "application/json": { schema: errorSchema } },
+          description: "Forbidden",
+        },
+      },
+      summary: "Get WhatsApp device pairing secrets",
+      tags: ["Models"],
+    })
+  );
+  app.openAPIRegistry.registerPath(
+    createRoute({
       method: "put",
       operationId: "setWhatsAppSettings",
       path: "/v1/settings/whatsapp",
@@ -1641,6 +1670,9 @@ export function registerModelRoutes(
       decodeAudioTranscriptionData(body.data);
       return json<TranscribeAudioResponse>(
         await agent.transcribeAudioForOrg(orgId, body, {
+          allowPersistedSessionPrincipal:
+            auth.mode === "local-token" || auth.mode === "workspace-worker",
+          expectedChannel: auth.workspaceWorker?.channel,
           userId: auth.user.id,
         })
       );
@@ -1690,6 +1722,9 @@ export function registerModelRoutes(
     try {
       return json<GenerateImageResponse>(
         await agent.generateImageForOrg(orgId, body, {
+          allowPersistedSessionPrincipal:
+            auth.mode === "local-token" || auth.mode === "workspace-worker",
+          expectedChannel: auth.workspaceWorker?.channel,
           userId: auth.user.id,
         })
       );
@@ -1924,6 +1959,24 @@ export function registerModelRoutes(
     const orgId = requireActiveOrgIdFromContext(c);
     return json<WhatsAppSettingsResponse>(
       await agent.getWhatsAppSettings(orgId)
+    );
+  });
+
+  app.get("/v1/settings/whatsapp/pairing-status", async (c) => {
+    requireOrgAdminOrPlatformAdminFromContext(c);
+    const orgId = requireActiveOrgIdFromContext(c);
+    const status = await getWhatsAppWorkerStatus(orgId);
+    const headers = new Headers({
+      "Cache-Control": "no-store",
+      Pragma: "no-cache",
+    });
+    return json<WhatsAppPairingStatusResponse>(
+      {
+        devicePairingCode: status.devicePairingCode,
+        qrCode: status.qrCode,
+      },
+      200,
+      headers
     );
   });
 

@@ -16,10 +16,10 @@ describe("formatWhatsAppDevicePairingCode", () => {
 });
 
 describe("shouldShowWhatsAppChatAccessSection", () => {
-  test("shows chat access codes only in pairing mode", () => {
+  test("shows identity-link codes in every access mode", () => {
     expect(shouldShowWhatsAppChatAccessSection("pairing")).toBe(true);
-    expect(shouldShowWhatsAppChatAccessSection("open")).toBe(false);
-    expect(shouldShowWhatsAppChatAccessSection("allowlist")).toBe(false);
-    expect(shouldShowWhatsAppChatAccessSection("denylist")).toBe(false);
+    expect(shouldShowWhatsAppChatAccessSection("open")).toBe(true);
+    expect(shouldShowWhatsAppChatAccessSection("allowlist")).toBe(true);
+    expect(shouldShowWhatsAppChatAccessSection("denylist")).toBe(true);
   });
 });

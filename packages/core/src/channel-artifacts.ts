@@ -575,6 +575,41 @@ export function extractTurnDeliverableArtifacts(
   return [...artifactsByPath.values()];
 }
 
+/**
+ * Every artifact path proven to originate from one persisted chat session.
+ * This is intentionally derived from tool results rather than the shared
+ * profile directory so channel workers cannot discover another session's
+ * files merely by knowing a filename.
+ */
+export function extractSessionArtifacts(
+  messages: ChatMessage[]
+): ChannelArtifactRef[] {
+  const artifactsByPath = new Map<string, ChannelArtifactRef>();
+  const toolInputs = buildToolInputMap(messages);
+
+  for (const message of messages) {
+    if (message.role !== "tool") {
+      continue;
+    }
+
+    const written = artifactRefFromUnpairedWrite(message, toolInputs);
+    if (written) {
+      artifactsByPath.set(written.path, written);
+    }
+
+    const generated = artifactRefFromGenerateImage(message);
+    if (generated) {
+      artifactsByPath.set(generated.path, generated);
+    }
+
+    for (const embedded of artifactRefsFromEmbeddedToolArtifacts(message)) {
+      artifactsByPath.set(embedded.path, embedded);
+    }
+  }
+
+  return [...artifactsByPath.values()];
+}
+
 function artifactRefFromUnpairedWrite(
   message: Extract<ChatMessage, { role: "tool" }>,
   toolInputs: Map<string, Record<string, unknown>>

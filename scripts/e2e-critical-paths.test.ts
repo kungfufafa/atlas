@@ -113,6 +113,7 @@ describe("critical paths", () => {
       approvalId: "appr_1",
       decision: "approved",
       principal,
+      sessionId: "sess_1",
     });
     expect(decided.record.status).toBe("approved");
     expect(decided.grantId).toBeTruthy();

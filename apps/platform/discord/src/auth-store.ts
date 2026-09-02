@@ -1,5 +1,6 @@
 import type { DiscordConfigFile } from "@atlas/core/discord-config";
 import {
+  type DiscordPairingPrincipalBinder,
   isDiscordUserAuthorized,
   loadDiscordConfigFile,
   verifyAndPairDiscordUser,
@@ -34,16 +35,14 @@ export class DiscordAuthStore {
 
   async tryPair(
     handshakeInput: string,
-    userId: string
-  ): Promise<{
-    ok: boolean;
-    message: string;
-    pairingAssertion?: string | null;
-  }> {
+    userId: string,
+    bindPrincipal?: DiscordPairingPrincipalBinder
+  ): Promise<{ ok: boolean; message: string }> {
     const result = await verifyAndPairDiscordUser(
       handshakeInput,
       userId,
-      this.orgId
+      this.orgId,
+      bindPrincipal
     );
     await this.reload();
     return result;

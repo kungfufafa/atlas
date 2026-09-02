@@ -1,6 +1,7 @@
 import type {
   LlmUsageReportGroupBy,
   SystemStatusResponse,
+  WorkerProcessInfo,
 } from "@atlas/core/contract";
 import {
   Clock01Icon,
@@ -13,6 +14,67 @@ import { PAGE_PATHS } from "@/lib/navigation";
 export type StatusTone = "ok" | "warn" | "bad";
 
 type ServiceStatusTone = "ok" | "warn" | "bad" | "muted";
+
+const RESOURCE_NUMBER_FORMAT = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 1,
+});
+
+function formatResourceNumber(value: number | null, suffix: string): string {
+  if (value === null || !Number.isFinite(value) || value < 0) {
+    return "—";
+  }
+
+  return `${RESOURCE_NUMBER_FORMAT.format(value)}${suffix}`;
+}
+
+function formatWorkerUptime(uptimeSeconds: number | null): string {
+  if (
+    uptimeSeconds === null ||
+    !Number.isFinite(uptimeSeconds) ||
+    uptimeSeconds < 0
+  ) {
+    return "—";
+  }
+
+  const totalSeconds = Math.floor(uptimeSeconds);
+  const days = Math.floor(totalSeconds / 86_400);
+  const hours = Math.floor((totalSeconds % 86_400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (days > 0) {
+    return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+  }
+
+  if (hours > 0) {
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+  }
+
+  if (minutes > 0) {
+    return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+  }
+
+  return `${seconds}s`;
+}
+
+export function formatWorkerResources(
+  process: WorkerProcessInfo | null | undefined
+): string {
+  if (
+    !process ||
+    (process.cpuPercent === null &&
+      process.memoryMb === null &&
+      process.uptimeSeconds === null)
+  ) {
+    return "—";
+  }
+
+  const cpu = formatResourceNumber(process.cpuPercent, "%");
+  const memory = formatResourceNumber(process.memoryMb, " MB");
+  const uptime = formatWorkerUptime(process.uptimeSeconds);
+
+  return `CPU ${cpu} · Memory ${memory} · Uptime ${uptime}`;
+}
 
 export function buildServiceColumns(status: SystemStatusResponse) {
   const { automationWorker, telegramWorker, whatsappWorker, discordWorker } =
@@ -98,6 +160,10 @@ function whatsappServiceStatus(
     return { status: "Awaiting pairing", tone: "warn" };
   }
 
+  if (!whatsappWorker.connected) {
+    return { status: "Disconnected", tone: "bad" };
+  }
+
   return { status: "Healthy", tone: "ok" };
 }
 
@@ -114,6 +180,10 @@ function discordServiceStatus(
 
   if (!discordWorker.paired) {
     return { status: "Awaiting pairing", tone: "warn" };
+  }
+
+  if (!discordWorker.connected) {
+    return { status: "Disconnected", tone: "bad" };
   }
 
   return { status: "Healthy", tone: "ok" };
@@ -175,6 +245,64 @@ export function deriveSummary(status: SystemStatusResponse): {
     };
   }
 
+  if (status.telegramWorker.configured && !status.telegramWorker.paired) {
+    return {
+      action: { label: "Open Integrations", to: PAGE_PATHS.integrations },
+      description:
+        "Finish Telegram pairing before this bridge can receive messages.",
+      title: "Telegram awaiting pairing",
+      tone: "warn",
+    };
+  }
+
+  if (status.whatsappWorker.configured && !status.whatsappWorker.paired) {
+    return {
+      action: { label: "Open Integrations", to: PAGE_PATHS.integrations },
+      description:
+        "Finish WhatsApp pairing before this bridge can receive messages.",
+      title: "WhatsApp awaiting pairing",
+      tone: "warn",
+    };
+  }
+
+  if (
+    status.whatsappWorker.configured &&
+    status.whatsappWorker.paired &&
+    !status.whatsappWorker.connected
+  ) {
+    return {
+      action: { label: "Open Integrations", to: PAGE_PATHS.integrations },
+      description:
+        "The WhatsApp worker is running but its socket is disconnected.",
+      title: "WhatsApp bridge disconnected",
+      tone: "warn",
+    };
+  }
+
+  if (status.discordWorker.configured && !status.discordWorker.paired) {
+    return {
+      action: { label: "Open Integrations", to: PAGE_PATHS.integrations },
+      description:
+        "Finish Discord pairing before this bridge can receive messages.",
+      title: "Discord awaiting pairing",
+      tone: "warn",
+    };
+  }
+
+  if (
+    status.discordWorker.configured &&
+    status.discordWorker.paired &&
+    !status.discordWorker.connected
+  ) {
+    return {
+      action: { label: "Open Integrations", to: PAGE_PATHS.integrations },
+      description:
+        "The Discord worker is running but its gateway is disconnected.",
+      title: "Discord bridge disconnected",
+      tone: "warn",
+    };
+  }
+
   if (
     !(
       status.server.providerConfigured &&
@@ -201,6 +329,14 @@ export function usageBreakdownGroups(
   canManageBudget: boolean
 ): LlmUsageReportGroupBy[] {
   return canManageBudget
-    ? ["user", "provider", "model", "capability", "credential"]
-    : ["user", "provider", "model", "capability"];
+    ? [
+        "user",
+        "profile",
+        "channel",
+        "provider",
+        "model",
+        "capability",
+        "credential",
+      ]
+    : ["user", "profile", "channel", "provider", "model", "capability"];
 }

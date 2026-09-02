@@ -699,12 +699,10 @@ describe("AgentService session model overrides", () => {
       )?.canUpdateModel
     ).toBe(true);
     expect(
-      (
-        await service.getSessionMessages(ORG_ID, sessionId, {
-          userId: "user_member",
-        })
-      )?.canUpdateModel
-    ).toBe(false);
+      await service.getSessionMessages(ORG_ID, sessionId, {
+        userId: "user_member",
+      })
+    ).toBeNull();
     expect(
       (
         await service.getSessionMessages(ORG_ID, sessionId, {
@@ -713,12 +711,10 @@ describe("AgentService session model overrides", () => {
       )?.canUpdateModel
     ).toBe(true);
     expect(
-      (
-        await service.getSessionMessages(ORG_ID, sessionId, {
-          userId: "user_viewer",
-        })
-      )?.canUpdateModel
-    ).toBe(false);
+      await service.getSessionMessages(ORG_ID, sessionId, {
+        userId: "user_viewer",
+      })
+    ).toBeNull();
   });
 
   test("subscription catalog snapshot persist does not abort in-flight turns", async () => {

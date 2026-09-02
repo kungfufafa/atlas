@@ -102,14 +102,30 @@ export function registerSkillProposalRoutes(
       | "rejected"
       | undefined;
     const profileId = c.req.query("profileId");
-    const sessionId = c.req.query("sessionId");
+    const sessionId = c.req.query("sessionId")?.trim();
     const isOrgAdmin = auth.orgRole === "admin" || auth.isPlatformAdmin;
     if (!(isOrgAdmin || sessionId)) {
       throw new AtlasApiError("Forbidden", 403);
     }
+    if (
+      !isOrgAdmin &&
+      sessionId &&
+      !(await options.agent.canAccessSession(
+        orgId,
+        sessionId,
+        {
+          isPlatformAdmin: auth.isPlatformAdmin,
+          orgRole: auth.orgRole,
+          userId: auth.user.id,
+        },
+        "read"
+      ))
+    ) {
+      throw new AtlasApiError("Not found", 404);
+    }
     const result = await service.listProposals(orgId, {
       profileId: profileId || undefined,
-      sessionId: sessionId || undefined,
+      sessionId,
       status,
     });
     return json<ListSkillProposalsResponse>({

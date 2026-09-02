@@ -22,7 +22,11 @@ describe("knowledge base store", () => {
   const previousConfigDir = process.env.ATLAS_CONFIG_DIR;
 
   afterEach(async () => {
-    process.env.ATLAS_CONFIG_DIR = previousConfigDir;
+    if (previousConfigDir === undefined) {
+      delete process.env.ATLAS_CONFIG_DIR;
+    } else {
+      process.env.ATLAS_CONFIG_DIR = previousConfigDir;
+    }
 
     if (tempConfigDir) {
       await rm(tempConfigDir, { force: true, recursive: true });

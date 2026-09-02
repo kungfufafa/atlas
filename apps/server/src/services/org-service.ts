@@ -3,6 +3,7 @@ import {
   generateTemporaryPassword,
   getProfileSoulDir,
   initSoulDirectory,
+  isChannelGuestUserId,
   normalizeOptionalSetupPhone,
   normalizeSetupEmail,
   SETUP_EMAIL_PATTERN,
@@ -610,7 +611,10 @@ export class OrgService {
     const members: OrgMemberSummary[] = [];
 
     for (const record of records) {
-      if (record.userId === LOCAL_CLIENT_USER_ID) {
+      if (
+        record.userId === LOCAL_CLIENT_USER_ID ||
+        isChannelGuestUserId(record.userId)
+      ) {
         continue;
       }
 

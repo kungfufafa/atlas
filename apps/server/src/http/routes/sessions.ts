@@ -21,6 +21,7 @@ import {
   validateDocumentAttachments,
 } from "@atlas/core";
 import { createRoute, z } from "@hono/zod-openapi";
+import type { SessionActor } from "../../services/agent-service";
 import { resolveRequestClientOrigin } from "../../services/composio-callback-url";
 import { validateDecodedImageAttachments } from "../../services/image-decoder-validation";
 import { sessionTurnRegistry } from "../../services/session-turn-registry";
@@ -34,6 +35,7 @@ import {
   getRequestAuth,
   json,
   parseChannel,
+  type RequestAuthContext,
   readJson,
   readJsonWithLimit,
   readOptionalJson,
@@ -73,6 +75,19 @@ function safeAttachmentMediaType(mediaType: string): string {
     : "application/octet-stream";
 }
 
+const EXTERNAL_SESSION_CHANNELS = new Set(["telegram", "whatsapp", "discord"]);
+
+function sessionActorFromAuth(auth: RequestAuthContext): SessionActor {
+  return {
+    isPlatformAdmin: auth.isPlatformAdmin,
+    orgRole: auth.orgRole,
+    userId: auth.user.id,
+    ...(auth.workspaceWorker
+      ? { workspaceWorkerChannel: auth.workspaceWorker.channel }
+      : {}),
+  };
+}
+
 export function registerSessionRoutes(
   app: HonoApp,
   options: ServerOptions
@@ -97,7 +112,13 @@ export function registerSessionRoutes(
     .object({
       channel: agentChannelSchema,
       externalPrincipal: z
-        .object({ channelUserId: z.string().min(1) })
+        .object({
+          channelUserAliases: z
+            .array(z.string().trim().min(1))
+            .max(8)
+            .optional(),
+          channelUserId: z.string().min(1),
+        })
         .optional(),
       model: z.string().trim().min(1).optional(),
       profileId: z.string().optional(),
@@ -494,6 +515,15 @@ export function registerSessionRoutes(
     }
     const body: CreateSessionRequest = parsedBody.data;
     const channel = parseChannel(body.channel);
+    if (EXTERNAL_SESSION_CHANNELS.has(channel) && !auth.workspaceWorker) {
+      return errorResponse(
+        "External channel sessions require a scoped workspace worker credential",
+        403
+      );
+    }
+    if (auth.workspaceWorker && auth.workspaceWorker.channel !== channel) {
+      return errorResponse("Workspace worker channel mismatch", 403);
+    }
     try {
       const sessionId = await agent.createSession(
         orgId,
@@ -501,7 +531,9 @@ export function registerSessionRoutes(
         body.profileId,
         auth.user.id,
         {
-          excludeSuperAgent: auth.mode === "local-token" && channel !== "cli",
+          excludeSuperAgent:
+            (auth.mode === "local-token" || auth.mode === "workspace-worker") &&
+            channel !== "cli",
           externalPrincipal: body.externalPrincipal,
           isPlatformAdmin: auth.isPlatformAdmin,
           model: body.model,
@@ -512,9 +544,11 @@ export function registerSessionRoutes(
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const status =
-        error instanceof Error && error.name === "PrincipalRequiredError"
-          ? 403
-          : 400;
+        error instanceof AtlasApiError
+          ? error.status
+          : error instanceof Error && error.name === "PrincipalRequiredError"
+            ? 403
+            : 400;
       return errorResponse(message, status);
     }
   });
@@ -526,9 +560,19 @@ export function registerSessionRoutes(
     const body = await readJson<{
       channel: "telegram" | "whatsapp" | "discord";
       channelUserId: string;
+      expectedUserId?: string;
       pairingAssertion?: string;
       userId?: string;
     }>(c.req.raw);
+    if (!auth.workspaceWorker) {
+      return errorResponse(
+        "Channel identity binding requires a scoped workspace worker credential",
+        403
+      );
+    }
+    if (auth.workspaceWorker && auth.workspaceWorker.channel !== body.channel) {
+      return errorResponse("Workspace worker channel mismatch", 403);
+    }
     try {
       const principal = await agent.identityService.bindExternalPrincipal({
         actor: {
@@ -537,6 +581,7 @@ export function registerSessionRoutes(
         },
         channel: body.channel,
         channelUserId: body.channelUserId,
+        expectedUserId: body.expectedUserId,
         orgId,
         pairingAssertion: body.pairingAssertion,
       });
@@ -552,10 +597,20 @@ export function registerSessionRoutes(
     requireNotViewerFromContext(c);
     const auth = getRequestAuth(c);
     const orgId = requireActiveOrgIdFromContext(c);
-    const sessionId = c.req.param("sessionId");
-    const approvalId = c.req.param("approvalId");
+    const sessionId = decodeURIComponent(c.req.param("sessionId"));
+    const approvalId = decodeURIComponent(c.req.param("approvalId"));
     const body = await readJson<{ decision: "approved" | "denied" }>(c.req.raw);
     try {
+      if (
+        !(await agent.canAccessSession(
+          orgId,
+          sessionId,
+          sessionActorFromAuth(auth),
+          "invoke"
+        ))
+      ) {
+        return errorResponse("Session not found", 404);
+      }
       const result = await agent.executionPlane.decide({
         approvalId,
         decision: body.decision,
@@ -565,20 +620,24 @@ export function registerSessionRoutes(
           orgRole: auth.orgRole ?? "member",
           userId: auth.user.id,
         },
+        sessionId,
       });
-      void sessionId;
       return json({
         grantId: result.grantId,
         resumed: body.decision === "approved",
         status: result.record.status,
       });
     } catch (error) {
+      if (error instanceof AtlasApiError) {
+        return errorResponse(error.message, error.status);
+      }
       const message = error instanceof Error ? error.message : String(error);
       return errorResponse(message, 400);
     }
   });
 
   app.get("/v1/sessions", async (c) => {
+    const auth = getRequestAuth(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const profileId = c.req.query("profileId")?.trim();
     const channel = parseChannel(c.req.query("channel"));
@@ -588,7 +647,12 @@ export function registerSessionRoutes(
     }
 
     return json<ListSessionsResponse>(
-      await agent.listSessions(orgId, profileId, channel)
+      await agent.listSessions(
+        orgId,
+        profileId,
+        channel,
+        sessionActorFromAuth(auth)
+      )
     );
   });
 
@@ -610,11 +674,7 @@ export function registerSessionRoutes(
         orgId,
         sessionId,
         body.model,
-        {
-          isPlatformAdmin: auth.isPlatformAdmin,
-          orgRole: auth.orgRole,
-          userId: auth.user.id,
-        }
+        sessionActorFromAuth(auth)
       );
       if (!updated) {
         return errorResponse("Session not found", 404);
@@ -630,12 +690,14 @@ export function registerSessionRoutes(
 
   app.delete("/v1/sessions/:sessionId", async (c) => {
     requireNotViewerFromContext(c);
+    const auth = getRequestAuth(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
     const purge = c.req.query("purge") === "true";
+    const actor = sessionActorFromAuth(auth);
     const cleared = purge
-      ? await agent.purgeSession(orgId, sessionId)
-      : await agent.clearSession(orgId, sessionId);
+      ? await agent.purgeSession(orgId, sessionId, actor)
+      : await agent.clearSession(orgId, sessionId, actor);
 
     if (!cleared) {
       return errorResponse("Session not found", 404);
@@ -646,12 +708,16 @@ export function registerSessionRoutes(
 
   app.post("/v1/sessions/:sessionId/compact", async (c) => {
     requireNotViewerFromContext(c);
+    const auth = getRequestAuth(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
     const body = await readOptionalJson<CompactSessionRequest>(c.req.raw, {});
-    const result = await agent.compactSession(orgId, sessionId, {
-      force: body.force ?? false,
-    });
+    const result = await agent.compactSession(
+      orgId,
+      sessionId,
+      { force: body.force ?? false },
+      sessionActorFromAuth(auth)
+    );
 
     if (!result) {
       return errorResponse("Session not found", 404);
@@ -664,11 +730,11 @@ export function registerSessionRoutes(
     const auth = getRequestAuth(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
-    const result = await agent.getSessionMessages(orgId, sessionId, {
-      isPlatformAdmin: auth.isPlatformAdmin,
-      orgRole: auth.orgRole,
-      userId: auth.user.id,
-    });
+    const result = await agent.getSessionMessages(
+      orgId,
+      sessionId,
+      sessionActorFromAuth(auth)
+    );
 
     if (!result) {
       return errorResponse("Session not found", 404);
@@ -727,9 +793,14 @@ export function registerSessionRoutes(
   });
 
   app.get("/v1/sessions/:sessionId/status", async (c) => {
+    const auth = getRequestAuth(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
-    const result = await agent.getSessionMessages(orgId, sessionId);
+    const result = await agent.getSessionMessages(
+      orgId,
+      sessionId,
+      sessionActorFromAuth(auth)
+    );
 
     if (!result) {
       return errorResponse("Session not found", 404);
@@ -743,9 +814,14 @@ export function registerSessionRoutes(
   });
 
   app.get("/v1/sessions/:sessionId/stream", async (c) => {
+    const auth = getRequestAuth(c);
     const orgId = requireActiveOrgIdFromContext(c);
     const sessionId = decodeURIComponent(c.req.param("sessionId"));
-    const result = await agent.getSessionMessages(orgId, sessionId);
+    const actor = sessionActorFromAuth(auth);
+    if (!(await agent.canAccessSession(orgId, sessionId, actor, "invoke"))) {
+      return errorResponse("Session not found", 404);
+    }
+    const result = await agent.getSessionMessages(orgId, sessionId, actor);
 
     if (!result) {
       return errorResponse("Session not found", 404);
@@ -771,11 +847,7 @@ export function registerSessionRoutes(
         orgId,
         sessionId,
         body.messageIndex,
-        {
-          isPlatformAdmin: auth.isPlatformAdmin,
-          orgRole: auth.orgRole,
-          userId: auth.user.id,
-        }
+        sessionActorFromAuth(auth)
       );
 
       if (!result) {
@@ -827,7 +899,8 @@ export function registerSessionRoutes(
       }
       throw error;
     }
-    const turnStarted = await agent.beginSessionTurn(orgId, sessionId);
+    const actor = sessionActorFromAuth(auth);
+    const turnStarted = await agent.beginSessionTurn(orgId, sessionId, actor);
     if (turnStarted === null) {
       return errorResponse("Session not found", 404);
     }
@@ -840,11 +913,7 @@ export function registerSessionRoutes(
 
     let session: Awaited<ReturnType<typeof agent.resolveSession>>;
     try {
-      session = await agent.resolveSession(orgId, sessionId, {
-        isPlatformAdmin: auth.isPlatformAdmin,
-        orgRole: auth.orgRole,
-        userId: auth.user.id,
-      });
+      session = await agent.resolveSession(orgId, sessionId, actor);
       if (!session) {
         sessionTurnRegistry.cancelTurn(sessionId);
         return errorResponse("Session not found", 404);

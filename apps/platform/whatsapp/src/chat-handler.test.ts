@@ -6,8 +6,18 @@ import { MAX_DOCUMENT_BYTES } from "@atlas/core/message-content";
 import { resetActiveStreamsForTests } from "./active-stream";
 import { formatSavedWhatsAppDocumentMessage } from "./attachments";
 import { WhatsAppAuthStore } from "./auth-store";
-import { createChatHandler, resetChatLocksForTests } from "./chat-handler";
+import {
+  createChatHandler,
+  isTransientWhatsAppSendError,
+  resetChatLocksForTests,
+  resolveWhatsAppSessionKey,
+  WhatsAppChatBusyError,
+  WhatsAppDeliveryRetryableError,
+  withChatLock,
+} from "./chat-handler";
+import { WhatsAppInboundReplaySafeError } from "./delivery-error";
 import { SessionStore } from "./session-store";
+import { runClaimedInboundDelivery } from "./socket";
 import {
   createMockClient,
   createMultiTestOrgs,
@@ -76,7 +86,11 @@ function groupInbound(options: {
   };
 }
 
-function createMockSocket(options?: { failDocumentSend?: boolean }) {
+function createMockSocket(options?: {
+  failDocumentSend?: boolean;
+  failTextSend?: boolean;
+  hangTextSend?: boolean;
+}) {
   const sent: Array<{
     document?: unknown;
     fileName?: string;
@@ -109,6 +123,14 @@ function createMockSocket(options?: { failDocumentSend?: boolean }) {
     ) => {
       if (content.document && options?.failDocumentSend) {
         throw new Error("WhatsApp document send failed");
+      }
+
+      if (content.text && options?.failTextSend) {
+        throw new Error("WhatsApp socket disconnected");
+      }
+
+      if (content.text && options?.hangTextSend) {
+        await new Promise<void>(() => undefined);
       }
 
       const editedMessageId = content.edit?.id?.trim();
@@ -162,6 +184,99 @@ async function waitForCondition(
   throw new Error(message);
 }
 
+async function captureError(promise: Promise<unknown>): Promise<unknown> {
+  try {
+    await promise;
+    return null;
+  } catch (error) {
+    return error;
+  }
+}
+
+describe("withChatLock", () => {
+  test("times out queued turns without running them or releasing the active holder", async () => {
+    let signalFirstStarted!: () => void;
+    const firstStarted = new Promise<void>((resolve) => {
+      signalFirstStarted = resolve;
+    });
+    let releaseFirst!: () => void;
+    const firstGate = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    let firstRuns = 0;
+    const first = withChatLock("same-chat", async () => {
+      firstRuns += 1;
+      signalFirstStarted();
+      await firstGate;
+    });
+    await firstStarted;
+
+    let secondRuns = 0;
+    const secondError = await captureError(
+      withChatLock(
+        "same-chat",
+        async () => {
+          secondRuns += 1;
+        },
+        10
+      )
+    );
+
+    expect(secondError).toBeInstanceOf(WhatsAppChatBusyError);
+    expect(secondError).toMatchObject({
+      code: "WHATSAPP_CHAT_BUSY",
+      retryable: true,
+    });
+    expect(secondRuns).toBe(0);
+
+    let thirdRuns = 0;
+    const thirdError = await captureError(
+      withChatLock(
+        "same-chat",
+        async () => {
+          thirdRuns += 1;
+        },
+        10
+      )
+    );
+
+    expect(thirdError).toBeInstanceOf(WhatsAppChatBusyError);
+    expect(thirdRuns).toBe(0);
+    expect(firstRuns).toBe(1);
+
+    releaseFirst();
+    await first;
+    await Promise.resolve();
+    expect(secondRuns).toBe(0);
+    expect(thirdRuns).toBe(0);
+
+    let nextRuns = 0;
+    await withChatLock(
+      "same-chat",
+      async () => {
+        nextRuns += 1;
+      },
+      10
+    );
+    expect(nextRuns).toBe(1);
+  });
+});
+
+describe("WhatsApp outbound retry classification", () => {
+  test("retries only errors that identify a transient connection failure", () => {
+    expect(
+      isTransientWhatsAppSendError(
+        Object.assign(new Error("connection reset"), { code: "ECONNRESET" })
+      )
+    ).toBe(true);
+    expect(isTransientWhatsAppSendError({ output: { statusCode: 503 } })).toBe(
+      true
+    );
+    expect(isTransientWhatsAppSendError(new Error("invalid recipient"))).toBe(
+      false
+    );
+  });
+});
 interface GroupHarness {
   clientMock: ReturnType<typeof createMockClient>;
   handleMessage: ReturnType<typeof createChatHandler>;
@@ -289,6 +404,113 @@ async function withGroupHarness(
 }
 
 describe("createChatHandler", () => {
+  test("marks config-read failures before the rate limiter as replay safe", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        phoneNumber: "1234567890",
+      });
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const failure = new Error("config read failed");
+      authStore.reload = async () => {
+        throw failure;
+      };
+      const clientMock = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      await sessionStore.load();
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client: clientMock.client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      const error = await captureError(
+        handleMessage({
+          jid: "628199999999@s.whatsapp.net",
+          text: "hello",
+        })
+      );
+
+      expect(error).toBeInstanceOf(WhatsAppInboundReplaySafeError);
+      expect((error as Error).cause).toBe(failure);
+    });
+  });
+
+  test("does not replay an unmarked failure after the rate-limit boundary", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const originalReload = authStore.reload.bind(authStore);
+      const failure = new Error("post-rate-limit config read failed");
+      let reloadCalls = 0;
+      authStore.reload = async () => {
+        reloadCalls += 1;
+        if (reloadCalls === 2) {
+          throw failure;
+        }
+        await originalReload();
+      };
+      const clientMock = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      await sessionStore.load();
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client: clientMock.client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+      const completed: string[] = [];
+      let handlerCalls = 0;
+
+      const result = await runClaimedInboundDelivery({
+        deliver: async () => {
+          handlerCalls += 1;
+          await handleMessage({
+            fromMe: true,
+            jid: PAIRED_JID,
+            text: "hello",
+          });
+        },
+        deliveryId: "post-rate-limit-failure",
+        ledger: {
+          complete: async (id) => {
+            completed.push(id);
+          },
+          release: () => undefined,
+        },
+        retryBaseDelayMs: 0,
+      });
+
+      expect(result).toEqual({
+        attempts: 1,
+        disposition: "delivery-error-recorded",
+        error: failure,
+      });
+      expect(handlerCalls).toBe(1);
+      expect(reloadCalls).toBe(2);
+      expect(completed).toEqual(["post-rate-limit-failure"]);
+    });
+  });
+
   test("blocks unauthorized JID from chatting", async () => {
     await withTempHome(async (homeDir) => {
       await writeWhatsAppConfigIni(homeDir, {
@@ -454,13 +676,16 @@ describe("createChatHandler", () => {
   test("pairs a JID with a valid code and allows chatting", async () => {
     await withTempHome(async (homeDir) => {
       await writeWhatsAppConfigIni(homeDir, {
+        pairingAssertion: "assertion_valid",
         pairingCode: "ABCD1234",
+        pairingUserId: "user_admin",
         phoneNumber: "1234567890",
       });
 
       const authStore = new WhatsAppAuthStore();
       await authStore.reload();
       const { client, calls } = createMockClient({
+        boundPrincipalUserId: "user_admin",
         profiles: [
           {
             createdAt: new Date().toISOString(),
@@ -499,6 +724,7 @@ describe("createChatHandler", () => {
         authStore,
         client,
         config: { phoneNumber: "1234567890", profileId: "default" },
+        fixedWorkspaceId: "org_test",
         getSocket: () => socket as any,
         orgStore,
         sessionStore,
@@ -509,11 +735,127 @@ describe("createChatHandler", () => {
 
       expect(sent.length).toBe(1);
       expect(sent[0]!.text).toContain("Chat authorized");
+      expect(calls.bindChannelPrincipal).toBe(1);
+      expect(calls.bindExpectedUserIds).toEqual(["user_admin"]);
+      expect(calls.bindPairingAssertions).toEqual(["assertion_valid"]);
       expect(authStore.isAuthorized(pairJid)).toBe(true);
 
       await handleMessage({ jid: pairJid, text: "hello agent" });
       expect(calls.createSession).toBe(1);
       expect(calls.sendStream).toBe(1);
+    });
+  });
+
+  test("does not authorize or consume local pairing state when principal binding fails", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairingAssertion: "assertion_retryable",
+        pairingCode: "ABCD1234",
+        pairingUserId: "user_admin",
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        boundPrincipalUserId: "user_admin",
+        failBindChannelPrincipal: new Error("binding unavailable"),
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        fixedWorkspaceId: "org_test",
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({ jid: PAIRED_JID, text: "ABCD1234" });
+
+      expect(calls.bindChannelPrincipal).toBe(1);
+      expect(sent).toHaveLength(1);
+      expect(sent[0]?.text).not.toContain("Chat authorized");
+      expect(sent[0]?.text).toContain("still active");
+      expect(authStore.isAuthorized(PAIRED_JID)).toBe(false);
+      expect(authStore.getConfig()).toMatchObject({
+        pairedJid: null,
+        pairingAssertion: "assertion_retryable",
+        pairingCode: "ABCD1234",
+        pairingUserId: "user_admin",
+      });
+    });
+  });
+
+  test("re-pairing A to B drops every cached session for that WhatsApp identity", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        pairingAssertion: "assertion_user_b",
+        pairingCode: "ABCD1234",
+        pairingUserId: "user_b",
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        boundPrincipalUserId: "user_b",
+      });
+      const sessionPath = path.join(
+        homeDir,
+        ".atlas",
+        "whatsapp",
+        "chat-sessions.json"
+      );
+      const sessionStore = new SessionStore(sessionPath);
+      const oldSession = {
+        channelUserId: PAIRED_JID,
+        profileId: "default",
+        sessionId: "session_user_a",
+        updatedAt: new Date().toISOString(),
+      };
+      const groupSessionKey = resolveWhatsAppSessionKey(GROUP_JID, PAIRED_JID);
+      sessionStore.set(PAIRED_JID, oldSession);
+      sessionStore.set(groupSessionKey, oldSession);
+      await sessionStore.save();
+
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket, sent } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        fixedWorkspaceId: "org_test",
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({ jid: PAIRED_JID, text: "ABCD1234" });
+
+      expect(sent.at(-1)?.text).toContain("Chat authorized");
+      expect(calls.bindChannelPrincipal).toBe(1);
+      expect(sessionStore.get(PAIRED_JID)).toBeUndefined();
+      expect(sessionStore.get(groupSessionKey)).toBeUndefined();
+
+      const persistedStore = new SessionStore(sessionPath);
+      await persistedStore.load();
+      expect(persistedStore.get(PAIRED_JID)).toBeUndefined();
+      expect(persistedStore.get(groupSessionKey)).toBeUndefined();
+
+      await handleMessage({ jid: PAIRED_JID, text: "hello as user B" });
+
+      expect(calls.createSession).toBe(1);
+      expect(calls.externalPrincipalIds).toEqual([PAIRED_JID]);
+      expect(sessionStore.get(PAIRED_JID)?.sessionId).toBe("session_test");
     });
   });
 
@@ -749,13 +1091,17 @@ describe("createChatHandler", () => {
   test("pairs when an unauthorized photo caption is the access code", async () => {
     await withTempHome(async (homeDir) => {
       await writeWhatsAppConfigIni(homeDir, {
+        pairingAssertion: "assertion_photo",
         pairingCode: "ABCD1234",
+        pairingUserId: "user_admin",
         phoneNumber: "1234567890",
       });
 
       const authStore = new WhatsAppAuthStore();
       await authStore.reload();
-      const { client, calls } = createMockClient();
+      const { client, calls } = createMockClient({
+        boundPrincipalUserId: "user_admin",
+      });
       const sessionStore = new SessionStore(
         path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
       );
@@ -766,6 +1112,7 @@ describe("createChatHandler", () => {
         authStore,
         client,
         config: { phoneNumber: "1234567890", profileId: "default" },
+        fixedWorkspaceId: "org_test",
         getSocket: () => socket as any,
         orgStore,
         sessionStore,
@@ -1182,6 +1529,161 @@ describe("createChatHandler", () => {
 
       expect(sent.length).toBe(1);
       expect(sent[0].text).toBe("Nothing to stop.");
+    });
+  });
+
+  test("throws retryable delivery errors when the socket is unavailable or disconnected", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+
+      const unavailableHandler = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => null,
+        orgStore,
+        sendRetryAttempts: 1,
+        sessionStore,
+      });
+      const unavailableError = await captureError(
+        unavailableHandler({ jid: PAIRED_JID, text: "/stop" })
+      );
+
+      expect(unavailableError).toBeInstanceOf(WhatsAppDeliveryRetryableError);
+      expect(unavailableError).toMatchObject({
+        code: "WHATSAPP_DELIVERY_RETRYABLE",
+        retryable: true,
+      });
+
+      const { socket } = createMockSocket({ failTextSend: true });
+      const disconnectedHandler = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sendRetryAttempts: 1,
+        sessionStore,
+      });
+      const disconnectedError = await captureError(
+        disconnectedHandler({ jid: PAIRED_JID, text: "/stop" })
+      );
+
+      expect(disconnectedError).toBeInstanceOf(WhatsAppDeliveryRetryableError);
+      expect(disconnectedError).toMatchObject({
+        cause: expect.any(Error),
+        code: "WHATSAPP_DELIVERY_RETRYABLE",
+        retryable: true,
+      });
+      expect(calls.sendStream).toBe(0);
+    });
+  });
+
+  test("times out a stalled socket send without holding the chat forever", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket } = createMockSocket({ hangTextSend: true });
+      const handler = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sendTimeoutMs: 5,
+        sessionStore,
+      });
+
+      const error = await captureError(
+        handler({ jid: PAIRED_JID, text: "/stop" })
+      );
+
+      expect(error).toBeInstanceOf(WhatsAppDeliveryRetryableError);
+      expect(error).toMatchObject({
+        cause: expect.objectContaining({ message: "WhatsApp send timed out." }),
+        retryable: true,
+      });
+    });
+  });
+
+  test("retries only the transiently failed reply chunk", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const firstChunk = "A".repeat(400);
+      const secondChunk = "B".repeat(400);
+      const reply = `${firstChunk} ${secondChunk}`;
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient({
+        steps: [{ reply, type: "resolve" }],
+        streaming: true,
+      });
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const textAttempts: string[] = [];
+      let transientFailureInjected = false;
+      const socket = {
+        sendMessage: async (
+          _jid: string,
+          content: { text?: string }
+        ): Promise<void> => {
+          if (!content.text) {
+            return;
+          }
+          textAttempts.push(content.text);
+          if (content.text === secondChunk && !transientFailureInjected) {
+            transientFailureInjected = true;
+            throw Object.assign(new Error("socket disconnected"), {
+              code: "ECONNRESET",
+            });
+          }
+        },
+        sendPresenceUpdate: async (): Promise<void> => undefined,
+      };
+      const handler = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        getSocket: () => socket as any,
+        orgStore,
+        sendRetryBaseDelayMs: 0,
+        sessionStore,
+      });
+
+      await handler({ jid: PAIRED_JID, text: "hello" });
+
+      expect(calls.sendStream).toBe(1);
+      expect(textAttempts).toEqual([firstChunk, secondChunk, secondChunk]);
     });
   });
 
@@ -1705,6 +2207,74 @@ describe("bridge API integration", () => {
     });
   });
 
+  test("extracts oversized open-mode guest documents without consuming artifact storage", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        accessMode: "open",
+        pairedJid: PAIRED_JID,
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls, getLastStreamInput } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket } = createMockSocket();
+      const guestJid = "628555555555@s.whatsapp.net";
+      const textBytes = Buffer.alloc(MAX_DOCUMENT_BYTES + 1, 97);
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        downloadMedia: async () => textBytes,
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({
+        inbound: {
+          key: { fromMe: false, id: "guest-text-large", remoteJid: guestJid },
+          message: {
+            documentMessage: {
+              caption: "Summarize",
+              fileName: "notes.txt",
+              mimetype: "text/plain",
+            },
+          },
+        },
+        jid: guestJid,
+        text: "Summarize",
+      });
+
+      expect(calls.sendStream).toBe(1);
+      expect(getLastStreamInput()).toMatchObject({
+        message: expect.stringContaining("[File: notes.txt]"),
+      });
+      expect(JSON.stringify(getLastStreamInput())).not.toContain(
+        "[Saved WhatsApp file:"
+      );
+      await expect(
+        readFile(
+          path.join(
+            homeDir,
+            ".atlas",
+            "orgs",
+            "org_test",
+            "profiles",
+            "default",
+            "artifacts",
+            "notes.txt"
+          )
+        )
+      ).rejects.toThrow();
+    });
+  });
+
   test("forwards a captionless photo to sendStream", async () => {
     await withTempHome(async (homeDir) => {
       await writeWhatsAppConfigIni(homeDir, {
@@ -1787,6 +2357,9 @@ describe("bridge API integration", () => {
       });
 
       expect(calls.transcribeAudio).toBe(1);
+      expect(calls.transcribeInputs[0]).toMatchObject({
+        sessionId: "session_test",
+      });
       expect(calls.sendStream).toBe(1);
       expect(getLastStreamInput()).toEqual({
         message: "Transcribed voice message",
@@ -1912,6 +2485,10 @@ describe("bridge API integration", () => {
       });
       expect(calls.createSession).toBe(1);
       expect(calls.sendStream).toBe(1);
+      expect(calls.externalPrincipalIds).toEqual([lid]);
+      expect(calls.externalPrincipalAliases).toEqual([
+        ["6281234567890@s.whatsapp.net"],
+      ]);
 
       await handleMessage({ jid: lid, text: "follow up" });
       expect(calls.sendStream).toBe(2);
@@ -1990,6 +2567,44 @@ describe("bridge API integration", () => {
     });
   });
 
+  test("never binds a stale pairing assertion from an authorized open-mode message", async () => {
+    await withTempHome(async (homeDir) => {
+      await writeWhatsAppConfigIni(homeDir, {
+        accessMode: "open",
+        pairingAssertion: "assertion_stale",
+        pairingUserId: "user_admin",
+        phoneNumber: "1234567890",
+      });
+
+      const authStore = new WhatsAppAuthStore();
+      await authStore.reload();
+      const { client, calls } = createMockClient();
+      const sessionStore = new SessionStore(
+        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+      );
+      const orgStore = createTestOrgStore(homeDir);
+      await orgStore.load();
+      const { socket } = createMockSocket();
+      const handleMessage = createChatHandler({
+        authStore,
+        client,
+        config: { phoneNumber: "1234567890", profileId: "default" },
+        fixedWorkspaceId: "org_a",
+        getSocket: () => socket as any,
+        orgStore,
+        sessionStore,
+      });
+
+      await handleMessage({
+        jid: "6289999999@s.whatsapp.net",
+        text: "Customer question",
+      });
+
+      expect(calls.bindChannelPrincipal).toBe(0);
+      expect(calls.createSession).toBe(1);
+    });
+  });
+
   test("replies when creating a chat session fails instead of staying silent", async () => {
     await withTempHome(async (homeDir) => {
       await writeWhatsAppConfigIni(homeDir, {
@@ -2025,11 +2640,8 @@ describe("bridge API integration", () => {
         text: "Hello",
       });
       expect(calls.sendStream).toBe(0);
-      expect(
-        sent.some((message) =>
-          message.text.includes("No canonical user mapping")
-        )
-      ).toBe(true);
+      expect(sent.at(-1)?.text).toContain("not linked to an Atlas user");
+      expect(sent.at(-1)?.text).not.toContain("canonical user mapping");
     });
   });
 
@@ -2111,6 +2723,9 @@ describe("createChatHandler group chats", () => {
         expect(clientMock.calls.externalPrincipalIds).toEqual([
           "104784384290844@lid",
         ]);
+        expect(clientMock.calls.externalPrincipalAliases).toEqual([
+          ["628122222222@s.whatsapp.net"],
+        ]);
         expect(sent.at(-1)?.jid).toBe(GROUP_JID);
       }
     );
@@ -2190,10 +2805,18 @@ describe("createChatHandler group chats", () => {
     await withGroupHarness(
       { profiles },
       async ({ clientMock, handleMessage, sessionStore }) => {
+        const groupSessionKey = resolveWhatsAppSessionKey(
+          GROUP_JID,
+          PAIRED_JID
+        );
+        const otherGroupSessionKey = resolveWhatsAppSessionKey(
+          OTHER_GROUP_JID,
+          PAIRED_JID
+        );
         await handleMessage(groupInbound({ text: "/profile research" }));
 
         expect(clientMock.calls.profileIds).toEqual(["research"]);
-        expect(sessionStore.get(GROUP_JID)).toMatchObject({
+        expect(sessionStore.get(groupSessionKey)).toMatchObject({
           profileId: "research",
           profileOverride: true,
         });
@@ -2201,7 +2824,7 @@ describe("createChatHandler group chats", () => {
         await handleMessage(groupInbound({ text: "/new" }));
 
         expect(clientMock.calls.profileIds).toEqual(["research", "research"]);
-        expect(sessionStore.get(GROUP_JID)).toMatchObject({
+        expect(sessionStore.get(groupSessionKey)).toMatchObject({
           profileId: "research",
           profileOverride: true,
         });
@@ -2215,11 +2838,11 @@ describe("createChatHandler group chats", () => {
           "research",
           "default",
         ]);
-        expect(sessionStore.get(OTHER_GROUP_JID)).toMatchObject({
+        expect(sessionStore.get(otherGroupSessionKey)).toMatchObject({
           profileId: "default",
         });
         expect(
-          sessionStore.get(OTHER_GROUP_JID)?.profileOverride
+          sessionStore.get(otherGroupSessionKey)?.profileOverride
         ).toBeUndefined();
       }
     );
@@ -2229,7 +2852,8 @@ describe("createChatHandler group chats", () => {
     await withGroupHarness(
       {},
       async ({ clientMock, handleMessage, sent, sessionStore }) => {
-        sessionStore.set(GROUP_JID, {
+        sessionStore.set(resolveWhatsAppSessionKey(GROUP_JID, PAIRED_JID), {
+          channelUserId: PAIRED_JID,
           deliverableArtifacts: [
             {
               filename: "group-report.md",
@@ -2310,6 +2934,35 @@ describe("createChatHandler group chats", () => {
           })
         );
         expect(stream.signal?.aborted).toBe(false);
+
+        stream.complete();
+        await running;
+      }
+    );
+  });
+
+  test("does not let another authorized group sender stop an in-flight reply", async () => {
+    await withGroupHarness(
+      { accessMode: "open", streaming: true },
+      async ({ clientMock, handleMessage, sent }) => {
+        const running = handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            senderJid: PAIRED_JID,
+            text: "@Atlas work on this",
+          })
+        );
+        const stream = await waitForStreamControl(clientMock.getStreamControl);
+
+        await handleMessage(
+          groupInbound({
+            senderJid: "628199999999@s.whatsapp.net",
+            text: "/stop",
+          })
+        );
+
+        expect(stream.signal?.aborted).toBe(false);
+        expect(sent.at(-1)?.text).toBe("Nothing to stop.");
 
         stream.complete();
         await running;
@@ -2430,8 +3083,59 @@ describe("createChatHandler group chats", () => {
 
         expect(clientMock.calls.createSession).toBe(3);
         expect(sessionStore.get(PAIRED_JID)).toBeDefined();
-        expect(sessionStore.get(GROUP_JID)).toBeDefined();
-        expect(sessionStore.get(OTHER_GROUP_JID)).toBeDefined();
+        expect(
+          sessionStore.get(resolveWhatsAppSessionKey(GROUP_JID, PAIRED_JID))
+        ).toBeDefined();
+        expect(
+          sessionStore.get(
+            resolveWhatsAppSessionKey(OTHER_GROUP_JID, PAIRED_JID)
+          )
+        ).toBeDefined();
+      }
+    );
+  });
+
+  test("keeps a separate group session for each sender identity", async () => {
+    await withGroupHarness(
+      { accessMode: "open" },
+      async ({ clientMock, handleMessage, sessionStore }) => {
+        const secondSender = "628199999999@s.whatsapp.net";
+
+        await handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            senderJid: PAIRED_JID,
+            text: "@Atlas first sender",
+          })
+        );
+        await handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            senderJid: secondSender,
+            text: "@Atlas second sender",
+          })
+        );
+        await handleMessage(
+          groupInbound({
+            mentionedJids: [BOT_ME.id],
+            senderJid: PAIRED_JID,
+            text: "@Atlas first sender again",
+          })
+        );
+
+        expect(clientMock.calls.createSession).toBe(2);
+        expect(clientMock.calls.externalPrincipalIds).toEqual([
+          PAIRED_JID,
+          secondSender,
+        ]);
+        expect(
+          sessionStore.get(resolveWhatsAppSessionKey(GROUP_JID, PAIRED_JID))
+            ?.channelUserId
+        ).toBe(PAIRED_JID);
+        expect(
+          sessionStore.get(resolveWhatsAppSessionKey(GROUP_JID, secondSender))
+            ?.channelUserId
+        ).toBe(secondSender);
       }
     );
   });

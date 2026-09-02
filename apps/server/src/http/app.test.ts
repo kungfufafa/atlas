@@ -2,7 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { loadLocalAuthToken, verifyLocalAuthToken } from "@atlas/core";
+import {
+  createWorkspaceWorkerAuthToken,
+  loadLocalAuthToken,
+  verifyLocalAuthToken,
+} from "@atlas/core";
 import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { AuthService } from "../services/auth-service";
 import { OrgService } from "../services/org-service";
@@ -70,6 +74,7 @@ function createServerOptions() {
       branchSession: async (_sessionId: string, messageIndex: number) => ({
         sessionId: `branched-${messageIndex}`,
       }),
+      canAccessSession: async () => true,
       clearSession: async (_sessionId: string) => true,
       compactSession: async (_sessionId: string, body: { force: boolean }) => ({
         action: body.force ? "summarized" : "none",
@@ -173,6 +178,7 @@ function createServerOptions() {
         documents: [],
         sources: [],
       }),
+      listProfileArtifacts: async () => ({ artifacts: [] }),
       listProfiles: async () => ({ profiles: [{ id: "default" }] }),
       listProfileTools: async (_profileId: string) => ({
         tools: [{ id: "tool_1" }],
@@ -378,6 +384,465 @@ describe("createHonoApp", () => {
       await expect(whatsappResponse.json()).resolves.toEqual({
         enabled: false,
       });
+    } finally {
+      delete process.env.ATLAS_CONFIG_DIR;
+      await rm(configDir, { force: true, recursive: true });
+    }
+  });
+
+  test("workspace worker token uses its claimed org with member role", async () => {
+    const configDir = await mkdtemp(join(tmpdir(), "atlas-worker-auth-http-"));
+    process.env.ATLAS_CONFIG_DIR = configDir;
+
+    try {
+      const options = createServerOptions();
+      const now = new Date().toISOString();
+      await options.databaseAdapter.upsertOrganization({
+        createdAt: now,
+        id: TEST_ORG_ID,
+        name: "Test Org",
+        slug: "test-org",
+        updatedAt: now,
+      });
+      let observedAccess: { excludeSuperAgent?: boolean; orgRole?: string } =
+        {};
+      options.agent.createSession = async (
+        _orgId: string,
+        _channel: string,
+        _profileId: string | undefined,
+        _userId: string,
+        access: { excludeSuperAgent?: boolean; orgRole?: string }
+      ) => {
+        observedAccess = access;
+        return "session_1";
+      };
+      const token = await createWorkspaceWorkerAuthToken({
+        channel: "whatsapp",
+        orgId: TEST_ORG_ID,
+      });
+      const app = createHonoApp(options);
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+
+      const profiles = await app.fetch(
+        new Request("http://localhost:4310/v1/profiles", { headers })
+      );
+      expect(profiles.status).toBe(200);
+
+      const models = await app.fetch(
+        new Request("http://localhost:4310/v1/models", { headers })
+      );
+      expect(models.status).toBe(200);
+
+      const session = await app.fetch(
+        new Request("http://localhost:4310/v1/sessions", {
+          body: JSON.stringify({ channel: "whatsapp", profileId: "default" }),
+          headers,
+          method: "POST",
+        })
+      );
+      expect(session.status).toBe(201);
+      expect(observedAccess).toMatchObject({
+        excludeSuperAgent: true,
+        orgRole: "member",
+      });
+
+      const adminRoute = await app.fetch(
+        new Request("http://localhost:4310/v1/settings/whatsapp", { headers })
+      );
+      expect(adminRoute.status).toBe(403);
+    } finally {
+      delete process.env.ATLAS_CONFIG_DIR;
+      await rm(configDir, { force: true, recursive: true });
+    }
+  });
+
+  test("workspace worker token rejects cross-org and cross-channel requests", async () => {
+    const configDir = await mkdtemp(join(tmpdir(), "atlas-worker-auth-http-"));
+    process.env.ATLAS_CONFIG_DIR = configDir;
+
+    try {
+      const options = createServerOptions();
+      const now = new Date().toISOString();
+      await options.databaseAdapter.upsertOrganization({
+        createdAt: now,
+        id: TEST_ORG_ID,
+        name: "Test Org",
+        slug: "test-org",
+        updatedAt: now,
+      });
+      await options.databaseAdapter.upsertOrganization({
+        createdAt: now,
+        id: "org_beta",
+        name: "Beta Org",
+        slug: "beta-org",
+        updatedAt: now,
+      });
+      await options.databaseAdapter.upsertProfile({
+        createdAt: now,
+        id: "default",
+        isSuper: false,
+        model: null,
+        name: "Default",
+        orgId: TEST_ORG_ID,
+        systemPrompt: "",
+        updatedAt: now,
+      });
+      await options.databaseAdapter.upsertProfile({
+        createdAt: now,
+        id: "super",
+        isSuper: true,
+        model: null,
+        name: "Super Agent",
+        orgId: TEST_ORG_ID,
+        systemPrompt: "",
+        updatedAt: now,
+      });
+      for (const [id, role] of [
+        ["worker_artifact_member", "member"],
+        ["worker_artifact_viewer", "viewer"],
+      ] as const) {
+        await options.databaseAdapter.createUser({
+          createdAt: now,
+          email: `${id}@example.com`,
+          id,
+          passwordHash: "unused",
+          updatedAt: now,
+        });
+        await options.databaseAdapter.upsertOrgMember({
+          createdAt: now,
+          orgId: TEST_ORG_ID,
+          role,
+          userId: id,
+        });
+      }
+      await options.databaseAdapter.createUser({
+        createdAt: now,
+        email: "worker_artifact_removed@example.com",
+        id: "worker_artifact_removed",
+        passwordHash: "unused",
+        updatedAt: now,
+      });
+      await options.databaseAdapter.upsertSession({
+        agentQuestionnaire: null,
+        agentTodos: [],
+        channel: "whatsapp",
+        createdAt: now,
+        id: "session_whatsapp",
+        modelOverride: null,
+        orgId: TEST_ORG_ID,
+        profileId: "default",
+        title: null,
+        userId: "worker_artifact_member",
+      });
+      await options.databaseAdapter.appendMessagesForSession(
+        "session_whatsapp",
+        [
+          {
+            createdAt: now,
+            id: "message_artifact_call",
+            payload: {
+              content: "",
+              role: "assistant",
+              toolCalls: [
+                {
+                  arguments: {
+                    content: "allowed",
+                    path: "artifacts/allowed.md",
+                  },
+                  id: "tool_allowed",
+                  name: "write_file",
+                },
+              ],
+            },
+            seq: 0,
+            sessionId: "session_whatsapp",
+          },
+          {
+            createdAt: now,
+            id: "message_artifact_result",
+            payload: {
+              content: JSON.stringify({
+                bytesWritten: 7,
+                path: "/tmp/profile/artifacts/allowed.md",
+              }),
+              name: "write_file",
+              role: "tool",
+              toolCallId: "tool_allowed",
+            },
+            seq: 1,
+            sessionId: "session_whatsapp",
+          },
+        ]
+      );
+      options.agent.listProfileArtifacts = async () => ({
+        artifacts: [
+          {
+            filename: "allowed.md",
+            mimeType: "text/markdown",
+            path: "allowed.md",
+            sizeBytes: 7,
+            updatedAt: now,
+          },
+          {
+            filename: "other-session.md",
+            mimeType: "text/markdown",
+            path: "other-session.md",
+            sizeBytes: 12,
+            updatedAt: now,
+          },
+        ],
+        directory: "/private/profile/artifacts",
+        folders: [],
+        profileId: "default",
+        total: 2,
+      });
+      await options.databaseAdapter.upsertSession({
+        agentQuestionnaire: null,
+        agentTodos: [],
+        channel: "whatsapp",
+        createdAt: now,
+        id: "session_super",
+        modelOverride: null,
+        orgId: TEST_ORG_ID,
+        profileId: "super",
+        title: null,
+        userId: "worker_artifact_member",
+      });
+      await options.databaseAdapter.upsertSession({
+        agentQuestionnaire: null,
+        agentTodos: [],
+        channel: "telegram",
+        createdAt: now,
+        id: "session_telegram",
+        modelOverride: null,
+        orgId: TEST_ORG_ID,
+        profileId: "default",
+        title: null,
+        userId: "worker_artifact_member",
+      });
+      for (const [id, userId] of [
+        ["session_legacy", null],
+        ["session_removed", "worker_artifact_removed"],
+        ["session_viewer", "worker_artifact_viewer"],
+      ] as const) {
+        await options.databaseAdapter.upsertSession({
+          agentQuestionnaire: null,
+          agentTodos: [],
+          channel: "whatsapp",
+          createdAt: now,
+          id,
+          modelOverride: null,
+          orgId: TEST_ORG_ID,
+          profileId: "default",
+          title: null,
+          userId,
+        });
+      }
+      const token = await createWorkspaceWorkerAuthToken({
+        channel: "whatsapp",
+        orgId: TEST_ORG_ID,
+      });
+      const app = createHonoApp(options);
+
+      const crossOrg = await app.fetch(
+        new Request("http://localhost:4310/v1/profiles", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "X-Org-Id": "org_beta",
+          },
+        })
+      );
+      expect(crossOrg.status).toBe(403);
+
+      const unscopedSessionList = await app.fetch(
+        new Request("http://localhost:4310/v1/sessions", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      );
+      expect(unscopedSessionList.status).toBe(403);
+
+      const scopedSessionList = await app.fetch(
+        new Request(
+          "http://localhost:4310/v1/sessions?channel=whatsapp&profileId=default",
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+      );
+      expect(scopedSessionList.status).toBe(403);
+
+      const artifactHeaders = { Authorization: `Bearer ${token}` };
+      const matchingArtifact = await app.fetch(
+        new Request(
+          "http://localhost:4310/v1/profiles/default/artifacts?sessionId=session_whatsapp",
+          { headers: artifactHeaders }
+        )
+      );
+      expect(matchingArtifact.status).toBe(200);
+      expect(await matchingArtifact.json()).toMatchObject({
+        artifacts: [{ path: "allowed.md" }],
+        directory: "",
+        total: 1,
+      });
+
+      const crossSessionArtifactContent = await app.fetch(
+        new Request(
+          "http://localhost:4310/v1/profiles/default/artifacts/content?path=other-session.md&sessionId=session_whatsapp",
+          { headers: artifactHeaders }
+        )
+      );
+      expect(crossSessionArtifactContent.status).toBe(404);
+
+      const crossSessionArtifactShare = await app.fetch(
+        new Request(
+          "http://localhost:4310/v1/profiles/default/artifacts/shares?sessionId=session_whatsapp",
+          {
+            body: JSON.stringify({ path: "other-session.md" }),
+            headers: {
+              ...artifactHeaders,
+              "Content-Type": "application/json",
+            },
+            method: "POST",
+          }
+        )
+      );
+      expect(crossSessionArtifactShare.status).toBe(404);
+
+      const viewerArtifactRead = await app.fetch(
+        new Request(
+          "http://localhost:4310/v1/profiles/default/artifacts?sessionId=session_viewer",
+          { headers: artifactHeaders }
+        )
+      );
+      expect(viewerArtifactRead.status).toBe(200);
+      const viewerArtifactShare = await app.fetch(
+        new Request(
+          "http://localhost:4310/v1/profiles/default/artifacts/shares?sessionId=session_viewer",
+          {
+            body: JSON.stringify({ path: "allowed.md" }),
+            headers: {
+              ...artifactHeaders,
+              "Content-Type": "application/json",
+            },
+            method: "POST",
+          }
+        )
+      );
+      expect(viewerArtifactShare.status).toBe(404);
+
+      for (const path of [
+        "/v1/profiles/default/artifacts",
+        "/v1/profiles/default/artifacts?sessionId=session_telegram",
+        "/v1/profiles/other/artifacts?sessionId=session_whatsapp",
+        "/v1/profiles/super/artifacts?sessionId=session_super",
+        "/v1/profiles/default/artifacts?sessionId=session_legacy",
+        "/v1/profiles/default/artifacts?sessionId=session_removed",
+        "/v1/sessions/session_super/messages",
+      ]) {
+        const response = await app.fetch(
+          new Request(`http://localhost:4310${path}`, {
+            headers: artifactHeaders,
+          })
+        );
+        expect(response.status).toBe(404);
+      }
+
+      const crossChannel = await app.fetch(
+        new Request("http://localhost:4310/v1/sessions", {
+          body: JSON.stringify({ channel: "telegram", profileId: "default" }),
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+        })
+      );
+      expect(crossChannel.status).toBe(403);
+    } finally {
+      delete process.env.ATLAS_CONFIG_DIR;
+      await rm(configDir, { force: true, recursive: true });
+    }
+  });
+
+  test("workspace worker token cannot access auth or platform routes", async () => {
+    const configDir = await mkdtemp(join(tmpdir(), "atlas-worker-auth-http-"));
+    process.env.ATLAS_CONFIG_DIR = configDir;
+
+    try {
+      const options = createServerOptions();
+      const token = await createWorkspaceWorkerAuthToken({
+        channel: "whatsapp",
+        orgId: TEST_ORG_ID,
+      });
+      const app = createHonoApp(options);
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const authRoute = await app.fetch(
+        new Request("http://localhost:4310/v1/auth/orgs", { headers })
+      );
+      expect(authRoute.status).toBe(403);
+
+      const platformRoute = await app.fetch(
+        new Request("http://localhost:4310/v1/platform/orgs", { headers })
+      );
+      expect(platformRoute.status).toBe(403);
+
+      const health = await app.fetch(
+        new Request("http://localhost:4310/health", { headers })
+      );
+      expect(health.status).toBe(200);
+
+      for (const path of [
+        "/v1/automations",
+        "/v1/settings/whatsapp",
+        "/v1/tasks",
+        "/v1/tools",
+        "/v1/usage?groupBy=model",
+        "/v1/workers",
+      ]) {
+        const response = await app.fetch(
+          new Request(`http://localhost:4310${path}`, { headers })
+        );
+        expect(response.status).toBe(403);
+        await expect(response.json()).resolves.toEqual({
+          error: "Workspace worker credential cannot access this route",
+        });
+      }
+
+      const automationDraft = await app.fetch(
+        new Request("http://localhost:4310/v1/automations/draft", {
+          body: JSON.stringify({ channel: "whatsapp", prompt: "draft" }),
+          headers: { ...headers, "Content-Type": "application/json" },
+          method: "POST",
+        })
+      );
+      expect(automationDraft.status).toBe(403);
+
+      const sessionMutation = await app.fetch(
+        new Request("http://localhost:4310/v1/sessions/session_1", {
+          body: JSON.stringify({ model: "example" }),
+          headers: { ...headers, "Content-Type": "application/json" },
+          method: "PATCH",
+        })
+      );
+      expect(sessionMutation.status).toBe(403);
+
+      const artifactMutation = await app.fetch(
+        new Request(
+          "http://localhost:4310/v1/profiles/default/artifacts?path=report.md",
+          {
+            headers,
+            method: "DELETE",
+          }
+        )
+      );
+      expect(artifactMutation.status).toBe(403);
+
+      const individualProfile = await app.fetch(
+        new Request("http://localhost:4310/v1/profiles/default", { headers })
+      );
+      expect(individualProfile.status).toBe(403);
     } finally {
       delete process.env.ATLAS_CONFIG_DIR;
       await rm(configDir, { force: true, recursive: true });
@@ -962,6 +1427,36 @@ describe("createHonoApp", () => {
     expect(loginResponse.status).toBe(200);
   });
 
+  test("internal channel guest principals can never log in", async () => {
+    const options = createServerOptions();
+    const app = createHonoApp(options);
+    await setupFreshInstallSession(app, options.databaseAdapter);
+    const now = new Date().toISOString();
+    await options.databaseAdapter.createUser({
+      createdAt: now,
+      email: "guest@channel-guest.atlas.invalid",
+      id: "user_channel_guest_0123456789abcdef",
+      isPlatformAdmin: false,
+      passwordHash: await options.authService.hashPassword("known-password"),
+      updatedAt: now,
+    });
+
+    const loginResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/auth/login", {
+        body: JSON.stringify({
+          email: "guest@channel-guest.atlas.invalid",
+          password: "known-password",
+        }),
+        method: "POST",
+      })
+    );
+
+    expect(loginResponse.status).toBe(401);
+    await expect(loginResponse.json()).resolves.toEqual({
+      error: "Invalid credentials",
+    });
+  });
+
   test("change-password revokes other browser sessions", async () => {
     const options = createServerOptions();
     const app = createHonoApp(options);
@@ -1145,6 +1640,52 @@ describe("createHonoApp", () => {
       })
     );
     expect(missingChannel.status).toBe(400);
+  });
+
+  test("browser users cannot impersonate external channel principals", async () => {
+    const options = createServerOptions();
+    let createCalls = 0;
+    options.agent.createSession = async () => {
+      createCalls += 1;
+      return "session_external";
+    };
+    const app = createHonoApp(options);
+    const session = await setupFreshInstallSession(
+      app,
+      options.databaseAdapter
+    );
+    const headers = session.headers({
+      "Content-Type": "application/json",
+      "X-CSRF-Token": session.csrfToken,
+    });
+
+    const createResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/sessions", {
+        body: JSON.stringify({
+          channel: "whatsapp",
+          externalPrincipal: {
+            channelUserId: "628111111111@s.whatsapp.net",
+          },
+          profileId: "default",
+        }),
+        headers,
+        method: "POST",
+      })
+    );
+    expect(createResponse.status).toBe(403);
+    expect(createCalls).toBe(0);
+
+    const bindResponse = await app.fetch(
+      new Request("http://localhost:4310/v1/channel-principals", {
+        body: JSON.stringify({
+          channel: "whatsapp",
+          channelUserId: "628111111111@s.whatsapp.net",
+        }),
+        headers,
+        method: "POST",
+      })
+    );
+    expect(bindResponse.status).toBe(403);
   });
 
   const smokeRoutes = [

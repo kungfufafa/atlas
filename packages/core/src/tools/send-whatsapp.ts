@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createWhatsAppOutboundAdapter } from "../channels/whatsapp-outbound";
 import type { ToolContext, ToolDefinition } from "../contract";
+import { isChannelGuestUserId } from "../identity/principal";
 import { toWhatsAppPhoneJid } from "../whatsapp-config";
 import { jsonSchemaFromZod, parseToolInput } from "./schema";
 
@@ -41,6 +42,12 @@ export async function runSendWhatsApp(
   }) => Promise<{ error?: string; ok: boolean }> = (payload) =>
     createWhatsAppOutboundAdapter().send(payload)
 ): Promise<SendWhatsAppResult> {
+  if (isChannelGuestUserId(context.userId)) {
+    return {
+      error: "Channel guest principals cannot send outbound WhatsApp messages.",
+      ok: false,
+    };
+  }
   const parsed = parseToolInput(sendWhatsAppInputSchema, input);
   const orgId = context.orgId?.trim();
 

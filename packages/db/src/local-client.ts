@@ -3,14 +3,14 @@ import {
   LOCAL_CLIENT_USER_ID,
 } from "@atlas/core/local-auth";
 import bcrypt from "bcryptjs";
-import type { DatabaseAdapter } from "./types";
+import type { DatabaseAdapter, StoredUserRecord } from "./types";
 
 const SALT_ROUNDS = 10;
 const PLACEHOLDER_HASH = "unused";
 
-export async function ensureLocalClientAccess(
+export async function ensureLocalClientIdentity(
   db: DatabaseAdapter
-): Promise<void> {
+): Promise<StoredUserRecord | null> {
   const now = new Date().toISOString();
   let user = await db.getUserByEmail(LOCAL_CLIENT_EMAIL);
 
@@ -36,8 +36,21 @@ export async function ensureLocalClientAccess(
   }
 
   if (!user) {
+    return null;
+  }
+
+  return user;
+}
+
+export async function ensureLocalClientAccess(
+  db: DatabaseAdapter
+): Promise<void> {
+  const user = await ensureLocalClientIdentity(db);
+  if (!user) {
     return;
   }
+
+  const now = new Date().toISOString();
 
   for (const org of await db.listOrganizations()) {
     if (org.archivedAt) {

@@ -1,10 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { createInMemoryDatabaseAdapter } from "./adapters/in-memory";
+import { createSqliteDatabase } from "./adapters/sqlite";
 import type { LlmUsageDimensions } from "./types";
 
 function dims(overrides: Partial<LlmUsageDimensions>): LlmUsageDimensions {
   return {
     capability: "chat.completion",
+    channel: "web",
     modelId: "gpt-x",
     orgId: "org_a",
     profileId: "profile_1",
@@ -31,15 +33,23 @@ async function seed() {
     requestCount: 1,
   });
   // org_a / user_2 — one turn
-  await db.incrementLlmUsageDaily(dims({ userId: "user_2" }), {
-    estimatedCostUsd: 0.05,
-    inputTokens: 50,
-    outputTokens: 10,
-    requestCount: 1,
-  });
+  await db.incrementLlmUsageDaily(
+    dims({ channel: "whatsapp", userId: "user_2" }),
+    {
+      estimatedCostUsd: 0.05,
+      inputTokens: 50,
+      outputTokens: 10,
+      requestCount: 1,
+    }
+  );
   // org_b / user_3 — same shared credential, different workspace
   await db.incrementLlmUsageDaily(
-    dims({ modelId: "claude-y", orgId: "org_b", userId: "user_3" }),
+    dims({
+      channel: "discord",
+      modelId: "claude-y",
+      orgId: "org_b",
+      userId: "user_3",
+    }),
     {
       estimatedCostUsd: 1,
       inputTokens: 1000,
@@ -97,6 +107,32 @@ describe("llm_usage_daily rollup + aggregation (in-memory)", () => {
     ]);
   });
 
+  test("groups and filters by initiating channel", async () => {
+    const db = await seed();
+    const byChannel = await db.aggregateLlmUsage({ groupBy: "channel" });
+    expect(byChannel.map((row) => row.key)).toEqual([
+      "discord",
+      "web",
+      "whatsapp",
+    ]);
+
+    const whatsappUsers = await db.aggregateLlmUsage({
+      channel: "whatsapp",
+      groupBy: "user",
+      orgId: "org_a",
+    });
+    expect(whatsappUsers).toEqual([
+      {
+        estimatedCostUsd: 0.05,
+        inputTokens: 50,
+        key: "user_2",
+        outputTokens: 10,
+        requestCount: 1,
+        totalTokens: 60,
+      },
+    ]);
+  });
+
   test("keeps capabilities as separate rows and aggregates by capability", async () => {
     const db = await seed();
     await db.incrementLlmUsageDaily(
@@ -117,6 +153,31 @@ describe("llm_usage_daily rollup + aggregation (in-memory)", () => {
     const image = byCapability.find((row) => row.key === "image.generation");
     expect(chat?.requestCount).toBe(3);
     expect(image?.requestCount).toBe(1);
+  });
+
+  test("ranks zero-token billable capabilities by cost before token-only activity", async () => {
+    const db = await seed();
+    await db.incrementLlmUsageDaily(
+      dims({
+        capability: "image.generation",
+        modelId: "gpt-image-2",
+        userId: "user_image",
+      }),
+      {
+        estimatedCostUsd: 2,
+        inputTokens: 0,
+        outputTokens: 0,
+        requestCount: 10,
+      }
+    );
+
+    const users = await db.aggregateLlmUsage({ groupBy: "user", limit: 1 });
+    expect(users[0]).toMatchObject({
+      estimatedCostUsd: 2,
+      key: "user_image",
+      requestCount: 10,
+      totalTokens: 0,
+    });
   });
 
   test("scopes to a single user (member view) and honors limit", async () => {
@@ -161,5 +222,73 @@ describe("llm_usage_daily rollup + aggregation (in-memory)", () => {
     });
     expect((await db.getOrgUsageBudget("org_a"))?.monthlyLimitUsd).toBe(40);
     expect(await db.listOrgUsageBudgets()).toHaveLength(1);
+  });
+});
+
+describe("llm_usage_daily channel dimensions (sqlite)", () => {
+  test("keeps otherwise identical usage separate by channel", async () => {
+    const database = await createSqliteDatabase(":memory:");
+
+    try {
+      await database.adapter.incrementLlmUsageDaily(dims({ channel: "web" }), {
+        estimatedCostUsd: 0.1,
+        inputTokens: 100,
+        outputTokens: 20,
+        requestCount: 1,
+      });
+      await database.adapter.incrementLlmUsageDaily(
+        dims({ channel: "whatsapp" }),
+        {
+          estimatedCostUsd: 0.2,
+          inputTokens: 200,
+          outputTokens: 40,
+          requestCount: 1,
+        }
+      );
+      await database.adapter.incrementLlmUsageDaily(
+        dims({
+          capability: "image.generation",
+          channel: "unknown",
+          userId: "user_image",
+        }),
+        {
+          estimatedCostUsd: 1,
+          inputTokens: 0,
+          outputTokens: 0,
+          requestCount: 20,
+        }
+      );
+
+      const channels = await database.adapter.aggregateLlmUsage({
+        groupBy: "channel",
+        orgId: "org_a",
+      });
+      expect(channels.map((row) => row.key)).toEqual([
+        "unknown",
+        "whatsapp",
+        "web",
+      ]);
+
+      const whatsapp = await database.adapter.aggregateLlmUsage({
+        channel: "whatsapp",
+        groupBy: "workspace",
+        orgId: "org_a",
+      });
+      expect(whatsapp[0]).toMatchObject({
+        inputTokens: 200,
+        outputTokens: 40,
+        requestCount: 1,
+        totalTokens: 240,
+      });
+
+      const highestCostUser = await database.adapter.aggregateLlmUsage({
+        groupBy: "user",
+        limit: 1,
+        orgId: "org_a",
+      });
+      expect(highestCostUser[0]?.key).toBe("user_image");
+    } finally {
+      database.close();
+    }
   });
 });

@@ -1,4 +1,5 @@
 import type {
+  AgentChannel,
   AgentQuestionnaire,
   AgentTodo,
   OrgRole,
@@ -144,6 +145,7 @@ export interface StoredSessionSummaryRecord {
 
 export interface StoredTaskRecord {
   createdAt: string;
+  createdByUserId?: string | null;
   description: string;
   id: string;
   orgId?: string | null;
@@ -362,6 +364,8 @@ export const DEFAULT_USAGE_CAPABILITY = "chat.completion";
 export interface LlmUsageDimensions {
   /** Capability that ran (e.g. `chat.completion`, `image.generation`). */
   capability: string;
+  /** Product surface that initiated the request. */
+  channel: AgentChannel | typeof UNKNOWN_USAGE_DIMENSION;
   modelId: string;
   orgId: string;
   profileId: string;
@@ -400,16 +404,19 @@ export type LlmUsageGroupBy =
   | "workspace"
   | "user"
   | "profile"
+  | "channel"
   | "provider"
   | "credential"
   | "model"
   | "capability";
 
 export interface LlmUsageAggregateOptions {
+  /** Restrict to a single initiating product surface. */
+  channel?: string;
   /** Inclusive lower bound, `YYYY-MM-DD` (UTC). */
   from?: string;
   groupBy: LlmUsageGroupBy;
-  /** Max rows returned, ordered by total tokens desc. */
+  /** Max rows returned, ordered by estimated cost, then tokens and requests. */
   limit?: number;
   /** Restrict to a single workspace (org admins are always scoped this way). */
   orgId?: string;
@@ -868,6 +875,12 @@ export interface DatabaseAdapter {
   assignSkillToProfile(profileId: string, skillId: string): Promise<void>;
   assignToolToProfile(profileId: string, toolId: string): Promise<void>;
   casExecutionRun(input: CasExecutionRunInput): Promise<boolean>;
+  claimTaskOwner(
+    taskId: string,
+    orgId: string,
+    userId: string,
+    updatedAt: string
+  ): Promise<boolean>;
   /**
    * Atomically replaces an existing Composio connection only when its current
    * OAuth state hash matches the expected generation.
@@ -923,6 +936,7 @@ export interface DatabaseAdapter {
   deleteAutomation(id: string): Promise<boolean>;
   deleteAutomationRun(automationId: string, runId: string): Promise<boolean>;
   deleteChannelOrgMapping(
+    orgId: string,
     channel: ChannelType,
     channelUserId: string
   ): Promise<boolean>;
@@ -971,6 +985,7 @@ export interface DatabaseAdapter {
     sessionTokenHash: string
   ): Promise<StoredBrowserSessionRecord | null>;
   getChannelOrgMapping(
+    orgId: string,
     channel: ChannelType,
     channelUserId: string
   ): Promise<StoredChannelOrgMappingRecord | null>;
@@ -1244,7 +1259,8 @@ export interface DatabaseAdapter {
   listQueuedOutbox(orgId: string): Promise<StoredOutboxRecord[]>;
   listSessionSummaries(
     profileId: string,
-    channel: string
+    channel: string,
+    userId?: string
   ): Promise<StoredSessionSummaryRecord[]>;
 
   listSessions(): Promise<StoredSessionRecord[]>;

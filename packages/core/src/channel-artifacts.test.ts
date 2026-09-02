@@ -3,6 +3,7 @@ import {
   channelArtifactRefFromArtifact,
   extractLatestTurnMessages,
   extractPairedTurnArtifacts,
+  extractSessionArtifacts,
   extractTurnDeliverableArtifacts,
 } from "./channel-artifacts";
 import type { ChatMessage } from "./contract";
@@ -798,5 +799,50 @@ describe("extractLatestTurnMessages", () => {
       { content: "second", role: "user" },
       { content: "two", role: "assistant" },
     ]);
+  });
+});
+
+describe("extractSessionArtifacts", () => {
+  test("collects proven artifact paths across every turn", () => {
+    const messages: ChatMessage[] = [
+      { content: "first", role: "user" },
+      assistantWithToolCalls([
+        {
+          arguments: { content: "one", path: "artifacts/first.md" },
+          id: "tool_first",
+          name: "write_file",
+        },
+      ]),
+      toolMessage({
+        id: "tool_first",
+        input: { content: "one", path: "artifacts/first.md" },
+        name: "write_file",
+        result: {
+          bytesWritten: 3,
+          path: `${ARTIFACTS_ROOT}/first.md`,
+        },
+      }),
+      { content: "second", role: "user" },
+      assistantWithToolCalls([
+        {
+          arguments: { content: "two", path: "artifacts/second.md" },
+          id: "tool_second",
+          name: "write_file",
+        },
+      ]),
+      toolMessage({
+        id: "tool_second",
+        input: { content: "two", path: "artifacts/second.md" },
+        name: "write_file",
+        result: {
+          bytesWritten: 3,
+          path: `${ARTIFACTS_ROOT}/second.md`,
+        },
+      }),
+    ];
+
+    expect(
+      extractSessionArtifacts(messages).map((artifact) => artifact.path)
+    ).toEqual(["first.md", "second.md"]);
   });
 });

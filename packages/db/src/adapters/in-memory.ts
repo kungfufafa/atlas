@@ -1,4 +1,8 @@
-import { getUserMessageText, type MessageContentPart } from "@atlas/core";
+import {
+  getUserMessageText,
+  isChannelGuestUserId,
+  type MessageContentPart,
+} from "@atlas/core";
 import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
 import { LLM_USAGE_STATS_ID } from "../constants";
 import type {
@@ -276,8 +280,8 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
   const learningJobs = new Map<string, StoredLearningJobRecord>();
   const auditEvents = new Map<string, StoredAuditEventRecord>();
   const outboundOutbox = new Map<string, StoredOutboxRecord>();
-  const mappingKey = (channel: string, channelUserId: string) =>
-    `${channel}:${channelUserId}`;
+  const mappingKey = (orgId: string, channel: string, channelUserId: string) =>
+    `${orgId}:${channel}:${channelUserId}`;
   const llmUsageDaily = new Map<string, StoredLlmUsageDailyRecord>();
   const orgUsageBudgets = new Map<string, StoredOrgUsageBudgetRecord>();
 
@@ -289,6 +293,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         }
         if (options.groupBy === "profile") {
           return record.profileId;
+        }
+        if (options.groupBy === "channel") {
+          return record.channel;
         }
         if (options.groupBy === "provider") {
           return record.providerType;
@@ -307,6 +314,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
       const totals = new Map<string, LlmUsageAggregateRow>();
       for (const record of llmUsageDaily.values()) {
+        if (options.channel && record.channel !== options.channel) {
+          continue;
+        }
         if (options.orgId && record.orgId !== options.orgId) {
           continue;
         }
@@ -337,9 +347,20 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         totals.set(key, row);
       }
 
-      let rows = [...totals.values()].sort(
-        (left, right) => right.totalTokens - left.totalTokens
-      );
+      let rows = [...totals.values()].sort((left, right) => {
+        const costDifference = right.estimatedCostUsd - left.estimatedCostUsd;
+        if (costDifference !== 0) {
+          return costDifference;
+        }
+        const tokenDifference = right.totalTokens - left.totalTokens;
+        if (tokenDifference !== 0) {
+          return tokenDifference;
+        }
+        const requestDifference = right.requestCount - left.requestCount;
+        return requestDifference === 0
+          ? left.key.localeCompare(right.key)
+          : requestDifference;
+      });
       if (typeof options.limit === "number" && options.limit > 0) {
         rows = rows.slice(0, Math.floor(options.limit));
       }
@@ -504,6 +525,20 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       return true;
     },
 
+    async claimTaskOwner(taskId, orgId, userId, updatedAt) {
+      const task = tasks.get(taskId);
+      if (!task || task.orgId !== orgId || task.createdByUserId?.trim()) {
+        return false;
+      }
+
+      tasks.set(taskId, {
+        ...task,
+        createdByUserId: userId,
+        updatedAt,
+      });
+      return true;
+    },
+
     async compareAndSwapComposioUserConnection(record, expectedOAuthStateHash) {
       const current = composioUserConnections.get(record.id);
       if (
@@ -522,7 +557,8 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
     async countHumanUsers() {
       return [...usersById.values()].filter(
-        (user) => user.id !== LOCAL_CLIENT_USER_ID
+        (user) =>
+          user.id !== LOCAL_CLIENT_USER_ID && !isChannelGuestUserId(user.id)
       ).length;
     },
 
@@ -690,8 +726,10 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       automationRuns.set(automationId, filtered);
       return filtered.length !== existing.length;
     },
-    async deleteChannelOrgMapping(channel, channelUserId) {
-      return channelOrgMappings.delete(mappingKey(channel, channelUserId));
+    async deleteChannelOrgMapping(orgId, channel, channelUserId) {
+      return channelOrgMappings.delete(
+        mappingKey(orgId, channel, channelUserId)
+      );
     },
 
     async deleteComposioToolkit(id) {
@@ -909,8 +947,11 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     async getBrowserSessionBySessionTokenHash(sessionTokenHash) {
       return browserSessionsByHash.get(sessionTokenHash) ?? null;
     },
-    async getChannelOrgMapping(channel, channelUserId) {
-      return channelOrgMappings.get(mappingKey(channel, channelUserId)) ?? null;
+    async getChannelOrgMapping(orgId, channel, channelUserId) {
+      return (
+        channelOrgMappings.get(mappingKey(orgId, channel, channelUserId)) ??
+        null
+      );
     },
 
     async getComposioToolkit(id) {
@@ -1287,6 +1328,7 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         dimensions.providerCredentialId,
         dimensions.modelId,
         dimensions.capability,
+        dimensions.channel,
       ].join("\u0000");
       const existing = llmUsageDaily.get(key);
       llmUsageDaily.set(key, {
@@ -1700,14 +1742,16 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       );
     },
 
-    async listSessionSummaries(profileId, channel) {
+    async listSessionSummaries(profileId, channel, userId) {
       if (profiles.get(profileId)?.isImporting) {
         return [];
       }
       return Array.from(sessions.values())
         .filter(
           (session) =>
-            session.profileId === profileId && session.channel === channel
+            session.profileId === profileId &&
+            session.channel === channel &&
+            (userId === undefined || session.userId === userId)
         )
         .map((session) =>
           summarizeSession(
@@ -2493,9 +2537,10 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       });
     },
     async upsertChannelOrgMapping(record) {
-      channelOrgMappings.set(mappingKey(record.channel, record.channelUserId), {
-        ...record,
-      });
+      channelOrgMappings.set(
+        mappingKey(record.orgId, record.channel, record.channelUserId),
+        { ...record }
+      );
     },
 
     async upsertComposioToolkit(record) {

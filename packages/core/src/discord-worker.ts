@@ -32,9 +32,10 @@ export function resolveDiscordWorkerStatus(
 ): DiscordWorkerStatus {
   const configured = settings.configured;
   const paired = settings.pairedUserIds.length > 0;
-  const ok = !configured || running;
+  const bridgeConnected = running && connected;
+  const ok = !configured || (running && (!paired || bridgeConnected));
 
-  return { configured, connected, ok, paired, running };
+  return { configured, connected: bridgeConnected, ok, paired, running };
 }
 
 export function isProcessAlive(pid: number): boolean {

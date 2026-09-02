@@ -22,7 +22,11 @@ describe("profile avatar", () => {
   let tempConfigDir = "";
 
   afterEach(async () => {
-    process.env.ATLAS_CONFIG_DIR = originalConfigDir;
+    if (originalConfigDir === undefined) {
+      delete process.env.ATLAS_CONFIG_DIR;
+    } else {
+      process.env.ATLAS_CONFIG_DIR = originalConfigDir;
+    }
 
     if (tempConfigDir) {
       await rm(tempConfigDir, { force: true, recursive: true });
