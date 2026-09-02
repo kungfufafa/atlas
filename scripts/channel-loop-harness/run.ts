@@ -9,7 +9,10 @@ import {
 } from "@atlas/core/channel-org";
 import { getDiscordConfigPath } from "@atlas/core/discord-config";
 import { writePrivateTextFile } from "@atlas/core/fs";
-import { loadLocalAuthToken } from "@atlas/core/local-auth";
+import {
+  createWorkspaceWorkerAuthToken,
+  loadLocalAuthToken,
+} from "@atlas/core/local-auth";
 import { getTelegramConfigPath } from "@atlas/core/telegram-config";
 import { getWhatsAppConfigPath } from "@atlas/core/whatsapp-config";
 import { DiscordAuthStore } from "../../apps/platform/discord/src/auth-store";
@@ -158,6 +161,24 @@ export async function runChannelLoopHarness(): Promise<ChannelLoopHarnessResult>
       orgId: tenant.orgId,
     });
 
+    const createWorkerClient = async (
+      channel: "discord" | "telegram" | "whatsapp"
+    ) =>
+      createClient({
+        authToken: await createWorkspaceWorkerAuthToken({
+          channel,
+          orgId: tenant.orgId,
+        }),
+        baseUrl,
+        orgId: tenant.orgId,
+        tokenAuth: true,
+      });
+    const [discordClient, telegramClient, whatsappClient] = await Promise.all([
+      createWorkerClient("discord"),
+      createWorkerClient("telegram"),
+      createWorkerClient("whatsapp"),
+    ]);
+
     const profiles = await client.listProfiles();
     const profile =
       profiles.profiles.find((item) => item.isDefault) ?? profiles.profiles[0];
@@ -200,7 +221,7 @@ export async function runChannelLoopHarness(): Promise<ChannelLoopHarnessResult>
     await whatsappOrgs.load();
     const whatsappHandle = createWhatsAppChatHandler({
       authStore,
-      client,
+      client: whatsappClient,
       config: { phoneNumber: "1234567890", profileId: "default" },
       downloadMedia: (message) => whatsappProbe.probe.download(message),
       fixedWorkspaceId: tenant.orgId,
@@ -219,7 +240,7 @@ export async function runChannelLoopHarness(): Promise<ChannelLoopHarnessResult>
     await telegramOrgs.load();
     const telegramHandle = createTelegramChatHandler({
       authStore: telegramAuth,
-      client,
+      client: telegramClient,
       config: { botToken: "1234567890:CHANNELLOOP", profileId: "default" },
       fixedWorkspaceId: tenant.orgId,
       orgStore: telegramOrgs,
@@ -238,7 +259,7 @@ export async function runChannelLoopHarness(): Promise<ChannelLoopHarnessResult>
     await threadStore.load();
     const discordHandler = createDiscordChatHandler({
       authStore: discordAuth,
-      client,
+      client: discordClient,
       config: { botToken: "discord-bot-token", profileId: "default" },
       fixedWorkspaceId: tenant.orgId,
       orgStore: discordOrgs,
