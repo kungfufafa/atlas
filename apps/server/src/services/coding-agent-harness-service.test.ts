@@ -92,7 +92,7 @@ describe("coding-agent harness resolution", () => {
       codingAgentHarnesses: [
         {
           args: [],
-          command: "echo",
+          command: process.execPath,
           enabled: true,
           id: "coding-harness-cursor-agent",
           kind: "cursor_agent",
@@ -107,13 +107,14 @@ describe("coding-agent harness resolution", () => {
       visionModel: null,
     });
 
-    const statuses = await listCodingAgentHarnessStatuses(db);
-    const cursor = statuses.find(
-      (harness) => harness.id === "coding-harness-cursor-agent"
+    const cursor = await refreshCodingAgentHarnessProbe(
+      db,
+      "coding-harness-cursor-agent",
+      { providerPassthroughEnabled: false }
     );
-    expect(cursor?.installed).toBe(true);
-    expect(cursor?.ready).toBe(true);
-    expect(cursor?.statusMessage).toMatch(/host Cursor auth/i);
+    expect(cursor.installed).toBe(true);
+    expect(cursor.ready).toBe(true);
+    expect(cursor.statusMessage).toMatch(/host Cursor auth/i);
   });
 
   test("refreshCodingAgentHarnessProbe persists cached readiness", async () => {

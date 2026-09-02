@@ -105,17 +105,20 @@ export async function spawnJsonTool(
           reject(error);
         });
 
-        child.once("close", (exitCode) => {
+        child.once("close", (exitCode, signal) => {
           clearTimeout(timeoutTimer);
           if (sigkillTimer) {
             clearTimeout(sigkillTimer);
           }
           const stderrTail = stderr.trim() || "(no stderr)";
+          const exitStatus = signal
+            ? `signal ${signal}`
+            : `exit code ${exitCode ?? "null"}`;
 
           if (timedOut) {
             reject(
               new Error(
-                `${label} timed out after ${timeoutMs}ms (exit code ${exitCode ?? "null"}): ${stderrTail}`
+                `${label} timed out after ${timeoutMs}ms (${exitStatus}): ${stderrTail}`
               )
             );
             return;
@@ -126,9 +129,7 @@ export async function spawnJsonTool(
             return;
           }
 
-          reject(
-            new Error(`${label} exit code ${exitCode ?? "null"}: ${stderrTail}`)
-          );
+          reject(new Error(`${label} ${exitStatus}: ${stderrTail}`));
         });
 
         child.stdin?.end(payload);
