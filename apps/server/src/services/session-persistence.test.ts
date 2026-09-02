@@ -77,8 +77,58 @@ describe("wrapPersistedSession", () => {
     );
     expect(appendCalls).toBe(0);
     expect(replaceCalls).toBe(0);
-    expect(rejectedCalls).toBe(0);
-    expect(resolvedCalls).toBe(1);
+    expect(rejectedCalls).toBe(1);
+    expect(resolvedCalls).toBe(0);
+    expect(history).toEqual([]);
+  });
+
+  test("rolls back a completed turn when persist fails so a follow-up does not skip it", async () => {
+    const history: Array<
+      { content: string; role: "user" } | { content: string; role: "assistant" }
+    > = [];
+    const appended: string[][] = [];
+    let persistShouldFail = true;
+    const session = {
+      getHistory: () => history,
+      getHistoryRevision: () => 0,
+      async send(message: string) {
+        history.push(
+          { content: message, role: "user" },
+          { content: `${message}-reply`, role: "assistant" }
+        );
+        return `${message}-reply`;
+      },
+      async sendStream(message: string) {
+        return session.send(message);
+      },
+    } as unknown as AgentChatSession;
+    const db = {
+      appendMessagesForSession(
+        _sessionId: string,
+        messages: Array<{ payload: { content: string } }>
+      ) {
+        appended.push(messages.map((message) => message.payload.content));
+        return Promise.resolve();
+      },
+      listMessagesForSession: () => Promise.resolve([]),
+    } as unknown as DatabaseAdapter;
+    const persisted = wrapPersistedSession("session_1", session, db, {
+      async beforePersist() {
+        if (persistShouldFail) {
+          throw new Error("disk full");
+        }
+      },
+    });
+
+    await expect(persisted.sendStream("first", {})).rejects.toThrow(
+      "disk full"
+    );
+    expect(history).toEqual([]);
+    expect(appended).toEqual([]);
+
+    persistShouldFail = false;
+    await expect(persisted.send("second")).resolves.toBe("second-reply");
+    expect(appended).toEqual([["second", "second-reply"]]);
   });
 
   test("notifies rejection for underlying send and stream failures", async () => {
