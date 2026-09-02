@@ -7,7 +7,7 @@ ARG BUILDPLATFORM
 FROM --platform=${BUILDPLATFORM} oven/bun:1.3-slim AS web-builder
 WORKDIR /app
 
-COPY package.json bun.lock ./
+COPY package.json bun.lock bunfig.toml ./
 COPY apps apps
 COPY packages packages
 
@@ -53,16 +53,17 @@ RUN if [ -n "$OMNI_VERSION" ]; then \
       omni --version; \
     fi
 
-COPY package.json bun.lock ./
+COPY package.json bun.lock bunfig.toml ./
 COPY apps/server apps/server
 COPY apps/platform/automation apps/platform/automation
 COPY apps/platform/telegram apps/platform/telegram
 COPY apps/platform/whatsapp apps/platform/whatsapp
 COPY apps/platform/discord apps/platform/discord
 COPY packages packages
-# Workspace stubs keep the lockfile valid without pulling web/cli sources.
+# Workspace stubs keep the lockfile valid without pulling web/cli/mobile sources.
 COPY apps/web/package.json apps/web/
 COPY apps/cli/package.json apps/cli/
+COPY apps/mobile/package.json apps/mobile/
 COPY --from=web-builder /app/apps/web/dist apps/web/dist
 
 RUN bun install --frozen-lockfile --production --ignore-scripts \
