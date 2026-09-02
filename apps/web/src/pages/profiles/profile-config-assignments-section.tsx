@@ -14,8 +14,11 @@ export function ProfileConfigAssignmentsSection({
   const {
     detail,
     busy,
-    availableTools,
+    allTools,
     handleAssignTool,
+    handleSetToolAssigned,
+    toolsError,
+    toolsLoading,
     setRemoveConfirm,
     allMcpServers,
     availableMcpServers,
@@ -42,11 +45,12 @@ export function ProfileConfigAssignmentsSection({
   return (
     <>
       <ProfileToolsSection
-        availableTools={availableTools}
         busy={busy}
         detail={detail}
-        onAssign={handleAssignTool}
-        onRemove={setRemoveConfirm}
+        onAssignmentChange={handleSetToolAssigned}
+        tools={allTools}
+        toolsLoadFailed={Boolean(toolsError)}
+        toolsLoading={toolsLoading}
       />
       <ProfileMcpSection
         allMcpServers={allMcpServers}

@@ -212,7 +212,10 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
     setCreateOpen,
     setSelectedId,
     handleCloneProfile,
+    handleExportProfile,
     openDeleteDialog,
+    exportDisabled,
+    exportPending,
   } = state;
   const { user, activeOrg } = useAuth();
   const isOrgAdmin = activeOrg?.role === "admin";
@@ -259,7 +262,13 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
       !detail.isSuper
         ? createPortal(
             <>
-              <ExportProfileButton disabled={busy} profileId={selectedId} />
+              <ExportProfileButton
+                className="hidden self-center lg:inline-flex"
+                disabled={exportDisabled}
+                onExport={handleExportProfile}
+                pending={exportPending}
+                profileId={selectedId}
+              />
               <Button
                 aria-label="Clone profile"
                 className="hidden self-center lg:inline-flex"
@@ -368,7 +377,12 @@ export function ProfilesPageLayout(state: ProfilesPageState) {
           {selectedId && detail && !detail.isSuper ? (
             <div className="flex items-center justify-end gap-2 lg:hidden">
               {canCreateProfile ? (
-                <ExportProfileButton disabled={busy} profileId={selectedId} />
+                <ExportProfileButton
+                  disabled={exportDisabled}
+                  onExport={handleExportProfile}
+                  pending={exportPending}
+                  profileId={selectedId}
+                />
               ) : null}
               <Button
                 aria-label="Clone profile"
