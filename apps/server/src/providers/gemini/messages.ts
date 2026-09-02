@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { ChatMessage } from "@atlas/core";
 import { resolveUserContentForProvider } from "@atlas/core";
 import {
@@ -15,6 +16,7 @@ export async function toGeminiContents(
   providerReplayRevision?: string
 ): Promise<Content[]> {
   const contents: Content[] = [];
+  const idlessProviderToolCalls = new Set<string>();
 
   for (const message of messages) {
     if (message.role === "user") {
@@ -32,7 +34,8 @@ export async function toGeminiContents(
         message,
         providerInstanceId,
         modelId,
-        providerReplayRevision
+        providerReplayRevision,
+        idlessProviderToolCalls
       );
 
       if (parts.length > 0) {
@@ -42,16 +45,21 @@ export async function toGeminiContents(
       continue;
     }
 
-    contents.push({
-      parts: [
-        createPartFromFunctionResponse(
+    const response = parseToolResultContent(message.content);
+    const part = idlessProviderToolCalls.has(message.toolCallId)
+      ? {
+          functionResponse: {
+            name: message.name,
+            response,
+          },
+        }
+      : createPartFromFunctionResponse(
           message.toolCallId,
           message.name,
-          parseToolResultContent(message.content)
-        ),
-      ],
-      role: "user",
-    });
+          response
+        );
+
+    contents.push({ parts: [part], role: "user" });
   }
 
   return contents;
@@ -97,7 +105,8 @@ function toGeminiAssistantParts(
   message: Extract<ChatMessage, { role: "assistant" }>,
   providerInstanceId?: string,
   modelId?: string,
-  providerReplayRevision?: string
+  providerReplayRevision?: string,
+  idlessProviderToolCalls?: Set<string>
 ): Part[] {
   if (
     hasMatchingProviderContent(
@@ -109,7 +118,13 @@ function toGeminiAssistantParts(
       providerReplayRevision
     )
   ) {
-    return message.providerContent as Part[];
+    const parts = message.providerContent as Part[];
+    rememberIdlessGeminiFunctionCalls(
+      parts,
+      message.toolCalls,
+      idlessProviderToolCalls
+    );
+    return parts;
   }
 
   const parts: Part[] = [];
@@ -139,6 +154,32 @@ function toGeminiAssistantParts(
   }
 
   return parts;
+}
+
+function rememberIdlessGeminiFunctionCalls(
+  parts: Part[],
+  toolCalls: Extract<ChatMessage, { role: "assistant" }>["toolCalls"],
+  destination: Set<string> | undefined
+): void {
+  if (!(destination && toolCalls?.length)) {
+    return;
+  }
+
+  let functionCallIndex = 0;
+
+  for (const part of parts) {
+    const functionCall = part.functionCall;
+    if (!functionCall?.name?.trim()) {
+      continue;
+    }
+
+    const normalizedCall = toolCalls[functionCallIndex];
+    functionCallIndex += 1;
+
+    if (!functionCall.id?.trim() && normalizedCall?.id) {
+      destination.add(normalizedCall.id);
+    }
+  }
 }
 
 function parseToolResultContent(content: string): Record<string, unknown> {
@@ -175,21 +216,24 @@ export function parseGeminiFunctionCalls(
   }
 
   return functionCalls.flatMap((call) => {
-    const id = call.id?.trim();
     const name = call.name?.trim();
 
-    if (!(id && name)) {
+    if (!name) {
       return [];
     }
 
     return [
       {
         arguments: readRecord(call.args ?? {}),
-        id,
+        id: call.id?.trim() || createGeminiFunctionCallId(),
         name,
       },
     ];
   });
+}
+
+export function createGeminiFunctionCallId(): string {
+  return `gemini_call_${randomUUID()}`;
 }
 
 export function extractTextAndThinkingFromParts(parts: Part[] | undefined): {

@@ -177,6 +177,8 @@ describe("server chat capability policy", () => {
     const firstParty: Array<ProviderInstance["type"]> = [
       "anthropic",
       "cerebras",
+      "chatgpt",
+      "claude",
       "cloudflare",
       "deepseek",
       "fireworks",
@@ -207,6 +209,21 @@ describe("server chat capability policy", () => {
         policy.capabilities[PROVIDER_CAPABILITY_IDS.chatToolUse],
         type
       ).toMatchObject({ selectable: true, status: "supported" });
+    }
+
+    for (const type of firstParty.filter(
+      (provider) => provider !== "chatgpt"
+    )) {
+      const policy = resolvePolicy(
+        {
+          apiKey: "test-key",
+          createdAt,
+          id: `${type}-test`,
+          label: type,
+          type,
+        },
+        "any-model"
+      );
       expect(
         policy.capabilities[PROVIDER_CAPABILITY_IDS.chatReasoning],
         type

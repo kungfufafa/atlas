@@ -107,6 +107,57 @@ describe("toGeminiContents", () => {
     expect(contents[1]?.parts).toEqual([rawPartWithSig]);
   });
 
+  test("keeps synthetic ids internal when replaying id-less provider content", async () => {
+    const messages: ChatMessage[] = [
+      { content: "Write file", role: "user" },
+      {
+        content: "",
+        providerContent: [
+          {
+            functionCall: {
+              args: { ignored: true },
+            },
+          },
+          {
+            functionCall: {
+              args: { path: "demo.txt" },
+              name: "write_file",
+            },
+            thoughtSignature: "sig_abc_123",
+          },
+        ],
+        role: "assistant",
+        toolCalls: [
+          {
+            arguments: { path: "demo.txt" },
+            id: "gemini_call_saved",
+            name: "write_file",
+          },
+        ],
+      },
+      {
+        content: '{"ok":true}',
+        name: "write_file",
+        role: "tool",
+        toolCallId: "gemini_call_saved",
+      },
+    ];
+
+    const contents = await toGeminiContents(messages);
+
+    expect(contents[1]?.parts?.[1]).toEqual({
+      functionCall: {
+        args: { path: "demo.txt" },
+        name: "write_file",
+      },
+      thoughtSignature: "sig_abc_123",
+    });
+    expect(contents[2]?.parts?.[0]?.functionResponse).toEqual({
+      name: "write_file",
+      response: { ok: true },
+    });
+  });
+
   test("maps image parts to inlineData", async () => {
     const messages: ChatMessage[] = [
       {
@@ -137,6 +188,22 @@ describe("parseGeminiFunctionCalls", () => {
     ).toEqual([
       { arguments: { path: "a.txt" }, id: "fc1", name: "write_file" },
     ]);
+  });
+
+  test("synthesizes distinct ids when Gemini omits optional function-call ids", () => {
+    const calls = parseGeminiFunctionCalls([
+      { args: { path: "a.txt" }, name: "write_file" },
+      { args: { path: "b.txt" }, name: "write_file" },
+    ]);
+
+    expect(calls).toHaveLength(2);
+    expect(calls[0]).toMatchObject({
+      arguments: { path: "a.txt" },
+      name: "write_file",
+    });
+    expect(calls[0]?.id).toStartWith("gemini_call_");
+    expect(calls[1]?.id).toStartWith("gemini_call_");
+    expect(calls[0]?.id).not.toBe(calls[1]?.id);
   });
 });
 

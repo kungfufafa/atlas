@@ -19,6 +19,7 @@ import {
 } from "../shared";
 import { buildGeminiChatConfig, buildGeminiGenerateConfig } from "./config";
 import {
+  createGeminiFunctionCallId,
   extractTextAndThinkingFromParts,
   parseGeminiFunctionCalls,
   toGeminiContents,
@@ -103,11 +104,15 @@ interface PendingFunctionCall {
 
 function mergePendingFunctionCall(
   pending: Map<string, PendingFunctionCall>,
+  key: string,
   call: { id?: string; name?: string; args?: Record<string, unknown> },
   handlers?: StreamChatHandlers
 ): void {
-  const id = call.id?.trim() || "pending";
-  const current = pending.get(id) ?? { argsJson: "{}", id, name: "" };
+  const current = pending.get(key) ?? {
+    argsJson: "",
+    id: call.id?.trim() || createGeminiFunctionCallId(),
+    name: "",
+  };
 
   if (call.name) {
     current.name = call.name;
@@ -127,7 +132,7 @@ function mergePendingFunctionCall(
     );
   }
 
-  pending.set(id, current);
+  pending.set(key, current);
 }
 
 function finalizePendingFunctionCalls(
@@ -140,7 +145,7 @@ function finalizePendingFunctionCalls(
 
     return parseGeminiFunctionCalls([
       {
-        args: JSON.parse(call.argsJson) as Record<string, unknown>,
+        args: JSON.parse(call.argsJson || "{}") as Record<string, unknown>,
         id: call.id,
         name: call.name,
       },
@@ -161,14 +166,6 @@ function accumulateStreamParts(
     const text = part.text;
 
     if (!text) {
-      if (part.functionCall) {
-        handlers?.onToolStart?.({
-          input: (part.functionCall.args ?? {}) as Record<string, unknown>,
-          tool: part.functionCall.name ?? "",
-          toolCallId: part.functionCall.id ?? "pending",
-        });
-      }
-
       continue;
     }
 
@@ -193,6 +190,7 @@ async function readGeminiStream(
   const pending = new Map<string, PendingFunctionCall>();
   const rawParts: Part[] = [];
   let usage: ChatCompletionResult["usage"];
+  let anonymousCallCount = 0;
 
   for await (const chunk of stream) {
     usage = extractGeminiTokenUsage(chunk.usageMetadata) ?? usage;
@@ -203,7 +201,12 @@ async function readGeminiStream(
     accumulateStreamParts(parts, state, handlers);
 
     for (const call of chunk.functionCalls ?? []) {
-      mergePendingFunctionCall(pending, call, handlers);
+      const providedId = call.id?.trim();
+      const key = providedId || `anonymous:${anonymousCallCount}`;
+      if (!providedId) {
+        anonymousCallCount += 1;
+      }
+      mergePendingFunctionCall(pending, key, call, handlers);
     }
   }
 

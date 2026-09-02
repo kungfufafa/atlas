@@ -154,6 +154,7 @@ export function buildChatSystemPrompt(
     sections.push(
       "",
       "You have access to tools for this session. Use them when needed to finish the work, then reply to the user in natural language unless another tool call is required.",
+      "Atlas executes these tools independently of the selected model provider. Provider-native shell, filesystem, sandbox, skill, or MCP restrictions do not disable a tool listed for this session. Call the listed tool instead of claiming the provider environment cannot perform the action; the tool's own result is authoritative.",
       "If a tool returns an authentication, API-key, or not-connected error, do not retry that tool. Switch to another assigned tool that can finish the work."
     );
 

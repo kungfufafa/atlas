@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import type { GenerateChatInput } from "@atlas/core";
 import { formatSubscriptionPrompt, parseSubscriptionResponse } from "./prompt";
 
 const TINY_PNG_BASE64 =
@@ -25,6 +26,49 @@ describe("subscription prompt mapping", () => {
     expect(formatted.developerInstructions).toContain("atlas-tool-call");
     expect(formatted.developerInstructions).toContain("knowledge_base_search");
     expect(formatted.latestTurn).toContain("Search docs");
+  });
+
+  test("keeps Atlas write tools outside both native runtime permission boundaries", async () => {
+    const input: GenerateChatInput = {
+      messages: [{ content: "Create a presentation", role: "user" }],
+      system: "You are Atlas.",
+      tools: [
+        {
+          description: "Create a PowerPoint presentation",
+          name: "write_pptx",
+          parameters: { type: "object" },
+        },
+      ],
+    };
+    const [chatgpt, claude] = await Promise.all([
+      formatSubscriptionPrompt(input, "chatgpt"),
+      formatSubscriptionPrompt(input, "claude"),
+    ]);
+
+    for (const formatted of [chatgpt, claude]) {
+      expect(formatted.developerInstructions).toMatch(
+        /Atlas, not this subscription runtime, executes every tool listed below/
+      );
+      expect(formatted.developerInstructions).toMatch(
+        /native sandbox, filesystem, approval, and permission settings do not restrict Atlas tools/
+      );
+      expect(formatted.developerInstructions).toMatch(
+        /including creating or modifying files/
+      );
+      expect(formatted.developerInstructions).toMatch(
+        /still enforce their own schemas, authorization, approval, and runtime checks/
+      );
+      expect(formatted.developerInstructions).toMatch(
+        /Do not refuse because this runtime cannot perform the same action natively/
+      );
+      expect(formatted.developerInstructions).toContain("write_pptx");
+    }
+    expect(chatgpt.developerInstructions).toMatch(
+      /read-only sandbox applies only to Codex-native shell and filesystem actions/
+    );
+    expect(claude.developerInstructions).toMatch(
+      /empty native tool set and dontAsk permission mode apply only to Claude-native actions/
+    );
   });
 
   test("extracts documents into the subscription transcript", async () => {
