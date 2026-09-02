@@ -370,6 +370,49 @@ describe("profile service createProfile", () => {
     expect(tools).toEqual([]);
   });
 
+  test("keeps legacy-missing tools off until they are explicitly assigned", async () => {
+    tempConfigDir = await mkdtemp(
+      path.join(os.tmpdir(), "atlas-profile-legacy-tools-")
+    );
+    process.env.ATLAS_CONFIG_DIR = tempConfigDir;
+
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    const profileId = "legacy-profile";
+    await db.upsertProfile({
+      createdAt: now,
+      id: profileId,
+      isDefault: false,
+      isSuper: false,
+      model: null,
+      name: "Legacy Profile",
+      orgId: ORG_ID,
+      systemPrompt: "",
+      updatedAt: now,
+    });
+
+    const service = new ProfileService(db);
+    const catalog = await service.listTools(ORG_ID);
+    const writePptx = catalog.tools.find((tool) => tool.name === "write_pptx");
+
+    expect(writePptx).toBeDefined();
+    expect((await service.listProfileTools(ORG_ID, profileId)).tools).toEqual(
+      []
+    );
+
+    if (!writePptx) {
+      throw new Error("write_pptx was not seeded into the tool catalog");
+    }
+
+    const assigned = await service.assignTool(ORG_ID, profileId, {
+      toolId: writePptx.id,
+    });
+
+    expect(assigned.profile.tools.map((tool) => tool.name)).toContain(
+      "write_pptx"
+    );
+  });
+
   test("writes generated soul files and keeps memory empty", async () => {
     tempConfigDir = await mkdtemp(
       path.join(os.tmpdir(), "atlas-profile-generated-soul-")

@@ -12,6 +12,23 @@ import { buildChatCompletionResult } from "../shared";
 
 const TOOL_CALL_FENCE = "atlas-tool-call";
 const TOOL_CALL_FENCE_RE = /```atlas-tool-call\s*([\s\S]*?)```/gi;
+const ATLAS_TOOL_EXECUTION_CONTRACT = [
+  "Atlas, not this subscription runtime, executes every tool listed below.",
+  "Native runtime tools are disabled; native sandbox, filesystem, approval, and permission settings do not restrict Atlas tools.",
+  "Each listed Atlas tool remains available for its declared behavior, including creating or modifying files.",
+  "Atlas tools still enforce their own schemas, authorization, approval, and runtime checks; their results are authoritative.",
+  "When a listed Atlas tool can complete the request, call it through the Atlas tool-call format. Do not refuse because this runtime cannot perform the same action natively.",
+  "Do not run native shell commands or edit files yourself.",
+].join(" ");
+const SUBSCRIPTION_RUNTIME_TOOL_BOUNDARY: Record<
+  SubscriptionProviderKind,
+  string
+> = {
+  chatgpt:
+    "For ChatGPT/Codex, the read-only sandbox applies only to Codex-native shell and filesystem actions.",
+  claude:
+    "For Claude Code, the empty native tool set and dontAsk permission mode apply only to Claude-native actions.",
+};
 
 export async function formatSubscriptionPrompt(
   input: GenerateChatInput,
@@ -29,7 +46,7 @@ export async function formatSubscriptionPrompt(
 }> {
   const developerInstructions = [
     input.system.trim(),
-    formatToolInstructions(input.tools),
+    formatToolInstructions(input.tools, provider),
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -113,7 +130,8 @@ export function appendDelta(
 }
 
 function formatToolInstructions(
-  tools: LlmToolDefinition[] | undefined
+  tools: LlmToolDefinition[] | undefined,
+  provider: SubscriptionProviderKind
 ): string {
   if (!tools?.length) {
     return "";
@@ -127,7 +145,8 @@ function formatToolInstructions(
     .join("\n");
 
   return [
-    "Atlas executes tools. Do not run shell commands or edit files yourself.",
+    ATLAS_TOOL_EXECUTION_CONTRACT,
+    SUBSCRIPTION_RUNTIME_TOOL_BOUNDARY[provider],
     "If you need a tool, emit one or more fenced blocks and nothing else in those blocks:",
     "```" + TOOL_CALL_FENCE,
     '{"name":"tool_name","arguments":{}}',

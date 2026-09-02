@@ -55,6 +55,74 @@ export function profileHasPendingEdits(snapshot: ProfileEditSnapshot): boolean {
   );
 }
 
+export async function flushProfileSave(options: {
+  clearScheduledSave: () => void;
+  hasPendingEdits: () => boolean;
+  isSaving: () => boolean;
+  isValid: () => boolean;
+  performSave: () => Promise<boolean>;
+}): Promise<boolean> {
+  options.clearScheduledSave();
+
+  if (!options.isValid()) {
+    return false;
+  }
+
+  while (options.isSaving() || options.hasPendingEdits()) {
+    const saved = await options.performSave();
+    options.clearScheduledSave();
+
+    if (!(saved && options.isValid())) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+export async function runExclusiveProfileExport(options: {
+  lock: { current: boolean };
+  onPendingChange: (pending: boolean) => void;
+  run: () => Promise<void>;
+}): Promise<boolean> {
+  if (options.lock.current) {
+    return false;
+  }
+
+  options.lock.current = true;
+
+  try {
+    options.onPendingChange(true);
+    await options.run();
+    return true;
+  } finally {
+    options.lock.current = false;
+    options.onPendingChange(false);
+  }
+}
+
+export async function runProfileExport(options: {
+  download: (filename: string, data: ArrayBuffer) => void;
+  exportProfile: (
+    profileId: string
+  ) => Promise<{ data: ArrayBuffer; filename: string }>;
+  flushSave: () => Promise<boolean>;
+  isCurrentProfile: () => boolean;
+  profileId: string;
+}): Promise<boolean> {
+  if (!(await options.flushSave())) {
+    return false;
+  }
+
+  if (!options.isCurrentProfile()) {
+    return false;
+  }
+
+  const archive = await options.exportProfile(options.profileId);
+  options.download(archive.filename, archive.data);
+  return true;
+}
+
 export type RemoveAssignmentTarget =
   | { kind: "tool"; id: string; name: string }
   | { kind: "mcp"; id: string; name: string }

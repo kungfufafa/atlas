@@ -92,7 +92,7 @@ async function withTemporaryConfig<T>(run: () => Promise<T>): Promise<T> {
 }
 
 describe("Claude subscription runtime", () => {
-  test("disables native capabilities and buffers Atlas tool syntax", async () => {
+  test("disables native capabilities while preserving Atlas tool execution", async () => {
     let capturedOptions: Record<string, unknown> | undefined;
     const sdk: ClaudeAgentSdk = {
       query: ({ options }) => {
@@ -140,6 +140,11 @@ describe("Claude subscription runtime", () => {
               name: "knowledge_base_search",
               parameters: { type: "object" },
             },
+            {
+              description: "Create a PowerPoint presentation",
+              name: "write_pptx",
+              parameters: { type: "object" },
+            },
           ],
         },
         { onChunk: (chunk) => chunks.push(chunk) },
@@ -157,6 +162,15 @@ describe("Claude subscription runtime", () => {
       thinking: { display: "summarized", type: "adaptive" },
       tools: [],
     });
+    expect(capturedOptions?.systemPrompt).toMatch(
+      /native sandbox, filesystem, approval, and permission settings do not restrict Atlas tools/
+    );
+    expect(capturedOptions?.systemPrompt).toMatch(
+      /empty native tool set and dontAsk permission mode apply only to Claude-native actions/
+    );
+    expect(capturedOptions?.systemPrompt).toMatch(
+      /write_pptx[\s\S]+Create a PowerPoint presentation/
+    );
     expect(result.content).toBe("Working.");
     expect(result.toolCalls).toEqual([
       {

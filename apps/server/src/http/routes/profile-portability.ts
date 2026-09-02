@@ -202,6 +202,7 @@ export function registerProfilePortabilityRoutes(
       );
       return new Response(result.data as unknown as BodyInit, {
         headers: {
+          "Cache-Control": "no-store",
           "Content-Disposition": `attachment; filename="${result.filename}"`,
           "Content-Type": "application/zip",
         },

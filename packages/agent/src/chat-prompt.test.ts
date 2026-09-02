@@ -8,6 +8,9 @@ test("buildChatSystemPrompt default identity is a present personal assistant", (
   expect(prompt).toContain("Talk like a capable personal assistant");
   expect(prompt).toContain("# Presence");
   expect(prompt).toContain("their assistant in this conversation now");
+  expect(prompt).not.toContain(
+    "Atlas executes these tools independently of the selected model provider"
+  );
   expect(prompt).not.toContain("helpful personal AI assistant");
 });
 
@@ -212,6 +215,13 @@ test("buildChatSystemPrompt nudges assigned work tools without extra product mod
   expect(prompt).toContain("use spreadsheet");
   expect(prompt).toContain("write the finished output");
   expect(prompt).toContain("Use them when needed to finish the work");
+  expect(prompt).toContain(
+    "Atlas executes these tools independently of the selected model provider"
+  );
+  expect(prompt).toContain(
+    "Provider-native shell, filesystem, sandbox, skill, or MCP restrictions do not disable"
+  );
+  expect(prompt).toContain("the tool's own result is authoritative");
   expect(prompt).not.toContain("ChatGPT");
 });
 

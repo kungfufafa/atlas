@@ -19,6 +19,7 @@ import {
   useProfileComposioToolkits,
   useUpdateProfileComposioToolkitsMutation,
 } from "@/hooks/use-composio";
+import { useExportProfilePack } from "@/hooks/use-profile-pack";
 import {
   useAssignMcpServerMutation,
   useAssignSkillMutation,
@@ -38,13 +39,16 @@ import {
 } from "@/hooks/use-resource-mutations";
 import { resolveProfilesPageProfileId } from "@/lib/chat-history";
 import { formatError } from "@/lib/client";
+import { downloadArchive } from "@/lib/download-archive";
 import {
   extractModelId,
   groupModelsByProvider,
   profileModelSelectionValue,
 } from "@/lib/models";
 import { fileToImageAttachment } from "@/lib/profile-images";
+import { toast } from "@/lib/toast";
 import {
+  flushProfileSave,
   type ProfileDetailTab,
   type ProfileSaveStatus,
   profileHasPendingEdits,
@@ -52,6 +56,8 @@ import {
   profileTextSaveDelayMs,
   type RemoveAssignmentTarget,
   resolveProfileDetailTab,
+  runExclusiveProfileExport,
+  runProfileExport,
 } from "@/pages/profiles/profiles-page.shared";
 
 export function useProfilesPage() {
@@ -63,7 +69,11 @@ export function useProfilesPage() {
     isFetching: profilesRefreshing,
     error: profilesError,
   } = useProfilesQuery();
-  const { data: allTools = [] } = useToolsQuery();
+  const {
+    data: allTools = [],
+    isLoading: toolsLoading,
+    error: toolsError,
+  } = useToolsQuery();
   const { data: allMcpServers = [] } = useMcpServersQuery();
   const { data: composioToolkitsData } = useComposioToolkits();
   const [selectedId, setSelectedIdState] = useState<string | null>(null);
@@ -83,6 +93,7 @@ export function useProfilesPage() {
     refetch: refetchDetail,
   } = useProfileQuery(selectedId);
   const updateMutation = useUpdateProfileMutation();
+  const exportMutation = useExportProfilePack();
   const cloneProfileMutation = useCloneProfileMutation();
   const deleteMutation = useDeleteProfileMutation();
   const uploadAvatarMutation = useUploadProfileAvatarMutation();
@@ -99,7 +110,9 @@ export function useProfilesPage() {
   const deleteSkillMutation = useDeleteSkillMutation();
   const updateComposioMutation = useUpdateProfileComposioToolkitsMutation();
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const exportWorkflowRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
+  const [exportPending, setExportPending] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
@@ -162,9 +175,12 @@ export function useProfilesPage() {
     );
   }, [editModel, providerModelGroups]);
 
-  const busy =
-    updateMutation.isPending ||
+  const exportBlocked =
+    exportPending ||
+    cloneProfileMutation.isPending ||
     deleteMutation.isPending ||
+    uploadAvatarMutation.isPending ||
+    deleteAvatarMutation.isPending ||
     assignMutation.isPending ||
     unassignMutation.isPending ||
     assignMcpMutation.isPending ||
@@ -176,6 +192,8 @@ export function useProfilesPage() {
     unassignSkillMutation.isPending ||
     deleteSkillMutation.isPending ||
     updateComposioMutation.isPending;
+  const exportDisabled = !editName.trim() || exportBlocked;
+  const busy = updateMutation.isPending || exportBlocked;
 
   const refreshing =
     profilesRefreshing || (detailLoading && Boolean(selectedId));
@@ -361,19 +379,46 @@ export function useProfilesPage() {
     performSaveRef.current = performSave;
   }, [performSave]);
 
-  const flushSave = useCallback(async (): Promise<boolean> => {
-    clearScheduledSave();
+  const flushSave = useCallback(
+    async (): Promise<boolean> =>
+      await flushProfileSave({
+        clearScheduledSave,
+        hasPendingEdits: () => profileHasPendingEdits(editStateRef.current),
+        isSaving: () => savingRef.current,
+        isValid: () => Boolean(editStateRef.current.editName.trim()),
+        performSave,
+      }),
+    [clearScheduledSave, performSave]
+  );
 
-    while (profileHasPendingEdits(editStateRef.current)) {
-      const saved = await performSave();
-      clearScheduledSave();
-      if (!saved) {
-        return false;
+  const handleExportProfile = useCallback(
+    async (profileId: string): Promise<void> => {
+      try {
+        await runExclusiveProfileExport({
+          lock: exportWorkflowRef,
+          onPendingChange: setExportPending,
+          run: async () => {
+            setError(null);
+            const exported = await runProfileExport({
+              download: downloadArchive,
+              exportProfile: (targetProfileId) =>
+                exportMutation.mutateAsync(targetProfileId),
+              flushSave,
+              isCurrentProfile: () => selectedIdRef.current === profileId,
+              profileId,
+            });
+
+            if (exported) {
+              toast("Profile download started.");
+            }
+          },
+        });
+      } catch (err) {
+        toast(formatError(err));
       }
-    }
-
-    return true;
-  }, [clearScheduledSave, performSave]);
+    },
+    [exportMutation, flushSave]
+  );
 
   const handleEditNameChange = useCallback(
     (value: string) => {
@@ -523,10 +568,6 @@ export function useProfilesPage() {
       }
     },
     []
-  );
-
-  const availableTools = allTools.filter(
-    (tool) => !detail?.tools.some((assigned) => assigned.id === tool.id)
   );
 
   const availableMcpServers = allMcpServers.filter(
@@ -710,6 +751,10 @@ export function useProfilesPage() {
   }
 
   async function handleAssignTool(toolId: string) {
+    await handleSetToolAssigned(toolId, true);
+  }
+
+  async function handleSetToolAssigned(toolId: string, assigned: boolean) {
     if (!selectedId) {
       return;
     }
@@ -717,7 +762,11 @@ export function useProfilesPage() {
     setError(null);
 
     try {
-      await assignMutation.mutateAsync({ profileId: selectedId, toolId });
+      if (assigned) {
+        await assignMutation.mutateAsync({ profileId: selectedId, toolId });
+      } else {
+        await unassignMutation.mutateAsync({ profileId: selectedId, toolId });
+      }
     } catch (err) {
       setError(formatError(err));
     }
@@ -972,7 +1021,6 @@ export function useProfilesPage() {
     assignSkillMutation,
     availableComposioToolkits,
     availableMcpServers,
-    availableTools,
     avatarInputRef,
     busy,
     cloneProfileMutation,
@@ -993,6 +1041,8 @@ export function useProfilesPage() {
     editName,
     editPrompt,
     error,
+    exportDisabled,
+    exportPending,
     flushSave,
     handleAssignComposioToolkit,
     handleAssignMcpServer,
@@ -1010,9 +1060,11 @@ export function useProfilesPage() {
     handleEditModelChange,
     handleEditNameChange,
     handleEditPromptChange,
+    handleExportProfile,
     handleInstallSkill,
     handleRemoveAssignmentConfirm,
     handleSelectProfile,
+    handleSetToolAssigned,
     installSkillMutation,
     isDirty,
     mcpCreateOpen,
@@ -1040,6 +1092,8 @@ export function useProfilesPage() {
     setSkillInstallOpen,
     skillCreateOpen,
     skillInstallOpen,
+    toolsError,
+    toolsLoading,
     unassignMcpMutation,
     unassignMutation,
     unassignSkillMutation,

@@ -697,6 +697,12 @@ describe("ChatGPT subscription runtime", () => {
           id: "thread-1",
         },
       ]);
+      expect(server.threadOptions[0]?.developerInstructions).toMatch(
+        /native sandbox, filesystem, approval, and permission settings do not restrict Atlas tools/
+      );
+      expect(server.resumeInputs[0]?.developerInstructions).toMatch(
+        /read-only sandbox applies only to Codex-native/
+      );
       expect(server.turnInputs[1]).toEqual([
         {
           text: "Tool result (knowledge_base_search):\nThe answer is 42.",

@@ -126,6 +126,75 @@ describe("createGeminiProvider", () => {
     });
   });
 
+  test("generateChat preserves an id-less write tool call", async () => {
+    const fetchMock = mock(
+      async (_input: RequestInfo | URL, init?: RequestInit) => {
+        const body = JSON.parse(String(init?.body ?? "{}")) as {
+          systemInstruction?: { parts?: Array<{ text?: string }> };
+          tools?: Array<{
+            functionDeclarations?: Array<{
+              name?: string;
+              parameters?: Record<string, unknown>;
+            }>;
+          }>;
+        };
+
+        expect(JSON.stringify(body.systemInstruction)).toContain(
+          "Atlas executes assigned tools"
+        );
+        expect(body.tools?.[0]?.functionDeclarations?.[0]).toMatchObject({
+          name: "write_pptx",
+          parameters: {
+            properties: { path: { type: "STRING" } },
+            required: ["path"],
+            type: "OBJECT",
+          },
+        });
+
+        return new Response(
+          generateContentResponse({
+            functionCalls: [
+              {
+                args: { path: "artifacts/deck.pptx" },
+                name: "write_pptx",
+              },
+            ],
+          }),
+          { headers: { "Content-Type": "application/json" }, status: 200 }
+        );
+      }
+    );
+
+    await withMockFetch(fetchMock as typeof fetch, async () => {
+      const provider = createGeminiProvider({
+        apiKey: "AIzaTest",
+        model: "gemini-2.5-flash",
+      });
+      const result = await provider.generateChat({
+        messages: [{ content: "Create slides", role: "user" }],
+        system: "Atlas executes assigned tools.",
+        tools: [
+          {
+            description: "Create a PowerPoint presentation",
+            name: "write_pptx",
+            parameters: {
+              properties: { path: { type: "string" } },
+              required: ["path"],
+              type: "object",
+            },
+          },
+        ],
+      });
+
+      expect(result.toolCalls).toHaveLength(1);
+      expect(result.toolCalls[0]).toMatchObject({
+        arguments: { path: "artifacts/deck.pptx" },
+        name: "write_pptx",
+      });
+      expect(result.toolCalls[0]?.id).toStartWith("gemini_call_");
+    });
+  });
+
   test("captures API-reported usage", async () => {
     const fetchMock = mock(
       async () =>
@@ -199,6 +268,62 @@ describe("createGeminiProvider", () => {
       expect(result.assistantMessage.thinking).toBe("Plan");
       expect(chunks).toEqual(["Hi"]);
       expect(thinking).toEqual(["Plan"]);
+    });
+  });
+
+  test("streamChat preserves parallel id-less tool calls", async () => {
+    const fetchMock = mock(
+      async () =>
+        new Response(
+          streamFromEvents([
+            generateContentResponse({
+              functionCalls: [
+                { args: { path: "a.txt" }, name: "write_file" },
+                { args: { path: "b.txt" }, name: "write_file" },
+              ],
+            }),
+          ]),
+          { headers: { "Content-Type": "text/event-stream" }, status: 200 }
+        )
+    );
+
+    await withMockFetch(fetchMock as typeof fetch, async () => {
+      const provider = createGeminiProvider({ apiKey: "AIzaTest" });
+      const providerToolStarts: string[] = [];
+      const toolInputDeltaIds: string[] = [];
+      const result = await provider.streamChat(
+        {
+          messages: [{ content: "write two files", role: "user" }],
+          system: "system",
+          tools: [
+            {
+              description: "Write a file",
+              name: "write_file",
+              parameters: { properties: {}, type: "object" },
+            },
+          ],
+        },
+        {
+          onChunk: () => undefined,
+          onToolInputDelta: (event) => {
+            toolInputDeltaIds.push(event.toolCallId);
+          },
+          onToolStart: (event) => {
+            providerToolStarts.push(event.toolCallId);
+          },
+        }
+      );
+
+      expect(result.toolCalls).toHaveLength(2);
+      expect(result.toolCalls.map((call) => call.arguments)).toEqual([
+        { path: "a.txt" },
+        { path: "b.txt" },
+      ]);
+      expect(result.toolCalls[0]?.id).not.toBe(result.toolCalls[1]?.id);
+      expect(providerToolStarts).toEqual([]);
+      expect(toolInputDeltaIds).toEqual(
+        result.toolCalls.map((call) => call.id)
+      );
     });
   });
 });

@@ -112,6 +112,10 @@ describe("profile portability routes", () => {
       })
     );
     expect(exported.status).toBe(200);
+    expect(exported.headers.get("cache-control")).toBe("no-store");
+    expect(exported.headers.get("content-disposition")).toMatch(
+      /^attachment; filename="atlas-profile-export-.+\.zip"$/
+    );
     expect(exported.headers.get("content-type")).toBe("application/zip");
     const archive = Buffer.from(await exported.arrayBuffer());
 
