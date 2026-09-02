@@ -2954,7 +2954,8 @@ export class AgentService {
   async getSessionAttachment(
     orgId: string,
     sessionId: string,
-    attachmentId: string
+    attachmentId: string,
+    actor?: SessionActor
   ): Promise<{
     bytes: Buffer;
     filename: string | null;
@@ -2964,6 +2965,17 @@ export class AgentService {
     const sessionRecord = await this.getSessionRecordForOrg(orgId, sessionId);
 
     if (!sessionRecord) {
+      return null;
+    }
+    if (
+      actor &&
+      !(await this.canActorAccessSessionRecord(
+        orgId,
+        sessionRecord,
+        actor,
+        "read"
+      ))
+    ) {
       return null;
     }
 

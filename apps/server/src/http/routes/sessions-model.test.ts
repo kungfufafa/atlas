@@ -326,6 +326,87 @@ describe("session model route", () => {
     expect(branchAttachment.status).toBe(200);
   });
 
+  test("does not serve another member's session attachments", async () => {
+    const { app, db } = await createScenario();
+    const owner = await loginUserSession(
+      app,
+      "owner@example.com",
+      PASSWORD,
+      ORG_ID
+    );
+    const member = await loginUserSession(
+      app,
+      "member@example.com",
+      PASSWORD,
+      ORG_ID
+    );
+    const admin = await loginUserSession(
+      app,
+      "admin@example.com",
+      PASSWORD,
+      ORG_ID
+    );
+    const outsider = await loginUserSession(
+      app,
+      "outsider@example.com",
+      PASSWORD,
+      OTHER_ORG_ID
+    );
+    const ownerSessionId = await createWebSession(app, owner);
+    const save = createAttachmentSaver(db, {
+      channel: "web",
+      orgId: ORG_ID,
+      profileId: PROFILE_ID,
+      sessionId: ownerSessionId,
+    });
+    const saved = await save({
+      bytes: Buffer.from("private image bytes"),
+      filename: "secret.png",
+      kind: "image",
+      mediaType: "image/png",
+    });
+    await db.replaceMessagesForSession(ownerSessionId, [
+      {
+        createdAt: new Date().toISOString(),
+        id: "owner-attachment-message",
+        payload: {
+          content: [
+            {
+              attachmentId: saved.attachmentId,
+              mediaType: "image/png",
+              size: saved.size,
+              type: "image_ref" as const,
+            },
+          ],
+          role: "user" as const,
+        },
+        seq: 0,
+        sessionId: ownerSessionId,
+      },
+    ]);
+
+    const fetchAttachment = (
+      session: Awaited<ReturnType<typeof loginUserSession>>
+    ) =>
+      app.fetch(
+        new Request(
+          `http://localhost:4310/v1/sessions/${ownerSessionId}/attachments/${saved.attachmentId}`,
+          { headers: session.headers() }
+        )
+      );
+
+    const ownerDownload = await fetchAttachment(owner);
+    expect(ownerDownload.status).toBe(200);
+    expect(await ownerDownload.text()).toBe("private image bytes");
+
+    expect((await fetchAttachment(member)).status).toBe(404);
+    expect((await fetchAttachment(outsider)).status).toBe(404);
+
+    const adminDownload = await fetchAttachment(admin);
+    expect(adminDownload.status).toBe(200);
+    expect(await adminDownload.text()).toBe("private image bytes");
+  });
+
   test("rejects corrupt image pixels before starting a session turn", async () => {
     const { app } = await createScenario();
     const owner = await loginUserSession(
