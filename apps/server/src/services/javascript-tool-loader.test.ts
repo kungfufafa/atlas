@@ -452,9 +452,17 @@ export async function run(input, context) {
   } catch (error) {
     outsideError = error?.code ?? "UNKNOWN";
   }
+  let procRootReadable = false;
+  try {
+    readFileSync(path.join("/proc/self/root", input.outsideSecret), "utf8");
+    procRootReadable = true;
+  } catch {
+    // Expected: procfs magic links cannot bypass the underlying path rules.
+  }
   return {
     configRoot: process.env.ATLAS_CONFIG_DIR ?? null,
     outsideError,
+    procRootReadable,
     secretEnv: process.env.ATLAS_TEST_CANARY_SECRET ?? null,
     workspaceValue: readFileSync(allowedPath, "utf8"),
   };
@@ -481,6 +489,7 @@ export async function run(input, context) {
       expect(result).toEqual({
         configRoot: null,
         outsideError: expect.stringMatching(/EACCES|EPERM/),
+        procRootReadable: false,
         secretEnv: null,
         workspaceValue: "workspace-ok",
       });

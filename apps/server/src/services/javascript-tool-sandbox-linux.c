@@ -6,7 +6,6 @@ extern int chdir(const char *path);
 extern int close(int file_descriptor);
 extern int dprintf(int file_descriptor, const char *format, ...);
 extern int execv(const char *path, char *const arguments[]);
-extern void free(void *pointer);
 extern char *getenv(const char *name);
 extern int open(const char *path, int flags, ...);
 extern int prctl(int option, ...);
@@ -14,6 +13,7 @@ extern char *strdup(const char *value);
 extern char *strerror(int error_number);
 extern long syscall(long number, ...);
 extern int unsetenv(const char *name);
+extern void _exit(int status);
 
 #define ATLAS_ERRNO (*__errno_location())
 
@@ -251,6 +251,7 @@ int atlas_landlock_and_exec(void) {
     "/etc/ssl",
     "/etc/pki",
     "/etc/ca-certificates",
+    "/proc/self",
   };
   const char *runtime_files[] = {
     "/etc/resolv.conf",
@@ -262,10 +263,27 @@ int atlas_landlock_and_exec(void) {
     "/dev/random",
     "/dev/urandom",
   };
+  const char *runtime_executables[] = {
+#if defined(__x86_64__)
+    "/lib64/ld-linux-x86-64.so.2",
+    "/lib/ld-linux-x86-64.so.2",
+    "/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2",
+    "/lib/ld-musl-x86_64.so.1",
+#elif defined(__aarch64__)
+    "/lib/ld-linux-aarch64.so.1",
+    "/lib64/ld-linux-aarch64.so.1",
+    "/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1",
+    "/lib/ld-musl-aarch64.so.1",
+#endif
+  };
 
   int failed = 0;
   unsigned int path_index;
-  for (path_index = 0; path_index < 8; path_index += 1) {
+  for (
+    path_index = 0;
+    path_index < sizeof(runtime_directories) / sizeof(runtime_directories[0]);
+    path_index += 1
+  ) {
     if (
       atlas_add_path_rule(
         ruleset_fd,
@@ -277,12 +295,35 @@ int atlas_landlock_and_exec(void) {
       failed = 1;
     }
   }
-  for (path_index = 0; path_index < 8; path_index += 1) {
+  for (
+    path_index = 0;
+    path_index < sizeof(runtime_files) / sizeof(runtime_files[0]);
+    path_index += 1
+  ) {
     if (
       atlas_add_path_rule(
         ruleset_fd,
         runtime_files[path_index],
         ATLAS_READ_FILE_ACCESS,
+        0
+      ) < 0
+    ) {
+      failed = 1;
+    }
+  }
+  // A dynamically linked Bun binary needs EXECUTE permission on its exact ELF
+  // interpreter after Landlock is active. Keep this narrower than granting
+  // executable access to the complete system library directories.
+  for (
+    path_index = 0;
+    path_index < sizeof(runtime_executables) / sizeof(runtime_executables[0]);
+    path_index += 1
+  ) {
+    if (
+      atlas_add_path_rule(
+        ruleset_fd,
+        runtime_executables[path_index],
+        ATLAS_EXECUTABLE_ACCESS,
         0
       ) < 0
     ) {
@@ -392,22 +433,16 @@ int atlas_landlock_and_exec(void) {
 
   atlas_close_inherited_descriptors();
   execv(bun_path, arguments);
+  int exec_error = ATLAS_ERRNO;
   dprintf(
     2,
     "Landlock could not start the custom-tool runner: %s\n",
-    strerror(ATLAS_ERRNO)
+    strerror(exec_error)
   );
-
-  free(workspace_copy);
-  free(module_root_copy);
-  free(temp_path);
-  free(module_directory);
-  free(module_path);
-  free(mode);
-  free(runner_directory);
-  free(runner_path);
-  free(bun_path);
-  return 1;
+  // Descriptors owned by Bun's event loop and FFI runtime are already closed.
+  // Returning to JavaScript here would leave the launcher in a corrupted state.
+  _exit(126);
+  return 126;
 }
 
 #else
