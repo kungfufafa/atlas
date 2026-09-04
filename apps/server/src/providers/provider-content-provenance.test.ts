@@ -170,6 +170,12 @@ describe("provider content provenance", () => {
         role: "assistant",
         toolCalls: [NORMALIZED_TOOL_CALL],
       },
+      {
+        content: "tool result",
+        name: "search",
+        role: "tool",
+        toolCallId: NORMALIZED_TOOL_CALL.id,
+      },
     ]);
     expect(gemini[0]?.parts).toEqual([geminiRaw]);
 

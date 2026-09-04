@@ -18,7 +18,7 @@ export async function toGeminiContents(
   const contents: Content[] = [];
   const idlessProviderToolCalls = new Set<string>();
 
-  for (const message of messages) {
+  for (const message of normalizeGeminiToolHistory(messages)) {
     if (message.role === "user") {
       const parts = await toGeminiUserParts(message.content);
 
@@ -63,6 +63,111 @@ export async function toGeminiContents(
   }
 
   return contents;
+}
+
+function normalizeGeminiToolHistory(messages: ChatMessage[]): ChatMessage[] {
+  const normalized: ChatMessage[] = [];
+
+  for (const [index, rawMessage] of messages.entries()) {
+    if (rawMessage.role !== "assistant" || !rawMessage.toolCalls?.length) {
+      normalized.push(rawMessage);
+      continue;
+    }
+
+    const visibleToolResults = new Set<string>();
+    for (const follower of messages.slice(index + 1)) {
+      if (follower.role !== "tool") {
+        break;
+      }
+      if (follower.toolCallId) {
+        visibleToolResults.add(follower.toolCallId);
+      }
+    }
+
+    const remainingToolCalls = rawMessage.toolCalls.filter((call) =>
+      visibleToolResults.has(call.id)
+    );
+    if (remainingToolCalls.length === 0) {
+      const text = rawMessage.content.trim();
+      const thinking = rawMessage.thinking?.trim();
+      if (!(text || thinking)) {
+        continue;
+      }
+
+      normalized.push({
+        ...rawMessage,
+        providerContent: filterGeminiProviderContent(
+          rawMessage.providerContent,
+          new Set(),
+          rawMessage.toolCalls
+        ),
+        toolCalls: undefined,
+      });
+      continue;
+    }
+
+    if (remainingToolCalls.length !== rawMessage.toolCalls.length) {
+      const allowedToolCallIds = new Set(
+        remainingToolCalls.map((call) => call.id)
+      );
+      normalized.push({
+        ...rawMessage,
+        providerContent: filterGeminiProviderContent(
+          rawMessage.providerContent,
+          allowedToolCallIds,
+          rawMessage.toolCalls
+        ),
+        toolCalls: remainingToolCalls,
+      });
+      continue;
+    }
+
+    normalized.push(rawMessage);
+  }
+
+  const keptToolCallIds = new Set<string>();
+  for (const message of normalized) {
+    if (message.role !== "assistant") {
+      continue;
+    }
+    for (const call of message.toolCalls ?? []) {
+      keptToolCallIds.add(call.id);
+    }
+  }
+
+  return normalized.filter(
+    (message) =>
+      message.role !== "tool" || keptToolCallIds.has(message.toolCallId)
+  );
+}
+
+function filterGeminiProviderContent(
+  providerContent: unknown[] | undefined,
+  allowedToolCallIds: Set<string>,
+  toolCalls: Extract<ChatMessage, { role: "assistant" }>["toolCalls"]
+): unknown[] | undefined {
+  if (!providerContent?.length) {
+    return providerContent;
+  }
+
+  let functionCallIndex = 0;
+  const filtered = providerContent.filter((part) => {
+    const functionCall = readRecord(readRecord(part).functionCall);
+    const name =
+      typeof functionCall.name === "string" ? functionCall.name.trim() : "";
+    if (!name) {
+      return true;
+    }
+
+    const normalizedCall = toolCalls?.[functionCallIndex];
+    functionCallIndex += 1;
+    const providedId =
+      typeof functionCall.id === "string" ? functionCall.id.trim() : "";
+    const id = providedId || normalizedCall?.id;
+    return Boolean(id && allowedToolCallIds.has(id));
+  });
+
+  return filtered.length > 0 ? filtered : undefined;
 }
 
 async function toGeminiUserParts(

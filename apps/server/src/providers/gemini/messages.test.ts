@@ -58,6 +58,12 @@ describe("toGeminiContents", () => {
           },
         ],
       },
+      {
+        content: '{"hits":[]}',
+        name: "knowledge_base_search",
+        role: "tool",
+        toolCallId: "call_kb",
+      },
     ];
 
     const contents = await toGeminiContents(messages);
@@ -98,6 +104,12 @@ describe("toGeminiContents", () => {
             name: "write_file",
           },
         ],
+      },
+      {
+        content: '{"ok":true}',
+        name: "write_file",
+        role: "tool",
+        toolCallId: "call_sig",
       },
     ];
 
