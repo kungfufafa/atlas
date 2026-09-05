@@ -978,6 +978,112 @@ describe("AgentService skill_manage injection", () => {
   });
 });
 
+describe("AgentService session listing org isolation", () => {
+  test("does not list another organization's sessions for a foreign profile id", async () => {
+    const db = createInMemoryDatabaseAdapter();
+    const now = new Date().toISOString();
+    await db.upsertOrganization({
+      createdAt: now,
+      id: ORG_ID,
+      name: "Acme",
+      slug: "acme",
+      updatedAt: now,
+    });
+    await db.upsertOrganization({
+      createdAt: now,
+      id: "org_other",
+      name: "Other",
+      slug: "other",
+      updatedAt: now,
+    });
+    await db.upsertProfile(createDefaultProfile());
+    await db.upsertProfile({
+      createdAt: now,
+      id: "sales",
+      isDefault: false,
+      isSuper: false,
+      model: null,
+      name: "Sales",
+      orgId: ORG_ID,
+      systemPrompt: "",
+      updatedAt: now,
+    });
+    await db.upsertProfile({
+      createdAt: now,
+      id: "profile_other_default",
+      isDefault: true,
+      isSuper: false,
+      model: null,
+      name: "Default",
+      orgId: "org_other",
+      systemPrompt: "",
+      updatedAt: now,
+    });
+    await db.createUser({
+      createdAt: now,
+      email: "ada@example.com",
+      id: "user_1",
+      name: "Ada",
+      passwordHash: "x",
+      updatedAt: now,
+    });
+    await db.upsertOrgMember({
+      createdAt: now,
+      orgId: ORG_ID,
+      role: "member",
+      userId: "user_1",
+    });
+    await db.createUser({
+      createdAt: now,
+      email: "peer-admin@example.com",
+      id: "user_other_admin",
+      name: "Peer Admin",
+      passwordHash: "x",
+      updatedAt: now,
+    });
+    await db.upsertOrgMember({
+      createdAt: now,
+      orgId: "org_other",
+      role: "admin",
+      userId: "user_other_admin",
+    });
+
+    const service = new AgentService(null, null, db);
+    const sessionId = await service.createSession(
+      ORG_ID,
+      "web",
+      "sales",
+      "user_1",
+      { orgRole: "member" }
+    );
+    await db.replaceMessagesForSession(sessionId, [
+      {
+        createdAt: now,
+        id: "msg_secret",
+        payload: { content: "Acme Q3 pipeline and pricing", role: "user" },
+        seq: 0,
+        sessionId,
+      },
+    ]);
+
+    const ownListing = await service.listSessions(ORG_ID, "sales", "web", {
+      userId: "user_1",
+    });
+    expect(ownListing.sessions.map((session) => session.id)).toContain(
+      sessionId
+    );
+
+    await expect(
+      service.listSessions("org_other", "sales", "web", {
+        userId: "user_other_admin",
+      })
+    ).rejects.toMatchObject({
+      message: "Profile not found.",
+      status: 404,
+    });
+  });
+});
+
 async function installFakeOpenCode(binDir: string): Promise<void> {
   const scriptPath = path.join(binDir, "opencode");
   await writeFile(

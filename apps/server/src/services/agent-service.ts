@@ -5403,16 +5403,13 @@ export class AgentService {
       if (defaultProfile) {
         return defaultProfile;
       }
+      throw new AtlasApiError("Profile not found.", 404);
     }
 
     const profile = await this.db.getProfileForOrg(profileId, orgId);
 
     if (!profile) {
-      const defaultProfile = await this.db.getDefaultProfileForOrg(orgId);
-      if (defaultProfile) {
-        return defaultProfile;
-      }
-      throw new Error("Profile not found.");
+      throw new AtlasApiError("Profile not found.", 404);
     }
 
     return profile;

@@ -130,7 +130,7 @@ async function createScenario() {
     taskService,
   });
 
-  return { agent, app, db, taskService };
+  return { agent, app, authService, db, taskService };
 }
 
 async function patchModel(
@@ -1095,5 +1095,70 @@ describe("session model route", () => {
       )
     );
     expect(unattributedRead.status).toBe(404);
+  });
+
+  test("does not list another organization's sessions by profile id", async () => {
+    const { app, authService, db } = await createScenario();
+    const now = new Date().toISOString();
+    await seedUser(db, authService, {
+      email: "other-admin@example.com",
+      id: "user_other_admin",
+      orgId: OTHER_ORG_ID,
+      role: "admin",
+    });
+    await db.upsertProfile({
+      createdAt: now,
+      id: "profile_other_default",
+      isDefault: true,
+      isSuper: false,
+      model: null,
+      name: "Other Default",
+      orgId: OTHER_ORG_ID,
+      systemPrompt: "Test",
+      updatedAt: now,
+    });
+
+    const owner = await loginUserSession(
+      app,
+      "owner@example.com",
+      PASSWORD,
+      ORG_ID
+    );
+    const sessionId = await createWebSession(app, owner);
+    await db.replaceMessagesForSession(sessionId, [
+      {
+        createdAt: now,
+        id: "msg_secret",
+        payload: { content: "Acme confidential pipeline", role: "user" },
+        seq: 0,
+        sessionId,
+      },
+    ]);
+
+    const otherAdmin = await loginUserSession(
+      app,
+      "other-admin@example.com",
+      PASSWORD,
+      OTHER_ORG_ID
+    );
+    const leaked = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/sessions?profileId=${PROFILE_ID}&channel=web`,
+        { headers: otherAdmin.headers({}, OTHER_ORG_ID) }
+      )
+    );
+
+    expect(leaked.status).toBe(404);
+    expect(await leaked.json()).toMatchObject({ error: "Profile not found." });
+
+    const own = await app.fetch(
+      new Request(
+        `http://localhost:4310/v1/sessions?profileId=${PROFILE_ID}&channel=web`,
+        { headers: owner.headers({}, ORG_ID) }
+      )
+    );
+    expect(own.status).toBe(200);
+    const body = (await own.json()) as { sessions: Array<{ id: string }> };
+    expect(body.sessions.map((session) => session.id)).toContain(sessionId);
   });
 });
