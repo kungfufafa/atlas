@@ -311,37 +311,97 @@ export async function readSseEvents(
   const decoder = new TextDecoder();
   let buffer = "";
 
-  while (true) {
-    const { done, value } = await reader.read();
-
-    if (value) {
-      buffer += decoder.decode(value, { stream: true });
-    }
-
-    if (done) {
-      buffer += decoder.decode();
-    }
-
+  try {
     while (true) {
-      const boundary = findSseBoundary(buffer);
+      const { done, value } = await reader.read();
 
-      if (!boundary) {
-        break;
+      if (value) {
+        buffer += decoder.decode(value, { stream: true });
       }
 
-      const eventBlock = buffer.slice(0, boundary.index);
-      buffer = buffer.slice(boundary.index + boundary.length);
-      await emitSseEvent(eventBlock, onEvent, options);
+      if (done) {
+        buffer += decoder.decode();
+      }
+
+      while (true) {
+        const boundary = findSseBoundary(buffer);
+
+        if (!boundary) {
+          break;
+        }
+
+        const eventBlock = buffer.slice(0, boundary.index);
+        buffer = buffer.slice(boundary.index + boundary.length);
+        await emitSseEvent(eventBlock, onEvent, options);
+      }
+
+      if (done) {
+        break;
+      }
     }
 
-    if (done) {
-      break;
+    if (buffer.trim()) {
+      await emitSseEvent(buffer, onEvent, options);
     }
+  } catch (error) {
+    await reader.cancel().catch(() => undefined);
+    throw error;
+  } finally {
+    reader.releaseLock();
   }
+}
 
-  if (buffer.trim()) {
-    await emitSseEvent(buffer, onEvent, options);
+/** A closed HTTP body alone does not establish that a generation completed. */
+export async function readChatCompletionSseEvents(
+  body: ReadableStream<Uint8Array>,
+  onEvent: (event: SseEvent) => void | Promise<void>,
+  label: string
+): Promise<void> {
+  let completed = false;
+  await readSseEvents(
+    body,
+    async (event) => {
+      if (event.data.trim() === "[DONE]") {
+        completed = true;
+        return;
+      }
+
+      const payload = readRecord(JSON.parse(event.data));
+      if (payload.error != null) {
+        throw new Error(`${label} reported a stream error.`);
+      }
+      const choice = Array.isArray(payload.choices)
+        ? readRecord(payload.choices[0])
+        : {};
+      if (assertChatCompletionFinishReason(choice.finish_reason, label)) {
+        completed = true;
+      }
+      await onEvent(event);
+    },
+    { includeDoneSentinel: true }
+  );
+  if (!completed) {
+    throw new Error(`${label} stream ended before completion.`);
   }
+}
+
+export function assertChatCompletionFinishReason(
+  reason: unknown,
+  label: string
+): boolean {
+  if (typeof reason !== "string" || !reason) {
+    return false;
+  }
+  if (
+    reason === "length" ||
+    reason === "content_filter" ||
+    reason === "error"
+  ) {
+    throw new Error(
+      `${label} stopped before completing the response (${reason}).`
+    );
+  }
+  return true;
 }
 
 async function emitSseEvent(
@@ -424,76 +484,62 @@ export function parseJsonRecord(raw: string): Record<string, unknown> {
   }
 }
 
+/** Never turn malformed model arguments into a different, executable input. */
+export function parseToolArguments(raw: unknown): Record<string, unknown> {
+  if (raw === undefined) {
+    return {};
+  }
+  if (typeof raw !== "string") {
+    throw new Error("The provider returned invalid JSON tool arguments.");
+  }
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return {};
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(trimmed);
+  } catch {
+    throw new Error("The provider returned invalid JSON tool arguments.");
+  }
+  return readToolArguments(parsed);
+}
+
+export function readToolArguments(value: unknown): Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new Error(
+      "The provider returned tool arguments that are not an object."
+    );
+  }
+  return value as Record<string, unknown>;
+}
+
 export function readRecord(value: unknown): Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
 }
 
-/**
- * Default effort values for providers that don't declare their own.
- * Matches OpenAI, OpenRouter, Fireworks, Cerebras API contracts.
- */
-export const DEFAULT_REASONING_EFFORT_VALUES = [
-  "low",
-  "medium",
-  "high",
-] as const;
-export const DEFAULT_REASONING_EFFORT = "medium";
-
-/**
- * Resolve the effort value to send to a provider API.
- *
- * @param effort  - The user-selected effort string (from profile settings).
- * @param validValues - The ordered list of values this provider/model accepts
- *   (from `ProviderModelOption.reasoningEffortValues` or a hardcoded per-provider
- *   constant). When omitted, falls back to DEFAULT_REASONING_EFFORT_VALUES.
- *
- * Fallback strategy:
- *   1. If the effort is in validValues → return as-is.
- *   2. Otherwise pick the median value (represents "medium" intent).
- */
+/** Select only an advertised value; stale cross-provider choices use its documented default. */
 export function resolveThinkingEffort(
   effort: ThinkingEffort | undefined,
-  validValues?: readonly string[] | string[]
-): string {
-  const valid = validValues ?? DEFAULT_REASONING_EFFORT_VALUES;
+  validValues?: readonly string[],
+  defaultEffort?: string
+): string | undefined {
   const trimmed = effort?.trim();
-
-  if (trimmed) {
-    if (valid.includes(trimmed)) {
-      return trimmed;
-    }
-
-    // Semantic aliases for cross-provider compatibility:
-    if ((trimmed === "high" || trimmed === "max") && valid.includes("xhigh")) {
-      return "xhigh";
-    }
-    if (trimmed === "xhigh" && valid.includes("max")) {
-      return "max";
-    }
-    if ((trimmed === "xhigh" || trimmed === "max") && valid.includes("high")) {
-      return "high";
-    }
-    if ((trimmed === "high" || trimmed === "xhigh") && valid.includes("max")) {
-      return "max";
-    }
+  if (trimmed && validValues?.includes(trimmed)) {
+    return trimmed;
   }
-
-  // Pick the middle index as the "medium" fallback.
-  return (
-    valid[Math.floor(valid.length / 2)] ?? valid[0] ?? DEFAULT_REASONING_EFFORT
-  );
+  const trimmedDefault = defaultEffort?.trim();
+  return trimmedDefault && validValues?.includes(trimmedDefault)
+    ? trimmedDefault
+    : undefined;
 }
 
-/**
- * @deprecated Use resolveThinkingEffort() instead.
- * Kept for backward compatibility — delegates to resolveThinkingEffort with the
- * standard three-value scale.
- */
+/** @deprecated Use resolveThinkingEffort with model metadata. */
 export function normalizeThinkingEffort(
   effort: ThinkingEffort | undefined
-): string {
+): string | undefined {
   return resolveThinkingEffort(effort);
 }
 

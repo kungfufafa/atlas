@@ -1,6 +1,5 @@
 import {
   type CapabilityTarget,
-  findCustomModel,
   findProviderInstance,
   migrateCapabilityTargetProviderIds,
   migrateLegacyCapabilityConfig,
@@ -9,6 +8,7 @@ import {
   type ProviderInstance,
   type UserConfig,
 } from "@atlas/core";
+import { getModelsForProviderInstance } from "../compatible-models";
 import type { CapabilityRouteAttempt } from "./errors";
 import { ProviderCapabilityError } from "./errors";
 import type {
@@ -122,8 +122,9 @@ export function evaluateCapabilityTarget(
       selectable: false,
     };
   }
-  const modelClaim = findCustomModel(instance.customModels, target.modelId)
-    ?.capabilities?.[options.capabilityId];
+  const modelClaim = getModelsForProviderInstance(instance).find(
+    (model) => model.id === target.modelId
+  )?.capabilities?.[options.capabilityId];
   const providerOverride = instance.capabilityOverrides?.[options.capabilityId];
   const instanceClaim = options.registry.resolveInstanceCapabilityClaims(
     instance,

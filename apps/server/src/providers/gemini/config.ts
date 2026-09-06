@@ -1,21 +1,25 @@
 import type {
+  CustomModelEntry,
   GenerateChatInput,
   LlmToolDefinition,
   ProviderChatOptions,
-  ThinkingEffort,
 } from "@atlas/core";
 import {
   type GenerateContentConfig,
   ThinkingLevel,
   type Tool,
 } from "@google/genai";
-import { resolveThinkingEffort } from "../shared";
+import {
+  modelSupportsReasoning,
+  resolveModelThinkingEffort,
+} from "../reasoning-metadata";
 
 export function buildGeminiGenerateConfig(options: {
   system: string;
   tools?: LlmToolDefinition[];
   providerOptions?: ProviderChatOptions;
   model: string;
+  customModels?: CustomModelEntry[];
   responseMimeType?: string;
 }): GenerateContentConfig {
   const tools = buildGeminiTools(
@@ -24,7 +28,8 @@ export function buildGeminiGenerateConfig(options: {
   );
   const thinkingConfig = buildGeminiThinkingConfig(
     options.model,
-    options.providerOptions
+    options.providerOptions,
+    options.customModels
   );
 
   return {
@@ -149,67 +154,48 @@ function buildGeminiTools(
   return result.length > 0 ? result : undefined;
 }
 
+// https://ai.google.dev/gemini-api/docs/generate-content/thinking
+// Named levels are sent only when advertised; legacy 2.5 budgets stay provider-managed.
+const GEMINI_THINKING_LEVELS: Record<string, ThinkingLevel> = {
+  high: ThinkingLevel.HIGH,
+  low: ThinkingLevel.LOW,
+  medium: ThinkingLevel.MEDIUM,
+  minimal: ThinkingLevel.MINIMAL,
+};
+
 function buildGeminiThinkingConfig(
   model: string,
-  providerOptions: ProviderChatOptions | undefined
+  providerOptions: ProviderChatOptions | undefined,
+  customModels?: CustomModelEntry[]
 ): GenerateContentConfig["thinkingConfig"] {
-  const enabled = providerOptions?.thinking?.enabled ?? false;
-
-  if (!enabled) {
-    if (model.includes("flash")) {
-      return { thinkingBudget: 0 };
-    }
-
+  if (
+    !(
+      providerOptions?.thinking?.enabled &&
+      modelSupportsReasoning(model, customModels)
+    )
+  ) {
     return;
   }
-
-  const effort = resolveThinkingEffort(providerOptions?.thinking?.effort);
-
-  if (model.includes("gemini-3") || model.includes("3-")) {
-    return {
-      includeThoughts: true,
-      thinkingLevel: mapEffortToThinkingLevel(effort),
-    };
-  }
-
+  const effort = resolveModelThinkingEffort(
+    model,
+    providerOptions.thinking.effort,
+    customModels
+  );
+  const thinkingLevel = effort ? GEMINI_THINKING_LEVELS[effort] : undefined;
   return {
     includeThoughts: true,
-    thinkingBudget: mapEffortToThinkingBudget(effort),
+    ...(thinkingLevel ? { thinkingLevel } : {}),
   };
-}
-
-function mapEffortToThinkingLevel(effort: ThinkingEffort): ThinkingLevel {
-  const resolved = resolveThinkingEffort(effort);
-  if (resolved === "low") {
-    return ThinkingLevel.LOW;
-  }
-
-  if (resolved === "high" || resolved === "xhigh" || resolved === "max") {
-    return ThinkingLevel.HIGH;
-  }
-
-  return ThinkingLevel.MEDIUM;
-}
-
-function mapEffortToThinkingBudget(effort: ThinkingEffort): number {
-  const resolved = resolveThinkingEffort(effort);
-  if (resolved === "low") {
-    return 1024;
-  }
-
-  if (resolved === "high" || resolved === "xhigh" || resolved === "max") {
-    return 8192;
-  }
-
-  return 4096;
 }
 
 export function buildGeminiChatConfig(
   input: Pick<GenerateChatInput, "tools" | "providerOptions">,
   system: string,
-  model: string
+  model: string,
+  customModels?: CustomModelEntry[]
 ): GenerateContentConfig {
   return buildGeminiGenerateConfig({
+    customModels,
     model,
     providerOptions: input.providerOptions,
     system,

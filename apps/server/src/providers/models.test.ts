@@ -23,10 +23,8 @@ describe("resolveModel", () => {
     );
   });
 
-  test("falls back to default for invalid OpenRouter slugs", () => {
-    expect(resolveModel("openrouter", "not-a-slug")).toBe(
-      getDefaultModel("openrouter")
-    );
+  test("rejects invalid OpenRouter slugs without selecting another model", () => {
+    expect(() => resolveModel("openrouter", "not-a-slug")).toThrow();
   });
 
   test("resolves catalog models for OpenAI", () => {
@@ -42,9 +40,7 @@ describe("resolveModel", () => {
       "gemini-3.1-flash-lite"
     );
     expect(resolveModel("gemini", "gemini-3.5-flash")).toBe("gemini-3.5-flash");
-    expect(resolveModel("gemini", "gemini-2.5-flash")).toBe(
-      "gemini-3-flash-preview"
-    );
+    expect(resolveModel("gemini", "gemini-2.5-flash")).toBe("gemini-2.5-flash");
     expect(getDefaultModel("gemini")).toBe("gemini-3-flash-preview");
   });
 
@@ -53,7 +49,7 @@ describe("resolveModel", () => {
     expect(resolveModel("openai", "gpt-4o-mini", customModels)).toBe(
       "gpt-4o-mini"
     );
-    expect(resolveModel("openai", "gpt-5.4", customModels)).toBe("gpt-4o-mini");
+    expect(() => resolveModel("openai", "gpt-5.4", customModels)).toThrow();
     expect(resolveModel("openai", undefined, customModels)).toBe("gpt-4o-mini");
   });
 
@@ -93,9 +89,7 @@ describe("resolveModel", () => {
         selectedModel
       );
       expect(getDefaultModel(provider, customModels)).toBe(defaultModel);
-      expect(resolveModel(provider, "unknown", customModels)).toBe(
-        defaultModel
-      );
+      expect(() => resolveModel(provider, "unknown", customModels)).toThrow();
     }
   });
 
@@ -148,9 +142,9 @@ describe("resolveModel", () => {
     expect(resolveModel("cerebras", "zai-glm-4.7", customModels)).toBe(
       "zai-glm-4.7"
     );
-    expect(resolveModel("cerebras", "unknown-model", customModels)).toBe(
-      "zai-glm-4.7"
-    );
+    expect(() =>
+      resolveModel("cerebras", "unknown-model", customModels)
+    ).toThrow();
   });
 
   test("resolves catalog models for Fireworks", () => {
@@ -177,8 +171,8 @@ describe("resolveModel", () => {
         customModels
       )
     ).toBe("accounts/fireworks/models/glm-5p2");
-    expect(resolveModel("fireworks", "unknown-model", customModels)).toBe(
-      "accounts/fireworks/models/glm-5p2"
-    );
+    expect(() =>
+      resolveModel("fireworks", "unknown-model", customModels)
+    ).toThrow();
   });
 });

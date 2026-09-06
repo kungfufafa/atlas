@@ -1,6 +1,5 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import {
-  CEREBRAS_FALLBACK_MODELS,
   type CerebrasModelRow,
   type CerebrasModelsApiResponse,
   normalizeCerebrasModels,
@@ -12,19 +11,10 @@ async function fetchCerebrasModels(): Promise<{
   rows: CerebrasModelRow[];
   usedFallback: boolean;
 }> {
-  try {
-    const data = (await client.getExternalModelCatalog(
-      "cerebras"
-    )) as CerebrasModelsApiResponse;
-    const rows = normalizeCerebrasModels(data);
-    if (rows.length === 0) {
-      return { rows: CEREBRAS_FALLBACK_MODELS, usedFallback: true };
-    }
-
-    return { rows, usedFallback: false };
-  } catch {
-    return { rows: CEREBRAS_FALLBACK_MODELS, usedFallback: true };
-  }
+  const data = (await client.getExternalModelCatalog(
+    "cerebras"
+  )) as CerebrasModelsApiResponse;
+  return { rows: normalizeCerebrasModels(data), usedFallback: false };
 }
 
 export const cerebrasModelsQueryOptions = queryOptions({

@@ -232,6 +232,29 @@ describe("executeWithRetry", () => {
 });
 
 describe("executeProtectedTool", () => {
+  test("reports truncation only when output was actually shortened", async () => {
+    const text = "a".repeat(40_000);
+    const base = { description: "Large result", name: "large_output" };
+    const stringResult = await executeProtectedTool(
+      { ...base, run: async () => text },
+      {},
+      {}
+    );
+    expect(stringResult.success).toBe(true);
+    expect(stringResult.metadata?.truncated).toBe(true);
+    expect(stringResult.data?.length).toBeLessThan(text.length);
+
+    const objectResult = await executeProtectedTool(
+      { ...base, run: async () => ({ content: text, cursor: "next-page" }) },
+      {},
+      {}
+    );
+    expect(objectResult.success).toBe(true);
+    expect(objectResult.metadata?.truncated).toBe(false);
+    expect(objectResult.data).toEqual({ content: text, cursor: "next-page" });
+    expect(objectResult.metadata?.warnings).toHaveLength(1);
+  });
+
   const sampleTool: ToolDefinition<{ input: string }, string> = {
     description: "Sample tool",
     name: "sample",

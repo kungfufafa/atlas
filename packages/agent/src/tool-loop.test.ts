@@ -2,8 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import type { ToolDefinition } from "@atlas/core";
-import { canRunToolCallsInParallel, executeToolCall } from "./tool-loop";
+import { metrics, type ToolDefinition } from "@atlas/core";
+import {
+  canRunToolCallsInParallel,
+  executeToolCall,
+  serializeToolResult,
+} from "./tool-loop";
 
 const sampleTool: ToolDefinition = {
   description: "Sample tool for tests",
@@ -21,6 +25,108 @@ const sampleTool: ToolDefinition = {
 };
 
 describe("tool-loop", () => {
+  test("counts unsuccessful handler results as failures without replacing their evidence", async () => {
+    const outcomes = [
+      { error: "Write rejected" },
+      { ok: false },
+      { success: false },
+      { content: [{ text: "Remote failure", type: "text" }], isError: true },
+      { ok: true },
+    ];
+    for (const [index, outcome] of outcomes.entries()) {
+      const tool: ToolDefinition = {
+        description: "Returns a structured tool outcome",
+        name: `reported_outcome_${index}`,
+        run: async () => outcome,
+      };
+      const result = await executeToolCall([tool], {
+        arguments: {},
+        id: `call_outcome_${index}`,
+        name: tool.name,
+      });
+      const failed = index < outcomes.length - 1;
+      expect(result).toEqual(outcome);
+      expect(
+        metrics.toolCallsTotal.get({ status: "error", tool: tool.name })
+      ).toBe(failed ? 1 : 0);
+      expect(
+        metrics.toolCallsTotal.get({ status: "success", tool: tool.name })
+      ).toBe(failed ? 0 : 1);
+      expect(metrics.toolFailuresTotal.get({ tool: tool.name })).toBe(
+        failed ? 1 : 0
+      );
+    }
+  });
+
+  test("serializes absent tool results into valid history content", () => {
+    expect(serializeToolResult(undefined)).toBe("null");
+    expect(serializeToolResult("completed")).toBe("completed");
+  });
+
+  test("does not report completed side effects as failed when output serialization fails", async () => {
+    let writes = 0;
+    const tool: ToolDefinition = {
+      description: "Produce a custom result after completing a write",
+      name: "custom_output",
+      async run() {
+        writes += 1;
+        return {
+          toJSON() {
+            throw new Error("Unserializable custom output");
+          },
+        };
+      },
+    };
+
+    const result = await executeToolCall([tool], {
+      arguments: {},
+      id: "serialization-failure",
+      name: tool.name,
+    });
+
+    expect(writes).toBe(1);
+    expect(result).toMatchObject({
+      outputUnavailable: true,
+      serializationError: "Unserializable custom output",
+      toolExecutionCompleted: true,
+    });
+    expect(result).not.toHaveProperty("error");
+    expect(JSON.parse(serializeToolResult(result))).toEqual(result);
+  });
+
+  test("returns serializable successful data for custom BigInt and circular results", async () => {
+    const output: Record<string, unknown> = { id: 9007199254740993n };
+    output.self = output;
+    const result = await executeToolCall(
+      [{ ...sampleTool, run: async () => output }],
+      {
+        arguments: { message: "read" },
+        id: "non-json-result",
+        name: "sample",
+      }
+    );
+
+    expect(result).toEqual({ id: "9007199254740993", self: "[Circular]" });
+    expect(JSON.parse(serializeToolResult(result))).toEqual(result);
+  });
+
+  test("rejects invalid advertised arguments before running the handler", async () => {
+    let invoked = false;
+    const result = await executeToolCall(
+      [
+        {
+          ...sampleTool,
+          async run() {
+            invoked = true;
+          },
+        },
+      ],
+      { arguments: { message: 42 }, id: "invalid-input", name: "sample" }
+    );
+    expect(invoked).toBe(false);
+    expect(result).toMatchObject({ errorCode: "INVALID_ARGUMENT" });
+  });
+
   test("canRunToolCallsInParallel requires more than one parallelSafe tool", () => {
     const parallelTool: ToolDefinition = { ...sampleTool, parallelSafe: true };
     const sequentialTool: ToolDefinition = {

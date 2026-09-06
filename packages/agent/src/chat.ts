@@ -2,8 +2,10 @@ import type {
   AgentChannel,
   AutomationDefinition,
   CapabilitySupportStatus,
+  ChatCompletionResult,
   ChatContextUsage,
   ChatMessage,
+  CompactedHistoryArchive,
   CompactionResponse,
   MessageContentPart,
   ProviderCapabilityConstraints,
@@ -108,6 +110,11 @@ import {
   executeToolCall,
   serializeToolResult,
 } from "./tool-loop";
+import {
+  createToolProgressTracker,
+  toolResultError,
+  validateToolCallIds,
+} from "./tool-progress";
 
 const MAX_TOOL_ITERATIONS = 100;
 
@@ -174,12 +181,14 @@ export interface StreamHandlers {
 export type SendMessageArg = string | SendMessageInput;
 
 export interface AgentChatSession {
+  acknowledgeHistoryArchives?(ids: readonly string[]): void;
   clear(): void;
   compact(options?: { force?: boolean }): Promise<CompactionResponse>;
   createAutomation(prompt: string): Promise<AutomationDefinition>;
   getContextUsage(): ChatContextUsage | null;
   getHistory(): readonly ChatMessage[];
   getHistoryRevision(): number;
+  getPendingHistoryArchives?(): readonly CompactedHistoryArchive[];
   send(input: SendMessageArg, options?: SendStreamOptions): Promise<string>;
   sendStream(
     input: SendMessageArg,
@@ -273,23 +282,27 @@ export function createAgentChatSession(
     ? [...options.initialHistory]
     : [];
   let historyRevision = 0;
+  const pendingHistoryArchives: CompactedHistoryArchive[] = [];
   let lastContextUsage: ChatContextUsage | null = null;
+  let lifecycle = new AbortController();
 
   function bumpHistoryRevision(): void {
     historyRevision += 1;
   }
 
-  async function preprocessHistoryForTurn(): Promise<void> {
+  async function preprocessHistoryForTurn(signal: AbortSignal): Promise<void> {
     if (!options.preprocessHistoryForTurn) {
       return;
     }
 
     const prepared = await options.preprocessHistoryForTurn(history);
+    signal.throwIfAborted();
     if (prepared === history) {
       return;
     }
 
     history.splice(0, history.length, ...prepared);
+    lastContextUsage = null;
     bumpHistoryRevision();
   }
 
@@ -302,33 +315,50 @@ export function createAgentChatSession(
 
   function buildContextUsage(
     usedTokens: number,
-    source: ChatContextUsage["source"]
+    source: ChatContextUsage["source"],
+    providerContextUsage?: ChatCompletionResult["contextUsage"]
   ): ChatContextUsage | null {
-    if (!options.compaction) {
+    let contextUsage: ChatContextUsage;
+    if (providerContextUsage) {
+      contextUsage = {
+        ...providerContextUsage,
+        source: "provider",
+        usableContextTokens: providerContextUsage.contextWindow,
+      };
+    } else if (options.compaction && !dependencies.provider?.managesContext) {
+      contextUsage = {
+        contextWindow: options.compaction.contextWindow,
+        source,
+        usableContextTokens: usableContextTokens(options.compaction),
+        usedTokens,
+      };
+    } else {
       return null;
     }
 
     return {
+      ...contextUsage,
       // Reported only once an optimiser has actually removed something in this
       // session, so the chip stays silent rather than announcing a feature.
       bytesKeptOut: bytesKeptOut > 0 ? bytesKeptOut : undefined,
       bytesProduced: bytesKeptOut > 0 ? bytesProduced : undefined,
-      contextWindow: options.compaction.contextWindow,
-      source,
-      usableContextTokens: usableContextTokens(options.compaction),
-      usedTokens,
     };
   }
 
   function rememberContextUsage(
     usedTokens: number,
-    source: ChatContextUsage["source"]
+    source: ChatContextUsage["source"],
+    providerContextUsage?: ChatCompletionResult["contextUsage"]
   ): void {
-    lastContextUsage = buildContextUsage(usedTokens, source);
+    lastContextUsage = buildContextUsage(
+      usedTokens,
+      source,
+      providerContextUsage
+    );
   }
 
   function estimateCurrentContextUsage(): ChatContextUsage | null {
-    if (!options.compaction) {
+    if (!options.compaction || dependencies.provider?.managesContext) {
       return null;
     }
 
@@ -342,8 +372,14 @@ export function createAgentChatSession(
     return buildContextUsage(usedTokens, "estimate");
   }
 
-  async function runCompaction(force: boolean): Promise<CompactionResponse> {
-    if (!(dependencies.provider && options.compaction)) {
+  async function runCompaction(
+    force: boolean,
+    signal?: AbortSignal
+  ): Promise<CompactionResponse> {
+    if (
+      !(dependencies.provider && (options.compaction || force)) ||
+      (dependencies.provider.managesContext && !force)
+    ) {
       return {
         action: "none",
         messagesAfter: history.length,
@@ -360,26 +396,67 @@ export function createAgentChatSession(
       compaction: options.compaction,
       force,
       history,
+      onArchive: (archive) => pendingHistoryArchives.push(archive),
       provider: dependencies.provider,
+      signal,
       systemPrompt,
       tools: llmTools,
     });
 
     if (result.action !== "none") {
+      lastContextUsage = null;
       bumpHistoryRevision();
     }
 
     return result;
   }
 
+  function failedSendHandler(): (hasCompletedTools: boolean) => void {
+    const previousArchives = new Set(
+      pendingHistoryArchives.map((archive) => archive.id)
+    );
+    return (hasCompletedTools) => {
+      lastContextUsage = null;
+      if (hasCompletedTools) {
+        return;
+      }
+      // Match history rollback: a rejected user message and its attachments
+      // must not survive inside a snapshot queued by pre-turn compaction.
+      for (
+        let index = pendingHistoryArchives.length - 1;
+        index >= 0;
+        index -= 1
+      ) {
+        if (!previousArchives.has(pendingHistoryArchives[index]!.id)) {
+          pendingHistoryArchives.splice(index, 1);
+        }
+      }
+    };
+  }
+
   return {
+    acknowledgeHistoryArchives(ids) {
+      const acknowledged = new Set(ids);
+      for (
+        let index = pendingHistoryArchives.length - 1;
+        index >= 0;
+        index -= 1
+      ) {
+        if (acknowledged.has(pendingHistoryArchives[index]!.id)) {
+          pendingHistoryArchives.splice(index, 1);
+        }
+      }
+    },
     clear() {
+      lifecycle.abort(new Error("Conversation was cleared."));
+      lifecycle = new AbortController();
       history.length = 0;
+      pendingHistoryArchives.length = 0;
       lastContextUsage = null;
       bumpHistoryRevision();
     },
     compact(options) {
-      return runCompaction(options?.force ?? false);
+      return runCompaction(options?.force ?? false, lifecycle.signal);
     },
     createAutomation(prompt) {
       return harness.createAutomationFromPrompt({ channel, prompt }, { tools });
@@ -393,8 +470,15 @@ export function createAgentChatSession(
     getHistoryRevision() {
       return historyRevision;
     },
+    getPendingHistoryArchives() {
+      return pendingHistoryArchives;
+    },
     async send(input, sendOptions) {
-      await preprocessHistoryForTurn();
+      const turnLifecycle = lifecycle;
+      const signal = sendOptions?.signal
+        ? AbortSignal.any([sendOptions.signal, turnLifecycle.signal])
+        : turnLifecycle.signal;
+      await preprocessHistoryForTurn(signal);
       return sendMessage(
         dependencies,
         tools,
@@ -404,19 +488,25 @@ export function createAgentChatSession(
         "send",
         {
           enableToolLoop,
+          isCurrentTurn: () => turnLifecycle === lifecycle,
           onContextUsage: rememberContextUsage,
+          onFailedSend: failedSendHandler(),
           preprocessUserContent: options.preprocessUserContent,
           rehydrateMessagesForProvider: options.rehydrateMessagesForProvider,
           resolvePromptContext: options.resolvePromptContext,
-          runCompaction,
-          signal: sendOptions?.signal,
+          runCompaction: (force) => runCompaction(force, signal),
+          signal,
           toolContext,
           userTimezone: options.userTimezone,
         }
       );
     },
     async sendStream(input, handlers, streamOptions) {
-      await preprocessHistoryForTurn();
+      const turnLifecycle = lifecycle;
+      const signal = streamOptions?.signal
+        ? AbortSignal.any([streamOptions.signal, turnLifecycle.signal])
+        : turnLifecycle.signal;
+      await preprocessHistoryForTurn(signal);
       return sendMessage(
         dependencies,
         tools,
@@ -427,12 +517,14 @@ export function createAgentChatSession(
         {
           enableToolLoop,
           handlers,
+          isCurrentTurn: () => turnLifecycle === lifecycle,
           onContextUsage: rememberContextUsage,
+          onFailedSend: failedSendHandler(),
           preprocessUserContent: options.preprocessUserContent,
           rehydrateMessagesForProvider: options.rehydrateMessagesForProvider,
           resolvePromptContext: options.resolvePromptContext,
-          runCompaction,
-          signal: streamOptions?.signal,
+          runCompaction: (force) => runCompaction(force, signal),
+          signal,
           toolContext,
           userTimezone: options.userTimezone,
         }
@@ -455,12 +547,15 @@ async function sendMessage(
   options: {
     enableToolLoop: boolean;
     handlers?: StreamHandlers;
+    isCurrentTurn?: () => boolean;
     toolContext?: ToolContext;
     runCompaction?: (force: boolean) => Promise<CompactionResponse>;
     onContextUsage?: (
       usedTokens: number,
-      source: ChatContextUsage["source"]
+      source: ChatContextUsage["source"],
+      providerContextUsage?: ChatCompletionResult["contextUsage"]
     ) => void;
+    onFailedSend?: (hasCompletedTools: boolean) => void;
     resolvePromptContext?: (
       context?: ResolvePromptContextInput
     ) => string | Promise<string>;
@@ -569,6 +664,7 @@ async function sendMessage(
     }
   );
   const historyBeforeTurn = [...history];
+  let completedToolHistory: ChatMessage[] | undefined;
   history.push({ content: userContent, role: "user" });
   let executionStarted = false;
   let executionStartMs = 0;
@@ -626,7 +722,13 @@ async function sendMessage(
       options.rehydrateMessagesForProvider,
       options.onContextUsage,
       options.signal,
-      options.userTimezone
+      options.userTimezone,
+      {
+        onToolsComplete: () => {
+          completedToolHistory = [...history];
+        },
+        runCompaction: options.runCompaction,
+      }
     );
 
     if (
@@ -637,16 +739,17 @@ async function sendMessage(
       const questions = await generateRelatedQuestions(
         dependencies.provider,
         userMessage,
-        reply
+        reply,
+        options.signal
       );
-      if (questions) {
+      if (questions && !options.signal?.aborted) {
         const lastAssistant = [...history]
           .reverse()
           .find((message) => message.role === "assistant");
         if (lastAssistant && lastAssistant.role === "assistant") {
           lastAssistant.relatedQuestions = questions;
         }
-        options.handlers?.onRelatedQuestions?.(questions);
+        nonThrowingObserver(options.handlers?.onRelatedQuestions)?.(questions);
       }
     }
 
@@ -673,7 +776,11 @@ async function sendMessage(
         metrics.executionFailureTotal.inc({ failure_code: failure.code });
       }
     }
-    restoreFailedSend(history, historyBeforeTurn);
+    // A failed model follow-up cannot undo actions tools already performed.
+    if (options.isCurrentTurn?.() !== false) {
+      restoreFailedSend(history, completedToolHistory ?? historyBeforeTurn);
+      options.onFailedSend?.(completedToolHistory !== undefined);
+    }
     throw error;
   } finally {
     if (executionStarted) {
@@ -706,14 +813,34 @@ async function runConversation(
   ) => Promise<ChatMessage[]>,
   onContextUsage?: (
     usedTokens: number,
-    source: ChatContextUsage["source"]
+    source: ChatContextUsage["source"],
+    providerContextUsage?: ChatCompletionResult["contextUsage"]
   ) => void,
   signal?: AbortSignal,
-  userTimezone?: string
+  userTimezone?: string,
+  hooks?: {
+    onToolsComplete: () => void;
+    runCompaction?: (force: boolean) => Promise<CompactionResponse>;
+  }
 ): Promise<string> {
-  const toolCallSignatures: string[] = [];
+  const progress = createToolProgressTracker();
   let totalTurns = 0;
   let totalToolCalls = 0;
+  let stopReason = "The tool iteration limit was reached.";
+
+  function recordUsage(result: ChatCompletionResult): void {
+    try {
+      toolContext?.recordTurnUsage?.({
+        estimated: Boolean(result.usage?.estimated ?? !result.usage),
+        inputTokens: result.usage?.inputTokens ?? 0,
+        // The session wrapper supplies whether any output was shortened.
+        optimized: false,
+        outputTokens: result.usage?.outputTokens ?? 0,
+      });
+    } catch {
+      // Accounting must not interrupt execution or discard completed actions.
+    }
+  }
 
   try {
     for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration += 1) {
@@ -748,70 +875,94 @@ async function runConversation(
         );
       onContextUsage?.(
         usedTokens,
-        result.usage && !result.usage.estimated ? "provider" : "estimate"
+        result.usage && !result.usage.estimated ? "provider" : "estimate",
+        result.contextUsage
       );
 
-      // The arm is what the optimiser did in this session, not what a setting
-      // says: a session where nothing was ever shortened belongs in the control
-      // arm even with the feature switched on, or the comparison flatters itself.
-      try {
-        toolContext?.recordTurnUsage?.({
-          estimated: Boolean(result.usage?.estimated ?? !result.usage),
-          inputTokens: result.usage?.inputTokens ?? 0,
-          // Overwritten by the session wrapper, which is the only scope that
-          // knows whether anything was shortened.
-          optimized: false,
-          outputTokens: result.usage?.outputTokens ?? 0,
-        });
-      } catch {
-        // never let accounting break a turn
-      }
+      recordUsage(result);
 
+      validateToolCallIds(result.toolCalls);
+      if (!enableToolLoop && result.toolCalls.length > 0) {
+        throw new Error(
+          "Provider requested tools when tool execution was disabled."
+        );
+      }
       history.push(result.assistantMessage);
 
       if (!enableToolLoop || result.toolCalls.length === 0) {
+        if (!result.content.trim()) {
+          throw new Error("Provider finished without a final response.");
+        }
         return result.content;
       }
 
-      // Loop Guard: Detect identical repetitive tool calls without progress
-      const signature = result.toolCalls
-        .map((c) => `${c.name}:${JSON.stringify(c.arguments)}`)
-        .sort()
-        .join("|");
-
-      toolCallSignatures.push(signature);
-      const repeatedCount = toolCallSignatures.filter(
-        (sig) => sig === signature
-      ).length;
-
-      if (repeatedCount >= 4) {
-        // Break out of loop to avoid runaway token burn on hallucinated repeats
-        metrics.duplicateToolCallPreventionsTotal.inc();
-        break;
-      }
-
       totalToolCalls += result.toolCalls.length;
+      const resultStart = history.length;
       await executeToolCalls(
         tools,
         result.toolCalls,
         history,
-        handlers,
+        isolateToolObservers(handlers),
         toolContext
       );
+      hooks?.onToolsComplete();
+      const stalled = progress.record(
+        result.toolCalls,
+        history.slice(resultStart),
+        canRunToolCallsInParallel(tools, result.toolCalls)
+      );
+      if (stalled) {
+        metrics.duplicateToolCallPreventionsTotal.inc();
+        stopReason =
+          "Repeated tool calls returned identical outcomes without observable progress.";
+      }
 
       if (iteration === MAX_TOOL_ITERATIONS - 1) {
         metrics.agentLoopLimitTotal.inc();
       }
+      signal?.throwIfAborted();
+      await hooks?.runCompaction?.(false);
+      hooks?.onToolsComplete();
+      if (stalled) {
+        break;
+      }
     }
 
-    const lastAssistant = [...history]
-      .reverse()
-      .find(
-        (message): message is Extract<ChatMessage, { role: "assistant" }> =>
-          message.role === "assistant"
+    // Give the model the completed results and one tool-free final response.
+    // Never substitute an earlier preamble for an unfinished task's outcome.
+    signal?.throwIfAborted();
+    totalTurns += 1;
+    const final = await generateReply(
+      provider,
+      `${systemPrompt}\n\n${stopReason} No further tool actions are available in this turn. Give a final response in the user's language using only the observed results. Clearly distinguish completed work, unfinished work, and the blocker. Do not claim unverified work succeeded.`,
+      history,
+      undefined,
+      providerOptions?.thinking
+        ? { thinking: providerOptions.thinking }
+        : undefined,
+      mode,
+      streamingAvailable,
+      handlers,
+      rehydrateMessagesForProvider,
+      signal,
+      userTimezone,
+      toolContext?.sessionId
+    );
+    signal?.throwIfAborted();
+    recordUsage(final);
+    validateToolCallIds(final.toolCalls);
+    if (final.toolCalls.length > 0 || !final.content.trim()) {
+      throw new Error(
+        "Provider did not produce a final response after tool execution stopped."
       );
-
-    return lastAssistant?.content ?? "";
+    }
+    history.push(final.assistantMessage);
+    onContextUsage?.(
+      final.usage?.inputTokens ?? estimateHistoryTokens(history, systemPrompt),
+      final.usage && !final.usage.estimated ? "provider" : "estimate",
+      final.contextUsage
+    );
+    return final.content;
   } finally {
     metrics.agentTurnsPerExecution.observe(totalTurns);
     metrics.toolCallsPerExecution.observe(totalToolCalls);
@@ -939,6 +1090,42 @@ function emitArtifactsFromToolResult(
   }
 }
 
+function nonThrowingObserver<Args extends unknown[]>(
+  observer: ((...args: Args) => void) | undefined
+): ((...args: Args) => void) | undefined {
+  if (!observer) {
+    return;
+  }
+  return (...args) => {
+    try {
+      observer(...args);
+    } catch {
+      // Stream observers can disconnect. They must not undo completed tool
+      // evidence or interrupt an in-flight batch; cancellation uses the signal.
+    }
+  };
+}
+
+function isolateToolObservers(
+  handlers?: StreamHandlers
+): StreamHandlers | undefined {
+  if (!handlers) {
+    return;
+  }
+  return {
+    ...handlers,
+    onActivityComplete: nonThrowingObserver(handlers.onActivityComplete),
+    onActivityStart: nonThrowingObserver(handlers.onActivityStart),
+    onApprovalRequested: nonThrowingObserver(handlers.onApprovalRequested),
+    onArtifactCreated: nonThrowingObserver(handlers.onArtifactCreated),
+    onMemorySaved: nonThrowingObserver(handlers.onMemorySaved),
+    onSourcesUpdated: nonThrowingObserver(handlers.onSourcesUpdated),
+    onSubAgentActivity: nonThrowingObserver(handlers.onSubAgentActivity),
+    onToolEnd: nonThrowingObserver(handlers.onToolEnd),
+    onToolStart: nonThrowingObserver(handlers.onToolStart),
+  };
+}
+
 async function executeToolCalls(
   tools: ToolDefinition[],
   toolCalls: ToolCall[],
@@ -1009,6 +1196,7 @@ async function executeToolCalls(
             call,
             contextForCall(call)
           );
+          results[idx] = { call, result };
 
           handlers?.onToolEnd?.({
             result,
@@ -1023,8 +1211,9 @@ async function executeToolCalls(
             handlers
           );
 
+          const error = toolResultError(result);
           handlers?.onActivityComplete?.(
-            updateActivityCompletion(activity, true)
+            updateActivityCompletion(activity, !error, error)
           );
 
           emitSourcesFromToolResult(call.name, result, handlers);
@@ -1032,26 +1221,21 @@ async function executeToolCalls(
           if (
             (call.name === "memory_write" ||
               call.name === "update_profile_memory") &&
+            !error &&
             typeof result === "object" &&
             result !== null
           ) {
             handlers?.onMemorySaved?.("Remembered");
           }
-
-          results[idx] = { call, result };
         }
       }
     );
 
     await Promise.all(workers);
 
-    const resultsByCallId = new Map(
-      results.map((entry) => [entry.call.id, entry.result])
-    );
-
-    for (const call of toolCalls) {
+    for (const { call, result } of results) {
       history.push({
-        content: serializeToolResult(resultsByCallId.get(call.id)),
+        content: serializeToolResult(result),
         name: call.name,
         role: "tool",
         toolCallId: call.id,
@@ -1103,6 +1287,13 @@ async function executeToolCalls(
       });
     }
 
+    history.push({
+      content: serializeToolResult(result),
+      name: call.name,
+      role: "tool",
+      toolCallId: call.id,
+    });
+
     handlers?.onToolEnd?.({
       result,
       tool: call.name,
@@ -1116,24 +1307,21 @@ async function executeToolCalls(
       handlers
     );
 
-    handlers?.onActivityComplete?.(updateActivityCompletion(activity, true));
+    const error = toolResultError(result);
+    handlers?.onActivityComplete?.(
+      updateActivityCompletion(activity, !error, error)
+    );
 
     emitSourcesFromToolResult(call.name, result, handlers);
 
     if (
       (call.name === "memory_write" || call.name === "update_profile_memory") &&
+      !error &&
       typeof result === "object" &&
       result !== null
     ) {
       handlers?.onMemorySaved?.("Remembered");
     }
-
-    history.push({
-      content: serializeToolResult(result),
-      name: call.name,
-      role: "tool",
-      toolCallId: call.id,
-    });
   }
 }
 
@@ -1178,17 +1366,35 @@ const RELATED_QUESTIONS_SYSTEM_PROMPT = [
  * Follow-up suggestions shown under the finished reply. Runs after the last
  * chunk but before the turn resolves, so the stream still delivers them ahead
  * of `done`. Any failure or timeout quietly skips the feature: it must never
- * break or visibly delay a turn.
+ * break the completed reply or outlive cancellation/the suggestion timeout.
  */
 export async function generateRelatedQuestions(
   provider: ProviderClient | undefined,
   userMessage: string,
-  reply: string
+  reply: string,
+  signal?: AbortSignal
 ): Promise<string[] | null> {
-  if (!provider || reply.trim().length < RELATED_QUESTIONS_MIN_REPLY_CHARS) {
+  if (
+    !provider ||
+    signal?.aborted ||
+    reply.trim().length < RELATED_QUESTIONS_MIN_REPLY_CHARS
+  ) {
     return null;
   }
 
+  const timeoutController = new AbortController();
+  const requestSignal = signal
+    ? AbortSignal.any([signal, timeoutController.signal])
+    : timeoutController.signal;
+  const timer = setTimeout(
+    () => timeoutController.abort(),
+    RELATED_QUESTIONS_TIMEOUT_MS
+  );
+  let onAbort = () => {};
+  const cancelled = new Promise<null>((resolve) => {
+    onAbort = () => resolve(null);
+    requestSignal.addEventListener("abort", onAbort, { once: true });
+  });
   try {
     const completion = await Promise.race([
       provider.generateText({
@@ -1200,11 +1406,10 @@ export async function generateRelatedQuestions(
           "",
           "Generate follow-up question suggestions for this reply.",
         ].join("\n"),
+        signal: requestSignal,
         system: RELATED_QUESTIONS_SYSTEM_PROMPT,
       }),
-      new Promise<null>((resolve) =>
-        setTimeout(() => resolve(null), RELATED_QUESTIONS_TIMEOUT_MS)
-      ),
+      cancelled,
     ]);
     if (!completion) {
       return null;
@@ -1212,6 +1417,9 @@ export async function generateRelatedQuestions(
     return parseRelatedQuestions(completion.content);
   } catch {
     return null;
+  } finally {
+    clearTimeout(timer);
+    requestSignal.removeEventListener("abort", onAbort);
   }
 }
 

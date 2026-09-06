@@ -13,6 +13,8 @@ import type {
   ToolExecutionResult,
 } from "./execution-contract";
 import { DEFAULT_TOOL_CAPABILITIES } from "./permissions";
+import { serializeToolOutput } from "./result-serialization";
+import { validateToolArguments } from "./schema";
 
 export const DEFAULT_MAX_OUTPUT_CHARS = 32_000;
 export const DEFAULT_MAX_RETRIES = 2;
@@ -461,6 +463,8 @@ export async function executeProtectedTool<Input = unknown, Output = unknown>(
       throw error;
     }
 
+    validateToolArguments(tool.parameters, input);
+
     // 1. Server-side Action Risk Evaluation
     const { evaluateActionRisk, computeActionHash } = await import(
       "../risk-engine"
@@ -562,12 +566,14 @@ export async function executeProtectedTool<Input = unknown, Output = unknown>(
     metadata.durationMs = durationMs;
     metadata.retries = retries;
 
-    let finalData = result;
+    const serialized = serializeToolOutput(result);
+    warnings.push(...serialized.warnings);
+    let finalData = serialized.data as Output;
     const declaredArtifacts: ToolArtifact[] = [];
 
     // Extract artifacts if tool returned standard artifact references
-    if (typeof result === "object" && result !== null) {
-      const record = result as Record<string, unknown>;
+    if (typeof finalData === "object" && finalData !== null) {
+      const record = finalData as Record<string, unknown>;
       if (Array.isArray(record.artifacts)) {
         for (const item of record.artifacts) {
           if (
@@ -592,16 +598,20 @@ export async function executeProtectedTool<Input = unknown, Output = unknown>(
     const artifacts = mergeToolArtifacts(declaredArtifacts, detectedArtifacts);
 
     // Check output size and apply safe truncation if exceeded
-    const stringified =
-      typeof result === "string" ? result : JSON.stringify(result);
+    const stringified = serialized.text;
     if (stringified && stringified.length > maxOutputChars) {
-      metadata.truncated = true;
-      warnings.push(
-        `Output exceeded ${maxOutputChars} characters and was truncated.`
-      );
       if (typeof result === "string") {
+        metadata.truncated = true;
+        warnings.push(
+          `Output exceeded ${maxOutputChars} characters and was truncated.`
+        );
         finalData =
           `${stringified.slice(0, maxOutputChars)}\n\n[... truncated ${stringified.length - maxOutputChars} characters]` as Output;
+      } else {
+        metadata.truncated = false;
+        warnings.push(
+          `Structured output exceeded ${maxOutputChars} characters and was retained intact.`
+        );
       }
     }
 

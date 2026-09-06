@@ -1,6 +1,13 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import type { ToolContext, ToolDefinition } from "@atlas/core";
+import type {
+  ChatMessage,
+  CompactedHistoryArchive,
+  ProviderClient,
+  ToolContext,
+  ToolDefinition,
+} from "@atlas/core";
 import { createSqliteDatabase, type SqliteDatabase } from "@atlas/db";
+import { compactHistory } from "../../../../packages/agent/src/history-compaction";
 import { createConversationTools } from "./conversation-tools";
 
 const ORG_ALPHA = "org-alpha";
@@ -164,6 +171,103 @@ afterAll(() => {
 });
 
 describe("conversation retrieval tools", () => {
+  test("finds and reads never-persisted tool evidence captured before successful compaction", async () => {
+    const sessionId = "session-compaction-retrieval";
+    await addSession({
+      content: "Initial request",
+      id: sessionId,
+      orgId: ORG_ALPHA,
+      profileId: REGULAR_PROFILE,
+      title: "Compaction retrieval",
+      userId: USER_ONE,
+    });
+    const history: ChatMessage[] = [
+      { content: "Inspect the build; do not deploy", role: "user" },
+      {
+        content: "",
+        role: "assistant",
+        toolCalls: [{ arguments: {}, id: "first", name: "read" }],
+      },
+      {
+        content: `archived-build-output ${"detailed evidence ".repeat(100)}`,
+        name: "read",
+        role: "tool",
+        toolCallId: "first",
+      },
+      {
+        content: "",
+        role: "assistant",
+        toolCalls: [{ arguments: {}, id: "last", name: "read" }],
+      },
+      {
+        content: "Latest checks passed",
+        name: "read",
+        role: "tool",
+        toolCallId: "last",
+      },
+    ];
+    const archives: CompactedHistoryArchive[] = [];
+    const provider: ProviderClient = {
+      generateChat: () =>
+        Promise.resolve({
+          assistantMessage: {
+            content: "Earlier build inspected",
+            role: "assistant",
+          },
+          content: "Earlier build inspected",
+          toolCalls: [],
+        }),
+      generateText: () => Promise.resolve({ content: "unused" }),
+      name: "openai",
+      streamChat: () => {
+        throw new Error("unused");
+      },
+    };
+    await compactHistory({
+      force: true,
+      history,
+      onArchive: (archive) => archives.push(archive),
+      provider,
+      systemPrompt: "system",
+    });
+    const createdAt = new Date().toISOString();
+    await database.adapter.replaceMessagesForSession(
+      sessionId,
+      history.map((payload, seq) => ({
+        createdAt,
+        id: `${sessionId}-${seq}`,
+        payload,
+        seq,
+        sessionId,
+      })),
+      archives.map((archive) => ({ ...archive, sessionId }))
+    );
+    expect(
+      JSON.stringify(await database.adapter.listMessagesForSession(sessionId))
+    ).not.toContain("archived-build-output");
+    const found = (await searchChatsTool.run(
+      { query: "archived-build-output" },
+      toolContext("member")
+    )) as { results: Array<{ archiveId: string; sessionId: string }> };
+    expect(found.results).toHaveLength(1);
+    expect(found.results[0]?.archiveId).toBe(archives[0]?.id);
+    const recovered = (await getConversationTool.run(
+      { archiveId: found.results[0]?.archiveId, sessionId },
+      toolContext("member")
+    )) as { messages: Array<{ text: string }> };
+    expect(
+      recovered.messages.some((message) =>
+        message.text.includes("archived-build-output")
+      )
+    ).toBe(true);
+    await expect(
+      getConversationTool.run(
+        { archiveId: found.results[0]?.archiveId, sessionId },
+        toolContext("member", { userId: USER_TWO })
+      )
+    ).rejects.toThrow();
+  });
+
   test("searches and retrieves the caller's own regular conversation", async () => {
     const searchResult = (await searchChatsTool.run(
       { query: "launch decision" },

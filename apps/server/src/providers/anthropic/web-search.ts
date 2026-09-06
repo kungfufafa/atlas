@@ -11,20 +11,30 @@ import type {
 import type {
   ChatCompletionResult,
   ChatMessage,
+  CustomModelEntry,
   GenerateChatInput,
   LlmToolDefinition,
   ProviderName,
   StreamChatHandlers,
   ToolCall,
 } from "@atlas/core";
-import { toAnthropicUserContent, WEB_SEARCH_TOOL_NAME } from "@atlas/core";
+import {
+  findCustomModel,
+  PROVIDER_CAPABILITY_IDS,
+  toAnthropicUserContent,
+  WEB_SEARCH_TOOL_NAME,
+} from "@atlas/core";
+import {
+  modelSupportsReasoning,
+  resolveModelThinkingEffort,
+} from "../reasoning-metadata";
 import {
   buildTokenUsage,
   hasMatchingProviderContent,
   notifyToolInputDelta,
-  parseJsonRecord,
+  parseToolArguments,
   readRecord,
-  resolveThinkingEffort,
+  readToolArguments,
 } from "../shared";
 
 const MAX_PAUSE_CONTINUATIONS = 5;
@@ -217,8 +227,13 @@ export function parseAnthropicContent(
     }
 
     if (block.type === "tool_use") {
+      if (!(block.id?.trim() && block.name?.trim())) {
+        throw new Error(
+          "Anthropic returned a tool call without an ID or name."
+        );
+      }
       toolCalls.push({
-        arguments: readRecord(block.input),
+        arguments: readToolArguments(block.input),
         id: block.id,
         name: block.name,
       });
@@ -255,6 +270,7 @@ export function parseAnthropicContent(
 
 export interface ContinueAnthropicUntilDoneOptions {
   client: Anthropic;
+  customModels?: CustomModelEntry[];
   handlers?: StreamChatHandlers;
   messages: ChatMessage[];
   model: string;
@@ -283,7 +299,11 @@ export async function continueAnthropicUntilDone(
   let totalInputTokens = 0;
   let totalOutputTokens = 0;
   const tools = buildAnthropicTools(options.tools, options.webSearch);
-  const thinkingRequest = buildAnthropicThinkingRequest(options.thinking);
+  const thinkingRequest = buildAnthropicThinkingRequest(
+    options.model,
+    options.thinking,
+    options.customModels
+  );
   const requestBase = {
     max_tokens: 4096,
     messages: apiMessages,
@@ -336,7 +356,7 @@ export async function continueAnthropicUntilDone(
 
       apiMessages = appendAnthropicAssistantMessage(
         apiMessages,
-        combinedContent
+        streamed.contentBlocks
       );
       continue;
     }
@@ -352,6 +372,7 @@ export async function continueAnthropicUntilDone(
     totalOutputTokens += payload.usage?.output_tokens ?? 0;
 
     const content = payload.content;
+    assertAnthropicStopReason(payload.stop_reason);
     emitHostedToolEvents(content, options.handlers);
     combinedContent.push(...content);
 
@@ -371,27 +392,23 @@ export async function continueAnthropicUntilDone(
       });
     }
 
-    apiMessages = appendAnthropicAssistantMessage(apiMessages, combinedContent);
+    apiMessages = appendAnthropicAssistantMessage(apiMessages, content);
   }
 
-  return finalizeAnthropicResult({
-    parsed: parseAnthropicContent(
-      combinedContent,
-      options.provider,
-      options.providerInstanceId,
-      options.model,
-      options.providerReplayRevision
-    ),
-    usage: buildTokenUsage({
-      inputTokens: totalInputTokens,
-      outputTokens: totalOutputTokens,
-    }),
-  });
+  throw new Error("Anthropic did not finish before the continuation limit.");
 }
 
 interface StreamedAnthropicResult extends ChatCompletionResult {
   contentBlocks: ContentBlock[];
   stopReason?: string;
+}
+
+export function assertAnthropicStopReason(reason: unknown): void {
+  if (reason === "max_tokens" || reason === "model_context_window_exceeded") {
+    throw new Error(
+      `Anthropic stopped before completing the response (${reason}).`
+    );
+  }
 }
 
 async function readAnthropicStream(
@@ -403,6 +420,7 @@ async function readAnthropicStream(
   providerReplayRevision?: string
 ): Promise<StreamedAnthropicResult> {
   let content = "";
+  let completed = false;
   let stopReason: string | undefined;
   let inputTokens: number | undefined;
   let outputTokens: number | undefined;
@@ -414,6 +432,9 @@ async function readAnthropicStream(
   const contentBlocks = new Map<number, ContentBlock>();
 
   for await (const event of stream) {
+    if (event.type === "message_stop") {
+      completed = true;
+    }
     if (event.type === "message_start") {
       inputTokens = event.message.usage.input_tokens;
       outputTokens = event.message.usage.output_tokens;
@@ -421,6 +442,10 @@ async function readAnthropicStream(
 
     if (event.type === "message_delta") {
       stopReason = event.delta.stop_reason ?? stopReason;
+      assertAnthropicStopReason(stopReason);
+      if (stopReason) {
+        completed = true;
+      }
 
       if (event.usage.input_tokens != null) {
         inputTokens = event.usage.input_tokens;
@@ -526,7 +551,7 @@ async function readAnthropicStream(
       ) {
         providerContent[index] = {
           ...block,
-          input: parseJsonRecord(streamedInput),
+          input: parseToolArguments(streamedInput),
         };
       }
 
@@ -540,7 +565,15 @@ async function readAnthropicStream(
     }
   }
 
-  const toolCalls = finalizeAnthropicToolCalls(pending);
+  if (!completed) {
+    throw new Error("Anthropic stream ended before completion.");
+  }
+  const customToolInputs = new Map(
+    [...pending].filter(
+      ([index]) => providerContent[index]?.type !== "server_tool_use"
+    )
+  );
+  const toolCalls = finalizeAnthropicToolCalls(customToolInputs);
   const normalizedContent = providerContent.filter(Boolean);
   const parsed = parseAnthropicContent(
     normalizedContent,
@@ -562,27 +595,58 @@ async function readAnthropicStream(
   };
 }
 
-const ANTHROPIC_REASONING_EFFORT_VALUES = [
-  "low",
-  "medium",
-  "high",
-  "xhigh",
-] as const;
+// Adaptive mode availability is a transport constraint, not inferred reasoning metadata.
+// https://platform.claude.com/docs/en/build-with-claude/thinking#thinking-modes
+const ANTHROPIC_ADAPTIVE_MODELS = new Set([
+  "claude-sonnet-4-6",
+  "claude-opus-4-6",
+  "claude-opus-4-7",
+  "claude-opus-4-8",
+  "claude-sonnet-5",
+  "claude-opus-5",
+  "claude-fable-5",
+  "claude-mythos-5",
+  "claude-fable-5-1",
+  "claude-mythos-5-1",
+  "claude-mythos-preview",
+]);
 
 function buildAnthropicThinkingRequest(
-  providerOptions: GenerateChatInput["providerOptions"]
+  model: string,
+  providerOptions: GenerateChatInput["providerOptions"],
+  customModels?: CustomModelEntry[]
 ): Pick<MessageCreateParams, "thinking" | "output_config"> {
-  if (!providerOptions?.thinking?.enabled) {
+  const metadata = findCustomModel(customModels, model);
+  const thinkingTypes =
+    metadata?.capabilities?.[PROVIDER_CAPABILITY_IDS.chatReasoning]?.constraints
+      ?.supportedValues?.["thinking.type"];
+  const supportsAdaptive = thinkingTypes
+    ? thinkingTypes.includes("adaptive")
+    : ANTHROPIC_ADAPTIVE_MODELS.has(model);
+  if (
+    !(
+      providerOptions?.thinking?.enabled &&
+      modelSupportsReasoning(model, customModels) &&
+      supportsAdaptive
+    )
+  ) {
     return {};
   }
-
-  const effort = resolveThinkingEffort(
+  const effort = resolveModelThinkingEffort(
+    model,
     providerOptions.thinking.effort,
-    ANTHROPIC_REASONING_EFFORT_VALUES
-  ) as "low" | "medium" | "high" | "xhigh";
-
+    customModels
+  );
   return {
-    output_config: { effort },
+    ...(effort
+      ? {
+          output_config: {
+            effort: effort as NonNullable<
+              MessageCreateParams["output_config"]
+            >["effort"],
+          },
+        }
+      : {}),
     thinking: { type: "adaptive" },
   };
 }
@@ -641,12 +705,14 @@ function finalizeAnthropicToolCalls(
     .map(([, call]) => call)
     .flatMap((call) => {
       if (!(call.id && call.name)) {
-        return [];
+        throw new Error(
+          "The provider returned a tool call without an ID or name."
+        );
       }
 
       return [
         {
-          arguments: parseJsonRecord(call.inputJson),
+          arguments: parseToolArguments(call.inputJson),
           id: call.id,
           name: call.name,
         },

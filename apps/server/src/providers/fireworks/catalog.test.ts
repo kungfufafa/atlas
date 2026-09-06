@@ -4,6 +4,7 @@ import { fetchFireworksGatewayModels, normalizeGatewayModel } from "./catalog";
 describe("normalizeGatewayModel", () => {
   test("normalizes full model paths and capability flags", () => {
     const entry = normalizeGatewayModel({
+      contextLength: 262_144,
       conversationConfig: {},
       displayName: "Kimi K2.6",
       name: "accounts/fireworks/models/kimi-k2p6",
@@ -28,7 +29,8 @@ describe("normalizeGatewayModel", () => {
       supportsTools: true,
     });
 
-    expect(entry).toEqual({
+    expect(entry).toMatchObject({
+      contextWindow: 262_144,
       id: "accounts/fireworks/models/kimi-k2p6",
       inputPerMillionUsd: 0.6,
       name: "Kimi K2.6",
@@ -47,14 +49,30 @@ describe("normalizeGatewayModel", () => {
     ).toBeNull();
   });
 
-  test("infers reasoning for known families when gateway omits the flag", () => {
+  test("keeps reasoning unknown when gateway omits the flag", () => {
     const entry = normalizeGatewayModel({
       conversationConfig: {},
       displayName: "GPT OSS 120B",
       name: "accounts/fireworks/models/gpt-oss-120b",
     });
 
-    expect(entry?.supportsThinking).toBe(true);
+    expect(entry?.supportsThinking).toBeUndefined();
+    expect(entry?.supportsVision).toBeUndefined();
+  });
+  test("preserves explicit unsupported flags and empty reasoning levels", () => {
+    const entry = normalizeGatewayModel({
+      name: "qwen-thinking",
+      reasoningEffortValues: [],
+      supportsImageInput: false,
+      supportsReasoning: false,
+      supportsTools: false,
+    });
+    expect(entry).toMatchObject({
+      capabilities: { "chat.tool-use": { status: "unsupported" } },
+      reasoningEffortValues: [],
+      supportsThinking: false,
+      supportsVision: false,
+    });
   });
 });
 

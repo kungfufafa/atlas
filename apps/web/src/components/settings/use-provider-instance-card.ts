@@ -11,7 +11,10 @@ import {
 import { useMemo, useState } from "react";
 import { isCatalogShortlistProvider } from "@/components/catalog-provider-model-fields.shared";
 import type { ModelListRow } from "@/components/ModelListEditor";
-import { normalizeModelListRows } from "@/components/model-list-editor.shared";
+import {
+  clearConnectionModelMetadata,
+  normalizeModelListRows,
+} from "@/components/model-list-editor.shared";
 import type { RemoteModelBrowseProvider } from "@/components/remote-models-browse.shared";
 import {
   seedManageModelRows,
@@ -304,10 +307,20 @@ export function useProviderInstanceCard({
     saveCapabilityEvidence,
     saveCompatible,
     saveManageModels,
-    setApiKey,
+    setApiKey: (value: string) => {
+      if (value !== apiKey) {
+        setManageModels(clearConnectionModelMetadata);
+      }
+      setApiKey(value);
+    },
     setCapabilityEvidenceOpen,
     setDeleteOpen,
-    setEditBaseUrl,
+    setEditBaseUrl: (value: string) => {
+      if (value !== editBaseUrl) {
+        setManageModels(clearConnectionModelMetadata);
+      }
+      setEditBaseUrl(value);
+    },
     setEditLabel,
     setEditOpen,
     setEditWireApi,

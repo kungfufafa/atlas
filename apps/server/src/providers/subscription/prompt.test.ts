@@ -137,9 +137,9 @@ describe("subscription prompt mapping", () => {
     );
 
     expect(resumed.previousHistoryFingerprint).toBe(first.historyFingerprint);
-    expect(resumed.continuation).toBe(
-      "Tool result (knowledge_base_search):\nThe record is 42."
-    );
+    expect(resumed.continuation).toContain('call "call-1"');
+    expect(resumed.continuation).toContain('"query":"record"');
+    expect(resumed.continuation).toContain("The record is 42.");
     expect(resumed.continuation).not.toContain("Find the record");
   });
 

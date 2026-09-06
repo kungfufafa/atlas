@@ -36,6 +36,7 @@ export function enforceChatCapabilityPolicy(
       }
       return await provider.generateText(input);
     },
+    managesContext: provider.managesContext,
     name: provider.name,
     async streamChat(input, handlers) {
       const preparedInput = prepareChatInputForPolicy(input, policy);

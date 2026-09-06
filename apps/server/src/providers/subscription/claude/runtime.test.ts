@@ -97,30 +97,39 @@ describe("Claude subscription runtime", () => {
     const sdk: ClaudeAgentSdk = {
       query: ({ options }) => {
         capturedOptions = options;
-        return queryHandle([
-          {
-            message: {
-              content: [{ text: "Working.", type: "text" }],
-              model: "claude-sonnet-4-6",
+        return {
+          ...queryHandle([
+            {
+              message: {
+                content: [{ text: "Working.", type: "text" }],
+                model: "claude-sonnet-4-6",
+              },
+              session_id: "claude-session",
+              type: "assistant",
             },
-            session_id: "claude-session",
-            type: "assistant",
-          },
-          {
-            errors: [],
-            is_error: false,
-            result: [
-              "Working.",
-              "```atlas-tool-call",
-              '{"name":"knowledge_base_search","arguments":{"query":"atlas"}}',
-              "```",
-            ].join("\n"),
-            session_id: "claude-session",
-            subtype: "success",
-            type: "result",
-            usage: { input_tokens: 4, output_tokens: 5 },
-          },
-        ]);
+            {
+              errors: [],
+              is_error: false,
+              result: [
+                "Working.",
+                "```atlas-tool-call",
+                '{"name":"knowledge_base_search","arguments":{"query":"atlas"}}',
+                "```",
+              ].join("\n"),
+              session_id: "claude-session",
+              subtype: "success",
+              type: "result",
+              usage: { input_tokens: 4, output_tokens: 5 },
+            },
+          ]),
+          supportedModels: async () => [
+            {
+              supportedEffortLevels: ["high"],
+              supportsAdaptiveThinking: true,
+              value: "claude-sonnet-4-6",
+            },
+          ],
+        };
       },
     };
     const runtime = new AuthenticatedClaudeRuntime({ sdk });
@@ -131,7 +140,7 @@ describe("Claude subscription runtime", () => {
         {
           messages: [{ content: "Search", role: "user" }],
           providerOptions: {
-            thinking: { effort: "xhigh", enabled: true },
+            thinking: { effort: "high", enabled: true },
           },
           system: "You are Atlas.",
           tools: [
@@ -154,7 +163,7 @@ describe("Claude subscription runtime", () => {
 
     expect(capturedOptions).toMatchObject({
       allowedTools: [],
-      effort: "xhigh",
+      effort: "high",
       mcpServers: {},
       permissionMode: "dontAsk",
       settingSources: [],

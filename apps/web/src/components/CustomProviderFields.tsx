@@ -14,6 +14,7 @@ import {
   type RemoteModelRow,
   RemoteModelsBrowseList,
 } from "@/components/RemoteModelsBrowseList";
+import type { RemoteModelBrowseProvider } from "@/components/remote-models-browse.shared";
 import { remoteModelRowToCustomModelEntry } from "@/components/remote-models-browse.shared";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
@@ -57,14 +58,7 @@ interface CustomProviderFieldsProps {
   onDisplayNameChange: (value: string) => void;
   onWireApiChange?: (value: WireApi) => void;
   providerInstanceId?: string;
-  remoteProvider?:
-    | "ollama"
-    | "openai_compatible"
-    | "minimax"
-    | "minimax_cn"
-    | "xai"
-    | "zhipu"
-    | "zhipu_cn";
+  remoteProvider?: RemoteModelBrowseProvider;
   showModelsEditor?: boolean;
   wireApi?: WireApi;
 }

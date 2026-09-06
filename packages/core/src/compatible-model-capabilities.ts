@@ -12,41 +12,6 @@ const REASONING_PARAM_NAMES = new Set([
   "thinking_budget",
 ]);
 
-const THINKING_DENY_FRAGMENTS = [
-  "cohere/",
-  "gemma-",
-  "google/gemma",
-  "llama-3",
-  "llama3",
-  "meta-llama/",
-  "meta/llama",
-  "microsoft/phi",
-  "mistralai/",
-  "phi-3",
-  "phi-4",
-] as const;
-
-const THINKING_ALLOW_FRAGMENTS = [
-  "claude",
-  "deepseek-r1",
-  "deepseek-reasoner",
-  "deepseek-v3",
-  "deepseek-v4",
-  "gemini-2.5",
-  "gemini-3",
-  "glm",
-  "gpt-5",
-  "gpt-oss",
-  "grok-3",
-  "grok-4",
-  "kimi",
-  "o1",
-  "o3",
-  "o4",
-  "qwen",
-  "qwq",
-] as const;
-
 export interface CompatibleModelCapabilityContext {
   baseUrl?: string;
   provider?: ProviderName;
@@ -55,73 +20,25 @@ export interface CompatibleModelCapabilityContext {
 
 export interface ParsedRemoteOpenAIModel {
   capabilities?: ProviderCapabilityClaims;
+  contextWindow?: number;
+  defaultReasoningEffort?: string;
   id: string;
+  maxOutputTokens?: number;
   name?: string;
   reasoningEffortValues?: string[];
   supportsThinking?: boolean;
   supportsVision?: boolean;
 }
 
-export function inferCompatibleModelThinking(modelId: string): boolean {
-  const slug = modelId.trim().toLowerCase();
+/** @deprecated Model names do not establish reasoning support. */
+export function inferCompatibleModelThinking(_modelId: string): undefined {}
 
-  if (
-    slug.includes("reasoning") ||
-    slug.includes("thinking") ||
-    slug.includes(":thinking")
-  ) {
-    return true;
-  }
-
-  for (const fragment of THINKING_DENY_FRAGMENTS) {
-    if (slug.includes(fragment)) {
-      return false;
-    }
-  }
-
-  for (const fragment of THINKING_ALLOW_FRAGMENTS) {
-    if (slug.includes(fragment)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
+/** @deprecated Reasoning values must come from provider metadata or configuration. */
 export function inferCompatibleReasoningEffortValues(
-  modelId: string,
-  context: CompatibleModelCapabilityContext = {}
+  _modelId: string,
+  _context: CompatibleModelCapabilityContext = {}
 ): string[] {
-  const mid = modelId.toLowerCase();
-  const plabel = (context.providerLabel ?? "").toLowerCase();
-  const url = (context.baseUrl ?? "").toLowerCase();
-
-  if (mid.includes("claude") || context.provider === "anthropic") {
-    return ["low", "medium", "high", "xhigh"];
-  }
-
-  if (mid.includes("deepseek") || context.provider === "deepseek") {
-    return ["low", "high", "max"];
-  }
-
-  if (
-    plabel === "tr" ||
-    plabel.startsWith("tr ") ||
-    plabel.endsWith(" tr") ||
-    plabel.includes("tokenrouter") ||
-    plabel.includes("token router") ||
-    plabel.includes("token-router") ||
-    url.includes("tokenrouter") ||
-    url.includes("token-router") ||
-    mid.includes("tokenrouter") ||
-    mid.includes("qwen") ||
-    mid.includes("kimi") ||
-    mid.includes("glm")
-  ) {
-    return ["low", "medium", "xhigh"];
-  }
-
-  return ["low", "medium", "high"];
+  return [];
 }
 
 export function parseRemoteOpenAIModelEntry(
@@ -139,52 +56,68 @@ export function parseRemoteOpenAIModelEntry(
 
   const name = firstNonEmptyString(record.name, record.display_name);
   const supportedParams = [
-    ...(readStringArray(record.supported_parameters) ?? []),
-    ...(readStringArray(record.supported_params) ?? []),
+    ...readSupportedParameters(record.supported_parameters),
+    ...readSupportedParameters(record.supported_params),
   ];
   const reasoning = asRecord(record.reasoning);
   const advertisedCapabilities = asRecord(record.capabilities);
   const details = asRecord(record.supported_params_details);
 
-  let supportsThinking: boolean | undefined;
-  if (
-    record.supports_reasoning === true ||
-    record.supports_thinking === true ||
-    record.supportsReasoning === true ||
-    record.supportsThinking === true ||
-    record.reasoning === true ||
-    advertisedCapabilities?.reasoning === true ||
-    advertisedCapabilities?.thinking === true
-  ) {
-    supportsThinking = true;
-  } else if (
-    record.supports_reasoning === false ||
-    record.supports_thinking === false ||
-    record.supportsReasoning === false ||
-    record.supportsThinking === false ||
-    record.reasoning === false ||
-    advertisedCapabilities?.reasoning === false
-  ) {
-    supportsThinking = false;
-  } else if (
-    supportedParams.some((param) =>
-      REASONING_PARAM_NAMES.has(param.toLowerCase())
-    )
-  ) {
-    supportsThinking = true;
-  }
-
   const reasoningEffortValues =
+    readStringArray(record.reasoningEffortValues) ??
+    readStringArray(record.reasoning_effort_values) ??
     readStringArray(reasoning?.supported_efforts) ??
     readStringArray(reasoning?.effort) ??
     readStringArray(reasoning?.efforts) ??
     readStringArray(asRecord(details?.reasoning_effort)?.accepted_values) ??
     readStringArray(asRecord(details?.reasoning_effort)?.enum) ??
     readStringArray(asRecord(details?.reasoning)?.effort);
-
-  if (reasoningEffortValues && supportsThinking === undefined) {
-    supportsThinking = true;
-  }
+  const supportsThinking =
+    firstBoolean(
+      record.supportsThinking,
+      record.supportsReasoning,
+      record.supports_thinking,
+      record.supports_reasoning,
+      record.reasoning,
+      advertisedCapabilities?.reasoning,
+      advertisedCapabilities?.thinking
+    ) ??
+    (supportedParams.some((param) =>
+      REASONING_PARAM_NAMES.has(param.toLowerCase())
+    ) || (reasoningEffortValues?.length ?? 0) > 0
+      ? true
+      : undefined);
+  const advertisedDefault = firstNonEmptyString(
+    record.defaultReasoningEffort,
+    record.default_reasoning_effort,
+    reasoning?.default_effort,
+    reasoning?.default,
+    asRecord(details?.reasoning_effort)?.default
+  );
+  const defaultReasoningEffort =
+    reasoningEffortValues !== undefined &&
+    advertisedDefault &&
+    !reasoningEffortValues.includes(advertisedDefault)
+      ? undefined
+      : advertisedDefault;
+  const topProvider = asRecord(record.top_provider);
+  const limits = asRecord(record.limits);
+  const contextWindow = firstTokenLimit(
+    record.contextWindow,
+    record.context_window,
+    record.context_length,
+    record.contextLength,
+    record.max_model_len,
+    topProvider?.context_length,
+    limits?.max_context_length
+  );
+  const maxOutputTokens = firstTokenLimit(
+    record.maxOutputTokens,
+    record.max_output_tokens,
+    record.max_completion_tokens,
+    topProvider?.max_completion_tokens,
+    limits?.max_completion_tokens
+  );
 
   const supportsVision = detectRemoteVision(record, advertisedCapabilities);
   const normalizedCapabilities = detectNormalizedCapabilities({
@@ -200,6 +133,9 @@ export function parseRemoteOpenAIModelEntry(
       ? { capabilities: normalizedCapabilities }
       : {}),
     id,
+    ...(contextWindow === undefined ? {} : { contextWindow }),
+    ...(maxOutputTokens === undefined ? {} : { maxOutputTokens }),
+    ...(defaultReasoningEffort ? { defaultReasoningEffort } : {}),
     ...(name ? { name } : {}),
     ...(supportsThinking === undefined ? {} : { supportsThinking }),
     ...(reasoningEffortValues ? { reasoningEffortValues } : {}),
@@ -242,18 +178,29 @@ function detectNormalizedCapabilities(input: {
   }
   if (inputModalities.includes("audio")) {
     addDiscoveredClaim(result, PROVIDER_CAPABILITY_IDS.chatInputAudio, true);
-    if (outputModalities.includes("text")) {
-      addDiscoveredClaim(
-        result,
-        PROVIDER_CAPABILITY_IDS.audioTranscription,
-        true
-      );
-    }
   }
   if (outputModalities.includes("image")) {
     addDiscoveredClaim(result, PROVIDER_CAPABILITY_IDS.imageGeneration, true);
   }
 
+  addExplicitCapabilityClaim(result, PROVIDER_CAPABILITY_IDS.chatInputAudio, [
+    input.record.supports_audio_input,
+    input.record.supportsAudioInput,
+    input.advertisedCapabilities?.audio_input,
+  ]);
+  addExplicitCapabilityClaim(result, PROVIDER_CAPABILITY_IDS.chatCompletion, [
+    input.record.supports_chat_completion,
+    input.advertisedCapabilities?.completion,
+  ]);
+  addExplicitCapabilityClaim(result, PROVIDER_CAPABILITY_IDS.chatStreaming, [
+    input.record.supports_streaming,
+    input.advertisedCapabilities?.streaming,
+  ]);
+  addExplicitCapabilityClaim(
+    result,
+    PROVIDER_CAPABILITY_IDS.chatNativeWebSearch,
+    [input.record.supports_web_search, input.advertisedCapabilities?.web_search]
+  );
   addExplicitCapabilityClaim(
     result,
     PROVIDER_CAPABILITY_IDS.audioTranscription,
@@ -270,23 +217,39 @@ function detectNormalizedCapabilities(input: {
   ]);
 
   const supportsTools =
-    normalizedParams.has("tools") ||
+    firstBoolean(
+      input.record.supportsTools,
+      input.record.supports_tools,
+      input.advertisedCapabilities?.tools,
+      input.advertisedCapabilities?.function_calling
+    ) ??
+    (normalizedParams.has("tools") ||
     normalizedParams.has("tool_choice") ||
-    normalizedParams.has("functions") ||
-    input.advertisedCapabilities?.tools === true ||
-    input.advertisedCapabilities?.function_calling === true;
-  if (supportsTools) {
-    addDiscoveredClaim(result, PROVIDER_CAPABILITY_IDS.chatToolUse, true);
+    normalizedParams.has("functions")
+      ? true
+      : undefined);
+  if (supportsTools !== undefined) {
+    addDiscoveredClaim(
+      result,
+      PROVIDER_CAPABILITY_IDS.chatToolUse,
+      supportsTools
+    );
   }
   const supportsStructured =
-    normalizedParams.has("response_format") ||
-    normalizedParams.has("json_schema") ||
-    input.advertisedCapabilities?.structured_outputs === true;
-  if (supportsStructured) {
+    firstBoolean(
+      input.record.supportsStructuredOutput,
+      input.record.supports_structured_output,
+      input.advertisedCapabilities?.structured_outputs
+    ) ??
+    (normalizedParams.has("response_format") ||
+    normalizedParams.has("json_schema")
+      ? true
+      : undefined);
+  if (supportsStructured !== undefined) {
     addDiscoveredClaim(
       result,
       PROVIDER_CAPABILITY_IDS.chatStructuredOutput,
-      true
+      supportsStructured
     );
   }
   if (input.supportsThinking !== undefined) {
@@ -326,27 +289,28 @@ function addDiscoveredClaim(
 }
 
 export function resolveCompatibleModelCapabilities(
-  modelId: string,
+  _modelId: string,
   advertised: {
+    defaultReasoningEffort?: string;
     reasoningEffortValues?: string[];
     supportsThinking?: boolean;
   } = {},
-  context: CompatibleModelCapabilityContext = {}
-): Pick<CustomModelEntry, "reasoningEffortValues" | "supportsThinking"> {
+  _context: CompatibleModelCapabilityContext = {}
+): Pick<
+  CustomModelEntry,
+  "defaultReasoningEffort" | "reasoningEffortValues" | "supportsThinking"
+> {
   const supportsThinking =
-    advertised.supportsThinking ?? inferCompatibleModelThinking(modelId);
-
-  if (!supportsThinking) {
-    return advertised.supportsThinking === false
-      ? { supportsThinking: false }
-      : {};
-  }
-
+    advertised.supportsThinking ??
+    ((advertised.reasoningEffortValues?.length ?? 0) > 0 ? true : undefined);
   return {
-    reasoningEffortValues:
-      advertised.reasoningEffortValues ??
-      inferCompatibleReasoningEffortValues(modelId, context),
-    supportsThinking: true,
+    ...(supportsThinking === undefined ? {} : { supportsThinking }),
+    ...(advertised.reasoningEffortValues === undefined
+      ? {}
+      : { reasoningEffortValues: advertised.reasoningEffortValues }),
+    ...(advertised.defaultReasoningEffort === undefined
+      ? {}
+      : { defaultReasoningEffort: advertised.defaultReasoningEffort }),
   };
 }
 
@@ -354,25 +318,31 @@ function detectRemoteVision(
   record: Record<string, unknown>,
   capabilities: Record<string, unknown> | null
 ): boolean | undefined {
-  if (
-    record.supports_vision === true ||
-    record.supportsVision === true ||
-    record.supports_image_input === true ||
-    capabilities?.vision === true
-  ) {
-    return true;
-  }
-
-  const modalities = readStringArray(
-    asRecord(record.architecture)?.input_modalities
+  const explicit = firstBoolean(
+    record.supportsVision,
+    record.supports_vision,
+    record.supportsImageInput,
+    record.supports_image_input,
+    capabilities?.vision
   );
-  if (modalities?.includes("image")) {
-    return true;
+  if (explicit !== undefined) {
+    return explicit;
   }
+  const modalities =
+    readStringArray(asRecord(record.architecture)?.input_modalities) ??
+    readStringArray(record.input_modalities);
+  return modalities?.includes("image");
+}
 
-  if (record.supports_vision === false || record.supportsVision === false) {
-    return false;
-  }
+function firstBoolean(...values: unknown[]): boolean | undefined {
+  return values.find((value): value is boolean => typeof value === "boolean");
+}
+
+function firstTokenLimit(...values: unknown[]): number | undefined {
+  return values.find(
+    (value): value is number =>
+      typeof value === "number" && Number.isSafeInteger(value) && value > 0
+  );
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -381,6 +351,15 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   }
 
   return value as Record<string, unknown>;
+}
+
+function readSupportedParameters(value: unknown): string[] {
+  return (
+    readStringArray(value) ??
+    Object.entries(asRecord(value) ?? {})
+      .filter(([, supported]) => supported === true)
+      .map(([parameter]) => parameter)
+  );
 }
 
 function readStringArray(value: unknown): string[] | undefined {
@@ -392,7 +371,9 @@ function readStringArray(value: unknown): string[] | undefined {
     .map((item) => (typeof item === "string" ? item.trim() : ""))
     .filter(Boolean);
 
-  return parts.length > 0 ? parts : undefined;
+  return value.length === 0 || parts.length > 0
+    ? [...new Set(parts)]
+    : undefined;
 }
 
 function firstNonEmptyString(...values: unknown[]): string | undefined {

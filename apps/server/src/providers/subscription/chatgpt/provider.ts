@@ -43,6 +43,7 @@ export function createChatgptProvider(options: {
         };
       });
     },
+    managesContext: true,
     name: "chatgpt",
     streamChat(input: GenerateChatInput, handlers: StreamChatHandlers) {
       return withSubscriptionSessionLease(

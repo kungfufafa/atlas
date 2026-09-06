@@ -11,7 +11,9 @@ import { getUserMessageText, resolveUserContentForProvider } from "@atlas/core";
 import { buildChatCompletionResult } from "../shared";
 
 const TOOL_CALL_FENCE = "atlas-tool-call";
-const TOOL_CALL_FENCE_RE = /```atlas-tool-call\s*([\s\S]*?)```/gi;
+const TOOL_CALL_FENCE_RE =
+  /^[\t ]*```atlas-tool-call[\t ]*\r?\n([\s\S]*?)^[\t ]*```[\t ]*\r?$/gim;
+const TOOL_CALL_FENCE_START_RE = /```atlas-tool-call\b/i;
 const ATLAS_TOOL_EXECUTION_CONTRACT = [
   "Atlas, not this subscription runtime, executes every tool listed below.",
   "Native runtime tools are disabled; native sandbox, filesystem, approval, and permission settings do not restrict Atlas tools.",
@@ -52,15 +54,19 @@ export async function formatSubscriptionPrompt(
     .join("\n\n");
 
   const messages = await resolveDocuments(input.messages, provider);
+  const toolCallsById = indexToolCalls(messages);
   const transcript = formatTranscript(messages);
-  const transcriptInput = formatPromptInput(messages);
+  const transcriptInput = formatPromptInput(messages, toolCallsById);
   const latestTurn = formatLatestTurn(messages) || transcript;
   const continuation = formatContinuation(messages, previousMessageCount);
   const continuationMessages = continuationMessageSlice(
     messages,
     previousMessageCount
   );
-  const continuationInput = formatPromptInput(continuationMessages);
+  const continuationInput = formatPromptInput(
+    continuationMessages,
+    toolCallsById
+  );
   const historyFingerprint = fingerprintMessages(messages);
   const previousHistoryFingerprint =
     previousMessageCount === undefined
@@ -89,15 +95,25 @@ export function parseSubscriptionResponse(
   usage?: ChatCompletionResult["usage"]
 ): ChatCompletionResult {
   const toolCalls: ToolCall[] = [];
+  const toolCallIds = new Set<string>();
   let content = raw;
   TOOL_CALL_FENCE_RE.lastIndex = 0;
   content = content.replace(TOOL_CALL_FENCE_RE, (_match, body: string) => {
     const parsed = parseToolCallJson(String(body ?? "").trim());
-    if (parsed) {
-      toolCalls.push(parsed);
+    if (!parsed || toolCallIds.has(parsed.id)) {
+      throw new Error(
+        "The subscription runtime returned an invalid Atlas tool call. Retry the request."
+      );
     }
+    toolCallIds.add(parsed.id);
+    toolCalls.push(parsed);
     return "";
   });
+  if (TOOL_CALL_FENCE_START_RE.test(content)) {
+    throw new Error(
+      "The subscription runtime returned an incomplete Atlas tool call. Retry the request."
+    );
+  }
 
   return buildChatCompletionResult({
     content: content.trim(),
@@ -114,6 +130,8 @@ export function appendDelta(
   delta: string;
   text: string;
 } {
+  // Reconcile complete snapshots only. True token deltas must be appended,
+  // even when the next fragment repeats or starts with the preceding text.
   if (!next) {
     return { delta: "", text: previous };
   }
@@ -156,9 +174,22 @@ function formatToolInstructions(
   ].join("\n");
 }
 
+function indexToolCalls(messages: ChatMessage[]): Map<string, ToolCall> {
+  const calls = new Map<string, ToolCall>();
+  for (const message of messages) {
+    if (message.role === "assistant") {
+      for (const call of message.toolCalls ?? []) {
+        calls.set(call.id, call);
+      }
+    }
+  }
+  return calls;
+}
+
 function formatTranscript(messages: ChatMessage[]): string {
+  const toolCallsById = indexToolCalls(messages);
   return messages
-    .map((message) => formatMessage(message))
+    .map((message) => formatMessage(message, toolCallsById))
     .filter(Boolean)
     .join("\n\n");
 }
@@ -199,15 +230,19 @@ function formatLatestTurn(messages: ChatMessage[]): string {
     break;
   }
 
-  return trailing.map((message) => formatMessage(message)).join("\n\n");
+  const toolCallsById = indexToolCalls(messages);
+  return trailing
+    .map((message) => formatMessage(message, toolCallsById))
+    .join("\n\n");
 }
 
 function formatContinuation(
   messages: ChatMessage[],
   previousMessageCount?: number
 ): string {
+  const toolCallsById = indexToolCalls(messages);
   return continuationMessageSlice(messages, previousMessageCount)
-    .map((message) => formatMessage(message))
+    .map((message) => formatMessage(message, toolCallsById))
     .filter(Boolean)
     .join("\n\n");
 }
@@ -224,7 +259,10 @@ function continuationMessageSlice(
     .filter((message) => message.role !== "assistant");
 }
 
-function formatPromptInput(messages: ChatMessage[]): SubscriptionPromptInput[] {
+function formatPromptInput(
+  messages: ChatMessage[],
+  toolCallsById: ReadonlyMap<string, ToolCall>
+): SubscriptionPromptInput[] {
   const input: SubscriptionPromptInput[] = [];
   for (const message of messages) {
     if (message.role === "user" && typeof message.content !== "string") {
@@ -232,7 +270,7 @@ function formatPromptInput(messages: ChatMessage[]): SubscriptionPromptInput[] {
       continue;
     }
 
-    const text = formatMessage(message);
+    const text = formatMessage(message, toolCallsById);
     if (text) {
       input.push({ text, type: "text" });
     }
@@ -345,13 +383,22 @@ function hashSegment(
   hash.update(value);
 }
 
-function formatMessage(message: ChatMessage): string {
+function formatMessage(
+  message: ChatMessage,
+  toolCallsById?: ReadonlyMap<string, ToolCall>
+): string {
   if (message.role === "user") {
     return `User:\n${getUserMessageText(message.content)}`;
   }
   if (message.role === "assistant") {
     const toolCalls = message.toolCalls
-      ?.map((call) => `${call.name}(${JSON.stringify(call.arguments)})`)
+      ?.map((call) =>
+        JSON.stringify({
+          arguments: call.arguments,
+          id: call.id,
+          name: call.name,
+        })
+      )
       .join(", ");
     const body = [message.content, toolCalls ? `tool calls: ${toolCalls}` : ""]
       .filter(Boolean)
@@ -359,7 +406,11 @@ function formatMessage(message: ChatMessage): string {
     return body ? `Assistant:\n${body}` : "";
   }
   if (message.role === "tool") {
-    return `Tool result (${message.name}):\n${message.content}`;
+    const call = toolCallsById?.get(message.toolCallId);
+    const request = call
+      ? `Arguments: ${JSON.stringify(call.arguments)}\n`
+      : "";
+    return `Tool result (${message.name}, call ${JSON.stringify(message.toolCallId)}):\n${request}${message.content}`;
   }
   return "";
 }
@@ -371,7 +422,21 @@ function parseToolCallJson(raw: string): ToolCall | null {
       id?: unknown;
       name?: unknown;
     };
-    if (typeof parsed.name !== "string" || !parsed.name.trim()) {
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      Array.isArray(parsed) ||
+      typeof parsed.name !== "string" ||
+      !parsed.name.trim()
+    ) {
+      return null;
+    }
+    if (
+      parsed.arguments !== undefined &&
+      (!parsed.arguments ||
+        typeof parsed.arguments !== "object" ||
+        Array.isArray(parsed.arguments))
+    ) {
       return null;
     }
     const args =

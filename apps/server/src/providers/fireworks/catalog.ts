@@ -1,4 +1,7 @@
-import type { CustomModelEntry } from "@atlas/core";
+import {
+  type CustomModelEntry,
+  parseRemoteOpenAIModelEntry,
+} from "@atlas/core";
 import { formatHttpErrorBody } from "../shared";
 
 export const FIREWORKS_GATEWAY_BASE_URL = "https://api.fireworks.ai/v1";
@@ -24,11 +27,15 @@ interface GatewayModel {
   baseModelDetails?: {
     parameterCount?: string;
   };
+  contextLength?: number;
   conversationConfig?: unknown;
+  defaultReasoningEffort?: string;
   deprecationDate?: unknown;
   displayName?: string;
   kind?: string;
+  maxOutputTokens?: number;
   name?: string;
+  reasoningEffortValues?: string[];
   serverlessModes?: ServerlessMode[];
   supportsImageInput?: boolean;
   supportsReasoning?: boolean;
@@ -112,29 +119,7 @@ function isChatModel(model: GatewayModel): boolean {
     return true;
   }
 
-  const id = model.name?.toLowerCase() ?? "";
-
-  if (id.includes("embed")) {
-    return false;
-  }
-
   return true;
-}
-
-function inferReasoning(model: GatewayModel, modelId: string): boolean {
-  if (model.supportsReasoning === true) {
-    return true;
-  }
-
-  const slug = modelId.toLowerCase();
-
-  return (
-    slug.includes("gpt-oss") ||
-    slug.includes("glm") ||
-    slug.includes("kimi") ||
-    slug.includes("deepseek") ||
-    slug.includes("qwen")
-  );
 }
 
 export function normalizeGatewayModel(
@@ -147,12 +132,12 @@ export function normalizeGatewayModel(
   }
 
   const pricing = parseSkuPricing(model.serverlessModes);
+  const metadata = parseRemoteOpenAIModelEntry({ ...model, id });
 
   return {
+    ...metadata,
     id,
     name: model.displayName?.trim() || id.split("/").pop() || id,
-    supportsThinking: inferReasoning(model, id),
-    supportsVision: model.supportsImageInput === true,
     ...(pricing.inputPerMillionUsd !== undefined &&
     pricing.outputPerMillionUsd !== undefined
       ? {

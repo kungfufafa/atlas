@@ -154,7 +154,7 @@ export function validateCustomModels(entries: unknown): CustomModelEntry[] {
 
     if (
       defaultReasoningEffort &&
-      reasoningEffortValues?.length &&
+      reasoningEffortValues !== undefined &&
       !reasoningEffortValues.includes(defaultReasoningEffort)
     ) {
       throw new Error(
@@ -171,15 +171,26 @@ export function validateCustomModels(entries: unknown): CustomModelEntry[] {
       );
     }
 
+    const contextWindow = parseOptionalTokenLimit(
+      record.contextWindow,
+      "contextWindow"
+    );
+    const maxOutputTokens = parseOptionalTokenLimit(
+      record.maxOutputTokens,
+      "maxOutputTokens"
+    );
+
     result.push({
       id,
+      ...(contextWindow === undefined ? {} : { contextWindow }),
+      ...(maxOutputTokens === undefined ? {} : { maxOutputTokens }),
       ...(capabilities ? { capabilities } : {}),
       ...(name ? { name } : {}),
       ...(isDefault ? { default: true } : {}),
       ...(defaultReasoningEffort ? { defaultReasoningEffort } : {}),
       ...(supportsThinking === undefined ? {} : { supportsThinking }),
       ...(supportsVision === undefined ? {} : { supportsVision }),
-      ...(reasoningEffortValues?.length ? { reasoningEffortValues } : {}),
+      ...(reasoningEffortValues === undefined ? {} : { reasoningEffortValues }),
       ...(inputPerMillionUsd === undefined ? {} : { inputPerMillionUsd }),
       ...(outputPerMillionUsd === undefined ? {} : { outputPerMillionUsd }),
     });
@@ -190,6 +201,19 @@ export function validateCustomModels(entries: unknown): CustomModelEntry[] {
   }
 
   return result;
+}
+
+function parseOptionalTokenLimit(
+  value: unknown,
+  field: string
+): number | undefined {
+  if (value === undefined) {
+    return;
+  }
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value <= 0) {
+    throw new Error(`${field} must be a positive integer.`);
+  }
+  return value;
 }
 
 function parseOptionalUsdRate(value: unknown): number | undefined {

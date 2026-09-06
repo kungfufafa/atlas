@@ -2,6 +2,7 @@ import type {
   AgentChannel,
   AgentQuestionnaire,
   AgentTodo,
+  CompactedHistoryArchive,
   OrgRole,
   ThinkingEffort,
 } from "@atlas/core";
@@ -112,6 +113,11 @@ export interface StoredSessionMessageRecord {
   id: string;
   payload: unknown;
   seq: number;
+  sessionId: string;
+}
+
+export interface StoredSessionHistoryArchiveRecord
+  extends CompactedHistoryArchive {
   sessionId: string;
 }
 
@@ -1005,12 +1011,15 @@ export interface DatabaseAdapter {
     orgId: string,
     sessionId: string,
     options?: {
+      archiveId?: string;
       excludeSuperAgent?: boolean;
       limit?: number;
       offset?: number;
       userId?: string;
     }
   ): Promise<{
+    archiveId?: string;
+    archivedAt?: string;
     createdAt: string;
     messages: StoredConversationMessageItem[];
     profileId: string;
@@ -1323,7 +1332,8 @@ export interface DatabaseAdapter {
   ): Promise<ProfileImportPublishResult>;
   replaceMessagesForSession(
     sessionId: string,
-    messages: StoredSessionMessageRecord[]
+    messages: StoredSessionMessageRecord[],
+    archives?: StoredSessionHistoryArchiveRecord[]
   ): Promise<void>;
   replaceProfileComposioToolkits(
     profileId: string,
@@ -1477,6 +1487,8 @@ export interface DatabaseAdapter {
 }
 
 export interface StoredConversationSearchResult {
+  archivedAt?: string;
+  archiveId?: string;
   createdAt: string;
   matchedSnippet: string;
   messageId: string;

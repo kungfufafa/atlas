@@ -1,6 +1,7 @@
 import type {
   ConfigureProviderRequest,
   CreateProviderRequest,
+  CustomModelEntry,
   OllamaHostMode,
   ProviderModelOption,
   WireApi,
@@ -349,16 +350,7 @@ export function isShortlistCapabilityProvider(
   return provider === "cerebras" || provider === "fireworks";
 }
 
-type ShortlistModelRow = {
-  capabilities?: ProviderModelOption["capabilities"];
-  id: string;
-  name?: string;
-  default?: boolean;
-  supportsThinking?: boolean;
-  supportsVision?: boolean;
-  inputPerMillionUsd?: number;
-  outputPerMillionUsd?: number;
-};
+type ShortlistModelRow = CustomModelEntry;
 
 export function modelsFromShortlistRows(
   provider: ShortlistCapabilityProvider,
@@ -373,6 +365,7 @@ export function modelsFromShortlistRows(
     }
 
     models.push({
+      ...row,
       ...(row.capabilities ? { capabilities: row.capabilities } : {}),
       id,
       name: row.name?.trim() || id,
@@ -397,13 +390,7 @@ export function modelsFromShortlistRows(
 }
 
 export function modelsFromOpenRouterRows(
-  rows: Array<{
-    id: string;
-    name?: string;
-    default?: boolean;
-    inputPerMillionUsd?: number;
-    outputPerMillionUsd?: number;
-  }>
+  rows: CustomModelEntry[]
 ): ProviderModelOption[] {
   const models: ProviderModelOption[] = [];
 
@@ -414,6 +401,7 @@ export function modelsFromOpenRouterRows(
     }
 
     models.push({
+      ...row,
       id,
       name: row.name?.trim() || id,
       provider: "openrouter" as const,
@@ -431,85 +419,22 @@ export function modelsFromOpenRouterRows(
 }
 
 export function appendOpenRouterModelRow(
-  rows: Array<{
-    id: string;
-    name?: string;
-    default?: boolean;
-    inputPerMillionUsd?: number;
-    outputPerMillionUsd?: number;
-  }>,
+  rows: CustomModelEntry[],
   modelId: string,
   modelName: string,
-  pricing?: { inputPerMillionUsd?: number; outputPerMillionUsd?: number }
-): Array<{
-  id: string;
-  name: string;
-  default?: boolean;
-  inputPerMillionUsd?: number;
-  outputPerMillionUsd?: number;
-}> {
-  const base: Array<{
-    id: string;
-    name: string;
-    default?: boolean;
-    inputPerMillionUsd?: number;
-    outputPerMillionUsd?: number;
-  }> = [];
-
-  for (const row of rows) {
-    if (!row.id.trim()) {
-      continue;
-    }
-
-    base.push({
-      id: row.id,
-      name: row.name ?? row.id,
-      ...(row.default ? { default: true } : {}),
-      ...(row.inputPerMillionUsd === undefined
-        ? {}
-        : { inputPerMillionUsd: row.inputPerMillionUsd }),
-      ...(row.outputPerMillionUsd === undefined
-        ? {}
-        : { outputPerMillionUsd: row.outputPerMillionUsd }),
-    });
+  metadata?: Omit<CustomModelEntry, "id" | "name" | "default">
+): CustomModelEntry[] {
+  const existing = rows
+    .filter((row) => row.id.trim())
+    .map((row) => ({ ...row, default: row.id === modelId }));
+  if (existing.some((row) => row.id === modelId)) {
+    return existing.map((row) =>
+      row.id === modelId ? { ...row, ...metadata, name: modelName } : row
+    );
   }
-
-  if (base.some((row) => row.id === modelId)) {
-    return base.map((row) => ({
-      default: row.id === modelId,
-      id: row.id,
-      name: row.name ?? row.id,
-      ...(row.inputPerMillionUsd === undefined
-        ? {}
-        : { inputPerMillionUsd: row.inputPerMillionUsd }),
-      ...(row.outputPerMillionUsd === undefined
-        ? {}
-        : { outputPerMillionUsd: row.outputPerMillionUsd }),
-    }));
-  }
-
   return [
-    ...base.map((row) => ({
-      id: row.id,
-      name: row.name ?? row.id,
-      ...(row.inputPerMillionUsd === undefined
-        ? {}
-        : { inputPerMillionUsd: row.inputPerMillionUsd }),
-      ...(row.outputPerMillionUsd === undefined
-        ? {}
-        : { outputPerMillionUsd: row.outputPerMillionUsd }),
-    })),
-    {
-      default: true,
-      id: modelId,
-      name: modelName,
-      ...(pricing?.inputPerMillionUsd === undefined
-        ? {}
-        : { inputPerMillionUsd: pricing.inputPerMillionUsd }),
-      ...(pricing?.outputPerMillionUsd === undefined
-        ? {}
-        : { outputPerMillionUsd: pricing.outputPerMillionUsd }),
-    },
+    ...existing,
+    { ...metadata, default: true, id: modelId, name: modelName },
   ];
 }
 
@@ -784,63 +709,49 @@ export function effectiveProfileModelSelection(
   return firstAvailableModelSelection(groups);
 }
 
+/** A qualified selection must never borrow metadata from another provider. */
+function resolveSelectedModel(
+  selection: string | null | undefined,
+  groups: ReturnType<typeof groupModelsByProvider>
+): ProviderModelOption | undefined {
+  const effectiveSelection = selection || firstAvailableModelSelection(groups);
+  if (!effectiveSelection) {
+    return;
+  }
+  const decoded = decodeModelSelection(effectiveSelection);
+  if (decoded) {
+    return groups
+      .find((group) => group.providerId === decoded.providerId)
+      ?.models.find((model) => model.id === decoded.modelId);
+  }
+  const matches = groups.flatMap((group) =>
+    group.models.filter((model) => model.id === effectiveSelection)
+  );
+  return matches.length === 1 ? matches[0] : undefined;
+}
+
 export function resolveModelThinkingSupport(
   selection: string | null | undefined,
   groups: ReturnType<typeof groupModelsByProvider>
 ): boolean | undefined {
-  const effectiveSelection =
-    selection ||
-    (groups[0]?.models[0]
-      ? encodeModelSelection(groups[0].providerId, groups[0].models[0].id)
-      : undefined);
-
-  if (!effectiveSelection) {
-    return;
-  }
-
-  const decoded = decodeModelSelection(effectiveSelection);
-  const resolvedModelId = decoded?.modelId ?? effectiveSelection;
-
-  const findModel = () => {
-    if (decoded && decoded.providerId !== "__unknown__") {
-      const group = groups.find(
-        (entry) => entry.providerId === decoded.providerId
-      );
-      const match = group?.models.find((model) => model.id === resolvedModelId);
-      if (match) {
-        return match;
-      }
-    }
-
-    for (const group of groups) {
-      const match = group.models.find((model) => model.id === resolvedModelId);
-      if (match) {
-        return match;
-      }
-    }
-  };
-
-  const model = findModel();
+  const model = resolveSelectedModel(selection, groups);
   if (!model) {
     return;
   }
-
   const capability =
     model.capabilities?.[PROVIDER_CAPABILITY_IDS.chatReasoning];
-  if (capability?.status === "supported") {
-    return true;
-  }
-  if (capability?.status === "unsupported") {
+  if (
+    model.supportsThinking === false ||
+    capability?.status === "unsupported"
+  ) {
     return false;
   }
   if (capability?.status === "unknown") {
     return;
   }
-
-  if (model.supportsThinking !== undefined) {
-    return model.supportsThinking;
+  if (capability?.status === "supported" || model.supportsThinking === true) {
+    return true;
   }
-
   return model.reasoningEffortValues?.length ? true : undefined;
 }
 
@@ -848,39 +759,10 @@ export function resolveModelReasoningEffortValues(
   selection: string | null | undefined,
   groups: ReturnType<typeof groupModelsByProvider>
 ): string[] | undefined {
-  const effectiveSelection =
-    selection ||
-    (groups[0]?.models[0]
-      ? encodeModelSelection(groups[0].providerId, groups[0].models[0].id)
-      : undefined);
-
-  if (!effectiveSelection) {
-    return;
+  const model = resolveSelectedModel(selection, groups);
+  if (resolveModelThinkingSupport(selection, groups) !== true) {
+    return model?.supportsThinking === false ? [] : undefined;
   }
-
-  const decoded = decodeModelSelection(effectiveSelection);
-  const resolvedModelId = decoded?.modelId ?? effectiveSelection;
-
-  const findModel = () => {
-    if (decoded && decoded.providerId !== "__unknown__") {
-      const group = groups.find(
-        (entry) => entry.providerId === decoded.providerId
-      );
-      const match = group?.models.find((model) => model.id === resolvedModelId);
-      if (match) {
-        return match;
-      }
-    }
-
-    for (const group of groups) {
-      const match = group.models.find((model) => model.id === resolvedModelId);
-      if (match) {
-        return match;
-      }
-    }
-  };
-
-  const model = findModel();
   return model?.reasoningEffortValues;
 }
 
@@ -888,35 +770,12 @@ export function resolveModelDefaultReasoningEffort(
   selection: string | null | undefined,
   groups: ReturnType<typeof groupModelsByProvider>
 ): string | undefined {
-  const effectiveSelection =
-    selection ||
-    (groups[0]?.models[0]
-      ? encodeModelSelection(groups[0].providerId, groups[0].models[0].id)
-      : undefined);
-
-  if (!effectiveSelection) {
-    return;
-  }
-
-  const decoded = decodeModelSelection(effectiveSelection);
-  const resolvedModelId = decoded?.modelId ?? effectiveSelection;
-
-  if (decoded && decoded.providerId !== "__unknown__") {
-    const group = groups.find(
-      (entry) => entry.providerId === decoded.providerId
-    );
-    const match = group?.models.find((model) => model.id === resolvedModelId);
-    if (match) {
-      return match.defaultReasoningEffort;
-    }
-  }
-
-  for (const group of groups) {
-    const match = group.models.find((model) => model.id === resolvedModelId);
-    if (match) {
-      return match.defaultReasoningEffort;
-    }
-  }
+  const model = resolveSelectedModel(selection, groups);
+  const values = resolveModelReasoningEffortValues(selection, groups);
+  return model?.defaultReasoningEffort &&
+    values?.includes(model.defaultReasoningEffort)
+    ? model.defaultReasoningEffort
+    : undefined;
 }
 
 export function resolveModelVisionSupport(
@@ -926,56 +785,20 @@ export function resolveModelVisionSupport(
   if (!selection) {
     return;
   }
-
-  const decoded = decodeModelSelection(selection);
-  const resolvedModelId = decoded?.modelId ?? selection;
-
-  const findModel = () => {
-    if (decoded && decoded.providerId !== "__unknown__") {
-      const group = groups.find(
-        (entry) => entry.providerId === decoded.providerId
-      );
-      const match = group?.models.find((model) => model.id === resolvedModelId);
-      if (match) {
-        return match;
-      }
-    }
-
-    for (const group of groups) {
-      const match = group.models.find((model) => model.id === resolvedModelId);
-      if (match) {
-        return match;
-      }
-    }
-  };
-
-  const model = findModel();
-  if (!model) {
-    return;
-  }
+  const model = resolveSelectedModel(selection, groups);
   const capability =
-    model.capabilities?.[PROVIDER_CAPABILITY_IDS.chatInputImage];
-  if (capability?.status === "supported") {
-    return true;
-  }
-  if (capability?.status === "unsupported") {
+    model?.capabilities?.[PROVIDER_CAPABILITY_IDS.chatInputImage];
+  if (model?.supportsVision === false || capability?.status === "unsupported") {
     return false;
   }
   if (capability?.status === "unknown") {
     return;
   }
-
-  return model.supportsVision;
+  return capability?.status === "supported" ? true : model?.supportsVision;
 }
 
 export function modelsFromCustomRows(
-  rows: Array<{
-    id: string;
-    name?: string;
-    default?: boolean;
-    inputPerMillionUsd?: number;
-    outputPerMillionUsd?: number;
-  }>
+  rows: CustomModelEntry[]
 ): ProviderModelOption[] {
   const models: ProviderModelOption[] = [];
 
@@ -986,6 +809,7 @@ export function modelsFromCustomRows(
     }
 
     models.push({
+      ...row,
       id,
       name: row.name?.trim() || id,
       provider: "openai_compatible" as const,

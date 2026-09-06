@@ -440,7 +440,7 @@ describe("agent chat tool loop", () => {
     expect(maxActive).toBe(1);
   });
 
-  test("rolls back incomplete tool turns when follow-up provider call fails", async () => {
+  test("retains completed tool evidence when the follow-up provider call fails", async () => {
     const provider = createMockProvider([
       {
         assistantMessage: {
@@ -463,7 +463,15 @@ describe("agent chat tool loop", () => {
     await expect(session.send("say hi")).rejects.toThrow(
       "Unexpected provider call 2"
     );
-    expect(session.getHistory()).toEqual([]);
+    expect(session.getHistory().map((message) => message.role)).toEqual([
+      "user",
+      "assistant",
+      "tool",
+    ]);
+    expect(session.getHistory().at(-1)).toMatchObject({
+      role: "tool",
+      toolCallId: "call_1",
+    });
   });
 
   test("persists approval metadata without executing the guarded tool", async () => {
@@ -542,6 +550,7 @@ describe("agent chat tool loop", () => {
         return Promise.resolve({
           assistantMessage: { content: "done", role: "assistant" },
           content: "done",
+          toolCalls: [],
         });
       },
       generateText() {
@@ -554,6 +563,7 @@ describe("agent chat tool loop", () => {
         return Promise.resolve({
           assistantMessage: { content: "done", role: "assistant" },
           content: "done",
+          toolCalls: [],
         });
       },
     };

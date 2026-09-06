@@ -44,6 +44,7 @@ import type {
   StoredProfileChangeEvent,
   StoredProfileComposioToolkitRecord,
   StoredProfileRecord,
+  StoredSessionHistoryArchiveRecord,
   StoredSessionMessageRecord,
   StoredSessionRecord,
   StoredSessionSummaryRecord,
@@ -228,6 +229,10 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
   const sessions = new Map<string, StoredSessionRecord>();
   const sessionUpdatedAt = new Map<string, string>();
   const sessionMessages = new Map<string, StoredSessionMessageRecord[]>();
+  const sessionHistoryArchives = new Map<
+    string,
+    StoredSessionHistoryArchiveRecord
+  >();
   const attachments = new Map<string, StoredAttachmentRecord>();
   const usersById = new Map<string, StoredUserRecord>();
   const usersByEmail = new Map<string, StoredUserRecord>();
@@ -777,6 +782,11 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
     async deleteMessagesForSession(sessionId) {
       sessionMessages.delete(sessionId);
+      for (const [id, archive] of sessionHistoryArchives) {
+        if (archive.sessionId === sessionId) {
+          sessionHistoryArchives.delete(id);
+        }
+      }
     },
 
     async deleteNotificationDestination(id) {
@@ -836,6 +846,11 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
     async deleteSession(id) {
       sessionMessages.delete(id);
+      for (const [archiveId, archive] of sessionHistoryArchives) {
+        if (archive.sessionId === id) {
+          sessionHistoryArchives.delete(archiveId);
+        }
+      }
       sessionUpdatedAt.delete(id);
       return sessions.delete(id);
     },
@@ -993,9 +1008,22 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         return null;
       }
 
-      const allMessages = [...(sessionMessages.get(sessionId) ?? [])].sort(
-        (left, right) => left.seq - right.seq
-      );
+      const archive = options.archiveId
+        ? sessionHistoryArchives.get(options.archiveId)
+        : undefined;
+      if (options.archiveId && archive?.sessionId !== sessionId) {
+        return null;
+      }
+      const archiveMessages = archive?.messages.map((payload, seq) => ({
+        createdAt: archive.createdAt,
+        id: `${archive.id}:${seq}`,
+        payload,
+        seq,
+        sessionId,
+      }));
+      const allMessages = [
+        ...(archiveMessages ?? sessionMessages.get(sessionId) ?? []),
+      ].sort((left, right) => left.seq - right.seq);
       const limit = Math.min(100, options.limit ?? 50);
       const offset = options.offset ?? 0;
       const messages = allMessages
@@ -1012,6 +1040,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         });
 
       return {
+        ...(archive
+          ? { archivedAt: archive.createdAt, archiveId: archive.id }
+          : {}),
         createdAt: session.createdAt,
         messages,
         profileId: session.profileId,
@@ -2137,7 +2168,22 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       return "published";
     },
 
-    async replaceMessagesForSession(sessionId, messages) {
+    async replaceMessagesForSession(sessionId, messages, archives = []) {
+      const prepared = new Map<string, StoredSessionHistoryArchiveRecord>();
+      for (const archive of archives) {
+        if (archive.sessionId !== sessionId || !sessions.has(sessionId)) {
+          throw new Error("History archive belongs to another session.");
+        }
+        const existing =
+          prepared.get(archive.id) ?? sessionHistoryArchives.get(archive.id);
+        if (existing && JSON.stringify(existing) !== JSON.stringify(archive)) {
+          throw new Error("History archives are immutable.");
+        }
+        prepared.set(archive.id, structuredClone(archive));
+      }
+      for (const archive of prepared.values()) {
+        sessionHistoryArchives.set(archive.id, archive);
+      }
       sessionMessages.set(sessionId, [...messages]);
       const updatedAt = messages.reduce(
         (latest, message) =>
@@ -2234,7 +2280,31 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
           continue;
         }
 
-        for (const message of sessionMessages.get(session.id) ?? []) {
+        const candidates: Array<
+          StoredSessionMessageRecord & { archiveId?: string }
+        > = [...(sessionMessages.get(session.id) ?? [])];
+        const archives = [...sessionHistoryArchives.values()]
+          .filter((archive) => archive.sessionId === session.id)
+          .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+        for (const archive of archives) {
+          candidates.push(
+            ...archive.messages.map((payload, seq) => ({
+              archiveId: archive.id,
+              createdAt: archive.createdAt,
+              id: `${archive.id}:${seq}`,
+              payload,
+              seq,
+              sessionId: session.id,
+            }))
+          );
+        }
+        const seen = new Set<string>();
+        for (const message of candidates) {
+          const serialized = JSON.stringify(message.payload);
+          if (seen.has(serialized)) {
+            continue;
+          }
+          seen.add(serialized);
           if (
             (options.after && message.createdAt < options.after) ||
             (options.before && message.createdAt > options.before)
@@ -2252,6 +2322,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
             matchIndex + clean.length + 80
           );
           results.push({
+            ...(message.archiveId
+              ? { archivedAt: message.createdAt, archiveId: message.archiveId }
+              : {}),
             createdAt: message.createdAt,
             matchedSnippet: `...${parsed.text.slice(start, end).trim()}...`,
             messageId: message.id,

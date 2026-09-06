@@ -608,7 +608,7 @@ describe("AgentService workspace provider isolation", () => {
 });
 
 describe("AgentService thinking provider options", () => {
-  test("keeps thinking enabled for openai-compatible providers", () => {
+  test("omits global effort when the selected provider has no advertised levels", () => {
     const db = createInMemoryDatabaseAdapter();
     const service = new AgentService(
       {
@@ -662,7 +662,7 @@ describe("AgentService thinking provider options", () => {
       { effort: "high", enabled: true }
     );
 
-    expect(options?.thinking).toEqual({ effort: "high", enabled: true });
+    expect(options?.thinking).toEqual({ enabled: true });
   });
 });
 

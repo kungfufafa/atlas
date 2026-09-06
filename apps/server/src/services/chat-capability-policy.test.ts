@@ -110,7 +110,7 @@ describe("server chat capability policy", () => {
     expect(generateText).toHaveBeenCalledTimes(0);
   });
 
-  test("lets OpenCode Go use tools and reasoning from adapter defaults", () => {
+  test("keeps OpenCode Go model features unknown without model evidence", () => {
     const policy = resolvePolicy(
       {
         apiKey: "test-key",
@@ -124,20 +124,32 @@ describe("server chat capability policy", () => {
 
     expect(
       policy.capabilities[PROVIDER_CAPABILITY_IDS.chatToolUse]
-    ).toMatchObject({ selectable: true, status: "supported" });
+    ).toMatchObject({ selectable: false, status: "unknown" });
     expect(
       policy.capabilities[PROVIDER_CAPABILITY_IDS.chatReasoning]
-    ).toMatchObject({ selectable: true, status: "supported" });
+    ).toMatchObject({ selectable: false, status: "unknown" });
     expect(
       policy.capabilities[PROVIDER_CAPABILITY_IDS.chatStreaming]
     ).toMatchObject({ selectable: true, status: "supported" });
   });
 
-  test("keeps OpenCode Go tool-use selectable for live catalog models", () => {
+  test("uses exact discovered tool support for OpenCode Go models", () => {
     const policy = resolvePolicy(
       {
         apiKey: "test-key",
         createdAt,
+        customModels: [
+          {
+            capabilities: {
+              [PROVIDER_CAPABILITY_IDS.chatToolUse]: {
+                source: "provider-discovery",
+                status: "supported",
+                verified: true,
+              },
+            },
+            id: "opencode-go/future-model",
+          },
+        ],
         id: "opencode-go-live",
         label: "OpenCode Go",
         type: "opencode_go",
@@ -173,12 +185,10 @@ describe("server chat capability policy", () => {
     ).toMatchObject({ selectable: true, status: "supported" });
   });
 
-  test("lets first-party chat providers use tools without admin evidence", () => {
+  test("requires exact model evidence for optional API provider features", () => {
     const firstParty: Array<ProviderInstance["type"]> = [
       "anthropic",
       "cerebras",
-      "chatgpt",
-      "claude",
       "cloudflare",
       "deepseek",
       "fireworks",
@@ -205,30 +215,139 @@ describe("server chat capability policy", () => {
         },
         "any-model"
       );
-      expect(
-        policy.capabilities[PROVIDER_CAPABILITY_IDS.chatToolUse],
-        type
-      ).toMatchObject({ selectable: true, status: "supported" });
+      for (const capabilityId of [
+        PROVIDER_CAPABILITY_IDS.chatToolUse,
+        PROVIDER_CAPABILITY_IDS.chatReasoning,
+        PROVIDER_CAPABILITY_IDS.chatInputImage,
+        PROVIDER_CAPABILITY_IDS.chatInputAudio,
+        PROVIDER_CAPABILITY_IDS.chatStructuredOutput,
+        PROVIDER_CAPABILITY_IDS.chatNativeWebSearch,
+      ]) {
+        expect(
+          policy.capabilities[capabilityId],
+          `${type}: ${capabilityId}`
+        ).toMatchObject({ selectable: false, status: "unknown" });
+      }
     }
+  });
 
-    for (const type of firstParty.filter(
-      (provider) => provider !== "chatgpt"
-    )) {
+  test("preserves native subscription tool guarantees without inventing other model features", () => {
+    for (const type of ["chatgpt", "claude"] as const) {
       const policy = resolvePolicy(
         {
-          apiKey: "test-key",
+          apiKey: "",
           createdAt,
           id: `${type}-test`,
           label: type,
           type,
         },
-        "any-model"
+        "runtime-model"
       );
       expect(
-        policy.capabilities[PROVIDER_CAPABILITY_IDS.chatReasoning],
-        type
+        policy.capabilities[PROVIDER_CAPABILITY_IDS.chatToolUse]
       ).toMatchObject({ selectable: true, status: "supported" });
+      expect(
+        policy.capabilities[PROVIDER_CAPABILITY_IDS.chatReasoning]
+      ).toMatchObject({ selectable: false, status: "unknown" });
+      expect(
+        policy.capabilities[PROVIDER_CAPABILITY_IDS.chatInputImage]
+      ).toMatchObject({ selectable: false, status: "unknown" });
     }
+  });
+
+  test.each([
+    "anthropic",
+    "gemini",
+    "openai",
+    "claude",
+    "chatgpt",
+    "openai_compatible",
+  ] as const)(
+    "%s respects explicit thinking support with no configurable effort levels",
+    (type) => {
+      const instance: ProviderInstance = {
+        apiKey: "test-key",
+        createdAt,
+        customModels: [
+          {
+            id: "selected-model",
+            reasoningEffortValues: [],
+            supportsThinking: true,
+          },
+        ],
+        id: "selected",
+        label: "Selected",
+        type,
+      };
+      expect(
+        resolvePolicy(instance, "selected-model").capabilities[
+          PROVIDER_CAPABILITY_IDS.chatReasoning
+        ]
+      ).toMatchObject({ selectable: true, status: "supported" });
+      instance.customModels = [
+        {
+          id: "selected-model",
+          reasoningEffortValues: [],
+          supportsThinking: false,
+        },
+      ];
+      expect(
+        resolvePolicy(instance, "selected-model").capabilities[
+          PROVIDER_CAPABILITY_IDS.chatReasoning
+        ]
+      ).toMatchObject({ selectable: false, status: "unsupported" });
+    }
+  );
+
+  test("keeps proxy model features unknown until that endpoint supplies evidence", () => {
+    const instance: ProviderInstance = {
+      apiKey: "test-key",
+      baseUrl: "https://proxy.example.test/v1",
+      createdAt,
+      customModels: [{ id: "gpt-5.4" }],
+      id: "proxy",
+      label: "Proxy",
+      type: "openai",
+    };
+    const capabilityIds = [
+      PROVIDER_CAPABILITY_IDS.chatReasoning,
+      PROVIDER_CAPABILITY_IDS.chatToolUse,
+      PROVIDER_CAPABILITY_IDS.chatInputImage,
+      PROVIDER_CAPABILITY_IDS.chatStructuredOutput,
+    ];
+    const unknown = resolvePolicy(instance, "gpt-5.4");
+    for (const capabilityId of capabilityIds) {
+      expect(unknown.capabilities[capabilityId]).toMatchObject({
+        selectable: false,
+        status: "unknown",
+      });
+    }
+
+    instance.customModels = [
+      {
+        capabilities: Object.fromEntries(
+          capabilityIds.map((id) => [
+            id,
+            {
+              source: "provider-discovery" as const,
+              status: "supported" as const,
+              verified: true,
+            },
+          ])
+        ),
+        id: "gpt-5.4",
+      },
+    ];
+    const discovered = resolvePolicy(instance, "gpt-5.4");
+    for (const capabilityId of capabilityIds) {
+      expect(discovered.capabilities[capabilityId]).toMatchObject({
+        selectable: true,
+        status: "supported",
+      });
+    }
+    expect(
+      discovered.capabilities[PROVIDER_CAPABILITY_IDS.chatNativeWebSearch]
+    ).toMatchObject({ selectable: false, status: "unsupported" });
   });
 
   test("preserves unknown evidence and honors an admin override", () => {
@@ -298,6 +417,18 @@ describe("server chat capability policy", () => {
       {
         apiKey: "test-key",
         createdAt,
+        customModels: [
+          {
+            capabilities: {
+              [PROVIDER_CAPABILITY_IDS.chatNativeWebSearch]: {
+                source: "provider-discovery",
+                status: "supported",
+                verified: true,
+              },
+            },
+            id: "gemini-3-flash-preview",
+          },
+        ],
         id: "gemini-test",
         label: "Gemini",
         type: "gemini",

@@ -42,54 +42,21 @@ export function resolveEffortForOptions(
   effort: ThinkingEffort | undefined,
   validValues: readonly string[] | string[],
   runtimeDefault?: string
-): string {
+): string | undefined {
   const trimmed = effort?.trim();
-  if (trimmed) {
-    if (validValues.includes(trimmed)) {
-      return trimmed;
-    }
-    if (
-      (trimmed === "high" || trimmed === "max") &&
-      validValues.includes("xhigh")
-    ) {
-      return "xhigh";
-    }
-    if (trimmed === "xhigh" && validValues.includes("max")) {
-      return "max";
-    }
-    if (
-      (trimmed === "xhigh" || trimmed === "max") &&
-      validValues.includes("high")
-    ) {
-      return "high";
-    }
-    if (
-      (trimmed === "high" || trimmed === "xhigh") &&
-      validValues.includes("max")
-    ) {
-      return "max";
-    }
+  if (trimmed && validValues.includes(trimmed)) {
+    return trimmed;
   }
-  const normalizedRuntimeDefault = runtimeDefault?.trim();
-  if (
-    normalizedRuntimeDefault &&
-    validValues.includes(normalizedRuntimeDefault)
-  ) {
-    return normalizedRuntimeDefault;
-  }
-  return (
-    validValues[Math.floor(validValues.length / 2)] ??
-    validValues[0] ??
-    DEFAULT_THINKING_EFFORT
-  );
+  const normalizedDefault = runtimeDefault?.trim();
+  return normalizedDefault && validValues.includes(normalizedDefault)
+    ? normalizedDefault
+    : undefined;
 }
 
 export function buildThinkingEffortOptions(
   effortValues?: string[]
 ): Array<{ value: ThinkingEffort; label: string }> {
-  const values = effortValues?.length
-    ? effortValues
-    : ["low", "medium", "high"];
+  const values = effortValues ?? [];
 
   return values.map((value) => ({
     label: thinkingEffortLabel(value),
@@ -110,7 +77,7 @@ export function buildAutoEnableThinkingPayload(
   settings: Pick<ThinkingSettings, "effort">
 ): ThinkingSettings {
   return {
-    effort: settings.effort ?? DEFAULT_THINKING_EFFORT,
+    effort: settings.effort,
     enabled: true,
   };
 }

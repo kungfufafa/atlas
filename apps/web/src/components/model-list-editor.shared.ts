@@ -88,6 +88,7 @@ export function normalizeModelListRows(
 
     return [
       {
+        ...row,
         id,
         ...(row.name?.trim() ? { name: row.name.trim() } : {}),
         ...(row.default ? { default: true } : {}),
@@ -100,9 +101,9 @@ export function normalizeModelListRows(
         ...(row.supportsVision === undefined
           ? {}
           : { supportsVision: row.supportsVision }),
-        ...(reasoningEffortValues && reasoningEffortValues.length > 0
-          ? { reasoningEffortValues }
-          : {}),
+        ...(reasoningEffortValues === undefined
+          ? {}
+          : { reasoningEffortValues }),
         ...(row.inputPerMillionUsd === undefined
           ? {}
           : { inputPerMillionUsd: row.inputPerMillionUsd }),
@@ -111,5 +112,24 @@ export function normalizeModelListRows(
           : { outputPerMillionUsd: row.outputPerMillionUsd }),
       },
     ];
+  });
+}
+
+/** A different account or endpoint needs fresh discovery; retain explicit admin claims. */
+export function clearConnectionModelMetadata(
+  models: ModelListRow[]
+): ModelListRow[] {
+  return models.map(({ id, name, default: isDefault, capabilities }) => {
+    const adminClaims = Object.fromEntries(
+      Object.entries(capabilities ?? {}).filter(
+        ([, claim]) => claim.source === "admin-override"
+      )
+    );
+    return {
+      id,
+      ...(name === undefined ? {} : { name }),
+      ...(isDefault === undefined ? {} : { default: isDefault }),
+      ...(Object.keys(adminClaims).length ? { capabilities: adminClaims } : {}),
+    };
   });
 }

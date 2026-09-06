@@ -1,15 +1,9 @@
-import { type CustomModelEntry, findCustomModel } from "@atlas/core";
+import type { CustomModelEntry } from "@atlas/core";
+import { modelSupportsReasoning } from "../reasoning-metadata";
 
 export function fireworksModelSupportsThinking(
   model: string,
   customModels?: CustomModelEntry[]
 ): boolean {
-  const trimmed = model.trim();
-  const custom = findCustomModel(customModels, trimmed);
-
-  if (custom?.supportsThinking !== undefined) {
-    return custom.supportsThinking;
-  }
-
-  return false;
+  return modelSupportsReasoning(model, customModels);
 }

@@ -23,6 +23,13 @@ export const searchChatsInputSchema = z.object({
 });
 
 export const getConversationInputSchema = z.object({
+  archiveId: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      "Archive ID returned by search_chats for context preserved before compaction"
+    ),
   limit: z
     .number()
     .int()
@@ -70,6 +77,8 @@ export function createConversationTools(db: DatabaseAdapter): ToolDefinition[] {
         count: results.length,
         query: parsed.query,
         results: results.map((r) => ({
+          archivedAt: r.archivedAt,
+          archiveId: r.archiveId,
           createdAt: r.createdAt,
           matchedSnippet: r.matchedSnippet,
           messageId: r.messageId,
@@ -98,6 +107,7 @@ export function createConversationTools(db: DatabaseAdapter): ToolDefinition[] {
         orgId,
         parsed.sessionId,
         {
+          archiveId: parsed.archiveId,
           excludeSuperAgent,
           limit: parsed.limit,
           offset: parsed.offset,

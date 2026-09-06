@@ -253,6 +253,26 @@ export function registerModelRoutes(
     .object({
       apiKey: z.string().optional(),
       baseUrl: z.string().optional(),
+      hostMode: z.enum(["local", "cloud"]).optional(),
+      provider: z
+        .enum([
+          "anthropic",
+          "cerebras",
+          "deepseek",
+          "fireworks",
+          "gemini",
+          "minimax",
+          "minimax_cn",
+          "ollama",
+          "openai",
+          "openai_compatible",
+          "opencode_go",
+          "openrouter",
+          "xai",
+          "zhipu",
+          "zhipu_cn",
+        ])
+        .optional(),
       providerId: z.string().optional(),
     })
     .openapi("DiscoverModelsRequest");

@@ -1,5 +1,6 @@
 import type {
   ChatCompletionResult,
+  CustomModelEntry,
   GenerateChatInput,
   GenerateTextInput,
   GenerateTextResult,
@@ -16,6 +17,7 @@ import {
   buildChatCompletionResult,
   extractGeminiTokenUsage,
   notifyToolInputDelta,
+  readToolArguments,
 } from "../shared";
 import { buildGeminiChatConfig, buildGeminiGenerateConfig } from "./config";
 import {
@@ -31,6 +33,7 @@ const DEFAULT_MODEL = "gemini-3-flash-preview";
 export interface GeminiProviderOptions {
   apiKey: string;
   baseUrl?: string;
+  customModels?: CustomModelEntry[];
   model?: string;
   providerInstanceId?: string;
   providerReplayRevision?: string;
@@ -72,6 +75,7 @@ function parseGenerateContentResponse(
   modelId?: string,
   providerReplayRevision?: string
 ): ChatCompletionResult {
+  assertGeminiFinishReason(response.candidates?.[0]?.finishReason);
   const parts = response.candidates?.[0]?.content?.parts;
   const { content, thinking } = extractTextAndThinkingFromParts(parts);
   const toolCalls = parseGeminiFunctionCalls(response.functionCalls);
@@ -96,6 +100,18 @@ function parseGenerateContentResponse(
   });
 }
 
+function assertGeminiFinishReason(reason: string | undefined): boolean {
+  if (!reason || reason === "FINISH_REASON_UNSPECIFIED") {
+    return false;
+  }
+  if (reason !== "STOP") {
+    throw new Error(
+      `Gemini stopped before completing the response (${reason}).`
+    );
+  }
+  return true;
+}
+
 interface PendingFunctionCall {
   argsJson: string;
   id: string;
@@ -118,8 +134,8 @@ function mergePendingFunctionCall(
     current.name = call.name;
   }
 
-  if (call.args) {
-    const nextJson = JSON.stringify(call.args);
+  if (call.args !== undefined) {
+    const nextJson = JSON.stringify(readToolArguments(call.args));
     const delta =
       nextJson.length > current.argsJson.length
         ? nextJson.slice(current.argsJson.length)
@@ -140,7 +156,9 @@ function finalizePendingFunctionCalls(
 ): ReturnType<typeof parseGeminiFunctionCalls> {
   return [...pending.values()].flatMap((call) => {
     if (!(call.id && call.name)) {
-      return [];
+      throw new Error(
+        "The provider returned a tool call without an ID or name."
+      );
     }
 
     return parseGeminiFunctionCalls([
@@ -191,8 +209,12 @@ async function readGeminiStream(
   const rawParts: Part[] = [];
   let usage: ChatCompletionResult["usage"];
   let anonymousCallCount = 0;
+  let completed = false;
 
   for await (const chunk of stream) {
+    completed =
+      assertGeminiFinishReason(chunk.candidates?.[0]?.finishReason) ||
+      completed;
     usage = extractGeminiTokenUsage(chunk.usageMetadata) ?? usage;
     const parts = chunk.candidates?.[0]?.content?.parts;
     if (parts?.length) {
@@ -210,6 +232,9 @@ async function readGeminiStream(
     }
   }
 
+  if (!completed) {
+    throw new Error("Gemini stream ended before completion.");
+  }
   const toolCalls = finalizePendingFunctionCalls(pending);
   const thinking = state.thinking.trim() || undefined;
 
@@ -244,7 +269,12 @@ export function createGeminiProvider(
       return withGeminiError(async () => {
         const response = await client.models.generateContent({
           config: {
-            ...buildGeminiChatConfig(input, input.system, model),
+            ...buildGeminiChatConfig(
+              input,
+              input.system,
+              model,
+              options.customModels
+            ),
             abortSignal: input.signal,
           },
           contents: await toGeminiContents(
@@ -281,6 +311,7 @@ export function createGeminiProvider(
           model,
         });
 
+        assertGeminiFinishReason(response.candidates?.[0]?.finishReason);
         const content = response.text?.trim();
         const usage = extractGeminiTokenUsage(response.usageMetadata);
 
@@ -299,7 +330,12 @@ export function createGeminiProvider(
       return withGeminiError(async () => {
         const stream = await client.models.generateContentStream({
           config: {
-            ...buildGeminiChatConfig(input, input.system, model),
+            ...buildGeminiChatConfig(
+              input,
+              input.system,
+              model,
+              options.customModels
+            ),
             abortSignal: input.signal,
           },
           contents: await toGeminiContents(

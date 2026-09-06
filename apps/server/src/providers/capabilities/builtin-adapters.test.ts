@@ -83,6 +83,10 @@ describe("built-in provider adapter registry", () => {
     expect(
       registry.require("openai").manifest.capabilities[nativeSearch]
         ?.modelDefault.status
+    ).toBe("unknown");
+    expect(
+      registry.require("openai").manifest.capabilities[nativeSearch]?.native
+        .status
     ).toBe("supported");
     expect(registry.require("anthropic").chatCapabilities).toContain(
       nativeSearch
@@ -97,7 +101,7 @@ describe("built-in provider adapter registry", () => {
     ).toBe("unknown");
   });
 
-  test("declares structured-output defaults for adapters that enforce JSON", () => {
+  test("keeps model structured output unknown when only transport support is known", () => {
     const registry = createBuiltinProviderAdapterRegistry();
 
     for (const providerId of ["cerebras", "gemini", "openai", "opencode_go"]) {
@@ -105,11 +109,11 @@ describe("built-in provider adapter registry", () => {
         registry.require(providerId).manifest.capabilities[
           PROVIDER_CAPABILITY_IDS.chatStructuredOutput
         ]?.modelDefault.status
-      ).toBe("supported");
+      ).toBe("unknown");
     }
   });
 
-  test("lets OpenCode Go chat with tools and reasoning without admin evidence", () => {
+  test("keeps OpenCode Go model reasoning separate from implemented controls", () => {
     const go = createBuiltinProviderAdapterRegistry().require("opencode_go");
 
     for (const capabilityId of [
@@ -120,12 +124,16 @@ describe("built-in provider adapter registry", () => {
     ]) {
       const entry = go.manifest.capabilities[capabilityId];
       expect(entry?.implementation.status).toBe("available");
-      expect(entry?.modelDefault.status).toBe("supported");
+      expect(entry?.modelDefault.status).toBe(
+        capabilityId === PROVIDER_CAPABILITY_IDS.chatStreaming
+          ? "supported"
+          : "unknown"
+      );
       expect(entry?.native.status).toBe("supported");
     }
   });
 
-  test("lets first-party chat providers use tools without admin evidence", () => {
+  test("preserves native tool implementations while requiring API model evidence", () => {
     const registry = createBuiltinProviderAdapterRegistry();
     const firstParty = [
       "anthropic",
@@ -153,16 +161,20 @@ describe("built-in provider adapter registry", () => {
           PROVIDER_CAPABILITY_IDS.chatToolUse
         ];
       expect(entry?.implementation.status, providerId).toBe("available");
-      expect(entry?.modelDefault.status, providerId).toBe("supported");
+      expect(entry?.modelDefault.status, providerId).toBe(
+        providerId === "chatgpt" || providerId === "claude"
+          ? "supported"
+          : "unknown"
+      );
       expect(entry?.native.status, providerId).toBe("supported");
     }
 
-    for (const providerId of firstParty.filter((id) => id !== "chatgpt")) {
+    for (const providerId of firstParty) {
       const entry =
         registry.require(providerId).manifest.capabilities[
           PROVIDER_CAPABILITY_IDS.chatReasoning
         ];
-      expect(entry?.modelDefault.status, providerId).toBe("supported");
+      expect(entry?.modelDefault.status, providerId).toBe("unknown");
     }
 
     expect(
@@ -177,6 +189,38 @@ describe("built-in provider adapter registry", () => {
       ];
     expect(custom?.implementation.status).toBe("available");
     expect(custom?.modelDefault.status).toBe("unknown");
+  });
+
+  test("unknown API models do not inherit optional features from adapter defaults", () => {
+    const registry = createBuiltinProviderAdapterRegistry();
+    for (const adapter of registry.list()) {
+      const providerType = adapter.manifest.provider.id;
+      if (providerType === "chatgpt" || providerType === "claude") {
+        continue;
+      }
+      for (const capabilityId of [
+        PROVIDER_CAPABILITY_IDS.chatToolUse,
+        PROVIDER_CAPABILITY_IDS.chatReasoning,
+        PROVIDER_CAPABILITY_IDS.chatInputImage,
+        PROVIDER_CAPABILITY_IDS.chatInputAudio,
+        PROVIDER_CAPABILITY_IDS.imageUnderstanding,
+        PROVIDER_CAPABILITY_IDS.chatStructuredOutput,
+        PROVIDER_CAPABILITY_IDS.chatNativeWebSearch,
+      ]) {
+        expect(
+          registry.resolveModelCapability({
+            capabilityId,
+            credentialsAvailable: true,
+            modelId: "unadvertised-model",
+            providerType,
+          }),
+          `${providerType}: ${capabilityId}`
+        ).toMatchObject({
+          claim: { status: "unknown", verified: false },
+          selectable: false,
+        });
+      }
+    }
   });
 
   test("keeps ChatGPT model capabilities runtime-gated while wiring media handlers", () => {
@@ -205,15 +249,20 @@ describe("built-in provider adapter registry", () => {
       .sort();
 
     expect(discoveryProviders).toEqual([
+      "anthropic",
+      "cerebras",
       "chatgpt",
       "claude",
+      "deepseek",
       "fireworks",
+      "gemini",
       "minimax",
       "minimax_cn",
       "ollama",
       "openai",
       "openai_compatible",
       "opencode_go",
+      "openrouter",
       "xai",
       "zhipu",
       "zhipu_cn",

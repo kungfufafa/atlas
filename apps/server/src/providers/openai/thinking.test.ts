@@ -17,9 +17,9 @@ describe("openAIModelSupportsThinking", () => {
     expect(openAIModelSupportsThinking("gpt-4o-mini")).toBe(false);
   });
 
-  test("allows gpt-5 models", () => {
-    expect(openAIModelSupportsThinking("gpt-5.4")).toBe(true);
-    expect(openAIModelSupportsThinking("gpt-5.3-codex")).toBe(true);
+  test("does not infer reasoning from gpt-5 names", () => {
+    expect(openAIModelSupportsThinking("gpt-5.4")).toBe(false);
+    expect(openAIModelSupportsThinking("gpt-5.3-codex")).toBe(false);
   });
 
   test("denies gpt-4o variants by prefix", () => {
@@ -77,6 +77,13 @@ describe("OpenAI codex vision routing", () => {
 
     const provider = createOpenAIProvider({
       apiKey: "sk-test",
+      customModels: [
+        {
+          id: "gpt-5.3-codex",
+          reasoningEffortValues: ["low", "medium", "high"],
+          supportsThinking: true,
+        },
+      ],
       model: "gpt-5.3-codex",
     });
 
@@ -135,6 +142,13 @@ describe("OpenAI tools + reasoning routing", () => {
 
     const provider = createOpenAIProvider({
       apiKey: "sk-test",
+      customModels: [
+        {
+          id: "gpt-5.6-luna",
+          reasoningEffortValues: ["low", "medium", "high"],
+          supportsThinking: true,
+        },
+      ],
       model: "gpt-5.6-luna",
     });
 
@@ -183,6 +197,13 @@ describe("OpenAI tools + reasoning routing", () => {
 
     const provider = createOpenAIProvider({
       apiKey: "sk-test",
+      customModels: [
+        {
+          id: "gpt-5.4",
+          reasoningEffortValues: ["low", "medium", "high"],
+          supportsThinking: true,
+        },
+      ],
       model: "gpt-5.4",
     });
 

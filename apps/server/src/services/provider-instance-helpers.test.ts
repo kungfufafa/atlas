@@ -24,6 +24,60 @@ function createProviderInstance(
 }
 
 describe("resolveProfileProviderSelection", () => {
+  test("rejects a missing qualified provider even when another provider offers the same model", () => {
+    const available = createProviderInstance({
+      id: "other-openai",
+      label: "Other OpenAI",
+      type: "openai",
+    });
+    for (const providers of [[available], []]) {
+      expect(() =>
+        resolveProfileProviderSelection({
+          defaultProviderId: available.id,
+          profileModel: "deleted-openai::gpt-5.4",
+          providers,
+        })
+      ).toThrow(AtlasApiError);
+    }
+  });
+
+  test("rejects a qualified selection with no model instead of using its default", () => {
+    const provider = createProviderInstance({
+      id: "openai-1",
+      label: "OpenAI",
+      type: "openai",
+    });
+    expect(() =>
+      resolveProfileProviderSelection({
+        defaultProviderId: provider.id,
+        profileModel: `${provider.id}:: `,
+        providers: [provider],
+      })
+    ).toThrow(AtlasApiError);
+  });
+
+  test("rejects removed shortlist models and unmatched legacy choices", () => {
+    const provider = createProviderInstance({
+      customModels: [{ default: true, id: "gpt-4o-mini" }],
+      id: "openai-1",
+      label: "OpenAI",
+      type: "openai",
+    });
+    for (const profileModel of [
+      "openai-1::gpt-5.4",
+      "gpt-5.4",
+      "future-model",
+    ]) {
+      expect(() =>
+        resolveProfileProviderSelection({
+          defaultProviderId: provider.id,
+          profileModel,
+          providers: [provider],
+        })
+      ).toThrow(AtlasApiError);
+    }
+  });
+
   test("uses the explicitly selected provider instance for provider-qualified profile models", () => {
     const providers: ProviderInstance[] = [
       createProviderInstance({
@@ -379,6 +433,134 @@ describe("environment-backed provider visibility", () => {
 });
 
 describe("applyProviderInstanceUpdate", () => {
+  test("invalidates connection-scoped model metadata when endpoint or credentials change", () => {
+    const instance = createProviderInstance({
+      apiKey: `sk-${"a".repeat(40)}`,
+      baseUrl: "https://api.openai.com/v1",
+      customModels: [
+        {
+          capabilities: {
+            "chat.reasoning": {
+              source: "provider-discovery",
+              status: "supported",
+              verified: true,
+            },
+          },
+          contextWindow: 1_050_000,
+          default: true,
+          defaultReasoningEffort: "medium",
+          id: "gpt-5.4",
+          inputPerMillionUsd: 2.5,
+          maxOutputTokens: 128_000,
+          name: "Selected model",
+          outputPerMillionUsd: 15,
+          reasoningEffortValues: ["low", "medium", "high"],
+          supportsThinking: true,
+          supportsVision: true,
+        },
+      ],
+      id: "openai-1",
+      label: "OpenAI",
+      type: "openai",
+    });
+    for (const update of [
+      { apiKey: `sk-${"b".repeat(40)}` },
+      {
+        apiKey: `sk-${"a".repeat(40)}`,
+        baseUrl: "https://proxy.example/v1",
+      },
+    ]) {
+      const updated = applyProviderInstanceUpdate(instance, update);
+      expect(updated.customModels).toEqual([
+        { default: true, id: "gpt-5.4", name: "Selected model" },
+      ]);
+      expect(instance.customModels?.[0]?.contextWindow).toBe(1_050_000);
+    }
+  });
+
+  test("invalidates metadata on host and wire changes while retaining intentional admin claims", () => {
+    const adminClaim = {
+      source: "admin-override" as const,
+      status: "unsupported" as const,
+      verified: true,
+    };
+    const discoveredClaim = {
+      source: "provider-discovery" as const,
+      status: "supported" as const,
+      verified: true,
+    };
+    for (const { instance, update } of [
+      {
+        instance: createProviderInstance({
+          hostMode: "local",
+          id: "ollama-1",
+          label: "Ollama",
+          type: "ollama",
+        }),
+        update: { hostMode: "cloud" as const },
+      },
+      {
+        instance: createProviderInstance({
+          id: "compatible-1",
+          label: "Compatible",
+          type: "openai_compatible",
+        }),
+        update: { wireApi: "responses" as const },
+      },
+    ]) {
+      const updated = applyProviderInstanceUpdate(
+        {
+          ...instance,
+          capabilityOverrides: {
+            "chat.reasoning": adminClaim,
+            "chat.streaming": discoveredClaim,
+          },
+          customModels: [
+            {
+              capabilities: {
+                "chat.reasoning": adminClaim,
+                "chat.streaming": discoveredClaim,
+              },
+              contextWindow: 100_000,
+              id: "model-1",
+            },
+          ],
+        },
+        update
+      );
+      expect(updated.customModels).toEqual([
+        { capabilities: { "chat.reasoning": adminClaim }, id: "model-1" },
+      ]);
+      expect(updated.capabilityOverrides).toEqual({
+        "chat.reasoning": adminClaim,
+      });
+    }
+  });
+
+  test("preserves unchanged connection metadata and accepts replacement discovery metadata", () => {
+    const customModels = [{ contextWindow: 100_000, id: "model-1" }];
+    const instance = createProviderInstance({
+      baseUrl: "https://endpoint.example/v1",
+      customModels,
+      id: "compatible-1",
+      label: "Compatible",
+      type: "openai_compatible",
+    });
+    const unchanged = applyProviderInstanceUpdate(instance, {
+      apiKey: "test-key",
+      baseUrl: "https://endpoint.example/v1/",
+      label: "Renamed",
+    });
+    expect(unchanged.customModels).toEqual(customModels);
+
+    const rediscovered = [{ contextWindow: 200_000, id: "model-1" }];
+    const changed = applyProviderInstanceUpdate(instance, {
+      apiKey: "new-key",
+      customModels: rediscovered,
+    });
+    expect(changed.customModels).toEqual(rediscovered);
+  });
+
   test("rejects API keys and clears legacy secrets for subscription providers", () => {
     const instance = createProviderInstance({
       apiKey: "legacy-secret",
@@ -684,6 +866,20 @@ describe("applyProviderInstanceUpdate", () => {
 });
 
 describe("buildProviderInstanceFromCreateRequest", () => {
+  test("does not seed proxy model capabilities or prices from another provider's matching model ID", () => {
+    const provider = buildProviderInstanceFromCreateRequest(
+      {
+        apiKey: "test-key",
+        baseUrl: "https://proxy.example/v1",
+        label: "Proxy",
+        model: "gpt-5.4",
+        skipValidation: true,
+        type: "openai_compatible",
+      },
+      []
+    );
+    expect(provider.customModels).toEqual([{ default: true, id: "gpt-5.4" }]);
+  });
   test("rejects API keys for subscription providers", () => {
     for (const type of ["chatgpt", "claude"] as const) {
       try {

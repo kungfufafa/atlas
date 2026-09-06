@@ -424,6 +424,45 @@ class PersistenceFailureCodexServer extends FakeCodexServer {
 }
 
 describe("ChatGPT subscription runtime", () => {
+  test("rejects malformed tool output without streaming protocol text or retaining the native thread", async () => {
+    class MalformedToolServer extends FakeCodexServer {
+      override async startTurn(): ReturnType<CodexAppServer["startTurn"]> {
+        return {
+          text: '```atlas-tool-call\n{"name":"read_file","arguments":[]}',
+          thinking: "",
+        };
+      }
+    }
+    const server = new MalformedToolServer();
+    const runtime = new ChatgptSubscriptionRuntime(server);
+    const chunks: string[] = [];
+    await withTemporaryUserConfig("atlas-malformed-tool", async () => {
+      await expect(
+        runtime.streamChat(
+          {
+            conversationId: "malformed-tool",
+            messages: [{ content: "Read a file", role: "user" }],
+            system: "Atlas",
+            tools: [
+              {
+                description: "Read",
+                name: "read_file",
+                parameters: { type: "object" },
+              },
+            ],
+          },
+          { onChunk: (chunk) => chunks.push(chunk) }
+        )
+      ).rejects.toMatchObject({ code: "runtime_error" });
+      expect(
+        await readSubscriptionSession("chatgpt", "malformed-tool")
+      ).toBeNull();
+    });
+    expect(chunks).toEqual([]);
+    expect(server.deletedThreads).toEqual(["thread-1"]);
+    runtime.close();
+  });
+
   const processes: FakeProcess[] = [];
 
   afterEach(() => {
@@ -481,7 +520,59 @@ describe("ChatGPT subscription runtime", () => {
     expect(model?.supportsThinking).toBeUndefined();
     expect(model?.supportsVision).toBeUndefined();
     expect(model?.capabilities?.["chat.reasoning"]).toBeUndefined();
+    expect(model?.contextWindow).toBeUndefined();
   });
+
+  test.each(["generateChat", "streamChat"] as const)(
+    "%s forwards native context separately from token usage",
+    async (method) => {
+      await withTemporaryUserConfig("atlas-chatgpt-context", async () => {
+        const server = new FakeCodexServer();
+        server.startTurn = async (options) => {
+          options.onDelta?.("Hello");
+          return {
+            contextUsage: { contextWindow: 258_400, usedTokens: 12_500 },
+            text: "Hello",
+            thinking: "",
+            usage: {
+              inputTokens: 12_000,
+              outputTokens: 500,
+              totalTokens: 12_500,
+            },
+          };
+        };
+        setChatgptRuntimeForTests(new ChatgptSubscriptionRuntime(server));
+        const provider = createChatgptProvider({ model: "gpt-test" });
+        const input = {
+          messages: [{ content: "hi", role: "user" as const }],
+          system: "Answer briefly.",
+        };
+        const chunks: string[] = [];
+
+        const result =
+          method === "generateChat"
+            ? await provider.generateChat(input)
+            : await provider.streamChat(input, {
+                onChunk: (chunk) => chunks.push(chunk),
+              });
+
+        expect(provider.managesContext).toBe(true);
+        expect(result.contextUsage).toEqual({
+          contextWindow: 258_400,
+          usedTokens: 12_500,
+        });
+        expect(result.usage).toEqual({
+          inputTokens: 12_000,
+          outputTokens: 500,
+          totalTokens: 12_500,
+        });
+        if (method === "streamChat") {
+          expect(chunks).toEqual(["Hello"]);
+        }
+        expect(server.deletedThreads).toEqual(["thread-1"]);
+      });
+    }
+  );
 
   test("maps implemented reasoning, vision, and generation from runtime metadata", async () => {
     const runtime = new ChatgptSubscriptionRuntime(
@@ -705,11 +796,14 @@ describe("ChatGPT subscription runtime", () => {
       );
       expect(server.turnInputs[1]).toEqual([
         {
-          text: "Tool result (knowledge_base_search):\nThe answer is 42.",
+          text: expect.stringContaining("The answer is 42."),
           text_elements: [],
           type: "text",
         },
       ]);
+      expect(JSON.stringify(server.turnInputs[1])).toContain(
+        '\\"query\\":\\"atlas\\"'
+      );
       expect(JSON.stringify(server.turnInputs[1])).not.toContain(
         "Find the answer"
       );

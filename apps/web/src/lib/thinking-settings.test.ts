@@ -89,11 +89,12 @@ describe("thinking-settings helpers", () => {
   });
 
   test("buildThinkingEffortOptions builds dynamic options list", () => {
-    expect(buildThinkingEffortOptions()).toEqual([
-      { label: "Low", value: "low" },
-      { label: "Medium", value: "medium" },
-      { label: "High", value: "high" },
-    ]);
+    expect(buildThinkingEffortOptions()).toEqual([]);
+    expect(buildThinkingEffortOptions([])).toEqual([]);
+    expect(
+      resolveEffortForOptions("max", ["low", "high", "xhigh"])
+    ).toBeUndefined();
+    expect(resolveEffortForOptions(undefined, ["low", "high"])).toBeUndefined();
 
     expect(buildThinkingEffortOptions(["low", "medium", "xhigh"])).toEqual([
       { label: "Low", value: "low" },

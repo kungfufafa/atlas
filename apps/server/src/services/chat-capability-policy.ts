@@ -100,7 +100,7 @@ export function resolveChatCapabilityPolicy(options: {
   return { capabilities };
 }
 
-function modelClaimsForCapability(
+export function modelClaimsForCapability(
   capabilityId: string,
   model: ChatCapabilityModelEvidence | undefined
 ): ProviderCapabilityClaim[] {

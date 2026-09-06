@@ -7,7 +7,7 @@ import {
   createPartFromText,
   type Part,
 } from "@google/genai";
-import { hasMatchingProviderContent, readRecord } from "../shared";
+import { hasMatchingProviderContent, readToolArguments } from "../shared";
 
 export async function toGeminiContents(
   messages: ChatMessage[],
@@ -219,12 +219,12 @@ export function parseGeminiFunctionCalls(
     const name = call.name?.trim();
 
     if (!name) {
-      return [];
+      throw new Error("Gemini returned a function call without a name.");
     }
 
     return [
       {
-        arguments: readRecord(call.args ?? {}),
+        arguments: readToolArguments(call.args === undefined ? {} : call.args),
         id: call.id?.trim() || createGeminiFunctionCallId(),
         name,
       },

@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import type { SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
 import type {
   ChatCompletionResult,
   GenerateChatInput,
@@ -9,7 +10,6 @@ import type {
   SubscriptionLoginStatusResponse,
 } from "@atlas/core";
 import { ensureDir } from "@atlas/core";
-import { buildTokenUsage } from "../../shared";
 import {
   claudeInstallHint,
   claudeLoginCommand,
@@ -33,10 +33,16 @@ import {
   withSubscriptionSessionLease,
   writeSubscriptionSession,
 } from "../session-store";
+import {
+  type ClaudeRuntimeModel,
+  claudeModelOptions,
+  claudeThinkingOptions,
+  readClaudeContextUsage,
+  readClaudeTokenUsage,
+} from "./metadata";
 
 const FALLBACK_CLAUDE_MODELS: ProviderModelOption[] = [
   {
-    default: true,
     id: "claude-sonnet-4-6",
     name: "Claude Sonnet 4.6",
     provider: "claude",
@@ -54,7 +60,9 @@ const DEFAULT_TURN_TIMEOUT_MS = 15 * 60 * 1000;
 const FORCE_KILL_DELAY_MS = 1000;
 const MAX_COMMAND_OUTPUT_CHARS = 64 * 1024;
 const MAX_PENDING_LOGINS = 128;
-const CLAUDE_EFFORTS = new Set(["low", "medium", "high", "xhigh", "max"]);
+const MODEL_DISCOVERY_TIMEOUT_MS = 20_000;
+const CONTEXT_USAGE_TIMEOUT_MS = 3000;
+const MODEL_METADATA_TTL_MS = 60_000;
 
 interface PendingLogin {
   expiresAt: number;
@@ -64,10 +72,9 @@ interface PendingLogin {
 
 export interface ClaudeQueryHandle {
   close?: () => void;
+  getContextUsage?: () => Promise<unknown>;
   interrupt?: () => Promise<void>;
-  supportedModels?: () => Promise<
-    Array<{ displayName?: string; value?: string }>
-  >;
+  supportedModels?: () => Promise<ClaudeRuntimeModel[]>;
   [Symbol.asyncIterator](): AsyncIterator<unknown>;
 }
 
@@ -78,7 +85,7 @@ export interface ClaudeAgentSdk {
   ) => Promise<void>;
   query(input: {
     options?: Record<string, unknown>;
-    prompt: string;
+    prompt: string | AsyncIterable<SDKUserMessage>;
   }): ClaudeQueryHandle;
 }
 
@@ -91,6 +98,7 @@ export class ClaudeSubscriptionRuntime {
   private loginStarting = false;
   private readonly pendingLogins = new Map<string, PendingLogin>();
   private sdk: ClaudeAgentSdk | null | undefined;
+  private modelMetadata?: { models: ClaudeRuntimeModel[]; readAt: number };
   private readonly turnTimeoutMs: number;
 
   constructor(options: ClaudeSubscriptionRuntimeOptions = {}) {
@@ -275,6 +283,7 @@ export class ClaudeSubscriptionRuntime {
       (candidate) => this.deleteConversationSession(candidate.runtimeSessionId),
       async () => {
         await this.logoutNativeAccount();
+        this.modelMetadata = undefined;
         this.pendingLogins.clear();
       }
     );
@@ -289,9 +298,61 @@ export class ClaudeSubscriptionRuntime {
 
   private async listModelsWithinLease(): Promise<ProviderModelOption[]> {
     await this.requireAuthenticated();
-    // Agent SDK model listing requires an active query. Avoid starting a billed
-    // turn just to discover ids; execution reports the model that actually ran.
-    return FALLBACK_CLAUDE_MODELS;
+    const sdk = await this.loadSdk();
+    if (!sdk) {
+      return FALLBACK_CLAUDE_MODELS.map((model) => ({ ...model }));
+    }
+    const models = await this.readModelMetadata(sdk);
+    return models === undefined
+      ? FALLBACK_CLAUDE_MODELS.map((model) => ({ ...model }))
+      : claudeModelOptions(models);
+  }
+
+  private async readModelMetadata(
+    sdk: ClaudeAgentSdk,
+    signal?: AbortSignal
+  ): Promise<ClaudeRuntimeModel[] | undefined> {
+    if (
+      this.modelMetadata &&
+      Date.now() - this.modelMetadata.readAt < MODEL_METADATA_TTL_MS
+    ) {
+      return this.modelMetadata.models;
+    }
+    const cwd = subscriptionWorkspaceDir("claude");
+    await ensureDir(cwd);
+    const input = createClaudePromptStream();
+    const abortController = new AbortController();
+    const discoverySignal = AbortSignal.any([
+      abortController.signal,
+      AbortSignal.timeout(MODEL_DISCOVERY_TIMEOUT_MS),
+      ...(signal ? [signal] : []),
+    ]);
+    let handle: ClaudeQueryHandle | undefined;
+    try {
+      // supportedModels reads the initialization response. Keeping streaming
+      // input open without yielding a user message starts no inference turn.
+      handle = sdk.query({
+        options: {
+          ...claudeRuntimeOptions(cwd, abortController),
+          persistSession: false,
+        },
+        prompt: input.stream,
+      });
+      if (!handle.supportedModels) {
+        return;
+      }
+      const models = await waitForClaudeOperation(
+        handle.supportedModels(),
+        discoverySignal,
+        () => "Claude model discovery timed out or was cancelled."
+      );
+      this.modelMetadata = { models, readAt: Date.now() };
+      return models;
+    } finally {
+      input.close();
+      abortController.abort();
+      handle?.close?.();
+    }
   }
 
   async generateChat(
@@ -408,46 +469,48 @@ export class ClaudeSubscriptionRuntime {
       abortController.abort();
     }, this.turnTimeoutMs);
 
-    const claudeLaunch = resolveSubscriptionLaunch("claude");
-    const thinkingOptions = claudeThinkingOptions(
-      input.providerOptions?.thinking
-    );
-
     let text = "";
     let thinking = "";
     let sessionId = resumeId;
     let actualModel: string | undefined;
     let usage: ChatCompletionResult["usage"];
+    let contextUsage: ChatCompletionResult["contextUsage"];
+    let result: ChatCompletionResult;
+    let completed = false;
     const bufferText = Boolean(input.tools?.length);
     let handle: ClaudeQueryHandle | undefined;
+    const turnInput = createClaudePromptStream(
+      resumeId ? prompt.continuation : prompt.transcript
+    );
     try {
+      const requestedThinking = input.providerOptions?.thinking;
+      const models = requestedThinking?.enabled
+        ? await this.readModelMetadata(sdk, abortController.signal)
+        : undefined;
+      const runtimeModel = model
+        ? (models?.find((candidate) => candidate.value === model) ??
+          models?.find((candidate) => candidate.resolvedModel === model))
+        : undefined;
+      const thinkingOptions = claudeThinkingOptions(
+        requestedThinking,
+        runtimeModel
+      );
       handle = sdk.query({
         options: {
-          abortController,
-          allowedTools: [],
-          cwd,
-          env: buildSubscriptionRuntimeEnv("claude"),
+          ...claudeRuntimeOptions(cwd, abortController),
           includePartialMessages: Boolean(handlers),
           maxTurns: 1,
-          mcpServers: {},
-          permissionMode: "dontAsk",
           persistSession: Boolean(conversationId),
-          settingSources: [],
-          skills: [],
           systemPrompt: prompt.developerInstructions,
-          tools: [],
           ...thinkingOptions,
-          ...(claudeLaunch && claudeLaunch.prefixArgs.length === 0
-            ? { pathToClaudeCodeExecutable: claudeLaunch.command }
-            : {}),
           ...(model ? { model } : {}),
           ...(resumeId ? { resume: resumeId } : {}),
         },
-        prompt: resumeId ? prompt.continuation : prompt.transcript,
+        prompt: turnInput.stream,
       });
       const iterator = handle[Symbol.asyncIterator]();
       while (true) {
-        const next = await waitForIteratorResult(
+        const next = await waitForClaudeOperation(
           iterator.next(),
           abortController.signal,
           () => (timedOut ? "Claude turn timed out." : "Claude turn cancelled.")
@@ -466,26 +529,56 @@ export class ClaudeSubscriptionRuntime {
         if (parsed.usage) {
           usage = parsed.usage;
         }
-        if (parsed.thinkingDelta && handlers?.onThinking) {
-          const next = appendDelta(thinking, parsed.thinkingDelta);
+        if (parsed.thinkingDelta) {
+          thinking += parsed.thinkingDelta;
+          handlers?.onThinking?.(parsed.thinkingDelta);
+        } else if (parsed.thinking) {
+          const next = appendDelta(thinking, parsed.thinking);
           thinking = next.text;
           if (next.delta) {
-            handlers.onThinking(next.delta);
+            handlers?.onThinking?.(next.delta);
           }
         }
         if (parsed.textDelta) {
-          const next = appendDelta(text, parsed.textDelta);
-          text = next.text;
-          if (next.delta && !bufferText) {
-            handlers?.onChunk(next.delta);
+          text += parsed.textDelta;
+          if (!bufferText) {
+            handlers?.onChunk(parsed.textDelta);
           }
         } else if (parsed.text) {
+          if (!bufferText && parsed.text.startsWith(text)) {
+            const delta = parsed.text.slice(text.length);
+            if (delta) {
+              handlers?.onChunk(delta);
+            }
+          }
           text = parsed.text;
         }
         if (parsed.error) {
           throwSubscriptionError("claude", parsed.error);
         }
+        if (parsed.completed) {
+          completed = true;
+          contextUsage = await captureClaudeContext(
+            handle,
+            abortController.signal
+          );
+          break;
+        }
       }
+      if (!completed) {
+        throw new SubscriptionRuntimeError(
+          "claude",
+          "runtime_error",
+          "Claude ended the stream before completing the turn. Retry the request."
+        );
+      }
+      if (actualModel && model && actualModel !== model) {
+        // Surface substitution instead of pretending the requested model ran.
+        text = text.trim()
+          ? `${text.trim()}\n\n[Model used: ${actualModel}]`
+          : `[Model used: ${actualModel}]`;
+      }
+      result = parseSubscriptionResponse(text, thinking, usage);
     } catch (error) {
       if (conversationId && sessionId) {
         await clearSubscriptionSession("claude", conversationId);
@@ -521,6 +614,7 @@ export class ClaudeSubscriptionRuntime {
         error instanceof Error ? error.message : String(error)
       );
     } finally {
+      turnInput.close();
       clearTimeout(timeout);
       input.signal?.removeEventListener("abort", onAbort);
       if (abortController.signal.aborted) {
@@ -532,13 +626,6 @@ export class ClaudeSubscriptionRuntime {
       } catch {
         // The result or runtime error has already been captured.
       }
-    }
-
-    if (actualModel && model && actualModel !== model) {
-      // Surface substitution instead of pretending the requested model ran.
-      text = text.trim()
-        ? `${text.trim()}\n\n[Model used: ${actualModel}]`
-        : `[Model used: ${actualModel}]`;
     }
 
     if (conversationId && sessionId) {
@@ -569,7 +656,9 @@ export class ClaudeSubscriptionRuntime {
       await clearSubscriptionSession("claude", conversationId);
     }
 
-    const result = parseSubscriptionResponse(text, thinking, usage);
+    if (contextUsage) {
+      result.contextUsage = contextUsage;
+    }
     if (bufferText && result.content) {
       handlers?.onChunk(result.content);
     }
@@ -629,28 +718,84 @@ export class ClaudeSubscriptionRuntime {
   }
 }
 
-function claudeThinkingOptions(
-  thinking: NonNullable<GenerateChatInput["providerOptions"]>["thinking"]
+function claudeRuntimeOptions(
+  cwd: string,
+  abortController: AbortController
 ): Record<string, unknown> {
-  if (!thinking) {
-    return {};
-  }
-  if (!thinking.enabled) {
-    return { thinking: { type: "disabled" } };
-  }
-  const effort = thinking.effort?.trim().toLowerCase();
+  const launch = resolveSubscriptionLaunch("claude");
   return {
-    ...(effort && CLAUDE_EFFORTS.has(effort) ? { effort } : {}),
-    thinking: { display: "summarized", type: "adaptive" },
+    abortController,
+    allowedTools: [],
+    cwd,
+    env: buildSubscriptionRuntimeEnv("claude"),
+    mcpServers: {},
+    permissionMode: "dontAsk",
+    settingSources: [],
+    skills: [],
+    tools: [],
+    ...(launch && launch.prefixArgs.length === 0
+      ? { pathToClaudeCodeExecutable: launch.command }
+      : {}),
   };
 }
 
+function createClaudePromptStream(prompt?: string): {
+  close: () => void;
+  stream: AsyncIterable<SDKUserMessage>;
+} {
+  let close: () => void = () => undefined;
+  const closed = new Promise<void>((resolve) => {
+    close = resolve;
+  });
+  return {
+    close,
+    stream: {
+      async *[Symbol.asyncIterator]() {
+        if (prompt !== undefined) {
+          yield {
+            message: { content: prompt, role: "user" },
+            parent_tool_use_id: null,
+            session_id: "",
+            type: "user",
+          };
+        }
+        await closed;
+      },
+    },
+  };
+}
+
+async function captureClaudeContext(
+  handle: ClaudeQueryHandle,
+  signal: AbortSignal
+): Promise<ChatCompletionResult["contextUsage"]> {
+  if (!handle.getContextUsage) {
+    return;
+  }
+  try {
+    const usage = await waitForClaudeOperation(
+      handle.getContextUsage(),
+      AbortSignal.any([signal, AbortSignal.timeout(CONTEXT_USAGE_TIMEOUT_MS)]),
+      () => "Claude context accounting timed out."
+    );
+    return readClaudeContextUsage(usage);
+  } catch (error) {
+    if (signal.aborted) {
+      throw error;
+    }
+    // Older runtimes may not implement this control request. Cumulative
+    // modelUsage is not a substitute for unknown native context occupancy.
+  }
+}
+
 function readClaudeMessage(message: unknown): {
+  completed?: boolean;
   error?: string;
   model?: string;
   sessionId?: string;
   text?: string;
   textDelta?: string;
+  thinking?: string;
   thinkingDelta?: string;
   usage?: ChatCompletionResult["usage"];
 } {
@@ -664,7 +809,7 @@ function readClaudeMessage(message: unknown): {
       model: readString(assistantMessage.model),
       sessionId,
       text: extractAssistantText(record),
-      thinkingDelta: extractThinking(record),
+      thinking: extractThinking(record),
     };
   }
   if (type === "stream_event" || type === "partial") {
@@ -678,11 +823,11 @@ function readClaudeMessage(message: unknown): {
     };
   }
   if (type === "result") {
-    const usage = asRecord(record.usage);
     const subtype = readString(record.subtype);
     const errors = readStringArray(record.errors);
     const isError = record.is_error === true || subtype !== "success";
     return {
+      completed: true,
       error: isError
         ? errors.join("; ") || readText(record.result) || "Claude query failed."
         : undefined,
@@ -691,10 +836,7 @@ function readClaudeMessage(message: unknown): {
       text: isError
         ? undefined
         : (readText(record.result) ?? extractAssistantText(record)),
-      usage: buildTokenUsage({
-        inputTokens: usage.input_tokens ?? usage.inputTokens,
-        outputTokens: usage.output_tokens ?? usage.outputTokens,
-      }),
+      usage: readClaudeTokenUsage(record),
     };
   }
   return { sessionId };
@@ -911,20 +1053,18 @@ function abortableDelay(ms: number, signal?: AbortSignal): Promise<void> {
   });
 }
 
-function waitForIteratorResult<T>(
-  operation: PromiseLike<IteratorResult<T>>,
+function waitForClaudeOperation<T>(
+  operation: PromiseLike<T>,
   signal: AbortSignal,
   abortMessage: () => string
-): Promise<IteratorResult<T>> {
+): Promise<T> {
   return new Promise((resolve, reject) => {
     let settled = false;
     const cleanup = () => {
       signal.removeEventListener("abort", onAbort);
     };
     const finish = (
-      result:
-        | { error: Error; ok: false }
-        | { ok: true; value: IteratorResult<T> }
+      result: { error: Error; ok: false } | { ok: true; value: T }
     ) => {
       if (settled) {
         return;

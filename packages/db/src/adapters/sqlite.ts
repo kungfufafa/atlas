@@ -45,6 +45,7 @@ import type {
   StoredProfileChangeEvent,
   StoredProfileComposioToolkitRecord,
   StoredProfileRecord,
+  StoredSessionHistoryArchiveRecord,
   StoredSessionMessageRecord,
   StoredSessionRecord,
   StoredSessionSummaryRecord,
@@ -902,8 +903,46 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
   const deleteMessagesForSessionStmt = db.prepare(
     "DELETE FROM session_messages WHERE session_id = ?"
   );
+  const deleteHistoryArchivesForSessionStmt = db.prepare(
+    "DELETE FROM session_history_archives WHERE session_id = ?"
+  );
+  const insertHistoryArchiveStmt = db.prepare(
+    "INSERT INTO session_history_archives (id, session_id, messages, created_at) VALUES (?, ?, ?, ?) ON CONFLICT (id) DO NOTHING"
+  );
+  const getHistoryArchiveStmt = db.prepare(
+    "SELECT session_id, messages, created_at FROM session_history_archives WHERE id = ?"
+  );
   const replaceMessagesForSessionTransaction = db.transaction(
-    (sessionId: string, messages: StoredSessionMessageRecord[]) => {
+    (
+      sessionId: string,
+      messages: StoredSessionMessageRecord[],
+      archives: StoredSessionHistoryArchiveRecord[] = []
+    ) => {
+      for (const archive of archives) {
+        if (archive.sessionId !== sessionId) {
+          throw new Error("History archive belongs to another session.");
+        }
+        const serialized = JSON.stringify(archive.messages);
+        const existing = getHistoryArchiveStmt.get(archive.id) as {
+          session_id: string;
+          messages: string;
+          created_at: string;
+        } | null;
+        if (
+          existing &&
+          (existing.session_id !== sessionId ||
+            existing.messages !== serialized ||
+            existing.created_at !== archive.createdAt)
+        ) {
+          throw new Error("History archives are immutable.");
+        }
+        insertHistoryArchiveStmt.run(
+          archive.id,
+          sessionId,
+          serialized,
+          archive.createdAt
+        );
+      }
       deleteMessagesForSessionStmt.run(sessionId);
       insertMessages(sessionId, messages);
 
@@ -2765,7 +2804,10 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
     },
 
     async deleteMessagesForSession(sessionId) {
-      deleteMessagesForSessionStmt.run(sessionId);
+      db.transaction(() => {
+        deleteMessagesForSessionStmt.run(sessionId);
+        deleteHistoryArchivesForSessionStmt.run(sessionId);
+      })();
     },
 
     async deleteNotificationDestination(id) {
@@ -2945,20 +2987,43 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
         return null;
       }
 
-      const countRow = db
-        .prepare(
-          "SELECT COUNT(*) AS count FROM session_messages WHERE session_id = ?"
-        )
-        .get(sessionId) as { count: number };
+      const archive = options.archiveId
+        ? (db
+            .prepare(
+              "SELECT created_at, json_array_length(messages) AS count FROM session_history_archives WHERE id = ? AND session_id = ?"
+            )
+            .get(options.archiveId, sessionId) as {
+            created_at: string;
+            count: number;
+          } | null)
+        : null;
+      if (options.archiveId && !archive) {
+        return null;
+      }
+      const countRow =
+        archive ??
+        (db
+          .prepare(
+            "SELECT COUNT(*) AS count FROM session_messages WHERE session_id = ?"
+          )
+          .get(sessionId) as { count: number });
 
       const limit = Math.min(100, options.limit ?? 50);
       const offset = options.offset ?? 0;
 
-      const messageRows = db
-        .prepare(
-          "SELECT id, seq, payload, created_at FROM session_messages WHERE session_id = ? ORDER BY seq ASC LIMIT ? OFFSET ?"
-        )
-        .all(sessionId, limit, offset) as Array<{
+      const messageRows = (
+        archive
+          ? db
+              .prepare(
+                "SELECT a.id || ':' || j.key AS id, CAST(j.key AS INTEGER) AS seq, j.value AS payload, a.created_at FROM session_history_archives a, json_each(a.messages) j WHERE a.id = ? AND a.session_id = ? ORDER BY seq ASC LIMIT ? OFFSET ?"
+              )
+              .all(options.archiveId!, sessionId, limit, offset)
+          : db
+              .prepare(
+                "SELECT id, seq, payload, created_at FROM session_messages WHERE session_id = ? ORDER BY seq ASC LIMIT ? OFFSET ?"
+              )
+              .all(sessionId, limit, offset)
+      ) as Array<{
         created_at: string;
         id: string;
         payload: string;
@@ -2988,6 +3053,9 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       });
 
       return {
+        ...(archive
+          ? { archivedAt: archive.created_at, archiveId: options.archiveId }
+          : {}),
         createdAt: sessionRow.created_at,
         messages,
         profileId: sessionRow.profile_id,
@@ -4146,8 +4214,8 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       }
     },
 
-    async replaceMessagesForSession(sessionId, messages) {
-      replaceMessagesForSessionTransaction(sessionId, messages);
+    async replaceMessagesForSession(sessionId, messages, archives) {
+      replaceMessagesForSessionTransaction(sessionId, messages, archives);
     },
 
     async replaceProfileComposioToolkits(profileId, assignments) {
@@ -4234,20 +4302,40 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       }
 
       let sql = `
+        WITH all_messages AS (
+          SELECT m.id AS message_id, m.session_id, m.payload, m.created_at, NULL AS archive_id
+          FROM session_messages m
+          INNER JOIN sessions owner ON owner.id = m.session_id
+          WHERE owner.org_id = ?
+          UNION ALL
+          SELECT a.id || ':' || j.key AS message_id, a.session_id, j.value AS payload,
+            a.created_at, a.id AS archive_id
+          FROM session_history_archives a
+          INNER JOIN sessions owner ON owner.id = a.session_id
+          INNER JOIN json_each(a.messages) j
+          WHERE owner.org_id = ?
+        ), ranked_messages AS (
+          SELECT *, ROW_NUMBER() OVER (
+            PARTITION BY session_id, payload
+            ORDER BY archive_id IS NULL DESC, created_at DESC, message_id DESC
+          ) AS match_rank
+          FROM all_messages
+        )
         SELECT
-          m.id AS message_id,
+          m.message_id,
           m.session_id,
           m.payload,
           m.created_at,
+          m.archive_id,
           s.title AS session_title,
           s.profile_id
-        FROM session_messages m
+        FROM ranked_messages m
         INNER JOIN sessions s ON s.id = m.session_id
         INNER JOIN profiles p
           ON p.id = s.profile_id AND p.org_id = s.org_id
-        WHERE s.org_id = ? AND p.is_importing = 0
+        WHERE s.org_id = ? AND p.is_importing = 0 AND m.match_rank = 1
       `;
-      const params: (string | number)[] = [orgId];
+      const params: (string | number)[] = [orgId, orgId, orgId];
 
       if (options.profileId) {
         sql += " AND s.profile_id = ?";
@@ -4276,6 +4364,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
       params.push(options.limit ?? 20);
 
       const rows = db.prepare(sql).all(...params) as Array<{
+        archive_id: string | null;
         created_at: string;
         message_id: string;
         payload: string;
@@ -4307,6 +4396,9 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
             : `...${text.slice(start, end).trim()}...`;
 
         return {
+          ...(r.archive_id
+            ? { archivedAt: r.created_at, archiveId: r.archive_id }
+            : {}),
           createdAt: r.created_at,
           matchedSnippet: snippet,
           messageId: r.message_id,

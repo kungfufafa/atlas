@@ -48,7 +48,7 @@ describe("createOpenCodeGoProvider", () => {
     expect(result.content).toBe("Hello from OpenCode Go");
   });
 
-  test("sends DeepSeek thinking with tools on OpenCode Go chat completions", async () => {
+  test("does not copy upstream DeepSeek reasoning assumptions into the Go gateway", async () => {
     let capturedBody: Record<string, unknown> | null = null;
 
     mockFetch(async (request) => {
@@ -79,8 +79,8 @@ describe("createOpenCodeGoProvider", () => {
       ],
     });
 
-    expect(capturedBody?.thinking).toEqual({ type: "enabled" });
-    expect(capturedBody?.reasoning_effort).toBe("high");
+    expect(capturedBody?.thinking).toBeUndefined();
+    expect(capturedBody?.reasoning_effort).toBeUndefined();
     expect(capturedBody?.tools).toEqual([
       {
         function: {

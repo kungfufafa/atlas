@@ -5,11 +5,40 @@ import {
   fetchRemoteOpenAIModels,
   getModelsForProviderInstance,
   mergeOpenRouterCatalog,
+  resolveCerebrasDefaultModel,
+  resolveCompatibleDefaultModel,
+  resolveFireworksDefaultModel,
+  resolveOllamaDefaultModel,
+  resolveOpenRouterDefaultModel,
 } from "./compatible-models";
 
 const resolvePublicDns = async () => [
   { address: "8.8.8.8", family: 4 as const },
 ];
+
+describe("provider default model resolvers", () => {
+  const resolvers = [
+    ["OpenRouter", resolveOpenRouterDefaultModel],
+    ["Cerebras", resolveCerebrasDefaultModel],
+    ["Fireworks", resolveFireworksDefaultModel],
+    ["Ollama", resolveOllamaDefaultModel],
+    ["OpenAI compatible", resolveCompatibleDefaultModel],
+  ] as const;
+
+  test.each(resolvers)(
+    "%s preserves an explicit choice and rejects unavailable shortlist models",
+    (_name, resolve) => {
+      const models = [
+        { default: true, id: "vendor/default" },
+        { id: "vendor/selected" },
+      ];
+      expect(resolve(models, "vendor/selected")).toBe("vendor/selected");
+      expect(resolve(models)).toBe("vendor/default");
+      expect(() => resolve(models, "vendor/missing")).toThrow();
+      expect(resolve(undefined, "vendor/new-model")).toBe("vendor/new-model");
+    }
+  );
+});
 
 describe("mergeOpenRouterCatalog", () => {
   test("merges custom display names over static entries", () => {
@@ -128,10 +157,10 @@ describe("getModelsForProviderInstance openrouter", () => {
     ).toBe(true);
     expect(models.some((model) => model.id === "openai/gpt-5.4")).toBe(false);
     expect(models[0]?.providerId).toBe("or-1");
-    expect(models[0]?.supportsThinking).toBe(false);
+    expect(models[0]?.supportsThinking).toBeUndefined();
   });
 
-  test("maps supportsThinking for reasoning-capable OpenRouter models", () => {
+  test("leaves thinking unknown when an OpenRouter row provides only a model name", () => {
     const models = getModelsForProviderInstance({
       apiKey: "sk-test",
       createdAt: "2026-06-07T10:00:00.000Z",
@@ -143,7 +172,7 @@ describe("getModelsForProviderInstance openrouter", () => {
       type: "openrouter",
     });
 
-    expect(models[0]?.supportsThinking).toBe(true);
+    expect(models[0]?.supportsThinking).toBeUndefined();
   });
 
   test("honors explicit supportsThinking overrides", () => {
@@ -183,7 +212,7 @@ describe("getModelsForProviderInstance openrouter", () => {
 
     expect(models).toHaveLength(1);
     expect(models[0]?.id).toBe("google/gemma-4-31b-it:free");
-    expect(models[0]?.supportsThinking).toBe(false);
+    expect(models[0]?.supportsThinking).toBeUndefined();
     expect(models.some((model) => model.id === "openai/gpt-5.4")).toBe(false);
   });
 });
@@ -266,7 +295,7 @@ describe("getModelsForProviderInstance fireworks", () => {
 });
 
 describe("getModelsForProviderInstance openai_compatible", () => {
-  test("infers reasoning for known families when the flag is unset", () => {
+  test("leaves reasoning unknown even when a model ID resembles a known family", () => {
     const models = getModelsForProviderInstance({
       apiKey: "",
       baseUrl: "https://api.tokenrouter.com/v1",
@@ -277,12 +306,8 @@ describe("getModelsForProviderInstance openai_compatible", () => {
       type: "openai_compatible",
     });
 
-    expect(models[0]?.supportsThinking).toBe(true);
-    expect(models[0]?.reasoningEffortValues).toEqual([
-      "low",
-      "medium",
-      "xhigh",
-    ]);
+    expect(models[0]?.supportsThinking).toBeUndefined();
+    expect(models[0]?.reasoningEffortValues).toBeUndefined();
   });
 
   test("maps supportsThinking from custom models into the catalog", () => {
@@ -347,14 +372,12 @@ describe("fetchRemoteOpenAIModels TokenRouter payload", () => {
     ]);
     expect(
       models.find((model) => model.id === "qwen/qwen3.8-max-free")
-    ).toMatchObject({
-      supportsThinking: true,
-    });
+    ).toEqual({ id: "qwen/qwen3.8-max-free", name: "qwen/qwen3.8-max-free" });
   });
 });
 
 describe("compatibleModelSupportsThinking", () => {
-  test("honors an explicit opt-out and infers known reasoning families", () => {
+  test("requires explicit support before enabling reasoning", () => {
     expect(
       compatibleModelSupportsThinking("qwen3.6-35b", [
         { id: "qwen3.6-35b", supportsThinking: true },
@@ -373,7 +396,7 @@ describe("compatibleModelSupportsThinking", () => {
       compatibleModelSupportsThinking("qwen/qwen3.8-max-free", [
         { id: "qwen/qwen3.8-max-free" },
       ])
-    ).toBe(true);
+    ).toBe(false);
   });
 });
 

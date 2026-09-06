@@ -24,12 +24,13 @@ import type {
 } from "@openrouter/sdk/models";
 import { OpenRouterError } from "@openrouter/sdk/models/errors";
 import { toOpenAIMessages } from "../openai";
+import { resolveModelThinkingEffort } from "../reasoning-metadata";
 import {
+  assertChatCompletionFinishReason,
   buildChatCompletionResult,
   extractOpenAITokenUsage,
   notifyToolInputDelta,
-  parseJsonRecord,
-  resolveThinkingEffort,
+  parseToolArguments,
 } from "../shared";
 import { openRouterModelSupportsThinking } from "./thinking";
 
@@ -156,12 +157,14 @@ function parseSdkToolCalls(toolCalls: ChatToolCall[] | undefined): ToolCall[] {
     const id = call.id?.trim();
 
     if (!(name && id)) {
-      return [];
+      throw new Error(
+        "The provider returned a tool call without an ID or name."
+      );
     }
 
     return [
       {
-        arguments: parseJsonRecord(call.function.arguments ?? "{}"),
+        arguments: parseToolArguments(call.function.arguments),
         id,
         name,
       },
@@ -183,11 +186,16 @@ function buildOpenRouterReasoningRequest(
     return;
   }
 
+  const effort = resolveModelThinkingEffort(
+    model,
+    providerOptions.thinking.effort,
+    customModels
+  );
+  if (!effort) {
+    return;
+  }
   const reasoning: ChatRequestReasoning = {
-    effort: resolveThinkingEffort(
-      providerOptions.thinking.effort
-    ) as ChatRequestReasoning["effort"],
-    summary: "auto",
+    effort: effort as ChatRequestReasoning["effort"],
   };
 
   return { reasoning };
@@ -203,6 +211,7 @@ function parseMessageReasoning(
 function parseChatResult(result: {
   usage?: Record<string, unknown>;
   choices?: Array<{
+    finishReason?: string | null;
     message?: {
       content?: string | null;
       reasoning?: string | null;
@@ -210,6 +219,10 @@ function parseChatResult(result: {
     };
   }>;
 }): ChatCompletionResult {
+  assertChatCompletionFinishReason(
+    result.choices?.[0]?.finishReason,
+    PROVIDER_LABEL
+  );
   const message = result.choices?.[0]?.message;
   const toolCalls = parseSdkToolCalls(message?.toolCalls);
   const content = typeof message?.content === "string" ? message.content : "";
@@ -290,12 +303,14 @@ function finalizePendingToolCalls(
     .map(([, call]) => call)
     .flatMap((call) => {
       if (!(call.id && call.name)) {
-        return [];
+        throw new Error(
+          "The provider returned a tool call without an ID or name."
+        );
       }
 
       return [
         {
-          arguments: parseJsonRecord(call.arguments),
+          arguments: parseToolArguments(call.arguments),
           id: call.id,
           name: call.name,
         },
@@ -310,9 +325,15 @@ async function readOpenRouterStream(
   let content = "";
   let thinking = "";
   let usage: ChatCompletionResult["usage"];
+  let completed = false;
   const pending = new Map<number, PendingToolCall>();
 
   for await (const chunk of stream) {
+    completed =
+      assertChatCompletionFinishReason(
+        chunk.choices?.[0]?.finishReason,
+        PROVIDER_LABEL
+      ) || completed;
     usage =
       extractOpenAITokenUsage(
         (chunk as { usage?: Record<string, unknown> }).usage
@@ -345,6 +366,9 @@ async function readOpenRouterStream(
     }
   }
 
+  if (!completed) {
+    throw new Error(`${PROVIDER_LABEL} stream ended before completion.`);
+  }
   const toolCalls = finalizePendingToolCalls(pending);
   const thinkingText = thinking.trim() || undefined;
 
@@ -409,6 +433,10 @@ export function createOpenRouterProvider(
           },
         });
 
+        assertChatCompletionFinishReason(
+          result.choices?.[0]?.finishReason,
+          PROVIDER_LABEL
+        );
         const content = result.choices?.[0]?.message?.content?.trim();
         const usage = extractOpenAITokenUsage(
           (result as { usage?: Record<string, unknown> }).usage

@@ -85,6 +85,7 @@ describe("OpenAI-compatible wire API", () => {
       baseUrl: "https://endpoint.test/v1",
       displayName: "Endpoint",
       model: "gpt-5.4",
+      reasoningEffortValues: ["low", "medium", "high"],
       supportsThinking: true,
       wireApi: "responses",
     });
@@ -108,6 +109,7 @@ describe("OpenAI-compatible wire API", () => {
       baseUrl: "https://endpoint.test/v1",
       displayName: "Endpoint",
       model: "gpt-5.4",
+      reasoningEffortValues: ["low", "medium", "high"],
       supportsThinking: true,
       wireApi: "responses",
     });
@@ -154,6 +156,7 @@ describe("OpenAI-compatible wire API", () => {
       baseUrl: "https://endpoint.test/v1",
       displayName: "Endpoint",
       model: "gpt-5.4",
+      reasoningEffortValues: ["low", "medium", "high"],
       supportsThinking: true,
       wireApi: "responses",
     });
@@ -178,6 +181,7 @@ describe("OpenAI-compatible wire API", () => {
       baseUrl: "https://endpoint.test/v1",
       displayName: "Endpoint",
       model: "gpt-5.4",
+      reasoningEffortValues: ["low", "medium", "high"],
       supportsThinking: true,
     });
 
@@ -233,3 +237,47 @@ describe("OpenAI-compatible wire API", () => {
     );
   });
 });
+
+test.each([
+  {
+    defaultEffort: undefined,
+    effort: "high",
+    expected: undefined,
+    values: undefined,
+  },
+  { defaultEffort: "high", effort: "high", expected: undefined, values: [] },
+  {
+    defaultEffort: undefined,
+    effort: "max",
+    expected: undefined,
+    values: ["minimal", "high"],
+  },
+  {
+    defaultEffort: "minimal",
+    effort: "max",
+    expected: "minimal",
+    values: ["minimal", "high"],
+  },
+])(
+  "Responses sends only an advertised effort or its advertised default: %j",
+  async ({ values, defaultEffort, effort, expected }) => {
+    const calls = stubFetch(RESPONSE_PAYLOAD);
+    const provider = createOpenAICompatibleProvider({
+      apiKey: "fixture",
+      baseUrl: "https://endpoint.test/v1",
+      defaultReasoningEffort: defaultEffort,
+      displayName: "Fixture",
+      model: "model",
+      reasoningEffortValues: values,
+      supportsThinking: true,
+      wireApi: "responses",
+    });
+    await provider.generateChat({
+      ...CHAT_INPUT,
+      providerOptions: { thinking: { effort, enabled: true } },
+    });
+    expect(
+      (calls[0]?.body.reasoning as { effort?: string } | undefined)?.effort
+    ).toBe(expected);
+  }
+);

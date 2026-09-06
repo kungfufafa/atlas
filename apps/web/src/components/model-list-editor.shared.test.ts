@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   applyInferredCompatibleCapabilities,
+  clearConnectionModelMetadata,
   modelListRowVisionEnabled,
   normalizeModelListRows,
   toggleModelListRow,
@@ -11,7 +12,7 @@ import {
 } from "./settings/provider-settings-seed";
 
 describe("applyInferredCompatibleCapabilities", () => {
-  test("fills reasoning from the model id when the user did not set it", () => {
+  test("leaves reasoning unknown when only a model id is supplied", () => {
     expect(
       applyInferredCompatibleCapabilities(
         [{ id: "qwen/qwen3.8-max-free", name: "Qwen" }],
@@ -21,8 +22,6 @@ describe("applyInferredCompatibleCapabilities", () => {
       {
         id: "qwen/qwen3.8-max-free",
         name: "Qwen",
-        reasoningEffortValues: ["low", "medium", "xhigh"],
-        supportsThinking: true,
       },
     ]);
   });
@@ -206,4 +205,57 @@ describe("provider-settings-seed", () => {
       expect.objectContaining({ capabilities, supportsVision: true })
     );
   });
+});
+
+test("saving model rows keeps limits, defaults, and explicit empty efforts", () => {
+  const row = {
+    contextWindow: 98_000,
+    defaultReasoningEffort: "high",
+    id: "model",
+    maxOutputTokens: 12_000,
+    name: "Model",
+    reasoningEffortValues: [],
+    supportsThinking: false,
+  };
+  expect(normalizeModelListRows([row])).toEqual([row]);
+  expect(seedManageModelRows([row], [])[0]).toMatchObject(row);
+  expect(seedShortlistManageModelRows([row])[0]).toMatchObject(row);
+});
+
+test("changing connection removes old endpoint metadata while retaining explicit admin claims", () => {
+  const admin = {
+    source: "admin-override" as const,
+    status: "unsupported" as const,
+    verified: true,
+  };
+  const discovery = {
+    source: "provider-discovery" as const,
+    status: "supported" as const,
+    verified: true,
+  };
+  expect(
+    clearConnectionModelMetadata([
+      {
+        capabilities: {
+          "chat.input.image": admin,
+          "chat.reasoning": discovery,
+        },
+        contextWindow: 98_000,
+        default: true,
+        defaultReasoningEffort: "high",
+        id: "model",
+        maxOutputTokens: 12_000,
+        name: "Model",
+        reasoningEffortValues: ["high"],
+        supportsThinking: true,
+      },
+    ])
+  ).toEqual([
+    {
+      capabilities: { "chat.input.image": admin },
+      default: true,
+      id: "model",
+      name: "Model",
+    },
+  ]);
 });

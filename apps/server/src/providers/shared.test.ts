@@ -4,6 +4,7 @@ import {
   formatHttpErrorBody,
   normalizeThinkingEffort,
   parseJsonRecord,
+  parseToolArguments,
   readRecord,
   readSseEvents,
   resolveThinkingEffort,
@@ -71,6 +72,47 @@ describe("provider shared helpers", () => {
     expect(parseJsonRecord("{bad json")).toEqual({});
   });
 
+  test("tool arguments preserve valid objects and reject malformed inputs", () => {
+    expect(
+      parseToolArguments('{"path":"a.txt","nested":{"value":null}}')
+    ).toEqual({
+      nested: { value: null },
+      path: "a.txt",
+    });
+    expect(parseToolArguments("{}")).toEqual({});
+    expect(parseToolArguments(undefined)).toEqual({});
+    for (const raw of [
+      '{"path":"a',
+      "[]",
+      "null",
+      "true",
+      '"text"',
+      null,
+      {},
+    ]) {
+      expect(() => parseToolArguments(raw)).toThrow();
+    }
+  });
+
+  test("SSE parsing cancels the body and releases its lock after a callback fails", async () => {
+    let canceled = false;
+    const body = new ReadableStream<Uint8Array>({
+      cancel() {
+        canceled = true;
+      },
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('data: {"chunk":1}\n\n'));
+      },
+    });
+    await expect(
+      readSseEvents(body, () => {
+        throw new Error("Invalid event");
+      })
+    ).rejects.toThrow();
+    expect(canceled).toBe(true);
+    expect(body.locked).toBe(false);
+  });
+
   test("readRecord only accepts plain records", () => {
     expect(readRecord({ ok: true })).toEqual({ ok: true });
     expect(readRecord(null)).toEqual({});
@@ -78,40 +120,17 @@ describe("provider shared helpers", () => {
     expect(readRecord("text")).toEqual({});
   });
 
-  test("normalizeThinkingEffort falls back to medium", () => {
-    expect(normalizeThinkingEffort("low")).toBe("low");
-    expect(normalizeThinkingEffort("high")).toBe("high");
-    expect(normalizeThinkingEffort(undefined)).toBe("medium");
-  });
-
-  test("resolveThinkingEffort respects custom valid values and semantic aliases", () => {
-    expect(resolveThinkingEffort("low")).toBe("low");
-    expect(resolveThinkingEffort("medium")).toBe("medium");
-    expect(resolveThinkingEffort("high")).toBe("high");
-    expect(resolveThinkingEffort(undefined)).toBe("medium");
-
-    // Semantic alias: high -> xhigh for providers with xhigh
-    expect(resolveThinkingEffort("high", ["low", "medium", "xhigh"])).toBe(
-      "xhigh"
-    );
-    expect(resolveThinkingEffort("xhigh", ["low", "medium", "xhigh"])).toBe(
-      "xhigh"
-    );
-
-    // Semantic alias: xhigh -> high for providers with high
-    expect(resolveThinkingEffort("xhigh", ["low", "medium", "high"])).toBe(
-      "high"
-    );
-
-    // Semantic alias: high/xhigh -> max for DeepSeek
-    expect(resolveThinkingEffort("high", ["low", "high", "max"])).toBe("high");
-    expect(resolveThinkingEffort("xhigh", ["low", "high", "max"])).toBe("max");
-    expect(resolveThinkingEffort("max", ["low", "high", "max"])).toBe("max");
-
-    // Unknown value falls back to median
-    expect(resolveThinkingEffort("unknown", ["low", "medium", "high"])).toBe(
-      "medium"
-    );
+  test("does not invent provider effort support or defaults", () => {
+    expect(normalizeThinkingEffort("high")).toBeUndefined();
+    expect(resolveThinkingEffort("high")).toBeUndefined();
+    expect(resolveThinkingEffort("high", [])).toBeUndefined();
+    expect(resolveThinkingEffort("high", ["low", "xhigh"])).toBeUndefined();
+    expect(resolveThinkingEffort(undefined, ["low", "high"])).toBeUndefined();
+    expect(resolveThinkingEffort("max", ["low", "high"], "low")).toBe("low");
+    expect(resolveThinkingEffort("high", ["low", "high"], "low")).toBe("high");
+    expect(
+      resolveThinkingEffort("max", ["low", "high"], "medium")
+    ).toBeUndefined();
   });
 
   test("formatHttpErrorBody extracts OpenCode-style JSON errors", () => {

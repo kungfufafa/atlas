@@ -39,6 +39,13 @@ describe("OpenAI provider streaming", () => {
 
     const provider = createOpenAIProvider({
       apiKey: "sk-test",
+      customModels: [
+        {
+          id: "gpt-5.4",
+          reasoningEffortValues: ["low", "medium", "high"],
+          supportsThinking: true,
+        },
+      ],
       model: "gpt-5.4",
     });
 
@@ -77,6 +84,13 @@ describe("OpenAI provider streaming", () => {
 
     const provider = createOpenAIProvider({
       apiKey: "sk-test",
+      customModels: [
+        {
+          id: "gpt-5.4",
+          reasoningEffortValues: ["low", "medium", "high"],
+          supportsThinking: true,
+        },
+      ],
       model: "gpt-5.4",
     });
 
@@ -187,6 +201,13 @@ describe("OpenAI provider streaming", () => {
     createOpenAIProvider({
       apiKey: "sk-test",
       baseUrl: "https://api.deepseek.com",
+      customModels: [
+        {
+          id: "deepseek-chat",
+          reasoningEffortValues: ["high", "max"],
+          supportsThinking: true,
+        },
+      ],
       model: "deepseek-chat",
       providerName: "deepseek",
     });

@@ -32,7 +32,7 @@ describe("OpenAI-compatible provider", () => {
           reasoning?: { effort?: string };
           reasoning_effort?: string;
         };
-        expect(body.reasoning).toEqual({ effort: "high" });
+        expect(body.reasoning).toBeUndefined();
         expect(body.reasoning_effort).toBe("high");
         return Response.json({
           choices: [{ message: { content: "Answer", reasoning: "Plan" } }],
@@ -47,6 +47,7 @@ describe("OpenAI-compatible provider", () => {
       baseUrl: "https://api.example.com/v1",
       displayName: "NetraRuntime",
       model: "qwen3.6-35b",
+      reasoningEffortValues: ["low", "medium", "high", "xhigh"],
       supportsThinking: true,
     });
 
@@ -94,7 +95,7 @@ describe("OpenAI-compatible provider", () => {
     expect(result.content).toBe("Answer");
   });
 
-  test("sets reasoning_effort to none for gpt-5.6 tools on chat completions", async () => {
+  test("does not infer a reasoning override from an OpenAI-like model name", async () => {
     const fetchMock = mock(
       async (_input: RequestInfo | URL, init?: RequestInit) => {
         const body = JSON.parse(String(init?.body ?? "{}")) as {
@@ -104,7 +105,7 @@ describe("OpenAI-compatible provider", () => {
         };
         expect(body.tools).toHaveLength(1);
         expect(body.reasoning).toBeUndefined();
-        expect(body.reasoning_effort).toBe("none");
+        expect(body.reasoning_effort).toBe("high");
         return Response.json({
           choices: [{ message: { content: "Answer" } }],
         });
@@ -118,6 +119,7 @@ describe("OpenAI-compatible provider", () => {
       baseUrl: "https://api.openai.com/v1",
       displayName: "OpenAI",
       model: "gpt-5.6-luna",
+      reasoningEffortValues: ["low", "medium", "high", "xhigh"],
       supportsThinking: true,
     });
 
@@ -137,7 +139,7 @@ describe("OpenAI-compatible provider", () => {
     expect(result.content).toBe("Answer");
   });
 
-  test("forces reasoning_effort none for gpt-5.6 tools even when thinking is off", async () => {
+  test("omits reasoning when thinking is off even for an OpenAI-like name", async () => {
     const fetchMock = mock(
       async (_input: RequestInfo | URL, init?: RequestInit) => {
         const body = JSON.parse(String(init?.body ?? "{}")) as {
@@ -147,7 +149,7 @@ describe("OpenAI-compatible provider", () => {
         };
         expect(body.tools).toHaveLength(1);
         expect(body.reasoning).toBeUndefined();
-        expect(body.reasoning_effort).toBe("none");
+        expect(body.reasoning_effort).toBeUndefined();
         return Response.json({
           choices: [{ message: { content: "Answer" } }],
         });
@@ -161,6 +163,7 @@ describe("OpenAI-compatible provider", () => {
       baseUrl: "https://api.openai.com/v1",
       displayName: "OpenAI",
       model: "gpt-5.6-luna",
+      reasoningEffortValues: ["low", "medium", "high", "xhigh"],
       supportsThinking: true,
     });
 
@@ -201,6 +204,7 @@ describe("OpenAI-compatible provider", () => {
       baseUrl: "https://api.example.com/v1",
       displayName: "NetraRuntime",
       model: "qwen3.6-35b",
+      reasoningEffortValues: ["low", "medium", "high", "xhigh"],
       supportsThinking: true,
     });
 
@@ -242,6 +246,7 @@ describe("OpenAI-compatible provider", () => {
       baseUrl: "https://opencode.ai/zen/v1",
       displayName: "OpenCode Zen",
       model: "big-pickle",
+      reasoningEffortValues: ["low", "medium", "high", "xhigh"],
       supportsThinking: true,
     });
 
@@ -282,6 +287,7 @@ describe("OpenAI-compatible provider", () => {
       baseUrl: "https://api.example.com/v1",
       displayName: "NetraRuntime",
       model: "qwen3.6-35b",
+      reasoningEffortValues: ["low", "medium", "high", "xhigh"],
       supportsThinking: true,
     });
 
@@ -389,7 +395,7 @@ describe("OpenAI-compatible provider", () => {
           reasoning?: { effort?: string };
           reasoning_effort?: string;
         };
-        expect(body.reasoning).toEqual({ effort: "xhigh" });
+        expect(body.reasoning).toBeUndefined();
         expect(body.reasoning_effort).toBe("xhigh");
         return Response.json({
           choices: [
@@ -406,6 +412,7 @@ describe("OpenAI-compatible provider", () => {
       baseUrl: "https://api.tokenrouter.ai/v1",
       displayName: "Token Router",
       model: "claude-sonnet-4-6",
+      reasoningEffortValues: ["low", "medium", "high", "xhigh"],
       supportsThinking: true,
     });
 
@@ -444,6 +451,7 @@ describe("OpenAI-compatible provider", () => {
       baseUrl: "https://api.tokenrouter.ai/v1",
       displayName: "Token Router",
       model: "claude-sonnet-4-6",
+      reasoningEffortValues: ["low", "medium", "high", "xhigh"],
       supportsThinking: true,
     });
 
@@ -456,7 +464,7 @@ describe("OpenAI-compatible provider", () => {
       { onChunk: () => {} }
     );
 
-    expect(capturedBody.reasoning?.effort).toBe("xhigh");
+    expect(capturedBody.reasoning).toBeUndefined();
     expect(capturedBody.reasoning_effort).toBe("xhigh");
   });
 });

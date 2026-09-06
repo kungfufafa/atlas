@@ -78,6 +78,26 @@ describe("parseRelatedQuestions", () => {
 });
 
 describe("generateRelatedQuestions", () => {
+  test("cancellation settles even when a provider ignores its abort signal", async () => {
+    const controller = new AbortController();
+    let providerSignal: AbortSignal | undefined;
+    const provider = createMockProvider([]);
+    provider.generateText = (input) => {
+      providerSignal = input.signal;
+      controller.abort();
+      return new Promise(() => {});
+    };
+    expect(
+      await generateRelatedQuestions(
+        provider,
+        "explain",
+        longReply,
+        controller.signal
+      )
+    ).toBeNull();
+    expect(providerSignal?.aborted).toBe(true);
+  });
+
   test("skips short replies", async () => {
     expect(await generateRelatedQuestions(undefined, "hi", "short")).toBeNull();
   });
@@ -117,6 +137,32 @@ describe("generateRelatedQuestions", () => {
 });
 
 describe("chat session related questions", () => {
+  test("a failed suggestion observer does not discard the completed reply", async () => {
+    const provider = createMockProvider([
+      {
+        assistantMessage: { content: longReply, role: "assistant" },
+        content: longReply,
+        toolCalls: [],
+      },
+    ]);
+    const session = createAgentHarness({ provider }).createChatSession();
+    expect(
+      await session.sendStream(
+        { message: "Explain the result", relatedQuestions: true },
+        {
+          onChunk: () => {},
+          onRelatedQuestions: () => {
+            throw new Error("Stream disconnected");
+          },
+        }
+      )
+    ).toBe(longReply);
+    expect(session.getHistory().at(-1)).toMatchObject({
+      content: longReply,
+      role: "assistant",
+    });
+  });
+
   test("emits and persists suggestions after a streamed reply", async () => {
     const provider = createMockProvider([
       {

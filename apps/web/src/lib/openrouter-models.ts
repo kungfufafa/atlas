@@ -22,6 +22,7 @@ export interface OpenRouterApiModel {
   name: string;
   pricing?: OpenRouterApiPricing;
   supported_parameters?: string[];
+  top_provider?: { max_completion_tokens?: number };
 }
 
 export interface OpenRouterModelsApiResponse {
@@ -35,11 +36,12 @@ export interface OpenRouterModelRow {
   id: string;
   inputPerMillionUsd?: number;
   isFree: boolean;
+  maxOutputTokens?: number;
   name: string;
   outputPerMillionUsd?: number;
-  reasoning: boolean;
-  tools: boolean;
-  vision: boolean;
+  reasoning?: boolean;
+  tools?: boolean;
+  vision?: boolean;
 }
 
 /** OpenRouter API prices are USD per token; convert to USD per 1M tokens. */
@@ -100,8 +102,8 @@ export function isOpenRouterModelDeprecated(
 export function normalizeOpenRouterModel(
   entry: OpenRouterApiModel
 ): OpenRouterModelRow {
-  const inputModalities = entry.architecture?.input_modalities ?? [];
-  const supported = entry.supported_parameters ?? [];
+  const inputModalities = entry.architecture?.input_modalities;
+  const supported = entry.supported_parameters;
   const perMillion = openRouterPricingPerMillion(entry.pricing);
 
   return {
@@ -110,12 +112,14 @@ export function normalizeOpenRouterModel(
     description: truncateDescription(entry.description ?? ""),
     id: entry.id,
     isFree: isOpenRouterModelFree(entry.pricing),
+    maxOutputTokens: entry.top_provider?.max_completion_tokens,
     name: entry.name,
-    reasoning:
-      supported.includes("reasoning") ||
-      supported.includes("include_reasoning"),
-    tools: supported.includes("tools"),
-    vision: inputModalities.includes("image"),
+    reasoning: supported
+      ? supported.includes("reasoning") ||
+        supported.includes("include_reasoning")
+      : undefined,
+    tools: supported?.includes("tools"),
+    vision: inputModalities?.includes("image"),
     ...(perMillion ?? {}),
   };
 }

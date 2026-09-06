@@ -17,15 +17,16 @@ import {
   toOpenAIMessages,
   toOpenAITools,
 } from "../openai";
+import { resolveModelThinkingEffort } from "../reasoning-metadata";
 import {
+  assertChatCompletionFinishReason,
   buildChatCompletionResult,
   DEFAULT_USER_AGENT,
   extractOpenAITokenUsage,
   formatHttpErrorBody,
   notifyToolInputDelta,
-  parseJsonRecord,
-  readSseEvents,
-  resolveThinkingEffort,
+  parseToolArguments,
+  readChatCompletionSseEvents,
 } from "../shared";
 import { cerebrasModelSupportsThinking } from "./thinking";
 
@@ -65,7 +66,13 @@ export function createCerebrasProvider(
       return;
     }
 
-    return input.providerOptions?.thinking;
+    const thinking = input.providerOptions?.thinking;
+    const effort = resolveModelThinkingEffort(
+      model,
+      thinking?.effort,
+      customModels
+    );
+    return thinking?.enabled && effort ? { effort, enabled: true } : undefined;
   };
 
   return {
@@ -116,7 +123,7 @@ function buildThinkingBody(thinking?: ProviderChatOptions["thinking"]) {
   }
 
   return {
-    reasoning_effort: resolveThinkingEffort(thinking.effort),
+    reasoning_effort: thinking.effort,
   };
 }
 
@@ -206,6 +213,10 @@ async function requestChatCompletion(
       { signal: options.signal }
     );
 
+    assertChatCompletionFinishReason(
+      completion.choices[0]?.finish_reason,
+      PROVIDER_LABEL
+    );
     const message = completion.choices[0]?.message;
     const toolCalls = parseOpenAIToolCalls(
       message?.tool_calls as
@@ -295,54 +306,58 @@ async function streamChatCompletion(options: {
   let usage: ChatCompletionResult["usage"];
   const pending = new Map<number, PendingToolCall>();
 
-  await readSseEvents(response.body, ({ data }) => {
-    const payload = JSON.parse(data) as {
-      usage?: Record<string, unknown>;
-      choices?: Array<{
-        delta?: {
-          content?: string | null;
-          tool_calls?: Array<{
-            index?: number;
-            id?: string;
-            function?: { name?: string; arguments?: string };
-          }>;
-        };
-      }>;
-    };
+  await readChatCompletionSseEvents(
+    response.body,
+    ({ data }) => {
+      const payload = JSON.parse(data) as {
+        usage?: Record<string, unknown>;
+        choices?: Array<{
+          delta?: {
+            content?: string | null;
+            tool_calls?: Array<{
+              index?: number;
+              id?: string;
+              function?: { name?: string; arguments?: string };
+            }>;
+          };
+        }>;
+      };
 
-    usage = extractOpenAITokenUsage(payload.usage) ?? usage;
+      usage = extractOpenAITokenUsage(payload.usage) ?? usage;
 
-    const delta = payload.choices?.[0]?.delta;
+      const delta = payload.choices?.[0]?.delta;
 
-    if (delta?.content) {
-      content += delta.content;
-      options.handlers.onChunk(delta.content);
-    }
+      if (delta?.content) {
+        content += delta.content;
+        options.handlers.onChunk(delta.content);
+      }
 
-    const reasoningDelta = readReasoningText(delta, {
-      preserveWhitespace: true,
-    });
+      const reasoningDelta = readReasoningText(delta, {
+        preserveWhitespace: true,
+      });
 
-    if (reasoningDelta) {
-      thinking += reasoningDelta;
-      options.handlers.onThinking?.(reasoningDelta);
-    }
+      if (reasoningDelta) {
+        thinking += reasoningDelta;
+        options.handlers.onThinking?.(reasoningDelta);
+      }
 
-    if (delta?.tool_calls) {
-      for (const toolDelta of delta.tool_calls) {
-        const argDelta = toolDelta.function?.arguments ?? "";
-        mergePendingToolCall(pending, toolDelta);
+      if (delta?.tool_calls) {
+        for (const toolDelta of delta.tool_calls) {
+          const argDelta = toolDelta.function?.arguments ?? "";
+          mergePendingToolCall(pending, toolDelta);
 
-        if (argDelta) {
-          const current = pending.get(toolDelta.index ?? 0);
+          if (argDelta) {
+            const current = pending.get(toolDelta.index ?? 0);
 
-          if (current) {
-            notifyToolInputDelta(options.handlers, current, argDelta);
+            if (current) {
+              notifyToolInputDelta(options.handlers, current, argDelta);
+            }
           }
         }
       }
-    }
-  });
+    },
+    PROVIDER_LABEL
+  );
 
   const toolCalls = finalizePendingToolCalls(pending);
 
@@ -370,6 +385,10 @@ async function requestCompletion(
         : {}),
     });
 
+    assertChatCompletionFinishReason(
+      completion.choices[0]?.finish_reason,
+      PROVIDER_LABEL
+    );
     const content = completion.choices[0]?.message?.content?.trim();
 
     if (!content) {
@@ -424,12 +443,14 @@ function finalizePendingToolCalls(
     .map(([, call]) => call)
     .flatMap((call) => {
       if (!(call.id && call.name)) {
-        return [];
+        throw new Error(
+          "The provider returned a tool call without an ID or name."
+        );
       }
 
       return [
         {
-          arguments: parseJsonRecord(call.arguments),
+          arguments: parseToolArguments(call.arguments),
           id: call.id,
           name: call.name,
         },

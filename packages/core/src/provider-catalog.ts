@@ -93,6 +93,8 @@ export const BUILTIN_PROVIDER_DEFINITIONS = [
   {
     apiKey: { placeholder: "sk-ant-…", requirement: "required" },
     apiKeyEnvVar: "ANTHROPIC_API_KEY",
+    discoveryBaseUrl: "https://api.anthropic.com",
+    discoveryModels: true,
     displayName: "Anthropic",
     fallbackModelId: "claude-sonnet-4-6",
     id: "anthropic",
@@ -142,6 +144,8 @@ export const BUILTIN_PROVIDER_DEFINITIONS = [
       "gemini-2.5-flash-lite": "gemini-3-flash-preview",
       "gemini-2.5-pro": "gemini-3-flash-preview",
     },
+    discoveryBaseUrl: "https://generativelanguage.googleapis.com",
+    discoveryModels: true,
     displayName: "Gemini",
     fallbackModelId: "gemini-3-flash-preview",
     id: "gemini",
@@ -151,6 +155,8 @@ export const BUILTIN_PROVIDER_DEFINITIONS = [
   {
     apiKey: { placeholder: "sk-…", requirement: "required" },
     apiKeyEnvVar: null,
+    discoveryBaseUrl: "https://api.deepseek.com",
+    discoveryModels: true,
     displayName: "DeepSeek",
     fallbackModelId: "deepseek-v4-flash",
     id: "deepseek",

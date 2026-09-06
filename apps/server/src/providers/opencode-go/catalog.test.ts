@@ -59,25 +59,52 @@ describe("fetchOpenCodeGoGatewayModels", () => {
     expect(
       entries.find((entry) => entry.id === "opencode-go/kimi-k2.7-code")
         ?.capabilities?.["chat.tool-use"]
-    ).toMatchObject({ status: "supported", verified: true });
+    ).toBeUndefined();
     expect(
       entries.find((entry) => entry.id === "opencode-go/glm-5.3")
         ?.supportsThinking
-    ).toBe(true);
+    ).toBeUndefined();
     expect(
       entries.find(
         (entry) => entry.id === "opencode-go/deepseek-v4-flash-vision-exp"
       )?.supportsVision
-    ).toBe(true);
+    ).toBeUndefined();
     expect(
       entries.find(
         (entry) => entry.id === "opencode-go/deepseek-v4-flash-vision-exp"
       )?.capabilities?.["chat.input.image"]
-    ).toMatchObject({ status: "supported" });
+    ).toBeUndefined();
     expect(
       entries.find((entry) => entry.id === "opencode-go/kimi-k2.7-code")
         ?.capabilities?.["chat.input.image"]
     ).toBeUndefined();
+  });
+
+  test("retains metadata supplied in model rows", async () => {
+    globalThis.fetch = (async () =>
+      new Response(
+        JSON.stringify({
+          data: [
+            {
+              capabilities: { tools: false },
+              context_length: 65_536,
+              id: "custom",
+              max_output_tokens: 4096,
+              reasoningEffortValues: [],
+              supportsThinking: false,
+            },
+          ],
+        })
+      )) as typeof fetch;
+    const [entry] = await fetchOpenCodeGoGatewayModels();
+    expect(entry).toMatchObject({
+      capabilities: { "chat.tool-use": { status: "unsupported" } },
+      contextWindow: 65_536,
+      id: "opencode-go/custom",
+      maxOutputTokens: 4096,
+      reasoningEffortValues: [],
+      supportsThinking: false,
+    });
   });
 
   test("reuses the cached catalog within the TTL", async () => {
@@ -124,6 +151,120 @@ describe("getModelsForOpenCodeGoInstance", () => {
       "opencode-go/kimi-k3",
     ]);
     expect(models[0]?.providerId).toBe("go-1");
+  });
+
+  test("refreshes saved discovery metadata from the exact live model", async () => {
+    globalThis.fetch = (async () =>
+      Response.json({
+        data: [
+          {
+            context_length: 131_072,
+            id: "custom",
+            reasoningEffortValues: ["low", "high"],
+            supportsThinking: true,
+          },
+        ],
+      })) as typeof fetch;
+    const instance = {
+      apiKey: "sk-test",
+      createdAt: "2026-06-07T10:00:00.000Z",
+      id: "go-1",
+      label: "OpenCode Go",
+      type: "opencode_go" as const,
+    };
+    const [configured] = await getModelsForOpenCodeGoInstance({
+      ...instance,
+      customModels: [
+        {
+          contextWindow: 16_384,
+          id: "custom",
+          reasoningEffortValues: [],
+          supportsThinking: false,
+        },
+      ],
+    });
+    const [other] = await getModelsForOpenCodeGoInstance({
+      ...instance,
+      id: "go-2",
+    });
+    expect(configured).toMatchObject({
+      contextWindow: 131_072,
+      id: "opencode-go/custom",
+      reasoningEffortValues: ["low", "high"],
+      supportsThinking: true,
+    });
+    expect(other).toMatchObject({
+      contextWindow: 131_072,
+      reasoningEffortValues: ["low", "high"],
+      supportsThinking: true,
+    });
+  });
+
+  test("honors live negative declarations, omitted limits, and explicit admin capability overrides", async () => {
+    globalThis.fetch = (async () =>
+      Response.json({
+        data: [
+          {
+            capabilities: { tools: false, vision: false },
+            context_length: 32_768,
+            id: "custom",
+            reasoningEffortValues: [],
+            supportsThinking: false,
+          },
+        ],
+      })) as typeof fetch;
+    const [model] = await getModelsForOpenCodeGoInstance({
+      apiKey: "sk-test",
+      createdAt: "2026-06-07T10:00:00.000Z",
+      customModels: [
+        {
+          capabilities: {
+            "chat.input.image": {
+              source: "provider-discovery",
+              status: "supported",
+              verified: true,
+            },
+            "chat.tool-use": {
+              source: "admin-override",
+              status: "supported",
+              verified: true,
+            },
+          },
+          contextWindow: 131_072,
+          default: true,
+          defaultReasoningEffort: "high",
+          id: "custom",
+          maxOutputTokens: 8192,
+          name: "My selected model",
+          reasoningEffortValues: ["low", "high"],
+          supportsThinking: true,
+          supportsVision: true,
+        },
+      ],
+      id: "go-1",
+      label: "OpenCode Go",
+      type: "opencode_go",
+    });
+    expect(model).toMatchObject({
+      capabilities: {
+        "chat.input.image": {
+          source: "provider-discovery",
+          status: "unsupported",
+        },
+        "chat.tool-use": {
+          source: "admin-override",
+          status: "supported",
+        },
+      },
+      contextWindow: 32_768,
+      default: true,
+      maxOutputTokens: 8192,
+      name: "My selected model",
+      reasoningEffortValues: [],
+      supportsThinking: false,
+      supportsVision: false,
+    });
+    expect(model?.defaultReasoningEffort).toBeUndefined();
   });
 
   test("keeps the live catalog when a default shortlist is saved", async () => {

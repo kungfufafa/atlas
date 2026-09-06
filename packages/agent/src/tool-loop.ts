@@ -2,12 +2,14 @@ import {
   distillToolResult,
   executeProtectedTool,
   metrics,
+  serializeToolOutput,
   standardizeToolError,
   type ToolCall,
   type ToolContext,
   type ToolDefinition,
   withSpan,
 } from "@atlas/core";
+import { toolResultError } from "./tool-progress";
 
 export function findTool(
   tools: ToolDefinition[],
@@ -74,9 +76,15 @@ export async function executeToolCall(
         };
       }
 
-      metrics.toolCallsTotal.inc({ status: "success", tool: call.name });
-
       const rawData = execution.data;
+      const reportedError = toolResultError(rawData);
+      metrics.toolCallsTotal.inc({
+        status: reportedError ? "error" : "success",
+        tool: call.name,
+      });
+      if (reportedError) {
+        metrics.toolFailuresTotal.inc({ tool: call.name });
+      }
       // The single place every tool result passes through, so the optimiser is
       // wired once rather than per tool. It returns `result` untouched unless it
       // is enabled, recognises the tool, and produces something strictly shorter.
@@ -117,8 +125,5 @@ export async function executeToolCall(
 }
 
 export function serializeToolResult(result: unknown): string {
-  if (typeof result === "string") {
-    return result;
-  }
-  return JSON.stringify(result);
+  return serializeToolOutput(result).text;
 }

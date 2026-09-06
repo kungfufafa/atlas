@@ -118,3 +118,18 @@ describe("resolveRemoteModelBrowseReadiness", () => {
     ).toBe(true);
   });
 });
+
+test("preserves limits, provider defaults, and explicit empty efforts through browse", () => {
+  const entry = {
+    contextWindow: 98_000,
+    defaultReasoningEffort: "high",
+    id: "model",
+    maxOutputTokens: 12_000,
+    name: "Model",
+    reasoningEffortValues: [],
+    supportsThinking: false,
+  };
+  expect(
+    remoteModelRowToCustomModelEntry(remoteModelEntryToRow(entry))
+  ).toEqual(entry);
+});

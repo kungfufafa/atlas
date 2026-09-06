@@ -45,14 +45,21 @@ export function ChatThinkingEffortControl({
   }
 
   const options = buildThinkingEffortOptions(effortValues);
+  if (options.length === 0) {
+    return null;
+  }
   const validValues = options.map((opt) => opt.value);
   const resolvedEffort = resolveEffortForOptions(
     effort,
     validValues,
     defaultEffort
   );
-  const fullLabel = thinkingEffortLabel(resolvedEffort);
-  const shortLabel = thinkingEffortShortLabel(resolvedEffort);
+  const fullLabel = resolvedEffort
+    ? thinkingEffortLabel(resolvedEffort)
+    : "Default";
+  const shortLabel = resolvedEffort
+    ? thinkingEffortShortLabel(resolvedEffort)
+    : "Default";
 
   return (
     <Tooltip>
@@ -66,7 +73,7 @@ export function ChatThinkingEffortControl({
                   onEffortChange(value as ThinkingEffort);
                 }
               }}
-              value={resolvedEffort}
+              value={resolvedEffort ?? ""}
             >
               <PromptInputSelectTrigger
                 aria-label="Thinking effort"

@@ -1,7 +1,10 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { createInMemoryDatabaseAdapter } from "./adapters/in-memory";
 import { createSqliteDatabase, type SqliteDatabase } from "./adapters/sqlite";
-import type { DatabaseAdapter } from "./types";
+import type {
+  DatabaseAdapter,
+  StoredSessionHistoryArchiveRecord,
+} from "./types";
 
 const ORG_A = "conversation-org-a";
 const ORG_B = "conversation-org-b";
@@ -180,6 +183,191 @@ function conversationAdapterContract(
         new Set([OWN_SESSION, SUPER_SESSION])
       );
     });
+
+    test("retrieves compacted evidence without adding archives to active model history", async () => {
+      const active = await adapter.listMessagesForSession(OWN_SESSION);
+      const archive: StoredSessionHistoryArchiveRecord = {
+        createdAt: "2026-09-06T00:00:00.000Z",
+        id: "archive-owned",
+        messages: [
+          { content: "Inspect deployment", role: "user" },
+          {
+            content: "deploy-evidence release 42 succeeded",
+            name: "deploy",
+            role: "tool",
+            toolCallId: "deploy-42",
+          },
+        ],
+        sessionId: OWN_SESSION,
+      };
+      await adapter.replaceMessagesForSession(OWN_SESSION, active, [archive]);
+      await adapter.replaceMessagesForSession(OWN_SESSION, active, [archive]);
+      expect(await adapter.listMessagesForSession(OWN_SESSION)).toEqual(active);
+      const matches = await adapter.searchConversationMessages(
+        ORG_A,
+        "deploy-evidence",
+        { userId: USER_A }
+      );
+      expect(matches).toHaveLength(1);
+      expect(matches[0]?.archiveId).toBe(archive.id);
+      const retrieved = await adapter.getConversationHistory(
+        ORG_A,
+        OWN_SESSION,
+        { archiveId: archive.id, limit: 1, offset: 1, userId: USER_A }
+      );
+      expect(retrieved?.messages[0]?.text).toBe(
+        "deploy-evidence release 42 succeeded"
+      );
+      expect(retrieved?.totalMessages).toBe(2);
+      expect(retrieved?.archiveId).toBe(archive.id);
+      expect(
+        (await adapter.getConversationHistory(ORG_A, OWN_SESSION))
+          ?.totalMessages
+      ).toBe(1);
+    });
+
+    test("archive retrieval and search enforce tenant, owner, and Super Agent boundaries", async () => {
+      for (const sessionId of [
+        OWN_SESSION,
+        OTHER_USER_SESSION,
+        SUPER_SESSION,
+        OTHER_ORG_SESSION,
+      ]) {
+        await adapter.replaceMessagesForSession(
+          sessionId,
+          await adapter.listMessagesForSession(sessionId),
+          [
+            {
+              createdAt: "2026-09-06T00:00:00.000Z",
+              id: `archive-scope-${sessionId}`,
+              messages: [
+                { content: `archived-scope-marker ${sessionId}`, role: "user" },
+              ],
+              sessionId,
+            },
+          ]
+        );
+      }
+      const matches = await adapter.searchConversationMessages(
+        ORG_A,
+        "archived-scope-marker",
+        { excludeSuperAgent: true, userId: USER_A }
+      );
+      expect(matches.map((match) => match.sessionId)).toEqual([OWN_SESSION]);
+      for (const sessionId of [
+        OTHER_USER_SESSION,
+        SUPER_SESSION,
+        OTHER_ORG_SESSION,
+      ]) {
+        expect(
+          await adapter.getConversationHistory(ORG_A, sessionId, {
+            archiveId: `archive-scope-${sessionId}`,
+            excludeSuperAgent: true,
+            userId: USER_A,
+          })
+        ).toBeNull();
+      }
+      expect(
+        await adapter.getConversationHistory(ORG_A, OWN_SESSION, {
+          archiveId: `archive-scope-${OTHER_USER_SESSION}`,
+          userId: USER_A,
+        })
+      ).toBeNull();
+    });
+
+    test("archive replacement is atomic and rejects changes to an immutable snapshot", async () => {
+      const active = await adapter.listMessagesForSession(OWN_SESSION);
+      const archive: StoredSessionHistoryArchiveRecord = {
+        createdAt: "2026-09-06T00:00:00.000Z",
+        id: "archive-atomic",
+        messages: [{ content: "atomic-archive-original", role: "user" }],
+        sessionId: OWN_SESSION,
+      };
+      await expect(
+        adapter.replaceMessagesForSession(
+          OWN_SESSION,
+          [],
+          [
+            archive,
+            {
+              ...archive,
+              id: "archive-wrong-session",
+              sessionId: OTHER_ORG_SESSION,
+            },
+          ]
+        )
+      ).rejects.toThrow();
+      expect(await adapter.listMessagesForSession(OWN_SESSION)).toEqual(active);
+      expect(
+        await adapter.getConversationHistory(ORG_A, OWN_SESSION, {
+          archiveId: archive.id,
+        })
+      ).toBeNull();
+      await adapter.replaceMessagesForSession(OWN_SESSION, active, [archive]);
+      await expect(
+        adapter.replaceMessagesForSession(
+          OWN_SESSION,
+          [],
+          [{ ...archive, messages: [] }]
+        )
+      ).rejects.toThrow();
+      expect(await adapter.listMessagesForSession(OWN_SESSION)).toEqual(active);
+      expect(
+        (
+          await adapter.getConversationHistory(ORG_A, OWN_SESSION, {
+            archiveId: archive.id,
+          })
+        )?.totalMessages
+      ).toBe(1);
+    });
+
+    test.each(["clear", "delete"])(
+      "%s removes archived history as well as active messages",
+      async (operation) => {
+        const sessionId = `archive-cleanup-${operation}`;
+        await adapter.upsertSession({
+          agentQuestionnaire: null,
+          agentTodos: [],
+          channel: "web",
+          createdAt: "2026-09-06T00:00:00.000Z",
+          id: sessionId,
+          modelOverride: null,
+          orgId: ORG_A,
+          profileId: PROFILE_A,
+          title: null,
+          userId: USER_A,
+        });
+        const archiveId = `archive-${sessionId}`;
+        await adapter.replaceMessagesForSession(
+          sessionId,
+          [],
+          [
+            {
+              createdAt: "2026-09-06T00:00:00.000Z",
+              id: archiveId,
+              messages: [
+                { content: `cleanup-marker-${operation}`, role: "user" },
+              ],
+              sessionId,
+            },
+          ]
+        );
+        if (operation === "clear") {
+          await adapter.deleteMessagesForSession(sessionId);
+        } else {
+          await adapter.deleteSession(sessionId);
+        }
+        expect(
+          await adapter.searchConversationMessages(
+            ORG_A,
+            `cleanup-marker-${operation}`
+          )
+        ).toEqual([]);
+        expect(
+          await adapter.getConversationHistory(ORG_A, sessionId, { archiveId })
+        ).toBeNull();
+      }
+    );
   });
 }
 

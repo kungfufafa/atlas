@@ -3,7 +3,6 @@ import {
   type CustomModelEntry,
   createTimeoutAbortSignal,
   findCustomModel,
-  inferCompatibleReasoningEffortValues,
   isDiscoveryModelProvider,
   LLM_FETCH_TIMEOUT_MS,
   normalizeBaseUrl,
@@ -14,8 +13,8 @@ import {
 } from "@atlas/core";
 import OpenAI from "openai";
 import type { ProviderModelOption } from "./models";
-import { AVAILABLE_MODELS } from "./models";
-import { openRouterSlugSupportsThinking } from "./openrouter/thinking";
+import { AVAILABLE_MODELS, resolveModel } from "./models";
+import { documentedNativeModelMetadata } from "./native-model-metadata";
 import {
   fetchSafeProviderDiscoveryEndpoint,
   type ProviderDiscoveryDnsResolver,
@@ -25,8 +24,25 @@ import {
 } from "./provider-discovery-safety";
 import { DEFAULT_USER_AGENT } from "./shared";
 
-const DEFAULT_CONTEXT_WINDOW = 128_000;
-const DEFAULT_MAX_OUTPUT = 8192;
+/** A missing field is unknown, not a reason to substitute another model's limits. */
+function modelFromEntry(
+  entry: CustomModelEntry,
+  provider: ProviderName,
+  name?: string
+): ProviderModelOption {
+  const reasoning = resolveCompatibleModelCapabilities(entry.id, entry);
+  const model: ProviderModelOption = {
+    ...entry,
+    ...reasoning,
+    name: entry.name?.trim() || name || entry.id,
+    provider,
+  };
+  if (entry.supportsThinking === false) {
+    delete model.defaultReasoningEffort;
+    model.reasoningEffortValues = [];
+  }
+  return model;
+}
 
 function withLegacyModelCapabilityClaims(
   model: ProviderModelOption
@@ -34,7 +50,6 @@ function withLegacyModelCapabilityClaims(
   if (model.supportsVision === undefined) {
     return model;
   }
-
   const capabilities = { ...model.capabilities };
   const visionClaim = {
     source: "legacy-migration" as const,
@@ -45,103 +60,49 @@ function withLegacyModelCapabilityClaims(
   };
   capabilities[PROVIDER_CAPABILITY_IDS.chatInputImage] ??= visionClaim;
   capabilities[PROVIDER_CAPABILITY_IDS.imageUnderstanding] ??= visionClaim;
-
   return { ...model, capabilities };
 }
 
-function resolveOpenRouterCatalogThinking(entry: CustomModelEntry): boolean {
-  if (entry.supportsThinking !== undefined) {
-    return entry.supportsThinking;
+function mergeDocumentedMetadata(
+  entry: CustomModelEntry,
+  documented: Omit<CustomModelEntry, "id"> | undefined
+): CustomModelEntry {
+  const capabilities = { ...documented?.capabilities, ...entry.capabilities };
+  // An explicit saved vision flag must replace documentary vision claims too.
+  // The normal legacy conversion below supplies a claim for that saved field.
+  if (entry.supportsVision !== undefined) {
+    for (const id of [
+      PROVIDER_CAPABILITY_IDS.chatInputImage,
+      PROVIDER_CAPABILITY_IDS.imageUnderstanding,
+    ]) {
+      if (!entry.capabilities?.[id]) {
+        delete capabilities[id];
+      }
+    }
   }
-
-  return openRouterSlugSupportsThinking(entry.id);
+  return {
+    ...documented,
+    ...entry,
+    ...(Object.keys(capabilities).length ? { capabilities } : {}),
+  };
 }
 
 export function openRouterCustomModelsToCatalog(
   entries: CustomModelEntry[]
 ): ProviderModelOption[] {
-  return entries.map((entry) => ({
-    ...(entry.capabilities ? { capabilities: entry.capabilities } : {}),
-    contextWindow: DEFAULT_CONTEXT_WINDOW,
-    id: entry.id,
-    maxOutputTokens: DEFAULT_MAX_OUTPUT,
-    name: entry.name?.trim() || entry.id,
-    provider: "openrouter" as const,
-    supportsThinking: resolveOpenRouterCatalogThinking(entry),
-    ...(entry.default ? { default: true } : {}),
-    ...(entry.reasoningEffortValues
-      ? { reasoningEffortValues: entry.reasoningEffortValues }
-      : {}),
-    ...(entry.inputPerMillionUsd === undefined
-      ? {}
-      : { inputPerMillionUsd: entry.inputPerMillionUsd }),
-    ...(entry.outputPerMillionUsd === undefined
-      ? {}
-      : { outputPerMillionUsd: entry.outputPerMillionUsd }),
-  }));
-}
-
-function resolveCerebrasCatalogThinking(entry: CustomModelEntry): boolean {
-  if (entry.supportsThinking !== undefined) {
-    return entry.supportsThinking;
-  }
-
-  return false;
+  return entries.map((entry) => modelFromEntry(entry, "openrouter"));
 }
 
 export function cerebrasCustomModelsToCatalog(
   entries: CustomModelEntry[]
 ): ProviderModelOption[] {
-  return entries.map((entry) => ({
-    ...(entry.capabilities ? { capabilities: entry.capabilities } : {}),
-    contextWindow: DEFAULT_CONTEXT_WINDOW,
-    id: entry.id,
-    maxOutputTokens: DEFAULT_MAX_OUTPUT,
-    name: entry.name?.trim() || entry.id,
-    provider: "cerebras" as const,
-    supportsThinking: resolveCerebrasCatalogThinking(entry),
-    ...(entry.supportsVision === undefined
-      ? {}
-      : { supportsVision: entry.supportsVision }),
-    ...(entry.default ? { default: true } : {}),
-    ...(entry.reasoningEffortValues
-      ? { reasoningEffortValues: entry.reasoningEffortValues }
-      : {}),
-    ...(entry.inputPerMillionUsd === undefined
-      ? {}
-      : { inputPerMillionUsd: entry.inputPerMillionUsd }),
-    ...(entry.outputPerMillionUsd === undefined
-      ? {}
-      : { outputPerMillionUsd: entry.outputPerMillionUsd }),
-  }));
-}
-
-function resolveFireworksCatalogThinking(entry: CustomModelEntry): boolean {
-  if (entry.supportsThinking !== undefined) {
-    return entry.supportsThinking;
-  }
-
-  return false;
+  return entries.map((entry) => modelFromEntry(entry, "cerebras"));
 }
 
 export function fireworksCustomModelsToCatalog(
   entries: CustomModelEntry[]
 ): ProviderModelOption[] {
-  const staticModels = AVAILABLE_MODELS.filter(
-    (model) => model.provider === "fireworks"
-  );
-
-  return catalogCustomModelsToCatalog(entries, staticModels, "fireworks").map(
-    (model) => ({
-      ...model,
-      supportsThinking:
-        model.supportsThinking === undefined
-          ? resolveFireworksCatalogThinking(
-              entries.find((entry) => entry.id === model.id) ?? { id: model.id }
-            )
-          : model.supportsThinking,
-    })
-  );
+  return entries.map((entry) => modelFromEntry(entry, "fireworks"));
 }
 
 export function catalogCustomModelsToCatalog(
@@ -149,51 +110,21 @@ export function catalogCustomModelsToCatalog(
   staticModels: ProviderModelOption[],
   provider: ProviderName
 ): ProviderModelOption[] {
-  const staticById = new Map(staticModels.map((model) => [model.id, model]));
-
+  const staticById = new Map(
+    staticModels
+      .filter((model) => model.provider === provider)
+      .map((model) => [model.id, model])
+  );
   return entries.map((entry) => {
     const existing = staticById.get(entry.id);
-    const model: ProviderModelOption = {
-      ...(existing ?? {
-        contextWindow: DEFAULT_CONTEXT_WINDOW,
-        id: entry.id,
-        maxOutputTokens: DEFAULT_MAX_OUTPUT,
-        provider,
-      }),
-      id: entry.id,
-      name: entry.name?.trim() || existing?.name || entry.id,
+    // Only documented, exact OpenAI API metadata is used when the list API
+    // supplies identifiers alone. Other catalogs are display choices, not evidence.
+    const documented = provider === "openai" ? existing : undefined;
+    return modelFromEntry(
+      mergeDocumentedMetadata(entry, documented),
       provider,
-    };
-
-    if (entry.capabilities) {
-      model.capabilities = entry.capabilities;
-    }
-
-    if (entry.default) {
-      model.default = true;
-    }
-    if (entry.defaultReasoningEffort !== undefined) {
-      model.defaultReasoningEffort = entry.defaultReasoningEffort;
-    }
-    if (entry.supportsVision !== undefined) {
-      model.supportsVision = entry.supportsVision;
-    }
-    if (entry.supportsThinking !== undefined) {
-      model.supportsThinking = entry.supportsThinking;
-    } else if (provider === "deepseek") {
-      model.supportsThinking = false;
-    }
-    if (entry.reasoningEffortValues !== undefined) {
-      model.reasoningEffortValues = entry.reasoningEffortValues;
-    }
-    if (entry.inputPerMillionUsd !== undefined) {
-      model.inputPerMillionUsd = entry.inputPerMillionUsd;
-    }
-    if (entry.outputPerMillionUsd !== undefined) {
-      model.outputPerMillionUsd = entry.outputPerMillionUsd;
-    }
-
-    return model;
+      existing?.name
+    );
   });
 }
 
@@ -208,108 +139,39 @@ export function mergeOpenRouterCatalog(
   staticModels: ProviderModelOption[],
   customEntries: CustomModelEntry[]
 ): ProviderModelOption[] {
-  const byId = new Map(staticModels.map((model) => [model.id, { ...model }]));
-
+  const byId = new Map(
+    staticModels
+      .filter((model) => model.provider === "openrouter")
+      .map((model) => [model.id, model])
+  );
   for (const entry of customEntries) {
-    const existing = byId.get(entry.id);
-    byId.set(entry.id, {
-      ...(entry.capabilities ? { capabilities: entry.capabilities } : {}),
-      ...(existing ?? {
-        contextWindow: DEFAULT_CONTEXT_WINDOW,
-        id: entry.id,
-        maxOutputTokens: DEFAULT_MAX_OUTPUT,
-        provider: "openrouter" as const,
-      }),
-      id: entry.id,
-      name: entry.name?.trim() || existing?.name || entry.id,
-      provider: "openrouter",
-      supportsThinking: resolveOpenRouterCatalogThinking(entry),
-      ...(entry.default
-        ? { default: true }
-        : existing?.default
-          ? { default: true }
-          : {}),
-      ...(entry.reasoningEffortValues
-        ? { reasoningEffortValues: entry.reasoningEffortValues }
-        : {}),
-      ...(entry.inputPerMillionUsd === undefined
-        ? {}
-        : { inputPerMillionUsd: entry.inputPerMillionUsd }),
-      ...(entry.outputPerMillionUsd === undefined
-        ? {}
-        : { outputPerMillionUsd: entry.outputPerMillionUsd }),
-    });
+    byId.set(
+      entry.id,
+      modelFromEntry(entry, "openrouter", byId.get(entry.id)?.name)
+    );
   }
-
   return [...byId.values()].sort((left, right) =>
     left.name.localeCompare(right.name)
   );
 }
 
+/** @deprecated Effort options must be supplied by the provider or configuration. */
 export function inferReasoningEffortValues(
-  modelId: string,
-  provider?: ProviderName,
-  providerLabel?: string,
-  baseUrl?: string
+  _modelId: string,
+  _provider?: ProviderName,
+  _providerLabel?: string,
+  _baseUrl?: string
 ): string[] {
-  return inferCompatibleReasoningEffortValues(modelId, {
-    baseUrl,
-    provider,
-    providerLabel,
-  });
+  return [];
 }
 
 export function customModelsToCatalog(
   entries: CustomModelEntry[],
   provider: ProviderName = "openai_compatible",
-  providerLabel?: string,
-  baseUrl?: string
+  _providerLabel?: string,
+  _baseUrl?: string
 ): ProviderModelOption[] {
-  return entries.map((entry) => {
-    const inferred = resolveCompatibleModelCapabilities(
-      entry.id,
-      {
-        reasoningEffortValues: entry.reasoningEffortValues,
-        supportsThinking: entry.supportsThinking,
-      },
-      { baseUrl, provider, providerLabel }
-    );
-    const model: ProviderModelOption = {
-      contextWindow: DEFAULT_CONTEXT_WINDOW,
-      id: entry.id,
-      maxOutputTokens: DEFAULT_MAX_OUTPUT,
-      name: entry.name?.trim() || entry.id,
-      provider,
-    };
-
-    if (entry.capabilities) {
-      model.capabilities = entry.capabilities;
-    }
-
-    if (entry.default) {
-      model.default = true;
-    }
-    if (entry.defaultReasoningEffort !== undefined) {
-      model.defaultReasoningEffort = entry.defaultReasoningEffort;
-    }
-    if (inferred.supportsThinking !== undefined) {
-      model.supportsThinking = inferred.supportsThinking;
-    }
-    if (inferred.reasoningEffortValues !== undefined) {
-      model.reasoningEffortValues = inferred.reasoningEffortValues;
-    }
-    if (entry.supportsVision !== undefined) {
-      model.supportsVision = entry.supportsVision;
-    }
-    if (entry.inputPerMillionUsd !== undefined) {
-      model.inputPerMillionUsd = entry.inputPerMillionUsd;
-    }
-    if (entry.outputPerMillionUsd !== undefined) {
-      model.outputPerMillionUsd = entry.outputPerMillionUsd;
-    }
-
-    return model;
-  });
+  return entries.map((entry) => modelFromEntry(entry, provider));
 }
 
 export function ensureCurrentModelInCatalog(
@@ -318,118 +180,80 @@ export function ensureCurrentModelInCatalog(
   provider: ProviderName = "openai_compatible"
 ): ProviderModelOption[] {
   const trimmed = currentModel?.trim();
-
-  if (!trimmed || catalog.some((model) => model.id === trimmed)) {
-    return catalog;
-  }
-
-  return [
-    ...catalog,
-    {
-      contextWindow: DEFAULT_CONTEXT_WINDOW,
-      id: trimmed,
-      maxOutputTokens: DEFAULT_MAX_OUTPUT,
-      name: trimmed,
-      provider,
-      ...(provider === "openrouter"
-        ? { supportsThinking: openRouterSlugSupportsThinking(trimmed) }
-        : {}),
-    },
-  ];
+  return !trimmed || catalog.some((model) => model.id === trimmed)
+    ? catalog
+    : [...catalog, { id: trimmed, name: trimmed, provider }];
 }
 
 export function getModelsForProviderInstance(
   instance: ProviderInstance,
   currentModel?: string | null
 ): ProviderModelOption[] {
-  const annotate = (models: ProviderModelOption[]): ProviderModelOption[] =>
-    models.map((model) => {
-      const normalized = withLegacyModelCapabilityClaims(model);
-      return {
-        ...normalized,
-        providerId: instance.id,
-        providerLabel: instance.label,
-      };
-    });
-
-  if (isDiscoveryModelProvider(instance.type)) {
-    const entries = instance.customModels ?? [];
-    const models = customModelsToCatalog(
-      entries,
-      instance.type,
-      instance.label,
-      instance.baseUrl
-    );
-
-    return annotate(
-      ensureCurrentModelInCatalog(models, currentModel, instance.type)
-    );
-  }
-
-  if (instance.type === "openrouter") {
-    const entries = instance.customModels ?? [];
-    const catalog = entries.length
-      ? openRouterCustomModelsToCatalog(entries)
-      : [];
-    return annotate(
-      ensureCurrentModelInCatalog(catalog, currentModel, "openrouter")
-    );
-  }
-
-  if (instance.type === "cerebras") {
-    const entries = instance.customModels ?? [];
-    const staticModels = AVAILABLE_MODELS.filter(
-      (model) => model.provider === "cerebras"
-    );
-    const catalog = entries.length
-      ? cerebrasCustomModelsToCatalog(entries)
-      : staticModels;
-    return annotate(
-      ensureCurrentModelInCatalog(catalog, currentModel, "cerebras")
-    );
-  }
-
-  if (instance.type === "fireworks") {
-    const entries = instance.customModels ?? [];
-    const staticModels = AVAILABLE_MODELS.filter(
-      (model) => model.provider === "fireworks"
-    );
-    const catalog = entries.length
-      ? fireworksCustomModelsToCatalog(entries)
-      : staticModels;
-    return annotate(
-      ensureCurrentModelInCatalog(catalog, currentModel, "fireworks")
-    );
-  }
-
-  if (instance.type === "ollama") {
-    const entries = instance.customModels ?? [];
-    return annotate(
-      ensureCurrentModelInCatalog(
-        customModelsToCatalog(entries, "ollama"),
-        currentModel,
-        "ollama"
-      )
-    );
-  }
-
   const entries = instance.customModels ?? [];
-  if (entries.length) {
-    const staticModels = AVAILABLE_MODELS.filter(
-      (model) => model.provider === instance.type
-    );
-    return annotate(
-      ensureCurrentModelInCatalog(
-        catalogCustomModelsToCatalog(entries, staticModels, instance.type),
-        currentModel,
-        instance.type
-      )
-    );
-  }
-
-  return annotate(
-    AVAILABLE_MODELS.filter((model) => model.provider === instance.type)
+  const staticModels = AVAILABLE_MODELS.filter(
+    (model) => model.provider === instance.type
   );
+  const canUseDocumentedMetadata =
+    instance.type === "openai" && isOfficialOpenAIEndpoint(instance.baseUrl);
+  let models: ProviderModelOption[];
+  if (entries.length) {
+    models = catalogCustomModelsToCatalog(
+      entries,
+      canUseDocumentedMetadata ? staticModels : [],
+      instance.type
+    );
+  } else if (
+    isDiscoveryModelProvider(instance.type) ||
+    instance.type === "openrouter" ||
+    instance.type === "ollama" ||
+    instance.type === "chatgpt" ||
+    instance.type === "claude"
+  ) {
+    models = [];
+  } else {
+    models = canUseDocumentedMetadata
+      ? staticModels
+      : staticModels.map(({ id, name, provider, default: isDefault }) => ({
+          id,
+          name,
+          provider,
+          ...(isDefault ? { default: true } : {}),
+        }));
+  }
+  return ensureCurrentModelInCatalog(models, currentModel, instance.type).map(
+    (model) => ({
+      ...withLegacyModelCapabilityClaims({
+        ...model,
+        ...mergeDocumentedMetadata(
+          model,
+          documentedNativeModelMetadata(instance, model.id)
+        ),
+      }),
+      providerId: instance.id,
+      providerLabel: instance.label,
+    })
+  );
+}
+
+export function isOfficialOpenAIEndpoint(baseUrl?: string | null): boolean {
+  if (!baseUrl?.trim()) {
+    return true;
+  }
+  try {
+    const url = new URL(baseUrl.trim());
+    return (
+      url.protocol === "https:" &&
+      url.hostname === "api.openai.com" &&
+      !url.port &&
+      url.pathname.replace(/\/$/, "") === "/v1" &&
+      !url.search &&
+      !url.hash &&
+      !url.username &&
+      !url.password
+    );
+  } catch {
+    return false;
+  }
 }
 
 export function getModelsForConfiguredProvider(
@@ -452,8 +276,8 @@ export function resolveOpenRouterDefaultModel(
 ): string {
   const trimmed = model?.trim();
 
-  if (trimmed && findCustomModel(customModels, trimmed)) {
-    return trimmed;
+  if (trimmed) {
+    return resolveModel("openrouter", trimmed, customModels);
   }
 
   const catalog = openRouterCustomModelsToCatalog(customModels ?? []);
@@ -470,8 +294,8 @@ export function resolveCerebrasDefaultModel(
 ): string {
   const trimmed = model?.trim();
 
-  if (trimmed && findCustomModel(customModels, trimmed)) {
-    return trimmed;
+  if (trimmed) {
+    return resolveModel("cerebras", trimmed, customModels);
   }
 
   const catalog = cerebrasCustomModelsToCatalog(customModels ?? []);
@@ -488,8 +312,8 @@ export function resolveFireworksDefaultModel(
 ): string {
   const trimmed = model?.trim();
 
-  if (trimmed && findCustomModel(customModels, trimmed)) {
-    return trimmed;
+  if (trimmed) {
+    return resolveModel("fireworks", trimmed, customModels);
   }
 
   const catalog = fireworksCustomModelsToCatalog(customModels ?? []);
@@ -506,8 +330,8 @@ export function resolveOllamaDefaultModel(
 ): string {
   const trimmed = model?.trim();
 
-  if (trimmed && findCustomModel(customModels, trimmed)) {
-    return trimmed;
+  if (trimmed) {
+    return resolveModel("ollama", trimmed, customModels);
   }
 
   const catalog = customModelsToCatalog(customModels ?? [], "ollama");
@@ -678,33 +502,13 @@ function isAbortOrTimeoutError(error: unknown): boolean {
 }
 
 function toDiscoveredCustomModel(
-  parsed: {
-    capabilities?: CustomModelEntry["capabilities"];
-    id: string;
-    name?: string;
-    reasoningEffortValues?: string[];
-    supportsThinking?: boolean;
-    supportsVision?: boolean;
-  },
-  context: { baseUrl: string }
+  parsed: CustomModelEntry,
+  _context: { baseUrl: string }
 ): CustomModelEntry {
-  const capabilities = resolveCompatibleModelCapabilities(
-    parsed.id,
-    {
-      reasoningEffortValues: parsed.reasoningEffortValues,
-      supportsThinking: parsed.supportsThinking,
-    },
-    context
-  );
-
   return {
-    ...(parsed.capabilities ? { capabilities: parsed.capabilities } : {}),
-    id: parsed.id,
+    ...parsed,
+    ...resolveCompatibleModelCapabilities(parsed.id, parsed),
     name: parsed.name?.trim() || parsed.id,
-    ...capabilities,
-    ...(parsed.supportsVision === undefined
-      ? {}
-      : { supportsVision: parsed.supportsVision }),
   };
 }
 
@@ -721,8 +525,8 @@ export function resolveCompatibleDefaultModel(
 ): string {
   const trimmed = model?.trim();
 
-  if (trimmed && findCustomModel(customModels, trimmed)) {
-    return trimmed;
+  if (trimmed) {
+    return resolveModel("openai_compatible", trimmed, customModels);
   }
 
   const catalog = customModelsToCatalog(customModels ?? []);

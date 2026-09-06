@@ -79,7 +79,11 @@ export function getModelPricing(
   }
 
   if (
-    (provider !== null && isDiscoveryModelProvider(provider)) ||
+    (provider !== null &&
+      isDiscoveryModelProvider(provider) &&
+      provider !== "anthropic" &&
+      provider !== "gemini" &&
+      provider !== "deepseek") ||
     provider === "openrouter" ||
     provider === "cerebras" ||
     provider === "fireworks" ||

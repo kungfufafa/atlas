@@ -267,6 +267,13 @@ describe("CodexAppServer protocol", () => {
             threadId: currentThreadId,
             tokenUsage: {
               last: { inputTokens: 2, outputTokens: 3, totalTokens: 5 },
+              modelContextWindow:
+                currentThreadId === "alpha" ? 258_400 : 950_000,
+              total: {
+                inputTokens: 40_000,
+                outputTokens: 10_000,
+                totalTokens: 50_000,
+              },
             },
             turnId: `turn-${currentThreadId}`,
           },
@@ -307,11 +314,16 @@ describe("CodexAppServer protocol", () => {
     ]);
 
     expect(alpha).toMatchObject({
+      contextUsage: { contextWindow: 258_400, usedTokens: 5 },
       text: " alpha ",
       thinking: "think-alpha",
       usage: { inputTokens: 2, outputTokens: 3, totalTokens: 5 },
     });
-    expect(beta).toMatchObject({ text: "beta", thinking: "think-beta" });
+    expect(beta).toMatchObject({
+      contextUsage: { contextWindow: 950_000, usedTokens: 5 },
+      text: "beta",
+      thinking: "think-beta",
+    });
     expect(alphaChunks).toEqual([" alpha "]);
     expect(betaChunks).toEqual(["beta"]);
     expect(starts.get("alpha")).toMatchObject({
@@ -319,6 +331,154 @@ describe("CodexAppServer protocol", () => {
     });
     server.close();
   });
+
+  test("keeps the latest native context snapshot when completion reports turn usage", async () => {
+    const child = new FakeProcess();
+    processes.push(child);
+    observeRequests(child, (request) => {
+      if (request.method !== "turn/start") {
+        return;
+      }
+      // Notifications can arrive before turn/start's response, including a
+      // lower context count after native compaction during the same turn.
+      for (const usedTokens of [240_000, 12_000]) {
+        send(child, {
+          method: "thread/tokenUsage/updated",
+          params: {
+            threadId: "thread-1",
+            tokenUsage: {
+              last: { totalTokens: usedTokens },
+              modelContextWindow: 258_400,
+              total: { totalTokens: 900_000 },
+            },
+            turnId: "turn-1",
+          },
+        });
+      }
+      send(child, {
+        method: "thread/tokenUsage/updated",
+        params: {
+          threadId: "thread-1",
+          tokenUsage: {
+            last: { totalTokens: 99_000 },
+            modelContextWindow: 950_000,
+          },
+          turnId: "old-turn",
+        },
+      });
+      send(child, {
+        method: "turn/completed",
+        params: {
+          threadId: "thread-1",
+          turn: {
+            id: "turn-1",
+            status: "completed",
+            usage: {
+              inputTokens: 15_000,
+              outputTokens: 500,
+              totalTokens: 15_500,
+            },
+          },
+        },
+      });
+      send(child, { id: request.id, result: { turn: { id: "turn-1" } } });
+    });
+    const server = new CodexAppServer({
+      client: new JsonRpcStdioClient(child),
+    });
+
+    const result = await server.startTurn({
+      input: "hi",
+      threadId: "thread-1",
+    });
+
+    expect(result.contextUsage).toEqual({
+      contextWindow: 258_400,
+      usedTokens: 12_000,
+    });
+    expect(result.usage).toEqual({
+      inputTokens: 15_000,
+      outputTokens: 500,
+      totalTokens: 15_500,
+    });
+    server.close();
+  });
+
+  test.each([
+    {
+      expected: 15,
+      last: { inputTokens: 12, outputTokens: 3 },
+      modelContextWindow: 258_400,
+    },
+    { expected: 0, last: { totalTokens: 0 }, modelContextWindow: 258_400 },
+    {
+      expected: undefined,
+      last: { totalTokens: 12 },
+      modelContextWindow: null,
+    },
+    { expected: undefined, last: { totalTokens: 12 }, modelContextWindow: 0 },
+    { expected: undefined, last: { totalTokens: 12 }, modelContextWindow: -1 },
+    {
+      expected: undefined,
+      last: { totalTokens: -1 },
+      modelContextWindow: 258_400,
+    },
+    {
+      expected: undefined,
+      last: { totalTokens: 1.5 },
+      modelContextWindow: 258_400,
+    },
+    { expected: undefined, last: {}, modelContextWindow: 258_400 },
+  ])(
+    "validates native context metadata %#",
+    async ({ last, modelContextWindow, expected }) => {
+      const child = new FakeProcess();
+      processes.push(child);
+      observeRequests(child, (request) => {
+        if (request.method !== "turn/start") {
+          return;
+        }
+        send(child, { id: request.id, result: { turn: { id: "turn-1" } } });
+        send(child, {
+          method: "thread/tokenUsage/updated",
+          params: {
+            threadId: "thread-1",
+            tokenUsage: {
+              last,
+              modelContextWindow,
+              total: { totalTokens: 80_000 },
+            },
+            turnId: "turn-1",
+          },
+        });
+        send(child, {
+          method: "turn/completed",
+          params: {
+            threadId: "thread-1",
+            turn: { id: "turn-1", status: "completed" },
+          },
+        });
+      });
+      const server = new CodexAppServer({
+        client: new JsonRpcStdioClient(child),
+      });
+
+      const result = await server.startTurn({
+        input: "hi",
+        threadId: "thread-1",
+      });
+
+      expect(result.contextUsage).toEqual(
+        expected === undefined
+          ? undefined
+          : {
+              contextWindow: modelContextWindow,
+              usedTokens: expected,
+            }
+      );
+      server.close();
+    }
+  );
 
   test("passes structured image input to turn/start unchanged", async () => {
     const child = new FakeProcess();

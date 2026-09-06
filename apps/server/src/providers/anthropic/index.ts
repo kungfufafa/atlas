@@ -1,5 +1,6 @@
 import Anthropic, { APIError } from "@anthropic-ai/sdk";
 import type {
+  CustomModelEntry,
   GenerateChatInput,
   GenerateTextInput,
   GenerateTextResult,
@@ -8,13 +9,17 @@ import type {
   StreamChatHandlers,
 } from "@atlas/core";
 import { buildTokenUsage } from "../shared";
-import { continueAnthropicUntilDone } from "./web-search";
+import {
+  assertAnthropicStopReason,
+  continueAnthropicUntilDone,
+} from "./web-search";
 
 const DEFAULT_PROVIDER_LABEL = "Anthropic";
 
 export interface AnthropicProviderOptions {
   apiKey: string;
   baseUrl?: string;
+  customModels?: CustomModelEntry[];
   /** Injected in tests to mock HTTP without touching global fetch. */
   fetch?: typeof fetch;
   model?: string;
@@ -79,6 +84,7 @@ export function createAnthropicProvider(
         () =>
           continueAnthropicUntilDone({
             client,
+            customModels: options.customModels,
             messages: input.messages,
             model,
             provider: name,
@@ -107,6 +113,7 @@ export function createAnthropicProvider(
           model,
           system,
         });
+        assertAnthropicStopReason(message.stop_reason);
 
         const content = message.content
           .filter((block) => block.type === "text")

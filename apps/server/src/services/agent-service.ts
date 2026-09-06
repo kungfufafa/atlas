@@ -121,7 +121,6 @@ import {
   appendOrgMemorySection,
   assignedSkillsForbidMarkdownWrites,
   buildErrorReport,
-  buildThinkingProviderOptions,
   buildToolExecutionContext,
   buildUserContextStatus,
   composeKnowledgeBaseCatalog,
@@ -226,7 +225,6 @@ import {
   createProviderForInstance,
   createProviderFromActiveConfig,
   evaluateCapabilityTarget,
-  getModelById,
   getModelsForProviderInstance,
   isCostEstimated,
   type ProviderAdapterRegistry,
@@ -234,11 +232,13 @@ import {
   resolveConfiguredCapability,
   withLiveOpenCodeGoCatalog,
 } from "../providers";
+import { resolveModelCompactionConfig } from "../providers/model-context";
 import { wrapProviderForNonVision } from "../providers/non-vision-wrap";
 import {
   estimateUsageCostUsd,
   type PricingContext,
 } from "../providers/pricing";
+import { resolveThinkingEffort } from "../providers/shared";
 import { deleteSubscriptionConversation } from "../providers/subscription";
 import { wrapProviderWithUsageTracking } from "../providers/usage-tracking";
 import { createAskUserQuestionTools } from "../tools/ask-user-question-tool";
@@ -276,6 +276,7 @@ import type { AutomationRunner } from "./automation-runner";
 import { resolveExecutableToolsForPrincipal } from "./channel-guest-tool-policy";
 import {
   createChatCapabilityAwareProvider,
+  modelClaimsForCapability,
   resolveChatCapabilityPolicy,
 } from "./chat-capability-policy";
 import {
@@ -1782,12 +1783,24 @@ export class AgentService {
   private resolveChatProviderOptions(
     providerInstance: ReturnType<typeof getActiveProviderInstance>,
     thinkingSettings: ThinkingSettings,
+    modelId?: string | null,
     overrides?: Partial<ProviderChatOptions>
   ): ProviderChatOptions | undefined {
-    const thinking = buildThinkingProviderOptions({
-      thinkingEffort: thinkingSettings.effort,
-      thinkingEnabled: thinkingSettings.enabled,
-    });
+    const model =
+      providerInstance && modelId
+        ? getModelsForProviderInstance(providerInstance).find(
+            (entry) => entry.id === modelId
+          )
+        : undefined;
+    const effort = resolveThinkingEffort(
+      thinkingSettings.effort,
+      model?.reasoningEffortValues,
+      model?.defaultReasoningEffort
+    );
+    const thinking = {
+      enabled: thinkingSettings.enabled,
+      ...(effort ? { effort } : {}),
+    };
     const webSearch = overrides?.webSearch;
     const mergedThinking = overrides?.thinking ?? thinking;
 
@@ -2891,10 +2904,8 @@ export class AgentService {
     ) {
       return null;
     }
-    const modelOverride = await this.resolveApprovedStoredSessionModelOverride(
-      orgId,
-      record
-    );
+    // History remains readable even when its selected model was removed.
+    const modelOverride = record.modelOverride?.trim() || null;
 
     const channel = parseAgentChannel(record.channel);
 
@@ -3771,13 +3782,13 @@ export class AgentService {
         process.env.NODE_ENV === "test");
 
     if (!shouldSkipValidation) {
-      const validatedSubscriptionModels = await validateProviderConnection(
+      const validatedModels = await validateProviderConnection(
         providerValidationRequest(instance, request.model)
       );
-      if (isSubscriptionProvider(instance.type)) {
+      if (validatedModels) {
         instance = {
           ...instance,
-          customModels: validatedSubscriptionModels,
+          customModels: validatedModels,
         };
       }
     }
@@ -4197,7 +4208,8 @@ export class AgentService {
               readApiKeyForInstance(provider, process.env),
             registry: this.providerAdapterRegistry,
           },
-          { modelId: model.id, providerId: instance.id }
+          { modelId: model.id, providerId: instance.id },
+          modelClaimsForCapability(capabilityId, model)
         );
         capabilities[capabilityId] = effective.claim;
       }
@@ -5310,7 +5322,8 @@ export class AgentService {
       chatCapabilityPolicy: options.chatCapabilityPolicy,
       chatOptions: this.resolveChatProviderOptions(
         providerInstance,
-        options.thinking
+        options.thinking,
+        options.modelId
       ),
       provider: trackedProvider ?? undefined,
     });
@@ -6009,6 +6022,11 @@ export class AgentService {
           turnAttachments.commitTurn(turnId);
         }
       },
+      onToolEvidenceRetained: (_id, turnId) => {
+        if (turnId) {
+          turnAttachments.commitTurn(turnId);
+        }
+      },
       runTurn: (turnId, operation) => {
         if (!turnId) {
           throw new Error("Attachment turn was not initialized.");
@@ -6429,9 +6447,10 @@ export class AgentService {
       return storedOverride;
     }
 
-    await this.db.updateSessionModelOverride(record.id, null);
-    this.sessions.delete(record.id);
-    return null;
+    throw new AtlasApiError(
+      "The selected session model is no longer available. Select an available model to continue this session.",
+      409
+    );
   }
 
   private async resolvePlaygroundProfileId(
@@ -6475,12 +6494,7 @@ export class AgentService {
       return;
     }
 
-    const model = getModelById(resolved.model);
-
-    return {
-      contextWindow: model?.contextWindow ?? 128_000,
-      maxOutputTokens: model?.maxOutputTokens ?? 8192,
-    };
+    return resolveModelCompactionConfig(resolved.instance, resolved.model);
   }
 
   private resolveWorkspaceThinkingDefaults(

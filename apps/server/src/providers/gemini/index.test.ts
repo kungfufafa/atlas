@@ -239,7 +239,9 @@ describe("createGeminiProvider", () => {
             ],
           }),
           JSON.stringify({
-            candidates: [{ content: { parts: [{ text: "Hi" }] } }],
+            candidates: [
+              { content: { parts: [{ text: "Hi" }] }, finishReason: "STOP" },
+            ],
           }),
         ]),
         { headers: { "Content-Type": "text/event-stream" }, status: 200 }

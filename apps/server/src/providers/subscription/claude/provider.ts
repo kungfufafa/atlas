@@ -40,6 +40,7 @@ export function createClaudeProvider(options: {
         };
       });
     },
+    managesContext: true,
     name: "claude",
     streamChat(input: GenerateChatInput, handlers: StreamChatHandlers) {
       return withSubscriptionSessionLease(

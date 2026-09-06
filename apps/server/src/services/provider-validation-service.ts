@@ -15,7 +15,6 @@ import {
 } from "@atlas/core/provider-catalog";
 import type { ProviderInstance } from "@atlas/core/user-config";
 import { builtinProviderAdapterRegistry } from "../providers/capabilities/builtin-adapters";
-import { fetchRemoteOpenAIModels } from "../providers/compatible-models";
 import { createProviderForInstance } from "../providers/create";
 import {
   getSubscriptionRuntime,
@@ -113,11 +112,17 @@ export async function validateProviderConnection(
     !customModels?.length;
 
   if (shouldDiscoverCompatibleModels && baseUrl) {
-    customModels = await fetchRemoteOpenAIModels(baseUrl, apiKey, {
-      localAccess: setup?.allowLocalDiscovery
-        ? { kind: "openai-compatible-local" }
-        : undefined,
-    });
+    const discovered = await builtinProviderAdapterRegistry.discoverModels(
+      type,
+      {
+        apiKey,
+        baseUrl,
+        configured: false,
+        ...(hostMode ? { hostMode } : {}),
+        instance: credentialProbe,
+      }
+    );
+    customModels = discovered.customModels;
   }
 
   const probeInstance: ProviderInstance = {
@@ -154,7 +159,7 @@ export async function validateProviderConnection(
         signal: controller.signal,
         system: "Respond with ok",
       });
-      return;
+      return customModels;
     } catch (error) {
       if (controller.signal.aborted) {
         throw new Error(
@@ -191,15 +196,21 @@ export function canonicalSubscriptionModelSnapshot(
   return validateCustomModels(
     models.map((model, index) => ({
       ...(model.capabilities ? { capabilities: model.capabilities } : {}),
+      ...(model.contextWindow === undefined
+        ? {}
+        : { contextWindow: model.contextWindow }),
+      ...(model.maxOutputTokens === undefined
+        ? {}
+        : { maxOutputTokens: model.maxOutputTokens }),
       ...(index === selectedDefaultIndex ? { default: true } : {}),
       ...(model.defaultReasoningEffort
         ? { defaultReasoningEffort: model.defaultReasoningEffort }
         : {}),
       id: model.id,
       name: model.name,
-      ...(model.reasoningEffortValues?.length
-        ? { reasoningEffortValues: model.reasoningEffortValues }
-        : {}),
+      ...(model.reasoningEffortValues === undefined
+        ? {}
+        : { reasoningEffortValues: model.reasoningEffortValues }),
       ...(model.supportsThinking === undefined
         ? {}
         : { supportsThinking: model.supportsThinking }),

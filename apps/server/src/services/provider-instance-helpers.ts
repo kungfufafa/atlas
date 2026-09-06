@@ -32,7 +32,6 @@ import type {
 import {
   getDefaultModel,
   getModelById,
-  getModelByIdForProvider,
   getModelsForProviderInstance,
   resolveModel,
 } from "../providers";
@@ -310,9 +309,37 @@ export function applyProviderInstanceUpdate(
     next.wireApi !== instance.wireApi;
   if (connectionSemanticsChanged) {
     next.replayRevision = crypto.randomUUID();
+    if (request.customModels === undefined) {
+      next.customModels = instance.customModels?.map((model) => {
+        const capabilities = retainAdminCapabilityClaims(model.capabilities);
+        return {
+          id: model.id,
+          ...(model.name === undefined ? {} : { name: model.name }),
+          ...(model.default === undefined ? {} : { default: model.default }),
+          ...(capabilities ? { capabilities } : {}),
+        };
+      });
+    }
+    next.capabilityOverrides = retainAdminCapabilityClaims(
+      next.capabilityOverrides
+    );
   }
 
   return next;
+}
+
+function retainAdminCapabilityClaims(
+  claims: ProviderCapabilityClaims | undefined
+): ProviderCapabilityClaims | undefined {
+  if (!claims) {
+    return;
+  }
+  const retained = Object.fromEntries(
+    Object.entries(claims).filter(
+      ([, claim]) => claim.source === "admin-override"
+    )
+  );
+  return Object.keys(retained).length ? retained : undefined;
 }
 
 function assertSubscriptionRuntimeManagedFields(
@@ -493,24 +520,12 @@ function requestedCustomModels(
     return [];
   }
 
-  const catalogModel =
-    getModelByIdForProvider(modelId, request.type) ?? getModelById(modelId);
+  // A chosen identifier is not evidence about a provider endpoint's limits,
+  // capabilities or pricing. Discovery enriches this exact instance later.
   return [
     {
       default: true,
       id: modelId,
-      ...(catalogModel?.supportsThinking === undefined
-        ? {}
-        : { supportsThinking: catalogModel.supportsThinking }),
-      ...(catalogModel?.supportsVision === undefined
-        ? {}
-        : { supportsVision: catalogModel.supportsVision }),
-      ...(catalogModel?.inputPerMillionUsd === undefined
-        ? {}
-        : { inputPerMillionUsd: catalogModel.inputPerMillionUsd }),
-      ...(catalogModel?.outputPerMillionUsd === undefined
-        ? {}
-        : { outputPerMillionUsd: catalogModel.outputPerMillionUsd }),
     },
   ];
 }
@@ -627,36 +642,39 @@ export function resolveProfileProviderSelection(options: {
     : null;
   const fallbackInstance = active ?? providers[0] ?? null;
 
-  if (!fallbackInstance) {
-    return null;
-  }
-
   const decoded = decodeStoredModelSelection(profileModel);
 
   if (decoded && decoded.providerId !== "__unknown__") {
     const explicit = findProviderInstance({ providers }, decoded.providerId);
+    if (!explicit) {
+      throw new AtlasApiError(
+        "The selected provider is no longer configured. Select an available provider and model.",
+        409
+      );
+    }
+    const explicitModelId = decoded.modelId.trim();
+    if (!explicitModelId) {
+      throw new AtlasApiError("Select a model for the selected provider.", 409);
+    }
 
     // A qualified selection records the provider decision itself. Native
     // providers accept model ids newer than Atlas' static catalog, so do not
     // reroute that selection merely because the catalog has not caught up yet.
-    if (explicit) {
-      const explicitModelId = decoded.modelId.trim();
-      if (
-        isSubscriptionProvider(explicit.type) &&
-        !explicit.customModels?.some((model) => model.id === explicitModelId)
-      ) {
-        throw new AtlasApiError(
-          `Model "${explicitModelId}" is no longer available for the ${explicit.label} subscription. Select an available model.`,
-          409
-        );
-      }
-      return {
-        instance: explicit,
-        model: isSubscriptionProvider(explicit.type)
-          ? explicitModelId
-          : resolveModel(explicit.type, explicitModelId, explicit.customModels),
-      };
+    if (
+      isSubscriptionProvider(explicit.type) &&
+      !explicit.customModels?.some((model) => model.id === explicitModelId)
+    ) {
+      throw new AtlasApiError(
+        `Model "${explicitModelId}" is no longer available for the ${explicit.label} subscription. Select an available model.`,
+        409
+      );
     }
+    return {
+      instance: explicit,
+      model: isSubscriptionProvider(explicit.type)
+        ? explicitModelId
+        : resolveModel(explicit.type, explicitModelId, explicit.customModels),
+    };
   }
 
   const selectedModel = extractStoredModelId(profileModel);
@@ -686,6 +704,14 @@ export function resolveProfileProviderSelection(options: {
         ),
       };
     }
+    throw new AtlasApiError(
+      "The selected model is no longer available on a configured provider. Select an available provider and model.",
+      409
+    );
+  }
+
+  if (!fallbackInstance) {
+    return null;
   }
 
   return {

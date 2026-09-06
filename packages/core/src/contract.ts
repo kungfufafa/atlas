@@ -984,7 +984,7 @@ export interface ChatContextUsage {
   bytesProduced?: number;
   contextWindow: number;
   source: ChatContextUsageSource;
-  /** Denominator matching compaction usable context (window minus reserved output). */
+  /** Atlas's compaction budget, or the provider's already-effective context window. */
   usableContextTokens: number;
   usedTokens: number;
 }
@@ -1029,6 +1029,13 @@ export interface CompactionResponse {
   messagesAfter: number;
   messagesBefore: number;
   prunedTokens?: number;
+}
+
+/** Original context retained for retrieval after a successful Atlas compaction. */
+export interface CompactedHistoryArchive {
+  createdAt: string;
+  id: string;
+  messages: ChatMessage[];
 }
 
 export type MessageContentPart =
@@ -1806,17 +1813,21 @@ export interface ApiErrorResponse {
 
 export interface CustomModelEntry {
   capabilities?: ProviderCapabilityClaims;
+  /** Provider-reported or explicitly configured context capacity; omitted when unknown. */
+  contextWindow?: number;
   default?: boolean;
   /** Runtime-advertised default reasoning effort for this model. */
   defaultReasoningEffort?: string;
   id: string;
   inputPerMillionUsd?: number;
+  /** Provider-reported or explicitly configured maximum output; omitted when unknown. */
+  maxOutputTokens?: number;
   name?: string;
   outputPerMillionUsd?: number;
   /**
    * Ordered list of effort values this model/provider accepts for reasoning.
-   * Drives the UI dropdown dynamically — omit to fall back to the provider
-   * default (usually ["low", "medium", "high"]).
+   * Drives the UI dropdown dynamically. Omitted means unknown; [] means no
+   * configurable effort levels. Never infer values from a model name.
    * Examples:
    *   Anthropic claude:  ["low", "medium", "xhigh"]
    *   DeepSeek:          ["low", "high", "max"]
@@ -2013,8 +2024,14 @@ export interface DiscoverModelsRequest {
   hostMode?: OllamaHostMode;
   /** When set, discovery uses the matching remote fetch path (Ollama includes `/api/tags` fallback). */
   provider?:
+    | "anthropic"
+    | "cerebras"
+    | "deepseek"
+    | "gemini"
     | "ollama"
+    | "openai"
     | "openai_compatible"
+    | "openrouter"
     | "fireworks"
     | "opencode_go"
     | "minimax"
@@ -2658,6 +2675,14 @@ export type ChatMessage =
 export interface ChatCompletionResult {
   assistantMessage: Extract<ChatMessage, { role: "assistant" }>;
   content: string;
+  /**
+   * Current provider-managed context occupancy, separate from billable usage.
+   * The window is already the runtime's effective budget; do not reserve output again.
+   */
+  contextUsage?: {
+    contextWindow: number;
+    usedTokens: number;
+  };
   toolCalls: ToolCall[];
   usage?: {
     inputTokens: number;
@@ -2728,6 +2753,8 @@ export interface StreamChatHandlers {
 export interface ProviderClient {
   generateChat(input: GenerateChatInput): Promise<ChatCompletionResult>;
   generateText(input: GenerateTextInput): Promise<GenerateTextResult>;
+  /** The native runtime owns automatic context compaction and context accounting. */
+  managesContext?: boolean;
   name: ProviderName;
   streamChat(
     input: GenerateChatInput,

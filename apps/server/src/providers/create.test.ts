@@ -208,3 +208,48 @@ describe("createProviderForInstance discovery-provider routing", () => {
     expect(requestBodies[1]).not.toContain("endpoint-item-1");
   });
 });
+
+test.each([
+  { baseUrl: "https://api.openai.com/v1", expectedEffort: "high" },
+  { baseUrl: "https://proxy.example.com/v1", expectedEffort: undefined },
+])(
+  "provider factory keeps official metadata scoped to the exact endpoint: %j",
+  async ({ baseUrl, expectedEffort }) => {
+    let requestBody: Record<string, unknown> | undefined;
+    globalThis.fetch = mock(
+      async (_request: RequestInfo | URL, init?: RequestInit) => {
+        requestBody = JSON.parse(String(init?.body ?? "{}"));
+        return Response.json({
+          choices: [{ message: { content: "Done" } }],
+          output: [
+            {
+              content: [{ text: "Done", type: "output_text" }],
+              role: "assistant",
+              type: "message",
+            },
+          ],
+        });
+      }
+    ) as unknown as typeof fetch;
+    const instance: ProviderInstance = {
+      apiKey: "fixture",
+      baseUrl,
+      createdAt: "2026-09-06T00:00:00.000Z",
+      customModels: [{ id: "gpt-5.4" }],
+      id: "factory-metadata",
+      label: "Configured endpoint",
+      type: "openai",
+    };
+    const provider = createProviderForInstance(instance, "gpt-5.4");
+    expect(provider).not.toBeNull();
+    await provider!.generateChat({
+      messages: [{ content: "Hi", role: "user" }],
+      providerOptions: { thinking: { effort: "high", enabled: true } },
+      system: "Answer",
+    });
+    expect(
+      (requestBody?.reasoning as { effort?: string } | undefined)?.effort
+    ).toBe(expectedEffort);
+    expect(requestBody?.reasoning_effort).toBeUndefined();
+  }
+);

@@ -3,6 +3,7 @@ import { ViewIcon, ViewOffIcon } from "hugeicons-react";
 import type { ReactNode } from "react";
 import { CustomProviderFields } from "@/components/CustomProviderFields";
 import type { ModelListRow } from "@/components/ModelListEditor";
+import type { RemoteModelBrowseProvider } from "@/components/remote-models-browse.shared";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -188,14 +189,7 @@ export function ProviderCompatibleEditDialog({
   apiKey?: string;
   showApiKey: boolean;
   browseSource?: "remote" | "models.dev";
-  remoteProvider?:
-    | "ollama"
-    | "openai_compatible"
-    | "minimax"
-    | "minimax_cn"
-    | "xai"
-    | "zhipu"
-    | "zhipu_cn";
+  remoteProvider?: RemoteModelBrowseProvider;
   providerInstanceId?: string;
   hostMode?: "local" | "cloud";
   browseLabel?: string;

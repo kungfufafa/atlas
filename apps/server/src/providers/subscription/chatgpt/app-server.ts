@@ -1,5 +1,6 @@
 import {
   ATLAS_API_VERSION,
+  type ChatCompletionResult,
   ensureDir,
   MAX_GENERATED_IMAGE_BYTES,
 } from "@atlas/core";
@@ -98,6 +99,14 @@ export interface CodexTurnUsage {
   inputTokens?: number;
   outputTokens?: number;
   totalTokens?: number;
+}
+
+export interface CodexTurnResult {
+  contextUsage?: ChatCompletionResult["contextUsage"];
+  generatedImages?: CodexGeneratedImage[];
+  text: string;
+  thinking: string;
+  usage?: CodexTurnUsage;
 }
 
 export interface CodexAppServerOptions {
@@ -304,12 +313,7 @@ export class CodexAppServer {
     signal?: AbortSignal;
     summary?: "auto" | "concise" | "detailed" | "none";
     threadId: string;
-  }): Promise<{
-    generatedImages?: CodexGeneratedImage[];
-    text: string;
-    thinking: string;
-    usage?: CodexTurnUsage;
-  }> {
+  }): Promise<CodexTurnResult> {
     if (options.signal?.aborted) {
       throw new Error("Turn cancelled.");
     }
@@ -323,6 +327,7 @@ export class CodexAppServer {
     const generatedImages: CodexGeneratedImage[] = [];
     const generatedImageIds = new Set<string>();
     let usage: CodexTurnUsage | undefined;
+    let contextUsage: CodexTurnResult["contextUsage"];
     let turnId: string | null = null;
     let settled = false;
     let interruptRequired = false;
@@ -331,23 +336,15 @@ export class CodexAppServer {
     let unsubscribe: () => void = () => undefined;
     let unsubscribeClose: () => void = () => undefined;
     let timeout: ReturnType<typeof setTimeout> | undefined;
-    let resolveCompletion: (value: {
-      generatedImages?: CodexGeneratedImage[];
-      text: string;
-      thinking: string;
-      usage?: CodexTurnUsage;
-    }) => void = () => undefined;
+    let resolveCompletion: (value: CodexTurnResult) => void = () => undefined;
     let rejectCompletion: (error: Error) => void = () => undefined;
 
-    const waitForCompletion = new Promise<{
-      generatedImages?: CodexGeneratedImage[];
-      text: string;
-      thinking: string;
-      usage?: CodexTurnUsage;
-    }>((resolve, reject) => {
-      resolveCompletion = resolve;
-      rejectCompletion = reject;
-    });
+    const waitForCompletion = new Promise<CodexTurnResult>(
+      (resolve, reject) => {
+        resolveCompletion = resolve;
+        rejectCompletion = reject;
+      }
+    );
 
     const cleanup = () => {
       unsubscribe();
@@ -383,6 +380,7 @@ export class CodexAppServer {
       settled = true;
       cleanup();
       resolveCompletion({
+        ...(contextUsage ? { contextUsage } : {}),
         ...(generatedImages.length > 0 ? { generatedImages } : {}),
         text,
         thinking,
@@ -435,6 +433,7 @@ export class CodexAppServer {
         }
       } else if (notification.method === "thread/tokenUsage/updated") {
         usage = readUsage(notification.params) ?? usage;
+        contextUsage = readContextUsage(notification.params);
       } else if (notification.method === "turn/completed") {
         usage = readUsage(notification.params) ?? usage;
         const status = readString(notificationTurn.status);
@@ -961,6 +960,31 @@ function readPngDimensions(data: Uint8Array): {
     throw new Error("Codex generated image has invalid dimensions.");
   }
   return { height, width };
+}
+
+function readContextUsage(params: unknown): CodexTurnResult["contextUsage"] {
+  const tokenUsage = asRecord(asRecord(params).tokenUsage);
+  const contextWindow = readTokenCount(tokenUsage.modelContextWindow);
+  const last = asRecord(tokenUsage.last);
+  const inputTokens = readTokenCount(last.inputTokens);
+  const outputTokens = readTokenCount(last.outputTokens);
+  const usedTokens =
+    readTokenCount(last.totalTokens) ??
+    (inputTokens !== undefined && outputTokens !== undefined
+      ? readTokenCount(inputTokens + outputTokens)
+      : undefined);
+  if (!contextWindow || usedTokens === undefined) {
+    return;
+  }
+  // Codex already applies its effective context budget. Use the latest model
+  // request, including its output; thread-wide totals accumulate across turns.
+  return { contextWindow, usedTokens };
+}
+
+function readTokenCount(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
+    ? value
+    : undefined;
 }
 
 function readUsage(params: unknown): CodexTurnUsage | undefined {

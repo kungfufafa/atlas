@@ -245,9 +245,11 @@ describe("AgentService session model overrides", () => {
       })
     ).rejects.toMatchObject({ status: 400 });
     expect((await service.getSessionMessages(ORG_ID, sessionId))?.model).toBe(
-      null
+      "chatgpt-1::model-b"
     );
-    expect((await db.getSession(sessionId))?.modelOverride).toBeNull();
+    expect((await db.getSession(sessionId))?.modelOverride).toBe(
+      "chatgpt-1::model-b"
+    );
 
     runtimeError = new SubscriptionRuntimeError(
       "chatgpt",
@@ -601,7 +603,7 @@ describe("AgentService session model overrides", () => {
     );
   });
 
-  test("clears a revoked override and falls back to the profile model", async () => {
+  test("keeps a revoked selection and requires an explicit replacement", async () => {
     const { db, service } = await createScenario();
     const requestModels: string[] = [];
     globalThis.fetch = mock(
@@ -628,17 +630,27 @@ describe("AgentService session model overrides", () => {
       skipValidation: true,
     });
 
+    await expect(
+      service.resolveSession(ORG_ID, sessionId, {
+        userId: "user_owner",
+      })
+    ).rejects.toMatchObject({ status: 409 });
+
+    expect(requestModels).toEqual([]);
+    expect((await db.getSession(sessionId))?.modelOverride).toBe(
+      "provider-1::session-alt"
+    );
+    await service.updateSessionModel(
+      ORG_ID,
+      sessionId,
+      "provider-1::profile-default",
+      { userId: "user_owner" }
+    );
     const session = await service.resolveSession(ORG_ID, sessionId, {
       userId: "user_owner",
     });
-    expect(session).not.toBeNull();
-    await session!.send("after revocation");
-
+    await session!.send("after explicit replacement");
     expect(requestModels).toEqual(["profile-default"]);
-    expect((await db.getSession(sessionId))?.modelOverride).toBeNull();
-    expect(
-      (await service.getSessionMessages(ORG_ID, sessionId))?.model
-    ).toBeNull();
   });
 
   test("rejects unapproved compatible and OpenRouter models for members and admins", async () => {

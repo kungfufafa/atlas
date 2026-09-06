@@ -590,6 +590,9 @@ export class ChatgptSubscriptionRuntime {
         totalTokens: turn.usage?.totalTokens,
       });
       const result = parseSubscriptionResponse(turn.text, turn.thinking, usage);
+      if (turn.contextUsage) {
+        result.contextUsage = turn.contextUsage;
+      }
       if (bufferText && result.content) {
         handlers?.onChunk(result.content);
       }

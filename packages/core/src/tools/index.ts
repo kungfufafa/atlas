@@ -12,6 +12,7 @@ export * from "./paths";
 export * from "./permissions";
 export * from "./protect-profile-skill-tree";
 export * from "./protected";
+export * from "./result-serialization";
 export * from "./ripgrep";
 export * from "./schema";
 export * from "./search-files";

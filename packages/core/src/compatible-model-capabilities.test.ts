@@ -7,45 +7,21 @@ import {
 } from "./compatible-model-capabilities";
 import { PROVIDER_CAPABILITY_IDS } from "./provider-capabilities";
 
-describe("inferCompatibleModelThinking", () => {
-  test("detects advertised reasoning slugs and known families", () => {
-    expect(inferCompatibleModelThinking("qwen/qwen3.8-max-free")).toBe(true);
+describe("model metadata does not come from names", () => {
+  test.each([
+    "qwen/qwen3.8-max-free",
+    "claude-sonnet-4-6",
+    "deepseek-r1",
+    "custom-thinking",
+  ])("keeps support and effort unknown for %s", (id) => {
+    expect(inferCompatibleModelThinking(id)).toBeUndefined();
     expect(
-      inferCompatibleModelThinking(
-        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
-      )
-    ).toBe(true);
-    expect(inferCompatibleModelThinking("anthropic/claude-sonnet-4-6")).toBe(
-      true
-    );
-    expect(inferCompatibleModelThinking("meta-llama/llama-3.3-70b")).toBe(
-      false
-    );
-    expect(inferCompatibleModelThinking("local-custom-7b")).toBe(false);
-  });
-});
-
-describe("inferCompatibleReasoningEffortValues", () => {
-  test("uses tokenrouter and qwen-style levels", () => {
-    expect(
-      inferCompatibleReasoningEffortValues("qwen/qwen3.8-max-free", {
+      inferCompatibleReasoningEffortValues(id, {
         baseUrl: "https://api.tokenrouter.com/v1",
+        providerLabel: "TokenRouter",
       })
-    ).toEqual(["low", "medium", "xhigh"]);
-  });
-
-  test("uses claude and deepseek-specific levels", () => {
-    expect(inferCompatibleReasoningEffortValues("claude-sonnet-4-6")).toEqual([
-      "low",
-      "medium",
-      "high",
-      "xhigh",
-    ]);
-    expect(inferCompatibleReasoningEffortValues("deepseek-r1")).toEqual([
-      "low",
-      "high",
-      "max",
-    ]);
+    ).toEqual([]);
+    expect(resolveCompatibleModelCapabilities(id)).toEqual({});
   });
 });
 
@@ -152,10 +128,6 @@ describe("parseRemoteOpenAIModelEntry", () => {
     });
 
     expect(parsed?.capabilities).toMatchObject({
-      [PROVIDER_CAPABILITY_IDS.audioTranscription]: {
-        source: "provider-discovery",
-        status: "supported",
-      },
       [PROVIDER_CAPABILITY_IDS.chatInputAudio]: {
         source: "provider-discovery",
         status: "supported",
@@ -173,11 +145,105 @@ describe("parseRemoteOpenAIModelEntry", () => {
         status: "supported",
       },
     });
+    expect(
+      parsed?.capabilities?.[PROVIDER_CAPABILITY_IDS.audioTranscription]
+    ).toBeUndefined();
   });
+
+  test("retains explicit context limits, effort values, and default", () => {
+    expect(
+      parseRemoteOpenAIModelEntry({
+        context_length: 131_072,
+        id: "custom",
+        reasoning: { default_effort: "max", supported_efforts: ["low", "max"] },
+        top_provider: { max_completion_tokens: 8192 },
+      })
+    ).toMatchObject({
+      contextWindow: 131_072,
+      defaultReasoningEffort: "max",
+      maxOutputTokens: 8192,
+      reasoningEffortValues: ["low", "max"],
+    });
+  });
+
+  test("reads Cerebras public model limits and parameter flags", () => {
+    const result = parseRemoteOpenAIModelEntry({
+      capabilities: { reasoning: true, streaming: true, vision: false },
+      id: "custom",
+      limits: { max_completion_tokens: 40_960, max_context_length: 131_072 },
+      supported_parameters: { reasoning_effort: false, tools: true },
+    });
+    expect(result).toMatchObject({
+      capabilities: {
+        "chat.streaming": { status: "supported" },
+        "chat.tool-use": { status: "supported" },
+      },
+      contextWindow: 131_072,
+      maxOutputTokens: 40_960,
+      supportsThinking: true,
+      supportsVision: false,
+    });
+    expect(result?.reasoningEffortValues).toBeUndefined();
+  });
+
+  test("reads vLLM's configured model length", () => {
+    expect(
+      parseRemoteOpenAIModelEntry({ id: "custom", max_model_len: 32_768 })
+        ?.contextWindow
+    ).toBe(32_768);
+  });
+
+  test("omits an inconsistent advertised reasoning default", () => {
+    const model = parseRemoteOpenAIModelEntry({
+      defaultReasoningEffort: "high",
+      id: "custom",
+      reasoningEffortValues: [],
+    });
+    expect(model?.reasoningEffortValues).toEqual([]);
+    expect(model?.defaultReasoningEffort).toBeUndefined();
+  });
+
+  test("preserves false and empty metadata over parameter advertisements", () => {
+    const result = parseRemoteOpenAIModelEntry({
+      capabilities: { structured_outputs: false, tools: false },
+      id: "thinking-vision-model",
+      input_modalities: ["text", "image"],
+      reasoningEffortValues: [],
+      supported_parameters: ["reasoning", "tools", "response_format"],
+      supportsThinking: false,
+      supportsVision: false,
+    });
+    expect(result).toMatchObject({
+      reasoningEffortValues: [],
+      supportsThinking: false,
+      supportsVision: false,
+    });
+    for (const capability of [
+      PROVIDER_CAPABILITY_IDS.chatReasoning,
+      PROVIDER_CAPABILITY_IDS.chatInputImage,
+      PROVIDER_CAPABILITY_IDS.chatToolUse,
+      PROVIDER_CAPABILITY_IDS.chatStructuredOutput,
+    ]) {
+      expect(result?.capabilities?.[capability]?.status).toBe("unsupported");
+    }
+  });
+
+  test.each([0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1, "32768"])(
+    "ignores invalid token limits %s",
+    (limit) => {
+      const result = parseRemoteOpenAIModelEntry({
+        context_window: limit,
+        id: "custom",
+        max_output_tokens: limit,
+      });
+      expect(result?.contextWindow).toBeUndefined();
+      expect(result?.maxOutputTokens).toBeUndefined();
+    }
+  );
 });
 
 describe("resolveCompatibleModelCapabilities", () => {
-  test("keeps explicit false and fills missing advertised data", () => {
+  test("keeps explicit false and preserves unknown advertised data", () => {
     expect(
       resolveCompatibleModelCapabilities("qwen/qwen3.8-max-free", {
         supportsThinking: false,
@@ -185,10 +251,13 @@ describe("resolveCompatibleModelCapabilities", () => {
     ).toEqual({ supportsThinking: false });
 
     expect(resolveCompatibleModelCapabilities("qwen/qwen3.8-max-free")).toEqual(
-      {
-        reasoningEffortValues: ["low", "medium", "xhigh"],
-        supportsThinking: true,
-      }
+      {}
     );
+    expect(
+      resolveCompatibleModelCapabilities("custom", {
+        reasoningEffortValues: [],
+        supportsThinking: true,
+      })
+    ).toEqual({ reasoningEffortValues: [], supportsThinking: true });
   });
 });

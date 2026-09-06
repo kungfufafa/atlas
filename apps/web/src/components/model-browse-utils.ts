@@ -1,16 +1,20 @@
+import type { CustomModelEntry } from "@atlas/core/contract";
 import type { ProviderCapabilityClaims } from "@atlas/core/provider-capabilities";
 
 export interface CapabilityBrowseRow {
   capabilities?: ProviderCapabilityClaims;
   contextLength?: number;
+  defaultReasoningEffort?: string;
   deprecated?: boolean;
   description?: string;
   id: string;
   inputPerMillionUsd?: number;
+  maxOutputTokens?: number;
   name: string;
   outputPerMillionUsd?: number;
   preview?: boolean;
   reasoning?: boolean;
+  reasoningEffortValues?: string[];
   tools?: boolean;
   vision?: boolean;
 }
@@ -33,21 +37,27 @@ export function formatBrowseCapabilities(row: {
   return capabilities;
 }
 
-export function capabilityBrowseRowToModelListRow(row: CapabilityBrowseRow): {
-  capabilities?: ProviderCapabilityClaims;
-  id: string;
-  name: string;
-  supportsThinking: boolean;
-  supportsVision: boolean;
-  inputPerMillionUsd?: number;
-  outputPerMillionUsd?: number;
-} {
+export function capabilityBrowseRowToModelListRow(
+  row: CapabilityBrowseRow
+): CustomModelEntry {
   return {
     ...(row.capabilities ? { capabilities: row.capabilities } : {}),
     id: row.id,
     name: row.name,
-    supportsThinking: row.reasoning === true,
-    supportsVision: row.vision === true,
+    ...(row.reasoning === undefined ? {} : { supportsThinking: row.reasoning }),
+    ...(row.vision === undefined ? {} : { supportsVision: row.vision }),
+    ...(row.contextLength && row.contextLength > 0
+      ? { contextWindow: row.contextLength }
+      : {}),
+    ...(row.maxOutputTokens === undefined
+      ? {}
+      : { maxOutputTokens: row.maxOutputTokens }),
+    ...(row.reasoningEffortValues === undefined
+      ? {}
+      : { reasoningEffortValues: row.reasoningEffortValues }),
+    ...(row.defaultReasoningEffort === undefined
+      ? {}
+      : { defaultReasoningEffort: row.defaultReasoningEffort }),
     ...(row.inputPerMillionUsd === undefined
       ? {}
       : { inputPerMillionUsd: row.inputPerMillionUsd }),

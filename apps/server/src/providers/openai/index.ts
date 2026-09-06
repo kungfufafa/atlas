@@ -21,13 +21,17 @@ import {
 } from "@atlas/core";
 import { toOpenCodeGoApiModelId } from "../models";
 import {
+  modelSupportsReasoning,
+  resolveModelThinkingEffort,
+} from "../reasoning-metadata";
+import {
+  assertChatCompletionFinishReason,
   buildChatCompletionResult,
   DEFAULT_USER_AGENT,
   extractOpenAITokenUsage,
   notifyToolInputDelta,
-  parseJsonRecord,
-  readSseEvents,
-  resolveThinkingEffort,
+  parseToolArguments,
+  readChatCompletionSseEvents,
   sanitizeToolCallHistory,
 } from "../shared";
 import { generateOpenAIResponsesChat } from "./responses";
@@ -83,9 +87,26 @@ export function createOpenAIProvider(
     client.providerName === "openai" &&
     openAIEndpointSupportsNativeWebSearch(client.baseUrl);
   const customModels = options.customModels;
-  const reasoningEffortValues = customModels?.find(
-    (entry) => entry.id === model
-  )?.reasoningEffortValues;
+  const reasoningMetadata = customModels?.find((entry) => entry.id === model);
+  const reasoningEffortValues = reasoningMetadata?.reasoningEffortValues;
+  const defaultReasoningEffort = reasoningMetadata?.defaultReasoningEffort;
+  const resolveThinking = (thinking: ProviderChatOptions["thinking"]) => {
+    if (!modelSupportsReasoning(model, customModels)) {
+      return;
+    }
+    if (thinking?.enabled === false) {
+      return thinking;
+    }
+    if (!thinking?.enabled) {
+      return;
+    }
+    const effort = resolveModelThinkingEffort(
+      model,
+      thinking.effort,
+      customModels
+    );
+    return { enabled: true, ...(effort ? { effort } : {}) };
+  };
 
   return {
     generateChat(input: GenerateChatInput) {
@@ -93,6 +114,7 @@ export function createOpenAIProvider(
         return generateOpenAIResponsesChat({
           apiKey: options.apiKey,
           customModels,
+          defaultReasoningEffort,
           input,
           model,
           providerInstanceId: options.providerInstanceId,
@@ -108,7 +130,7 @@ export function createOpenAIProvider(
         model,
         signal: input.signal,
         system: input.system,
-        thinking: input.providerOptions?.thinking,
+        thinking: resolveThinking(input.providerOptions?.thinking),
         tools: input.tools,
       });
     },
@@ -134,6 +156,7 @@ export function createOpenAIProvider(
         return generateOpenAIResponsesChat({
           apiKey: options.apiKey,
           customModels,
+          defaultReasoningEffort,
           handlers,
           input,
           model,
@@ -151,7 +174,7 @@ export function createOpenAIProvider(
         model,
         signal: input.signal,
         system: input.system,
-        thinking: input.providerOptions?.thinking,
+        thinking: resolveThinking(input.providerOptions?.thinking),
         tools: input.tools,
       });
     },
@@ -329,12 +352,14 @@ export function parseOpenAIToolCalls(
     const id = call.id?.trim();
 
     if (!(name && id)) {
-      return [];
+      throw new Error(
+        "The provider returned a tool call without an ID or name."
+      );
     }
 
     return [
       {
-        arguments: parseJsonRecord(call.function?.arguments ?? "{}"),
+        arguments: parseToolArguments(call.function?.arguments),
         id,
         name,
       },
@@ -370,15 +395,13 @@ async function buildChatCompletionRequestBody(options: {
     ),
     ...(usesDeepSeekThinkingBody(provider, options.model)
       ? buildDeepSeekThinkingBody(options.thinking)
-      : {}),
+      : options.thinking?.enabled && options.thinking.effort
+        ? { reasoning_effort: options.thinking.effort }
+        : {}),
     ...(hasTools
       ? {
           tool_choice: "auto",
           tools: toOpenAITools(options.tools),
-          // Safety net if a caller still hits chat/completions for gpt-5.4+.
-          ...(openAIModelRejectsChatToolsWithReasoning(options.model)
-            ? { reasoning_effort: "none" }
-            : {}),
         }
       : {}),
   };
@@ -409,14 +432,8 @@ function buildDeepSeekThinkingBody(
     return {};
   }
 
-  const reasoningEffort = resolveThinkingEffort(thinking.effort, [
-    "low",
-    "high",
-    "max",
-  ]);
-
   return {
-    reasoning_effort: reasoningEffort,
+    ...(thinking.effort ? { reasoning_effort: thinking.effort } : {}),
     thinking: { type: "enabled" as const },
   };
 }
@@ -479,6 +496,7 @@ async function requestChatCompletion(
   const payload = (await response.json()) as {
     usage?: Record<string, unknown>;
     choices?: Array<{
+      finish_reason?: string | null;
       message?: {
         content?: string | null;
         reasoning_content?: string | null;
@@ -490,6 +508,10 @@ async function requestChatCompletion(
     }>;
   };
 
+  assertChatCompletionFinishReason(
+    payload.choices?.[0]?.finish_reason,
+    client.label
+  );
   const message = payload.choices?.[0]?.message;
   const toolCalls = parseOpenAIToolCalls(message?.tool_calls);
   const content = message?.content ?? "";
@@ -581,9 +603,16 @@ async function requestCompletion(
   }
 
   const payload = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string | null } }>;
+    choices?: Array<{
+      finish_reason?: string | null;
+      message?: { content?: string | null };
+    }>;
   };
 
+  assertChatCompletionFinishReason(
+    payload.choices?.[0]?.finish_reason,
+    client.label
+  );
   const content = payload.choices?.[0]?.message?.content?.trim();
   const usage = extractOpenAITokenUsage(
     (payload as { usage?: Record<string, unknown> }).usage
@@ -643,12 +672,14 @@ function finalizePendingToolCalls(
     .map(([, call]) => call)
     .flatMap((call) => {
       if (!(call.id && call.name)) {
-        return [];
+        throw new Error(
+          "The provider returned a tool call without an ID or name."
+        );
       }
 
       return [
         {
-          arguments: parseJsonRecord(call.arguments),
+          arguments: parseToolArguments(call.arguments),
           id: call.id,
           name: call.name,
         },
@@ -666,55 +697,59 @@ async function readOpenAIStream(
   let usage: ChatCompletionResult["usage"];
   const pending = new Map<number, PendingToolCall>();
 
-  await readSseEvents(body, ({ data }) => {
-    const payload = JSON.parse(data) as {
-      usage?: Record<string, unknown>;
-      choices?: Array<{
-        delta?: {
-          content?: string | null;
-          reasoning_content?: string | null;
-          tool_calls?: Array<{
-            index?: number;
-            id?: string;
-            function?: { name?: string; arguments?: string };
-          }>;
-        };
-      }>;
-    };
+  await readChatCompletionSseEvents(
+    body,
+    ({ data }) => {
+      const payload = JSON.parse(data) as {
+        usage?: Record<string, unknown>;
+        choices?: Array<{
+          delta?: {
+            content?: string | null;
+            reasoning_content?: string | null;
+            tool_calls?: Array<{
+              index?: number;
+              id?: string;
+              function?: { name?: string; arguments?: string };
+            }>;
+          };
+        }>;
+      };
 
-    usage = extractOpenAITokenUsage(payload.usage) ?? usage;
+      usage = extractOpenAITokenUsage(payload.usage) ?? usage;
 
-    const delta = payload.choices?.[0]?.delta;
+      const delta = payload.choices?.[0]?.delta;
 
-    if (delta?.content) {
-      content += delta.content;
-      handlers.onChunk(delta.content);
-    }
+      if (delta?.content) {
+        content += delta.content;
+        handlers.onChunk(delta.content);
+      }
 
-    const reasoningDelta = readReasoningContent(delta, {
-      preserveWhitespace: true,
-    });
+      const reasoningDelta = readReasoningContent(delta, {
+        preserveWhitespace: true,
+      });
 
-    if (reasoningDelta) {
-      thinking += reasoningDelta;
-      handlers.onThinking?.(reasoningDelta);
-    }
+      if (reasoningDelta) {
+        thinking += reasoningDelta;
+        handlers.onThinking?.(reasoningDelta);
+      }
 
-    if (delta?.tool_calls) {
-      for (const toolDelta of delta.tool_calls) {
-        const argDelta = toolDelta.function?.arguments ?? "";
-        mergePendingToolCall(pending, toolDelta);
+      if (delta?.tool_calls) {
+        for (const toolDelta of delta.tool_calls) {
+          const argDelta = toolDelta.function?.arguments ?? "";
+          mergePendingToolCall(pending, toolDelta);
 
-        if (argDelta) {
-          const current = pending.get(toolDelta.index ?? 0);
+          if (argDelta) {
+            const current = pending.get(toolDelta.index ?? 0);
 
-          if (current) {
-            notifyToolInputDelta(handlers, current, argDelta);
+            if (current) {
+              notifyToolInputDelta(handlers, current, argDelta);
+            }
           }
         }
       }
-    }
-  });
+    },
+    label
+  );
 
   const toolCalls = finalizePendingToolCalls(pending);
   const thinkingText = thinking.trim() || undefined;

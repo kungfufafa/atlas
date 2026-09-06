@@ -582,7 +582,7 @@ describe("AgentService capability configuration", () => {
     ).toEqual([{ default: true, id: "stale-model" }]);
   });
 
-  test("uses provider-agnostic legacy vision evidence for routing options", async () => {
+  test("does not infer vision routing options from legacy provider catalogs without model evidence", async () => {
     const db = createInMemoryDatabaseAdapter();
     await db.upsertOrgAiConfig({
       config: {
@@ -617,20 +617,7 @@ describe("AgentService capability configuration", () => {
         option.capabilityId === PROVIDER_CAPABILITY_IDS.imageUnderstanding
     );
 
-    expect(imageOptions).toContainEqual(
-      expect.objectContaining({
-        effective: expect.objectContaining({ selectable: true }),
-        modelId: "accounts/fireworks/models/kimi-k2p5",
-        providerId: "fireworks-vision",
-      })
-    );
-    expect(imageOptions).toContainEqual(
-      expect.objectContaining({
-        effective: expect.objectContaining({ selectable: true }),
-        modelId: "gemma-4-31b",
-        providerId: "cerebras-vision",
-      })
-    );
+    expect(imageOptions).toEqual([]);
   });
 
   test("adds registry-resolved capability claims to configured chat models", async () => {

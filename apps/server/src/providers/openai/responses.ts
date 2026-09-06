@@ -20,7 +20,7 @@ import {
   formatHttpErrorBody,
   hasMatchingProviderContent,
   notifyToolInputDelta,
-  parseJsonRecord,
+  parseToolArguments,
   readRecord,
   readSseEvents,
   resolveThinkingEffort,
@@ -45,6 +45,7 @@ export async function generateOpenAIResponsesChat(options: {
   supportsThinking?: boolean;
   /** Provider/model-specific reasoning effort values from the configured catalog. */
   reasoningEffortValues?: string[];
+  defaultReasoningEffort?: string;
   /** Provider identity used to gate opaque Responses replay. */
   providerName?: ProviderName;
   providerInstanceId?: string;
@@ -63,6 +64,7 @@ export async function generateOpenAIResponsesChat(options: {
     options.supportsThinking,
     options.jsonOutput,
     options.reasoningEffortValues,
+    options.defaultReasoningEffort,
     options.providerName,
     options.providerInstanceId,
     options.providerReplayRevision
@@ -131,6 +133,7 @@ async function buildResponsesRequestBody(
   supportsThinking?: boolean,
   jsonOutput?: boolean,
   reasoningEffortValues?: string[],
+  defaultReasoningEffort?: string,
   providerName?: ProviderName,
   providerInstanceId?: string,
   providerReplayRevision?: string
@@ -156,7 +159,8 @@ async function buildResponsesRequestBody(
       input,
       customModels,
       supportsThinking,
-      reasoningEffortValues
+      reasoningEffortValues,
+      defaultReasoningEffort
     ),
     ...(jsonOutput ? { text: { format: { type: "json_object" } } } : {}),
     ...(stream ? { stream: true } : {}),
@@ -168,7 +172,8 @@ function buildOpenAIReasoningRequest(
   input: GenerateChatInput,
   customModels?: CustomModelEntry[],
   supportsThinking?: boolean,
-  reasoningEffortValues?: string[]
+  reasoningEffortValues?: string[],
+  defaultReasoningEffort?: string
 ): Record<string, unknown> {
   const modelSupportsThinking =
     supportsThinking ?? openAIModelSupportsThinking(model, customModels);
@@ -181,7 +186,8 @@ function buildOpenAIReasoningRequest(
     reasoning: {
       effort: resolveThinkingEffort(
         input.providerOptions.thinking.effort,
-        reasoningEffortValues
+        reasoningEffortValues,
+        defaultReasoningEffort
       ),
       summary: "auto",
     },
@@ -421,10 +427,17 @@ function parseResponsesOutput(
     }
 
     if (item.type === "function_call") {
+      const id = String(item.call_id ?? item.id ?? "");
+      const name = String(item.name ?? "");
+      if (!(id.trim() && name.trim())) {
+        throw new Error(
+          "The provider returned a tool call without an ID or name."
+        );
+      }
       toolCalls.push({
-        arguments: parseJsonRecord(String(item.arguments ?? "{}")),
-        id: String(item.call_id ?? item.id ?? ""),
-        name: String(item.name ?? ""),
+        arguments: parseToolArguments(item.arguments),
+        id,
+        name,
       });
     }
   }

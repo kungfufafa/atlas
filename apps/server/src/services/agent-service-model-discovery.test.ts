@@ -174,7 +174,11 @@ describe("AgentService adapter-owned model discovery", () => {
       syntheticConfig(instance)
     );
 
-    expect(requests).toEqual(["http://localhost:11434/v1/models"]);
+    expect(requests).toEqual([
+      "http://localhost:11434/v1/models",
+      "http://localhost:11434/api/ps",
+      "http://localhost:11434/api/show",
+    ]);
     expect(result.models.map((model) => model.id)).toEqual(["local-llama"]);
   });
 
@@ -218,7 +222,11 @@ describe("AgentService adapter-owned model discovery", () => {
       syntheticConfig(instance)
     );
 
-    expect(authorizations).toEqual(["Bearer cloud-secret"]);
+    expect(authorizations).toEqual([
+      "Bearer cloud-secret",
+      "Bearer cloud-secret",
+      "Bearer cloud-secret",
+    ]);
     expect(result.models.map((model) => model.id)).toEqual(["cloud-llama"]);
   });
 });

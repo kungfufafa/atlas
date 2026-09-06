@@ -40,9 +40,12 @@ function streamFromChunks(chunks: string[]): ReadableStream<Uint8Array> {
   });
 }
 
-function streamChunk(delta: Record<string, unknown>): string {
+function streamChunk(
+  delta: Record<string, unknown>,
+  finishReason: string | null = null
+): string {
   return `data:${JSON.stringify({
-    choices: [{ delta, finish_reason: null, index: 0 }],
+    choices: [{ delta, finish_reason: finishReason, index: 0 }],
     created: 1_700_000_000,
     id: "chunk-1",
     model: "anthropic/claude-sonnet-4-6",
@@ -73,6 +76,13 @@ describe("createOpenRouterProvider", () => {
 
     const provider = createOpenRouterProvider({
       apiKey: "sk-or-v1-test",
+      customModels: [
+        {
+          id: "anthropic/claude-sonnet-4-6",
+          reasoningEffortValues: ["low", "medium", "high"],
+          supportsThinking: true,
+        },
+      ],
       fetcher: fetchMock as typeof fetch,
       model: "anthropic/claude-sonnet-4-6",
     });
@@ -106,6 +116,13 @@ describe("createOpenRouterProvider", () => {
 
     const provider = createOpenRouterProvider({
       apiKey: "sk-or-v1-test",
+      customModels: [
+        {
+          id: "anthropic/claude-sonnet-4-6",
+          reasoningEffortValues: ["low", "medium", "high"],
+          supportsThinking: true,
+        },
+      ],
       fetcher: fetchMock as typeof fetch,
     });
 
@@ -139,7 +156,7 @@ describe("createOpenRouterProvider", () => {
           reasoning?: { effort?: string; summary?: string };
         };
 
-        expect(body.reasoning).toEqual({ effort: "high", summary: "auto" });
+        expect(body.reasoning).toEqual({ effort: "high" });
 
         return new Response(
           chatCompletionResponse("Answer", { reasoning: "Plan" }),
@@ -153,6 +170,13 @@ describe("createOpenRouterProvider", () => {
 
     const provider = createOpenRouterProvider({
       apiKey: "sk-or-v1-test",
+      customModels: [
+        {
+          id: "anthropic/claude-sonnet-4-6",
+          reasoningEffortValues: ["low", "medium", "high"],
+          supportsThinking: true,
+        },
+      ],
       fetcher: fetchMock as typeof fetch,
     });
 
@@ -224,6 +248,13 @@ describe("createOpenRouterProvider", () => {
 
     const provider = createOpenRouterProvider({
       apiKey: "sk-or-v1-test",
+      customModels: [
+        {
+          id: "anthropic/claude-sonnet-4-6",
+          reasoningEffortValues: ["low", "medium", "high"],
+          supportsThinking: true,
+        },
+      ],
       fetcher: fetchMock as typeof fetch,
       model: "meta-llama/llama-4-maverick",
     });
@@ -250,12 +281,13 @@ describe("createOpenRouterProvider", () => {
         };
 
         expect(body.stream).toBe(true);
-        expect(body.reasoning).toEqual({ effort: "medium", summary: "auto" });
+        expect(body.reasoning).toEqual({ effort: "medium" });
 
         return new Response(
           streamFromChunks([
             streamChunk({ reasoning: "Plan" }),
             streamChunk({ content: "Hi" }),
+            streamChunk({}, "stop"),
             "data:[DONE]\r\n\r\n",
           ]),
           { headers: { "Content-Type": "text/event-stream" }, status: 200 }
@@ -265,6 +297,13 @@ describe("createOpenRouterProvider", () => {
 
     const provider = createOpenRouterProvider({
       apiKey: "sk-or-v1-test",
+      customModels: [
+        {
+          id: "anthropic/claude-sonnet-4-6",
+          reasoningEffortValues: ["low", "medium", "high"],
+          supportsThinking: true,
+        },
+      ],
       fetcher: fetchMock as typeof fetch,
     });
 
@@ -301,6 +340,13 @@ describe("createOpenRouterProvider", () => {
 
     const provider = createOpenRouterProvider({
       apiKey: "sk-or-v1-test",
+      customModels: [
+        {
+          id: "anthropic/claude-sonnet-4-6",
+          reasoningEffortValues: ["low", "medium", "high"],
+          supportsThinking: true,
+        },
+      ],
       fetcher: fetchMock as typeof fetch,
     });
 

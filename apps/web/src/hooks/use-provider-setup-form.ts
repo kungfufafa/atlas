@@ -19,7 +19,10 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ModelListRow } from "@/components/ModelListEditor";
-import { normalizeModelListRows } from "@/components/model-list-editor.shared";
+import {
+  clearConnectionModelMetadata,
+  normalizeModelListRows,
+} from "@/components/model-list-editor.shared";
 import { isCurrentProviderOperation } from "@/components/provider-setup-form.shared";
 import { useAppContext } from "@/context/use-app-context";
 import { useAuth } from "@/context/use-auth";
@@ -270,6 +273,9 @@ export function useProviderSetupForm(
       setTestingConnection(false);
 
       if (clearDiscoveryCache) {
+        setCustomModels(clearConnectionModelMetadata);
+        setShortlistModels(clearConnectionModelMetadata);
+        setOpenRouterModels(clearConnectionModelMetadata);
         void queryClient.cancelQueries({
           queryKey: ["remoteModelDiscovery"],
         });
@@ -693,8 +699,6 @@ export function useProviderSetupForm(
           {
             id: modelId,
             name: row.modelName,
-            ...(row.reasoning ? { supportsThinking: true } : {}),
-            ...(row.vision ? { supportsVision: true } : {}),
           },
         ]);
         setSelectedModel(modelId);
@@ -712,8 +716,6 @@ export function useProviderSetupForm(
           {
             id: modelId,
             name: row.modelName,
-            ...(row.reasoning ? { supportsThinking: true } : {}),
-            ...(row.vision ? { supportsVision: true } : {}),
           },
         ]);
         setSelectedModel(modelId);
@@ -732,7 +734,6 @@ export function useProviderSetupForm(
               id: modelId,
               name: row.modelName,
               provider,
-              ...(row.context > 0 ? { contextWindow: row.context } : {}),
             },
           ];
         });
@@ -752,7 +753,6 @@ export function useProviderSetupForm(
               id: modelId,
               name: row.modelName,
               provider,
-              ...(row.context > 0 ? { contextWindow: row.context } : {}),
             },
           ];
         });

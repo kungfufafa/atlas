@@ -85,7 +85,13 @@ describe("Fireworks provider", () => {
 
     const provider = createFireworksProvider({
       apiKey: "test-key",
-      customModels: [{ id: FIREWORKS_TEST_MODEL, supportsThinking: true }],
+      customModels: [
+        {
+          id: FIREWORKS_TEST_MODEL,
+          reasoningEffortValues: ["low", "medium", "high"],
+          supportsThinking: true,
+        },
+      ],
       model: FIREWORKS_TEST_MODEL,
     });
 
@@ -146,7 +152,13 @@ describe("Fireworks provider", () => {
 
     const provider = createFireworksProvider({
       apiKey: "test-key",
-      customModels: [{ id: FIREWORKS_TEST_MODEL, supportsThinking: true }],
+      customModels: [
+        {
+          id: FIREWORKS_TEST_MODEL,
+          reasoningEffortValues: ["low", "medium", "high"],
+          supportsThinking: true,
+        },
+      ],
       model: FIREWORKS_TEST_MODEL,
     });
 

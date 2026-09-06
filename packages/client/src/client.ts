@@ -55,6 +55,7 @@ import type {
   DeleteKnowledgeBaseResponse,
   DeleteProviderResponse,
   DiscordSettingsResponse,
+  DiscoverModelsRequest,
   DocumentAttachment,
   DraftAutomationResponse,
   DraftTaskPromptRequest,
@@ -589,16 +590,7 @@ export class AtlasClient {
       baseUrl?: string;
       apiKey?: string;
       providerId?: string;
-      provider?:
-        | "ollama"
-        | "openai_compatible"
-        | "fireworks"
-        | "opencode_go"
-        | "minimax"
-        | "minimax_cn"
-        | "xai"
-        | "zhipu"
-        | "zhipu_cn";
+      provider?: DiscoverModelsRequest["provider"];
       hostMode?: "local" | "cloud";
     },
     options: { signal?: AbortSignal } = {}

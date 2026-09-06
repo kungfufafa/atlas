@@ -2,9 +2,9 @@ import { describe, expect, test } from "bun:test";
 import { openRouterModelSupportsThinking } from "./thinking";
 
 describe("openRouterModelSupportsThinking", () => {
-  test("allows catalog Claude models", () => {
+  test("does not infer support from Claude model ids", () => {
     expect(openRouterModelSupportsThinking("anthropic/claude-sonnet-4-6")).toBe(
-      true
+      false
     );
   });
 
@@ -34,9 +34,9 @@ describe("openRouterModelSupportsThinking", () => {
     );
   });
 
-  test("allows custom Claude slugs by prefix", () => {
+  test("does not infer support from custom Claude prefixes", () => {
     expect(openRouterModelSupportsThinking("anthropic/claude-3.7-sonnet")).toBe(
-      true
+      false
     );
   });
 

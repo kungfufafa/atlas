@@ -251,7 +251,11 @@ describe("resolveModelDefaultReasoningEffort", () => {
         group(
           "openai-1",
           "openai",
-          { defaultReasoningEffort: "high" },
+          {
+            defaultReasoningEffort: "high",
+            reasoningEffortValues: ["low", "high"],
+            supportsThinking: true,
+          },
           "gpt-runtime"
         )
       )
@@ -506,4 +510,34 @@ describe("hasOpenCodeZenProvider", () => {
       ])
     ).toBe(false);
   });
+});
+
+test("qualified model metadata cannot leak from another provider", () => {
+  const groups = group(
+    "other",
+    "openai",
+    {
+      defaultReasoningEffort: "high",
+      reasoningEffortValues: ["high"],
+      supportsThinking: true,
+      supportsVision: true,
+    },
+    "same-id"
+  );
+  const selection = encodeModelSelection("missing", "same-id");
+  expect(resolveModelThinkingSupport(selection, groups)).toBeUndefined();
+  expect(resolveModelReasoningEffortValues(selection, groups)).toBeUndefined();
+  expect(resolveModelDefaultReasoningEffort(selection, groups)).toBeUndefined();
+  expect(resolveModelVisionSupport(selection, groups)).toBeUndefined();
+});
+
+test("explicit unsupported reasoning suppresses stale effort metadata", () => {
+  const groups = group("provider", "openai", {
+    defaultReasoningEffort: "high",
+    reasoningEffortValues: ["high"],
+    supportsThinking: false,
+  });
+  const selection = encodeModelSelection("provider", "model-1");
+  expect(resolveModelReasoningEffortValues(selection, groups)).toEqual([]);
+  expect(resolveModelDefaultReasoningEffort(selection, groups)).toBeUndefined();
 });

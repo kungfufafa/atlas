@@ -128,7 +128,11 @@ describe("agent chat cancellation", () => {
 
     // Without this the provider request outlives the cancel and the session
     // stays locked until the model finishes on its own.
-    expect(providerSignal).toBe(controller.signal);
+    expect(providerSignal?.aborted).toBe(false);
+    const reason = new Error("Cancelled by caller");
+    controller.abort(reason);
+    expect(providerSignal?.aborted).toBe(true);
+    expect(providerSignal?.reason).toBe(reason);
   });
 
   test("hands cancellation to the provider for non-stream turns", async () => {
@@ -148,7 +152,11 @@ describe("agent chat cancellation", () => {
 
     await session.send("hello", { signal: controller.signal });
 
-    expect(providerSignal).toBe(controller.signal);
+    expect(providerSignal?.aborted).toBe(false);
+    const reason = new Error("Cancelled by caller");
+    controller.abort(reason);
+    expect(providerSignal?.aborted).toBe(true);
+    expect(providerSignal?.reason).toBe(reason);
   });
 
   test("runs to completion when nothing aborts", async () => {

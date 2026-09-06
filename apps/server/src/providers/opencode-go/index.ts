@@ -1,4 +1,5 @@
 import type {
+  CustomModelEntry,
   GenerateChatInput,
   GenerateTextInput,
   ProviderClient,
@@ -6,8 +7,9 @@ import type {
 } from "@atlas/core";
 import { createAnthropicProvider } from "../anthropic";
 import { toOpenCodeGoApiModelId } from "../models";
-import { createOpenAIProvider } from "../openai";
 import { generateOpenAIResponsesChat } from "../openai/responses";
+import { createOpenAICompatibleProvider } from "../openai-compatible";
+import { modelSupportsReasoning } from "../reasoning-metadata";
 import {
   DEFAULT_OPENCODE_GO_CATALOG_MODEL_ID,
   OPENCODE_GO_CHAT_BASE_URL,
@@ -22,6 +24,7 @@ export {
 
 export interface OpenCodeGoProviderOptions {
   apiKey: string;
+  customModels?: CustomModelEntry[];
   model?: string;
   providerInstanceId?: string;
   providerReplayRevision?: string;
@@ -33,11 +36,18 @@ export function createOpenCodeGoProvider(
   const catalogModel = options.model ?? DEFAULT_OPENCODE_GO_CATALOG_MODEL_ID;
   const model = toOpenCodeGoApiModelId(catalogModel);
   const apiKind = resolveOpenCodeGoApiKind(model);
+  const customModels = options.customModels?.map((entry) => ({
+    ...entry,
+    id: toOpenCodeGoApiModelId(entry.id),
+  }));
+  const metadata = customModels?.find((entry) => entry.id === model);
+  const supportsThinking = modelSupportsReasoning(model, customModels);
 
   if (apiKind === "messages") {
     const anthropic = createAnthropicProvider({
       apiKey: options.apiKey,
       baseUrl: OPENCODE_GO_MESSAGES_BASE_URL,
+      customModels,
       model,
       providerInstanceId: options.providerInstanceId,
       providerLabel: "OpenCode Go",
@@ -67,25 +77,33 @@ export function createOpenCodeGoProvider(
         generateOpenAIResponsesChat({
           apiKey: options.apiKey,
           baseUrl: OPENCODE_GO_CHAT_BASE_URL,
+          customModels,
+          defaultReasoningEffort: metadata?.defaultReasoningEffort,
           input: withoutNativeWebSearch(input),
           label: "OpenCode Go",
           model,
           providerInstanceId: options.providerInstanceId,
           providerName: "opencode_go",
           providerReplayRevision: options.providerReplayRevision,
+          reasoningEffortValues: metadata?.reasoningEffortValues,
           stream: false,
+          supportsThinking,
         }),
       generateText: async (input: GenerateTextInput) => {
         const result = await generateOpenAIResponsesChat({
           apiKey: options.apiKey,
           baseUrl: OPENCODE_GO_CHAT_BASE_URL,
+          customModels,
+          defaultReasoningEffort: metadata?.defaultReasoningEffort,
           input: withoutNativeWebSearch(toChatInput(input)),
           label: "OpenCode Go",
           model,
           providerInstanceId: options.providerInstanceId,
           providerName: "opencode_go",
           providerReplayRevision: options.providerReplayRevision,
+          reasoningEffortValues: metadata?.reasoningEffortValues,
           stream: false,
+          supportsThinking,
         });
 
         return {
@@ -98,6 +116,8 @@ export function createOpenCodeGoProvider(
         generateOpenAIResponsesChat({
           apiKey: options.apiKey,
           baseUrl: OPENCODE_GO_CHAT_BASE_URL,
+          customModels,
+          defaultReasoningEffort: metadata?.defaultReasoningEffort,
           handlers,
           input: withoutNativeWebSearch(input),
           label: "OpenCode Go",
@@ -105,18 +125,24 @@ export function createOpenCodeGoProvider(
           providerInstanceId: options.providerInstanceId,
           providerName: "opencode_go",
           providerReplayRevision: options.providerReplayRevision,
+          reasoningEffortValues: metadata?.reasoningEffortValues,
           stream: true,
+          supportsThinking,
         }),
     };
   }
 
-  return createOpenAIProvider({
+  return createOpenAICompatibleProvider({
     apiKey: options.apiKey,
     baseUrl: OPENCODE_GO_CHAT_BASE_URL,
+    defaultReasoningEffort: metadata?.defaultReasoningEffort,
+    displayName: "OpenCode Go",
     model,
     providerInstanceId: options.providerInstanceId,
     providerName: "opencode_go",
     providerReplayRevision: options.providerReplayRevision,
+    reasoningEffortValues: metadata?.reasoningEffortValues,
+    supportsThinking,
   });
 }
 

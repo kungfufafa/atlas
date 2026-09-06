@@ -44,7 +44,13 @@ describe("Cerebras provider", () => {
 
     const provider = createCerebrasProvider({
       apiKey: "test-key",
-      customModels: [{ id: "gpt-oss-120b", supportsThinking: true }],
+      customModels: [
+        {
+          id: "gpt-oss-120b",
+          reasoningEffortValues: ["low", "medium", "high"],
+          supportsThinking: true,
+        },
+      ],
       model: "gpt-oss-120b",
     });
 
@@ -105,7 +111,13 @@ describe("Cerebras provider", () => {
 
     const provider = createCerebrasProvider({
       apiKey: "test-key",
-      customModels: [{ id: "gpt-oss-120b", supportsThinking: true }],
+      customModels: [
+        {
+          id: "gpt-oss-120b",
+          reasoningEffortValues: ["low", "medium", "high"],
+          supportsThinking: true,
+        },
+      ],
       model: "gpt-oss-120b",
     });
 

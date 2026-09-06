@@ -103,12 +103,18 @@ Orgs isolate profiles, sessions, automations, tasks, tools, MCP, skills, usage (
 
 ## Subscription providers (ChatGPT / Claude)
 
+Model metadata is scoped to the exact provider instance, endpoint, and model ID. Discovery/configuration must preserve context/output limits, native effort values/defaults, explicit `false`, and empty effort lists. Missing fields mean unknown; do not infer capabilities from names, copy another provider's catalog, or supply generic 128k/8k limits. OpenAI API's ID-only model list is enriched only on its official endpoint using exact, documented entries in `providers/openai/model-metadata.ts`. Anthropic/Gemini use native model APIs; compatible gateways use advertised fields; Ollama uses configured/running context rather than trained model capacity. Runtime-managed subscription context takes precedence over catalog limits and bypasses Atlas automatic compaction. Explicit manual compaction remains available when limits are unknown.
+
+Adapter transport support does not prove model support: optional model features stay unknown without provider/configuration evidence or an exact official-endpoint documentation entry. Native ChatGPT/Claude runtimes guarantee their tool bridge separately. Connection changes invalidate prior discovered metadata. Keep selected model IDs stable; unavailable explicit selections must fail with an actionable error instead of switching models. Anthropic/Gemini input-only limits are already usable input budgets; do not subtract output capacity from them a second time.
+
 API-key providers (`openai`, `anthropic`) stay unchanged. Subscription access is separate catalog types:
 
 - `chatgpt` — Bundled `@openai/codex` app-server owns ChatGPT OAuth, account/plan, models, and thread/turn execution in the isolated `~/.atlas/subscription-auth/chatgpt` Codex home. Atlas never copies `~/.codex` tokens or loads host Codex tools/MCP/settings.
 - `claude` — Bundled `@anthropic-ai/claude-agent-sdk` native CLI + Agent SDK. Atlas never copies `~/.claude` tokens and unsets `ANTHROPIC_API_KEY` for this path so API billing cannot silently replace the subscription.
 
 Routes: `/v1/subscription/{chatgpt|claude}` (status, login, logout, models). Adapters: `apps/server/src/providers/subscription/`. Atlas session id maps to the runtime session in `~/.atlas/subscription-sessions.json`.
+
+**ChatGPT context:** `thread/tokenUsage/updated` supplies the effective `modelContextWindow` and current occupancy (`last.totalTokens`). Keep this separate from token usage totals; do not subtract an output reserve again. Codex `model/list` does not advertise context limits, so context stays unknown until the runtime reports it. ChatGPT sets `ProviderClient.managesContext`: preserve it through wrappers to let Codex own automatic compaction. Explicit Atlas compaction still works and invalidates the native snapshot.
 
 ## System prompt
 
