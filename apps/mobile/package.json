@@ -16,7 +16,7 @@
     "@atlas/design-tokens": "workspace:*",
     "@expo-google-fonts/instrument-sans": "^0.4.2",
     "@expo-google-fonts/jetbrains-mono": "^0.4.1",
-    "@expo/ui": "~57.0.14",
+    "@expo/ui": "~57.0.15",
     "@hookform/resolvers": "^5.9.1",
     "@hugeicons/core-free-icons": "^4.3.0",
     "@hugeicons/react-native": "^1.0.16",
