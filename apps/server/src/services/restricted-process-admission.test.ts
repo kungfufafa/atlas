@@ -325,7 +325,10 @@ test("policy snapshots launch/config inputs and independently binds simultaneous
     release.resolve();
     const [first, second] = await Promise.all([a, b]);
     try {
-      expect(first.args.at(-1)).toBe("printf actual-child > child-effect.txt");
+      expect(await execute(first)).toEqual({ code: 0, stderr: "" });
+      expect(
+        await readFile(path.join(workspace, "child-effect.txt"), "utf8")
+      ).toBe("actual-child");
       expect(first.evidence.launchId).not.toBe(second.evidence.launchId);
       expect(first.evidence.temporaryRoot.path).not.toBe(
         second.evidence.temporaryRoot.path

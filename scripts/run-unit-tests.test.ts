@@ -2,7 +2,13 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { collectUnitTestFiles, UNIT_TEST_SCOPES } from "./run-unit-tests";
+import {
+  collectUnitTestFiles,
+  parseUnitTestArguments,
+  partitionUnitTestFiles,
+  runUnitTestFiles,
+  UNIT_TEST_SCOPES,
+} from "./run-unit-tests";
 
 const temporaryRoots: string[] = [];
 
@@ -104,4 +110,101 @@ test("deduplicates overlapping scopes without losing discovered files", async ()
       "apps/server/src/check.test.ts",
     ])
   ).toEqual(["./apps/server/src/check.test.ts"]);
+});
+
+test("shards are deterministic, disjoint and cover every discovered file once", () => {
+  const files = Array.from(
+    { length: 17 },
+    (_, index) => `./apps/check-${index}.test.ts`
+  );
+  for (const total of [1, 4, 20]) {
+    const shards = Array.from({ length: total }, (_, index) =>
+      partitionUnitTestFiles(files, { index: index + 1, total })
+    );
+    expect(shards.flat().sort()).toEqual([...files].sort());
+    expect(new Set(shards.flat()).size).toBe(files.length);
+    expect(partitionUnitTestFiles(files, { index: 1, total })).toEqual(
+      shards[0]!
+    );
+  }
+  expect(partitionUnitTestFiles(files)).toEqual(files);
+});
+
+test("consumes the shard selection and forwards ordinary Bun test options", () => {
+  for (const shard of [["--shard=2/4"], ["--shard", "2/4"]]) {
+    expect(
+      parseUnitTestArguments(["--timeout=5000", ...shard, "-t", "case"])
+    ).toEqual({
+      forwardedArguments: ["--timeout=5000", "-t", "case"],
+      shard: { index: 2, total: 4 },
+    });
+  }
+});
+
+test("rejects invalid shards and native worker flags before starting tests", () => {
+  for (const arguments_ of [
+    ["--shard=0/4"],
+    ["--shard=5/4"],
+    ["--shard=1/0"],
+    ["--shard=one/four"],
+    ["--shard"],
+    ["--shard=1/4", "--shard=2/4"],
+    ["--parallel=2"],
+    ["--isolate"],
+    ["--test-worker"],
+  ]) {
+    expect(() => parseUnitTestArguments(arguments_)).toThrow();
+  }
+});
+
+test("runs at most two fresh ordinary processes and collects failures without omitting later files", async () => {
+  const files = ["./a.test.ts", "./b.test.ts", "./c.test.ts", "./d.test.ts"];
+  const commands: string[][] = [];
+  const root = await fixture();
+  let release!: () => void;
+  const firstWave = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let active = 0;
+  let peak = 0;
+  const running = runUnitTestFiles(
+    root,
+    files,
+    ["--timeout=5000"],
+    async (command, options) => {
+      commands.push(command);
+      active += 1;
+      peak = Math.max(peak, active);
+      expect(options.cwd).toBe(root);
+      expect(options.env.LLM_VCR_MODE).toBe(
+        process.env.LLM_VCR_MODE ?? "replay"
+      );
+      if (commands.length <= 2) {
+        await firstWave;
+      }
+      active -= 1;
+      return command.at(-1) === "./b.test.ts" ? 7 : 0;
+    }
+  );
+  expect(commands).toHaveLength(2);
+  release();
+  expect(await running).toEqual(["./b.test.ts"]);
+  expect(peak).toBe(2);
+  expect(commands).toEqual(
+    files.map((file) => [process.execPath, "test", "--timeout=5000", file])
+  );
+});
+
+test("an empty shard starts no processes and a successful child has no failure", async () => {
+  let invocations = 0;
+  const execute = async () => {
+    invocations += 1;
+    return 0;
+  };
+  expect(await runUnitTestFiles("/fixture", [], [], execute)).toEqual([]);
+  expect(invocations).toBe(0);
+  expect(
+    await runUnitTestFiles("/fixture", ["./pass.test.ts"], [], execute)
+  ).toEqual([]);
+  expect(invocations).toBe(1);
 });

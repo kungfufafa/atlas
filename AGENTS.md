@@ -7,7 +7,7 @@ Agent platform built to work with your team — not replace them. Multi-tenant m
 ## Dev
 
 - Bun 1.3.14+: `bun install`, `bun run`, `bun test`
-- Full unit suite: `bun run test` discovers the configured source scopes and passes explicit file paths to two isolated Bun workers. Focused tests should use `bun test ./path/to/file.test.ts`; bare path filters can scan the entire monorepo and exhaust file descriptors.
+- Full unit suite: `bun run test` discovers the configured source scopes and runs each file in a fresh Bun process, with at most two processes active. CI uses complete, disjoint `--shard=N/M` file partitions. Avoid native `--parallel`/`--isolate` worker mode after stdio corruption in CI. Focused tests should use `bun test ./path/to/file.test.ts`; bare path filters can scan the entire monorepo and exhaust file descriptors.
 - Servers: `bun run dev:server` | `dev:web` | `dev:cli` | `dev:mobile`
 - Layout: `apps/{server,web,cli,mobile}`, channel workers in `apps/platform/{telegram,whatsapp,discord,automation}`
 - Writing Tests: assert behavior, not prompt/description/error copy.

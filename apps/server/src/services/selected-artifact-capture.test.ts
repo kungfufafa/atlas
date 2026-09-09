@@ -17,7 +17,6 @@ import {
 } from "node:fs/promises";
 import { tmpdir as testTemporaryDirectory } from "node:os";
 import { join, join as joinTestTemporaryPath } from "node:path";
-import type { Readable, Writable } from "node:stream";
 import { resolvePythonRuntime } from "../tools/python-execute-tool";
 import { resolveRestrictedExecutable } from "./restricted-process";
 import { createSelectedArtifactCapture } from "./selected-artifact-capture";
@@ -57,18 +56,24 @@ async function expectedRoot(profile: string) {
   return { device: String(value.dev), inode: String(value.ino) };
 }
 
-// A fixture copy inserts a deterministic OS-pipe barrier into the exact static
-// worker. No barrier/environment hook exists in the production capture API.
+// A fixture copy uses newline-framed input and a deterministic stdio barrier.
+// The capture algorithm stays intact; production has no barrier or input hook.
 async function barrierCapture(
   profile: string,
   marker: string,
   mutate: () => Promise<void>,
   sourcePath = "artifacts/nested/selected.txt"
 ) {
-  const insertion = `os.write(3, b"barrier\\n"); require(os.read(4, 1) == b"x", "TEST_NO_ACK")`;
+  const barrier = "ATLAS_CAPTURE_BARRIER\n";
+  const insertion = String.raw`os.write(2, b"ATLAS_CAPTURE_BARRIER\n"); require(sys.stdin.buffer.read(1) == b"x", "TEST_NO_ACK")`;
   const token = `# ${marker}`;
+  const inputReader = "sys.stdin.buffer.read(16385)";
   expect(SELECTED_ARTIFACT_CAPTURE_SCRIPT.split(token).length).toBe(2);
+  expect(SELECTED_ARTIFACT_CAPTURE_SCRIPT.split(inputReader).length).toBe(2);
   const script = SELECTED_ARTIFACT_CAPTURE_SCRIPT.replace(
+    inputReader,
+    "sys.stdin.buffer.readline(16385)"
+  ).replace(
     token,
     marker === "CAPTURE_PARENT_OPENED"
       ? `if name == "nested": ${insertion}`
@@ -86,20 +91,27 @@ async function barrierCapture(
   const child = spawn(runtime, ["-I", "-S", "-u", "-c", script], {
     cwd: "/",
     env: { PATH: "/usr/bin:/bin" },
-    stdio: ["pipe", "pipe", "pipe", "pipe", "pipe"],
+    stdio: ["pipe", "pipe", "pipe"],
   });
   const output: Buffer[] = [];
   const diagnostics: Buffer[] = [];
   child.stdout!.on("data", (chunk: Buffer) => output.push(chunk));
   child.stderr!.on("data", (chunk: Buffer) => diagnostics.push(chunk));
-  const done = new Promise<number | null>((resolve, reject) => {
-    child.on("error", reject);
-    child.on("close", resolve);
-  });
+  const done = new Promise<{ code: number | null; error?: Error }>(
+    (resolve) => {
+      child.once("error", (error) => resolve({ code: null, error }));
+      child.once("close", (code) => resolve({ code }));
+    }
+  );
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const reached = new Promise<void>((resolve, reject) => {
-      (child.stdio[3] as Readable).once("data", () => resolve());
+      child.stderr!.on("data", () => {
+        if (Buffer.concat(diagnostics).toString("utf8").includes(barrier)) {
+          resolve();
+        }
+      });
+      child.once("error", reject);
       child.once("close", (code) =>
         reject(
           new Error(
@@ -112,12 +124,15 @@ async function barrierCapture(
         5000
       );
     });
-    child.stdin!.end(JSON.stringify(input));
+    child.stdin!.write(`${JSON.stringify(input)}\n`);
     await reached;
     expect(child.exitCode).toBeNull();
     await mutate();
-    (child.stdio[4] as Writable).end("x");
-    const code = await done;
+    child.stdin!.end("x");
+    const { code, error } = await done;
+    if (error) {
+      throw error;
+    }
     const result = JSON.parse(Buffer.concat(output).toString("utf8")) as {
       error?: { code: string };
       bytesBase64?: string;
