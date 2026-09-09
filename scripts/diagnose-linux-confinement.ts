@@ -319,6 +319,10 @@ async function main(): Promise<void> {
   console.log(
     JSON.stringify({
       bun: Bun.version,
+      corePattern: (
+        await readFile("/proc/sys/kernel/core_pattern", "utf8")
+      ).trim(),
+      limits: await readFile("/proc/self/limits", "utf8"),
       output,
       phase: "diagnostic-start",
       strace: Boolean(trace),
@@ -491,6 +495,80 @@ async function main(): Promise<void> {
       } finally {
         await prepared.cleanup();
       }
+    }
+    // Diagnostic-only ablation: copy the launcher and add one read-only rule
+    // for this exact process's maps inode. Never modify the production policy
+    // or grant a proc directory, another process, or its environ/fd entries.
+    const sourceDirectory = path.resolve(
+      import.meta.dir,
+      "../apps/server/src/services"
+    );
+    const copiedDirectory = path.join(root, "own-maps-launcher");
+    await mkdir(copiedDirectory);
+    const originalSource = await readFile(
+      path.join(sourceDirectory, "restricted-process-linux.c"),
+      "utf8"
+    );
+    const anchor = "  if (prctl(ATLAS_PR_SET_NO_NEW_PRIVS";
+    if (!originalSource.includes(anchor)) {
+      throw new Error("Diagnostic launcher insertion point is unavailable");
+    }
+    const ownMapsSource = originalSource.replace(
+      anchor,
+      '  if (atlas_add_path_rule(fd, "/proc/self/maps", ATLAS_READ_FILE_ACCESS, 1) < 0) { close(fd); return 1; }\n' +
+        anchor
+    );
+    await writeFile(
+      path.join(copiedDirectory, "restricted-process-linux.c"),
+      ownMapsSource
+    );
+    await writeFile(path.join(output, "own-maps-launcher.c"), ownMapsSource);
+    for (const filename of [
+      "restricted-process-linux.js",
+      "javascript-tool-sandbox-linux.c",
+    ]) {
+      await writeFile(
+        path.join(copiedDirectory, filename),
+        await readFile(path.join(sourceDirectory, filename))
+      );
+    }
+    await writeFile(canary, "synthetic-only");
+    const ownMapsPrepared = await prepare({
+      args: [...isolated, "-e", PROBE],
+      bin: process.execPath,
+      env: { ...baseEnv, PROBE_PROTOCOL: "0" },
+      workspaceRoot: workspace,
+    });
+    try {
+      const originalLauncher = path.join(
+        sourceDirectory,
+        "restricted-process-linux.js"
+      );
+      if (!ownMapsPrepared.args.includes(originalLauncher)) {
+        throw new Error("Diagnostic prepared launcher was not found");
+      }
+      const result = await collect(
+        "confined-bun-own-maps",
+        ownMapsPrepared.bin,
+        ownMapsPrepared.args.map((arg) =>
+          arg === originalLauncher
+            ? path.join(copiedDirectory, "restricted-process-linux.js")
+            : arg
+        ),
+        ownMapsPrepared.cwd,
+        ownMapsPrepared.env,
+        output,
+        trace
+      );
+      results.push(result);
+      if (result.code === 0) {
+        assertDenied(result.stdout);
+      }
+      if ((await readFile(canary, "utf8")) !== "synthetic-only") {
+        throw new Error("Own-maps diagnostic changed the denied canary");
+      }
+    } finally {
+      await ownMapsPrepared.cleanup();
     }
     process.exitCode = results.some(
       (result) =>

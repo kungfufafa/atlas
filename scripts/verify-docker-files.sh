@@ -33,6 +33,7 @@ docker run --rm --network none --read-only \
   ./packages/core/src/tools/paths.test.ts \
   ./packages/core/src/tools/filesystem.test.ts \
   ./packages/core/src/tools/search-files.test.ts \
+  ./packages/core/src/files/pdf-text.test.ts \
   ./packages/core/src/office-document/office-document.test.ts \
   ./packages/core/src/office-document/revisions.test.ts \
   ./packages/core/src/tools/spreadsheet-ooxml.test.ts \

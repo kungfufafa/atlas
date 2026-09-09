@@ -34,6 +34,7 @@ const probe = () => ({
   linkDenied: denied(() => fs.readFileSync('linked-canary')),
   cwd: process.cwd(), home: process.env.HOME,
   custom: process.env.FIXTURE_CREDENTIAL,
+  runtime: { node: process.versions.node, bun: process.versions.bun ?? null },
 });
 const initial = probe();
 const rl = readline.createInterface({input: process.stdin});
@@ -58,6 +59,7 @@ interface Probe {
   home: string;
   linkDenied: boolean;
   readDenied: boolean;
+  runtime: { node: string; bun: string | null };
   writeDenied: boolean;
 }
 
@@ -338,6 +340,10 @@ test("MCP Node runtime preserves configured credentials and confines real file e
         "active",
         "fixture-org"
       )) as { initial: Probe; current: Probe };
+      expect(
+        result.initial.runtime,
+        "The MCP Node fixture requires genuine Node.js on PATH; a Bun shim is not Node.js."
+      ).toMatchObject({ bun: null, node: expect.any(String) });
       expect(result.initial.readDenied).toBe(true);
       expect(result.initial.writeDenied).toBe(true);
       expect(result.current.linkDenied).toBe(true);
