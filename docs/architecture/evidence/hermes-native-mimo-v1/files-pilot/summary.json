@@ -1,0 +1,598 @@
+{
+  "candidateSourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+  "coverage": {
+    "batchErrors": 0,
+    "duplicateLifecycleRecords": 0,
+    "endsWithoutStart": 0,
+    "identifiableAttempts": 4,
+    "pairPreparationErrors": 0,
+    "rawEndRecords": 4,
+    "rawErrorRecords": 0,
+    "rawStartRecords": 4,
+    "scheduledArms": 4,
+    "scheduledArmsMissingOrAmbiguous": 0,
+    "scheduledPairs": 2,
+    "startsWithoutEnd": 0
+  },
+  "groups": [
+    {
+      "bootstrap": {
+        "clusters": 2,
+        "degenerate": false,
+        "descriptive95": {
+          "confidence": 0.95,
+          "lower": -1,
+          "upper": 0
+        },
+        "draws": 100000,
+        "familyEffects": [-1, 0],
+        "method": "Percentile paired bootstrap of equal-weight family effects; repetitions averaged within seeded instance.",
+        "pointEstimate": -0.5,
+        "seed": 20260917,
+        "simultaneous97_5": {
+          "confidence": 0.975,
+          "lower": -1,
+          "upper": 0
+        }
+      },
+      "completePaired": {
+        "atlasRate": 0.5,
+        "counts": {
+          "atlasOnly": 0,
+          "bothPass": 1,
+          "hermesOnly": 1,
+          "neitherSuccessful": 0
+        },
+        "delta": -0.5,
+        "hermesRate": 1,
+        "pairs": 2,
+        "pairsWithMissingOrAmbiguousArm": 0
+      },
+      "decision": {
+        "aggregateFloor": 0.9,
+        "comparativeAccountingKnown": true,
+        "complete": true,
+        "criticalIntegrityFailure": false,
+        "exploratory": true,
+        "familyFloor": 0.8,
+        "floorPass": false,
+        "informationAdequate": false,
+        "intervalConfidence": 0.95,
+        "multiplicity": "One predeclared file track.",
+        "noninferiority": "inconclusive_or_does_not_qualify",
+        "observedTie": false,
+        "statement": "Exploratory implementation/development evidence; no confirmatory claim.",
+        "superiority": "inconclusive_or_does_not_qualify"
+      },
+      "diagnosticOnly": false,
+      "diagnostics": {
+        "atlas": {
+          "accountingUncertain": 0,
+          "ambiguousFinal": 0,
+          "artifactOracle": {
+            "denominator": 2,
+            "numerator": 1,
+            "rate": 0.5
+          },
+          "boundaryFailures": 0,
+          "budgetExceeded": 0,
+          "deliveryFailures": 1,
+          "factual": null,
+          "falseCompletion": 0,
+          "finalContract": null,
+          "integrityFailures": 0,
+          "invocationErrors": 0,
+          "missingFacts": 0,
+          "statusCounts": {
+            "completed": 2
+          },
+          "strict": null,
+          "transferAccuracy": 0,
+          "transferredFacts": []
+        },
+        "hermes": {
+          "accountingUncertain": 0,
+          "ambiguousFinal": 0,
+          "artifactOracle": {
+            "denominator": 2,
+            "numerator": 2,
+            "rate": 1
+          },
+          "boundaryFailures": 0,
+          "budgetExceeded": 0,
+          "deliveryFailures": 0,
+          "factual": null,
+          "falseCompletion": 0,
+          "finalContract": null,
+          "integrityFailures": 0,
+          "invocationErrors": 0,
+          "missingFacts": 0,
+          "statusCounts": {
+            "completed": 2
+          },
+          "strict": null,
+          "transferAccuracy": 0,
+          "transferredFacts": []
+        }
+      },
+      "equalFamilyAtlasRate": 0.5,
+      "families": [
+        {
+          "family": "csv_join",
+          "atlasRate": 0,
+          "counts": {
+            "atlasOnly": 0,
+            "bothPass": 0,
+            "hermesOnly": 1,
+            "neitherSuccessful": 0
+          },
+          "delta": -1,
+          "hermesRate": 1,
+          "pairs": 1,
+          "pairsWithMissingOrAmbiguousArm": 0,
+          "effect": -1,
+          "instanceCount": 1
+        },
+        {
+          "family": "xlsx_reconciliation",
+          "atlasRate": 1,
+          "counts": {
+            "atlasOnly": 0,
+            "bothPass": 1,
+            "hermesOnly": 0,
+            "neitherSuccessful": 0
+          },
+          "delta": 0,
+          "hermesRate": 1,
+          "pairs": 1,
+          "pairsWithMissingOrAmbiguousArm": 0,
+          "effect": 0,
+          "instanceCount": 1
+        }
+      ],
+      "id": "files",
+      "intentionToRun": {
+        "atlasRate": 0.5,
+        "counts": {
+          "atlasOnly": 0,
+          "bothPass": 1,
+          "hermesOnly": 1,
+          "neitherSuccessful": 0
+        },
+        "delta": -0.5,
+        "hermesRate": 1,
+        "pairs": 2,
+        "pairsWithMissingOrAmbiguousArm": 0
+      },
+      "resources": {
+        "atlas": {
+          "attempts": 2,
+          "cachedTokens": {
+            "mean": 30464,
+            "measuredCount": 2,
+            "median": 30464,
+            "missingCount": 0,
+            "observedTotal": 60928,
+            "p95": 39392,
+            "total": 60928
+          },
+          "costUsd": {
+            "mean": null,
+            "measuredCount": 0,
+            "median": null,
+            "missingCount": 2,
+            "observedTotal": null,
+            "p95": null,
+            "total": null
+          },
+          "generatedTokens": {
+            "mean": 3247.5,
+            "measuredCount": 2,
+            "median": 3247.5,
+            "missingCount": 0,
+            "observedTotal": 6495,
+            "p95": 4315.35,
+            "total": 6495
+          },
+          "invocationLatencyMs": {
+            "mean": 69501.5,
+            "measuredCount": 2,
+            "median": 69501.5,
+            "missingCount": 0,
+            "observedTotal": 139003,
+            "p95": 80689.84999999999,
+            "total": 139003
+          },
+          "observedGeneratedTokenLowerBounds": {
+            "mean": 3247.5,
+            "measuredCount": 2,
+            "median": 3247.5,
+            "missingCount": 0,
+            "observedTotal": 6495,
+            "p95": 4315.35,
+            "total": 6495
+          },
+          "observedPromptTokenLowerBounds": {
+            "mean": 45622.5,
+            "measuredCount": 2,
+            "median": 45622.5,
+            "missingCount": 0,
+            "observedTotal": 91245,
+            "p95": 53418.75,
+            "total": 91245
+          },
+          "privateGradingLatencyMs": {
+            "mean": 223,
+            "measuredCount": 2,
+            "median": 223,
+            "missingCount": 0,
+            "observedTotal": 446,
+            "p95": 422.8,
+            "total": 446
+          },
+          "promptTokens": {
+            "mean": 45622.5,
+            "measuredCount": 2,
+            "median": 45622.5,
+            "missingCount": 0,
+            "observedTotal": 91245,
+            "p95": 53418.75,
+            "total": 91245
+          },
+          "providerRequests": {
+            "mean": 7.5,
+            "measuredCount": 2,
+            "median": 7.5,
+            "missingCount": 0,
+            "observedTotal": 15,
+            "p95": 8.85,
+            "total": 15
+          },
+          "providerStatusCounts": {
+            "200": 15
+          },
+          "scope": "All identifiable started/ended attempts, including failures and extra attempts; never only successful tasks. Unknown totals are not zero.",
+          "totalAttemptLatencyMs": {
+            "mean": 69730.5,
+            "measuredCount": 2,
+            "median": 69730.5,
+            "missingCount": 0,
+            "observedTotal": 139461,
+            "p95": 81119.55,
+            "total": 139461
+          }
+        },
+        "hermes": {
+          "attempts": 2,
+          "cachedTokens": {
+            "mean": 28256,
+            "measuredCount": 2,
+            "median": 28256,
+            "missingCount": 0,
+            "observedTotal": 56512,
+            "p95": 34390.4,
+            "total": 56512
+          },
+          "costUsd": {
+            "mean": null,
+            "measuredCount": 0,
+            "median": null,
+            "missingCount": 2,
+            "observedTotal": null,
+            "p95": null,
+            "total": null
+          },
+          "generatedTokens": {
+            "mean": 2211,
+            "measuredCount": 2,
+            "median": 2211,
+            "missingCount": 0,
+            "observedTotal": 4422,
+            "p95": 2671.8,
+            "total": 4422
+          },
+          "invocationLatencyMs": {
+            "mean": 47844.5,
+            "measuredCount": 2,
+            "median": 47844.5,
+            "missingCount": 0,
+            "observedTotal": 95689,
+            "p95": 52086.65,
+            "total": 95689
+          },
+          "observedGeneratedTokenLowerBounds": {
+            "mean": 2211,
+            "measuredCount": 2,
+            "median": 2211,
+            "missingCount": 0,
+            "observedTotal": 4422,
+            "p95": 2671.8,
+            "total": 4422
+          },
+          "observedPromptTokenLowerBounds": {
+            "mean": 38078.5,
+            "measuredCount": 2,
+            "median": 38078.5,
+            "missingCount": 0,
+            "observedTotal": 76157,
+            "p95": 44610.25,
+            "total": 76157
+          },
+          "privateGradingLatencyMs": {
+            "mean": 435,
+            "measuredCount": 2,
+            "median": 435,
+            "missingCount": 0,
+            "observedTotal": 870,
+            "p95": 443.09999999999997,
+            "total": 870
+          },
+          "promptTokens": {
+            "mean": 38078.5,
+            "measuredCount": 2,
+            "median": 38078.5,
+            "missingCount": 0,
+            "observedTotal": 76157,
+            "p95": 44610.25,
+            "total": 76157
+          },
+          "providerRequests": {
+            "mean": 6,
+            "measuredCount": 2,
+            "median": 6,
+            "missingCount": 0,
+            "observedTotal": 12,
+            "p95": 6.8999999999999995,
+            "total": 12
+          },
+          "providerStatusCounts": {
+            "200": 12
+          },
+          "scope": "All identifiable started/ended attempts, including failures and extra attempts; never only successful tasks. Unknown totals are not zero.",
+          "totalAttemptLatencyMs": {
+            "mean": 48284,
+            "measuredCount": 2,
+            "median": 48284,
+            "missingCount": 0,
+            "observedTotal": 96568,
+            "p95": 52533.799999999996,
+            "total": 96568
+          }
+        }
+      },
+      "scope": "This synthetic fixture distribution and the frozen model/runtime/capability configuration only.",
+      "strictIntentionToRun": null,
+      "transportAdmittedPaired": {
+        "atlasRate": 0.5,
+        "counts": {
+          "atlasOnly": 0,
+          "bothPass": 1,
+          "hermesOnly": 1,
+          "neitherSuccessful": 0
+        },
+        "delta": -0.5,
+        "hermesRate": 1,
+        "pairs": 2,
+        "pairsWithMissingOrAmbiguousArm": 0
+      }
+    }
+  ],
+  "limits": [
+    "No universal harness, provider, subscription, visual-quality or before/after improvement claim.",
+    "Memory formatting/factual metrics are separate. File final JSON/strict chat formatting is not required and is reported as not applicable.",
+    "A missing arm is unsuccessful for intention-to-run and remains explicitly missing; it is not an observed successful tie.",
+    "Provider prices are not guessed. Resource distributions include failures, missing observations and extra attempts."
+  ],
+  "phase": "pilot",
+  "resources": {
+    "atlas": {
+      "attempts": 2,
+      "cachedTokens": {
+        "mean": 30464,
+        "measuredCount": 2,
+        "median": 30464,
+        "missingCount": 0,
+        "observedTotal": 60928,
+        "p95": 39392,
+        "total": 60928
+      },
+      "costUsd": {
+        "mean": null,
+        "measuredCount": 0,
+        "median": null,
+        "missingCount": 2,
+        "observedTotal": null,
+        "p95": null,
+        "total": null
+      },
+      "generatedTokens": {
+        "mean": 3247.5,
+        "measuredCount": 2,
+        "median": 3247.5,
+        "missingCount": 0,
+        "observedTotal": 6495,
+        "p95": 4315.35,
+        "total": 6495
+      },
+      "invocationLatencyMs": {
+        "mean": 69501.5,
+        "measuredCount": 2,
+        "median": 69501.5,
+        "missingCount": 0,
+        "observedTotal": 139003,
+        "p95": 80689.84999999999,
+        "total": 139003
+      },
+      "observedGeneratedTokenLowerBounds": {
+        "mean": 3247.5,
+        "measuredCount": 2,
+        "median": 3247.5,
+        "missingCount": 0,
+        "observedTotal": 6495,
+        "p95": 4315.35,
+        "total": 6495
+      },
+      "observedPromptTokenLowerBounds": {
+        "mean": 45622.5,
+        "measuredCount": 2,
+        "median": 45622.5,
+        "missingCount": 0,
+        "observedTotal": 91245,
+        "p95": 53418.75,
+        "total": 91245
+      },
+      "privateGradingLatencyMs": {
+        "mean": 223,
+        "measuredCount": 2,
+        "median": 223,
+        "missingCount": 0,
+        "observedTotal": 446,
+        "p95": 422.8,
+        "total": 446
+      },
+      "promptTokens": {
+        "mean": 45622.5,
+        "measuredCount": 2,
+        "median": 45622.5,
+        "missingCount": 0,
+        "observedTotal": 91245,
+        "p95": 53418.75,
+        "total": 91245
+      },
+      "providerRequests": {
+        "mean": 7.5,
+        "measuredCount": 2,
+        "median": 7.5,
+        "missingCount": 0,
+        "observedTotal": 15,
+        "p95": 8.85,
+        "total": 15
+      },
+      "providerStatusCounts": {
+        "200": 15
+      },
+      "scope": "All identifiable started/ended attempts, including failures and extra attempts; never only successful tasks. Unknown totals are not zero.",
+      "totalAttemptLatencyMs": {
+        "mean": 69730.5,
+        "measuredCount": 2,
+        "median": 69730.5,
+        "missingCount": 0,
+        "observedTotal": 139461,
+        "p95": 81119.55,
+        "total": 139461
+      }
+    },
+    "hermes": {
+      "attempts": 2,
+      "cachedTokens": {
+        "mean": 28256,
+        "measuredCount": 2,
+        "median": 28256,
+        "missingCount": 0,
+        "observedTotal": 56512,
+        "p95": 34390.4,
+        "total": 56512
+      },
+      "costUsd": {
+        "mean": null,
+        "measuredCount": 0,
+        "median": null,
+        "missingCount": 2,
+        "observedTotal": null,
+        "p95": null,
+        "total": null
+      },
+      "generatedTokens": {
+        "mean": 2211,
+        "measuredCount": 2,
+        "median": 2211,
+        "missingCount": 0,
+        "observedTotal": 4422,
+        "p95": 2671.8,
+        "total": 4422
+      },
+      "invocationLatencyMs": {
+        "mean": 47844.5,
+        "measuredCount": 2,
+        "median": 47844.5,
+        "missingCount": 0,
+        "observedTotal": 95689,
+        "p95": 52086.65,
+        "total": 95689
+      },
+      "observedGeneratedTokenLowerBounds": {
+        "mean": 2211,
+        "measuredCount": 2,
+        "median": 2211,
+        "missingCount": 0,
+        "observedTotal": 4422,
+        "p95": 2671.8,
+        "total": 4422
+      },
+      "observedPromptTokenLowerBounds": {
+        "mean": 38078.5,
+        "measuredCount": 2,
+        "median": 38078.5,
+        "missingCount": 0,
+        "observedTotal": 76157,
+        "p95": 44610.25,
+        "total": 76157
+      },
+      "privateGradingLatencyMs": {
+        "mean": 435,
+        "measuredCount": 2,
+        "median": 435,
+        "missingCount": 0,
+        "observedTotal": 870,
+        "p95": 443.09999999999997,
+        "total": 870
+      },
+      "promptTokens": {
+        "mean": 38078.5,
+        "measuredCount": 2,
+        "median": 38078.5,
+        "missingCount": 0,
+        "observedTotal": 76157,
+        "p95": 44610.25,
+        "total": 76157
+      },
+      "providerRequests": {
+        "mean": 6,
+        "measuredCount": 2,
+        "median": 6,
+        "missingCount": 0,
+        "observedTotal": 12,
+        "p95": 6.8999999999999995,
+        "total": 12
+      },
+      "providerStatusCounts": {
+        "200": 12
+      },
+      "scope": "All identifiable started/ended attempts, including failures and extra attempts; never only successful tasks. Unknown totals are not zero.",
+      "totalAttemptLatencyMs": {
+        "mean": 48284,
+        "measuredCount": 2,
+        "median": 48284,
+        "missingCount": 0,
+        "observedTotal": 96568,
+        "p95": 52533.799999999996,
+        "total": 96568
+      }
+    }
+  },
+  "schemaVersion": 1,
+  "track": "files",
+  "transportMode": "live",
+  "validity": {
+    "issues": [],
+    "valid": true
+  },
+  "evidence": {
+    "archivedAnalysisSha256": "742950ec31c46ad2ae796e5997a13f0750abe456ea2d5d9135858c2e89abac2a",
+    "archiveVerification": "Archived member contents checked against recorded inventories without executing or extracting archived code; mutable app/package checkout not read.",
+    "batchDirectory": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v1/batches/pilot-1788714926426-08fedeba",
+    "candidateSourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+    "executedAnalysisSha256": "742950ec31c46ad2ae796e5997a13f0750abe456ea2d5d9135858c2e89abac2a",
+    "manifestSha256": "d7007a47777bc2a3495be3ce4682640b507112e77c6c17ac6cfd82d64b27b871"
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "at": "2026-09-07T00:35:34.640251+00:00",
+  "sourceHash": "8942bd95dc70c06f260842a730b64919139341f2727ab79a000146743109c3ad",
+  "sourceFilesVerified": 2088,
+  "rootC5SourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "rootC5FilesVerifiedUnchanged": 2078,
+  "foundationFilesVerifiedUnchanged": 2085,
+  "readinessSha256": "f44c791409527ece484b98502368a43d161ea247f695b23cf6b89451c7119544",
+  "inventorySha256": "bc897f7a5af2a1eb89b328841d70069824ca72b64e002a68c4829e79fc8b7a04",
+  "evidenceBindingSha256": "465b5009867c9560b911f7485a60f54ed19f513ea8a39e0af4bb9a85b204dda1",
+  "ownerFileBindingsVerified": 22,
+  "patchChecks": [
+    {
+      "patch": "combined.patch",
+      "sha256": "f014825cf699b6bee35a6b7f7981b0992029bfdc457fdd8dfa7d5037e84c674b",
+      "exitCode": 0,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "patch": "production.patch",
+      "sha256": "80b6ec8ca33edcf25a3d3f419b2e6f23da9e7b15a335278c222634acd1937fcd",
+      "exitCode": 0,
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "runtimeSourceBindingsVerified": {
+    "/private/tmp/atlas-selected-artifact-capture-foundation/source/apps/server/src/tools/python-execute-tool.ts": "c25b647c4bdad24bdee478f46956cdb7a725bca803429d5dd5ce11a0192a72f0",
+    "/private/tmp/atlas-selected-artifact-capture-foundation/source/apps/server/src/services/restricted-process.ts": "77985c02fdab7fe354fddde90c438c9494746e7b0232aa91a313acbbb9ab398a",
+    "/private/tmp/atlas-selected-artifact-capture-foundation/source/packages/core/src/files/pdf-runtime.ts": "b171096e8a3ffe86edb677fa81efa5670c593314c7eb12272dea9ed2f6e8b8a8",
+    "/Users/apriansyahrs/Documents/Code/atlas/Dockerfile": "f9797fb6ec6cdf3cf24b0a5f6eb611485a380bc2538ce72094ab4f075f294d20",
+    "/Users/apriansyahrs/Documents/Code/atlas/scripts/setup-file-runtime.sh": "2c82040111e8817a8d16cc864d5430a8c2b59307b05280d01d32242af4e045d8"
+  },
+  "ownedSources": {
+    "apps/server/src/services/selected-artifact-capture-worker.ts": "d17896f014c4c0c5a4e930c6bbae7c253f49bad4f4f94062f0af4d1a2612c341",
+    "apps/server/src/services/selected-artifact-capture.test.ts": "4f4d7beb9c895fc1844a70ecf6e4100c345ca470704d43d8eedde39be14b62cd",
+    "apps/server/src/services/selected-artifact-capture.ts": "a941c8abfcf20205842e6bd00c15623df4c0acd9a35364fd25c967c4b1c12221"
+  },
+  "ownerGates": [
+    {
+      "command": "bun test apps/server/src/services/selected-artifact-capture.test.ts",
+      "exitCode": 0,
+      "log": "extended-tests.log",
+      "sha256": "ca6debdc319929026c1206fd12c72369610177d7f61d289c40d93663c0d9c634"
+    },
+    {
+      "command": "bun x tsc --noEmit -p tsconfig.capture.json",
+      "exitCode": 0,
+      "log": "scoped-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "bun x tsc --noEmit -p tsconfig.typecheck.json",
+      "exitCode": 0,
+      "log": "final-production-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "bun x ultracite check apps/server/src/services/selected-artifact-capture.ts apps/server/src/services/selected-artifact-capture-worker.ts apps/server/src/services/selected-artifact-capture.test.ts",
+      "exitCode": 0,
+      "log": "final-lint.log",
+      "sha256": "f0fb4a3217b25586a39fd8850d4932d761f7ca4dc911362381c75d150481fb96"
+    },
+    {
+      "command": "git apply --check /private/tmp/atlas-selected-artifact-capture-foundation/combined.patch",
+      "exitCode": 0,
+      "log": "apply-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "git apply --check /private/tmp/atlas-selected-artifact-capture-foundation/production.patch",
+      "exitCode": 0,
+      "log": "production-apply-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "testsRerun": false,
+  "providerCalls": 0,
+  "sourceEdits": 0
+}

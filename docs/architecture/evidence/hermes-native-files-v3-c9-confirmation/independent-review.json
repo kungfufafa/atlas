@@ -1,0 +1,2745 @@
+{
+  "schemaVersion": 1,
+  "closedAt": "2026-09-07T10:19:27.486273+00:00",
+  "status": "closed",
+  "registration": {
+    "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-independent-review/registration.json",
+    "bytes": 1803,
+    "sha256": "d2391e180864c84311034dbdc312c272a15cd1c919c490a544dc84a0278959de"
+  },
+  "batch": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932",
+  "scope": "Independent full CLOSED confirmation instrumentation, original fields and opaque byte binding only. No provider/model/test/analyzer/oracle execution, source/control change, rescoring, or favorable-window filtering.",
+  "conclusion": {
+    "structuralValiditySupportedWithinRegisteredInstrumentation": true,
+    "unresolvedStructuralBlockerFound": false,
+    "explicitAuthenticationBlockerFound": false,
+    "globallyNonfunctionalEndpointEstablished": false,
+    "transientTransportFailuresRetained": true,
+    "all108OriginalArmsRetained": true,
+    "finiteEqualOrBetterClaimEstablished": false,
+    "newApiAdmissionGranted": false
+  },
+  "frozenBinding": {
+    "candidateSourceHash": "e2daf1b902a087eb279724f17d61e50b9a27f7c1d64828f6958b61b22225eb98",
+    "controlSourceHash": "b3673405fab43fdd268aa286d4f6f0164ea00c2332ba43d00e28abd3d538fde5",
+    "frozenManifest": {
+      "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/frozen/manifest.json",
+      "bytes": 1177733,
+      "sha256": "b50f7517975762665cd627e4c0493f5cbe6228d22c9581781b9100946d07b30f"
+    },
+    "sameFrozenSchedule": true,
+    "sameModelProfileBudget": true,
+    "sourceArchives": [
+      {
+        "archive": {
+          "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/atlas-source.tar.gz",
+          "bytes": 11195896,
+          "sha256": "7a32e16083318b69f053d6323d2c9bfeadbf35457a4a0e5a4cd4566f9fbaa2d5"
+        },
+        "membersVerifiedOpaque": 2121
+      },
+      {
+        "archive": {
+          "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/file-protocol-source.tar.gz",
+          "bytes": 179166,
+          "sha256": "6110c142438e14868cd425401b38149bed2d397e425f133e1d052682d5067ca5"
+        },
+        "membersVerifiedOpaque": 53
+      },
+      {
+        "archive": {
+          "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/hermes-source.tar.gz",
+          "bytes": 26490578,
+          "sha256": "9c254249eba850ee47648ef19a78dddc6260eb05cdacf651406d984ceeadf1f2"
+        },
+        "membersVerifiedOpaque": 7481
+      }
+    ]
+  },
+  "verifiedCounts": {
+    "pairs": 54,
+    "scheduledArms": 108,
+    "originalStarts": 108,
+    "originalEnds": 108,
+    "originalLedgerErrors": 0,
+    "originalSingleSpawnCalls": 108,
+    "parentCallerReferenceFiles": 972,
+    "sourceAssignments": 54,
+    "originalInputFilesHashedOpaquely": 72,
+    "privateOracleManifestsHashedNotParsed": 54,
+    "sourceArchiveMembers": 9655,
+    "wireFiles": 2643,
+    "nativeQueueArrivals": 742,
+    "brokerBudgetRejectionsBeforeUpstream": 6,
+    "upstreamRequestRecords": 736,
+    "recordedHttp200ResponsesReportingExactModel": 716,
+    "transportErrorsWithUpstreamStatusNull": 20,
+    "nativeIdentitiesBound": 104,
+    "nativeIdentitiesUnavailable": 4,
+    "knownMandatoryUsageArms": 98,
+    "unknownMandatoryUsageArms": 10,
+    "originalCallerFailures": 18,
+    "healthLedgerLinesReverified": 10,
+    "healthMetadataFilesReverified": 30,
+    "osSleepEntryNextWakeIntervals": 5,
+    "selectedExactCopies": 562
+  },
+  "fullVerification": {
+    "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-independent-review/full-instrumentation-verification.json",
+    "bytes": 3336751,
+    "sha256": "6e1ff369773f3530d46efa29c7331e3f913e7c57e96e44ec15081544fc9cc890"
+  },
+  "supplementaryVerification": {
+    "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-independent-review/supplementary-verification.json",
+    "bytes": 356121,
+    "sha256": "8bdc4d466c776451a3d8ebf9b716d2ee9c9c042c3a8c70108608dea99ab472e1"
+  },
+  "census": {
+    "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-independent-review/census.json",
+    "bytes": 876295,
+    "sha256": "bb96a27bdf7380f39e12952c9c8607687a28f4f80412d3fddaeaaecfa125ac3a"
+  },
+  "selectedEvidence": {
+    "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-independent-review/selected-evidence-bindings.json",
+    "bytes": 382107,
+    "sha256": "71b20d5b501576d1a83b909a92550c29a75dbd9fdbeb70c2a7500de0af9134ae"
+  },
+  "admission": {
+    "receipt": {
+      "path": "/private/tmp/atlas-native-file-v3-final-admission/confirmatory-admission.json",
+      "bytes": 4784,
+      "sha256": "8d397316af6c86b13e61d6701768fad39511b9586faaa03440de5ae9a0606acb"
+    },
+    "precedesEveryStart": true,
+    "allReferencedAdmissionFilesVerified": 12,
+    "originalRunner": {
+      "session": 87603,
+      "exitCode": 0,
+      "restarted": false
+    },
+    "originalAnalyzer": {
+      "session": 27461,
+      "exitCode": 0,
+      "rerun": false
+    },
+    "executionReceipts": [
+      {
+        "path": "/private/tmp/atlas-native-file-v3-final-admission/confirmatory-execution.json",
+        "bytes": 558,
+        "sha256": "067df3782f82608fcfff08eff368474229011c0859c8d7a45914946e161d5376"
+      },
+      {
+        "path": "/private/tmp/atlas-native-file-v3-final-admission/confirmatory-analysis-execution.json",
+        "bytes": 746,
+        "sha256": "607484b6556b4a8c48983e339c76a0876e9ab6ce1e79e42d1461c760e2eb6223"
+      }
+    ],
+    "everyArmOfflineNativeFixtureFalse": true,
+    "noReplacementOrAutomaticEvaluatorRerun": "Exact frozen schedule, unique identity index, original ordered lifecycle rows and one parent spawn each verified; original runner/analyzer receipts explicitly report no restart/rerun. Legitimate runtime requests within an original arm are retained."
+  },
+  "transport": {
+    "model": "mimo-v2.5",
+    "endpoint": "https://opencode.ai/zen/go/v1",
+    "userAgent": "Atlas-Hermes-Compatibility-Probe/1.0 (nonstreaming)",
+    "temperature": 0.2,
+    "stream": false,
+    "perResponseLimit": "Positive and bounded by min(4096, remaining reported-generated allowance of 12000).",
+    "proxyFacingStatusCounts": {
+      "200": 716,
+      "502": 20
+    },
+    "upstreamRequestStatusCounts": {
+      "200": 716,
+      "null": 20
+    },
+    "qualification": "Proxy-facing 502 is not evidence of provider HTTP 502. All 716 actual response records are HTTP 200 and report the exact model; twenty transport-error requests have no response and retain unknown reported identity/counters. No recorded 401/403 establishes an authentication failure. Reported model metadata is not independent certification of backend model internals."
+  },
+  "unknownAccountingArms": [
+    {
+      "scheduleOrdinal": 2,
+      "scheduledIdentity": {
+        "attemptId": "confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v0-r0-hermes",
+        "family": "code_fix",
+        "harness": "hermes",
+        "pairId": "native-files-confirmatory-code_fix-v0-r0",
+        "repetition": 0,
+        "variant": 0
+      },
+      "originalCaller": {
+        "status": "accounting_uncertain",
+        "success": false,
+        "inputIdentical": true,
+        "boundaryValid": true,
+        "inspectionAllowed": true
+      },
+      "originalEvaluation": {
+        "success": true,
+        "bindingPass": true,
+        "oraclePass": true,
+        "oracleIntegrityFailure": false
+      },
+      "process": {
+        "identity": "bound",
+        "observedIdentity": {
+          "framework": "hermes",
+          "runId": "transport-89e0a42a-b74d-4d8e-a3b9-5c73d1e25cb5"
+        },
+        "reportedStatus": "completed",
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": false,
+        "processFailure": false,
+        "failureCodes": [],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": {
+            "authority": "native_report_only",
+            "nativeCleanup": {
+              "completed": true
+            },
+            "supervisorCleanup": {
+              "completed": true
+            }
+          },
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 458313.25725,
+            "wallMs": 1788766477725
+          },
+          "code": 0,
+          "signal": null
+        },
+        "oneOriginalSpawn": true
+      },
+      "callerTiming": {
+        "callerInvocationReturned": {
+          "monotonicMs": 458317.228917,
+          "wallMs": 1788766477729
+        },
+        "callerInvocationStarted": {
+          "monotonicMs": 173738.092834,
+          "wallMs": 1788766193147
+        },
+        "deadline": {
+          "atMonotonicMs": 473730.018334,
+          "atWallMs": 1788766493139,
+          "scope": "scheduled_attempt"
+        },
+        "invocation": {
+          "bytes": 2117,
+          "path": "invocation.json",
+          "sha256": "e3dd5b87a00aa928e6f7a5abd9d46cab112b66eecd9deef1898239e5d310373a"
+        },
+        "outerInvocationElapsedMs": 284579.136083,
+        "outerInvocationElapsedWallMs": 284582,
+        "schemaVersion": 3
+      },
+      "originalTimingAndTransport": {
+        "at": "2026-09-07T07:34:39.190Z",
+        "attemptStarted": {
+          "monotonicMs": 173730.01833400002,
+          "wallMs": 1788766193139
+        },
+        "deadline": {
+          "atMonotonicMs": 473730.018334,
+          "atWallMs": 1788766493139,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 284579.136083,
+        "totalAttemptElapsedMs": 286048.42075,
+        "totalAttemptElapsedWallMs": 286051,
+        "providerStatuses": [200, 200, 502, 502, 200, 200, 200],
+        "processObservationElapsedMs": 284576.24416700006
+      },
+      "nativeMetadataOnly": {
+        "framework": "hermes",
+        "runId": "transport-89e0a42a-b74d-4d8e-a3b9-5c73d1e25cb5",
+        "model": "mimo-v2.5",
+        "status": "completed",
+        "nativeStateRoot": "/private/tmp/agent-runtime-9FRZ6w/state-qhC5WV/hermes-native-files-dhl_8fup/native-state",
+        "workspaceRoot": "/private/tmp/agent-runtime-9FRZ6w/state-qhC5WV/hermes-native-files-dhl_8fup/workspace"
+      },
+      "processTiming": {
+        "started": {
+          "monotonicMs": 173738.223125,
+          "wallMs": 1788766193147
+        },
+        "processObservedAt": {
+          "monotonicMs": 458314.619292,
+          "wallMs": 1788766477727
+        },
+        "elapsedWallMs": 284579,
+        "elapsedMonotonicMs": 284576.24416700006
+      },
+      "identityBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v0-r0-hermes/runtime-identity.json",
+        "bytes": 451,
+        "sha256": "268dd1db779f4868845770b91482446c22e894851c92f2b3ab2023026bf8a28d"
+      },
+      "sourceAssignmentBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/pairs/native-files-confirmatory-code_fix-v0-r0/source-assignment.json",
+        "bytes": 759,
+        "sha256": "68eb7984de8bb9de3dc6924f211c15f6eae356e07b60a1e0b05f0c1e183afd20"
+      },
+      "originalUsage": {
+        "budgetExceeded": false,
+        "cachedTokens": null,
+        "costUsd": null,
+        "generatedTokens": null,
+        "mandatoryUsageKnown": false,
+        "missingUsage": true,
+        "observedGeneratedTokens": 2420,
+        "observedPromptTokens": 36475,
+        "promptTokens": null,
+        "providerRequests": 7
+      },
+      "originalAccounting": {
+        "cachedTokens": null,
+        "finalized": true,
+        "generatedTokens": null,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": false,
+        "observationError": false,
+        "observedGeneratedTokens": 2420,
+        "observedPromptTokens": 36475,
+        "promptTokens": null
+      },
+      "requestCount": 7,
+      "originalRequestStatuses": {
+        "200": 5,
+        "None": 2
+      }
+    },
+    {
+      "scheduleOrdinal": 3,
+      "scheduledIdentity": {
+        "attemptId": "confirmatory-1788766021520-052b6932-native-files-confirmatory-xlsx_reconciliation-v0-r0-atlas",
+        "family": "xlsx_reconciliation",
+        "harness": "atlas",
+        "pairId": "native-files-confirmatory-xlsx_reconciliation-v0-r0",
+        "repetition": 0,
+        "variant": 0
+      },
+      "originalCaller": {
+        "status": "accounting_uncertain",
+        "success": false,
+        "inputIdentical": true,
+        "boundaryValid": false,
+        "inspectionAllowed": false
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": null,
+        "oraclePass": null,
+        "oracleIntegrityFailure": null
+      },
+      "process": {
+        "identity": "bound",
+        "observedIdentity": {
+          "framework": "atlas",
+          "runId": "transport-8ff2ce1b-8ac1-4411-ab74-48bfad461b86"
+        },
+        "reportedStatus": "failed",
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": false,
+        "processFailure": true,
+        "failureCodes": ["child_exit_not_zero", "native_reported_failure"],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": {
+            "authority": "native_report_only",
+            "nativeCleanup": null,
+            "supervisorCleanup": null
+          },
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 562411.290084,
+            "wallMs": 1788766581824
+          },
+          "code": 1,
+          "signal": null
+        },
+        "oneOriginalSpawn": true
+      },
+      "callerTiming": {
+        "callerInvocationReturned": {
+          "monotonicMs": 562413.914042,
+          "wallMs": 1788766581827
+        },
+        "callerInvocationStarted": {
+          "monotonicMs": 461983.92275,
+          "wallMs": 1788766481396
+        },
+        "deadline": {
+          "atMonotonicMs": 761976.3795,
+          "atWallMs": 1788766781388,
+          "scope": "scheduled_attempt"
+        },
+        "invocation": {
+          "bytes": 2145,
+          "path": "invocation.json",
+          "sha256": "b5494ff7039897793ff65d45c6bc5790e45be429eb1dfcb76d78091fa7d33ff6"
+        },
+        "outerInvocationElapsedMs": 100429.99129199993,
+        "outerInvocationElapsedWallMs": 100431,
+        "schemaVersion": 3
+      },
+      "originalTimingAndTransport": {
+        "at": "2026-09-07T07:36:21.829Z",
+        "attemptStarted": {
+          "monotonicMs": 461976.37950000004,
+          "wallMs": 1788766481388
+        },
+        "deadline": {
+          "atMonotonicMs": 761976.3795,
+          "atWallMs": 1788766781388,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 100429.99129199993,
+        "totalAttemptElapsedMs": 100439.05666699994,
+        "totalAttemptElapsedWallMs": 100441,
+        "providerStatuses": [200, 502],
+        "processObservationElapsedMs": 100428.31812500005
+      },
+      "nativeMetadataOnly": {
+        "framework": "atlas",
+        "runId": "transport-8ff2ce1b-8ac1-4411-ab74-48bfad461b86",
+        "model": "mimo-v2.5",
+        "status": "failed",
+        "nativeStateRoot": "/private/tmp/agent-runtime-9FRZ6w/state-P4mJKF/atlas-native-file-U4LfB8",
+        "workspaceRoot": "/private/tmp/agent-runtime-9FRZ6w/state-P4mJKF/atlas-native-file-U4LfB8/orgs/file_study_org/profiles/file_study_profile"
+      },
+      "processTiming": {
+        "started": {
+          "monotonicMs": 461984.039834,
+          "wallMs": 1788766481396
+        },
+        "processObservedAt": {
+          "monotonicMs": 562412.492084,
+          "wallMs": 1788766581826
+        },
+        "elapsedWallMs": 100429,
+        "elapsedMonotonicMs": 100428.31812500005
+      },
+      "identityBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-xlsx_reconciliation-v0-r0-atlas/runtime-identity.json",
+        "bytes": 482,
+        "sha256": "86573b48922947bdad9aa0924698b48a082472bd30fb9ada44363ed27aca3751"
+      },
+      "sourceAssignmentBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/pairs/native-files-confirmatory-xlsx_reconciliation-v0-r0/source-assignment.json",
+        "bytes": 616,
+        "sha256": "6a674688f382ffaf7b935f7919ea69925eecb74fba2a9049a003cee6a54a348b"
+      },
+      "originalUsage": {
+        "budgetExceeded": false,
+        "cachedTokens": null,
+        "costUsd": null,
+        "generatedTokens": null,
+        "mandatoryUsageKnown": false,
+        "missingUsage": true,
+        "observedGeneratedTokens": 293,
+        "observedPromptTokens": 5614,
+        "promptTokens": null,
+        "providerRequests": 2
+      },
+      "originalAccounting": {
+        "cachedTokens": null,
+        "finalized": true,
+        "generatedTokens": null,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": false,
+        "observationError": false,
+        "observedGeneratedTokens": 293,
+        "observedPromptTokens": 5614,
+        "promptTokens": null
+      },
+      "requestCount": 2,
+      "originalRequestStatuses": {
+        "200": 1,
+        "None": 1
+      }
+    },
+    {
+      "scheduleOrdinal": 52,
+      "scheduledIdentity": {
+        "attemptId": "confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-atlas",
+        "family": "pptx_revision",
+        "harness": "atlas",
+        "pairId": "native-files-confirmatory-pptx_revision-v1-r0",
+        "repetition": 0,
+        "variant": 1
+      },
+      "originalCaller": {
+        "status": "accounting_uncertain",
+        "success": false,
+        "inputIdentical": true,
+        "boundaryValid": true,
+        "inspectionAllowed": true
+      },
+      "originalEvaluation": {
+        "success": true,
+        "bindingPass": true,
+        "oraclePass": true,
+        "oracleIntegrityFailure": false
+      },
+      "process": {
+        "identity": "bound",
+        "observedIdentity": {
+          "framework": "atlas",
+          "runId": "transport-8006e2fa-beb8-44ee-920b-2c851fc69350"
+        },
+        "reportedStatus": "completed",
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": false,
+        "processFailure": false,
+        "failureCodes": [],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": {
+            "authority": "native_report_only",
+            "nativeCleanup": null,
+            "supervisorCleanup": null
+          },
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 3407085.374334,
+            "wallMs": 1788769505236
+          },
+          "code": 0,
+          "signal": null
+        },
+        "oneOriginalSpawn": true
+      },
+      "callerTiming": {
+        "callerInvocationReturned": {
+          "monotonicMs": 3407090.76225,
+          "wallMs": 1788769505241
+        },
+        "callerInvocationStarted": {
+          "monotonicMs": 3347112.724917,
+          "wallMs": 1788769366484
+        },
+        "deadline": {
+          "atMonotonicMs": 3647107.714584,
+          "atWallMs": 1788769666479,
+          "scope": "scheduled_attempt"
+        },
+        "invocation": {
+          "bytes": 2130,
+          "path": "invocation.json",
+          "sha256": "15854234219c891d7cdda691f152e5a635970a22c4fd75c63d56b4988e8e4360"
+        },
+        "outerInvocationElapsedMs": 59978.037332999986,
+        "outerInvocationElapsedWallMs": 138757,
+        "schemaVersion": 3
+      },
+      "originalTimingAndTransport": {
+        "at": "2026-09-07T08:25:05.872Z",
+        "attemptStarted": {
+          "monotonicMs": 3347107.714584,
+          "wallMs": 1788769366479
+        },
+        "deadline": {
+          "atMonotonicMs": 3647107.714584,
+          "atWallMs": 1788769666479,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 59978.037332999986,
+        "totalAttemptElapsedMs": 60614.947540999856,
+        "totalAttemptElapsedWallMs": 139393,
+        "providerStatuses": [200, 200, 200, 200, 200, 502],
+        "processObservationElapsedMs": 59974.663875000086
+      },
+      "nativeMetadataOnly": {
+        "framework": "atlas",
+        "runId": "transport-8006e2fa-beb8-44ee-920b-2c851fc69350",
+        "model": "mimo-v2.5",
+        "status": "completed",
+        "nativeStateRoot": "/private/tmp/agent-runtime-9FRZ6w/state-FNtXP0/atlas-native-file-dHgKqj",
+        "workspaceRoot": "/private/tmp/agent-runtime-9FRZ6w/state-FNtXP0/atlas-native-file-dHgKqj/orgs/file_study_org/profiles/file_study_profile"
+      },
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3347112.848334,
+          "wallMs": 1788769366484
+        },
+        "processObservedAt": {
+          "monotonicMs": 3407088.121334,
+          "wallMs": 1788769505238
+        },
+        "elapsedWallMs": 138754,
+        "elapsedMonotonicMs": 59974.663875000086
+      },
+      "identityBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-atlas/runtime-identity.json",
+        "bytes": 464,
+        "sha256": "a8e1176d718bb896589c8d49c6dc4ed4c45902bdbb2a6d1a96ca35883dd9c955"
+      },
+      "sourceAssignmentBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/pairs/native-files-confirmatory-pptx_revision-v1-r0/source-assignment.json",
+        "bytes": 600,
+        "sha256": "6f6b66a2309ad910de5a098c9042fd494e5b0ffe6ea4d34fe4855a2201de0d92"
+      },
+      "originalUsage": {
+        "budgetExceeded": false,
+        "cachedTokens": null,
+        "costUsd": null,
+        "generatedTokens": null,
+        "mandatoryUsageKnown": false,
+        "missingUsage": true,
+        "observedGeneratedTokens": 1707,
+        "observedPromptTokens": 32630,
+        "promptTokens": null,
+        "providerRequests": 6
+      },
+      "originalAccounting": {
+        "cachedTokens": null,
+        "finalized": true,
+        "generatedTokens": null,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": false,
+        "observationError": false,
+        "observedGeneratedTokens": 1707,
+        "observedPromptTokens": 32630,
+        "promptTokens": null
+      },
+      "requestCount": 6,
+      "originalRequestStatuses": {
+        "200": 5,
+        "None": 1
+      }
+    },
+    {
+      "scheduleOrdinal": 53,
+      "scheduledIdentity": {
+        "attemptId": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-atlas",
+        "family": "docx_report",
+        "harness": "atlas",
+        "pairId": "native-files-confirmatory-docx_report-v1-r0",
+        "repetition": 0,
+        "variant": 1
+      },
+      "originalCaller": {
+        "status": "accounting_uncertain",
+        "success": false,
+        "inputIdentical": true,
+        "boundaryValid": false,
+        "inspectionAllowed": false
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": null,
+        "oraclePass": null,
+        "oracleIntegrityFailure": null
+      },
+      "process": {
+        "identity": "bound",
+        "observedIdentity": {
+          "framework": "atlas",
+          "runId": "transport-3c4dc9aa-96db-4a99-a43e-c9d8636c1511"
+        },
+        "reportedStatus": "failed",
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": false,
+        "processFailure": true,
+        "failureCodes": ["child_exit_not_zero", "native_reported_failure"],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": {
+            "authority": "native_report_only",
+            "nativeCleanup": null,
+            "supervisorCleanup": null
+          },
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 3412323.480417,
+            "wallMs": 1788769510470
+          },
+          "code": 1,
+          "signal": null
+        },
+        "oneOriginalSpawn": true
+      },
+      "callerTiming": {
+        "callerInvocationReturned": {
+          "monotonicMs": 3412325.238584,
+          "wallMs": 1788769510472
+        },
+        "callerInvocationStarted": {
+          "monotonicMs": 3410479.464667,
+          "wallMs": 1788769508627
+        },
+        "deadline": {
+          "atMonotonicMs": 3710471.213709,
+          "atWallMs": 1788769808619,
+          "scope": "scheduled_attempt"
+        },
+        "invocation": {
+          "bytes": 2119,
+          "path": "invocation.json",
+          "sha256": "d60dd68d25150fe7fa034416dcc81c8722f17708289f6c4c59289829d7181a01"
+        },
+        "outerInvocationElapsedMs": 1845.773917000275,
+        "outerInvocationElapsedWallMs": 1845,
+        "schemaVersion": 3
+      },
+      "originalTimingAndTransport": {
+        "at": "2026-09-07T08:25:10.473Z",
+        "attemptStarted": {
+          "monotonicMs": 3410471.213709,
+          "wallMs": 1788769508619
+        },
+        "deadline": {
+          "atMonotonicMs": 3710471.213709,
+          "atWallMs": 1788769808619,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 1845.773917000275,
+        "totalAttemptElapsedMs": 1854.6704580001533,
+        "totalAttemptElapsedWallMs": 1854,
+        "providerStatuses": [502],
+        "processObservationElapsedMs": 1844.3223339999095
+      },
+      "nativeMetadataOnly": {
+        "framework": "atlas",
+        "runId": "transport-3c4dc9aa-96db-4a99-a43e-c9d8636c1511",
+        "model": "mimo-v2.5",
+        "status": "failed",
+        "nativeStateRoot": "/private/tmp/agent-runtime-9FRZ6w/state-nGTcFh/atlas-native-file-oKLdkF",
+        "workspaceRoot": "/private/tmp/agent-runtime-9FRZ6w/state-nGTcFh/atlas-native-file-oKLdkF/orgs/file_study_org/profiles/file_study_profile"
+      },
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3410479.63175,
+          "wallMs": 1788769508628
+        },
+        "processObservedAt": {
+          "monotonicMs": 3412324.002459,
+          "wallMs": 1788769510471
+        },
+        "elapsedWallMs": 1843,
+        "elapsedMonotonicMs": 1844.3223339999095
+      },
+      "identityBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-atlas/runtime-identity.json",
+        "bytes": 458,
+        "sha256": "986af3bbfef38c4ce41958ee880ef80cd69ef0b69dd47b0688b1fc5871c0d5ad"
+      },
+      "sourceAssignmentBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/pairs/native-files-confirmatory-docx_report-v1-r0/source-assignment.json",
+        "bytes": 592,
+        "sha256": "8a7101f99c315478519233dcbdf2ead4837389e5818dd110f080c78b2e233b60"
+      },
+      "originalUsage": {
+        "budgetExceeded": false,
+        "cachedTokens": null,
+        "costUsd": null,
+        "generatedTokens": null,
+        "mandatoryUsageKnown": false,
+        "missingUsage": true,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": null,
+        "providerRequests": 1
+      },
+      "originalAccounting": {
+        "cachedTokens": null,
+        "finalized": true,
+        "generatedTokens": null,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": false,
+        "observationError": false,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": null
+      },
+      "requestCount": 1,
+      "originalRequestStatuses": {
+        "None": 1
+      }
+    },
+    {
+      "scheduleOrdinal": 54,
+      "scheduledIdentity": {
+        "attemptId": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-hermes",
+        "family": "docx_report",
+        "harness": "hermes",
+        "pairId": "native-files-confirmatory-docx_report-v1-r0",
+        "repetition": 0,
+        "variant": 1
+      },
+      "originalCaller": {
+        "status": "accounting_uncertain",
+        "success": false,
+        "inputIdentical": false,
+        "boundaryValid": false,
+        "inspectionAllowed": false
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": null,
+        "oraclePass": null,
+        "oracleIntegrityFailure": null
+      },
+      "process": {
+        "identity": "unavailable",
+        "observedIdentity": null,
+        "reportedStatus": null,
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": true,
+        "processFailure": true,
+        "failureCodes": [
+          "process_deadline",
+          "child_exit_not_zero",
+          "native_empty_output"
+        ],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": null,
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 3420458.305917,
+            "wallMs": 1788770461214
+          },
+          "code": null,
+          "signal": "SIGTERM"
+        },
+        "oneOriginalSpawn": true
+      },
+      "callerTiming": {
+        "callerInvocationReturned": {
+          "monotonicMs": 3420466.856125,
+          "wallMs": 1788770461223
+        },
+        "callerInvocationStarted": {
+          "monotonicMs": 3412331.085709,
+          "wallMs": 1788769510478
+        },
+        "deadline": {
+          "atMonotonicMs": 3712326.4825,
+          "atWallMs": 1788769810473,
+          "scope": "scheduled_attempt"
+        },
+        "invocation": {
+          "bytes": 2115,
+          "path": "invocation.json",
+          "sha256": "a7b2ec38bbb96331879663a9ece3dfc5b6e6806733f8f48f65ec4e373cfd4ac0"
+        },
+        "outerInvocationElapsedMs": 8135.770415999927,
+        "outerInvocationElapsedWallMs": 950745,
+        "schemaVersion": 3
+      },
+      "originalTimingAndTransport": {
+        "at": "2026-09-07T08:41:01.223Z",
+        "attemptStarted": {
+          "monotonicMs": 3412326.4825,
+          "wallMs": 1788769510473
+        },
+        "deadline": {
+          "atMonotonicMs": 3712326.4825,
+          "atWallMs": 1788769810473,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 8135.770415999927,
+        "totalAttemptElapsedMs": 8141.087667000014,
+        "totalAttemptElapsedWallMs": 950750,
+        "providerStatuses": [502, 502, 502, 502, 502],
+        "processObservationElapsedMs": 8127.6680419999175
+      },
+      "nativeMetadataOnly": null,
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3412331.153167,
+          "wallMs": 1788769510478
+        },
+        "processObservedAt": {
+          "monotonicMs": 3420458.842792,
+          "wallMs": 1788770461215
+        },
+        "elapsedWallMs": 950737,
+        "elapsedMonotonicMs": 8127.6680419999175
+      },
+      "identityBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-hermes/runtime-identity.json",
+        "bytes": 460,
+        "sha256": "fe3d85e0b0cf721c6ddc540e8a5b57b7c573220346f637fd7e315bf57550ef45"
+      },
+      "sourceAssignmentBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/pairs/native-files-confirmatory-docx_report-v1-r0/source-assignment.json",
+        "bytes": 592,
+        "sha256": "8a7101f99c315478519233dcbdf2ead4837389e5818dd110f080c78b2e233b60"
+      },
+      "originalUsage": {
+        "budgetExceeded": true,
+        "cachedTokens": null,
+        "costUsd": null,
+        "generatedTokens": null,
+        "mandatoryUsageKnown": false,
+        "missingUsage": true,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": null,
+        "providerRequests": 5
+      },
+      "originalAccounting": {
+        "cachedTokens": null,
+        "finalized": true,
+        "generatedTokens": null,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": false,
+        "observationError": false,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": null
+      },
+      "requestCount": 5,
+      "originalRequestStatuses": {
+        "None": 5
+      }
+    },
+    {
+      "scheduleOrdinal": 55,
+      "scheduledIdentity": {
+        "attemptId": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-hermes",
+        "family": "docx_revision",
+        "harness": "hermes",
+        "pairId": "native-files-confirmatory-docx_revision-v2-r1",
+        "repetition": 1,
+        "variant": 2
+      },
+      "originalCaller": {
+        "status": "accounting_uncertain",
+        "success": false,
+        "inputIdentical": false,
+        "boundaryValid": false,
+        "inspectionAllowed": false
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": null,
+        "oraclePass": null,
+        "oracleIntegrityFailure": null
+      },
+      "process": {
+        "identity": "unavailable",
+        "observedIdentity": null,
+        "reportedStatus": null,
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": true,
+        "processFailure": true,
+        "failureCodes": [
+          "process_deadline",
+          "child_exit_not_zero",
+          "native_empty_output"
+        ],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": null,
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 3425755.407834,
+            "wallMs": 1788771376211
+          },
+          "code": null,
+          "signal": "SIGTERM"
+        },
+        "oneOriginalSpawn": true
+      },
+      "callerTiming": {
+        "callerInvocationReturned": {
+          "monotonicMs": 3425757.777084,
+          "wallMs": 1788771376214
+        },
+        "callerInvocationStarted": {
+          "monotonicMs": 3422916.637292,
+          "wallMs": 1788770463672
+        },
+        "deadline": {
+          "atMonotonicMs": 3722913.331292,
+          "atWallMs": 1788770763669,
+          "scope": "scheduled_attempt"
+        },
+        "invocation": {
+          "bytes": 2126,
+          "path": "invocation.json",
+          "sha256": "f2c5b5dc253d43cd3ad77af68a4ff41828c78d7be654db171ec6a2c388e20bca"
+        },
+        "outerInvocationElapsedMs": 2841.1397919999436,
+        "outerInvocationElapsedWallMs": 912542,
+        "schemaVersion": 3
+      },
+      "originalTimingAndTransport": {
+        "at": "2026-09-07T08:56:16.214Z",
+        "attemptStarted": {
+          "monotonicMs": 3422913.331292,
+          "wallMs": 1788770463669
+        },
+        "deadline": {
+          "atMonotonicMs": 3722913.331292,
+          "atWallMs": 1788770763669,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 2841.1397919999436,
+        "totalAttemptElapsedMs": 2844.9825419997796,
+        "totalAttemptElapsedWallMs": 912545,
+        "providerStatuses": [502, 502],
+        "processObservationElapsedMs": 2839.3604580000974
+      },
+      "nativeMetadataOnly": null,
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3422916.720334,
+          "wallMs": 1788770463672
+        },
+        "processObservedAt": {
+          "monotonicMs": 3425756.107959,
+          "wallMs": 1788771376212
+        },
+        "elapsedWallMs": 912540,
+        "elapsedMonotonicMs": 2839.3604580000974
+      },
+      "identityBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-hermes/runtime-identity.json",
+        "bytes": 466,
+        "sha256": "da58ebd5582f8ccc47a388fd78836b15b046c049e6f0c0e049180360042e93a1"
+      },
+      "sourceAssignmentBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/pairs/native-files-confirmatory-docx_revision-v2-r1/source-assignment.json",
+        "bytes": 599,
+        "sha256": "46adffabc4e682a2109f8082120adf9f3d5ebf664625bfb655352f51fed32a3f"
+      },
+      "originalUsage": {
+        "budgetExceeded": true,
+        "cachedTokens": null,
+        "costUsd": null,
+        "generatedTokens": null,
+        "mandatoryUsageKnown": false,
+        "missingUsage": true,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": null,
+        "providerRequests": 2
+      },
+      "originalAccounting": {
+        "cachedTokens": null,
+        "finalized": true,
+        "generatedTokens": null,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": false,
+        "observationError": false,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": null
+      },
+      "requestCount": 2,
+      "originalRequestStatuses": {
+        "None": 2
+      }
+    },
+    {
+      "scheduleOrdinal": 56,
+      "scheduledIdentity": {
+        "attemptId": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-atlas",
+        "family": "docx_revision",
+        "harness": "atlas",
+        "pairId": "native-files-confirmatory-docx_revision-v2-r1",
+        "repetition": 1,
+        "variant": 2
+      },
+      "originalCaller": {
+        "status": "accounting_uncertain",
+        "success": false,
+        "inputIdentical": true,
+        "boundaryValid": false,
+        "inspectionAllowed": false
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": null,
+        "oraclePass": null,
+        "oracleIntegrityFailure": null
+      },
+      "process": {
+        "identity": "bound",
+        "observedIdentity": {
+          "framework": "atlas",
+          "runId": "transport-0ce54971-6fbe-40d7-8aad-7065e71b1f20"
+        },
+        "reportedStatus": "failed",
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": false,
+        "processFailure": true,
+        "failureCodes": ["child_exit_not_zero", "native_reported_failure"],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": {
+            "authority": "native_report_only",
+            "nativeCleanup": null,
+            "supervisorCleanup": null
+          },
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 3427136.915042,
+            "wallMs": 1788771377593
+          },
+          "code": 1,
+          "signal": null
+        },
+        "oneOriginalSpawn": true
+      },
+      "callerTiming": {
+        "callerInvocationReturned": {
+          "monotonicMs": 3427139.471584,
+          "wallMs": 1788771377595
+        },
+        "callerInvocationStarted": {
+          "monotonicMs": 3425764.088042,
+          "wallMs": 1788771376220
+        },
+        "deadline": {
+          "atMonotonicMs": 3725759.83375,
+          "atWallMs": 1788771676216,
+          "scope": "scheduled_attempt"
+        },
+        "invocation": {
+          "bytes": 2123,
+          "path": "invocation.json",
+          "sha256": "e63eb8ea701738341e59087089fb1f04903ccebb5fd968b12db2207d24a1349e"
+        },
+        "outerInvocationElapsedMs": 1375.383542000316,
+        "outerInvocationElapsedWallMs": 1375,
+        "schemaVersion": 3
+      },
+      "originalTimingAndTransport": {
+        "at": "2026-09-07T08:56:17.596Z",
+        "attemptStarted": {
+          "monotonicMs": 3425759.83375,
+          "wallMs": 1788771376216
+        },
+        "deadline": {
+          "atMonotonicMs": 3725759.83375,
+          "atWallMs": 1788771676216,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 1375.383542000316,
+        "totalAttemptElapsedMs": 1380.1743339998648,
+        "totalAttemptElapsedWallMs": 1380,
+        "providerStatuses": [502],
+        "processObservationElapsedMs": 1373.0862079998478
+      },
+      "nativeMetadataOnly": {
+        "framework": "atlas",
+        "runId": "transport-0ce54971-6fbe-40d7-8aad-7065e71b1f20",
+        "model": "mimo-v2.5",
+        "status": "failed",
+        "nativeStateRoot": "/private/tmp/agent-runtime-9FRZ6w/state-Tq7yi1/atlas-native-file-EYt8Yk",
+        "workspaceRoot": "/private/tmp/agent-runtime-9FRZ6w/state-Tq7yi1/atlas-native-file-EYt8Yk/orgs/file_study_org/profiles/file_study_profile"
+      },
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3425764.142417,
+          "wallMs": 1788771376220
+        },
+        "processObservedAt": {
+          "monotonicMs": 3427137.253125,
+          "wallMs": 1788771377593
+        },
+        "elapsedWallMs": 1373,
+        "elapsedMonotonicMs": 1373.0862079998478
+      },
+      "identityBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-atlas/runtime-identity.json",
+        "bytes": 464,
+        "sha256": "51fe2cb7eab8247064bfd690fbd90d11d6300c909c49d1243ffe3c35a621128c"
+      },
+      "sourceAssignmentBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/pairs/native-files-confirmatory-docx_revision-v2-r1/source-assignment.json",
+        "bytes": 599,
+        "sha256": "46adffabc4e682a2109f8082120adf9f3d5ebf664625bfb655352f51fed32a3f"
+      },
+      "originalUsage": {
+        "budgetExceeded": false,
+        "cachedTokens": null,
+        "costUsd": null,
+        "generatedTokens": null,
+        "mandatoryUsageKnown": false,
+        "missingUsage": true,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": null,
+        "providerRequests": 1
+      },
+      "originalAccounting": {
+        "cachedTokens": null,
+        "finalized": true,
+        "generatedTokens": null,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": false,
+        "observationError": false,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": null
+      },
+      "requestCount": 1,
+      "originalRequestStatuses": {
+        "None": 1
+      }
+    },
+    {
+      "scheduleOrdinal": 57,
+      "scheduledIdentity": {
+        "attemptId": "confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-atlas",
+        "family": "code_fix",
+        "harness": "atlas",
+        "pairId": "native-files-confirmatory-code_fix-v1-r1",
+        "repetition": 1,
+        "variant": 1
+      },
+      "originalCaller": {
+        "status": "accounting_uncertain",
+        "success": false,
+        "inputIdentical": true,
+        "boundaryValid": false,
+        "inspectionAllowed": false
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": null,
+        "oraclePass": null,
+        "oracleIntegrityFailure": null
+      },
+      "process": {
+        "identity": "bound",
+        "observedIdentity": {
+          "framework": "atlas",
+          "runId": "transport-ba4cb2b5-db3d-42b4-9010-13aa80f9c67a"
+        },
+        "reportedStatus": "failed",
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": false,
+        "processFailure": true,
+        "failureCodes": ["child_exit_not_zero", "native_reported_failure"],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": {
+            "authority": "native_report_only",
+            "nativeCleanup": null,
+            "supervisorCleanup": null
+          },
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 3430198.056667,
+            "wallMs": 1788771380653
+          },
+          "code": 1,
+          "signal": null
+        },
+        "oneOriginalSpawn": true
+      },
+      "callerTiming": {
+        "callerInvocationReturned": {
+          "monotonicMs": 3430199.659625,
+          "wallMs": 1788771380655
+        },
+        "callerInvocationStarted": {
+          "monotonicMs": 3429290.303709,
+          "wallMs": 1788771379746
+        },
+        "deadline": {
+          "atMonotonicMs": 3729287.1635,
+          "atWallMs": 1788771679742,
+          "scope": "scheduled_attempt"
+        },
+        "invocation": {
+          "bytes": 2104,
+          "path": "invocation.json",
+          "sha256": "d70baf1f1f4b7302a28dd25dee3bf5ceeb17ba1e11e262d2a22ee02fd46d468e"
+        },
+        "outerInvocationElapsedMs": 909.3559159999713,
+        "outerInvocationElapsedWallMs": 909,
+        "schemaVersion": 3
+      },
+      "originalTimingAndTransport": {
+        "at": "2026-09-07T08:56:20.655Z",
+        "attemptStarted": {
+          "monotonicMs": 3429287.1635,
+          "wallMs": 1788771379742
+        },
+        "deadline": {
+          "atMonotonicMs": 3729287.1635,
+          "atWallMs": 1788771679742,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 909.3559159999713,
+        "totalAttemptElapsedMs": 913.0535840000957,
+        "totalAttemptElapsedWallMs": 913,
+        "providerStatuses": [502],
+        "processObservationElapsedMs": 908.1106659998186
+      },
+      "nativeMetadataOnly": {
+        "framework": "atlas",
+        "runId": "transport-ba4cb2b5-db3d-42b4-9010-13aa80f9c67a",
+        "model": "mimo-v2.5",
+        "status": "failed",
+        "nativeStateRoot": "/private/tmp/agent-runtime-9FRZ6w/state-jL2Idx/atlas-native-file-sFz6bE",
+        "workspaceRoot": "/private/tmp/agent-runtime-9FRZ6w/state-jL2Idx/atlas-native-file-sFz6bE/orgs/file_study_org/profiles/file_study_profile"
+      },
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3429290.419584,
+          "wallMs": 1788771379746
+        },
+        "processObservedAt": {
+          "monotonicMs": 3430198.577667,
+          "wallMs": 1788771380654
+        },
+        "elapsedWallMs": 908,
+        "elapsedMonotonicMs": 908.1106659998186
+      },
+      "identityBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-atlas/runtime-identity.json",
+        "bytes": 449,
+        "sha256": "3cfc1b3ab62cbf1ac159d76bd71003adb772359fe5445062fe8cc97650fcc9e0"
+      },
+      "sourceAssignmentBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/pairs/native-files-confirmatory-code_fix-v1-r1/source-assignment.json",
+        "bytes": 759,
+        "sha256": "0c9a6071de9610663b1d8ba2b7005c0918ef127c7d222d21f89bcf7c94c8feb3"
+      },
+      "originalUsage": {
+        "budgetExceeded": false,
+        "cachedTokens": null,
+        "costUsd": null,
+        "generatedTokens": null,
+        "mandatoryUsageKnown": false,
+        "missingUsage": true,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": null,
+        "providerRequests": 1
+      },
+      "originalAccounting": {
+        "cachedTokens": null,
+        "finalized": true,
+        "generatedTokens": null,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": false,
+        "observationError": false,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": null
+      },
+      "requestCount": 1,
+      "originalRequestStatuses": {
+        "None": 1
+      }
+    },
+    {
+      "scheduleOrdinal": 59,
+      "scheduledIdentity": {
+        "attemptId": "confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-hermes",
+        "family": "pptx_revision",
+        "harness": "hermes",
+        "pairId": "native-files-confirmatory-pptx_revision-v2-r1",
+        "repetition": 1,
+        "variant": 2
+      },
+      "originalCaller": {
+        "status": "accounting_uncertain",
+        "success": false,
+        "inputIdentical": false,
+        "boundaryValid": false,
+        "inspectionAllowed": false
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": null,
+        "oraclePass": null,
+        "oracleIntegrityFailure": null
+      },
+      "process": {
+        "identity": "unavailable",
+        "observedIdentity": null,
+        "reportedStatus": null,
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": true,
+        "processFailure": true,
+        "failureCodes": [
+          "process_deadline",
+          "child_exit_not_zero",
+          "native_empty_output"
+        ],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": null,
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 3443116.635375,
+            "wallMs": 1788772420882
+          },
+          "code": null,
+          "signal": "SIGTERM"
+        },
+        "oneOriginalSpawn": true
+      },
+      "callerTiming": {
+        "callerInvocationReturned": {
+          "monotonicMs": 3443136.633334,
+          "wallMs": 1788772420902
+        },
+        "callerInvocationStarted": {
+          "monotonicMs": 3433185.196542,
+          "wallMs": 1788772061336
+        },
+        "deadline": {
+          "atMonotonicMs": 3733182.115334,
+          "atWallMs": 1788772361333,
+          "scope": "scheduled_attempt"
+        },
+        "invocation": {
+          "bytes": 2125,
+          "path": "invocation.json",
+          "sha256": "70f14696a192a9f78c76ae483c8d70d1a47a74b24b8e17f115e4502123f493f0"
+        },
+        "outerInvocationElapsedMs": 9951.436792000197,
+        "outerInvocationElapsedWallMs": 359566,
+        "schemaVersion": 3
+      },
+      "originalTimingAndTransport": {
+        "at": "2026-09-07T09:13:40.914Z",
+        "attemptStarted": {
+          "monotonicMs": 3433182.115334,
+          "wallMs": 1788772061333
+        },
+        "deadline": {
+          "atMonotonicMs": 3733182.115334,
+          "atWallMs": 1788772361333,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 9951.436792000197,
+        "totalAttemptElapsedMs": 9966.789249999914,
+        "totalAttemptElapsedWallMs": 359581,
+        "providerStatuses": [502, 502, 502, 502, 502],
+        "processObservationElapsedMs": 9935.53037500009
+      },
+      "nativeMetadataOnly": null,
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3433185.255334,
+          "wallMs": 1788772061336
+        },
+        "processObservedAt": {
+          "monotonicMs": 3443120.821625,
+          "wallMs": 1788772420886
+        },
+        "elapsedWallMs": 359550,
+        "elapsedMonotonicMs": 9935.53037500009
+      },
+      "identityBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-hermes/runtime-identity.json",
+        "bytes": 466,
+        "sha256": "4f4109f9db0ec1711ba049201719afa18dac1163c69fb6909e2daad971aab116"
+      },
+      "sourceAssignmentBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/pairs/native-files-confirmatory-pptx_revision-v2-r1/source-assignment.json",
+        "bytes": 600,
+        "sha256": "ee7388ad0103326b2262751a401b3bd93014e850cdced915e9b17d1507e42ebb"
+      },
+      "originalUsage": {
+        "budgetExceeded": true,
+        "cachedTokens": null,
+        "costUsd": null,
+        "generatedTokens": null,
+        "mandatoryUsageKnown": false,
+        "missingUsage": true,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": null,
+        "providerRequests": 5
+      },
+      "originalAccounting": {
+        "cachedTokens": null,
+        "finalized": true,
+        "generatedTokens": null,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": false,
+        "observationError": false,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": null
+      },
+      "requestCount": 5,
+      "originalRequestStatuses": {
+        "None": 5
+      }
+    },
+    {
+      "scheduleOrdinal": 73,
+      "scheduledIdentity": {
+        "attemptId": "confirmatory-1788766021520-052b6932-native-files-confirmatory-csv_join-v2-r1-atlas",
+        "family": "csv_join",
+        "harness": "atlas",
+        "pairId": "native-files-confirmatory-csv_join-v2-r1",
+        "repetition": 1,
+        "variant": 2
+      },
+      "originalCaller": {
+        "status": "accounting_uncertain",
+        "success": false,
+        "inputIdentical": true,
+        "boundaryValid": true,
+        "inspectionAllowed": true
+      },
+      "originalEvaluation": {
+        "success": true,
+        "bindingPass": true,
+        "oraclePass": true,
+        "oracleIntegrityFailure": false
+      },
+      "process": {
+        "identity": "bound",
+        "observedIdentity": {
+          "framework": "atlas",
+          "runId": "transport-1dc0a0e0-e7ed-45e5-8577-98d7a9ffff6b"
+        },
+        "reportedStatus": "completed",
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": false,
+        "processFailure": false,
+        "failureCodes": [],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": {
+            "authority": "native_report_only",
+            "nativeCleanup": null,
+            "supervisorCleanup": null
+          },
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 4290346.634542,
+            "wallMs": 1788773268066
+          },
+          "code": 0,
+          "signal": null
+        },
+        "oneOriginalSpawn": true
+      },
+      "callerTiming": {
+        "callerInvocationReturned": {
+          "monotonicMs": 4290350.339792,
+          "wallMs": 1788773268070
+        },
+        "callerInvocationStarted": {
+          "monotonicMs": 4159564.886292,
+          "wallMs": 1788773137286
+        },
+        "deadline": {
+          "atMonotonicMs": 4459551.01725,
+          "atWallMs": 1788773437272,
+          "scope": "scheduled_attempt"
+        },
+        "invocation": {
+          "bytes": 2118,
+          "path": "invocation.json",
+          "sha256": "6697d429188c781275b732348aa44a777a57a491885adca685b6254da66beb57"
+        },
+        "outerInvocationElapsedMs": 130785.4535000003,
+        "outerInvocationElapsedWallMs": 130784,
+        "schemaVersion": 3
+      },
+      "originalTimingAndTransport": {
+        "at": "2026-09-07T09:27:48.603Z",
+        "attemptStarted": {
+          "monotonicMs": 4159551.0172499996,
+          "wallMs": 1788773137272
+        },
+        "deadline": {
+          "atMonotonicMs": 4459551.01725,
+          "atWallMs": 1788773437272,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 130785.4535000003,
+        "totalAttemptElapsedMs": 131332.393042,
+        "totalAttemptElapsedWallMs": 131331,
+        "providerStatuses": [200, 200, 200, 200, 502],
+        "processObservationElapsedMs": 130783.61595800007
+      },
+      "nativeMetadataOnly": {
+        "framework": "atlas",
+        "runId": "transport-1dc0a0e0-e7ed-45e5-8577-98d7a9ffff6b",
+        "model": "mimo-v2.5",
+        "status": "completed",
+        "nativeStateRoot": "/private/tmp/agent-runtime-9FRZ6w/state-VpRA2S/atlas-native-file-ceqLZh",
+        "workspaceRoot": "/private/tmp/agent-runtime-9FRZ6w/state-VpRA2S/atlas-native-file-ceqLZh/orgs/file_study_org/profiles/file_study_profile"
+      },
+      "processTiming": {
+        "started": {
+          "monotonicMs": 4159565.051292,
+          "wallMs": 1788773137286
+        },
+        "processObservedAt": {
+          "monotonicMs": 4290348.828834,
+          "wallMs": 1788773268068
+        },
+        "elapsedWallMs": 130782,
+        "elapsedMonotonicMs": 130783.61595800007
+      },
+      "identityBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-csv_join-v2-r1-atlas/runtime-identity.json",
+        "bytes": 449,
+        "sha256": "90f5185dbf97f2797ae3a1ca1ecd497895a57492410b384a96bbcfbb1327dca5"
+      },
+      "sourceAssignmentBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/pairs/native-files-confirmatory-csv_join-v2-r1/source-assignment.json",
+        "bytes": 669,
+        "sha256": "c91c3a53bf6528797ab35231a9746f250c717cefe45622c73704a3a8c09f812d"
+      },
+      "originalUsage": {
+        "budgetExceeded": false,
+        "cachedTokens": null,
+        "costUsd": null,
+        "generatedTokens": null,
+        "mandatoryUsageKnown": false,
+        "missingUsage": true,
+        "observedGeneratedTokens": 1667,
+        "observedPromptTokens": 25525,
+        "promptTokens": null,
+        "providerRequests": 5
+      },
+      "originalAccounting": {
+        "cachedTokens": null,
+        "finalized": true,
+        "generatedTokens": null,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": false,
+        "observationError": false,
+        "observedGeneratedTokens": 1667,
+        "observedPromptTokens": 25525,
+        "promptTokens": null
+      },
+      "requestCount": 5,
+      "originalRequestStatuses": {
+        "200": 4,
+        "None": 1
+      }
+    }
+  ],
+  "unavailableNativeIdentityArms": [
+    {
+      "scheduleOrdinal": 54,
+      "scheduledIdentity": {
+        "attemptId": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-hermes",
+        "family": "docx_report",
+        "harness": "hermes",
+        "pairId": "native-files-confirmatory-docx_report-v1-r0",
+        "repetition": 0,
+        "variant": 1
+      },
+      "originalCaller": {
+        "status": "accounting_uncertain",
+        "success": false,
+        "inputIdentical": false,
+        "boundaryValid": false,
+        "inspectionAllowed": false
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": null,
+        "oraclePass": null,
+        "oracleIntegrityFailure": null
+      },
+      "process": {
+        "identity": "unavailable",
+        "observedIdentity": null,
+        "reportedStatus": null,
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": true,
+        "processFailure": true,
+        "failureCodes": [
+          "process_deadline",
+          "child_exit_not_zero",
+          "native_empty_output"
+        ],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": null,
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 3420458.305917,
+            "wallMs": 1788770461214
+          },
+          "code": null,
+          "signal": "SIGTERM"
+        },
+        "oneOriginalSpawn": true
+      },
+      "callerTiming": {
+        "callerInvocationReturned": {
+          "monotonicMs": 3420466.856125,
+          "wallMs": 1788770461223
+        },
+        "callerInvocationStarted": {
+          "monotonicMs": 3412331.085709,
+          "wallMs": 1788769510478
+        },
+        "deadline": {
+          "atMonotonicMs": 3712326.4825,
+          "atWallMs": 1788769810473,
+          "scope": "scheduled_attempt"
+        },
+        "invocation": {
+          "bytes": 2115,
+          "path": "invocation.json",
+          "sha256": "a7b2ec38bbb96331879663a9ece3dfc5b6e6806733f8f48f65ec4e373cfd4ac0"
+        },
+        "outerInvocationElapsedMs": 8135.770415999927,
+        "outerInvocationElapsedWallMs": 950745,
+        "schemaVersion": 3
+      },
+      "originalTimingAndTransport": {
+        "at": "2026-09-07T08:41:01.223Z",
+        "attemptStarted": {
+          "monotonicMs": 3412326.4825,
+          "wallMs": 1788769510473
+        },
+        "deadline": {
+          "atMonotonicMs": 3712326.4825,
+          "atWallMs": 1788769810473,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 8135.770415999927,
+        "totalAttemptElapsedMs": 8141.087667000014,
+        "totalAttemptElapsedWallMs": 950750,
+        "providerStatuses": [502, 502, 502, 502, 502],
+        "processObservationElapsedMs": 8127.6680419999175
+      },
+      "nativeMetadataOnly": null,
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3412331.153167,
+          "wallMs": 1788769510478
+        },
+        "processObservedAt": {
+          "monotonicMs": 3420458.842792,
+          "wallMs": 1788770461215
+        },
+        "elapsedWallMs": 950737,
+        "elapsedMonotonicMs": 8127.6680419999175
+      },
+      "identityBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-hermes/runtime-identity.json",
+        "bytes": 460,
+        "sha256": "fe3d85e0b0cf721c6ddc540e8a5b57b7c573220346f637fd7e315bf57550ef45"
+      },
+      "sourceAssignmentBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/pairs/native-files-confirmatory-docx_report-v1-r0/source-assignment.json",
+        "bytes": 592,
+        "sha256": "8a7101f99c315478519233dcbdf2ead4837389e5818dd110f080c78b2e233b60"
+      },
+      "originalUsage": {
+        "budgetExceeded": true,
+        "cachedTokens": null,
+        "costUsd": null,
+        "generatedTokens": null,
+        "mandatoryUsageKnown": false,
+        "missingUsage": true,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": null,
+        "providerRequests": 5
+      },
+      "originalAccounting": {
+        "cachedTokens": null,
+        "finalized": true,
+        "generatedTokens": null,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": false,
+        "observationError": false,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": null
+      },
+      "requestCount": 5,
+      "originalRequestStatuses": {
+        "None": 5
+      }
+    },
+    {
+      "scheduleOrdinal": 55,
+      "scheduledIdentity": {
+        "attemptId": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-hermes",
+        "family": "docx_revision",
+        "harness": "hermes",
+        "pairId": "native-files-confirmatory-docx_revision-v2-r1",
+        "repetition": 1,
+        "variant": 2
+      },
+      "originalCaller": {
+        "status": "accounting_uncertain",
+        "success": false,
+        "inputIdentical": false,
+        "boundaryValid": false,
+        "inspectionAllowed": false
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": null,
+        "oraclePass": null,
+        "oracleIntegrityFailure": null
+      },
+      "process": {
+        "identity": "unavailable",
+        "observedIdentity": null,
+        "reportedStatus": null,
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": true,
+        "processFailure": true,
+        "failureCodes": [
+          "process_deadline",
+          "child_exit_not_zero",
+          "native_empty_output"
+        ],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": null,
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 3425755.407834,
+            "wallMs": 1788771376211
+          },
+          "code": null,
+          "signal": "SIGTERM"
+        },
+        "oneOriginalSpawn": true
+      },
+      "callerTiming": {
+        "callerInvocationReturned": {
+          "monotonicMs": 3425757.777084,
+          "wallMs": 1788771376214
+        },
+        "callerInvocationStarted": {
+          "monotonicMs": 3422916.637292,
+          "wallMs": 1788770463672
+        },
+        "deadline": {
+          "atMonotonicMs": 3722913.331292,
+          "atWallMs": 1788770763669,
+          "scope": "scheduled_attempt"
+        },
+        "invocation": {
+          "bytes": 2126,
+          "path": "invocation.json",
+          "sha256": "f2c5b5dc253d43cd3ad77af68a4ff41828c78d7be654db171ec6a2c388e20bca"
+        },
+        "outerInvocationElapsedMs": 2841.1397919999436,
+        "outerInvocationElapsedWallMs": 912542,
+        "schemaVersion": 3
+      },
+      "originalTimingAndTransport": {
+        "at": "2026-09-07T08:56:16.214Z",
+        "attemptStarted": {
+          "monotonicMs": 3422913.331292,
+          "wallMs": 1788770463669
+        },
+        "deadline": {
+          "atMonotonicMs": 3722913.331292,
+          "atWallMs": 1788770763669,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 2841.1397919999436,
+        "totalAttemptElapsedMs": 2844.9825419997796,
+        "totalAttemptElapsedWallMs": 912545,
+        "providerStatuses": [502, 502],
+        "processObservationElapsedMs": 2839.3604580000974
+      },
+      "nativeMetadataOnly": null,
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3422916.720334,
+          "wallMs": 1788770463672
+        },
+        "processObservedAt": {
+          "monotonicMs": 3425756.107959,
+          "wallMs": 1788771376212
+        },
+        "elapsedWallMs": 912540,
+        "elapsedMonotonicMs": 2839.3604580000974
+      },
+      "identityBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-hermes/runtime-identity.json",
+        "bytes": 466,
+        "sha256": "da58ebd5582f8ccc47a388fd78836b15b046c049e6f0c0e049180360042e93a1"
+      },
+      "sourceAssignmentBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/pairs/native-files-confirmatory-docx_revision-v2-r1/source-assignment.json",
+        "bytes": 599,
+        "sha256": "46adffabc4e682a2109f8082120adf9f3d5ebf664625bfb655352f51fed32a3f"
+      },
+      "originalUsage": {
+        "budgetExceeded": true,
+        "cachedTokens": null,
+        "costUsd": null,
+        "generatedTokens": null,
+        "mandatoryUsageKnown": false,
+        "missingUsage": true,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": null,
+        "providerRequests": 2
+      },
+      "originalAccounting": {
+        "cachedTokens": null,
+        "finalized": true,
+        "generatedTokens": null,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": false,
+        "observationError": false,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": null
+      },
+      "requestCount": 2,
+      "originalRequestStatuses": {
+        "None": 2
+      }
+    },
+    {
+      "scheduleOrdinal": 58,
+      "scheduledIdentity": {
+        "attemptId": "confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-hermes",
+        "family": "code_fix",
+        "harness": "hermes",
+        "pairId": "native-files-confirmatory-code_fix-v1-r1",
+        "repetition": 1,
+        "variant": 1
+      },
+      "originalCaller": {
+        "status": "budget_exceeded",
+        "success": false,
+        "inputIdentical": false,
+        "boundaryValid": false,
+        "inspectionAllowed": false
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": null,
+        "oraclePass": null,
+        "oracleIntegrityFailure": null
+      },
+      "process": {
+        "identity": "unavailable",
+        "observedIdentity": null,
+        "reportedStatus": null,
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": true,
+        "processFailure": true,
+        "failureCodes": [
+          "process_deadline",
+          "child_exit_not_zero",
+          "native_empty_output"
+        ],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": null,
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 3432233.502167,
+            "wallMs": 1788772060384
+          },
+          "code": null,
+          "signal": "SIGTERM"
+        },
+        "oneOriginalSpawn": true
+      },
+      "callerTiming": {
+        "callerInvocationReturned": {
+          "monotonicMs": 3432234.68525,
+          "wallMs": 1788772060386
+        },
+        "callerInvocationStarted": {
+          "monotonicMs": 3430203.714709,
+          "wallMs": 1788771380659
+        },
+        "deadline": {
+          "atMonotonicMs": 3730200.431375,
+          "atWallMs": 1788771680655,
+          "scope": "scheduled_attempt"
+        },
+        "invocation": {
+          "bytes": 2111,
+          "path": "invocation.json",
+          "sha256": "7b59a87b7f8e8afd64ffd704116d881f8bdcd5393a43c432bcd4ddb212a72c11"
+        },
+        "outerInvocationElapsedMs": 2030.9705409999005,
+        "outerInvocationElapsedWallMs": 679727,
+        "schemaVersion": 3
+      },
+      "originalTimingAndTransport": {
+        "at": "2026-09-07T09:07:40.386Z",
+        "attemptStarted": {
+          "monotonicMs": 3430200.431375,
+          "wallMs": 1788771380655
+        },
+        "deadline": {
+          "atMonotonicMs": 3730200.431375,
+          "atWallMs": 1788771680655,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 2030.9705409999005,
+        "totalAttemptElapsedMs": 2035.0339589999057,
+        "totalAttemptElapsedWallMs": 679731,
+        "providerStatuses": [],
+        "processObservationElapsedMs": 2030.058834000025
+      },
+      "nativeMetadataOnly": null,
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3430203.7755,
+          "wallMs": 1788771380659
+        },
+        "processObservedAt": {
+          "monotonicMs": 3432233.8535,
+          "wallMs": 1788772060385
+        },
+        "elapsedWallMs": 679726,
+        "elapsedMonotonicMs": 2030.058834000025
+      },
+      "identityBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-hermes/runtime-identity.json",
+        "bytes": 451,
+        "sha256": "67fa9aee66bfc18afd624f58abe1378b03b04f6205278f95a0ca613ba1079a28"
+      },
+      "sourceAssignmentBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/pairs/native-files-confirmatory-code_fix-v1-r1/source-assignment.json",
+        "bytes": 759,
+        "sha256": "0c9a6071de9610663b1d8ba2b7005c0918ef127c7d222d21f89bcf7c94c8feb3"
+      },
+      "originalUsage": {
+        "budgetExceeded": true,
+        "cachedTokens": 0,
+        "costUsd": null,
+        "generatedTokens": 0,
+        "mandatoryUsageKnown": true,
+        "missingUsage": false,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": 0,
+        "providerRequests": 0
+      },
+      "originalAccounting": {
+        "cachedTokens": 0,
+        "finalized": true,
+        "generatedTokens": 0,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": true,
+        "observationError": false,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": 0
+      },
+      "requestCount": 0,
+      "originalRequestStatuses": {}
+    },
+    {
+      "scheduleOrdinal": 59,
+      "scheduledIdentity": {
+        "attemptId": "confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-hermes",
+        "family": "pptx_revision",
+        "harness": "hermes",
+        "pairId": "native-files-confirmatory-pptx_revision-v2-r1",
+        "repetition": 1,
+        "variant": 2
+      },
+      "originalCaller": {
+        "status": "accounting_uncertain",
+        "success": false,
+        "inputIdentical": false,
+        "boundaryValid": false,
+        "inspectionAllowed": false
+      },
+      "originalEvaluation": {
+        "success": false,
+        "bindingPass": null,
+        "oraclePass": null,
+        "oracleIntegrityFailure": null
+      },
+      "process": {
+        "identity": "unavailable",
+        "observedIdentity": null,
+        "reportedStatus": null,
+        "receiptComplete": true,
+        "parentBinding": "bound",
+        "closed": true,
+        "timedOut": true,
+        "processFailure": true,
+        "failureCodes": [
+          "process_deadline",
+          "child_exit_not_zero",
+          "native_empty_output"
+        ],
+        "cleanup": {
+          "allDescendantsGone": "unproved",
+          "directChildCloseObserved": true,
+          "directChildExitObserved": true,
+          "nativeReport": null,
+          "processGroupProbe": "absent_at_probe"
+        },
+        "exit": {
+          "at": {
+            "monotonicMs": 3443116.635375,
+            "wallMs": 1788772420882
+          },
+          "code": null,
+          "signal": "SIGTERM"
+        },
+        "oneOriginalSpawn": true
+      },
+      "callerTiming": {
+        "callerInvocationReturned": {
+          "monotonicMs": 3443136.633334,
+          "wallMs": 1788772420902
+        },
+        "callerInvocationStarted": {
+          "monotonicMs": 3433185.196542,
+          "wallMs": 1788772061336
+        },
+        "deadline": {
+          "atMonotonicMs": 3733182.115334,
+          "atWallMs": 1788772361333,
+          "scope": "scheduled_attempt"
+        },
+        "invocation": {
+          "bytes": 2125,
+          "path": "invocation.json",
+          "sha256": "70f14696a192a9f78c76ae483c8d70d1a47a74b24b8e17f115e4502123f493f0"
+        },
+        "outerInvocationElapsedMs": 9951.436792000197,
+        "outerInvocationElapsedWallMs": 359566,
+        "schemaVersion": 3
+      },
+      "originalTimingAndTransport": {
+        "at": "2026-09-07T09:13:40.914Z",
+        "attemptStarted": {
+          "monotonicMs": 3433182.115334,
+          "wallMs": 1788772061333
+        },
+        "deadline": {
+          "atMonotonicMs": 3733182.115334,
+          "atWallMs": 1788772361333,
+          "scope": "scheduled_attempt"
+        },
+        "elapsedMs": 9951.436792000197,
+        "totalAttemptElapsedMs": 9966.789249999914,
+        "totalAttemptElapsedWallMs": 359581,
+        "providerStatuses": [502, 502, 502, 502, 502],
+        "processObservationElapsedMs": 9935.53037500009
+      },
+      "nativeMetadataOnly": null,
+      "processTiming": {
+        "started": {
+          "monotonicMs": 3433185.255334,
+          "wallMs": 1788772061336
+        },
+        "processObservedAt": {
+          "monotonicMs": 3443120.821625,
+          "wallMs": 1788772420886
+        },
+        "elapsedWallMs": 359550,
+        "elapsedMonotonicMs": 9935.53037500009
+      },
+      "identityBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-hermes/runtime-identity.json",
+        "bytes": 466,
+        "sha256": "4f4109f9db0ec1711ba049201719afa18dac1163c69fb6909e2daad971aab116"
+      },
+      "sourceAssignmentBinding": {
+        "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/pairs/native-files-confirmatory-pptx_revision-v2-r1/source-assignment.json",
+        "bytes": 600,
+        "sha256": "ee7388ad0103326b2262751a401b3bd93014e850cdced915e9b17d1507e42ebb"
+      },
+      "originalUsage": {
+        "budgetExceeded": true,
+        "cachedTokens": null,
+        "costUsd": null,
+        "generatedTokens": null,
+        "mandatoryUsageKnown": false,
+        "missingUsage": true,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": null,
+        "providerRequests": 5
+      },
+      "originalAccounting": {
+        "cachedTokens": null,
+        "finalized": true,
+        "generatedTokens": null,
+        "inFlightRequests": 0,
+        "mandatoryUsageKnown": false,
+        "observationError": false,
+        "observedGeneratedTokens": 0,
+        "observedPromptTokens": 0,
+        "promptTokens": null
+      },
+      "requestCount": 5,
+      "originalRequestStatuses": {
+        "None": 5
+      }
+    }
+  ],
+  "zeroUpstreamRequestArm": {
+    "scheduleOrdinal": 58,
+    "scheduledIdentity": {
+      "attemptId": "confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-hermes",
+      "family": "code_fix",
+      "harness": "hermes",
+      "pairId": "native-files-confirmatory-code_fix-v1-r1",
+      "repetition": 1,
+      "variant": 1
+    },
+    "originalCaller": {
+      "status": "budget_exceeded",
+      "success": false,
+      "inputIdentical": false,
+      "boundaryValid": false,
+      "inspectionAllowed": false
+    },
+    "originalEvaluation": {
+      "success": false,
+      "bindingPass": null,
+      "oraclePass": null,
+      "oracleIntegrityFailure": null
+    },
+    "process": {
+      "identity": "unavailable",
+      "observedIdentity": null,
+      "reportedStatus": null,
+      "receiptComplete": true,
+      "parentBinding": "bound",
+      "closed": true,
+      "timedOut": true,
+      "processFailure": true,
+      "failureCodes": [
+        "process_deadline",
+        "child_exit_not_zero",
+        "native_empty_output"
+      ],
+      "cleanup": {
+        "allDescendantsGone": "unproved",
+        "directChildCloseObserved": true,
+        "directChildExitObserved": true,
+        "nativeReport": null,
+        "processGroupProbe": "absent_at_probe"
+      },
+      "exit": {
+        "at": {
+          "monotonicMs": 3432233.502167,
+          "wallMs": 1788772060384
+        },
+        "code": null,
+        "signal": "SIGTERM"
+      },
+      "oneOriginalSpawn": true
+    },
+    "callerTiming": {
+      "callerInvocationReturned": {
+        "monotonicMs": 3432234.68525,
+        "wallMs": 1788772060386
+      },
+      "callerInvocationStarted": {
+        "monotonicMs": 3430203.714709,
+        "wallMs": 1788771380659
+      },
+      "deadline": {
+        "atMonotonicMs": 3730200.431375,
+        "atWallMs": 1788771680655,
+        "scope": "scheduled_attempt"
+      },
+      "invocation": {
+        "bytes": 2111,
+        "path": "invocation.json",
+        "sha256": "7b59a87b7f8e8afd64ffd704116d881f8bdcd5393a43c432bcd4ddb212a72c11"
+      },
+      "outerInvocationElapsedMs": 2030.9705409999005,
+      "outerInvocationElapsedWallMs": 679727,
+      "schemaVersion": 3
+    },
+    "originalTimingAndTransport": {
+      "at": "2026-09-07T09:07:40.386Z",
+      "attemptStarted": {
+        "monotonicMs": 3430200.431375,
+        "wallMs": 1788771380655
+      },
+      "deadline": {
+        "atMonotonicMs": 3730200.431375,
+        "atWallMs": 1788771680655,
+        "scope": "scheduled_attempt"
+      },
+      "elapsedMs": 2030.9705409999005,
+      "totalAttemptElapsedMs": 2035.0339589999057,
+      "totalAttemptElapsedWallMs": 679731,
+      "providerStatuses": [],
+      "processObservationElapsedMs": 2030.058834000025
+    },
+    "nativeMetadataOnly": null,
+    "processTiming": {
+      "started": {
+        "monotonicMs": 3430203.7755,
+        "wallMs": 1788771380659
+      },
+      "processObservedAt": {
+        "monotonicMs": 3432233.8535,
+        "wallMs": 1788772060385
+      },
+      "elapsedWallMs": 679726,
+      "elapsedMonotonicMs": 2030.058834000025
+    },
+    "identityBinding": {
+      "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-hermes/runtime-identity.json",
+      "bytes": 451,
+      "sha256": "67fa9aee66bfc18afd624f58abe1378b03b04f6205278f95a0ca613ba1079a28"
+    },
+    "sourceAssignmentBinding": {
+      "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/pairs/native-files-confirmatory-code_fix-v1-r1/source-assignment.json",
+      "bytes": 759,
+      "sha256": "0c9a6071de9610663b1d8ba2b7005c0918ef127c7d222d21f89bcf7c94c8feb3"
+    },
+    "originalUsage": {
+      "budgetExceeded": true,
+      "cachedTokens": 0,
+      "costUsd": null,
+      "generatedTokens": 0,
+      "mandatoryUsageKnown": true,
+      "missingUsage": false,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": 0,
+      "providerRequests": 0
+    },
+    "originalAccounting": {
+      "cachedTokens": 0,
+      "finalized": true,
+      "generatedTokens": 0,
+      "inFlightRequests": 0,
+      "mandatoryUsageKnown": true,
+      "observationError": false,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": 0
+    },
+    "requestCount": 0,
+    "originalRequestStatuses": {}
+  },
+  "attributionQualification": "All 108 parent-assigned state identities/receipts are bound, but only 104 native outputs report a matching identity. Four missing native observations stay unavailable. The original zero-request Hermes code_fix-v1-r1 budget failure has two queue arrivals rejected before upstream forwarding, known zero final counters and no usage journal; it is not an unknown-usage arm. Directory existence or a parent index never fills native identity.",
+  "failureQualification": "Ten accounting-uncertain and one known-zero budget-failed arm remain original primary failures. Seven other unsuccessful arms completed natively and retain their original task/oracle failures. Semantic DOCX diagnosis is outside this review; structural validity does not certify every oracle as a complete measure of practical task quality.",
+  "reportedUsageSummary": {
+    "atlas": {
+      "arms": 54,
+      "knownUsageArms": 48,
+      "unknownUsageArms": 6,
+      "providerRequests": 335,
+      "knownPromptSubtotals": 1949084,
+      "knownGeneratedSubtotals": 135396,
+      "observedPromptSubtotals": 2012853,
+      "observedGeneratedSubtotals": 139063
+    },
+    "hermes": {
+      "arms": 54,
+      "knownUsageArms": 50,
+      "unknownUsageArms": 4,
+      "providerRequests": 401,
+      "knownPromptSubtotals": 2550712,
+      "knownGeneratedSubtotals": 87525,
+      "observedPromptSubtotals": 2587187,
+      "observedGeneratedSubtotals": 89945
+    }
+  },
+  "resourceQualification": "Atlas known-arm subtotals: 1949084 prompt / 135396 generated; observed counters including partial arms: 2012853 / 139063 across 335 request records. Hermes known-arm subtotals: 2550712 / 87525; observed counters including partial arms: 2587187 / 89945 across 401 records. Complete totals remain unknown for both (A6/H4 unknown arms). Known zero is retained as zero; missing totals are not zero. Cost remains unknown for both and counters do not certify billing.",
+  "clockAndHealth": {
+    "closedHealthManifest": {
+      "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-health-window/manifest.json",
+      "bytes": 1251,
+      "sha256": "4a9a4051f14eeb923fa7d78987a836299b9b14bc79f65fa18e23bc1c2327eafe"
+    },
+    "closedHealthClosure": {
+      "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-health-window/closure.json",
+      "bytes": 926,
+      "sha256": "ac9f12d125d5a63c548f625e0569aff558eedaf9131cd1d5573719b754b4add2"
+    },
+    "all108ClockRowsRetained": true,
+    "matchedIntervals": [
+      {
+        "sleepEntryTimestamp": "2026-09-07 08:23:45.447239+0000",
+        "nextWakeFromSleepTimestamp": "2026-09-07 08:25:05.012540+0000",
+        "entryToWakeSeconds": 79.565301,
+        "releasedRowWithLargestWallIntervalOverlap": 52,
+        "observedCallerWallMinusMonotonicSeconds": 78.77896266700002,
+        "qualification": "Entry-to-wake categories include transition/preparation intervals; they are not exact asleep-duration counters or proof of a request-level failure cause."
+      },
+      {
+        "sleepEntryTimestamp": "2026-09-07 08:25:17.598279+0000",
+        "nextWakeFromSleepTimestamp": "2026-09-07 08:41:01.127897+0000",
+        "entryToWakeSeconds": 943.529618,
+        "releasedRowWithLargestWallIntervalOverlap": 54,
+        "observedCallerWallMinusMonotonicSeconds": 942.6092295840001,
+        "qualification": "Entry-to-wake categories include transition/preparation intervals; they are not exact asleep-duration counters or proof of a request-level failure cause."
+      },
+      {
+        "sleepEntryTimestamp": "2026-09-07 08:41:03.472697+0000",
+        "nextWakeFromSleepTimestamp": "2026-09-07 08:56:16.128435+0000",
+        "entryToWakeSeconds": 912.655738,
+        "releasedRowWithLargestWallIntervalOverlap": 55,
+        "observedCallerWallMinusMonotonicSeconds": 909.7008602080001,
+        "qualification": "Entry-to-wake categories include transition/preparation intervals; they are not exact asleep-duration counters or proof of a request-level failure cause."
+      },
+      {
+        "sleepEntryTimestamp": "2026-09-07 08:56:18.353855+0000",
+        "nextWakeFromSleepTimestamp": "2026-09-07 09:07:40.115135+0000",
+        "entryToWakeSeconds": 681.76128,
+        "releasedRowWithLargestWallIntervalOverlap": 58,
+        "observedCallerWallMinusMonotonicSeconds": 677.6960294590001,
+        "qualification": "Entry-to-wake categories include transition/preparation intervals; they are not exact asleep-duration counters or proof of a request-level failure cause."
+      },
+      {
+        "sleepEntryTimestamp": "2026-09-07 09:07:50.413056+0000",
+        "nextWakeFromSleepTimestamp": "2026-09-07 09:13:40.557912+0000",
+        "entryToWakeSeconds": 350.144856,
+        "releasedRowWithLargestWallIntervalOverlap": 59,
+        "observedCallerWallMinusMonotonicSeconds": 349.6145632079998,
+        "qualification": "Entry-to-wake categories include transition/preparation intervals; they are not exact asleep-duration counters or proof of a request-level failure cause."
+      }
+    ],
+    "largeCallerClockGapOrdinals": [52, 54, 55, 58, 59],
+    "interpretation": "Original caller wall-minus-monotonic gaps are about78.779/942.609/909.701/677.696/349.615 seconds. Matching five OS entry/wake category intervals supports host suspension, not a universal or request-level transport cause. Entry/wake includes transition time. No timestamp, denominator, failure, budget or score is corrected; no favorable-window subset is substituted.",
+    "osEvidenceLimit": "Reverified closed filtered OS category projection and original clock/ledger metadata; did not rerun OS query. Raw OS strings were discarded by the owner; captured-byte hash is a binding, not an independently available raw log. Entry/wake categories include transition time and cannot identify exact request-level failure cause.",
+    "scopeLimit": "Validity here means the registered original evidence supports attribution and source/transport accounting, not that every attempt finished within300 wall-clock seconds or ran under continuously awake healthy-host conditions."
+  },
+  "cleanupAndDeadlineLimits": [
+    "All direct child close/exit observations and complete parent receipts are retained. allDescendantsGone remains unproved; process-group absence at probe is not universal descendant termination.",
+    "The caller deadline covers full await invoke including internal reference/compatibility persistence. Later caller-receipt persistence, broker finalization and private grading are not a hard whole-pipeline watchdog. Separately sampled process elapsed counters and observation timestamps are not forcibly equated."
+  ],
+  "originalAnalyzerQuoted": {
+    "analysisBinding": {
+      "path": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/analysis-final.json",
+      "bytes": 21711,
+      "sha256": "180ceb12182c8febc7c13f3290f2140ea787784b2ddab94f8fbbbb4639920064"
+    },
+    "validity": {
+      "issues": [],
+      "valid": true
+    },
+    "coverage": {
+      "batchErrors": 0,
+      "duplicateLifecycleRecords": 0,
+      "endsWithoutStart": 0,
+      "identifiableAttempts": 108,
+      "pairPreparationErrors": 0,
+      "rawEndRecords": 108,
+      "rawErrorRecords": 0,
+      "rawStartRecords": 108,
+      "scheduledArms": 108,
+      "scheduledArmsMissingOrAmbiguous": 0,
+      "scheduledPairs": 54,
+      "startsWithoutEnd": 0
+    },
+    "completePaired": {
+      "atlasRate": 0.8148148148148148,
+      "counts": {
+        "atlasOnly": 2,
+        "bothPass": 42,
+        "hermesOnly": 4,
+        "neitherSuccessful": 6
+      },
+      "delta": -0.037037037037037035,
+      "hermesRate": 0.8518518518518519,
+      "pairs": 54,
+      "pairsWithMissingOrAmbiguousArm": 0
+    },
+    "decision": {
+      "aggregateFloor": 0.9,
+      "comparativeAccountingKnown": false,
+      "complete": true,
+      "criticalIntegrityFailure": false,
+      "exploratory": false,
+      "familyFloor": 0.8,
+      "finiteCensus": {
+        "atlasAtLeastHermes": false,
+        "atlasPrimaryCount": 44,
+        "eligible": false,
+        "fullScheduledDenominator": 54,
+        "hermesPrimaryCount": 46,
+        "populationInference": false,
+        "scope": "Exact finite scheduled census, model and execution setup only; no inference to unseen tasks or providers."
+      },
+      "floorPass": false,
+      "informationAdequate": true,
+      "intervalConfidence": null,
+      "multiplicity": "Fixed finite census; no statistical noninferiority or multiplicity-calibrated interval.",
+      "noninferiority": "not_evaluated_finite_census",
+      "observedTie": false,
+      "statement": "Descriptive complete-denominator counts only; finite-census equal-or-better prerequisites do not qualify.",
+      "superiority": "not_evaluated_finite_census"
+    },
+    "families": [
+      {
+        "family": "code_fix",
+        "atlasRate": 0.8333333333333334,
+        "counts": {
+          "atlasOnly": 1,
+          "bothPass": 4,
+          "hermesOnly": 0,
+          "neitherSuccessful": 1
+        },
+        "delta": 0.16666666666666666,
+        "hermesRate": 0.6666666666666666,
+        "pairs": 6,
+        "pairsWithMissingOrAmbiguousArm": 0,
+        "effect": 0.16666666666666666,
+        "instanceCount": 3
+      },
+      {
+        "family": "csv_join",
+        "atlasRate": 0.8333333333333334,
+        "counts": {
+          "atlasOnly": 0,
+          "bothPass": 5,
+          "hermesOnly": 1,
+          "neitherSuccessful": 0
+        },
+        "delta": -0.16666666666666666,
+        "hermesRate": 1,
+        "pairs": 6,
+        "pairsWithMissingOrAmbiguousArm": 0,
+        "effect": -0.16666666666666666,
+        "instanceCount": 3
+      },
+      {
+        "family": "docx_report",
+        "atlasRate": 0.16666666666666666,
+        "counts": {
+          "atlasOnly": 0,
+          "bothPass": 1,
+          "hermesOnly": 1,
+          "neitherSuccessful": 4
+        },
+        "delta": -0.16666666666666666,
+        "hermesRate": 0.3333333333333333,
+        "pairs": 6,
+        "pairsWithMissingOrAmbiguousArm": 0,
+        "effect": -0.16666666666666666,
+        "instanceCount": 3
+      },
+      {
+        "family": "docx_revision",
+        "atlasRate": 0.8333333333333334,
+        "counts": {
+          "atlasOnly": 0,
+          "bothPass": 5,
+          "hermesOnly": 0,
+          "neitherSuccessful": 1
+        },
+        "delta": 0,
+        "hermesRate": 0.8333333333333334,
+        "pairs": 6,
+        "pairsWithMissingOrAmbiguousArm": 0,
+        "effect": 0,
+        "instanceCount": 3
+      },
+      {
+        "family": "pdf_create",
+        "atlasRate": 1,
+        "counts": {
+          "atlasOnly": 0,
+          "bothPass": 6,
+          "hermesOnly": 0,
+          "neitherSuccessful": 0
+        },
+        "delta": 0,
+        "hermesRate": 1,
+        "pairs": 6,
+        "pairsWithMissingOrAmbiguousArm": 0,
+        "effect": 0,
+        "instanceCount": 3
+      },
+      {
+        "family": "pdf_extract",
+        "atlasRate": 1,
+        "counts": {
+          "atlasOnly": 0,
+          "bothPass": 6,
+          "hermesOnly": 0,
+          "neitherSuccessful": 0
+        },
+        "delta": 0,
+        "hermesRate": 1,
+        "pairs": 6,
+        "pairsWithMissingOrAmbiguousArm": 0,
+        "effect": 0,
+        "instanceCount": 3
+      },
+      {
+        "family": "pptx_revision",
+        "atlasRate": 0.8333333333333334,
+        "counts": {
+          "atlasOnly": 1,
+          "bothPass": 4,
+          "hermesOnly": 1,
+          "neitherSuccessful": 0
+        },
+        "delta": 0,
+        "hermesRate": 0.8333333333333334,
+        "pairs": 6,
+        "pairsWithMissingOrAmbiguousArm": 0,
+        "effect": 0,
+        "instanceCount": 3
+      },
+      {
+        "family": "xlsx_reconciliation",
+        "atlasRate": 0.8333333333333334,
+        "counts": {
+          "atlasOnly": 0,
+          "bothPass": 5,
+          "hermesOnly": 1,
+          "neitherSuccessful": 0
+        },
+        "delta": -0.16666666666666666,
+        "hermesRate": 1,
+        "pairs": 6,
+        "pairsWithMissingOrAmbiguousArm": 0,
+        "effect": -0.16666666666666666,
+        "instanceCount": 3
+      },
+      {
+        "family": "xlsx_surgical_edit",
+        "atlasRate": 1,
+        "counts": {
+          "atlasOnly": 0,
+          "bothPass": 6,
+          "hermesOnly": 0,
+          "neitherSuccessful": 0
+        },
+        "delta": 0,
+        "hermesRate": 1,
+        "pairs": 6,
+        "pairsWithMissingOrAmbiguousArm": 0,
+        "effect": 0,
+        "instanceCount": 3
+      }
+    ]
+  },
+  "claimInterpretation": "The original complete finite census reports Atlas44/54 and Hermes46/54. Required gates were Atlas at least49/54, each family at least5/6 and Atlas count at least Hermes. The original analyzer reports ineligible; no equal-or-better claim is established. This is not a new score or a claim of Hermes population superiority; it does not generalize to other providers/subscriptions/tasks or establish causal C9 improvement.",
+  "reviewerUtilityCorrections": [
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-independent-review/reviewer-clock-sampling-correction.json",
+      "bytes": 1964,
+      "sha256": "b5403e34a6eb589d8f46cf5a767d5837c70a6521b841132107a28aabd239c2d7"
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-independent-review/reviewer-parent-native-root-correction.json",
+      "bytes": 1709,
+      "sha256": "e59569fcce0e5f39e3b4c6f81ab51e8981cb081f86617f8e3ba4202606d52eae"
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-independent-review/reviewer-zero-request-journal-correction.json",
+      "bytes": 1728,
+      "sha256": "307a9c341042a912e6d8182d9d3e970680010fd38bda8fc6e1e9928efb4fba7d"
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-independent-review/reviewer-queue-admission-correction.json",
+      "bytes": 2554,
+      "sha256": "3071e1e41c86986b1b6bba5aecc14229c99fd3a51752625c83311e0050489f63"
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-independent-review/reviewer-null-label-correction.json",
+      "bytes": 1125,
+      "sha256": "a8e4c87a7e56f54c0244dcce75ae3bbfd823367fe5fc3c3338541980619febc0"
+    }
+  ],
+  "reviewerCorrectionScope": "Five reviewer-only assumptions/serialization mistakes are retained with original utilities and exact failure logs: separately sampled clock equality, parent/native directory equality, mandatory journal existence for zero requests, queue arrivals equated with upstream requests, Python None versus JSON null label. Corrected checks follow existing frozen schemas and preserve all raw fields. No source/control/score change or new experimental counterexample was executed.",
+  "independence": "Reviewer did not author current caller/analyzer. Prior underlying authenticated HTTP guard/principal authorship and prior offline/development reviews are disclosed. This is independent current instrumentation inspection, not independent revalidation of authored guard design.",
+  "excludedAssertions": [
+    "No semantic artifact/oracle re-evaluation",
+    "No raw hidden reasoning or response choices inspected",
+    "No OS log query rerun or raw log reconstruction",
+    "No new inference or test execution",
+    "No automatic rerun or source improvement",
+    "No universal security, resource-certification, provider parity, population NI or visual-quality claim"
+  ]
+}

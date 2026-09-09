@@ -7,6 +7,36 @@ import {
 describe("ReleaseDecisionEngine", () => {
   const engine = new ReleaseDecisionEngine();
 
+  it("blocks empty evidence and optional-only evidence", () => {
+    expect(engine.evaluate([]).coreDecision).toBe("BLOCKED");
+    expect(
+      engine.evaluate([
+        {
+          category: "Optional",
+          durationMs: 0,
+          id: "informational",
+          required: false,
+          status: "pass",
+        },
+      ]).coreDecision
+    ).toBe("BLOCKED");
+  });
+
+  it("blocks a required warning without converting it into a pass", () => {
+    const result = engine.evaluate([
+      {
+        category: "Required",
+        durationMs: 0,
+        id: "incomplete_check",
+        required: true,
+        status: "warning",
+      },
+    ]);
+    expect(result.coreDecision).toBe("BLOCKED");
+    expect(result.summary.passed).toBe(0);
+    expect(result.summary.warnings).toBe(1);
+  });
+
   it("decides RELEASE when all required checks pass", () => {
     const checks: ReleaseGateCheck[] = [
       {

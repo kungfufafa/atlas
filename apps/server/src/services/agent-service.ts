@@ -9,6 +9,7 @@ import {
   executeToolCall,
   expandLearnInLastUserMessage,
   suggestToolParamsFromPrompt,
+  type ToolLoopStopReason,
   tryParseLearnCommand,
 } from "@atlas/agent";
 import type {
@@ -85,6 +86,7 @@ import type {
   TestProviderResponse,
   ThinkingSettings,
   ThinkingSettingsResponse,
+  ToolContext,
   ToolDefinition,
   ToolResponse,
   ToolSourceResponse,
@@ -274,11 +276,17 @@ import {
 } from "./audio-transcription";
 import type { AutomationRunner } from "./automation-runner";
 import { resolveExecutableToolsForPrincipal } from "./channel-guest-tool-policy";
+import { ChannelNativeActionService } from "./channel-native-action-service";
+import { isChannelWorkFileTool } from "./channel-work-file-tools";
 import {
   createChatCapabilityAwareProvider,
   modelClaimsForCapability,
   resolveChatCapabilityPolicy,
 } from "./chat-capability-policy";
+import {
+  type ChatToolApprovalDecisionInput,
+  ChatToolApprovalService,
+} from "./chat-tool-approval-service";
 import {
   buildCodingAgentCommandTemplate,
   formatCodingAgentCommandContext,
@@ -341,6 +349,7 @@ import {
   canonicalSubscriptionModelSnapshot,
   validateProviderConnection,
 } from "./provider-validation-service";
+import { createPublicationTurnPrincipal } from "./publication-turn-principal";
 import {
   loadSessionHistory,
   replaceSessionHistory,
@@ -355,10 +364,8 @@ import type { SkillsService } from "./skills-service";
 import { SubagentService } from "./subagent-service";
 import { SuperAgentSessionState } from "./super-agent-session-state";
 import type { TaskRunner } from "./task-runner";
-import { toolActivationService } from "./tool-activation-service";
 import {
   resolveProfileStoredTools,
-  resolveToolsFromStorage,
   withToolSearchCatalog,
 } from "./tool-resolver";
 
@@ -445,10 +452,13 @@ export class AgentService {
   private readonly memoryService: MemoryService;
   readonly identityService: IdentityService;
   readonly executionPlane: ExecutionPlaneService;
+  readonly chatToolApprovals: ChatToolApprovalService;
+  readonly channelNativeActions: ChannelNativeActionService;
   readonly learningPlane: LearningPlaneService;
   readonly subagents: SubagentService;
   private readonly sessions = new Map<string, StoredSession>();
   private readonly sessionInvalidationVersions = new Map<string, number>();
+  private readonly profileToolInvalidationVersions = new Map<string, number>();
   private readonly sessionTitleService: SessionTitleService;
   private skillPostTurnReviewService: SkillPostTurnReviewService;
   private _providerConfigured: boolean;
@@ -469,7 +479,15 @@ export class AgentService {
     this.db = db;
     this.memoryService = new MemoryService(db);
     this.identityService = new IdentityService(db);
+    this.channelNativeActions = new ChannelNativeActionService(
+      db,
+      this.identityService
+    );
     this.executionPlane = new ExecutionPlaneService(db);
+    this.chatToolApprovals = new ChatToolApprovalService(
+      db,
+      this.executionPlane
+    );
     this.learningPlane = new LearningPlaneService(db);
     this.subagents = new SubagentService(this, this.executionPlane, db);
     this.profileService = new ProfileService(db);
@@ -782,6 +800,10 @@ export class AgentService {
       : false;
   }
 
+  async decideChatToolApproval(input: ChatToolApprovalDecisionInput) {
+    return this.chatToolApprovals.decide(input);
+  }
+
   setAutomationTools(tools: ToolDefinition[]): void {
     this.automationTools = tools;
     this.sessions.clear();
@@ -806,10 +828,16 @@ export class AgentService {
 
   setMcpService(service: McpService): void {
     this.mcpService = service;
+    service.setConfigurationChangeListener((orgId) =>
+      this.invalidateSessionsForOrg(orgId)
+    );
   }
 
   setComposioService(service: ComposioService): void {
     this.composioService = service;
+    service.setConfigurationChangeListener((orgId) =>
+      this.invalidateSessionsForOrg(orgId)
+    );
   }
 
   setSkillsService(service: SkillsService): void {
@@ -2229,6 +2257,12 @@ export class AgentService {
     principal?: CanonicalPrincipal
   ): Promise<string> {
     const actor = runAsPrincipal(principal, (value) => value);
+    if (actor.orgId !== orgId) {
+      throw new AtlasApiError(
+        "Automation principal belongs to another workspace.",
+        403
+      );
+    }
     const userConfig = await this.getOrgUserConfig(orgId);
     const toolConfigurationVersion =
       this.sessionInvalidationVersions.get(orgId) ?? 0;
@@ -2237,6 +2271,13 @@ export class AgentService {
     }
 
     const profile = await this.requireProfile(orgId, profileId);
+    const beforeToolCall = this.createToolExecutionGuard(
+      orgId,
+      profile.id,
+      toolConfigurationVersion,
+      actor
+    );
+    await beforeToolCall();
     const profileTools = await this.resolveProfileTools(
       profile,
       {
@@ -2271,8 +2312,7 @@ export class AgentService {
       toolContext: buildToolExecutionContext({
         automationId,
         automationRunId,
-        beforeToolCall: () =>
-          this.requireCurrentToolConfiguration(orgId, toolConfigurationVersion),
+        beforeToolCall,
         forbidProfileSkillMarkdownWrites:
           await this.shouldForbidProfileSkillMarkdownWrites(profile.id),
         isPlatformAdmin: actor.isPlatformAdmin,
@@ -2322,6 +2362,19 @@ export class AgentService {
 
     const timeoutMs = clampSubAgentTimeout(input.timeoutMs);
     const profile = await this.requireProfile(input.orgId, input.profileId);
+    const beforeToolCall = this.createToolExecutionGuard(
+      input.orgId,
+      profile.id,
+      toolConfigurationVersion,
+      input
+    );
+    try {
+      await beforeToolCall();
+    } catch (error) {
+      return failSubAgentResult(
+        error instanceof Error ? error.message : String(error)
+      );
+    }
     if (
       profile.isSuper &&
       !canAccessSuperAgentProfile({
@@ -2378,11 +2431,7 @@ export class AgentService {
       systemPrompt: childSystemPrompt,
       toolContext: buildToolExecutionContext({
         agentDepth: input.agentDepth,
-        beforeToolCall: () =>
-          this.requireCurrentToolConfiguration(
-            input.orgId,
-            toolConfigurationVersion
-          ),
+        beforeToolCall,
         clientOrigin: input.clientOrigin,
         forbidProfileSkillMarkdownWrites:
           await this.shouldForbidProfileSkillMarkdownWrites(input.profileId),
@@ -2500,7 +2549,10 @@ export class AgentService {
     taskId: string,
     profileId: string,
     prompt: string,
-    principal: CanonicalPrincipal
+    principal: CanonicalPrincipal,
+    options?: {
+      onToolLoopStop?: (reason: ToolLoopStopReason) => void | Promise<void>;
+    }
   ): Promise<string> {
     const task = await this.db.getTask(taskId);
 
@@ -2526,7 +2578,7 @@ export class AgentService {
       throw new Error("Session not found.");
     }
 
-    return session.send(prompt);
+    return session.send(prompt, options);
   }
 
   async ensureTaskSession(
@@ -2881,6 +2933,17 @@ export class AgentService {
     return this.agentQuestionnaireState.get(sessionId);
   }
 
+  async consumeSessionQuestionnaire(
+    orgId: string,
+    sessionId: string,
+    expected: AgentQuestionnaire
+  ): Promise<void> {
+    if (!(await this.getSessionRecordForOrg(orgId, sessionId))) {
+      throw new AtlasApiError("Session not found", 404);
+    }
+    await this.agentQuestionnaireState.consume(sessionId, expected);
+  }
+
   async getSessionMessages(
     orgId: string,
     sessionId: string,
@@ -3194,6 +3257,34 @@ export class AgentService {
     return true;
   }
 
+  /** Fresh authenticated HTTP turn authority; never retained in the session cache. */
+  async prepareAuthenticatedSessionTurnOptions(
+    orgId: string,
+    sessionId: string,
+    actor: SessionActor
+  ): Promise<
+    Readonly<
+      Pick<
+        NonNullable<Parameters<AgentChatSession["send"]>[1]>,
+        "toolExecutionGuard"
+      >
+    >
+  > {
+    const principal = await createPublicationTurnPrincipal({
+      actor,
+      agent: this,
+      db: this.db,
+      orgId,
+      sessionId,
+    });
+    // Context validation includes a fresh current-access check. This installs
+    // no publication lifecycle, private store, or process admission policy.
+    return Object.freeze({
+      toolExecutionGuard: (context: Readonly<ToolContext>) =>
+        principal.validateContext(context),
+    });
+  }
+
   async resolveSession(
     orgId: string,
     sessionId: string,
@@ -3394,6 +3485,7 @@ export class AgentService {
       return false;
     }
 
+    this.chatToolApprovals.cancelSession(sessionId);
     sessionTurnRegistry.cancelTurn(sessionId);
     await deleteSubscriptionConversation(sessionId);
 
@@ -3440,6 +3532,7 @@ export class AgentService {
     if (!(await this.getSessionRecordForOrg(orgId, sessionId))) {
       return false;
     }
+    this.chatToolApprovals.cancelSession(sessionId);
     sessionTurnRegistry.cancelTurn(sessionId);
     await deleteSubscriptionConversation(sessionId);
     this.sessions.delete(sessionId);
@@ -4421,9 +4514,10 @@ export class AgentService {
       throw new AtlasApiError("Audio data and media type are required.", 400);
     }
     const bytes = decodeAudioTranscriptionData(data);
+    const env = attribution?.orgId?.trim() ? {} : process.env;
     const selection = resolveTranscriptionProviderSelection(
       config,
-      process.env,
+      env,
       this.providerAdapterRegistry
     );
     if (!selection) {
@@ -4437,7 +4531,7 @@ export class AgentService {
         filename: input.filename?.trim() || "audio.ogg",
         mediaType,
       },
-      process.env,
+      env,
       this.providerAdapterRegistry
     );
     const orgId = attribution?.orgId?.trim();
@@ -4606,7 +4700,7 @@ export class AgentService {
 
   async deleteTool(orgId: string, toolId: string): Promise<void> {
     await this.profileService.deleteTool(orgId, toolId);
-    this.sessions.clear();
+    this.invalidateSessionsForOrg(orgId);
   }
 
   async runToolPlayground(
@@ -4614,6 +4708,13 @@ export class AgentService {
     parameters: Record<string, unknown>,
     context: { orgId: string; userId: string }
   ): Promise<RunToolResponse> {
+    const [orgRole, isPlatformAdmin] = await Promise.all([
+      this.resolveOrgRole(context.orgId, context.userId),
+      this.resolveIsPlatformAdmin(context.userId),
+    ]);
+    if (!isPlatformAdmin && orgRole !== "admin") {
+      throw new AtlasApiError("Workspace admin access is required.", 403);
+    }
     const { tool } = await this.profileService.getTool(context.orgId, toolId);
 
     if (tool.handlerType !== "javascript") {
@@ -4659,9 +4760,15 @@ export class AgentService {
     }
 
     const toolContext = buildToolExecutionContext({
-      beforeToolCall: () =>
-        this.requireActiveOrganizationForTurn(context.orgId),
+      beforeToolCall: this.createToolExecutionGuard(
+        context.orgId,
+        profileId,
+        this.sessionInvalidationVersions.get(context.orgId) ?? 0,
+        { isPlatformAdmin, orgRole, userId: context.userId }
+      ),
+      isPlatformAdmin,
       orgId: context.orgId,
+      orgRole: orgRole ?? undefined,
       profileId,
       userId: context.userId,
     });
@@ -5407,6 +5514,72 @@ export class AgentService {
     );
   }
 
+  private createToolExecutionGuard(
+    orgId: string,
+    profileId: string,
+    expectedVersion: number,
+    principal: {
+      isPlatformAdmin?: boolean;
+      orgRole?: OrgRole | null;
+      userId?: string | null;
+      allowChannelFileTools?: boolean;
+    }
+  ): () => Promise<void> {
+    const profileVersion =
+      this.profileToolInvalidationVersions.get(profileId) ?? 0;
+    return async () => {
+      await this.requireCurrentToolConfiguration(orgId, expectedVersion);
+      if (
+        (this.profileToolInvalidationVersions.get(profileId) ?? 0) !==
+        profileVersion
+      ) {
+        throw Object.assign(
+          new Error("Profile tools changed. Retry the request."),
+          {
+            code: "CANCELLED" as const,
+            retryable: false,
+          }
+        );
+      }
+      const userId = principal.userId?.trim();
+      if (
+        !userId ||
+        (isChannelGuestUserId(userId) && !principal.allowChannelFileTools)
+      ) {
+        throw Object.assign(
+          new AtlasApiError(
+            "A workspace principal is required to use tools.",
+            403
+          ),
+          { code: "PERMISSION_DENIED" as const, retryable: false }
+        );
+      }
+      const [user, member, profile] = await Promise.all([
+        this.db.getUserById(userId),
+        this.db.getOrgMember(orgId, userId),
+        this.db.getProfileForOrg(profileId, orgId),
+      ]);
+      const isPlatformAdmin = user?.isPlatformAdmin === true;
+      if (
+        !(user && profile) ||
+        (!isPlatformAdmin && (!member || member.role === "viewer")) ||
+        isPlatformAdmin !== (principal.isPlatformAdmin === true) ||
+        (!isPlatformAdmin &&
+          (member?.role ?? null) !== (principal.orgRole ?? null)) ||
+        (profile.isSuper &&
+          !canAccessSuperAgentProfile({
+            isPlatformAdmin,
+            orgRole: member?.role,
+          }))
+      ) {
+        throw Object.assign(
+          new AtlasApiError("Tool access changed. Retry the request.", 403),
+          { code: "PERMISSION_DENIED" as const, retryable: false }
+        );
+      }
+    };
+  }
+
   private async requireProfile(
     orgId: string,
     profileId: string
@@ -5470,7 +5643,9 @@ export class AgentService {
     } = {},
     userConfig: UserConfig | null = this.userConfig
   ): Promise<ToolDefinition[]> {
-    const storedTools = await this.db.listToolsForProfile(profile.id);
+    const storedTools = (await this.db.listToolsForProfile(profile.id)).filter(
+      (tool) => tool.orgId == null || tool.orgId === profile.orgId
+    );
     const deepResearchOverride = createDeepResearchServerTool({
       resolveProvider: () =>
         this.resolveProviderClientForProfile(profile, userConfig),
@@ -5493,31 +5668,8 @@ export class AgentService {
 
     let resolved = [...tools];
 
-    // Inject dynamically activated session tools if any
-    if (options.sessionId) {
-      const activeToolNames = toolActivationService.getActiveTools(
-        options.sessionId
-      );
-      if (activeToolNames.length > 0) {
-        const allOrgTools = profile.orgId
-          ? await this.db.listToolsForOrg(profile.orgId)
-          : [];
-        const activeStored = allOrgTools.filter((t) =>
-          activeToolNames.includes(t.name)
-        );
-        const dynamicTools = await resolveToolsFromStorage(
-          activeStored,
-          this.db,
-          [],
-          { userConfig }
-        );
-        for (const dynamicTool of dynamicTools) {
-          if (!resolved.some((r) => r.name === dynamicTool.name)) {
-            resolved.push(dynamicTool);
-          }
-        }
-      }
-    }
+    // Search activation is a session discovery hint, never an authorization
+    // source. Only the profile's current assignments may populate its tools.
 
     if (this.mcpClientManager) {
       const orgId = profile.orgId;
@@ -5536,7 +5688,8 @@ export class AgentService {
           mcpServers,
           this.mcpClientManager,
           orgId,
-          profile.id
+          profile.id,
+          () => this.db.listMcpServersForProfile(profile.id)
         ),
       ];
     }
@@ -5640,14 +5793,45 @@ export class AgentService {
   }
 
   private invalidateProfileSessions(profileId: string): void {
+    this.profileToolInvalidationVersions.set(
+      profileId,
+      (this.profileToolInvalidationVersions.get(profileId) ?? 0) + 1
+    );
     for (const [sessionId, record] of this.sessions.entries()) {
       if (record.profileId === profileId) {
+        this.chatToolApprovals.cancelSession(sessionId);
         this.sessions.delete(sessionId);
       }
     }
   }
 
+  async invalidateSessionsForUser(
+    orgId: string,
+    userId: string
+  ): Promise<void> {
+    // A registered stream may still be building its uncached chat session.
+    const sessionIds = new Set(
+      (await this.db.listSessions())
+        .filter((record) => record.orgId === orgId && record.userId === userId)
+        .map((record) => record.id)
+    );
+    for (const [sessionId, record] of this.sessions) {
+      if (record.orgId === orgId && record.userId === userId) {
+        sessionIds.add(sessionId);
+      }
+    }
+    for (const sessionId of sessionIds) {
+      this.chatToolApprovals.cancelSession(sessionId);
+      sessionTurnRegistry.cancelTurn(sessionId);
+      this.sessions.delete(sessionId);
+      this.superAgentSessionState.clearSession(sessionId);
+      this.agentTodoState.clearSession(sessionId);
+      this.agentQuestionnaireState.clearSession(sessionId);
+    }
+  }
+
   invalidateSessionsForOrg(orgId: string): void {
+    this.chatToolApprovals.cancelOrg(orgId);
     this.sessionInvalidationVersions.set(
       orgId,
       (this.sessionInvalidationVersions.get(orgId) ?? 0) + 1
@@ -5696,17 +5880,33 @@ export class AgentService {
     );
     const toolConfigurationVersion =
       this.sessionInvalidationVersions.get(orgId) ?? 0;
+    const beforeToolCall = this.createToolExecutionGuard(
+      orgId,
+      profileId,
+      toolConfigurationVersion,
+      {
+        allowChannelFileTools: ["telegram", "whatsapp", "discord"].includes(
+          channel
+        ),
+        isPlatformAdmin,
+        orgRole,
+        userId,
+      }
+    );
     const includeSkillManageTools = channel === "web" || channel === "cli";
-    let tools = await resolveExecutableToolsForPrincipal(userId, () =>
-      this.resolveProfileTools(
-        profile,
-        {
-          includeSkillManageTools,
-          sessionId,
-          userId,
-        },
-        userConfig
-      )
+    let tools = await resolveExecutableToolsForPrincipal(
+      userId,
+      () =>
+        this.resolveProfileTools(
+          profile,
+          {
+            includeSkillManageTools,
+            sessionId,
+            userId,
+          },
+          userConfig
+        ),
+      { channel }
     );
     if (channel === "discord" && !isGuestPrincipal) {
       tools = [...tools, ...createSendDiscordArtifactTools()];
@@ -5976,13 +6176,37 @@ export class AgentService {
       soul: soulActive,
       systemPrompt: resolvedSystemPrompt,
       toolContext: buildToolExecutionContext({
-        beforeToolCall: () =>
-          this.requireCurrentToolConfiguration(orgId, toolConfigurationVersion),
+        beforeToolCall: async (toolName) => {
+          if (
+            isGuestPrincipal &&
+            !(toolName && isChannelWorkFileTool(toolName))
+          ) {
+            throw new AtlasApiError(
+              "Channel guest tool is outside work-file scope",
+              403
+            );
+          }
+          await beforeToolCall();
+          if (
+            channel === "telegram" ||
+            channel === "whatsapp" ||
+            channel === "discord"
+          ) {
+            await this.channelNativeActions.authorizeTool(
+              orgId,
+              sessionId,
+              channel,
+              toolName
+            );
+          }
+        },
         channel,
         forbidProfileSkillMarkdownWrites,
         forceSkillWriteProposal: () => forceSkillWriteProposal,
         isPlatformAdmin: isPlatformAdmin === true,
         loadAttachment,
+        onToolTurnEnd: (runId, status, results) =>
+          this.chatToolApprovals.complete(runId, status, results),
         orgId,
         orgRole: orgRole ?? undefined,
         profileId,
@@ -5998,6 +6222,57 @@ export class AgentService {
             userId,
           })
         ),
+        requestChannelAction: (action, onPending, signal) =>
+          this.channelNativeActions.request(
+            {
+              beforeToolCall,
+              channel,
+              orgId,
+              profileId,
+              sessionId,
+              signal,
+              userId: userId ?? undefined,
+            },
+            action,
+            onPending
+          ),
+        requestToolApproval: async (request, onPending) => {
+          if (!userId) {
+            throw new AtlasApiError(
+              "A session principal is required for approval.",
+              403
+            );
+          }
+          return this.chatToolApprovals.request(
+            {
+              ...request,
+              beforeDecision: async () => {
+                await beforeToolCall();
+                if (
+                  !(await this.canAccessSession(
+                    orgId,
+                    sessionId,
+                    { userId },
+                    "invoke"
+                  ))
+                ) {
+                  throw new AtlasApiError(
+                    "Session access has been revoked.",
+                    403
+                  );
+                }
+              },
+              principal: {
+                isPlatformAdmin: isPlatformAdmin === true,
+                orgId,
+                orgRole: orgRole ?? "member",
+                userId,
+              },
+              sessionId,
+            },
+            onPending
+          );
+        },
         sessionId,
         tokenOptimizerEnabled: tokenOptimizerEnabled ?? undefined,
         userId: userId ?? undefined,

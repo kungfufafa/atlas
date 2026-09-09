@@ -11,6 +11,7 @@ import type {
   StreamChatHandlers,
   ToolCall,
 } from "@atlas/core";
+import { IncompleteCompletionError } from "@atlas/core";
 import type { Fetcher } from "@openrouter/sdk";
 import { HTTPClient, OpenRouter } from "@openrouter/sdk";
 import type {
@@ -70,6 +71,9 @@ function createOpenRouterClient(apiKey: string, fetcher?: Fetcher): OpenRouter {
 }
 
 function formatOpenRouterError(error: unknown): Error {
+  if (error instanceof IncompleteCompletionError) {
+    return error;
+  }
   if (error instanceof OpenRouterError) {
     return new Error(
       `${PROVIDER_LABEL} request failed (${error.statusCode}): ${error.body}`
@@ -221,7 +225,8 @@ function parseChatResult(result: {
 }): ChatCompletionResult {
   assertChatCompletionFinishReason(
     result.choices?.[0]?.finishReason,
-    PROVIDER_LABEL
+    PROVIDER_LABEL,
+    result
   );
   const message = result.choices?.[0]?.message;
   const toolCalls = parseSdkToolCalls(message?.toolCalls);
@@ -326,46 +331,73 @@ async function readOpenRouterStream(
   let thinking = "";
   let usage: ChatCompletionResult["usage"];
   let completed = false;
+  let limited = false;
   const pending = new Map<number, PendingToolCall>();
 
-  for await (const chunk of stream) {
-    completed =
-      assertChatCompletionFinishReason(
-        chunk.choices?.[0]?.finishReason,
-        PROVIDER_LABEL
-      ) || completed;
-    usage =
-      extractOpenAITokenUsage(
-        (chunk as { usage?: Record<string, unknown> }).usage
-      ) ?? usage;
-    const delta = chunk.choices?.[0]?.delta;
+  try {
+    for await (const chunk of stream) {
+      const reason = chunk.choices?.[0]?.finishReason;
+      if (reason === "length") {
+        limited = true;
+      } else {
+        completed =
+          assertChatCompletionFinishReason(reason, PROVIDER_LABEL) || completed;
+      }
+      usage =
+        extractOpenAITokenUsage(
+          (chunk as { usage?: Record<string, unknown> }).usage
+        ) ?? usage;
+      const delta = chunk.choices?.[0]?.delta;
 
-    if (delta?.reasoning) {
-      thinking += delta.reasoning;
-      handlers.onThinking?.(delta.reasoning);
-    }
+      if (delta?.reasoning) {
+        thinking += delta.reasoning;
+        handlers.onThinking?.(delta.reasoning);
+      }
 
-    if (delta?.content) {
-      content += delta.content;
-      handlers.onChunk(delta.content);
-    }
+      if (delta?.content) {
+        content += delta.content;
+        handlers.onChunk(delta.content);
+      }
 
-    if (delta?.toolCalls) {
-      for (const toolDelta of delta.toolCalls) {
-        const argDelta = toolDelta.function?.arguments ?? "";
-        mergePendingToolCall(pending, toolDelta);
+      if (delta?.toolCalls) {
+        for (const toolDelta of delta.toolCalls) {
+          const argDelta = toolDelta.function?.arguments ?? "";
+          mergePendingToolCall(pending, toolDelta);
 
-        if (argDelta) {
-          const current = pending.get(toolDelta.index ?? 0);
+          if (argDelta) {
+            const current = pending.get(toolDelta.index ?? 0);
 
-          if (current) {
-            notifyToolInputDelta(handlers, current, argDelta);
+            if (current) {
+              notifyToolInputDelta(handlers, current, argDelta);
+            }
           }
         }
       }
     }
+  } catch (cause) {
+    if (limited) {
+      throw new IncompleteCompletionError(
+        PROVIDER_LABEL,
+        {
+          content,
+          thinking,
+          toolInputFragments: [...pending.values()],
+          usage,
+        },
+        { cause, recoveryAllowed: false }
+      );
+    }
+    throw cause;
   }
 
+  if (limited) {
+    throw new IncompleteCompletionError(PROVIDER_LABEL, {
+      content,
+      thinking,
+      toolInputFragments: [...pending.values()],
+      usage,
+    });
+  }
   if (!completed) {
     throw new Error(`${PROVIDER_LABEL} stream ended before completion.`);
   }
@@ -435,7 +467,8 @@ export function createOpenRouterProvider(
 
         assertChatCompletionFinishReason(
           result.choices?.[0]?.finishReason,
-          PROVIDER_LABEL
+          PROVIDER_LABEL,
+          result
         );
         const content = result.choices?.[0]?.message?.content?.trim();
         const usage = extractOpenAITokenUsage(

@@ -1,0 +1,182 @@
+{
+  "sealedAt": "2026-09-07T02:30:18.722533+00:00",
+  "sourceOnly": true,
+  "verification": [
+    {
+      "label": "rootC5",
+      "path": "/Users/apriansyahrs/Documents/Code/atlas",
+      "sourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+      "listedFilesVerified": 2078,
+      "mismatches": []
+    },
+    {
+      "label": "assembly",
+      "path": "/private/tmp/atlas-artifact-assembly-c5/source",
+      "sourceHash": "092cddfec661d7e35a8061f16e52d4389c158a3b64a7c102523b8a4b31b9233c",
+      "listedFilesVerified": 2103,
+      "mismatches": []
+    }
+  ],
+  "selectedRootFiles": [
+    {
+      "path": "apps/server/src/services/agent-service.ts",
+      "sha256": "0e328e4a2b6787ead5f1136a9b0b1902b4eb30f3b3dcbf599498ebbeab88f4b0"
+    },
+    {
+      "path": "apps/server/src/http/routes/sessions.ts",
+      "sha256": "842b7edc64d4044beafa1a799706446011cb226358dd1cf1525fabfb0266418c"
+    },
+    {
+      "path": "apps/server/src/http/shared.ts",
+      "sha256": "562e19dbbbe5f7b8604dadde65ca0d2c3d657c91ebc0343f1abe2ebc95aa193a"
+    },
+    {
+      "path": "apps/server/src/http/context.ts",
+      "sha256": "52022a2dae64b9dccb4bfc8224707641bbae00c0fc9b4ba5c48be28390750f5e"
+    },
+    {
+      "path": "apps/server/src/index.ts",
+      "sha256": "6b434ffdbf9d407ce222851d935b998dc88b8f364b21ff6672b19fc2a393d04a"
+    },
+    {
+      "path": "apps/server/src/services/session-persistence.ts",
+      "sha256": "f3fa8807a812b0dec1d4ff4473b439e8c30fec69a99e5be58f63e28847c32ad0"
+    },
+    {
+      "path": "apps/server/src/services/tool-resolver.ts",
+      "sha256": "e4242e6a4f3f4da4194e21835449fae011e8564f3b202798530a391d956c9f90"
+    },
+    {
+      "path": "apps/server/src/services/channel-guest-tool-policy.ts",
+      "sha256": "94bdb6f86ca0bb1d6ccc9451982f8d9d0d9bff85117ed26b11ef52e4d34aa4cd"
+    },
+    {
+      "path": "apps/server/src/services/restricted-process.ts",
+      "sha256": "77985c02fdab7fe354fddde90c438c9494746e7b0232aa91a313acbbb9ab398a"
+    },
+    {
+      "path": "apps/server/src/services/custom-tool-subprocess.ts",
+      "sha256": "36a7e19256dd8b7935601189bf776f0b8b2ac925f14e0ec31b5f1f9f93a71a4a"
+    },
+    {
+      "path": "apps/server/src/services/javascript-tool-loader.ts",
+      "sha256": "5a33208863910584ce049e2a23220d22ce13dfa37840ddb2e66faff0bc0ada5e"
+    },
+    {
+      "path": "apps/server/src/services/mcp-client-manager.ts",
+      "sha256": "08ec3f08aaa60b48379ec18871d46211db0de5978e76895e4271c19c430d602a"
+    },
+    {
+      "path": "apps/server/src/services/mcp-service.ts",
+      "sha256": "31bb7b021e4222b639fbc39e511d9d99fe4428ef1fb7792846aae27224792245"
+    },
+    {
+      "path": "apps/server/src/tools/bash.ts",
+      "sha256": "20c74e8a143b3560a77af8a00d9e46a15846af7afb7d87e7dc7ca184e12652e6"
+    },
+    {
+      "path": "apps/server/src/tools/python-execute-tool.ts",
+      "sha256": "c25b647c4bdad24bdee478f46956cdb7a725bca803429d5dd5ce11a0192a72f0"
+    },
+    {
+      "path": "apps/server/src/providers/subscription/chatgpt/runtime.ts",
+      "sha256": "969d30b6caaa8e54976c11860ec354520b7a6046d783ee9e23d1dc35d7082369"
+    },
+    {
+      "path": "apps/server/src/providers/subscription/claude/runtime.ts",
+      "sha256": "8be571a08214fac854c36144fb9988067ba2456309aabb7fcedab63998cc5358"
+    },
+    {
+      "path": "apps/server/src/providers/subscription/claude/structured-tool-bridge.ts",
+      "sha256": "cf260fe0844b2309386543808bd0177d3f3d81f615362bc9eac194713b4753c6"
+    },
+    {
+      "path": "packages/agent/src/chat.ts",
+      "sha256": "3ea5cbbdf7f21aade5d117966695250611a2e5e740feaa8bc78c96afbe7bbd85"
+    },
+    {
+      "path": "packages/agent/src/runtime-tool-dispatcher.ts",
+      "sha256": "dd6706bd8d3d9f28ff1afc5f44b103be9d67559e35ff94719339a788b62d9ec3"
+    },
+    {
+      "path": "packages/core/src/tools/execution.ts",
+      "sha256": "67985f914b0c4c5a2acedc39546a3e66106f44e7eb490a579d7a9d58cbc58805"
+    },
+    {
+      "path": "packages/core/src/tools/protected.ts",
+      "sha256": "e5a82429251c481da4cc06af5c0b043da75bd5e601a0f0c20169ef0644bca549"
+    },
+    {
+      "path": "packages/core/src/skills/load-tool.ts",
+      "sha256": "4670cfac27b7364839301b20826efac3efa98e334229eefbd75b6fbd62e8b5da"
+    },
+    {
+      "path": "packages/core/src/contract.ts",
+      "sha256": "a443745cf6d784e864cd0c1159ca9e1b9938cc9a0a0b68d2647143283c431299"
+    }
+  ],
+  "selectedAssemblyFiles": [
+    {
+      "path": "apps/server/src/services/artifact-publication-lifecycle.ts",
+      "sha256": "eda45b53daa1030a2a9616f1616034cbd58ca65a6b32dc0cf0cdba869555fe05"
+    },
+    {
+      "path": "apps/server/src/services/artifact-publication-service.ts",
+      "sha256": "e1cbfc76fd43db8368c2506a7e7b1b623e3e37dbe8456c2289367dbb18d73df2"
+    },
+    {
+      "path": "apps/server/src/services/artifact-publication-access.ts",
+      "sha256": "709f3b221900e6b6289af2ba5ca48946b7e438b6e0c1905f52757a237d98cf34"
+    },
+    {
+      "path": "apps/server/src/services/artifact-publication-store.ts",
+      "sha256": "b0b3baaa8f3eecd0eb036704af69bdf5c4bdd04808db6d85a033b050c60e8c62"
+    },
+    {
+      "path": "apps/server/src/http/routes/artifact-publications.ts",
+      "sha256": "041c819bf6e7e67c9530764d5fe0b6c184ba4d02b6c4fb102feaa0844f5d2a46"
+    },
+    {
+      "path": "apps/server/src/http/app.ts",
+      "sha256": "b7527f2d28d340c8671eeccc2dec5f226d17150cd124a32071e1ecc21ba46e60"
+    },
+    {
+      "path": "apps/server/src/http/context.ts",
+      "sha256": "52022a2dae64b9dccb4bfc8224707641bbae00c0fc9b4ba5c48be28390750f5e"
+    },
+    {
+      "path": "packages/agent/src/chat.ts",
+      "sha256": "daa48027534b58b02bad7372659bc59d722bd3cc075ddd528c985339793fbffc"
+    },
+    {
+      "path": "packages/agent/src/tool-loop.ts",
+      "sha256": "2dc8d0f38b83437bcced2166204baf70c78ad3a661a95916c790166c98ce8457"
+    }
+  ],
+  "priorEvidence": [
+    {
+      "path": "/private/tmp/atlas-artifact-activation-seam-audit/manifest.json",
+      "sha256": "4b8421941df6b241ae900d21a3709d4bc04fe779086d8ff583f4cb1d25dda3d3"
+    },
+    {
+      "path": "/private/tmp/atlas-artifact-activation-seam-audit/activation-seams.md",
+      "sha256": "b53c7413cfb570c07b1ac4fcdd4066b0166cea3e575e691ceb51d74804e69ebe"
+    },
+    {
+      "path": "/private/tmp/atlas-artifact-activation-seam-audit/custom-and-builtin-roots.md",
+      "sha256": "2173287e00ef7500553f648ba84d42260f8d77ec9cfef5c1d4bd56f84f7eb762"
+    },
+    {
+      "path": "/private/tmp/atlas-artifact-activation-seam-audit/mcp-local-runtime-supplement.md",
+      "sha256": "8a1bec5a65baa8b56fe45c13591ad378b5516cf65728956b9bdfcb97bd95231a"
+    },
+    {
+      "path": "/private/tmp/atlas-artifact-assembly-c5/readiness-before-review.json",
+      "sha256": "1190ff64aab9cb479fff21c508e394caafca945fd55c34f46a21e8df2ddb8b46"
+    }
+  ],
+  "principalScratchInspected": false,
+  "sourceEdits": 0,
+  "providerCalls": 0,
+  "testsRun": 0
+}

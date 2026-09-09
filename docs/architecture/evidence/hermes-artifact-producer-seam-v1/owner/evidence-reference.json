@@ -1,0 +1,23 @@
+{
+  "baseline.json": "38b659f6c03bc0ab9bb5cf98df35f1068fffda741402323620e323d91577b7dd",
+  "combined.patch": "4809370cdce4ab3f756107576b605f6266d5f4c8d3b5190d8a47b33f18dbd4fc",
+  "export.log": "c624b0b6ec1fa7dae1bc7900526d44583ef8e300de3bc78fef9dd71c2f995c0f",
+  "export.py": "e0eec14e2c8059afca5e394dd5d2b080a8a0933610fc01fed5506096c6fe7a76",
+  "final-format.log": "a2b52db426090a343109847dec4773be95485bdad434ada8498c474ed7ecb920",
+  "final-lint.log": "4e07ac9498f4ceb2bcb8405851a3904ca0191770c25f5b27f6a5fdbb819693c9",
+  "final-regressions.log": "2bccbee530c99703acad2416d5ab2f70d71518374c2f65b95d2fad4c18c9664b",
+  "final-typecheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "gates.json": "70b9a86f940dd4803dcf71d7c729d4b2b4d9f9dfb840c3cf78303cf32397c116",
+  "implement.py": "16bd6500cb385ffb5d3fc1c791593baa3ed8f708facb6e93f32d61ee08c9e9c4",
+  "implementation-notes.md": "97d631ca4c4dea19f3f742ffc9778af2d7defd34b66a3a567b5168b7bd7cd2ee",
+  "initial-format.log": "816321578cd0514015c21e21b92dcffca37297834c7fb993280ad3838a811df7",
+  "initial-tests.log": "5a5c50f35dc31779946216122a321f517a3ef86db6c15e2507a54acfb6e3bdb1",
+  "initial-typecheck.log": "a13469b76257fb1b01618c63c371ec5c9f5a3a54353725faf67035c57645d3a7",
+  "inspection-errors.md": "7c4f4b53206d8215e7c0ceb867f795393ed2bdc7676c2a09cdaf294be67047c0",
+  "patch-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "production.patch": "776a6e5235cf5ebd0739f47daa7bb1e2eac35ff03130210ba723f6729c70b4e6",
+  "readiness.json": "4f6c5524f0da0cc8fac3138ec3a10d5061d65e90f26e8fe11868aa7646c7eb43",
+  "second-tests.log": "efa0d357c0b10722306976601a5f0915258f2738798f35b48de5fbf8529cdd13",
+  "source-inventory.json": "b78f0aa65a6f06a54ab682499904370d1abc896dcbafcc179480109a12008f62",
+  "test-format.log": "61d28b5d3d17fb6a7654dc357d1008eec10e48eaa25fc56d6705f17cadfb33ac"
+}

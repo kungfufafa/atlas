@@ -1,0 +1,7 @@
+{
+  "at": "2026-09-07T06:12:37.229357+00:00",
+  "reviewSha256": "1aa27eba4eba8360ec7db946cb345eb2fa2293ecab42b11625ab06afbd574543",
+  "manifestSha256": "f7d8d535c4120b702e32aa7ee30f650ad0eeb18d0a3497333e590a2c31f56b82",
+  "verifiedMembers": 17,
+  "status": "CLOSED: live pilot instrumentation verified; no structural/authentication/endpoint blocker found in reviewed evidence"
+}

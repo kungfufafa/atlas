@@ -1,0 +1,28 @@
+{
+  "createdAt": "2026-09-06T18:34:47.332729+00:00",
+  "scope": "Additive controlled executor/extractor attribution reproduction and lifecycle source review; no HTTP exploit or live comparison claimed; no product patch.",
+  "originalsRetained": true,
+  "knownCredentialLiteralScan": "passed selected files only",
+  "files": {
+    "design-note.md": {
+      "origin": "/private/tmp/atlas-artifact-attribution-audit/design-note.md",
+      "sha256": "3c5dcf0eaa40fce831052da9638f7356b6e8f0121cd092ef262df98869f0ed88",
+      "bytes": 7947
+    },
+    "report.md": {
+      "origin": "/private/tmp/atlas-artifact-attribution-audit/report.md",
+      "sha256": "f2644f681651e801500b092131e32e90ede9747392685bb8b4ecf2ea10f30ec3",
+      "bytes": 3628
+    },
+    "source-bindings.json": {
+      "origin": "/private/tmp/atlas-artifact-attribution-audit/source-bindings.json",
+      "sha256": "dec8cda3d9c1ade9de78c83bb06aaafe6dde3492ed92dfcc504b16dcc788e936",
+      "bytes": 4713
+    },
+    "reproduction/evidence.json": {
+      "origin": "/private/tmp/atlas-artifact-attribution-audit/run-CidGS4/evidence.json",
+      "sha256": "27f1e4aaf8b2a1b9c8f4a6c7997e44709b133d1e03a847ff64d41b1d3f136489",
+      "bytes": 24460
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "at": "2026-09-06T22:59:50.009504+00:00",
+  "purpose": "Additive final file-V2 offline readiness, preserving prior gate logs, source manifests, parser review, pilot and inspection errors.",
+  "directory": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness",
+  "files": {
+    "finalization.log": {
+      "sha256": "0b0f7d8af7c7135baa6d6904c48ed3653e0c1c4b4cc18883b7baa4e4673522b4",
+      "bytes": 539
+    },
+    "finalize.py": {
+      "sha256": "847699ec47a71ebeb1d59c6fa97f4928804472ca2e8e615359d8d2a9b994c10a",
+      "bytes": 16654
+    },
+    "inspection-final-note.json": {
+      "sha256": "2201cdc8dd8691080207e3086fce8b210fc9cdf407d983fef5a0ef84b700fb48",
+      "bytes": 426
+    },
+    "inspection-notes.json": {
+      "sha256": "0ab2a07a9a0a55bdb9903c78b821ccd0dd7bc9b6dc4876f6cb2d9463a79729cb",
+      "bytes": 644
+    },
+    "inspection-observation-shape-error.json": {
+      "sha256": "af1edafa81e6fb43440b1adc85ede06aa59e5fc2217490139a4671c17c8c755d",
+      "bytes": 293
+    },
+    "readiness-final.json": {
+      "sha256": "381d960e289ecdec9f26460ceb508432e42763f3375240d2d36ef07d85d39ff7",
+      "bytes": 18957
+    },
+    "snapshot-current.log": {
+      "sha256": "601a51971466de02488754bf73e69e79f9be1c3597005c978eb93d7d87cd12f0",
+      "bytes": 224
+    },
+    "snapshot-current.ts": {
+      "sha256": "55c3942f0a7857cd9285d359710a6bff190f0dddbbb33e7d2d36f7b6b0e8b0e0",
+      "bytes": 1184
+    },
+    "source-current.json": {
+      "sha256": "641ad7deb15c0205ea52ae3fb6aa99608607816a16142906276e6f796036aab5",
+      "bytes": 1167848
+    },
+    "verification.json": {
+      "sha256": "d87af0b34d3ac6555550d2204e3d7b58444d0e255d3f2fa403ed027d5d507df3",
+      "bytes": 47201
+    }
+  },
+  "newTestOrPilotRuns": 0,
+  "paidCalls": 0,
+  "freezePerformed": false,
+  "rootSourceEdits": false
+}

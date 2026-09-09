@@ -1,15 +1,27 @@
 import { generateSessionTitleFromMessages } from "@atlas/agent";
-import type {
-  ChatMessage,
-  ProviderClient,
-  ProviderInstance,
-  UserConfig,
+import {
+  type ChatMessage,
+  getUserMessageText,
+  type ProviderClient,
+  type ProviderInstance,
+  type UserConfig,
 } from "@atlas/core";
 import type { DatabaseAdapter, StoredProfileRecord } from "@atlas/db";
 import { createProviderForInstance } from "../providers/create";
 import { resolveProfileProviderSelection } from "./provider-instance-helpers";
 
 export const SESSION_TITLE_FALLBACK = "Untitled";
+
+const TITLE_GENERATION_TIMEOUT_MS = 30_000;
+const FALLBACK_MAX_LENGTH = 80;
+const WHITESPACE = /\s+/g;
+const fallbackSegmenter = new Intl.Segmenter(undefined, {
+  granularity: "grapheme",
+});
+
+interface SessionTitleOptions {
+  generationTimeoutMs?: number;
+}
 
 type SessionTitleProviderFactory = (
   instance: ProviderInstance,
@@ -19,6 +31,7 @@ type SessionTitleProviderFactory = (
 
 export class SessionTitleService {
   private readonly inFlight = new Set<string>();
+  private readonly generationTimeoutMs: number;
 
   constructor(
     private readonly db: DatabaseAdapter,
@@ -28,8 +41,21 @@ export class SessionTitleService {
     private readonly providerFactory: SessionTitleProviderFactory = (
       instance,
       model
-    ) => createProviderForInstance(instance, model)
-  ) {}
+    ) => createProviderForInstance(instance, model),
+    options: SessionTitleOptions = {}
+  ) {
+    const timeout = options.generationTimeoutMs ?? TITLE_GENERATION_TIMEOUT_MS;
+    if (
+      !Number.isSafeInteger(timeout) ||
+      timeout <= 0 ||
+      timeout > 2_147_483_647
+    ) {
+      throw new RangeError(
+        "Session title timeout must be a positive timer-safe integer"
+      );
+    }
+    this.generationTimeoutMs = timeout;
+  }
 
   scheduleSessionTitleGeneration(sessionId: string): void {
     void this.generateSessionTitle(sessionId).catch((error) => {
@@ -81,27 +107,38 @@ export class SessionTitleService {
       ) {
         return;
       }
-      const provider = this.resolveProviderForProfile(profile, userConfig);
-
-      if (!provider) {
-        await this.commitTitleIfEligible(
-          sessionId,
-          profile.id,
-          profile.orgId,
-          SESSION_TITLE_FALLBACK
-        );
-        return;
+      const fallback = firstUserTextFallback(messages);
+      let provider: ProviderClient | null = null;
+      try {
+        provider = this.resolveProviderForProfile(profile, userConfig);
+      } catch (error) {
+        console.error("Failed to resolve the session title provider:", error);
       }
 
-      const title = await generateSessionTitleFromMessages(messages, {
-        provider,
-      });
+      let title: string | null = null;
+      if (provider) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => {
+          controller.abort(
+            new DOMException("Session title deadline reached", "TimeoutError")
+          );
+        }, this.generationTimeoutMs);
+        try {
+          // Await cleanup even after abort: a duplicate job must not outlive this one.
+          title = await generateSessionTitleFromMessages(messages, {
+            provider,
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timeout);
+        }
+      }
 
       await this.commitTitleIfEligible(
         sessionId,
         profile.id,
         profile.orgId,
-        title ?? SESSION_TITLE_FALLBACK
+        title ?? fallback
       );
     } finally {
       this.inFlight.delete(sessionId);
@@ -177,4 +214,26 @@ function hasCompletedFirstTurn(messages: readonly ChatMessage[]): boolean {
   );
 
   return hasUser && hasAssistant;
+}
+
+function firstUserTextFallback(messages: readonly ChatMessage[]): string {
+  const firstUser = messages.find((message) => message.role === "user");
+  if (!firstUser || firstUser.role !== "user") {
+    return SESSION_TITLE_FALLBACK;
+  }
+  const text = getUserMessageText(firstUser.content)
+    .toWellFormed()
+    .replace(WHITESPACE, " ")
+    .trim();
+  if (!text) {
+    return SESSION_TITLE_FALLBACK;
+  }
+  let title = "";
+  for (const { segment } of fallbackSegmenter.segment(text)) {
+    if (title.length + segment.length > FALLBACK_MAX_LENGTH) {
+      return title ? `${title.trimEnd()}…` : SESSION_TITLE_FALLBACK;
+    }
+    title += segment;
+  }
+  return title;
 }

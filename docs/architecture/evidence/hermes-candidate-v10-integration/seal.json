@@ -1,0 +1,19 @@
+{
+  "archiveManifestSha256": "511c526871ed90aeecb2793d908e675aef999fe7f0f20a609c48ec38a17a9261",
+  "archiveSealSha256": "85218f71df5a0b415f00d454197e340e2088301aac40ea5dfbd123505e23312d",
+  "at": "2026-09-07T12:15:12.735462+00:00",
+  "knownCredentialScanClean": true,
+  "members": {
+    "references.json": {
+      "bytes": 17880,
+      "mode": 420,
+      "sha256": "91ebd0e863d4ce12517ec0fc544c665c9f10e2fdddd4e3727332090d3f9cc4c5"
+    },
+    "report.md": {
+      "bytes": 5776,
+      "mode": 420,
+      "sha256": "2dfd3a481b2b135eb6ec629018b37adbb987c401fb350a45d5b8b9c638c1cc76"
+    }
+  },
+  "scope": "Durable Indonesian product-evidence report; no shared progress file modification."
+}

@@ -13,6 +13,8 @@ import {
   loadDiscordConfigFile,
   loadTelegramConfigFile,
   loadWhatsAppConfigFile,
+  loadWhatsAppLidMap,
+  lookupWhatsAppLidPhone,
   normalizeWhatsAppUserJid,
   PrincipalRequiredError,
   toWhatsAppPhoneJid,
@@ -100,7 +102,7 @@ export class ChannelGuestPrincipalService {
   async resolveOrProvision(
     input: ChannelGuestPrincipalInput
   ): Promise<CanonicalPrincipal> {
-    const normalizedInput = normalizeExternalActor(input);
+    const normalizedInput = await normalizeExternalActor(input);
     const orgId = input.orgId.trim();
     const lockKey = `${orgId}:${input.channel}`;
 
@@ -302,7 +304,7 @@ export class ChannelGuestPrincipalService {
   }
 }
 
-async function authorizeExternalActorFromWorkspaceConfig(
+export async function authorizeExternalActorFromWorkspaceConfig(
   input: ChannelGuestPrincipalInput
 ): Promise<boolean> {
   if (input.channel === "telegram") {
@@ -329,7 +331,14 @@ async function authorizeExternalActorFromWorkspaceConfig(
       : false;
   }
 
-  const actor = normalizeWhatsAppActor(input);
+  const normalized = await normalizeExternalActor(input);
+  const actor = normalizeWhatsAppActor({
+    ...input,
+    channelUserAliases: normalized.channelUserIds.filter(
+      (id) => id !== normalized.primaryChannelUserId
+    ),
+    channelUserId: normalized.primaryChannelUserId,
+  });
   const config = await loadWhatsAppConfigFile(input.orgId);
   return config
     ? isWhatsAppUserAuthorized(
@@ -342,9 +351,9 @@ async function authorizeExternalActorFromWorkspaceConfig(
     : false;
 }
 
-export function normalizeExternalActor(
+export async function normalizeExternalActor(
   input: ChannelGuestPrincipalInput
-): NormalizedExternalActor {
+): Promise<NormalizedExternalActor> {
   if (!EXTERNAL_CHANNELS.has(input.channel)) {
     throw new PrincipalRequiredError("Unsupported external channel.");
   }
@@ -354,9 +363,24 @@ export function normalizeExternalActor(
     orgId: input.orgId,
   });
   if (input.channel === "whatsapp") {
-    return normalizeWhatsAppActor({
+    const actor = normalizeWhatsAppActor({
       ...input,
       channelUserId: primary.channelUserId,
+      orgId: primary.orgId,
+    });
+    const lidMap = await loadWhatsAppLidMap(primary.orgId);
+    const aliases = new Set(actor.channelUserIds);
+    for (const id of actor.channelUserIds) {
+      const phone = lookupWhatsAppLidPhone(lidMap, id);
+      if (phone) {
+        aliases.add(phone);
+      }
+    }
+    aliases.delete(actor.primaryChannelUserId);
+    return normalizeWhatsAppActor({
+      ...input,
+      channelUserAliases: [...aliases],
+      channelUserId: actor.primaryChannelUserId,
       orgId: primary.orgId,
     });
   }

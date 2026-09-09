@@ -1,0 +1,36 @@
+{
+  "rawExecution": "/private/tmp/atlas-go-compatibility-probe-v1/execution",
+  "scope": "Fixed-order compatibility-only screening, both models fully tested, no harness task quality or ranking. All10calls knownmandatoryusage; MiMo selected by predetermined order.",
+  "files": [
+    {
+      "path": "preregistration.md",
+      "source": "/private/tmp/atlas-go-compatibility-probe-v1/preregistration.md",
+      "sha256": "e68db837aff81e570afc5c97ee7c9b0ea50dd2fcc2dc3fad1a9bbd3cb3ce6dec"
+    },
+    {
+      "path": "plan.json",
+      "source": "/private/tmp/atlas-go-compatibility-probe-v1/plan.json",
+      "sha256": "5c5981703f649a6008b07f9d66a4bfe4d396db4e0796a7f05b92d14f9e992a37"
+    },
+    {
+      "path": "readiness.json",
+      "source": "/private/tmp/atlas-go-compatibility-probe-v1/readiness.json",
+      "sha256": "f98e1e0328a397dfb7e777ddc8eb5bace45d09d9a0d6df9794608a7f980868d2"
+    },
+    {
+      "path": "completed.json",
+      "source": "/private/tmp/atlas-go-compatibility-probe-v1/execution/completed.json",
+      "sha256": "3fdac17312d98760aeff0b12e080487c7b920eda5cb12251b0ce368549415a87"
+    },
+    {
+      "path": "independent-review.json",
+      "source": "/private/tmp/atlas-go-compatibility-probe-v1-independent-review.json",
+      "sha256": "32d4b19895be3cf0fc2c0c08b8ac17ea4bf4e6227a286d58946de981e782a2ee"
+    },
+    {
+      "path": "root-admission.json",
+      "source": "/private/tmp/atlas-go-compatibility-probe-v1/root-admission.json",
+      "sha256": "9391a58140287a9088ee39c5a03872bddd3774e9df54eeb194b80e8a15a502f7"
+    }
+  ]
+}

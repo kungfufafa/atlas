@@ -1,0 +1,341 @@
+{
+  "arms": 96,
+  "requests": 855,
+  "harnesses": {
+    "atlas": {
+      "all": {
+        "n": 441,
+        "prompt": {
+          "n": 441,
+          "known": 440,
+          "unknown": 1,
+          "sumKnown": 2938359,
+          "minKnown": 150,
+          "medianKnown": 7766.0,
+          "meanKnown": 6678.088636363636,
+          "maxKnown": 15011
+        },
+        "systemBytes": {
+          "n": 441,
+          "known": 441,
+          "unknown": 0,
+          "sumKnown": 5977179,
+          "minKnown": 427,
+          "medianKnown": 16827,
+          "meanKnown": 13553.69387755102,
+          "maxKnown": 19497
+        },
+        "toolsBytes": {
+          "n": 441,
+          "known": 441,
+          "unknown": 0,
+          "sumKnown": 3852710,
+          "minKnown": 0,
+          "medianKnown": 11135,
+          "meanKnown": 8736.303854875283,
+          "maxKnown": 11135
+        }
+      },
+      "main": {
+        "n": 346,
+        "prompt": {
+          "n": 346,
+          "known": 346,
+          "unknown": 0,
+          "sumKnown": 2916322,
+          "minKnown": 6718,
+          "medianKnown": 8131.0,
+          "meanKnown": 8428.676300578034,
+          "maxKnown": 15011
+        },
+        "systemBytes": {
+          "n": 346,
+          "known": 346,
+          "unknown": 0,
+          "sumKnown": 5936614,
+          "minKnown": 13420,
+          "medianKnown": 16939.0,
+          "meanKnown": 17157.843930635838,
+          "maxKnown": 19497
+        },
+        "toolsBytes": {
+          "n": 346,
+          "known": 346,
+          "unknown": 0,
+          "sumKnown": 3852710,
+          "minKnown": 11135,
+          "medianKnown": 11135.0,
+          "meanKnown": 11135,
+          "maxKnown": 11135
+        }
+      },
+      "auxiliary": {
+        "n": 95,
+        "prompt": {
+          "n": 95,
+          "known": 94,
+          "unknown": 1,
+          "sumKnown": 22037,
+          "minKnown": 150,
+          "medianKnown": 208.5,
+          "meanKnown": 234.43617021276594,
+          "maxKnown": 391
+        },
+        "systemBytes": {
+          "n": 95,
+          "known": 95,
+          "unknown": 0,
+          "sumKnown": 40565,
+          "minKnown": 427,
+          "medianKnown": 427,
+          "meanKnown": 427,
+          "maxKnown": 427
+        },
+        "toolsBytes": {
+          "n": 95,
+          "known": 95,
+          "unknown": 0,
+          "sumKnown": 0,
+          "minKnown": 0,
+          "medianKnown": 0,
+          "meanKnown": 0,
+          "maxKnown": 0
+        }
+      },
+      "initialMainForArm": {
+        "n": 48,
+        "prompt": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 357976,
+          "minKnown": 6718,
+          "medianKnown": 7747.0,
+          "meanKnown": 7457.833333333333,
+          "maxKnown": 8157
+        },
+        "systemBytes": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 793458,
+          "minKnown": 13420,
+          "medianKnown": 17728.0,
+          "meanKnown": 16530.375,
+          "maxKnown": 19423
+        },
+        "toolsBytes": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 534480,
+          "minKnown": 11135,
+          "medianKnown": 11135.0,
+          "meanKnown": 11135,
+          "maxKnown": 11135
+        }
+      },
+      "initialMainConversationShape": {
+        "n": 96,
+        "prompt": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 719908,
+          "minKnown": 6718,
+          "medianKnown": 7505.0,
+          "meanKnown": 7499.041666666667,
+          "maxKnown": 8157
+        },
+        "systemBytes": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 1606482,
+          "minKnown": 13420,
+          "medianKnown": 16827.0,
+          "meanKnown": 16734.1875,
+          "maxKnown": 19423
+        },
+        "toolsBytes": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 1068960,
+          "minKnown": 11135,
+          "medianKnown": 11135.0,
+          "meanKnown": 11135,
+          "maxKnown": 11135
+        }
+      }
+    },
+    "hermes": {
+      "all": {
+        "n": 414,
+        "prompt": {
+          "n": 414,
+          "known": 411,
+          "unknown": 3,
+          "sumKnown": 1473508,
+          "minKnown": 258,
+          "medianKnown": 3962,
+          "meanKnown": 3585.177615571776,
+          "maxKnown": 9472
+        },
+        "systemBytes": {
+          "n": 414,
+          "known": 414,
+          "unknown": 0,
+          "sumKnown": 2945798,
+          "minKnown": 942,
+          "medianKnown": 8969.0,
+          "meanKnown": 7115.454106280194,
+          "maxKnown": 9860
+        },
+        "toolsBytes": {
+          "n": 414,
+          "known": 414,
+          "unknown": 0,
+          "sumKnown": 1797705,
+          "minKnown": 0,
+          "medianKnown": 5707.0,
+          "meanKnown": 4342.282608695652,
+          "maxKnown": 5707
+        }
+      },
+      "main": {
+        "n": 315,
+        "prompt": {
+          "n": 315,
+          "known": 315,
+          "unknown": 0,
+          "sumKnown": 1445392,
+          "minKnown": 3695,
+          "medianKnown": 4154,
+          "meanKnown": 4588.546031746032,
+          "maxKnown": 9472
+        },
+        "systemBytes": {
+          "n": 315,
+          "known": 315,
+          "unknown": 0,
+          "sumKnown": 2852540,
+          "minKnown": 8969,
+          "medianKnown": 8969,
+          "meanKnown": 9055.682539682539,
+          "maxKnown": 9860
+        },
+        "toolsBytes": {
+          "n": 315,
+          "known": 315,
+          "unknown": 0,
+          "sumKnown": 1797705,
+          "minKnown": 5707,
+          "medianKnown": 5707,
+          "meanKnown": 5707,
+          "maxKnown": 5707
+        }
+      },
+      "auxiliary": {
+        "n": 99,
+        "prompt": {
+          "n": 99,
+          "known": 96,
+          "unknown": 3,
+          "sumKnown": 28116,
+          "minKnown": 258,
+          "medianKnown": 296.5,
+          "meanKnown": 292.875,
+          "maxKnown": 327
+        },
+        "systemBytes": {
+          "n": 99,
+          "known": 99,
+          "unknown": 0,
+          "sumKnown": 93258,
+          "minKnown": 942,
+          "medianKnown": 942,
+          "meanKnown": 942,
+          "maxKnown": 942
+        },
+        "toolsBytes": {
+          "n": 99,
+          "known": 99,
+          "unknown": 0,
+          "sumKnown": 0,
+          "minKnown": 0,
+          "medianKnown": 0,
+          "meanKnown": 0,
+          "maxKnown": 0
+        }
+      },
+      "initialMainForArm": {
+        "n": 48,
+        "prompt": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 178793,
+          "minKnown": 3695,
+          "medianKnown": 3723.5,
+          "meanKnown": 3724.8541666666665,
+          "maxKnown": 3768
+        },
+        "systemBytes": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 430512,
+          "minKnown": 8969,
+          "medianKnown": 8969.0,
+          "meanKnown": 8969,
+          "maxKnown": 8969
+        },
+        "toolsBytes": {
+          "n": 48,
+          "known": 48,
+          "unknown": 0,
+          "sumKnown": 273936,
+          "minKnown": 5707,
+          "medianKnown": 5707.0,
+          "meanKnown": 5707,
+          "maxKnown": 5707
+        }
+      },
+      "initialMainConversationShape": {
+        "n": 96,
+        "prompt": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 360626,
+          "minKnown": 3695,
+          "medianKnown": 3739.0,
+          "meanKnown": 3756.5208333333335,
+          "maxKnown": 3978
+        },
+        "systemBytes": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 870934,
+          "minKnown": 8969,
+          "medianKnown": 8969.0,
+          "meanKnown": 9072.229166666666,
+          "maxKnown": 9860
+        },
+        "toolsBytes": {
+          "n": 96,
+          "known": 96,
+          "unknown": 0,
+          "sumKnown": 547872,
+          "minKnown": 5707,
+          "medianKnown": 5707.0,
+          "meanKnown": 5707,
+          "maxKnown": 5707
+        }
+      }
+    }
+  },
+  "outputReference": "/private/tmp/atlas-prompt-overhead-audit/reference.json"
+}

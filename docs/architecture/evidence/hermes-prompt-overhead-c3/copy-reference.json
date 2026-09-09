@@ -1,0 +1,66 @@
+{
+  "at": "2026-09-06T23:48:11.966181+00:00",
+  "scope": "Selected source-bound reports, scripts and gate logs. Full original evidence remains at source paths; not an exhaustive archive. Existing manifest qualifications and failed attempts remain authoritative.",
+  "files": [
+    {
+      "path": "report.md",
+      "source": "/private/tmp/atlas-prompt-overhead-audit/report.md",
+      "sha256": "88ece57125e28cd20e3f14805b73cc0c7447109ce8cc02f51977dc883a466d33",
+      "bytes": 10712
+    },
+    {
+      "path": "report-reference.json",
+      "source": "/private/tmp/atlas-prompt-overhead-audit/report-reference.json",
+      "sha256": "5d9937418d667b77dd399ff2058d2b99c4a834cb43ad732d0930b4c0c69b40b4",
+      "bytes": 1151
+    },
+    {
+      "path": "reference.json",
+      "source": "/private/tmp/atlas-prompt-overhead-audit/reference.json",
+      "sha256": "3922a7c8e3a5b2aa2136da4a5408662834afe5ac7ce643e1f9b4f4bafb8d00bd",
+      "bytes": 1302
+    },
+    {
+      "path": "aggregate.json",
+      "source": "/private/tmp/atlas-prompt-overhead-audit/aggregate.json",
+      "sha256": "51ba5c36f50302aaf4987c5ae7c5be1f96906734c44eb7fe76b49eb8c7bb9b00",
+      "bytes": 54224
+    },
+    {
+      "path": "arms.json",
+      "source": "/private/tmp/atlas-prompt-overhead-audit/arms.json",
+      "sha256": "0eb42edb183561979f7e3cdfff1603f922769ba7cf826daaeab2f406f6ec5e95",
+      "bytes": 690924
+    },
+    {
+      "path": "sections.json",
+      "source": "/private/tmp/atlas-prompt-overhead-audit/sections.json",
+      "sha256": "adaf9cac6294d26a53fba3b54dffd4fa25d4ed267d4051ab80e546dfeb6d212a",
+      "bytes": 60558
+    },
+    {
+      "path": "source-bindings.json",
+      "source": "/private/tmp/atlas-prompt-overhead-audit/source-bindings.json",
+      "sha256": "cbfcf1d4cf8ecbaa0d4334bf2bb3f5ce8361f8d3a7ff643b289b11fe2f6a182f",
+      "bytes": 7030
+    },
+    {
+      "path": "control-bindings.json",
+      "source": "/private/tmp/atlas-prompt-overhead-audit/control-bindings.json",
+      "sha256": "8997d99f46bd4870564dde86a5a14990426ef46c6be9d18c2733a718805e81d0",
+      "bytes": 871
+    },
+    {
+      "path": "audit.py",
+      "source": "/private/tmp/atlas-prompt-overhead-audit/audit.py",
+      "sha256": "575f6b80bb125da66882e0fbb2b90e26b86d2c600eb4dc38def6ef1b6c9d9152",
+      "bytes": 15946
+    },
+    {
+      "path": "run.log",
+      "source": "/private/tmp/atlas-prompt-overhead-audit/run.log",
+      "sha256": "bb5181cf831fc3a79b341eab8960dc588d60063afcad4a4efc9222ad09907183",
+      "bytes": 8295
+    }
+  ]
+}

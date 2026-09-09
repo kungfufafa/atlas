@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.typecheck.json",
+  "include": [
+    "./*.ts",
+    "../harness-channel-audit/live-claude.ts",
+    "../live-human-e2e/run.ts"
+  ]
+}

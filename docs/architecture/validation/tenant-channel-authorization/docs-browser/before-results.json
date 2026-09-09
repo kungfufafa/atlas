@@ -1,0 +1,27 @@
+{
+  "phase": "before",
+  "results": [
+    {
+      "channel": "discord",
+      "url": "http://127.0.0.1:3000/atlas/discord",
+      "status": 200,
+      "title": "Discord",
+      "permissionsVerified": true
+    },
+    {
+      "channel": "whatsapp",
+      "url": "http://127.0.0.1:3000/atlas/whatsapp",
+      "status": 200,
+      "title": "WhatsApp",
+      "permissionsVerified": true
+    },
+    {
+      "channel": "telegram",
+      "url": "http://127.0.0.1:3000/atlas/telegram",
+      "status": 200,
+      "title": "Telegram",
+      "permissionsVerified": true
+    }
+  ],
+  "errors": []
+}

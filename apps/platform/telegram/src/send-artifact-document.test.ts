@@ -30,7 +30,7 @@ describe("sendTelegramArtifact", () => {
             options?: { message_thread_id?: number }
           ) => {
             sent.push({ options });
-            return {};
+            return { message_id: 123 };
           },
         },
         chat: { id: 1 },
@@ -61,7 +61,7 @@ describe("sendTelegramArtifact", () => {
             options?: { message_thread_id?: number }
           ) => {
             photos.push({ filename: file.filename ?? "", options });
-            return {};
+            return { message_id: 123 };
           },
         },
         chat: { id: 1 },
@@ -82,4 +82,106 @@ describe("sendTelegramArtifact", () => {
       },
     ]);
   });
+});
+
+for (const [mimeType, filename, bytes, method] of [
+  [
+    "audio/ogg",
+    "voice.ogg",
+    Buffer.from("OggSxxxxxxxxOpusHeadxxxxxxxx"),
+    "sendVoice",
+  ],
+  ["audio/mpeg", "audio.mp3", Buffer.from("ID3synthetic-mp3"), "sendAudio"],
+  ["audio/mp4", "audio.m4a", Buffer.from("0000ftypM4A synthetic"), "sendAudio"],
+  ["video/mp4", "video.mp4", Buffer.from("0000ftypisomsynthetic"), "sendVideo"],
+] as const) {
+  test(`${mimeType} uses its native Telegram method with acknowledged message identity`, async () => {
+    const sent: unknown[][] = [];
+    const result = await sendTelegramArtifact(
+      {
+        api: {
+          [method]: async (...args: unknown[]) => {
+            sent.push(args);
+            return { message_id: 800 };
+          },
+        },
+        chat: { id: 42 },
+        message: { message_thread_id: 77 },
+      } as never,
+      { bytes, filename, mimeType }
+    );
+    expect(result).toEqual({ messageId: "800", ok: true });
+    expect(sent).toHaveLength(1);
+    expect(sent[0]![0]).toBe(42);
+    expect(sent[0]![1]).toMatchObject({ filename });
+    expect(sent[0]![2]).toEqual({ message_thread_id: 77 });
+  });
+}
+
+test("invalid native media bytes fail before any upload", async () => {
+  let uploads = 0;
+  const ctx = {
+    api: {
+      sendVideo: async () => {
+        uploads++;
+        return { message_id: 1 };
+      },
+      sendVoice: async () => {
+        uploads++;
+        return { message_id: 1 };
+      },
+    },
+    chat: { id: 42 },
+  } as never;
+  for (const mimeType of ["audio/ogg", "video/mp4"]) {
+    const result = await sendTelegramArtifact(ctx, {
+      bytes: Buffer.from("incorrect bytes"),
+      filename: "file",
+      mimeType,
+    });
+    expect(result.ok).toBe(false);
+  }
+  expect(uploads).toBe(0);
+});
+
+test("an upload response without message_id stays unconfirmed and is not retried", async () => {
+  let uploads = 0;
+  const result = await sendTelegramArtifact(
+    {
+      api: {
+        sendDocument: async () => {
+          uploads++;
+          return {};
+        },
+      },
+      chat: { id: 42 },
+    } as never,
+    { bytes: Buffer.from("test"), filename: "note.txt", mimeType: "text/plain" }
+  );
+  expect(result.ok).toBe(false);
+  expect(result.messageId).toBeUndefined();
+  expect(uploads).toBe(1);
+});
+
+test("General forum topic omits the thread parameter for native uploads", async () => {
+  const options: unknown[] = [];
+  const result = await sendTelegramArtifact(
+    {
+      api: {
+        sendDocument: async (
+          _chat: unknown,
+          _file: unknown,
+          value: unknown
+        ) => {
+          options.push(value);
+          return { message_id: 1 };
+        },
+      },
+      chat: { id: -100 },
+      message: { message_thread_id: 1 },
+    } as never,
+    { bytes: Buffer.from("test"), filename: "note.txt", mimeType: "text/plain" }
+  );
+  expect(result.ok).toBe(true);
+  expect(options).toEqual([undefined]);
 });

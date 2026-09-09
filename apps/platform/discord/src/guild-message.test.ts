@@ -13,6 +13,7 @@ const BOT_ROLE_ID = "1525964112708894884";
 const OTHER_ROLE_ID = "role_other";
 
 function createGuildMessage(options: {
+  attachmentCount?: number;
   content?: string;
   mentionsBot?: boolean;
   mentionedRoleIds?: string[];
@@ -31,6 +32,7 @@ function createGuildMessage(options: {
   }
 
   return {
+    attachments: { size: options.attachmentCount ?? 0 },
     author: { bot: false, id: "user_1" },
     channel: {
       id: options.thread ? "thread_1" : channelId,
@@ -67,6 +69,25 @@ function createGuildMessage(options: {
 }
 
 describe("explainGuildMessageHandling", () => {
+  test("handles an attachment without a mention", () => {
+    expect(
+      explainGuildMessageHandling(
+        createGuildMessage({ attachmentCount: 1 }),
+        BOT_INFO
+      )
+    ).toEqual({ reason: "attachment", shouldHandle: true });
+  });
+
+  test("claims a foreign thread for an attachment without a mention", () => {
+    expect(
+      explainGuildMessageHandling(
+        createGuildMessage({ attachmentCount: 1, thread: true }),
+        BOT_INFO,
+        { botOwnsThread: false }
+      )
+    ).toEqual({ reason: "claim-thread", shouldHandle: true });
+  });
+
   test("ignores messages without trigger", () => {
     const decision = explainGuildMessageHandling(
       createGuildMessage({ content: "hello everyone" }),

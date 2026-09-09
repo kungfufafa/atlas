@@ -1,0 +1,161 @@
+{
+  "policy": "Hash/size references only; raw file contents were not copied.",
+  "files": [
+    {
+      "name": "build-install-progress.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/build-install-progress.log",
+      "bytes": 458,
+      "sha256": "c88e4feebedd37221fdf6ba84cd52d31569d9417c55c0cbb7fcc3027390a3735"
+    },
+    {
+      "name": "bundled-skills.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/bundled-skills.log",
+      "bytes": 2279,
+      "sha256": "4d4fbcc214000d94d4fe14b41208f9479654f285d5fe10ae9a166548d2b205cd"
+    },
+    {
+      "name": "channel-entrypoints.json",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/channel-entrypoints.json",
+      "bytes": 603,
+      "sha256": "46295ffddaf3c5566696f27eb2f53c4d82a01a422bf0ac1f8095c9a51f0acbb3"
+    },
+    {
+      "name": "cleanup-before-stop.json",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/cleanup-before-stop.json",
+      "bytes": 323,
+      "sha256": "cc272a16f911d0b259681ffa6777ceb3252467532b97ebc8e074c89e717a8f10"
+    },
+    {
+      "name": "dedicated-retained-images.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/dedicated-retained-images.log",
+      "bytes": 370,
+      "sha256": "532654c3ba8e0c340dcd4aa7f61aac0a2534e579230e1fade54234c68a10dae9"
+    },
+    {
+      "name": "dependency-build.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/dependency-build.log",
+      "bytes": 184259,
+      "sha256": "5d62e71cad4fd002653b311eb0ca5350589e308ccfbb33f52b34d8695664bc5e"
+    },
+    {
+      "name": "dependency-vm-pause.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/dependency-vm-pause.log",
+      "bytes": 1673,
+      "sha256": "8b6f3770bebe1eb78231dc082a24aa77366a560832c98eafbe48d5a10975eac0"
+    },
+    {
+      "name": "final-build-and-gates.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/final-build-and-gates.log",
+      "bytes": 117473,
+      "sha256": "bbdda2c417a2eb49e007b52f33516fbacc581b0da1fa26d4232c8da97c9c22b0"
+    },
+    {
+      "name": "final-default-context.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/final-default-context.log",
+      "bytes": 8,
+      "sha256": "01666ec060466c14b9fa06c613fbac449163f2a2017558fe16526209ab78c6b0"
+    },
+    {
+      "name": "final-host-storage.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/final-host-storage.log",
+      "bytes": 164,
+      "sha256": "f2b08dda7d87aa41c2a505069f377c753440c04f476b7f149fdb6be158506fdb"
+    },
+    {
+      "name": "final-postbuild-resources.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/final-postbuild-resources.log",
+      "bytes": 350,
+      "sha256": "5bfc703047990ccb4fee3312918068fbbd3c57c079d91d3894585679b420ef9c"
+    },
+    {
+      "name": "final-prebuild-resources.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/final-prebuild-resources.log",
+      "bytes": 350,
+      "sha256": "ac07f3f203aa36f8392287ca31769f57cc929cfe1ca903b41dd4e07f83834e85"
+    },
+    {
+      "name": "final-vm-start.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/final-vm-start.log",
+      "bytes": 3540,
+      "sha256": "902e24b05dda85fce83e4d8fd574f19e5e75e4911517ad49eeb5181a276fa69c"
+    },
+    {
+      "name": "final-vm-status.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/final-vm-status.log",
+      "bytes": 102,
+      "sha256": "da83bbaaf281cd9a50e690f2ce8c0e7bd68e6b7b06198303a7158b875a5698e2"
+    },
+    {
+      "name": "final-vm-stop.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/final-vm-stop.log",
+      "bytes": 1673,
+      "sha256": "d4df574191df181640ef25cf7692acc72331a38c10beecb0b183427d47b72a6e"
+    },
+    {
+      "name": "frozen-manifest-counts.json",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/frozen-manifest-counts.json",
+      "bytes": 234,
+      "sha256": "a41339e27e4bb19de93796d79d436d4adef070fe3332728a0cf51031a4312c39"
+    },
+    {
+      "name": "host-source-stability.json",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/host-source-stability.json",
+      "bytes": 176,
+      "sha256": "286af5ae154a7d0d9e83e7f7caed162fd7387e69bcf501539ecb46b66dc9e6aa"
+    },
+    {
+      "name": "image-inspect.json",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/image-inspect.json",
+      "bytes": 564,
+      "sha256": "58de9bcbcf11cf97d32e5ef63a33d5f7a21694c02ead8443dd9f9c9b8508b863"
+    },
+    {
+      "name": "image-markdown-hash-check.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/image-markdown-hash-check.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "image-runtime-hash-check.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/image-runtime-hash-check.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "image-runtime-versions.json",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/image-runtime-versions.json",
+      "bytes": 559,
+      "sha256": "d064c55b9ee949690e919fcdf061801845653988f61d7c996b26c196fcb61150"
+    },
+    {
+      "name": "large-font.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/large-font.log",
+      "bytes": 458,
+      "sha256": "dffe6232730ac2527a5bfcf0dd0175899547c2a852f86bffe46aac9fa9bd2190"
+    },
+    {
+      "name": "postbuild-source-facts.json",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/postbuild-source-facts.json",
+      "bytes": 477,
+      "sha256": "4dd48f0a6ee613288bc87fa290c3230928c0946106ba04aa56dd31584e9e10a3"
+    },
+    {
+      "name": "production-discord-entrypoint.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/production-discord-entrypoint.log",
+      "bytes": 379,
+      "sha256": "1ad6e35f4ee7c25601ce7a4a60f823bde73a5201673a070ce05a63c1f961e7a5"
+    },
+    {
+      "name": "production-telegram-entrypoint.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/production-telegram-entrypoint.log",
+      "bytes": 402,
+      "sha256": "74d93d4373362b22d832947410537a78bda241799e74bd8d439af0a0dba85126"
+    },
+    {
+      "name": "production-whatsapp-entrypoint.log",
+      "path": "/private/tmp/atlas-docker-native-proof-20260906/production-whatsapp-entrypoint.log",
+      "bytes": 418,
+      "sha256": "91cdead6aeffba1d1276c4f2d71a40f2773092fe87ec13ed89e08614c896147d"
+    }
+  ]
+}

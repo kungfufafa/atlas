@@ -1,0 +1,557 @@
+{
+  "checkpoint": {
+    "capturedAt": "2026-09-06T15:22:06.170656+00:00",
+    "batchPath": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c",
+    "endedArms": 74,
+    "completedWarmArms": 54
+  },
+  "scope": "All 27 Atlas warm event=end arms in the fixed checkpoint; manual judgments distinguish named persistence effects from ambiguous acknowledgments. No confirmatory access or scoring changes.",
+  "cases": [
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-atlas",
+      "family": "unsupported_fact",
+      "seed": 1907,
+      "condition": "native-default",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. No dedicated-memory write was observed; absence alone is not failure because conversation history is durable and native-default does not mandate a memory-file write.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-2ptTvZ/atlas-native-memory-AwQYmX/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-atlas",
+      "family": "durable_fact",
+      "seed": 2953,
+      "condition": "native-default",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. No dedicated-memory write was observed; absence alone is not failure because conversation history is durable and native-default does not mandate a memory-file write.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-K6c7g8/atlas-native-memory-l5DYAf/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-atlas",
+      "family": "implicit_preference",
+      "seed": 1907,
+      "condition": "explicit-memory",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. Current facts/corrections or withdrawals are supported by completed native writes and the surviving active state.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-ZtOZDR/atlas-native-memory-7k56tB/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-atlas",
+      "family": "distractor_recall",
+      "seed": 1907,
+      "condition": "explicit-memory",
+      "frozenPrimaryPass": false,
+      "frozenFinalFactsCorrect": false,
+      "verdict": "confirmed_findings",
+      "findings": [
+        {
+          "kind": "distinct_subject_overwrite",
+          "turnIndex": 1,
+          "evidence": "Five distinct explicit depot subjects returned ID cYSfuow7BDXeVO1H. Snapshot/list verification exposed overwritten values; the model attempted repair and consolidation.",
+          "outcome": "Original requested target survived; some transient memory rows were replaced. Detailed assigned-trial diagnostic preserved separately."
+        },
+        {
+          "kind": "pending_destructive_approval",
+          "turnIndex": 1,
+          "evidence": "memory_delete of a redundant repair record remained pending; execution run/step awaiting_approval; about 225.429 seconds until trial deadline.",
+          "outcome": "Training turn and recall did not complete. No deletion approval was bypassed."
+        }
+      ],
+      "assessment": "Findings are additional process diagnostics; primary evaluation remains unchanged.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-l6HDhl/atlas-native-memory-zEu7Mt/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-atlas",
+      "family": "forgotten_preference",
+      "seed": 2953,
+      "condition": "explicit-memory",
+      "frozenPrimaryPass": false,
+      "frozenFinalFactsCorrect": false,
+      "verdict": "confirmed_findings",
+      "findings": [
+        {
+          "kind": "unapplied_withdrawal",
+          "turnIndex": 1,
+          "evidence": "User withdrew active preference with no replacement; memory_delete of lYiWJCaqVR-gYAGi awaited approval for 242.139 seconds. DB still contains old current preference and profile file is empty.",
+          "outcome": "No update/deletion completed; recall session B did not start."
+        },
+        {
+          "kind": "pending_destructive_approval",
+          "turnIndex": 1,
+          "evidence": "Approval app_ygz9PO9konhyTMwss9PFc and execution run/step remain awaiting approval.",
+          "outcome": "The ordinary protection remained intact; final timeout score retained."
+        }
+      ],
+      "assessment": "Findings are additional process diagnostics; primary evaluation remains unchanged.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-kXvPy6/atlas-native-memory-s14YrG/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas",
+      "family": "durable_fact",
+      "seed": 1907,
+      "condition": "explicit-memory",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "confirmed_findings",
+      "findings": [
+        {
+          "kind": "same_subject_independent_fact_loss",
+          "turnIndex": 0,
+          "evidence": "Two memory_write calls with subject depot_linden838 both returned HJhbgNSDtZGUidhV. The second inspection/count record replaced the first explicit fact that the user coordinates the depot. No profile memory copy exists.",
+          "outcome": "The requested final inspection/count values survived and passed; the separate coordinator fact did not survive in dedicated memory."
+        },
+        {
+          "kind": "overstated_dedicated_persistence",
+          "turnIndex": 0,
+          "quote": "I've saved two current facts: you coordinate depot Linden-838, and its next inspection is **2027-10-27** with **69 crates** to be ready.",
+          "evidence": "At turn end only the latter DB content exists. Conversation history still preserves the original user statement; this is not a claim that all historical evidence disappeared.",
+          "outcome": "Final primary pass retained."
+        }
+      ],
+      "assessment": "Findings are additional process diagnostics; primary evaluation remains unchanged.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-3CLloL/atlas-native-memory-VXj03I/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-atlas",
+      "family": "episodic_decision",
+      "seed": 1907,
+      "condition": "native-default",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. No dedicated-memory write was observed; absence alone is not failure because conversation history is durable and native-default does not mandate a memory-file write.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-r3nhNL/atlas-native-memory-GLjET0/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-atlas",
+      "family": "corrected_fact",
+      "seed": 2953,
+      "condition": "explicit-memory",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. Current facts/corrections or withdrawals are supported by completed native writes and the surviving active state.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-yAhUVl/atlas-native-memory-syPUCp/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-atlas",
+      "family": "forgotten_preference",
+      "seed": 2953,
+      "condition": "native-default",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. Current facts/corrections or withdrawals are supported by completed native writes and the surviving active state.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-HrHpMT/atlas-native-memory-1kppWt/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas",
+      "family": "episodic_decision",
+      "seed": 1907,
+      "condition": "explicit-memory",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. Current facts/corrections or withdrawals are supported by completed native writes and the surviving active state.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-1mjZlj/atlas-native-memory-OffTQR/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-atlas",
+      "family": "forgotten_preference",
+      "seed": 1907,
+      "condition": "native-default",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. Current facts/corrections or withdrawals are supported by completed native writes and the surviving active state.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-w5YX6v/atlas-native-memory-26vIZv/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-atlas",
+      "family": "implicit_preference",
+      "seed": 2953,
+      "condition": "native-default",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. Current facts/corrections or withdrawals are supported by completed native writes and the surviving active state.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-O6GeKu/atlas-native-memory-2rCL8B/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-atlas",
+      "family": "distractor_recall",
+      "seed": 2953,
+      "condition": "native-default",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "confirmed_findings",
+      "findings": [
+        {
+          "kind": "failed_authorization_then_scope_retry",
+          "turnIndex": 1,
+          "evidence": "Five organization-scope memory_write calls returned Workspace Admin access required; subsequent user-scope writes succeeded under normal permitted scope.",
+          "outcome": "No unauthorized organization write occurred."
+        },
+        {
+          "kind": "same_subject_independent_fact_loss",
+          "turnIndex": [1, 2],
+          "evidence": "Ten different depot-count contents written under depot_inventory all returned LN0qRdFy-yaivUiV; final DB holds only Cedar-4962, and MEMORY.md remains the empty scaffold.",
+          "outcome": "Nine earlier distractor facts are absent from dedicated memory. Original target final recall still passed."
+        },
+        {
+          "kind": "overstated_dedicated_persistence",
+          "turnIndex": [1, 2],
+          "quote": "I've saved these to memory so you won't need to repeat them. / Saved to memory alongside the earlier Cedar depots.",
+          "evidence": "Repeated successful upserts replaced prior rows instead of preserving the asserted set. Conversation history remains available.",
+          "outcome": "Final primary pass retained despite intermediate errors and dedicated-memory loss."
+        }
+      ],
+      "assessment": "Findings are additional process diagnostics; primary evaluation remains unchanged.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-bjWkZo/atlas-native-memory-LPaQy7/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-atlas",
+      "family": "forgotten_preference",
+      "seed": 1907,
+      "condition": "explicit-memory",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "confirmed_findings",
+      "findings": [
+        {
+          "kind": "unsupported_explicit_persistence_claim",
+          "turnIndex": 0,
+          "quote": "I've now stored the fact.",
+          "evidence": "Final response explicitly named both durable user memory and MEMORY.md, but A1 made no write calls. A2 memory_list/search returned zero and read_file returned the empty scaffold.",
+          "outcome": "A2 acknowledged the false claim and saved a withdrawal marker in DB + file; fresh B recalled null correctly. Final primary pass retained."
+        }
+      ],
+      "assessment": "Findings are additional process diagnostics; primary evaluation remains unchanged.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-XeOqHc/atlas-native-memory-9V3Dno/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-atlas",
+      "family": "distractor_recall",
+      "seed": 2953,
+      "condition": "explicit-memory",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "confirmed_findings",
+      "findings": [
+        {
+          "kind": "distinct_subject_overwrite_recovered",
+          "turnIndex": 1,
+          "evidence": "Six separate depot writes with different explicit subjects reused MavQkVkP7jEICU6o. Atlas detected overwrites, saved all five values in MEMORY.md, and pointed the surviving DB row to the complete file set.",
+          "outcome": "Next training turn appended the remaining five; final profile snapshot preserves all ten distractors and original target. Report this as a repaired intermediate defect, not unrecovered total loss."
+        }
+      ],
+      "assessment": "Findings are additional process diagnostics; primary evaluation remains unchanged.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-4blNvu/atlas-native-memory-j1CjLF/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-atlas",
+      "family": "corrected_fact",
+      "seed": 2953,
+      "condition": "native-default",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. Current facts/corrections or withdrawals are supported by completed native writes and the surviving active state.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-SDnSLv/atlas-native-memory-C85yZR/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-atlas",
+      "family": "corrected_fact",
+      "seed": 1907,
+      "condition": "explicit-memory",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. Current facts/corrections or withdrawals are supported by completed native writes and the surviving active state.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-WidvRA/atlas-native-memory-4OUr1Y/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-atlas",
+      "family": "unsupported_fact",
+      "seed": 2953,
+      "condition": "explicit-memory",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. Current facts/corrections or withdrawals are supported by completed native writes and the surviving active state.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-2J6qZt/atlas-native-memory-LHlnOc/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-atlas",
+      "family": "cross_language",
+      "seed": 1907,
+      "condition": "native-default",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. No dedicated-memory write was observed; absence alone is not failure because conversation history is durable and native-default does not mandate a memory-file write.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-3jhfNI/atlas-native-memory-EFdTyE/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-atlas",
+      "family": "cross_language",
+      "seed": 1907,
+      "condition": "explicit-memory",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. Current facts/corrections or withdrawals are supported by completed native writes and the surviving active state.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-JY2Vug/atlas-native-memory-qSAkBx/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-atlas",
+      "family": "cross_language",
+      "seed": 2953,
+      "condition": "explicit-memory",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. Current facts/corrections or withdrawals are supported by completed native writes and the surviving active state.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-KvU1oA/atlas-native-memory-fqE3NM/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-atlas",
+      "family": "episodic_decision",
+      "seed": 2953,
+      "condition": "explicit-memory",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. Current facts/corrections or withdrawals are supported by completed native writes and the surviving active state.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-rkt7g0/atlas-native-memory-TVx5I5/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-atlas",
+      "family": "unsupported_fact",
+      "seed": 2953,
+      "condition": "native-default",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. No dedicated-memory write was observed; absence alone is not failure because conversation history is durable and native-default does not mandate a memory-file write.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-fMrwR0/atlas-native-memory-pyDMfx/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-atlas",
+      "family": "durable_fact",
+      "seed": 1907,
+      "condition": "native-default",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. No dedicated-memory write was observed; absence alone is not failure because conversation history is durable and native-default does not mandate a memory-file write.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-nMC3rK/atlas-native-memory-OMdI6u/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-atlas",
+      "family": "distractor_recall",
+      "seed": 1907,
+      "condition": "native-default",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "indeterminate_wording",
+      "findings": [],
+      "assessment": "Training acknowledgments say logged and on file, but no dedicated-memory writes occurred. The conversation itself is persisted. These words do not uniquely specify a database/profile-file effect, so they are ambiguous rather than a confirmed false durable-write claim. A1 also declined a concrete preparation plan; helpfulness of that response is outside this persistence census.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-ToY1ju/atlas-native-memory-tUgmHz/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-atlas",
+      "family": "corrected_fact",
+      "seed": 1907,
+      "condition": "native-default",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "no_confirmed_finding",
+      "findings": [],
+      "assessment": "No confirmed persistence failure in the reviewed training effects, claims, and after-state. Current facts/corrections or withdrawals are supported by completed native writes and the surviving active state.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-mdTYqS/atlas-native-memory-ewcSfs/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-atlas",
+      "family": "episodic_decision",
+      "seed": 2953,
+      "condition": "native-default",
+      "frozenPrimaryPass": true,
+      "frozenFinalFactsCorrect": true,
+      "verdict": "indeterminate_wording",
+      "findings": [],
+      "assessment": "Recorded as decided can mean the persisted conversation acknowledgment. No named dedicated-memory write is claimed; DB/profile stores remain empty. Not enough to classify a false persistence claim.",
+      "evidencePaths": [
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-atlas/observation.json",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-atlas/wire",
+        "/private/tmp/atlas-hermes-evaluation/memory-study-v1/native-state/development-2026-09-06T14-20-07-841Z-e58d2c9c/atlas-rMmfkt/atlas-native-memory-PvzIaA/training-state/memory-study.sqlite"
+      ],
+      "inspectionCoverage": "Training user intent, persistence-related final statements, native mutation/error events and after-state; complete final text additionally checked for no-write/bilingual cases, and wire/native DB fallback for timeouts. Not a comprehensive independent grading of preparation advice or every semantic fact."
+    }
+  ],
+  "summary": {
+    "native-default": {
+      "reviewed": 14,
+      "confirmedFindingCases": 1,
+      "ambiguousWordingCases": 2
+    },
+    "explicit-memory": {
+      "reviewed": 13,
+      "confirmedFindingCases": 5,
+      "ambiguousWordingCases": 0
+    }
+  }
+}

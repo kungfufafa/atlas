@@ -1,0 +1,50 @@
+{
+  "absolute": {
+    "samePath": true,
+    "originalAfter": "REPLACED"
+  },
+  "lineage": {
+    "before": {
+      "formatDetails": {},
+      "id": "mWM77GbzdOnT",
+      "mimeType": "text/plain",
+      "parentArtifactId": "t9NcE6mRnDij",
+      "revision": 2,
+      "rootArtifactId": "t9NcE6mRnDij",
+      "savedAt": "2026-09-06T03:45:59.551Z",
+      "sizeBytes": 3
+    },
+    "after": {
+      "formatDetails": {
+        "title": "new title"
+      },
+      "id": "mWM77GbzdOnT",
+      "mimeType": "text/plain",
+      "parentArtifactId": "IAYYp86qGL-I",
+      "revision": 2,
+      "rootArtifactId": "IAYYp86qGL-I",
+      "savedAt": "2026-09-06T03:45:59.560Z",
+      "sizeBytes": 3
+    },
+    "originalMeta": {
+      "formatDetails": {},
+      "id": "t9NcE6mRnDij",
+      "mimeType": "text/plain",
+      "revision": 1,
+      "rootArtifactId": "t9NcE6mRnDij",
+      "savedAt": "2026-09-06T03:45:59.547Z",
+      "sizeBytes": 8
+    },
+    "nestedMetadata": ["report.txt.atlas-meta.json.atlas-meta.json"]
+  },
+  "cwd": {
+    "expected": "/private/tmp/atlas-publication-probe-4fVRCp/a/artifacts/cwd.txt.atlas-meta.json",
+    "actual": "/private/tmp/atlas-publication-probe-4fVRCp/b/artifacts/cwd.txt.atlas-meta.json",
+    "actuallyTargetsB": true
+  },
+  "skillSymlink": {
+    "returned": "ok",
+    "isSymlink": true,
+    "skillContent": "injected skill"
+  }
+}

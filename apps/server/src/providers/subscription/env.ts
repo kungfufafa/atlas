@@ -1,5 +1,5 @@
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { isAbsolute, join } from "node:path";
 import { getUserConfigDir, type SubscriptionProviderKind } from "@atlas/core";
 import { getToolExecutionEnv } from "../../lib/ensure-process-path";
 
@@ -33,12 +33,15 @@ export function subscriptionRuntimeHome(
   kind: SubscriptionProviderKind,
   env: Record<string, string | undefined> = process.env
 ): string {
-  const home = env.HOME ?? env.USERPROFILE ?? homedir();
-  if (kind === "chatgpt") {
-    const atlasConfigDir = env.ATLAS_CONFIG_DIR?.trim() || getUserConfigDir();
-    return join(atlasConfigDir, "subscription-auth", "chatgpt");
+  const atlasConfigDir = env.ATLAS_CONFIG_DIR?.trim() || getUserConfigDir();
+  const claudeConfigDir = env.CLAUDE_CONFIG_DIR?.trim();
+  if (kind === "claude" && claudeConfigDir) {
+    if (!isAbsolute(claudeConfigDir)) {
+      throw new Error("CLAUDE_CONFIG_DIR must be an absolute path.");
+    }
+    return claudeConfigDir;
   }
-  return env.CLAUDE_CONFIG_DIR ?? join(home, ".claude");
+  return join(atlasConfigDir, "subscription-auth", kind);
 }
 
 export function buildSubscriptionRuntimeEnv(
@@ -65,9 +68,6 @@ export function buildSubscriptionRuntimeEnv(
     env.CODEX_HOME = providerHome;
   } else {
     env.CLAUDE_CONFIG_DIR = providerHome;
-    if (source.CLAUDE_CODE_OAUTH_TOKEN !== undefined) {
-      env.CLAUDE_CODE_OAUTH_TOKEN = source.CLAUDE_CODE_OAUTH_TOKEN;
-    }
   }
 
   return env;

@@ -1,0 +1,17 @@
+{
+  "at": "2026-09-07T00:05:55.688709+00:00",
+  "reviewer": "/root/file_v2_finalize",
+  "scope": "Independent post-outcome diagnostic selection of16 warm+4control arms from immutable peer-review-inventory-64.json; all selected current dispositions agreed within stated scope. Not an independent whole96 census, blinded score, prevalence/performance estimate, or proof of earliest public emission. No C5 criteria/frozen-score/manual-judgment revision resulted.",
+  "references": [
+    {
+      "path": "/private/tmp/atlas-c5-independent-census-check/registration.json",
+      "bytes": 113777,
+      "sha256": "9e486cec3c9ee0df6e6f01e1a07b9aeb52e925923633505a3e1a4b5dcc0b3fa9"
+    },
+    {
+      "path": "/private/tmp/atlas-c5-independent-census-check/review.json",
+      "bytes": 1036,
+      "sha256": "2258db74b0e45464990c249d266ff679519e643b1022d1fc71de287226efd649"
+    }
+  ]
+}

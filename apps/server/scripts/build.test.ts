@@ -7,8 +7,11 @@ import { buildServer } from "./build";
 
 const expectedRuntimeAssets = [
   "javascript-tool-runner.js",
+  "skill-tool-runner.js",
   "javascript-tool-sandbox-linux.c",
   "javascript-tool-sandbox-linux.js",
+  "restricted-process-linux.c",
+  "restricted-process-linux.js",
 ] as const;
 
 describe("server production build", () => {
@@ -33,6 +36,10 @@ describe("server production build", () => {
     const builtIndex = await readFile(path.join(outdir, "index.js"), "utf8");
     expect(builtIndex).toContain(
       'new URL("./javascript-tool-runner.js", import.meta.url)'
+    );
+
+    expect(builtIndex).toContain(
+      'new URL("./skill-tool-runner.js", import.meta.url)'
     );
 
     const moduleDirectory = path.join(testRoot, "tools");
@@ -84,6 +91,46 @@ describe("server production build", () => {
       message: "ready",
       productionRunner: true,
       workspaceRoot,
+    });
+
+    const skillModule = path.join(moduleDirectory, "tool.ts");
+    await writeFile(
+      path.join(moduleDirectory, "helper.ts"),
+      'export const label: string = "built-skill";'
+    );
+    await writeFile(
+      skillModule,
+      `import { label } from "./helper.ts";
+export const name = label;
+export const description = "Built TypeScript skill";
+export async function run(input: { value: number }, context) { return { value: input.value, orgId: context.orgId, root: context.workspaceRoot }; }
+`
+    );
+    const skillProbe = {
+      ...probeOptions,
+      modulePath: skillModule,
+      moduleReadRoot: moduleDirectory,
+      requireSandbox: true,
+      runnerPath: path.join(outdir, "skill-tool-runner.js"),
+    };
+    const inspected = await spawnJsonTool({
+      ...skillProbe,
+      input: {},
+      mode: "--inspect",
+      workspaceRoot: undefined,
+    });
+    expect(inspected).toEqual({
+      description: "Built TypeScript skill",
+      name: "built-skill",
+    });
+    const skillResult = await spawnJsonTool({
+      ...skillProbe,
+      input: { context: { orgId: "build_org" }, input: { value: 42 } },
+    });
+    expect(skillResult).toEqual({
+      orgId: "build_org",
+      root: workspaceRoot,
+      value: 42,
     });
   }, 30_000);
 });

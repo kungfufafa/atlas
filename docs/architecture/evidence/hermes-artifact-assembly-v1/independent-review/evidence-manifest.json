@@ -1,0 +1,66 @@
+{
+  "at": "2026-09-07T02:31:49.006463+00:00",
+  "sourceHash": "092cddfec661d7e35a8061f16e52d4389c158a3b64a7c102523b8a4b31b9233c",
+  "files": [
+    {
+      "path": "binding-verification.json",
+      "sizeBytes": 10593,
+      "sha256": "520eb555c7d193e518246bbbd2260213f1dcc2406e83a66b4fd40d282f11ab2e"
+    },
+    {
+      "path": "component.patch.check.log",
+      "sizeBytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "create-probe.py",
+      "sizeBytes": 959,
+      "sha256": "e293e1ee9872add1fda34608e8c4cc6bc216877c19b44a7c2a82b7a376688a4d"
+    },
+    {
+      "path": "probe.log",
+      "sizeBytes": 1091,
+      "sha256": "8befb455854b0354eb1abdbee70a9039013024794395cb33f706ff3d58e6518b"
+    },
+    {
+      "path": "probe.test.ts",
+      "sizeBytes": 10942,
+      "sha256": "94b7521c26e48c09af91d35a60f94cfb9467c0eba32acc56e8357a519b391334"
+    },
+    {
+      "path": "production.patch.check.log",
+      "sizeBytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "review.json",
+      "sizeBytes": 7291,
+      "sha256": "39f5afa6444886197fc14f65a977ca8c02fee837f85c4894a509810453da12b5"
+    },
+    {
+      "path": "review.md",
+      "sizeBytes": 1590,
+      "sha256": "5333dd6cbc58b33ff7db0915edfb574abce11296336bb08e6eba30de11040e6a"
+    },
+    {
+      "path": "selected-publication.patch.check.log",
+      "sizeBytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tsconfig.json",
+      "sizeBytes": 1087,
+      "sha256": "cd304dee15447ddc30eca58367721d89aca71edfb314e091ec4c55c710f39d97"
+    },
+    {
+      "path": "verify.py",
+      "sizeBytes": 5391,
+      "sha256": "e057b6461bb19384d561c2a3b5d825ead0c27285575a7f27c4968976ad74e751"
+    },
+    {
+      "path": "write-review.py",
+      "sizeBytes": 9406,
+      "sha256": "e4afb71e37ecb6320bad471bc3086aec8096795e07951e91de60ba307d0f4f42"
+    }
+  ]
+}

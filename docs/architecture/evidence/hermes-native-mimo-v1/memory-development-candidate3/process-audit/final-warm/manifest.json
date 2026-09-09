@@ -1,0 +1,219 @@
+{
+  "createdAt": "2026-09-06T19:23:35.225688+00:00",
+  "scope": "Derived immutable complete warm census; originals retained; controls excluded.",
+  "files": [
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/criteria.md",
+      "sha256": "c6216f23897c1f0dca93b0a408325184981a830f9a2d805f9fc03feda2d6f095",
+      "bytes": 5002
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/criteria-record.json",
+      "sha256": "1d4d915eb5d905863b0ec31fa9a26c7ac3a3bcda2be97803959e5614be405b6c",
+      "bytes": 390
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/method-notes.md",
+      "sha256": "655862b7edc09f099f02430beda20b649b9de455e528ee0055a6675744d84ead",
+      "bytes": 2216
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/collect.py",
+      "sha256": "1075b047177778b8beb19fc04a3171ef7e38fda6d73fcc83f5be51eb36c7ff31",
+      "bytes": 6352
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/project_public_messages.py",
+      "sha256": "49661e97a61365b91a7011aef53e26b8e4a3832ad00d14f1b6b2659e8dc4210c",
+      "bytes": 2494
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/project_public_chronology.py",
+      "sha256": "1f9ca2dde7fde81584b2aa46250e7c15302b244122d7a97e4dc164c41673728c",
+      "bytes": 3375
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/review_public_supplement.py",
+      "sha256": "d9f80525821099c631893914fc4ad60054d8ca78a9666f557e8d08e69bc7bb41",
+      "bytes": 4958
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/summarize.py",
+      "sha256": "652367bc0c5c2511f610730b43f8891dc71d790c1967da7bdc5a39b926bcf25d",
+      "bytes": 10603
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/finalize_warm.py",
+      "sha256": "f967e3e2e13a0141156dd3ca57c57c836d8f13783eac760059118e433512336f",
+      "bytes": 8353
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/independent-six-check/independent-review.json",
+      "sha256": "aa25c2f60c711c35afc477f680050680e0d1d55218e63d00c36ce69f3b5b2f96",
+      "bytes": 7370
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/final-warm/dispositions.json",
+      "sha256": "f4dbd3c38eac90515b3d4f1040b986f954ec214719b40c7d676caebc461dc473",
+      "bytes": 1355004
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/final-warm/retractions.json",
+      "sha256": "0374761a5d757f1750995c83de0cf3764fdd10132b82637c7b122b559c3e1b7e",
+      "bytes": 2216
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/final-warm/report.md",
+      "sha256": "cc7612da4bf09ff24d7331aa39459e14d9b880c259261de8f22dab0aa8c85669",
+      "bytes": 4660
+    }
+  ],
+  "warmCount": 64,
+  "publicChronologyCount": 64,
+  "criteriaSha256": "c6216f23897c1f0dca93b0a408325184981a830f9a2d805f9fc03feda2d6f095",
+  "priorManualVersions": [
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/manual-revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-cross_language-2953-native-default-warm-same-owner-r0-atlas-4cd896b65161.json",
+      "sha256": "4cd896b6516128553df15b1ee83c3aa7f705827218742fedc94c1bbeebf56234",
+      "bytes": 2185
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/manual-revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas-eca7911a620b10bf89ab6067e48110ff0dde01c98aef8d0015927ce77993eb9f.json",
+      "sha256": "eca7911a620b10bf89ab6067e48110ff0dde01c98aef8d0015927ce77993eb9f",
+      "bytes": 1684
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/manual-revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes-97edfe94bc17.json",
+      "sha256": "97edfe94bc17c244853fa76ca339df23e76ba073dfea293b3d66f34a9c176db9",
+      "bytes": 2152
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/manual-revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-atlas-57dc042c16b9.json",
+      "sha256": "57dc042c16b955ba10045531fd4a705364315f9b67ebbc4cfa1d8c3506e22ee4",
+      "bytes": 2199
+    }
+  ],
+  "sourceCheckpoint": {
+    "at": "2026-09-06T19:21:17.773320+00:00",
+    "batch": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9",
+    "ledgerPrefixSha256": "5bd51f762d48bf608c4667b2a6ba3165ef4b5f05c1a2f176d23234075db3dc31",
+    "ledgerBytes": 330260,
+    "ended": 94,
+    "warmEnded": 64,
+    "controlEnded": 30,
+    "scheduledWarm": 64,
+    "scheduledControls": 32,
+    "incompleteLines": 0,
+    "counts": {
+      "warm|atlas|native-default": 16,
+      "warm|hermes|native-default": 16,
+      "warm|atlas|explicit-memory": 16,
+      "warm|hermes|explicit-memory": 16,
+      "cold|atlas|explicit-memory": 4,
+      "cold|hermes|explicit-memory": 4,
+      "cold|atlas|native-default": 4,
+      "cold|hermes|native-default": 4,
+      "identity|atlas|native-default": 3,
+      "identity|hermes|native-default": 3,
+      "identity|atlas|explicit-memory": 4,
+      "identity|hermes|explicit-memory": 4
+    },
+    "endedIds": [
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-unsupported_fact-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-unsupported_fact-1907-explicit-memory-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-cross_language-2953-native-default-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-cross_language-2953-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-warm-same-owner-r0-atlas",
+      "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-warm-same-owner-r0-hermes"
+    ]
+  },
+  "scoresChanged": false
+}

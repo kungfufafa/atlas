@@ -155,7 +155,7 @@ describe("wrapPersistedSession", () => {
           }
           return "Reply";
         },
-        sendStream: async () => session.send(),
+        sendStream: async () => session.send("fixture"),
       } as unknown as AgentChatSession;
       const recorder = persistenceRecorder();
       const persisted = wrapPersistedSession(
@@ -177,7 +177,7 @@ describe("wrapPersistedSession", () => {
         firstOperation = false;
         operation = persisted.compact({ force: true });
       } else if (mode === "stream") {
-        operation = persisted.sendStream("old request", {});
+        operation = persisted.sendStream("old request", { onChunk() {} });
       } else {
         operation = persisted.send("old request");
       }
@@ -498,7 +498,7 @@ describe("wrapPersistedSession", () => {
           throw failure;
         },
         async sendStream() {
-          return await session.send();
+          return await session.send("fixture");
         },
       } as unknown as AgentChatSession;
       const recorder = persistenceRecorder();
@@ -529,7 +529,7 @@ describe("wrapPersistedSession", () => {
       const pending =
         mode === "send"
           ? persisted.send("create the report")
-          : persisted.sendStream("create the report", {});
+          : persisted.sendStream("create the report", { onChunk() {} });
       await expect(pending).rejects.toBe(failure);
       expect(recorder.history).toEqual(checkpoint);
       expect(recorder.appendCalls).toBe(1);
@@ -797,9 +797,9 @@ describe("wrapPersistedSession", () => {
       },
     });
 
-    await expect(persisted.sendStream("first", {})).rejects.toThrow(
-      "disk full"
-    );
+    await expect(
+      persisted.sendStream("first", { onChunk() {} })
+    ).rejects.toThrow("disk full");
     expect(history).toEqual([]);
     expect(appended).toEqual([]);
 
@@ -826,7 +826,9 @@ describe("wrapPersistedSession", () => {
     });
 
     await expect(persisted.send("hello")).rejects.toBe(providerError);
-    await expect(persisted.sendStream("hello", {})).rejects.toBe(providerError);
+    await expect(persisted.sendStream("hello", { onChunk() {} })).rejects.toBe(
+      providerError
+    );
     expect(rejectedModes).toEqual(["rejected", "rejected"]);
   });
 
@@ -907,4 +909,154 @@ describe("wrapPersistedSession", () => {
     await expect(pending).rejects.toThrow("Organization not found.");
     expect(appendCalls).toBe(0);
   });
+});
+
+test.each([false, true])(
+  "runtime receipts reach persistence before SDK acknowledgement (disconnect=%s)",
+  async (disconnect) => {
+    const { createAgentHarness } = await import("@atlas/agent");
+    const recorder = persistenceRecorder();
+    let effects = 0;
+    let acknowledged = 0;
+    const provider = {
+      async generateChat(input: import("@atlas/core").GenerateChatInput) {
+        for (let index = 0; index < 2; index += 1) {
+          await input.executeToolCall!({
+            arguments: {},
+            id: `call-${index}`,
+            name: "save_report",
+          });
+          expect(
+            recorder.history.filter((message) => message.role === "tool")
+          ).toHaveLength(index + 1);
+          acknowledged += 1;
+        }
+        if (disconnect) {
+          throw new Error("Runtime disconnected");
+        }
+        return {
+          assistantMessage: { content: "Saved.", role: "assistant" as const },
+          content: "Saved.",
+          toolCalls: [],
+        };
+      },
+      async generateText() {
+        return { content: "unused" };
+      },
+      name: "openai_compatible" as const,
+      async streamChat() {
+        throw new Error("Streaming is not used by this fixture");
+      },
+    };
+    const session = createAgentHarness({
+      provider,
+      tools: [
+        {
+          description: "Save a report",
+          name: "save_report",
+          parameters: { type: "object" },
+          async run() {
+            effects += 1;
+            return { saved: effects };
+          },
+        },
+      ],
+    }).createChatSession();
+    const persisted = wrapPersistedSession(
+      "session-checkpoint",
+      session,
+      recorder.db
+    );
+    if (disconnect) {
+      await expect(persisted.send("Save twice")).rejects.toThrow();
+    } else {
+      expect(await persisted.send("Save twice")).toBe("Saved.");
+    }
+    expect(effects).toBe(2);
+    expect(acknowledged).toBe(2);
+    expect(recorder.history).toEqual([...session.getHistory()]);
+    expect(
+      recorder.history.filter((message) => message.role === "tool")
+    ).toHaveLength(2);
+  }
+);
+
+test("persistence failure prevents SDK acknowledgement and retains completed evidence for recovery", async () => {
+  const { createAgentHarness } = await import("@atlas/agent");
+  const recorder = persistenceRecorder();
+  let failWrites = true;
+  const append = recorder.db.appendMessagesForSession.bind(recorder.db);
+  const replace = recorder.db.replaceMessagesForSession.bind(recorder.db);
+  recorder.db.appendMessagesForSession = async (...args) => {
+    if (failWrites) {
+      throw new Error("Disk full");
+    }
+    return append(...args);
+  };
+  recorder.db.replaceMessagesForSession = async (...args) => {
+    if (failWrites) {
+      throw new Error("Disk full");
+    }
+    return replace(...args);
+  };
+  let acknowledged = false;
+  let turns = 0;
+  let effects = 0;
+  const provider = {
+    async generateChat(input: import("@atlas/core").GenerateChatInput) {
+      turns += 1;
+      if (turns === 1) {
+        await input.executeToolCall!({
+          arguments: {},
+          id: "write",
+          name: "save_report",
+        });
+        acknowledged = true;
+      }
+      return {
+        assistantMessage: { content: "Recovered.", role: "assistant" as const },
+        content: "Recovered.",
+        toolCalls: [],
+      };
+    },
+    async generateText() {
+      return { content: "unused" };
+    },
+    name: "openai_compatible" as const,
+    async streamChat() {
+      throw new Error("Streaming is not used by this fixture");
+    },
+  };
+  const session = createAgentHarness({
+    provider,
+    tools: [
+      {
+        description: "Save",
+        name: "save_report",
+        async run() {
+          effects += 1;
+          return { saved: true };
+        },
+      },
+    ],
+  }).createChatSession();
+  const persisted = wrapPersistedSession(
+    "session-write-failure",
+    session,
+    recorder.db
+  );
+  await expect(persisted.send("Save")).rejects.toThrow();
+  expect(effects).toBe(1);
+  expect(acknowledged).toBe(false);
+  expect(session.getHistory().at(-1)).toMatchObject({
+    role: "tool",
+    toolCallId: "write",
+  });
+  failWrites = false;
+  expect(await persisted.send("Explain saved evidence")).toBe("Recovered.");
+  expect(effects).toBe(1);
+  expect(recorder.history).toEqual([...session.getHistory()]);
+  expect(
+    recorder.history.filter((message) => message.role === "tool")
+  ).toHaveLength(1);
 });

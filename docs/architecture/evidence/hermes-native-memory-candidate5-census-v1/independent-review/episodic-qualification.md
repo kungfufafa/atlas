@@ -1,0 +1,5 @@
+The comparative-duration finding belongs to the unselected C5 native-default Atlas episodic1907 arm. The census owner binds its persisted “the project deadline permits the longer transit time” to an unsupported ancillary assumption. This supplement records that owner citation without claiming independent inspection of the unselected transcript.
+
+The registered explicit-memory arm instead persisted “Deadline allows either option; rail selected on cost.” Its public “no schedule penalty” is supported only as deadline feasibility; it does not establish equal transit durations or the absence of every schedule difference. The broader wording is less precise than the input. A longer-transit-time assertion cannot be inferred from both options meeting a deadline.
+
+The original review remains unchanged at SHA256 2258db74b0e45464990c249d266ff679519e643b1022d1fc71de287226efd649. No sample, score, or manual judgment was changed; no additional arm transcript was opened. See episodic-qualification.json for exact identities, selected source bindings, and separately attributed owner citations.

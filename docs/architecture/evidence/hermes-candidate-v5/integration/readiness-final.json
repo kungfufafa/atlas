@@ -1,0 +1,238 @@
+{
+  "schemaVersion": 1,
+  "status": "isolated-candidate5-final-gates-passed-not-applied",
+  "createdAt": "2026-09-06T19:18:52.693838+00:00",
+  "readyForReview": true,
+  "readyForRootApplication": true,
+  "sourceRoot": "/private/tmp/atlas-candidate5-integration/source",
+  "candidate3BaseSourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+  "candidate4BaseSourceHash": "d09f087f01f3a8590ce8e2faef7b9454ce4546c8912dfce38e824d95fecb2ce3",
+  "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "sourceFiles": 2078,
+  "delta": {
+    "files": 18,
+    "changedExisting": 12,
+    "new": 6,
+    "production": 11,
+    "tests": 7,
+    "candidate4TaskStopOverlap": []
+  },
+  "integrationOnlyAmendment": "Two equivalent template literals in stoppedTaskError requested by parent; original inputs preserved.",
+  "inputHashes": {
+    "candidate3-inventory.json": "0fe2faa230fa4341b8fd6c0f0a6f18ef2daf8b12c7f0b4a5fcb1cef10e9bf2b2",
+    "candidate4-combined.patch": "be636e2a9ffc9d6566d83adb663afdec0d26dc13f5a14f238d98fc48dd25eb95",
+    "candidate4-inventory.json": "ffd0f2bd9eed3a52ae48ee955903bc789c807c63dbad6338a5e8dcab042480b4",
+    "candidate4-production.patch": "7c204d3a17e88981dd9c406d4f4f1d414a2397df81cb3e0975357222ce038a17",
+    "candidate4-readiness.json": "d32d5e3a05fc8432cd9a06007fdeb7ee34e48049c46ec5caf6f65b12f1f9acc1",
+    "task-stop-combined.patch": "ae4c9aaf242b0f1a11155403c47ee27df876a0cbedb58c51f5339b880e89a62b",
+    "task-stop-inventory.json": "90fb3a692eb6e8382e9d50080db7ba097fe8d278dac9eeefaafc8ad6567f08ab",
+    "task-stop-production.patch": "92c3eaa0dc52d3a02fc2406c3e4c9e0b37ee26dab91e6ed8c02b002db83657b8",
+    "task-stop-readiness.json": "1efbcb25471adc936ff25066e2f6aa15108deebcc9113296016b3a2a7204e7ab"
+  },
+  "patches": {
+    "combined.patch": {
+      "path": "/private/tmp/atlas-candidate5-integration/combined.patch",
+      "sha256": "7d95cdbd7fb8f0d62d4319649fb072aa7c0d1af672080ce1363aaafa182154a3"
+    },
+    "production.patch": {
+      "path": "/private/tmp/atlas-candidate5-integration/production.patch",
+      "sha256": "c94d6ee4c54a6d29f57c4c4ee0fb083673e1bdb4ee31f4800daae96859ecf41b"
+    }
+  },
+  "evidenceHashes": {
+    "README.md": "4cd5a789e3113efb966c0db45a76f6ff35da79f683a39bb48178c13410507259",
+    "gate-plan.json": "c310418ce133402ec05c2aff9f4a42e882f5a5f1b3076806a4454996399c5b14",
+    "source-inventory.json": "9b83697667ffee57e19f35738bd76d09dbb7ad3c8e74b060cb847a6ad4607f32",
+    "source-verification.json": "e4662a42c350e0cb86b11961e5e204134d32750d31d6018f440b79fdc5481212",
+    "pre-apply-source-inventory.json": "7edf13d944e3b0c52f83ea252f2e9887de234d7c18365928d4cb327b8a43773a",
+    "integration-amendment.json": "219982139ddc78a417234cc17887f9422eab36bc4aef24a74f73f9ba6cd12c06",
+    "dependency-links.json": "ca767932c5c8b4b138ab6fc5da93e586abc9662ec7b0afceee83c01c1060e26c",
+    "aliases.json": "05f6d2912be092fc9571be09618b38f15c32a7307bbfb0abb90abd33d9dc1408",
+    "task-stop-check.log": "16e3edbe92d848d09637b5ec0801d01a735a0deb44c99bc4c374f0865de6acd8",
+    "task-stop-apply.log": "16e3edbe92d848d09637b5ec0801d01a735a0deb44c99bc4c374f0865de6acd8",
+    "root-combined.patch.check.log": "16e3edbe92d848d09637b5ec0801d01a735a0deb44c99bc4c374f0865de6acd8",
+    "root-production.patch.check.log": "16e3edbe92d848d09637b5ec0801d01a735a0deb44c99bc4c374f0865de6acd8"
+  },
+  "toolingHashes": {
+    ".gitignore": "efacfbfe9dc84e2c67d1db75d0f0c43b6cdd46e42d5466ae7da6678354cff808",
+    "biome.jsonc": "e35c585fdfc0d0baabfb3cffe773c5fa15a07cdc635e1774c37311a970f062f5",
+    "tsconfig.integration-scope.json": "0abd069d1be07e506085046bc2a680a8f6e03d452351a1b0992fba03224a8db4"
+  },
+  "finalGates": {
+    "status": "passed",
+    "regressionUnion": {
+      "tests": 218,
+      "assertions": 1159,
+      "files": 19,
+      "failed": 0
+    },
+    "fullProductionTypecheck": true,
+    "scopedTypecheckIncludingChangedTests": true,
+    "scopedLintFiles": 18,
+    "substantiveIndependentReview": {
+      "status": "scoped-approved",
+      "path": "/private/tmp/atlas-candidate5-integration/inputs/task-stop-independent-review.json",
+      "sha256": "de1e06406db6dd0f2bc6901e89fc0542ae34775eff5784eb5df58f3862448d3e",
+      "independentTests": 18,
+      "independentAssertions": 124
+    }
+  },
+  "verified": {
+    "rootCandidate3FilesUnchanged": 2072,
+    "candidate4FilesUnchanged": 2076,
+    "originalStopFilesUnchanged": 2078,
+    "newSourceFilesVerified": 2078,
+    "rootApplyCheckCombined": true,
+    "rootApplyCheckProduction": true,
+    "localAtlasAliases": true
+  },
+  "rootApplied": false,
+  "frozenControlsEdited": false,
+  "paidCalls": false,
+  "nativePilots": false,
+  "heavyTestsStarted": false,
+  "activeProcesses": false,
+  "finalizedAt": "2026-09-06T19:24:47.140891+00:00",
+  "executedGates": [
+    {
+      "name": "combined-regression-union",
+      "command": [
+        "bun",
+        "test",
+        "apps/server/src/services/session-persistence.test.ts",
+        "apps/server/src/services/task-service.test.ts",
+        "apps/server/src/services/task-stop-semantics.test.ts",
+        "apps/server/src/tools/conversation-tools.test.ts",
+        "apps/server/src/tools/memory-scope-contract.test.ts",
+        "apps/server/src/tools/memory-tools-dedup.test.ts",
+        "apps/server/src/tools/memory-tools-update.test.ts",
+        "apps/server/src/tools/memory-tools.test.ts",
+        "packages/agent/src/chat-abort.test.ts",
+        "packages/agent/src/chat-failure-rollback.test.ts",
+        "packages/agent/src/chat-harness-reliability.test.ts",
+        "packages/agent/src/chat-output-limit.test.ts",
+        "packages/agent/src/chat-runtime-tools.test.ts",
+        "packages/agent/src/chat-stop-semantics.test.ts",
+        "packages/db/src/conversation-history.test.ts",
+        "packages/db/src/conversation-keyword-search.test.ts",
+        "packages/db/src/memory-preservation.test.ts",
+        "packages/db/src/memory-search.test.ts",
+        "packages/db/src/profile-atomic.test.ts"
+      ],
+      "cwd": "/private/tmp/atlas-candidate5-integration/source",
+      "startedAt": "2026-09-06T19:23:47.817097+00:00",
+      "finishedAt": "2026-09-06T19:23:52.143857+00:00",
+      "elapsedSeconds": 4.326716374998796,
+      "exitCode": 0,
+      "log": "/private/tmp/atlas-candidate5-integration/final-combined-regression-union.log",
+      "logSha256": "b25dd3452646d87f8289f6ea647df3e024e114887d1d3b86fe135c2a2393cc1c"
+    },
+    {
+      "name": "full-production-typecheck",
+      "command": [
+        "bun",
+        "run",
+        "tsc",
+        "--noEmit",
+        "-p",
+        "tsconfig.typecheck.json"
+      ],
+      "cwd": "/private/tmp/atlas-candidate5-integration/source",
+      "startedAt": "2026-09-06T19:23:47.817097+00:00",
+      "finishedAt": "2026-09-06T19:23:57.504083+00:00",
+      "elapsedSeconds": 9.68712983300793,
+      "exitCode": 0,
+      "log": "/private/tmp/atlas-candidate5-integration/final-full-production-typecheck.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "changed-source-and-tests-typecheck",
+      "command": [
+        "bun",
+        "run",
+        "tsc",
+        "--noEmit",
+        "-p",
+        "tsconfig.integration-scope.json"
+      ],
+      "cwd": "/private/tmp/atlas-candidate5-integration/source",
+      "startedAt": "2026-09-06T19:23:47.819502+00:00",
+      "finishedAt": "2026-09-06T19:23:54.808823+00:00",
+      "elapsedSeconds": 6.9893134589947294,
+      "exitCode": 0,
+      "log": "/private/tmp/atlas-candidate5-integration/final-changed-source-and-tests-typecheck.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "scoped-lint",
+      "command": [
+        "bun",
+        "run",
+        "ultracite",
+        "check",
+        "apps/server/src/services/agent-service.ts",
+        "apps/server/src/services/task-runner.ts",
+        "apps/server/src/services/task-stop-semantics.test.ts",
+        "apps/server/src/tools/conversation-tools.test.ts",
+        "apps/server/src/tools/conversation-tools.ts",
+        "apps/server/src/tools/memory-scope-contract.test.ts",
+        "apps/server/src/tools/memory-tools-dedup.test.ts",
+        "apps/server/src/tools/memory-tools.ts",
+        "packages/agent/src/chat-stop-semantics.test.ts",
+        "packages/agent/src/chat.ts",
+        "packages/agent/src/index.ts",
+        "packages/db/src/adapters/in-memory.ts",
+        "packages/db/src/adapters/sqlite.ts",
+        "packages/db/src/conversation-keyword-search.test.ts",
+        "packages/db/src/conversation-keyword-search.ts",
+        "packages/db/src/memory-search.test.ts",
+        "packages/db/src/memory-search.ts",
+        "packages/db/src/types.ts"
+      ],
+      "cwd": "/private/tmp/atlas-candidate5-integration/source",
+      "startedAt": "2026-09-06T19:23:47.831836+00:00",
+      "finishedAt": "2026-09-06T19:23:49.802871+00:00",
+      "elapsedSeconds": 1.9709773329959717,
+      "exitCode": 0,
+      "log": "/private/tmp/atlas-candidate5-integration/final-scoped-lint.log",
+      "logSha256": "10928043bcf726c71880a4fb0a15e6f4020d3723aaa96816208908605e627655"
+    }
+  ],
+  "sourceVerification": {
+    "at": "2026-09-06T19:24:47.140891+00:00",
+    "sourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+    "sourceFiles": 2078,
+    "sourceBeforeAfterEqual": true,
+    "rootCandidate3FilesUnchanged": 2072,
+    "candidate4FilesUnchanged": 2076,
+    "originalStopSourceFilesUnchanged": 2078,
+    "copiedInputsAndPatchesUnchanged": true,
+    "sourceActualTreeUnexpectedFiles": [],
+    "independentReviewSha256": "de1e06406db6dd0f2bc6901e89fc0542ae34775eff5784eb5df58f3862448d3e",
+    "rootCombinedApplyCheck": true,
+    "rootProductionApplyCheck": true,
+    "rootApplied": false,
+    "allProcessesClosed": true
+  },
+  "initialReadinessPreserved": {
+    "path": "/private/tmp/atlas-candidate5-integration/readiness-before-final-gates.json",
+    "sha256": "5853b1fb4f808b4275769da8fe7c694ea179dac54c3bb424ca8b9b6c24f01389"
+  },
+  "originalGatePlanPreserved": {
+    "path": "/private/tmp/atlas-candidate5-integration/gate-plan-before-final-gates.json",
+    "sha256": "c310418ce133402ec05c2aff9f4a42e882f5a5f1b3076806a4454996399c5b14"
+  },
+  "finalEvidenceHashes": {
+    "final-source-verification.json": "ad0945a4d48d787c445ea207605181a65772f77afdeea0609af9703bbb41c0e2",
+    "final-gates-before-inventory.json": "cb4be99b9ece24a6b5f38d10491a209eddfa10edda98496a6273da7aaab25152",
+    "final-root-combined.patch.check.log": "16e3edbe92d848d09637b5ec0801d01a735a0deb44c99bc4c374f0865de6acd8",
+    "final-root-production.patch.check.log": "16e3edbe92d848d09637b5ec0801d01a735a0deb44c99bc4c374f0865de6acd8"
+  },
+  "plannedFocusedGatesExecuted": true,
+  "limits": [
+    "No live/provider/subscription calls, native pilot, or full repository test suite.",
+    "Candidate4 remains preserved and unrun as a live candidate.",
+    "Generic product contract improvements only; no live quality or cross-harness superiority inferred.",
+    "Restart/uncertain-effect continuation remains outside this patch; preparation was paused before these gates."
+  ]
+}

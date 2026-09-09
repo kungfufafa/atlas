@@ -1,195 +1,203 @@
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
-import { chromium } from "playwright";
+import { type Browser, chromium, type Page } from "playwright";
+import {
+  BROWSER_SCENARIOS,
+  buildBrowserSmokeReport,
+  createBrowserSmokeOutputDirectory,
+  findNewAssistantDisplay,
+  loadBrowserFixtureConfig,
+} from "./e2e-browser-evidence";
 
-const BASE_URL = process.env.ATLAS_TEST_BASE_URL || "http://127.0.0.1:4310";
-const EMAIL = "developer@rizqi.com";
-const PASSWORD = "password123";
-const ARTIFACT_DIR =
-  process.env.ARTIFACT_DIR ||
-  "/Users/apriansyahrs/.gemini/antigravity-ide/brain/99688ddc-1a2a-4e4a-a26d-b59311dbdafe/screenshots";
+const ASSISTANT_TEXT_SELECTOR = ".is-assistant .chat-markdown";
 
-async function main() {
-  console.log(`Starting Comprehensive E2E Browser Test against ${BASE_URL}`);
-  const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({
-    viewport: { height: 900, width: 1440 },
-  });
-  const page = await context.newPage();
-
-  const consoleErrors: string[] = [];
-  page.on("console", (msg) => {
-    if (msg.type() === "error") {
-      console.log(`[Browser Console Error] ${msg.text()}`);
-      consoleErrors.push(msg.text());
+async function observeAssistantDisplay(
+  page: Page,
+  previousCount: number,
+  display: string
+): Promise<string> {
+  const deadline = Date.now() + 60_000;
+  while (Date.now() < deadline) {
+    const text = findNewAssistantDisplay(
+      await page.locator(ASSISTANT_TEXT_SELECTOR).allTextContents(),
+      previousCount,
+      display
+    );
+    if (
+      text &&
+      (await page
+        .getByRole("button", { exact: true, name: "Stop response" })
+        .count()) === 0
+    ) {
+      return text;
     }
-  });
+    // Poll an actual UI condition; elapsed time alone is never completion evidence.
+    await page.waitForTimeout(100);
+  }
+  throw new Error(`No completed new assistant display containing ${display}.`);
+}
 
-  page.on("pageerror", (err) => {
-    console.log(`[Browser Uncaught Exception] ${err.message}`);
-    consoleErrors.push(err.message);
-  });
-
+async function main(): Promise<void> {
+  const outputDirectory = await createBrowserSmokeOutputDirectory(
+    process.env.ATLAS_BROWSER_OUTPUT_DIR
+  );
+  const browserErrors: string[] = [];
+  const completed: string[] = [];
+  const observations: Array<{
+    id: string;
+    assistantDisplay: string;
+    screenshot: string;
+  }> = [];
+  let browser: Browser | undefined;
+  let page: Page | undefined;
+  let failure: string | undefined;
+  let prerequisitesMissing = false;
+  let fixture: ReturnType<typeof loadBrowserFixtureConfig> | undefined;
   try {
-    // 1. Navigate to Login Page
-    console.log("Navigating to login page...");
-    await page.goto(`${BASE_URL}/login`, { waitUntil: "networkidle" });
-    await page.screenshot({
-      path: path.join(ARTIFACT_DIR, "01_login_page.png"),
+    try {
+      fixture = loadBrowserFixtureConfig(process.env);
+    } catch (error) {
+      prerequisitesMissing = true;
+      throw error;
+    }
+    console.log(
+      `Starting fixture browser screenshot smoke against ${fixture.baseUrl}`
+    );
+    browser = await chromium.launch({ headless: true });
+    const context = await browser.newContext({
+      viewport: { height: 900, width: 1440 },
     });
-
-    // 2. Fill login form
-    console.log("Filling login form...");
-    await page.fill(
-      'input[type="email"], input[name="email"], input[id="email"]',
-      EMAIL
-    );
-    await page.fill(
-      'input[type="password"], input[name="password"], input[id="password"]',
-      PASSWORD
-    );
-    await page.click('button[type="submit"]');
-
-    // 3. Wait for navigation to /chat
-    console.log("Waiting for navigation to chat dashboard...");
-    await page.waitForURL((url) => url.pathname.includes("/chat"), {
+    page = await context.newPage();
+    page.on("console", (message) => {
+      if (message.type() === "error") {
+        browserErrors.push(message.text());
+      }
+    });
+    page.on("pageerror", (error) => browserErrors.push(error.message));
+    const response = await page.goto(`${fixture.baseUrl}/login`, {
+      waitUntil: "networkidle",
+    });
+    if (!response?.ok()) {
+      throw new Error(
+        `Fixture login page returned ${response?.status() ?? "no response"}.`
+      );
+    }
+    await page.screenshot({ path: path.join(outputDirectory, "01_login.png") });
+    await page.locator('input[type="email"]').fill(fixture.email);
+    await page.locator('input[type="password"]').fill(fixture.password);
+    await page.locator('button[type="submit"]').click();
+    await page.waitForURL((url) => url.pathname.startsWith("/chat"), {
       timeout: 30_000,
     });
-    await page.waitForTimeout(2000);
-    await page.screenshot({
-      path: path.join(ARTIFACT_DIR, "02_chat_loaded.png"),
-    });
-    console.log("Successfully logged in and reached /chat!");
-
-    // Helper to send message
-    const sendMessage = async (text: string) => {
-      const textarea = page.locator("textarea").first();
-      await textarea.fill(text);
-      const sendButton = page.locator('button[type="submit"]').first();
-      if (await sendButton.isVisible()) {
-        await sendButton.click();
-      } else {
-        await textarea.press("Enter");
-      }
-    };
-
-    // 4. Scenario 1: Calculator Execution
-    console.log("--- Scenario 1: Calculator Execution ---");
-    await sendMessage("Calculate (12500 * 17.5) / 7 using the calculator tool");
-    await page.waitForFunction(
-      () => document.body.innerText.includes("31250"),
-      undefined,
-      { timeout: 60_000 }
+    const csrf = (await context.cookies(fixture.baseUrl)).find(
+      (cookie) => cookie.name === "atlas_csrf"
     );
-    await page.waitForTimeout(2000);
-    await page.screenshot({
-      path: path.join(ARTIFACT_DIR, "03_calculator_result.png"),
-    });
-    console.log("Calculator test passed! Result 31250 displayed in UI.");
-
-    // 5. Scenario 2: Filesystem Tool
-    console.log("--- Scenario 2: Filesystem Tool ---");
-    await sendMessage(
-      "Create a file named e2e-test.txt containing hello atlas"
-    );
-    await page.waitForFunction(
-      () =>
-        document.body.innerText.includes("e2e-test.txt") &&
-        (document.body.innerText.includes("Operation completed") ||
-          document.body.innerText.includes("written")),
-      undefined,
-      { timeout: 60_000 }
-    );
-    await page.waitForTimeout(2000);
-    await page.screenshot({
-      path: path.join(ARTIFACT_DIR, "04_file_created_result.png"),
-    });
-    console.log("Filesystem write message turn completed in UI.");
-
-    // 6. Scenario 3: Python Analysis Sandbox
-    console.log("--- Scenario 3: Python Sandbox ---");
-    await sendMessage(
-      "Use python_execute to calculate 2**16 and print RESULT: 65536"
-    );
-    await page.waitForFunction(
-      () => document.body.innerText.includes("65536"),
-      undefined,
-      { timeout: 60_000 }
-    );
-    await page.waitForTimeout(2000);
-    await page.screenshot({
-      path: path.join(ARTIFACT_DIR, "05_python_result.png"),
-    });
-    console.log("Python execution message turn completed in UI.");
-
-    // 7. Scenario 4: Spreadsheet XLSX Engine
-    console.log("--- Scenario 4: Spreadsheet XLSX Engine ---");
-    await sendMessage(
-      "Use spreadsheet tool to create sales_report.xlsx with columns Item, Qty, Price, Total"
-    );
-    await page.waitForFunction(
-      () =>
-        document.body.innerText.includes("sales_report.xlsx") ||
-        document.body.innerText.includes("Created spreadsheet") ||
-        document.body.innerText.includes("spreadsheet"),
-      undefined,
-      { timeout: 60_000 }
-    );
-    await page.waitForTimeout(2000);
-    await page.screenshot({
-      path: path.join(ARTIFACT_DIR, "06_spreadsheet_result.png"),
-    });
-    console.log("Spreadsheet XLSX creation message turn completed in UI.");
-
-    // 8. Scenario 5: Dynamic Tool Search & Activation
-    console.log("--- Scenario 5: Dynamic Tool Search & Activation ---");
-    await sendMessage("Use tool_search to Find tools for spreadsheet analysis");
-    await page.waitForFunction(
-      () =>
-        document.body.innerText.includes("spreadsheet") ||
-        document.body.innerText.includes("tool_search") ||
-        document.body.innerText.includes("Discovered"),
-      undefined,
-      { timeout: 60_000 }
-    );
-    await page.waitForTimeout(2000);
-    await page.screenshot({
-      path: path.join(ARTIFACT_DIR, "07_tool_search_result.png"),
-    });
-    console.log("Dynamic tool search & activation turn completed in UI.");
-
-    // 9. Assertions on browser errors
-    console.log("Checking for uncaught browser errors...");
-    const fatalErrors = consoleErrors.filter(
-      (e) => !(e.includes("favicon") || e.includes("404") || e.includes("401"))
-    );
-
-    if (fatalErrors.length > 0) {
-      console.warn(
-        `Encountered ${fatalErrors.length} browser errors:`,
-        fatalErrors
+    if (!csrf) {
+      throw new Error(
+        "The fixture login did not establish a browser CSRF token."
       );
-    } else {
-      console.log("No fatal browser errors encountered.");
     }
-
-    await page.screenshot({
-      path: path.join(ARTIFACT_DIR, "08_final_e2e_state.png"),
+    const org = await context.request.post(
+      `${fixture.baseUrl}/v1/auth/active-org`,
+      {
+        data: { orgId: fixture.orgId },
+        headers: { "X-CSRF-Token": csrf.value },
+      }
+    );
+    if (!org.ok()) {
+      throw new Error(
+        `Fixture organization selection returned ${org.status()}.`
+      );
+    }
+    await page.goto(`${fixture.baseUrl}${fixture.chatPath}`, {
+      waitUntil: "networkidle",
     });
-    console.log("====================================================");
-    console.log("ALL COMPREHENSIVE E2E BROWSER SCENARIOS PASSED 100%!");
-    console.log("====================================================");
+    if (new URL(page.url()).pathname !== fixture.chatPath) {
+      throw new Error(
+        "The prepared fixture chat was not opened; refusing to use a different profile/session."
+      );
+    }
+    await page.locator("textarea").first().waitFor({ state: "visible" });
+    await page.screenshot({
+      path: path.join(outputDirectory, "02_fixture_chat.png"),
+    });
+    for (const scenario of BROWSER_SCENARIOS) {
+      if (browserErrors.length) {
+        throw new Error(
+          "Browser errors occurred before the next fixture turn."
+        );
+      }
+      const previousCount = await page.locator(ASSISTANT_TEXT_SELECTOR).count();
+      await page.locator("textarea").first().fill(scenario.prompt);
+      await page
+        .getByRole("button", { exact: true, name: "Send message" })
+        .click();
+      const assistantDisplay = await observeAssistantDisplay(
+        page,
+        previousCount,
+        scenario.display
+      );
+      const screenshot = `${scenario.id}.png`;
+      await page.screenshot({ path: path.join(outputDirectory, screenshot) });
+      observations.push({ assistantDisplay, id: scenario.id, screenshot });
+      completed.push(scenario.id);
+      if (browserErrors.length) {
+        throw new Error("Browser errors occurred during the fixture smoke.");
+      }
+    }
   } catch (error) {
-    console.error("E2E Test Failed with error:", error);
-    await page.screenshot({
-      path: path.join(ARTIFACT_DIR, "e2e_failure_state.png"),
-    });
-    throw error;
+    failure = error instanceof Error ? error.message : String(error);
+    if (fixture) {
+      failure = failure.replaceAll(fixture.password, "[redacted]");
+    }
+    if (page) {
+      await page
+        .screenshot({ path: path.join(outputDirectory, "failure.png") })
+        .catch(() => undefined);
+    }
   } finally {
-    await browser.close();
+    if (browser) {
+      await browser.close().catch((error) => {
+        browserErrors.push(`Browser cleanup failed: ${String(error)}`);
+      });
+    }
+    const report = buildBrowserSmokeReport({
+      browserErrors,
+      completed,
+      failure,
+      prerequisitesMissing,
+    });
+    await writeFile(
+      path.join(outputDirectory, "report.json"),
+      JSON.stringify(
+        {
+          ...report,
+          fixture: fixture
+            ? {
+                baseUrl: fixture.baseUrl,
+                chatPath: fixture.chatPath,
+                orgId: fixture.orgId,
+              }
+            : undefined,
+          observations,
+        },
+        null,
+        2
+      )
+    );
+    console.log(`${report.status}: ${outputDirectory}`);
+    if (report.status !== "UI_SMOKE_PASSED") {
+      process.exitCode = 1;
+    }
   }
 }
 
-main().catch((err) => {
-  console.error("FATAL E2E ERROR:", err);
-  process.exit(1);
-});
+if (import.meta.main) {
+  main().catch((error) => {
+    console.error(
+      "Browser smoke could not initialize its evidence output:",
+      error
+    );
+    process.exitCode = 1;
+  });
+}

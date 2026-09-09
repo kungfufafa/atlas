@@ -1,0 +1,92 @@
+{
+  "at": "2026-09-07T06:09:10.165977+00:00",
+  "status": "Closed C9 FILE V3 controls, independent changed-seam review, prospective freeze and root control adoption archived; active live study excluded",
+  "softwareSourceHash": "e2daf1b902a087eb279724f17d61e50b9a27f7c1d64828f6958b61b22225eb98",
+  "controlSourceHash": "b3673405fab43fdd268aa286d4f6f0164ea00c2332ba43d00e28abd3d538fde5",
+  "controlBindings": 53,
+  "rootAddedFiles": 49,
+  "rootSharedBindingsUntouched": 4,
+  "selectedCopies": {
+    "owner-readiness.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-integration/readiness-before-review.json",
+      "sha256": "df46b02e40877a1d424300c89deaf4dd94a1367febacd14bb136f65508a30e3d",
+      "bytes": 7559,
+      "mode": "0o644"
+    },
+    "review.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-independent-review/review.json",
+      "sha256": "eb83a466c5a33dbf743c1f380a9e2e80e7f037ab924c838504f7eca0d260c5aa",
+      "bytes": 9412,
+      "mode": "0o644"
+    },
+    "review-readable.md": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-independent-review/review-readable.md",
+      "sha256": "f8fe07863f776d73dab7d284de07a1ad5338828e397d357ced00308a6d9b6100",
+      "bytes": 2452,
+      "mode": "0o644"
+    },
+    "review-readability-supplement.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-independent-review/readability-supplement.json",
+      "sha256": "a2d9f0d76b552057877e6eb97c5a8b125875e357bc801216622e20d04f2a479b",
+      "bytes": 726,
+      "mode": "0o644"
+    },
+    "control-adoption.json": {
+      "source": "/private/tmp/atlas-native-file-v3-root-adoption/adoption-receipt.json",
+      "sha256": "26103c68a9bef3144e1c99523daa16cc18183aa4f2519b78ce34dd5a4c5ff908",
+      "bytes": 14625,
+      "mode": "0o644"
+    },
+    "archive-receipt.json": {
+      "source": "/private/tmp/atlas-file-v3-c9-freeze-archive/archive-receipt.json",
+      "sha256": "7709fe2d66fcd4bc630383169b33fffdb4b9c3f06e1662df2d61916c18307ec1",
+      "bytes": 445,
+      "mode": "0o644"
+    }
+  },
+  "completeArchive": {
+    "archive": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-07/file-v3-c9-freeze",
+    "at": "2026-09-07T06:07:41.590928+00:00",
+    "bytes": 219468015,
+    "files": 2747,
+    "manifestSha256": "938768f677118f3dc3e5e2d6fea0af93e21d08bf45d5f73ac6cfcaaa7e0ffe3a",
+    "postPromotionHashesModesMemberCensusVerified": true,
+    "providerCalls": 0,
+    "scannerBytes": 1315054821,
+    "scannerStreams": 44166,
+    "sourceRetained": true
+  },
+  "ownerValidation": {
+    "combinedTests": 73,
+    "assertions": 595,
+    "files": 5,
+    "scope": "Offline controls. Component test totals overlap and are not pooled. Actual-native scripted positive control produced four primary passes with synthetic upstream responses; injected finalization failure produced four valid failed primaries with unknown mandatory totals. Neither is live model quality evidence."
+  },
+  "independentReview": {
+    "kind": "Source/hash/binding and owner-evidence review; no reviewer test or provider rerun",
+    "reviewSha256": "eb83a466c5a33dbf743c1f380a9e2e80e7f037ab924c838504f7eca0d260c5aa",
+    "manifestSha256": "b3a7ff1048a90e31cd0c03ef5a7c71031da790f5e9c7e0974a1432d6d56981c1",
+    "sealSha256": "fb30d0de03deaf7abc7e4c566820d17fd21bd339d35f2cf678385d6cf909b91a"
+  },
+  "frozenStudy": {
+    "manifestSha256": "b50f7517975762665cd627e4c0493f5cbe6228d22c9581781b9100946d07b30f",
+    "schedulePairs": {
+      "pilot": 2,
+      "development": 18,
+      "confirmatory": 54
+    },
+    "sameSourceAndControlsAcrossPhases": true,
+    "scope": "Frozen prospective finite scheduled census; no live outcomes copied or comparative claim established by this reference."
+  },
+  "rootPreflight": {
+    "fileSelection": "Seven exact files, including before-scripts, additive failure descriptions, final preflight and single-pilot admission; no active console or batch.",
+    "failureProvenance": "The two failure JSONs describe actual tool-return failures; exact before-scripts are retained, but separate raw terminal-log copies were not available.",
+    "admissionSha256": "3e58bafebdcc2d2f2be24d016b7b6214b328b84af50f2fa304438a6c3cf07011"
+  },
+  "preservation": "Original C8 blocker, C9 before-fix counterexamples, original analyses, owner/reviewer bytes, archive-checker first failure and prior registration/script remain unchanged in their retained original or explicitly named prior paths. The corrected archive checker follows compact schedule hashing; raw schedule files are independently byte-bound.",
+  "limitations": [
+    "Known credential scan is finite and does not certify unknown secrets or arbitrary encodings.",
+    "Original pinned Hermes source archive, setup metadata and requirement versions are copied; installed environments and mutable dependency caches are excluded.",
+    "No product changes, source/index mutation, tests, provider calls, rescoring or active live-results reporting performed by this archive task."
+  ]
+}

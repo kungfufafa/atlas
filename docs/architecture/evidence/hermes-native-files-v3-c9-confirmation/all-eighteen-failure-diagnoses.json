@@ -1,0 +1,1013 @@
+[
+  {
+    "ordinal": 2,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v0-r0-hermes",
+    "family": "code_fix",
+    "harness": "hermes",
+    "category": "Accounting uncertainty after successful native code completion",
+    "diagnosis": "Hermes read the supplied contract, implementation and public test; wrote app/money.py using Decimal and ROUND_HALF_UP; then ran the public test with the prepared Python. The original terminal result is exit 0 with \u201cpublic checks passed\u201d. Its final text reports completion. The original isolated code result admits the implementation and reports 19/19 cases passed, with source mutation and delivery binding checks passed. Requests 3 and 4, both continuations containing the three public read_file results, timed out after 90,007 and 90,005 ms. Request 5 has the same captured message-array hash as those two continuations and proceeds to write the file; the two failed requests are retained. Request 2 is a successful auxiliary title request, not the cause of uncertainty. Native and full caller completed below 300 seconds, but the two failed-request usage totals remain unknown. Primary stays false; no arithmetic failure is established. This arm precedes the bounded sleep/wake window.",
+    "originalPrimarySuccess": false,
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": true,
+    "originalFailedChecks": [],
+    "originalNativeIdentity": "bound",
+    "originalNativeStatus": "completed",
+    "originalInputIdentical": true,
+    "originalBoundaryValid": true,
+    "originalInspectionAllowed": true,
+    "originalDelivery": {
+      "selectedPathPresent": true,
+      "evidence": "other-or-unavailable",
+      "candidateCount": 1,
+      "invalidCandidateCount": 0
+    },
+    "originalUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 2420,
+      "observedPromptTokens": 36475,
+      "promptTokens": null,
+      "providerRequests": 7
+    },
+    "originalDurationsMs": {
+      "elapsedMs": 284579.136083,
+      "processObservationElapsedMs": 284576.24416700006,
+      "totalAttemptElapsedMs": 286048.42075,
+      "totalAttemptElapsedWallMs": 286051
+    },
+    "publicToolEventCount": 5,
+    "publicFinalText": "**Done.** `app/money.py` updated. Public tests pass.\n\nImplementation uses `Decimal` arithmetic throughout \u2014 no binary float anywhere. `to_integral_exact(rounding=ROUND_HALF_UP)` handles halfway-away-from-zero for both positive and negative amounts. Invalid or non-finite input raises `ValueError`. All imports and members are within the contract's admitted set.",
+    "attribution": {
+      "kind": "this report, original public native/tool/request metadata and artifact bytes only"
+    },
+    "evidenceFiles": [
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v0-r0-hermes/runner-input.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v0-r0-hermes/result.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v0-r0-hermes/caller-return.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v0-r0-hermes/invocation.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v0-r0-hermes/process/process-outcome.json",
+      "/private/tmp/atlas-native-file-v3-c9-confirmation-census/public-failures/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v0-r0-hermes.json"
+    ],
+    "newScoreComputed": false
+  },
+  {
+    "ordinal": 3,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-xlsx_reconciliation-v0-r0-atlas",
+    "family": "xlsx_reconciliation",
+    "harness": "atlas",
+    "category": "Native tool error followed by transport failure and unknown accounting",
+    "diagnosis": "Atlas attempted read_file on input/invoices.xlsx. The actual tool rejected binary Excel as UTF-8 and recommended the spreadsheet/document tools. No write or final deliverable is present in its public native event list. The next request, after that public error result, timed out after 90,026 ms. Native output retains its genuine matching identity and failed status, empty final text and the proxy-facing 502 timeout error; direct exit code is 1. The original caller boundary/inspection flags are false and no artifact oracle ran. The evaluation\u2019s generic cleanup-insufficient message does not prove leaked processes: the parent observed direct exit/close and the group absent at its probe. The one successful response contributes a known subtotal, but total accounting remains unknown. This is before the health window; neither the tool error nor transport evidence proves an arithmetic result or provider-side cause.",
+    "originalPrimarySuccess": false,
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": null,
+    "originalFailedChecks": [],
+    "originalNativeIdentity": "bound",
+    "originalNativeStatus": "failed",
+    "originalInputIdentical": true,
+    "originalBoundaryValid": false,
+    "originalInspectionAllowed": false,
+    "originalDelivery": {
+      "selectedPathPresent": false,
+      "evidence": "unresolved",
+      "candidateCount": 0,
+      "invalidCandidateCount": 0
+    },
+    "originalUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 293,
+      "observedPromptTokens": 5614,
+      "promptTokens": null,
+      "providerRequests": 2
+    },
+    "originalDurationsMs": {
+      "elapsedMs": 100429.99129199993,
+      "processObservationElapsedMs": 100428.31812500005,
+      "totalAttemptElapsedMs": 100439.05666699994,
+      "totalAttemptElapsedWallMs": 100441
+    },
+    "publicToolEventCount": 1,
+    "publicFinalText": "",
+    "attribution": {
+      "kind": "this report, original public native/tool/request metadata and artifact bytes only"
+    },
+    "evidenceFiles": [
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-xlsx_reconciliation-v0-r0-atlas/runner-input.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-xlsx_reconciliation-v0-r0-atlas/result.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-xlsx_reconciliation-v0-r0-atlas/caller-return.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-xlsx_reconciliation-v0-r0-atlas/invocation.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-xlsx_reconciliation-v0-r0-atlas/process/process-outcome.json",
+      "/private/tmp/atlas-native-file-v3-c9-confirmation-census/public-failures/confirmatory-1788766021520-052b6932-native-files-confirmatory-xlsx_reconciliation-v0-r0-atlas.json"
+    ],
+    "newScoreComputed": false
+  },
+  {
+    "ordinal": 37,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r0-hermes",
+    "family": "docx_report",
+    "harness": "hermes",
+    "category": "Completed DOCX rejected by original oracle",
+    "diagnosis": "All six supplied facts are present across document paragraphs plus the correct Action/Due table. Action and due occur only in the table, contrary to the explicit instruction to include all supplied facts in readable paragraphs as well. This is a paragraph-location contract failure, not evidence of missing facts throughout the document.",
+    "originalPrimarySuccess": false,
+    "originalCallerStatus": "completed",
+    "originalOraclePass": false,
+    "originalFailedChecks": ["fact:action", "fact:due"],
+    "originalNativeIdentity": "bound",
+    "originalNativeStatus": "completed",
+    "originalInputIdentical": true,
+    "originalBoundaryValid": true,
+    "originalInspectionAllowed": true,
+    "originalDelivery": {
+      "selectedPathPresent": true,
+      "evidence": "final-text",
+      "candidateCount": 1,
+      "invalidCandidateCount": 0
+    },
+    "originalUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": 40256,
+      "costUsd": null,
+      "generatedTokens": 955,
+      "mandatoryUsageKnown": true,
+      "missingUsage": false,
+      "observedGeneratedTokens": 955,
+      "observedPromptTokens": 49087,
+      "promptTokens": 49087,
+      "providerRequests": 8
+    },
+    "originalDurationsMs": {
+      "elapsedMs": 42874.78391700005,
+      "processObservationElapsedMs": 42869.73516599974,
+      "totalAttemptElapsedMs": 43369.50387499994,
+      "totalAttemptElapsedWallMs": 43370
+    },
+    "publicToolEventCount": 6,
+    "publicFinalText": "**Deliverable:** `artifacts/incident-report.docx`\n\nContents verified:\n- **Heading 1:** \"Incident report\"\n- **Paragraph:** Incident INC-3142, owner Nara Wijaya, cause Barcode printer offline, 25 affected orders \u2014 all sourced directly from the JSON, no invented fields.\n- **Table:** Two columns (Action | Due) with one data row: \"Replace printer cable\" | \"2026-10-22\".\n- Input `input/incident.json` left unchanged.",
+    "attribution": {
+      "kind": "root independent retrospective package inspection",
+      "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-docx-contract-review/all-seven-diagnoses.json",
+      "sha256": "620d380e60658f2557d8ced51750cf7c4dc7e1b0f72a673c3b3c4b6e4f9ccc3d",
+      "additionalUnscoredLimitation": null
+    },
+    "evidenceFiles": [
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r0-hermes/runner-input.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r0-hermes/result.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r0-hermes/caller-return.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r0-hermes/invocation.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r0-hermes/process/process-outcome.json",
+      "/private/tmp/atlas-native-file-v3-c9-confirmation-census/public-failures/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r0-hermes.json"
+    ],
+    "newScoreComputed": false
+  },
+  {
+    "ordinal": 38,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r0-atlas",
+    "family": "docx_report",
+    "harness": "atlas",
+    "category": "Completed DOCX rejected by original oracle",
+    "diagnosis": "All six supplied facts are present across document paragraphs plus the correct Action/Due table. Action and due occur only in the table, contrary to the explicit instruction to include all supplied facts in readable paragraphs as well. This is a paragraph-location contract failure, not evidence of missing facts throughout the document.",
+    "originalPrimarySuccess": false,
+    "originalCallerStatus": "completed",
+    "originalOraclePass": false,
+    "originalFailedChecks": ["fact:action", "fact:due"],
+    "originalNativeIdentity": "bound",
+    "originalNativeStatus": "completed",
+    "originalInputIdentical": true,
+    "originalBoundaryValid": true,
+    "originalInspectionAllowed": true,
+    "originalDelivery": {
+      "selectedPathPresent": true,
+      "evidence": "final-text",
+      "candidateCount": 1,
+      "invalidCandidateCount": 0
+    },
+    "originalUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": 30848,
+      "costUsd": null,
+      "generatedTokens": 1733,
+      "mandatoryUsageKnown": true,
+      "missingUsage": false,
+      "observedGeneratedTokens": 1733,
+      "observedPromptTokens": 40349,
+      "promptTokens": 40349,
+      "providerRequests": 7
+    },
+    "originalDurationsMs": {
+      "elapsedMs": 37530.07891699998,
+      "processObservationElapsedMs": 37525.668416999746,
+      "totalAttemptElapsedMs": 38067.419208000414,
+      "totalAttemptElapsedWallMs": 38067
+    },
+    "publicToolEventCount": 6,
+    "publicFinalText": "Done. Input is unchanged.\n\n**Deliverable:** `artifacts/incident-report.docx`\n\nThe document contains:\n- **Heading:** \"Incident report\"\n- **Paragraphs** covering all supplied facts: incident ID (INC-3142), owner (Nara Wijaya), cause (Barcode printer offline), and affected orders (25)\n- **One table** with columns **Action** and **Due**, single data row: Replace printer cable | 2026-10-22\n- No invented resolved status, impact duration, or financial loss",
+    "attribution": {
+      "kind": "root independent retrospective package inspection",
+      "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-docx-contract-review/all-seven-diagnoses.json",
+      "sha256": "620d380e60658f2557d8ced51750cf7c4dc7e1b0f72a673c3b3c4b6e4f9ccc3d",
+      "additionalUnscoredLimitation": null
+    },
+    "evidenceFiles": [
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r0-atlas/runner-input.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r0-atlas/result.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r0-atlas/caller-return.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r0-atlas/invocation.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r0-atlas/process/process-outcome.json",
+      "/private/tmp/atlas-native-file-v3-c9-confirmation-census/public-failures/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r0-atlas.json"
+    ],
+    "newScoreComputed": false
+  },
+  {
+    "ordinal": 52,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-atlas",
+    "family": "pptx_revision",
+    "harness": "atlas",
+    "category": "Successful PPTX revision; failed auxiliary title accounting",
+    "diagnosis": "Atlas inspected the source, then its first python_execute failed with an IndentationError. The second Python call successfully saved artifacts/operations-revised.pptx. The third read the delivered deck and reported old target absent/new target present on slide 2. Final text identifies that deck and claims preservation. The original binding and artifact oracle pass; the retained 30,203-byte file still matches both the original binding and native snapshot. The final verification tool itself checks replacement text only, so the broader preservation assessment is the original oracle\u2019s evidence, not that narrow tool check alone. After the completed final answer, request 6 contains explicit public chat-title instructions and the opening user/assistant summary. It timed out after 95,229 ms. Source file-atlas-runner.ts awaits title generation but catches title errors, permitting the native turn to remain completed. This declared full-turn study lifecycle deliberately captures title accounting; ordinary HTTP routes schedule generation in the background, so this observation does not prove that ordinary users wait for title completion before seeing the file; the broker still marks mandatory totals unknown. Primary remains false. The matching closed sleep/wake records support this arm\u2019s 78.779-second wall/monotonic divergence, without isolating the transport timeout\u2019s cause.",
+    "originalPrimarySuccess": false,
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": true,
+    "originalFailedChecks": [],
+    "originalNativeIdentity": "bound",
+    "originalNativeStatus": "completed",
+    "originalInputIdentical": true,
+    "originalBoundaryValid": true,
+    "originalInspectionAllowed": true,
+    "originalDelivery": {
+      "selectedPathPresent": true,
+      "evidence": "final-text",
+      "candidateCount": 1,
+      "invalidCandidateCount": 0
+    },
+    "originalUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 1707,
+      "observedPromptTokens": 32630,
+      "promptTokens": null,
+      "providerRequests": 6
+    },
+    "originalDurationsMs": {
+      "elapsedMs": 59978.037332999986,
+      "processObservationElapsedMs": 59974.663875000086,
+      "totalAttemptElapsedMs": 60614.947540999856,
+      "totalAttemptElapsedWallMs": 139393
+    },
+    "publicToolEventCount": 4,
+    "publicFinalText": "I have processed the request. The original presentation was preserved, and a revised version has been created with the specified update on Slide 2.\n\n**Deliverable:** `artifacts/operations-revised.pptx`\n\n**Verification:**\n- **Slide 2:** \"Target: 257 cartons\" \u2192 \"Target: 671 cartons\"\n- **Integrity:** All 3 slides, shape positions, fonts, and other text elements remain unchanged.\n- **Source:** `input/operations.pptx` is unchanged.",
+    "attribution": {
+      "kind": "this report, original public native/tool/request metadata and artifact bytes only"
+    },
+    "evidenceFiles": [
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-atlas/runner-input.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-atlas/result.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-atlas/caller-return.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-atlas/invocation.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-atlas/process/process-outcome.json",
+      "/private/tmp/atlas-native-file-v3-c9-confirmation-census/public-failures/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v1-r0-atlas.json"
+    ],
+    "newScoreComputed": false
+  },
+  {
+    "ordinal": 53,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-atlas",
+    "family": "docx_report",
+    "harness": "atlas",
+    "category": "Initial transport failure before a DOCX report was produced",
+    "diagnosis": "The only request failed in 5 ms with \u201cUnable to connect. Is the computer able to access the url?\u201d and null captured upstream status. The genuine Atlas native receipt reports failed, empty final text and zero public tool events. No report-generation action or certified deliverable is evidenced. Original boundary/inspection flags are false; no DOCX oracle ran. This is a transport/native-completion failure with unknown usage, distinct from the seven completed DOCX oracle failures. It lies in the released health window after a wake category, but its own clocks do not show a large divergence. Timing proximity does not establish the individual failure cause.",
+    "originalPrimarySuccess": false,
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": null,
+    "originalFailedChecks": [],
+    "originalNativeIdentity": "bound",
+    "originalNativeStatus": "failed",
+    "originalInputIdentical": true,
+    "originalBoundaryValid": false,
+    "originalInspectionAllowed": false,
+    "originalDelivery": {
+      "selectedPathPresent": false,
+      "evidence": "unresolved",
+      "candidateCount": 0,
+      "invalidCandidateCount": 0
+    },
+    "originalUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": null,
+      "providerRequests": 1
+    },
+    "originalDurationsMs": {
+      "elapsedMs": 1845.773917000275,
+      "processObservationElapsedMs": 1844.3223339999095,
+      "totalAttemptElapsedMs": 1854.6704580001533,
+      "totalAttemptElapsedWallMs": 1854
+    },
+    "publicToolEventCount": 0,
+    "publicFinalText": "",
+    "attribution": {
+      "kind": "this report, original public native/tool/request metadata and artifact bytes only"
+    },
+    "evidenceFiles": [
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-atlas/runner-input.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-atlas/result.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-atlas/caller-return.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-atlas/invocation.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-atlas/process/process-outcome.json",
+      "/private/tmp/atlas-native-file-v3-c9-confirmation-census/public-failures/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-atlas.json"
+    ],
+    "newScoreComputed": false
+  },
+  {
+    "ordinal": 54,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-hermes",
+    "family": "docx_report",
+    "harness": "hermes",
+    "category": "Deadline with unavailable Hermes native evidence and unknown accounting",
+    "diagnosis": "Five requests failed with null upstream statuses and connection/URL diagnostic messages, each after 0\u20132 ms. Every available request has zero assistant/tool history; there is no successful response in the captured wire set. The process deadline fired, SIGTERM was sent and the child exited by SIGTERM; stdout was empty, so native identity, final text, tools and native cleanup receipt remain unavailable. Original caller status is accounting_uncertain, which takes precedence over the separately recorded budgetExceeded flag. Original inputIdentical:false here is absence of a verified native input-copy report, not a demonstrated foreign input assignment. The independently bound parent schedule/input lifecycle retains the failed arm. No file oracle ran. Total wall 950.750 s versus monotonic 8.141 s corresponds to the closed host suspension interval; no attempt is removed or retried.",
+    "originalPrimarySuccess": false,
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": null,
+    "originalFailedChecks": [],
+    "originalNativeIdentity": "unavailable",
+    "originalNativeStatus": null,
+    "originalInputIdentical": false,
+    "originalBoundaryValid": false,
+    "originalInspectionAllowed": false,
+    "originalDelivery": {
+      "selectedPathPresent": false,
+      "evidence": "other-or-unavailable",
+      "candidateCount": 0,
+      "invalidCandidateCount": 0
+    },
+    "originalUsage": {
+      "budgetExceeded": true,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": null,
+      "providerRequests": 5
+    },
+    "originalDurationsMs": {
+      "elapsedMs": 8135.770415999927,
+      "processObservationElapsedMs": 8127.6680419999175,
+      "totalAttemptElapsedMs": 8141.087667000014,
+      "totalAttemptElapsedWallMs": 950750
+    },
+    "publicToolEventCount": null,
+    "publicFinalText": null,
+    "attribution": {
+      "kind": "this report, original public native/tool/request metadata and artifact bytes only"
+    },
+    "evidenceFiles": [
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-hermes/runner-input.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-hermes/result.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-hermes/caller-return.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-hermes/invocation.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-hermes/process/process-outcome.json",
+      "/private/tmp/atlas-native-file-v3-c9-confirmation-census/public-failures/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-hermes.json"
+    ],
+    "newScoreComputed": false
+  },
+  {
+    "ordinal": 55,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-hermes",
+    "family": "docx_revision",
+    "harness": "hermes",
+    "category": "Deadline with unavailable Hermes DOCX-revision evidence",
+    "diagnosis": "Two requests failed after 2 and 1 ms, with null upstream statuses and connection/URL messages; neither includes assistant/tool history. No successful wire response is retained. Deadline termination produced empty native stdout and no genuine native identity or completion/cleanup report. Parent exit/close and absent-group probe are observed; all descendants gone remains unproved. The required date-only revision and source preservation cannot be evaluated from absent native evidence, and the original oracle is null. Original accounting_uncertain status and budgetExceeded flag remain. Total wall 912.545 s versus monotonic 2.845 s aligns with the closed host suspension evidence; this does not isolate the cause of either request failure.",
+    "originalPrimarySuccess": false,
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": null,
+    "originalFailedChecks": [],
+    "originalNativeIdentity": "unavailable",
+    "originalNativeStatus": null,
+    "originalInputIdentical": false,
+    "originalBoundaryValid": false,
+    "originalInspectionAllowed": false,
+    "originalDelivery": {
+      "selectedPathPresent": false,
+      "evidence": "other-or-unavailable",
+      "candidateCount": 0,
+      "invalidCandidateCount": 0
+    },
+    "originalUsage": {
+      "budgetExceeded": true,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": null,
+      "providerRequests": 2
+    },
+    "originalDurationsMs": {
+      "elapsedMs": 2841.1397919999436,
+      "processObservationElapsedMs": 2839.3604580000974,
+      "totalAttemptElapsedMs": 2844.9825419997796,
+      "totalAttemptElapsedWallMs": 912545
+    },
+    "publicToolEventCount": null,
+    "publicFinalText": null,
+    "attribution": {
+      "kind": "this report, original public native/tool/request metadata and artifact bytes only"
+    },
+    "evidenceFiles": [
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-hermes/runner-input.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-hermes/result.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-hermes/caller-return.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-hermes/invocation.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-hermes/process/process-outcome.json",
+      "/private/tmp/atlas-native-file-v3-c9-confirmation-census/public-failures/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-hermes.json"
+    ],
+    "newScoreComputed": false
+  },
+  {
+    "ordinal": 56,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-atlas",
+    "family": "docx_revision",
+    "harness": "atlas",
+    "category": "Initial Atlas DOCX-revision transport failure",
+    "diagnosis": "One request failed after 2 ms with \u201cUnable to connect. Is the computer able to access the url?\u201d and null upstream status. The genuine matching Atlas native report is failed with empty final text and zero tool events; direct exit code is 1. No date-edit action or successful artifact is evidenced, inspection is disallowed and no original oracle ran. Mandatory totals are unknown even though the reported observed subtotal is zero. This short attempt lies between long divergent-clock attempts in the released health window; no large clock gap is observed in this row itself and no specific network/provider cause is established.",
+    "originalPrimarySuccess": false,
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": null,
+    "originalFailedChecks": [],
+    "originalNativeIdentity": "bound",
+    "originalNativeStatus": "failed",
+    "originalInputIdentical": true,
+    "originalBoundaryValid": false,
+    "originalInspectionAllowed": false,
+    "originalDelivery": {
+      "selectedPathPresent": false,
+      "evidence": "unresolved",
+      "candidateCount": 0,
+      "invalidCandidateCount": 0
+    },
+    "originalUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": null,
+      "providerRequests": 1
+    },
+    "originalDurationsMs": {
+      "elapsedMs": 1375.383542000316,
+      "processObservationElapsedMs": 1373.0862079998478,
+      "totalAttemptElapsedMs": 1380.1743339998648,
+      "totalAttemptElapsedWallMs": 1380
+    },
+    "publicToolEventCount": 0,
+    "publicFinalText": "",
+    "attribution": {
+      "kind": "this report, original public native/tool/request metadata and artifact bytes only"
+    },
+    "evidenceFiles": [
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-atlas/runner-input.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-atlas/result.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-atlas/caller-return.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-atlas/invocation.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-atlas/process/process-outcome.json",
+      "/private/tmp/atlas-native-file-v3-c9-confirmation-census/public-failures/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-atlas.json"
+    ],
+    "newScoreComputed": false
+  },
+  {
+    "ordinal": 57,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-atlas",
+    "family": "code_fix",
+    "harness": "atlas",
+    "category": "Initial Atlas code-task transport failure",
+    "diagnosis": "One request failed after 1 ms with \u201cWas there a typo in the url or port?\u201d and null upstream status. The native report retains matching identity, failed status, empty final text and zero tool events; direct exit code is 1. There is no public contract read, code write or public-test execution. The original isolated code oracle was not run, so this is not an arithmetic or admission counterexample. Mandatory totals remain unknown; zero observed subtotal is not certified zero usage. The short row is retained within the health window without attributing its diagnostic message to an actual typo or a specific provider fault.",
+    "originalPrimarySuccess": false,
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": null,
+    "originalFailedChecks": [],
+    "originalNativeIdentity": "bound",
+    "originalNativeStatus": "failed",
+    "originalInputIdentical": true,
+    "originalBoundaryValid": false,
+    "originalInspectionAllowed": false,
+    "originalDelivery": {
+      "selectedPathPresent": false,
+      "evidence": "unresolved",
+      "candidateCount": 0,
+      "invalidCandidateCount": 0
+    },
+    "originalUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": null,
+      "providerRequests": 1
+    },
+    "originalDurationsMs": {
+      "elapsedMs": 909.3559159999713,
+      "processObservationElapsedMs": 908.1106659998186,
+      "totalAttemptElapsedMs": 913.0535840000957,
+      "totalAttemptElapsedWallMs": 913
+    },
+    "publicToolEventCount": 0,
+    "publicFinalText": "",
+    "attribution": {
+      "kind": "this report, original public native/tool/request metadata and artifact bytes only"
+    },
+    "evidenceFiles": [
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-atlas/runner-input.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-atlas/result.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-atlas/caller-return.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-atlas/invocation.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-atlas/process/process-outcome.json",
+      "/private/tmp/atlas-native-file-v3-c9-confirmation-census/public-failures/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-atlas.json"
+    ],
+    "newScoreComputed": false
+  },
+  {
+    "ordinal": 58,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-hermes",
+    "family": "code_fix",
+    "harness": "hermes",
+    "category": "Deadline before any admitted upstream request; native evidence unavailable",
+    "diagnosis": "The original upstream-request ledger contains zero requests and its finalized usage evidence reports known zero totals. The native queue separately records two arrivals at 09:07:40.383 UTC, both rejected by the broker budget guard before upstream admission; zero upstream requests does not mean zero arrival attempts. Preserve that original known-zero accounting; this row is not one of the ten unknown-accounting arms. The process deadline fired, SIGTERM was sent and the child exited by SIGTERM with empty stdout, leaving genuine native identity and task/tool/cleanup evidence unavailable. Primary status is budget_exceeded; no public or isolated code test ran. A runtime directory and parent identity do not substitute for native identity. Total wall 679.731 s versus monotonic 2.035 s matches the bounded host suspension evidence. These clocks do not imply 679 seconds of model execution, and no task result can be inferred.",
+    "originalPrimarySuccess": false,
+    "originalCallerStatus": "budget_exceeded",
+    "originalOraclePass": null,
+    "originalFailedChecks": [],
+    "originalNativeIdentity": "unavailable",
+    "originalNativeStatus": null,
+    "originalInputIdentical": false,
+    "originalBoundaryValid": false,
+    "originalInspectionAllowed": false,
+    "originalDelivery": {
+      "selectedPathPresent": false,
+      "evidence": "other-or-unavailable",
+      "candidateCount": 0,
+      "invalidCandidateCount": 0
+    },
+    "originalUsage": {
+      "budgetExceeded": true,
+      "cachedTokens": 0,
+      "costUsd": null,
+      "generatedTokens": 0,
+      "mandatoryUsageKnown": true,
+      "missingUsage": false,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": 0,
+      "providerRequests": 0
+    },
+    "originalDurationsMs": {
+      "elapsedMs": 2030.9705409999005,
+      "processObservationElapsedMs": 2030.058834000025,
+      "totalAttemptElapsedMs": 2035.0339589999057,
+      "totalAttemptElapsedWallMs": 679731
+    },
+    "publicToolEventCount": null,
+    "publicFinalText": null,
+    "attribution": {
+      "kind": "this report, original public native/tool/request metadata and artifact bytes only"
+    },
+    "evidenceFiles": [
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-hermes/runner-input.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-hermes/result.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-hermes/caller-return.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-hermes/invocation.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-hermes/process/process-outcome.json",
+      "/private/tmp/atlas-native-file-v3-c9-confirmation-census/public-failures/confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-hermes.json"
+    ],
+    "newScoreComputed": false
+  },
+  {
+    "ordinal": 59,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-hermes",
+    "family": "pptx_revision",
+    "harness": "hermes",
+    "category": "Deadline with unavailable Hermes PPTX evidence",
+    "diagnosis": "Five requests failed after 1\u20133 ms with null upstream status and connection/URL messages; available requests show no assistant/tool history and no successful response. Parent deadline handling sent SIGTERM and observed a signal exit plus empty stdout. No genuine native identity, PPTX tool effect, final selection or native cleanup receipt is available; the original artifact oracle remains null. Accounting is unknown and the separate budgetExceeded flag is true. Total wall 359.581 s versus monotonic 9.967 s corresponds to the closed host suspension interval. The process group was absent at the probe, while arbitrary escaped-descendant containment remains unproved.",
+    "originalPrimarySuccess": false,
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": null,
+    "originalFailedChecks": [],
+    "originalNativeIdentity": "unavailable",
+    "originalNativeStatus": null,
+    "originalInputIdentical": false,
+    "originalBoundaryValid": false,
+    "originalInspectionAllowed": false,
+    "originalDelivery": {
+      "selectedPathPresent": false,
+      "evidence": "other-or-unavailable",
+      "candidateCount": 0,
+      "invalidCandidateCount": 0
+    },
+    "originalUsage": {
+      "budgetExceeded": true,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 0,
+      "observedPromptTokens": 0,
+      "promptTokens": null,
+      "providerRequests": 5
+    },
+    "originalDurationsMs": {
+      "elapsedMs": 9951.436792000197,
+      "processObservationElapsedMs": 9935.53037500009,
+      "totalAttemptElapsedMs": 9966.789249999914,
+      "totalAttemptElapsedWallMs": 359581
+    },
+    "publicToolEventCount": null,
+    "publicFinalText": null,
+    "attribution": {
+      "kind": "this report, original public native/tool/request metadata and artifact bytes only"
+    },
+    "evidenceFiles": [
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-hermes/runner-input.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-hermes/result.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-hermes/caller-return.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-hermes/invocation.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-hermes/process/process-outcome.json",
+      "/private/tmp/atlas-native-file-v3-c9-confirmation-census/public-failures/confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-hermes.json"
+    ],
+    "newScoreComputed": false
+  },
+  {
+    "ordinal": 73,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-csv_join-v2-r1-atlas",
+    "family": "csv_join",
+    "harness": "atlas",
+    "category": "Successful CSV delivery; failed auxiliary title accounting",
+    "diagnosis": "Atlas listed input files, read both CSV sources, then used pandas with customer_id explicitly typed as string and a left merge. python_execute returned exit 0, actual artifacts/joined.csv metadata and the eight-row CSV preview. The final answer clearly links that file. The original oracle and byte binding pass; the retained 283-byte CSV matches the original binding/native snapshot, and both source files match their initial hashes. After the final answer, request 5 is explicitly a chat-title request containing a public user/assistant summary. It timed out after 90,030 ms. The native turn remains completed because the title error is caught, but mandatory accounting remains unknown. The study adapter deliberately awaits this auxiliary lifecycle; ordinary HTTP title scheduling is background work, so no ordinary-UI delay claim follows. Accounting is unchanged and primary stays false. This arm occurs after the bounded health window; the earlier sleep records do not establish its timeout cause.",
+    "originalPrimarySuccess": false,
+    "originalCallerStatus": "accounting_uncertain",
+    "originalOraclePass": true,
+    "originalFailedChecks": [],
+    "originalNativeIdentity": "bound",
+    "originalNativeStatus": "completed",
+    "originalInputIdentical": true,
+    "originalBoundaryValid": true,
+    "originalInspectionAllowed": true,
+    "originalDelivery": {
+      "selectedPathPresent": true,
+      "evidence": "final-text",
+      "candidateCount": 1,
+      "invalidCandidateCount": 0
+    },
+    "originalUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": null,
+      "costUsd": null,
+      "generatedTokens": null,
+      "mandatoryUsageKnown": false,
+      "missingUsage": true,
+      "observedGeneratedTokens": 1667,
+      "observedPromptTokens": 25525,
+      "promptTokens": null,
+      "providerRequests": 5
+    },
+    "originalDurationsMs": {
+      "elapsedMs": 130785.4535000003,
+      "processObservationElapsedMs": 130783.61595800007,
+      "totalAttemptElapsedMs": 131332.393042,
+      "totalAttemptElapsedWallMs": 131331
+    },
+    "publicToolEventCount": 4,
+    "publicFinalText": "The left join is complete. I've preserved the original order of `orders.csv`, leading zeroes in `customer_id`, and the embedded commas, quotes, and newlines in `customer_name`. Orders with no matching customer (`customer_id` 9999) have an empty `customer_name` field.\n\n**Deliverable:**\n- [artifacts/joined.csv](artifacts/joined.csv) \u2014 8 orders, columns `order_id,customer_id,total_cents,customer_name`.\n\n```csv\norder_id,customer_id,total_cents,customer_name\nORD-000,0012,4491,\"Mira\nWarehouse\"\nORD-001,9999,9123,\nORD-002,0007,9635,\"Ayu, \"\"North\"\"\"\nORD-003,0103,4007,Rafi Hasan\nORD-004,0012,6560,\"Mira\nWarehouse\"\nORD-005,9999,1973,\nORD-006,0007,4605,\"Ayu, \"\"North\"\"\"\nORD-007,0103,6988,Rafi Hasan\n```",
+    "attribution": {
+      "kind": "this report, original public native/tool/request metadata and artifact bytes only"
+    },
+    "evidenceFiles": [
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-csv_join-v2-r1-atlas/runner-input.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-csv_join-v2-r1-atlas/result.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-csv_join-v2-r1-atlas/caller-return.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-csv_join-v2-r1-atlas/invocation.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-csv_join-v2-r1-atlas/process/process-outcome.json",
+      "/private/tmp/atlas-native-file-v3-c9-confirmation-census/public-failures/confirmatory-1788766021520-052b6932-native-files-confirmatory-csv_join-v2-r1-atlas.json"
+    ],
+    "newScoreComputed": false
+  },
+  {
+    "ordinal": 75,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r1-atlas",
+    "family": "docx_report",
+    "harness": "atlas",
+    "category": "Completed DOCX rejected by original oracle",
+    "diagnosis": "All six supplied facts are present across document paragraphs plus the correct Action/Due table. Action and due occur only in the table, contrary to the explicit instruction to include all supplied facts in readable paragraphs as well. This is a paragraph-location contract failure, not evidence of missing facts throughout the document.",
+    "originalPrimarySuccess": false,
+    "originalCallerStatus": "completed",
+    "originalOraclePass": false,
+    "originalFailedChecks": ["fact:action", "fact:due"],
+    "originalNativeIdentity": "bound",
+    "originalNativeStatus": "completed",
+    "originalInputIdentical": true,
+    "originalBoundaryValid": true,
+    "originalInspectionAllowed": true,
+    "originalDelivery": {
+      "selectedPathPresent": true,
+      "evidence": "final-text",
+      "candidateCount": 1,
+      "invalidCandidateCount": 0
+    },
+    "originalUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": 33920,
+      "costUsd": null,
+      "generatedTokens": 2168,
+      "mandatoryUsageKnown": true,
+      "missingUsage": false,
+      "observedGeneratedTokens": 2168,
+      "observedPromptTokens": 39955,
+      "promptTokens": 39955,
+      "providerRequests": 7
+    },
+    "originalDurationsMs": {
+      "elapsedMs": 58691.03908299934,
+      "processObservationElapsedMs": 58687.02099999972,
+      "totalAttemptElapsedMs": 59232.90354099963,
+      "totalAttemptElapsedWallMs": 59233
+    },
+    "publicToolEventCount": 5,
+    "publicFinalText": "Done. The deliverable is:\n\n**`artifacts/incident-report.docx`**\n\nContents:\n- **Heading 1:** \"Incident report\"\n- **Paragraphs:** INC-3142, owner Nara Wijaya, cause (Barcode printer offline), 25 affected orders \u2014 all sourced from the JSON. A note that no resolved status, impact duration, or financial loss has been determined.\n- **Table** (2 columns, 1 data row): Action = \"Replace printer cable\", Due = \"2026-10-22\"\n- Input file `input/incident.json` left untouched.",
+    "attribution": {
+      "kind": "root independent retrospective package inspection",
+      "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-docx-contract-review/all-seven-diagnoses.json",
+      "sha256": "620d380e60658f2557d8ced51750cf7c4dc7e1b0f72a673c3b3c4b6e4f9ccc3d",
+      "additionalUnscoredLimitation": "The statement that resolved status, impact duration or financial loss has not been determined at this time is not established by the supplied input. The original limited forbidden-positive-phrase check passes; this inspection adds no score."
+    },
+    "evidenceFiles": [
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r1-atlas/runner-input.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r1-atlas/result.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r1-atlas/caller-return.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r1-atlas/invocation.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r1-atlas/process/process-outcome.json",
+      "/private/tmp/atlas-native-file-v3-c9-confirmation-census/public-failures/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r1-atlas.json"
+    ],
+    "newScoreComputed": false
+  },
+  {
+    "ordinal": 81,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v0-r1-atlas",
+    "family": "docx_report",
+    "harness": "atlas",
+    "category": "Completed DOCX rejected by original oracle",
+    "diagnosis": "All six supplied facts are present across document paragraphs plus the correct Action/Due table. Action and due occur only in the table, contrary to the explicit instruction to include all supplied facts in readable paragraphs as well. This is a paragraph-location contract failure, not evidence of missing facts throughout the document.",
+    "originalPrimarySuccess": false,
+    "originalCallerStatus": "completed",
+    "originalOraclePass": false,
+    "originalFailedChecks": ["fact:action", "fact:due"],
+    "originalNativeIdentity": "bound",
+    "originalNativeStatus": "completed",
+    "originalInputIdentical": true,
+    "originalBoundaryValid": true,
+    "originalInspectionAllowed": true,
+    "originalDelivery": {
+      "selectedPathPresent": true,
+      "evidence": "final-text",
+      "candidateCount": 1,
+      "invalidCandidateCount": 0
+    },
+    "originalUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": 28736,
+      "costUsd": null,
+      "generatedTokens": 2240,
+      "mandatoryUsageKnown": true,
+      "missingUsage": false,
+      "observedGeneratedTokens": 2240,
+      "observedPromptTokens": 41206,
+      "promptTokens": 41206,
+      "providerRequests": 7
+    },
+    "originalDurationsMs": {
+      "elapsedMs": 56468.61237500049,
+      "processObservationElapsedMs": 56465.56345800031,
+      "totalAttemptElapsedMs": 56917.08816700056,
+      "totalAttemptElapsedWallMs": 56917
+    },
+    "publicToolEventCount": 5,
+    "publicFinalText": "`artifacts/incident-report.docx` is ready. It includes the \"Incident report\" heading, paragraphs for the incident facts (ID, owner, affected orders, and cause), and a table with the action and due date.",
+    "attribution": {
+      "kind": "root independent retrospective package inspection",
+      "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-docx-contract-review/all-seven-diagnoses.json",
+      "sha256": "620d380e60658f2557d8ced51750cf7c4dc7e1b0f72a673c3b3c4b6e4f9ccc3d",
+      "additionalUnscoredLimitation": null
+    },
+    "evidenceFiles": [
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v0-r1-atlas/runner-input.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v0-r1-atlas/result.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v0-r1-atlas/caller-return.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v0-r1-atlas/invocation.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v0-r1-atlas/process/process-outcome.json",
+      "/private/tmp/atlas-native-file-v3-c9-confirmation-census/public-failures/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v0-r1-atlas.json"
+    ],
+    "newScoreComputed": false
+  },
+  {
+    "ordinal": 82,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v0-r1-hermes",
+    "family": "docx_report",
+    "harness": "hermes",
+    "category": "Completed DOCX rejected by original oracle",
+    "diagnosis": "All six supplied facts are present across document paragraphs plus the correct Action/Due table. Action and due occur only in the table, contrary to the explicit instruction to include all supplied facts in readable paragraphs as well. This is a paragraph-location contract failure, not evidence of missing facts throughout the document.",
+    "originalPrimarySuccess": false,
+    "originalCallerStatus": "completed",
+    "originalOraclePass": false,
+    "originalFailedChecks": ["fact:action", "fact:due"],
+    "originalNativeIdentity": "bound",
+    "originalNativeStatus": "completed",
+    "originalInputIdentical": true,
+    "originalBoundaryValid": true,
+    "originalInspectionAllowed": true,
+    "originalDelivery": {
+      "selectedPathPresent": true,
+      "evidence": "final-text",
+      "candidateCount": 1,
+      "invalidCandidateCount": 0
+    },
+    "originalUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": 19776,
+      "costUsd": null,
+      "generatedTokens": 1263,
+      "mandatoryUsageKnown": true,
+      "missingUsage": false,
+      "observedGeneratedTokens": 1263,
+      "observedPromptTokens": 27679,
+      "promptTokens": 27679,
+      "providerRequests": 5
+    },
+    "originalDurationsMs": {
+      "elapsedMs": 26425.999875000678,
+      "processObservationElapsedMs": 26423.327124999836,
+      "totalAttemptElapsedMs": 26821.767625000328,
+      "totalAttemptElapsedWallMs": 26822
+    },
+    "publicToolEventCount": 3,
+    "publicFinalText": "The Word document has been created successfully.\n\n**Deliverable:** `artifacts/incident-report.docx` (36,873 bytes)\n\n**Document contents:**\n- **Title:** \"Incident report\" (heading level 0)\n- **Paragraphs:** Four sections covering all incident facts:\n  - Incident: INC-2936\n  - Owner: Nara Wijaya\n  - Affected orders: 33\n  - Cause: Barcode printer offline\n- **Table:** 2 columns (Action, Due) with 1 data row:\n  - Replace printer cable | 2026-10-24\n\nNo status, impact duration, or financial loss figures were invented. The source file `input/incident.json` remains unchanged.",
+    "attribution": {
+      "kind": "root independent retrospective package inspection",
+      "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-docx-contract-review/all-seven-diagnoses.json",
+      "sha256": "620d380e60658f2557d8ced51750cf7c4dc7e1b0f72a673c3b3c4b6e4f9ccc3d",
+      "additionalUnscoredLimitation": null
+    },
+    "evidenceFiles": [
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v0-r1-hermes/runner-input.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v0-r1-hermes/result.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v0-r1-hermes/caller-return.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v0-r1-hermes/invocation.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v0-r1-hermes/process/process-outcome.json",
+      "/private/tmp/atlas-native-file-v3-c9-confirmation-census/public-failures/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v0-r1-hermes.json"
+    ],
+    "newScoreComputed": false
+  },
+  {
+    "ordinal": 107,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r1-hermes",
+    "family": "docx_report",
+    "harness": "hermes",
+    "category": "Completed DOCX rejected by original oracle",
+    "diagnosis": "Case-sensitive oracle mismatch: all six supplied facts occur in readable paragraphs; cause and action begin in lowercase in prose. Their meaning is preserved. Exact action and due are also in the required table. No missing-fact or paragraph-omission conclusion is supported by these two failed checks.",
+    "originalPrimarySuccess": false,
+    "originalCallerStatus": "completed",
+    "originalOraclePass": false,
+    "originalFailedChecks": ["fact:cause", "fact:action"],
+    "originalNativeIdentity": "bound",
+    "originalNativeStatus": "completed",
+    "originalInputIdentical": true,
+    "originalBoundaryValid": true,
+    "originalInspectionAllowed": true,
+    "originalDelivery": {
+      "selectedPathPresent": true,
+      "evidence": "final-text",
+      "candidateCount": 1,
+      "invalidCandidateCount": 0
+    },
+    "originalUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": 58368,
+      "costUsd": null,
+      "generatedTokens": 1194,
+      "mandatoryUsageKnown": true,
+      "missingUsage": false,
+      "observedGeneratedTokens": 1194,
+      "observedPromptTokens": 67150,
+      "promptTokens": 67150,
+      "providerRequests": 10
+    },
+    "originalDurationsMs": {
+      "elapsedMs": 74113.53316699993,
+      "processObservationElapsedMs": 74111.87062500045,
+      "totalAttemptElapsedMs": 74567.12070799991,
+      "totalAttemptElapsedWallMs": 74567
+    },
+    "publicToolEventCount": 8,
+    "publicFinalText": "**Finished deliverable:** `artifacts/incident-report.docx`\n\nThe document contains:\n\n- **Heading 1:** \"Incident report\"\n- **Paragraph 1:** Incident INC-2000, owner Nara Wijaya, 17 affected orders, cause \"barcode printer offline\"\n- **Paragraph 2:** Corrective action \"replace printer cable\", due 2026-10-12\n- **Table** (2 columns: Action / Due) with one data row: \"Replace printer cable\" | \"2026-10-12\"\n\nNo resolved status, impact duration, or financial loss was invented. The source file `input/incident.json` is unchanged (178 bytes, original timestamp).",
+    "attribution": {
+      "kind": "root independent retrospective package inspection",
+      "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-docx-contract-review/all-seven-diagnoses.json",
+      "sha256": "620d380e60658f2557d8ced51750cf7c4dc7e1b0f72a673c3b3c4b6e4f9ccc3d",
+      "additionalUnscoredLimitation": null
+    },
+    "evidenceFiles": [
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r1-hermes/runner-input.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r1-hermes/result.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r1-hermes/caller-return.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r1-hermes/invocation.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r1-hermes/process/process-outcome.json",
+      "/private/tmp/atlas-native-file-v3-c9-confirmation-census/public-failures/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r1-hermes.json"
+    ],
+    "newScoreComputed": false
+  },
+  {
+    "ordinal": 108,
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r1-atlas",
+    "family": "docx_report",
+    "harness": "atlas",
+    "category": "Completed DOCX rejected by original oracle",
+    "diagnosis": "All six supplied facts are present across document paragraphs plus the correct Action/Due table. Action and due occur only in the table, contrary to the explicit instruction to include all supplied facts in readable paragraphs as well. This is a paragraph-location contract failure, not evidence of missing facts throughout the document.",
+    "originalPrimarySuccess": false,
+    "originalCallerStatus": "completed",
+    "originalOraclePass": false,
+    "originalFailedChecks": ["fact:action", "fact:due"],
+    "originalNativeIdentity": "bound",
+    "originalNativeStatus": "completed",
+    "originalInputIdentical": true,
+    "originalBoundaryValid": true,
+    "originalInspectionAllowed": true,
+    "originalDelivery": {
+      "selectedPathPresent": true,
+      "evidence": "final-text",
+      "candidateCount": 1,
+      "invalidCandidateCount": 0
+    },
+    "originalUsage": {
+      "budgetExceeded": false,
+      "cachedTokens": 20160,
+      "costUsd": null,
+      "generatedTokens": 2150,
+      "mandatoryUsageKnown": true,
+      "missingUsage": false,
+      "observedGeneratedTokens": 2150,
+      "observedPromptTokens": 25850,
+      "promptTokens": 25850,
+      "providerRequests": 5
+    },
+    "originalDurationsMs": {
+      "elapsedMs": 47325.849874999374,
+      "processObservationElapsedMs": 47323.25416699983,
+      "totalAttemptElapsedMs": 47809.67950000055,
+      "totalAttemptElapsedWallMs": 47809
+    },
+    "publicToolEventCount": 3,
+    "publicFinalText": "I have created the incident report document.\n\n**Deliverable:**\n- **File:** `artifacts/incident-report.docx`\n\nThe document contains the heading \"Incident report\" and all supplied facts (Incident ID: INC-2000, Owner: Nara Wijaya, Affected Orders: 17, Cause: Barcode printer offline) in readable paragraphs. It also includes the required table with \"Action\" and \"Due\" columns and the corresponding data from the input.",
+    "attribution": {
+      "kind": "root independent retrospective package inspection",
+      "path": "/private/tmp/atlas-native-file-v3-c9-confirmation-docx-contract-review/all-seven-diagnoses.json",
+      "sha256": "620d380e60658f2557d8ced51750cf7c4dc7e1b0f72a673c3b3c4b6e4f9ccc3d",
+      "additionalUnscoredLimitation": null
+    },
+    "evidenceFiles": [
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r1-atlas/runner-input.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r1-atlas/result.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r1-atlas/caller-return.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r1-atlas/invocation.json",
+      "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/trials/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r1-atlas/process/process-outcome.json",
+      "/private/tmp/atlas-native-file-v3-c9-confirmation-census/public-failures/confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r1-atlas.json"
+    ],
+    "newScoreComputed": false
+  }
+]

@@ -14,6 +14,7 @@ export interface GuildMessageHandlingDecision {
     | "claim-thread"
     | "reply-to-bot"
     | "bot-mention"
+    | "attachment"
     | "no-text"
     | "no-trigger";
   shouldHandle: boolean;
@@ -109,6 +110,21 @@ export function shouldHandleGuildMessage(
     .shouldHandle;
 }
 
+export function isDiscordGuildMessageAddressed(
+  message: Message,
+  storedBotInfo?: DiscordBotInfo,
+  options?: GuildMessageHandlingOptions
+): boolean {
+  if (message.content?.trim().startsWith("/") || options?.botOwnsThread) {
+    return true;
+  }
+  const botInfo = resolveBotInfo(message, storedBotInfo);
+  return Boolean(
+    botInfo &&
+      (isReplyToBot(message, botInfo.id) || hasBotMention(message, botInfo))
+  );
+}
+
 export function explainGuildMessageHandling(
   message: Message,
   storedBotInfo?: DiscordBotInfo,
@@ -119,6 +135,15 @@ export function explainGuildMessageHandling(
 
   if (text.startsWith("/")) {
     return { reason: "slash-command", shouldHandle: true };
+  }
+
+  // Attachments are work requests even without a mention. The handler still
+  // authorizes the sender and room before downloading or claiming a thread.
+  if ((message.attachments?.size ?? 0) > 0) {
+    return {
+      reason: message.channel.isThread() ? "claim-thread" : "attachment",
+      shouldHandle: true,
+    };
   }
 
   if (!botInfo) {

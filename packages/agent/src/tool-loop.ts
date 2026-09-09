@@ -1,5 +1,6 @@
 import {
   distillToolResult,
+  evaluateActionRisk,
   executeProtectedTool,
   metrics,
   serializeToolOutput,
@@ -9,6 +10,11 @@ import {
   type ToolDefinition,
   withSpan,
 } from "@atlas/core";
+import {
+  reportToolLifecycleError,
+  type ToolExecutionLifecycle,
+  type ToolInvocationLifecycle,
+} from "./tool-execution-lifecycle";
 import { toolResultError } from "./tool-progress";
 
 export function findTool(
@@ -27,14 +33,17 @@ export function canRunToolCallsInParallel(
   }
 
   return toolCalls.every(
-    (call) => findTool(tools, call.name)?.parallelSafe === true
+    (call) =>
+      findTool(tools, call.name)?.parallelSafe === true &&
+      !evaluateActionRisk(call.name, call.arguments).requiresApproval
   );
 }
 
 export async function executeToolCall(
   tools: ToolDefinition[],
   call: ToolCall,
-  context: ToolContext = {}
+  context: ToolContext = {},
+  lifecycle?: ToolExecutionLifecycle
 ): Promise<unknown> {
   const tool = findTool(tools, call.name);
 
@@ -49,20 +58,27 @@ export async function executeToolCall(
   const startMs = Date.now();
   try {
     return await withSpan(`tool.${call.name}`, async () => {
-      const guardedTool: ToolDefinition = context.beforeToolCall
-        ? {
-            ...tool,
-            async run(input, runContext) {
-              await runContext.beforeToolCall?.();
-              return tool.run(input, runContext);
-            },
-          }
-        : tool;
-      const execution = await executeProtectedTool(
-        guardedTool,
-        call.arguments,
-        context
-      );
+      let invocation: ToolInvocationLifecycle | undefined;
+      if (lifecycle) {
+        try {
+          invocation = await lifecycle.begin(call, context);
+        } catch (error) {
+          reportToolLifecycleError(lifecycle, error, "begin");
+        }
+      }
+      const execution = await executeProtectedTool(tool, call.arguments, {
+        ...context,
+        artifactPublisher: invocation?.publisher,
+      });
+
+      if (invocation && lifecycle) {
+        try {
+          // Observe the actual protected result before any history distillation.
+          await invocation.complete(execution);
+        } catch (error) {
+          reportToolLifecycleError(lifecycle, error, "complete");
+        }
+      }
 
       const durationMs = Date.now() - startMs;
       metrics.toolLatencyMs.observe(durationMs, { tool: call.name });

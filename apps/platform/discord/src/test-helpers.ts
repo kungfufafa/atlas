@@ -144,6 +144,20 @@ export function createMockClient(
   const currentOrgId = () => orgIdScope.getStore()?.orgId ?? activeOrgId;
 
   const client = {
+    addDiscordAllowedUser: async (input: {
+      requesterChannelUserId: string;
+      targetChannelUserId: string;
+    }) => {
+      const { addDiscordAllowedUserId } = await import(
+        "@atlas/core/discord-config"
+      );
+      return addDiscordAllowedUserId(input.targetChannelUserId);
+    },
+    authorizeChannelPrincipal: async () => ({
+      orgId: currentOrgId(),
+      userId: "user_test",
+    }),
+    bindChannelActionContext: async () => ({ bound: true as const }),
     bindChannelPrincipal: async (
       input: Parameters<AtlasClient["bindChannelPrincipal"]>[0]
     ) => {
@@ -271,6 +285,7 @@ export function createMockClient(
 }
 
 export interface MockDmMessage {
+  componentMessages: unknown[];
   fileSendCalls: number;
   message: Message;
   sentMessages: string[];
@@ -288,6 +303,7 @@ export function createDmMessage(options: {
   }>;
 }): MockDmMessage {
   const sentMessages: string[] = [];
+  const componentMessages: unknown[] = [];
   const sentMessageById: Map<string, number> = new Map();
   let fileSendCalls = 0;
   const channelId = options.channelId ?? "dm_channel_1";
@@ -299,7 +315,9 @@ export function createDmMessage(options: {
     isThread: () => false,
     messages: {
       fetch: async (messageId: string) => ({
-        edit: async (text: string) => {
+        edit: async (payload: string | { content?: string }) => {
+          const text =
+            typeof payload === "string" ? payload : (payload.content ?? "");
           const index = sentMessageById.get(messageId);
           if (index !== undefined) {
             sentMessages[index] = text.slice(0, 2000);
@@ -308,9 +326,13 @@ export function createDmMessage(options: {
       }),
     },
     parentId: null,
-    send: async (payload: string | { files: unknown[] }) => {
-      if (typeof payload === "string") {
-        sentMessages.push(payload);
+    send: async (payload: string | { files?: unknown[]; content?: string }) => {
+      if (typeof payload !== "string" && "components" in payload) {
+        componentMessages.push(payload);
+      }
+      const text = typeof payload === "string" ? payload : payload.content;
+      if (typeof text === "string") {
+        sentMessages.push(text);
         const id = String(sentMessages.length);
         sentMessageById.set(id, sentMessages.length - 1);
         return { id };
@@ -347,6 +369,7 @@ export function createDmMessage(options: {
   } as unknown as Message;
 
   return {
+    componentMessages,
     get fileSendCalls() {
       return fileSendCalls;
     },
@@ -705,9 +728,13 @@ export async function writeDiscordConfigIni(
     handshakeUserId?: string | null;
     pairedUserIds?: string[];
     allowedUserIds?: string[];
+    blockedUserIds?: string[];
+    orgId?: string;
   }
 ): Promise<void> {
-  const dir = path.join(homeDir, ".atlas", "discord");
+  const dir = config.orgId
+    ? path.join(homeDir, ".atlas", "orgs", config.orgId, "channels", "discord")
+    : path.join(homeDir, ".atlas", "discord");
   await mkdir(dir, { recursive: true });
 
   const lines = [
@@ -735,6 +762,10 @@ export async function writeDiscordConfigIni(
 
   if (config.allowedUserIds?.length) {
     lines.push(`allowed_user_ids=${config.allowedUserIds.join(",")}`);
+  }
+
+  if (config.blockedUserIds?.length) {
+    lines.push(`blocked_user_ids=${config.blockedUserIds.join(",")}`);
   }
 
   lines.push("");

@@ -1,0 +1,6356 @@
+{
+  "queryStarted": "2026-09-07T09:20:54.715819+00:00",
+  "windowUTC": ["2026-09-07T08:20:00Z", "2026-09-07T09:20:00Z"],
+  "command": [
+    "/usr/bin/log",
+    "show",
+    "--start",
+    "2026-09-07 08:20:00+0000",
+    "--end",
+    "2026-09-07 09:20:00+0000",
+    "--timezone",
+    "UTC",
+    "--style",
+    "ndjson",
+    "--info",
+    "--no-debug",
+    "--no-backtrace",
+    "--no-signpost",
+    "--predicate",
+    "(process == \"powerd\" OR process == \"kernel\") AND (eventMessage CONTAINS[c] \"sleep\" OR eventMessage CONTAINS[c] \"wake\")"
+  ],
+  "returnCode": 0,
+  "capturedBytes": 1551193,
+  "capturedSha256": "2718ed83d9b6f74211e7e601d017bdc957a38d8b71bb4d4e7f2a16941509d5cd",
+  "stderrBytes": 0,
+  "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "nonJsonLines": 0,
+  "records": [
+    {
+      "timestamp": "2026-09-07 08:20:01.569096+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:20:06.756646+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:20:12.158748+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:20:17.232149+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:20:22.282276+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:20:27.186634+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:20:32.195872+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:20:37.325833+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:20:42.846276+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:20:48.517121+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:20:53.523675+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:20:58.588348+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:03.798239+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:08.915312+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:14.068124+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:19.163729+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:24.398020+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:29.544257+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:34.587289+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:38.949539+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:38.950809+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:38.965765+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:39.633103+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:43.513231+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:43.513309+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:43.513372+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:43.513477+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:43.513589+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:46.929469+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:51.988666+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:21:57.166993+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:22:02.239637+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:22:07.299092+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:22:12.398703+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:22:14.009775+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:22:14.011212+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:22:14.025667+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:22:17.457717+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:22:22.569853+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:22:27.667136+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:22:32.727725+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:22:42.022291+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:22:47.067314+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:22:52.180088+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:22:54.179396+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:22:57.280827+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:02.740923+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:07.852544+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:12.926594+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:22.272718+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:27.424049+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:32.525939+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:37.658362+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.380764+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.380835+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.380859+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.380977+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.384105+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.384468+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.384598+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.385376+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.385392+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.399529+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404863+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404869+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404871+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404883+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404888+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404894+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404899+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404905+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404915+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404920+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404925+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404932+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404937+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404943+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404949+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404964+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404971+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404977+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404982+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404989+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.404995+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.405010+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.405655+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.405658+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.405660+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.405671+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.405720+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.409523+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.422160+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.434499+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.434502+0000",
+      "category": "system_sleep"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.483018+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.483283+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:40.518822+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:41.045334+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:41.055813+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:41.072135+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:41.072661+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:41.072724+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:41.072780+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:41.072819+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:41.072877+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:41.072921+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:41.072977+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:41.492433+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:41.492541+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:41.494835+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:41.494980+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:41.494985+0000",
+      "category": "darkwake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:41.495029+0000",
+      "category": "system_sleep"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:42.082530+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:42.781481+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.422810+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.423215+0000",
+      "category": "darkwake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.423385+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.423446+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.423456+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.423463+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.423467+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.424263+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.424267+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.447239+0000",
+      "category": "sleep_entry"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.480464+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.741828+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.742088+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.742094+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743797+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743804+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743806+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743807+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743808+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743809+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743811+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743812+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743815+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743818+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743963+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743966+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743971+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743973+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743974+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743986+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743987+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743988+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743990+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743992+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743995+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743996+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743998+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.743999+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744001+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744003+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744009+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744010+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744011+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744016+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744022+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744030+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744033+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744036+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744041+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744043+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744044+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744045+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744047+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744048+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744049+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744050+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744052+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744053+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744054+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744055+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744057+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744059+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744066+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744068+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744093+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744095+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744650+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744660+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744661+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744848+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.744849+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745680+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745682+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745687+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745688+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745689+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745690+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745691+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745692+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745693+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745694+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745695+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745696+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745697+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745698+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745699+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745699+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745700+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745701+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745702+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745703+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745704+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745705+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745706+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745707+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745708+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745709+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745710+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745711+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.745712+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.754521+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.754566+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.755377+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.755392+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.767731+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.770834+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.770846+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.770852+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.771185+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.785013+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.796030+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.798611+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.805609+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.805647+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.815222+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.818236+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.821138+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.821181+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:45.841543+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.074407+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.103657+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.103707+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.103723+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.103745+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.103787+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.103803+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.108405+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.108452+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.108464+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.109061+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.109088+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.109119+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.131601+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.131618+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.149787+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.149813+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.149827+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.149842+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.149853+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.149861+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.149868+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.149877+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.150008+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.150013+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.153069+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.153084+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.155199+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.155451+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.156035+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.156107+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.156483+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.157361+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.175062+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.194084+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.194445+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.194455+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.194512+0000",
+      "category": "system_sleep"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.194516+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.194548+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.194557+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.194571+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.194593+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.194610+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.194618+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.194634+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.195522+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.195538+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.195554+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.195602+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.195640+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.195677+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.195697+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.195724+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.195757+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.195773+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.195795+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.195825+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.195849+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.195875+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.195921+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.195968+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.196030+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.196048+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.196522+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.196547+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.200867+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201267+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201624+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201650+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201670+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201688+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201708+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201727+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201762+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201784+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201803+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201820+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201836+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201856+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201873+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201889+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201907+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201923+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201942+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201965+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.201984+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.202012+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.202027+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.202048+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.202073+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.202103+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.202136+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.202228+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.202242+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:23:46.202315+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:04.996147+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:04.996161+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:04.996181+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:04.996219+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:04.996235+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:04.996246+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:04.996580+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:04.996605+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:04.996625+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:04.996637+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:04.996936+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:04.998458+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.002139+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.002397+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003036+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003050+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003056+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003070+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003082+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003095+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003104+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003129+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003158+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003172+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003181+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003190+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003206+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003225+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003241+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003271+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003292+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003317+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003733+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003750+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003754+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003867+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.003887+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.004745+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.004763+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.004798+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.004807+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.004999+0000",
+      "category": "system_wake"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.005408+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.005422+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.006002+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.006037+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.007608+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.007627+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.007641+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.007673+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.009532+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.010584+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.011162+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.012540+0000",
+      "category": "wake_from_sleep"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.034186+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.034251+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.109463+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.151348+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.208183+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.208188+0000",
+      "category": "system_wake"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.208189+0000",
+      "category": "system_wake"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.208214+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.208215+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.208220+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.208227+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.208229+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.208234+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.208236+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.208238+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.208647+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.208657+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.212646+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.217345+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.217944+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.217955+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.219028+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.259012+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.259253+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.259548+0000",
+      "category": "darkwake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.259549+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.266559+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.266617+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.266797+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.267520+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.267525+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.267532+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.267535+0000",
+      "category": "darkwake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.267555+0000",
+      "category": "system_sleep"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.287153+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.295707+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.303758+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.303768+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.303783+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.306615+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.326874+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.326884+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.335241+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.335248+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.335254+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.335260+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.371887+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.391688+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.394545+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.425521+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.444423+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.450378+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.450391+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.450497+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.450506+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.455780+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.455793+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.456228+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.456339+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.456415+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.456423+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.539673+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.564636+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.614767+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.615321+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:05.985501+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:06.023294+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:06.023310+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:06.122050+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:06.299827+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:10.374977+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:11.214226+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:11.295733+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:12.040848+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:15.214182+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:15.214579+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:15.374065+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:15.475171+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:17.446228+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:17.580214+0000",
+      "category": "darkwake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:17.580304+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:17.580335+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:17.580341+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:17.580347+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:17.580350+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:17.580406+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:17.580710+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:17.580713+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:17.598279+0000",
+      "category": "sleep_entry"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.126021+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.354908+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355148+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355155+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355669+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355729+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355732+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355810+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355823+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355825+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355851+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355853+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355857+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355907+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355910+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355916+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355918+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355920+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355921+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355923+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355925+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355926+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355928+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355930+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355931+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355933+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355934+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355936+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355938+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355939+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355941+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355943+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355945+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355946+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355948+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355950+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355951+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355953+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355954+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355956+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355958+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.355959+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.359897+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.373374+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.373896+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.374280+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.374303+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.398351+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.398359+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.398371+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.398385+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.398420+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.404034+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.404055+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.404063+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.404329+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.404341+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.404355+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.421554+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.421561+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.439061+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.439109+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.439112+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.440521+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.440526+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.440929+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.440935+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.440954+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.441066+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.441962+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.442066+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.458487+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.477314+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.477482+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.477486+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.477506+0000",
+      "category": "system_sleep"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.477510+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.477530+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.477532+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.477538+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.477550+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.477560+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.477563+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.477576+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.478217+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.478237+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.478251+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.478269+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.478298+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.478315+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.478325+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.478355+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.478377+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.478392+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.478408+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.478448+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.478469+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.478495+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.478523+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.478552+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.478651+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.478667+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.479140+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.479163+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.484203+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.484600+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.484989+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485011+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485028+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485048+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485067+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485087+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485118+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485156+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485175+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485196+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485212+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485230+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485245+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485265+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485281+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485299+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485315+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485333+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485353+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485370+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485391+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485418+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485437+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485498+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485518+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485634+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485650+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:25:18.485741+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.111408+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.111421+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.111438+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.111474+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.111492+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.111501+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.111850+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.111876+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.111896+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.111906+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.112214+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.113661+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.117270+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.117560+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118196+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118209+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118216+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118226+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118240+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118260+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118276+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118301+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118356+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118377+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118394+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118403+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118419+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118438+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118459+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118482+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118498+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118517+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118937+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118955+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.118956+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.119080+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.119095+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.119869+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.119884+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.119915+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.119923+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.120139+0000",
+      "category": "system_wake"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.120524+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.120536+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.121094+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.121126+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.122829+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.122844+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.122875+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.122898+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.125032+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.125836+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.126632+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.127897+0000",
+      "category": "wake_from_sleep"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.227523+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.248450+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.248599+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.249075+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.324759+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.324771+0000",
+      "category": "system_wake"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.324774+0000",
+      "category": "system_wake"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.324833+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.324835+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.324845+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.324864+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.324868+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.324879+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.324884+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.324888+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.326627+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.326728+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.329845+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.358488+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.358502+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.373018+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.397753+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.403363+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.403424+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.403588+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.451352+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.451566+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.452490+0000",
+      "category": "darkwake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.452494+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.463369+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.467425+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.467443+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.467458+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.467464+0000",
+      "category": "darkwake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.467513+0000",
+      "category": "system_sleep"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:01.720556+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:03.454404+0000",
+      "category": "darkwake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:03.454518+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:03.454563+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:03.454573+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:03.454581+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:03.454586+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:03.455267+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:03.455273+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:03.472697+0000",
+      "category": "sleep_entry"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.256662+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.257121+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.257128+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258689+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258762+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258764+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258847+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258862+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258864+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258892+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258894+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258899+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258952+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258956+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258963+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258965+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258967+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258969+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258970+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258972+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258974+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258976+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258977+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258979+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258981+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258982+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258984+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258986+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258988+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258990+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258991+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258993+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258995+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258996+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.258998+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.259000+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.259001+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.259003+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.259005+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.259007+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.259009+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.262769+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.279462+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.279584+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.279935+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.279953+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.304936+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.304951+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.304969+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.304993+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.305036+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.308773+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.308796+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.308804+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.309100+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.309114+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.309130+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.316863+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.316868+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.334251+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.334294+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.334297+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.335591+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.335597+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.336085+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.336093+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.336105+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.336118+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.353382+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.354339+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.354441+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.390430+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.390522+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.390525+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.390539+0000",
+      "category": "system_sleep"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.390540+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.390549+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.390551+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.390554+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.390559+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.390563+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.390574+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.390582+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391109+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391129+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391142+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391158+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391179+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391193+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391203+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391213+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391231+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391246+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391258+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391278+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391291+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391300+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391323+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391340+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391402+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391409+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391824+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.391850+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.395324+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396290+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396599+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396620+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396646+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396660+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396674+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396698+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396748+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396765+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396778+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396798+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396809+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396819+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396833+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396844+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396855+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396866+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396879+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396890+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396901+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396912+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396926+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396937+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396950+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396963+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.396978+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.397039+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.397049+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:41:06.397120+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.111494+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.111507+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.111518+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.111562+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.111579+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.111592+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.112097+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.112134+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.112151+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.112163+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.112529+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.114188+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.118164+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.118523+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119295+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119314+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119325+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119336+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119348+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119363+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119373+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119398+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119458+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119465+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119478+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119494+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119517+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119531+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119542+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119559+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119569+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119582+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119781+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119796+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119821+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119955+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.119970+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.120691+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.120705+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.120734+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.120739+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.120889+0000",
+      "category": "system_wake"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.121287+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.121298+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.121709+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.121733+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.123992+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.124015+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.124028+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.124052+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.126162+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.126865+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.128236+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.128435+0000",
+      "category": "wake_from_sleep"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.195036+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.214922+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.215104+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.227242+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.292547+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.292563+0000",
+      "category": "system_wake"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.292565+0000",
+      "category": "system_wake"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.292628+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.292629+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.292635+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.292649+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.292654+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.292658+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.292660+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.292667+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.295223+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.295255+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.297345+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.317601+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.317612+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.331932+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.332106+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.333860+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.333974+0000",
+      "category": "darkwake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.333976+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.339288+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.339410+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.339418+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.339430+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.339436+0000",
+      "category": "darkwake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.339486+0000",
+      "category": "system_sleep"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.355227+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.362988+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.363030+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.363131+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:16.569966+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:18.080262+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:18.340541+0000",
+      "category": "darkwake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:18.340625+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:18.340655+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:18.340662+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:18.340667+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:18.340670+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:18.341164+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:18.341168+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:18.353855+0000",
+      "category": "sleep_entry"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.237805+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.238223+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.238233+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239107+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239187+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239191+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239303+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239323+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239326+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239363+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239366+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239371+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239438+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239443+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239451+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239454+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239457+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239460+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239462+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239465+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239467+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239470+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239473+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239475+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239478+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239480+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239483+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239486+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239488+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239491+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239493+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239496+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239498+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239501+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239503+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239506+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239509+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239511+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239514+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239516+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.239519+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.243874+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.260707+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.260805+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.261140+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.261159+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.282618+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.282633+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.282650+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.282671+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.282717+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.286880+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.286907+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.286918+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.287302+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.287320+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:21.287335+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.301824+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.301838+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.319646+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.319743+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.319748+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.322517+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.322530+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.323777+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.323864+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.324413+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.325306+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.325620+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.342322+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.342902+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.382093+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.382346+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.382355+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.382393+0000",
+      "category": "system_sleep"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.382396+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.382423+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.382428+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.382438+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.382453+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.382466+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.382490+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.382500+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.383253+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.383272+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.383288+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.383307+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.383336+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.383357+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.383368+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.383390+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.383414+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.383433+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.383451+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.383482+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.383505+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.383535+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.383565+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.383594+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.383646+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.383665+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.384150+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.384177+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.388186+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.388586+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.388970+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.388996+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389013+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389031+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389049+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389066+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389096+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389119+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389136+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389155+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389171+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389188+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389205+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389220+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389238+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389255+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389272+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389290+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389305+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389323+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389349+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389365+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389383+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389400+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389420+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389513+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389526+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 08:56:22.389598+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.098558+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.098571+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.098590+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.098627+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.098644+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.098656+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.099014+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.099039+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.099059+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.099071+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.099395+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.100842+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.104490+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.104748+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.105398+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.105411+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.105423+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.105443+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.105457+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.105467+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.105477+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.105493+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.105521+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.105536+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.105545+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.105554+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.105570+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.105590+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.105605+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.105647+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.105700+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.105723+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.106158+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.106174+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.106177+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.106291+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.106313+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.107198+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.107213+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.107244+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.107249+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.107458+0000",
+      "category": "system_wake"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.107836+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.107848+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.108407+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.108437+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.110197+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.110218+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.110233+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.110265+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.112428+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.113191+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.113879+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.115135+0000",
+      "category": "wake_from_sleep"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.135220+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.135323+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.135892+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.214216+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.309207+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.309217+0000",
+      "category": "system_wake"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.309219+0000",
+      "category": "system_wake"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.309270+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.309272+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.309282+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.309292+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.309297+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.309308+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.309318+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.309322+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.309738+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.309761+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.312188+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.312791+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.313035+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.313282+0000",
+      "category": "darkwake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.313283+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.314194+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.318115+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.318947+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.319067+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.319075+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.319087+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.319094+0000",
+      "category": "darkwake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.319155+0000",
+      "category": "system_sleep"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.333531+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.333544+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.337728+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.337739+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.337882+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.337986+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.338081+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.338091+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.348605+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.371448+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.377068+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.377111+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.377617+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.556127+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.803244+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:40.809840+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:41.339906+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:44.043931+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:45.348489+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:46.604354+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:46.604510+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:47.828350+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:47.828544+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:48.116206+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:48.116498+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:48.416092+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:48.416229+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:48.678186+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:48.678363+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:49.030141+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:49.030261+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:49.091372+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:49.091394+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:49.105554+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.391622+0000",
+      "category": "darkwake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.391716+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.391751+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.391757+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.391764+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.391767+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.392176+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.395014+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.395018+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.413056+0000",
+      "category": "sleep_entry"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.577200+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.577455+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.577462+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.577895+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.577952+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.577955+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578033+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578044+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578046+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578072+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578075+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578079+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578137+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578140+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578147+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578149+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578151+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578153+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578154+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578156+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578158+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578160+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578161+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578163+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578164+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578166+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578168+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578170+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578171+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578173+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578175+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578176+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578178+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578180+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578181+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578183+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578185+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578186+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578188+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578190+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.578191+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.585518+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.585561+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.585703+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.585717+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.596856+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.599835+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.599845+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.599851+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.599861+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.613560+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.623912+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.626607+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.630850+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.630861+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.642225+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.643084+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.643555+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.643585+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.668809+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.800838+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.820129+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.820166+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.820189+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.820212+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.820242+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.820256+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.822549+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.822596+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.822609+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.823108+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.823134+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.823159+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.840226+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.840241+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.858090+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.858177+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.858182+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.860920+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.860934+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.862198+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.862280+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.862799+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.862808+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.864778+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.865111+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.880417+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.901604+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.901888+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.901895+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.901939+0000",
+      "category": "system_sleep"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.901943+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.901972+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.901977+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.901987+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.902003+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.902018+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.902024+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.902036+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.902791+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.902810+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.902825+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.902844+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.902877+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.902898+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.902911+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.902934+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.902965+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.902985+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.903004+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.903034+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.903050+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.903074+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.903103+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.903134+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.903194+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.903214+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.903672+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.903700+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.907764+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908159+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908529+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908557+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908578+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908596+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908615+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908632+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908661+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908684+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908701+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908720+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908737+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908754+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908771+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908786+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908803+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908820+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908836+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908855+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908871+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908887+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908903+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908929+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908947+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908964+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.908984+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.909074+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.909087+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:07:50.909165+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.539075+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.539090+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.539109+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.539147+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.539169+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.539181+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.539506+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.539528+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.539548+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.539560+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.539849+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.543794+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.547421+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.547654+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.548269+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.548283+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.548288+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.548299+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.548305+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.548319+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.548325+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.548346+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.548374+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.548388+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.548398+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.548407+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.548423+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.548443+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.548463+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.548506+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.548563+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.548609+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.549042+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.549058+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.549062+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.549176+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.549210+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.550049+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.550066+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.550095+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.550103+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.550291+0000",
+      "category": "system_wake"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.550616+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.550694+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.550747+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.550761+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.551337+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.551370+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.553073+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.553091+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.553105+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.553130+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.555298+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.556373+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.557614+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.557912+0000",
+      "category": "wake_from_sleep"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.568824+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.569008+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.569009+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.569053+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.569066+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.569100+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.569139+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.569152+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.569162+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.569169+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.569196+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.569210+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.569222+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.569242+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.569252+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.569270+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.569975+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.569978+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.571198+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.582032+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.654016+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.682378+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.686152+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.686156+0000",
+      "category": "system_sleep"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.721823+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.768748+0000",
+      "category": "system_wake"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.768751+0000",
+      "category": "system_wake"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.768817+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.768820+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.768830+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.768839+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.768843+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.768853+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.768884+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.768901+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.768910+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.768913+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.768914+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.774754+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.774815+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.776736+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.801364+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.801390+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.817622+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.830402+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.830488+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.887209+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.928778+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.930072+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.934499+0000",
+      "category": "wake_from_sleep"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.934513+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.943152+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.943167+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.943288+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.943298+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.944553+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.944598+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.944601+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.944608+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.944699+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.944801+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.944892+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:40.946166+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.162734+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.223030+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.223035+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.223595+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.223614+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.223791+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.228970+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.238533+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.238541+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.238557+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.250882+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.250900+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.255643+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.255653+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.255660+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.255672+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.283347+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.305656+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.356292+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.399337+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.416210+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.417140+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.820833+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:41.893673+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:45.628390+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:45.628463+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:45.830034+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:49.570872+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:51.002115+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:56.188617+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:13:58.868395+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:14:01.483399+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:14:06.894090+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:14:10.552100+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:14:12.055620+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:14:17.206585+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:14:21.877651+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:14:25.444677+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:14:26.873006+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:14:30.721476+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:14:31.967740+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:14:37.124897+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:14:41.456386+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:14:42.189329+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:14:45.871670+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:14:47.268746+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:14:49.673899+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:14:52.345212+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:14:57.414908+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:15:02.530688+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:15:07.639783+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:15:12.857830+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:15:21.918496+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:15:27.167506+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:15:32.271197+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:15:37.437599+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:15:42.943854+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:15:48.235757+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:15:57.067569+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:16:04.971462+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:16:10.027161+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:16:15.384656+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:16:20.982410+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:16:26.176886+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:16:31.182849+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:16:36.250461+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:16:41.299272+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:16:46.642613+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:16:52.264221+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:16:56.384401+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:17:00.134358+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:17:05.288135+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:17:10.420385+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:17:14.541965+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:17:15.713027+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:17:21.046186+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:17:26.339305+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:17:31.431222+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:17:36.506800+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:17:41.580888+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:17:46.652429+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:17:51.754516+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:17:56.846833+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:18:01.991027+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:18:07.135279+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:18:12.424219+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:18:14.732060+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:18:17.620086+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:18:25.669965+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:18:30.859722+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:18:36.054607+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:18:41.183294+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:18:46.287089+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:18:51.469720+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:18:56.584833+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:19:01.670948+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:19:10.745397+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:19:13.629942+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:19:14.022953+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:19:14.092233+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:19:15.810158+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:19:16.697208+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:19:19.665231+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:19:20.193543+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:19:20.194915+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:19:20.928959+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:19:26.530482+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:19:31.720912+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:19:36.854542+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:19:42.077115+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:19:47.395167+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:19:52.465170+0000",
+      "category": "unclassified_sleep_wake_mention"
+    },
+    {
+      "timestamp": "2026-09-07 09:19:57.534957+0000",
+      "category": "unclassified_sleep_wake_mention"
+    }
+  ],
+  "privacy": "Only timestamps and fixed category labels are emitted. Original selected event messages and process/app/device/reason strings are not retained. Raw capture is hash-bound only.",
+  "interpretation": "Mentions, including DarkWake or UUID mentions, are not by themselves certified sleep/wake transitions. No absence or system-health conclusion follows from an empty/failed query."
+}

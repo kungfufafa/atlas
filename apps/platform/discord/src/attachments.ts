@@ -1,3 +1,11 @@
+import {
+  CHANNEL_DOCUMENT_OVERSIZED_REPLY,
+  CHANNEL_DOCUMENT_UNSUPPORTED_REPLY,
+  prepareChannelAudio,
+  prepareChannelDocument,
+  prepareChannelImage,
+  type SaveInboundDocument,
+} from "@atlas/core/attachments/inbound-document";
 import type { SendMessageInput } from "@atlas/core/contract";
 import {
   createDownloadDeadline,
@@ -9,7 +17,7 @@ import {
   isSupportedDocumentMediaType,
   isSupportedImageMediaType,
   MAX_ATTACHMENTS_PER_MESSAGE,
-  MAX_DOCUMENT_BYTES,
+  MAX_DOCUMENT_INGEST_BYTES,
   MAX_IMAGE_BYTES,
   normalizeDocumentMediaType,
   normalizeImageMediaType,
@@ -20,11 +28,13 @@ import {
 } from "@atlas/core/message-content";
 import type { Attachment, Message } from "discord.js";
 
-export const UNSUPPORTED_DOCUMENT_TYPES_REPLY = `Unsupported file type. Send ${SUPPORTED_DOCUMENT_TYPE_LABEL} (max 5 MB).`;
+export const UNSUPPORTED_DOCUMENT_TYPES_REPLY =
+  CHANNEL_DOCUMENT_UNSUPPORTED_REPLY;
 
-export const OVERSIZED_FILE_REPLY = "File is too large. Maximum size is 5 MB.";
+export const OVERSIZED_FILE_REPLY = CHANNEL_DOCUMENT_OVERSIZED_REPLY;
+export const OVERSIZED_IMAGE_REPLY = "Atlas accepts images up to 5 MB.";
 
-export const UNSUPPORTED_MEDIA_REPLY = `Send text, a photo, a voice note, or a supported document (${SUPPORTED_DOCUMENT_TYPE_LABEL} — max 5 MB).`;
+export const UNSUPPORTED_MEDIA_REPLY = `Send text, a photo, a voice note, or a supported document (${SUPPORTED_DOCUMENT_TYPE_LABEL} — Atlas document limit: 25 MB).`;
 
 export const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
 
@@ -58,6 +68,7 @@ export async function buildDiscordAttachmentInput(
     idleTimeoutMs?: number;
     overallTimeoutMs?: number;
     signal?: AbortSignal;
+    saveInboundDocument?: SaveInboundDocument;
     transcribeAudio?: (input: {
       data: string;
       filename: string;
@@ -80,9 +91,24 @@ export async function buildDiscordAttachmentInput(
   const images: NonNullable<SendMessageInput["images"]> = [];
   const documents: NonNullable<SendMessageInput["documents"]> = [];
   const transcripts: string[] = [];
+  const documentMessages: string[] = [];
 
-  for (const attachment of message.attachments?.values() ?? []) {
-    const classified = classifyDiscordAttachment(attachment);
+  // Reject unsupported or oversized entries before saving any earlier document.
+  const entries = Array.from(
+    message.attachments?.values() ?? [],
+    (attachment) => ({
+      attachment,
+      classified: classifyDiscordAttachment(attachment),
+    })
+  );
+  for (const { classified } of entries) {
+    if (classified.kind === "reject") {
+      return classified;
+    }
+  }
+
+  for (const { attachment, classified } of entries) {
+    options?.signal?.throwIfAborted();
     if (classified.kind === "reject") {
       return classified;
     }
@@ -92,7 +118,7 @@ export async function buildDiscordAttachmentInput(
         ? MAX_IMAGE_BYTES
         : classified.kind === "audio"
           ? MAX_AUDIO_BYTES
-          : MAX_DOCUMENT_BYTES;
+          : MAX_DOCUMENT_INGEST_BYTES;
 
     let bytes: ArrayBuffer;
 
@@ -108,28 +134,58 @@ export async function buildDiscordAttachmentInput(
           message:
             classified.kind === "audio"
               ? OVERSIZED_AUDIO_REPLY
-              : OVERSIZED_FILE_REPLY,
+              : classified.kind === "image"
+                ? OVERSIZED_IMAGE_REPLY
+                : OVERSIZED_FILE_REPLY,
         };
       }
 
       return { kind: "reject", message: DOWNLOAD_FAILED_REPLY };
     }
 
-    const data = Buffer.from(bytes).toString("base64");
-
     if (classified.kind === "image") {
-      images.push({ data, mediaType: classified.mediaType });
+      const prepared = await prepareChannelImage({
+        bytes: Buffer.from(bytes),
+        caption: "",
+        channel: "Discord",
+        filename: classified.filename,
+        mediaType: classified.mediaType,
+        saveInboundDocument: options?.saveInboundDocument,
+        signal: options?.signal,
+      });
+      if (prepared.kind === "reject") {
+        return prepared;
+      }
+      images.push(...(prepared.input.images ?? []));
+      if (prepared.input.message) {
+        documentMessages.push(prepared.input.message);
+      }
       continue;
     }
 
     if (classified.kind === "audio") {
+      const prepared = await prepareChannelAudio({
+        bytes: Buffer.from(bytes),
+        caption: "",
+        channel: "Discord",
+        filename: classified.filename,
+        mediaType: classified.mediaType,
+        saveInboundDocument: options?.saveInboundDocument,
+        signal: options?.signal,
+      });
+      if (prepared.kind === "reject") {
+        return prepared;
+      }
+      if (prepared.input.message) {
+        documentMessages.push(prepared.input.message);
+      }
       if (!options?.transcribeAudio) {
         return { kind: "reject", message: AUDIO_TRANSCRIBE_FAILED_REPLY };
       }
 
       try {
         const transcription = options.transcribeAudio({
-          data,
+          data: Buffer.from(bytes).toString("base64"),
           filename: classified.filename,
           mediaType: classified.mediaType,
         });
@@ -156,11 +212,22 @@ export async function buildDiscordAttachmentInput(
       continue;
     }
 
-    documents.push({
-      data,
+    const prepared = await prepareChannelDocument({
+      bytes: Buffer.from(bytes),
+      caption: "",
+      channel: "Discord",
       filename: classified.filename,
       mediaType: classified.mediaType,
+      saveInboundDocument: options?.saveInboundDocument,
+      signal: options?.signal,
     });
+    if (prepared.kind === "reject") {
+      return prepared;
+    }
+    documents.push(...(prepared.input.documents ?? []));
+    if (prepared.input.message) {
+      documentMessages.push(prepared.input.message);
+    }
   }
 
   try {
@@ -178,7 +245,9 @@ export async function buildDiscordAttachmentInput(
   }
 
   const caption = options?.caption?.trim() ?? message.content?.trim() ?? "";
-  const messageText = [...transcripts, caption].filter(Boolean).join("\n\n");
+  const messageText = [...transcripts, caption, ...documentMessages]
+    .filter(Boolean)
+    .join("\n\n");
 
   return {
     input: {
@@ -200,7 +269,7 @@ class OversizedDiscordFileError extends Error {
 function classifyDiscordAttachment(
   attachment: Attachment
 ):
-  | { kind: "image"; mediaType: string }
+  | { kind: "image"; filename: string; mediaType: string }
   | { kind: "audio"; filename: string; mediaType: string }
   | { kind: "document"; filename: string; mediaType: string }
   | { kind: "reject"; message: string } {
@@ -247,10 +316,10 @@ function classifyDiscordAttachment(
     }
 
     if (size > MAX_IMAGE_BYTES) {
-      return { kind: "reject", message: OVERSIZED_FILE_REPLY };
+      return { kind: "reject", message: OVERSIZED_IMAGE_REPLY };
     }
 
-    return { kind: "image", mediaType };
+    return { filename, kind: "image", mediaType };
   }
 
   const mediaType = normalizeDocumentMediaType(rawType, filename);
@@ -259,7 +328,7 @@ function classifyDiscordAttachment(
     return { kind: "reject", message: UNSUPPORTED_DOCUMENT_TYPES_REPLY };
   }
 
-  if (size > MAX_DOCUMENT_BYTES) {
+  if (size > MAX_DOCUMENT_INGEST_BYTES) {
     return { kind: "reject", message: OVERSIZED_FILE_REPLY };
   }
 

@@ -1,0 +1,77 @@
+bun test v1.3.1 (89fa0f34)
+
+packages/db/src/memory-search.test.ts:
+(pass) numeric identifiers remain searchable alongside natural words [0.79ms]
+(pass) numeric support retains stop-word, literal punctuation and query bounds [0.25ms]
+
+packages/db/src/conversation-history.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+error: Cannot find package 'nanoid' from '/private/tmp/atlas-candidate4-integration/source/packages/core/src/local-auth.ts'
+-------------------------------
+
+
+packages/db/src/memory-preservation.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+-------------------------------
+
+
+packages/db/src/conversation-keyword-search.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+-------------------------------
+
+
+packages/db/src/profile-atomic.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+-------------------------------
+
+
+apps/server/src/tools/memory-tools.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+-------------------------------
+
+
+apps/server/src/tools/memory-scope-contract.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+error: Cannot find package 'zod' from '/private/tmp/atlas-candidate4-integration/source/apps/server/src/tools/memory-tools.ts'
+-------------------------------
+
+
+apps/server/src/tools/memory-tools-dedup.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+-------------------------------
+
+
+apps/server/src/tools/conversation-tools.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+error: Cannot find package 'zod' from '/private/tmp/atlas-candidate4-integration/source/apps/server/src/tools/conversation-tools.ts'
+-------------------------------
+
+
+apps/server/src/tools/memory-tools-update.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+-------------------------------
+
+
+ 2 pass
+ 9 fail
+ 9 errors
+ 8 expect() calls
+Ran 11 tests across 10 files. [111.00ms]

@@ -73,6 +73,8 @@ const MEDIA_TYPE_TO_FORMAT: Record<string, AnydocFormat> = {
   "application/vnd.ms-excel": "xlsx",
   "application/vnd.ms-excel.sheet.binary.macroEnabled.12": "xlsx",
   "application/vnd.ms-excel.sheet.macroEnabled.12": "xlsx",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation":
+    "pptx",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml":
     "xlsx",

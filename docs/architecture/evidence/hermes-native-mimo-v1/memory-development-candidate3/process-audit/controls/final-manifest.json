@@ -1,0 +1,978 @@
+{
+  "at": "2026-09-06T19:26:01.386965+00:00",
+  "scope": "All32 exploratory controls only; no primary score or warm census changes.",
+  "completed": true,
+  "criteria": {
+    "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/criteria.md",
+    "sha256": "b735bdd1985388e97ccabff213e34bd67b04e3ba13dc4a49415110c72f1f52d5"
+  },
+  "criteriaRecord": {
+    "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/criteria-record.json",
+    "sha256": "982587222b1108e11bd7d6d7721b494e528024fc76f0c6cd9e5469006d7876f4"
+  },
+  "finalInventoryCheckpoint": {
+    "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/reviewer-checkpoint-007.json",
+    "sha256": "ccd6eb09f9ddd5288e1406a16ac098cee041dc58d5ccd107c97ca6cb68b51595"
+  },
+  "scheduled": 32,
+  "reviewed": 32,
+  "pending": 0,
+  "reports": [
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/exploratory-report.json",
+      "sha256": "1d4eabe295fd2592f178da5ef3a328d383bffef9750278a003527f7375a0e2e0"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/exploratory-report.md",
+      "sha256": "323c508c7068511aec91ecf0de46aa9eea49f2dd4f5584675b32c841d0b8dfe1"
+    }
+  ],
+  "armBindings": [
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-atlas",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+        "sha256": "3bd6cb60e58a41d848f32482a64560b94f097e5563864eb13f619a34275ff7c8"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+        "sha256": "9f20887d40a18877e332eb8c18ddd7b50a4df9f480696db1ca146646e591b8bc"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+        "sha256": "317770c2b978f1920e77f6262a7699fb82679e4ea12ab36c2d8d38a337a89878",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-atlas/observation.json",
+        "sourceSha256": "051c05d29088c353d3eeffbf97fd01244692b5a6927ed02ec4473337e168a3fe",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+        "sha256": "952cb61931a0c429a630368b3b7aa96323c205a4da9c5748dfeb2eb8620823cc",
+        "sourceSha256": "051c05d29088c353d3eeffbf97fd01244692b5a6927ed02ec4473337e168a3fe"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-hermes",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+        "sha256": "4f8505b4ab7d5ef51504cbd9e7c3c9e1df874bf380a362128f112ea4012172e2"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+        "sha256": "140f62741bde63ee99643ace16bee365a1e041a9665b00e49a033839d614d9cf"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+        "sha256": "eb0be6afebdaf0e94e14a4a8a02a8b36210a82a37835d61bcaec86a38d17e517",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-hermes/observation.json",
+        "sourceSha256": "11b5a010cd75f4973979c38b740164eabd8eaaf23accf5c7d571b14eee74ae30",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+        "sha256": "92efa4becf6007cad79146b79b77ce8297168abaf1aefe2ce53cc82137efa640",
+        "sourceSha256": "11b5a010cd75f4973979c38b740164eabd8eaaf23accf5c7d571b14eee74ae30"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-atlas",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-atlas.json",
+        "sha256": "b6cf1d371f31a7a4fcc4de12166760277107bd396786ba98b6fb0d35b845db67"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-atlas.json",
+        "sha256": "28378febb83807c9534021a644daa45d9e0e4d0f68e417ac774b74267b0c4788"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-atlas.json",
+        "sha256": "41a82bb6580e4139fdc037b2c0ded85f0d16cca83b065105fc8e450371446159",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-atlas/observation.json",
+        "sourceSha256": "026448ec1872c8fd5289572d19f348b6cd835e7fdf798e88c7b163122d872b70",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-atlas.json",
+        "sha256": "8b4d2602bcc21ae1cf9494c798358537d806b8819785619e9df172d2972d0750",
+        "sourceSha256": "026448ec1872c8fd5289572d19f348b6cd835e7fdf798e88c7b163122d872b70"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-hermes",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-hermes.json",
+        "sha256": "3fdad775486ab7590e4ba0cd7a15750d9cd932f239c4bca3b88819ddb6df6488"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-hermes.json",
+        "sha256": "8b9501fd7fff83a511516e7922edf2c115607e8d22f14a4b28db556ababaa207"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-hermes.json",
+        "sha256": "9022c6ef70666d7466d9185a16a977caac18dc018fb2552450baae1d6564450f",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-hermes/observation.json",
+        "sourceSha256": "32032d222dfa5c819a83caec6c54ef948a9c4fae42409d23f357b994efe5d4e5",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-hermes.json",
+        "sha256": "3a5d454ae95efd9706df92e546c6cce655f49b4bd8a1507c40ec6b295efb8c9d",
+        "sourceSha256": "32032d222dfa5c819a83caec6c54ef948a9c4fae42409d23f357b994efe5d4e5"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-atlas",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-atlas.json",
+        "sha256": "135046a6d9b4e32464b9007e270d05cccc0500cac2b733eb99cbd69e2a0f2b69"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-atlas.json",
+        "sha256": "fc2aa95e9a7daa642b1276471a243f3908b2ad111e43f73dd85eb062e9f8a014"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-atlas.json",
+        "sha256": "897f509db5134658930221fba9a9407b9cf905c2649845a1b9a61f9f9d715577",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-atlas/observation.json",
+        "sourceSha256": "ae6db61d13f71a56b0a6e4913b9d5bccbab08251b1abf2b00fcb76dc1f9d505f",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-atlas.json",
+        "sha256": "398258cc4b16551aaeb1fbfced1f41155aaa7aee218f5c3aef035d2db185de33",
+        "sourceSha256": "ae6db61d13f71a56b0a6e4913b9d5bccbab08251b1abf2b00fcb76dc1f9d505f"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-hermes",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-hermes.json",
+        "sha256": "2ba838d0400123f7ccd86ec49e2e63e0f537ba43dcd11ea37d780f8292113c80"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-hermes.json",
+        "sha256": "c72378a28f1fe4b87fcb7e2b1adeb97276a0447056349621b63b8f18f962581b"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-hermes.json",
+        "sha256": "4235c37c100b19d49d51e9e14c681763fe1a8d34674cb876770a566509c62a03",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-hermes/observation.json",
+        "sourceSha256": "dfe969c7daff33c49b237a4f3a8c17c4b84858cd5099b2c356804d3fc3069750",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-hermes.json",
+        "sha256": "38f9821fa8603f0a9124761b0602f8ce39540d1d674dae1e7932c2a9e748c810",
+        "sourceSha256": "dfe969c7daff33c49b237a4f3a8c17c4b84858cd5099b2c356804d3fc3069750"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+        "sha256": "5d7201f162154f595021cfda05c7f76738621371dd39275b91234053c869c675"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+        "sha256": "587657956ba51820d53640c9ef475e49900e609ff26013b92e80ca9f4181aac4"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+        "sha256": "51dbc73cccdb1b20afeb89167548b6e6c853d536113f068bc889995760003c3b",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes/observation.json",
+        "sourceSha256": "1724d6ee6767ac428d2627f19f5ceb230660fb90c1ddf149bdb3de7b01385e00",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+        "sha256": "dc4d543906524b45832a2e85d5b3a4cd4fd1d8c74d242fe12ab12495cd4b403a",
+        "sourceSha256": "1724d6ee6767ac428d2627f19f5ceb230660fb90c1ddf149bdb3de7b01385e00"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+        "sha256": "14a2061cf0289d1d428d3937d6f3b64d2aa9b4175dbc06e806abf1e5d7e900c3"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+        "sha256": "7b121d1673cceba03e8570fca166a5648b4bb5f1433c9a50183270371b18ac11"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+        "sha256": "541da44939917c55d0289b28789f34f80a26b8668de2c15113e5bbc1a7bdedb4",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/observation.json",
+        "sourceSha256": "e73b6e829e4f7c06d83d2ce3693f926a48d84877171b3891dc22eaab1999c878",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+        "sha256": "7d057c21005b24cfeb9211d3ea329b05743a36209af96aa5eda65862d8115d67",
+        "sourceSha256": "e73b6e829e4f7c06d83d2ce3693f926a48d84877171b3891dc22eaab1999c878"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-atlas",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-atlas.json",
+        "sha256": "66ac63345c5324f83c17fd58dc3b959a1c8e28090f1af7a9bc8cf372fa843824"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-atlas.json",
+        "sha256": "d701291da8a7738f6db4392d80e69ba3a5a530c2ae4afa42616aade027001ab8"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-atlas.json",
+        "sha256": "8abb54ac0c7649f0083f26f7e71f3d80ddc0ba6c0342c90576fd78677cde7135",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-atlas/observation.json",
+        "sourceSha256": "997590ad61aa22e0327ff976b39943b4d21b012ecffea328cc116ada86c52523",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-atlas.json",
+        "sha256": "5257a00d8dc7cfc5fe5610ce638e12cf0a49cf663d6323c4e6f7d7bf93e627e8",
+        "sourceSha256": "997590ad61aa22e0327ff976b39943b4d21b012ecffea328cc116ada86c52523"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-hermes",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-hermes.json",
+        "sha256": "23cccb679a5533c94b44b09fac406553ea8b391b3a5cc440ae19e7d396b7e35d"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-hermes.json",
+        "sha256": "34309068dcf20f1b86d029f35d0c032b2046186073743643aa44d0d93ff438fe"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-hermes.json",
+        "sha256": "ef1fab31061a7548d5a607dc504df4c5c7ce8e9100918d26387b728063e98f2f",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-hermes/observation.json",
+        "sourceSha256": "f97bdbdebab55c1b868082747d7f364189c12cbb9b6380fd2d99bef83881fc96",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-hermes.json",
+        "sha256": "3662464383a6ec3db87787896eaa45b995f848f7cd2762eacb5d6d23a3ab1250",
+        "sourceSha256": "f97bdbdebab55c1b868082747d7f364189c12cbb9b6380fd2d99bef83881fc96"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-atlas",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-atlas.json",
+        "sha256": "c07dad87bbbff28a8a99eb904ade6487505a7cd1d17cbe4ee936e56410d9c7b1"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-atlas.json",
+        "sha256": "102948a6449b76a65be0a9dce1d4f69ba16b69f665080e5ec0474085b69ebc53"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-atlas.json",
+        "sha256": "a4893dc25c4e6803e9d562251f12a0bc214b650849493d336e068e6a0ebdceeb",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-atlas/observation.json",
+        "sourceSha256": "3d0be4e5f004f49bfa768be720f1b9e74de8ad21067324d9cd1258601b530def",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-atlas.json",
+        "sha256": "08bc2e21d5fe2a7502025c0f808779ec7ba5f21d5e1d119a1cea39fe395854b4",
+        "sourceSha256": "3d0be4e5f004f49bfa768be720f1b9e74de8ad21067324d9cd1258601b530def"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes.json",
+        "sha256": "da682c831ae24467d2e2f504ccde82f66a168a523d19facc1f7b2d991c791357"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes.json",
+        "sha256": "3ec9d20ca1351f0d352145c0c56e9ae02006cb4955af12c58218013ad7350f74"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes.json",
+        "sha256": "ce005eb51243847fa4504cf9fa12b6e802789af521b579eed37d5739015d4425",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes/observation.json",
+        "sourceSha256": "29c2ec00df26dc49d32e9fca299857b6edd7ec497e8a880585f59e6f4aa10fa2",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes.json",
+        "sha256": "d3cbb83ad21062d9b172cfb0dcfbfdd2b235b69e912aa5808395a4eafca37448",
+        "sourceSha256": "29c2ec00df26dc49d32e9fca299857b6edd7ec497e8a880585f59e6f4aa10fa2"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes.json",
+        "sha256": "eb75a65fab4a07c38c8b55616d97f380386305ce1f345d6b219b55fc298957f9"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes.json",
+        "sha256": "beba75be70e9a80673f17ee566d6512a4ae7bac974813d8fa1dce7370d13f5bb"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes.json",
+        "sha256": "b28f10c2517170ed0fd796b2ba159662b640c37745e04e01403980dc5bd15b0e",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes/observation.json",
+        "sourceSha256": "feea65020059aefb4c07984d0e298e101ea89661e6d4c318abb8a70e1130f8bc",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes.json",
+        "sha256": "42dc393140050747166a0ff6b798d296deba47a04cc7b27971a49ea8f6e77de2",
+        "sourceSha256": "feea65020059aefb4c07984d0e298e101ea89661e6d4c318abb8a70e1130f8bc"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-atlas",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-atlas.json",
+        "sha256": "32d35ee1d14138a127c2f93fffc4367b5061192837e05f91a04d84912cac337d"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-atlas.json",
+        "sha256": "41490a1ed38747790e62128f0c22b7ad29714ac97fa4112e54803249404a9546"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-atlas.json",
+        "sha256": "36e361f30c151fe7b887855b3633a575d58ed15257be1e87714855200566c5f9",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-atlas/observation.json",
+        "sourceSha256": "475bfda9ce75d589e06d837f82b87d8330c804f1395d97968c570611faa44482",
+        "assistantMessagesReviewed": 3,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-atlas.json",
+        "sha256": "7b047d13ef2523ab4f6f24c66a963a2bc7e37fe0dd8ec385c70acda15bd5b011",
+        "sourceSha256": "475bfda9ce75d589e06d837f82b87d8330c804f1395d97968c570611faa44482"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-hermes",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-hermes.json",
+        "sha256": "3cb0ee57d9a0a65437e3956d1d52d230bf1c30af098c7c6e7448fb56206d0611"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-hermes.json",
+        "sha256": "cb1655a9b2bdb6c5b7d9df9a8be89e5bf955dc06502bc9966f1f9eac528ea37b"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-hermes.json",
+        "sha256": "1d4fa1a3e7813abbdf281d419c303848998b35e33659521151f04b90211eaca8",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-hermes/observation.json",
+        "sourceSha256": "d978ec925715586bc02cecdf8b9391516b94e7223e70def0e7029ffa399612d7",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-hermes.json",
+        "sha256": "772320bcd732b9de2b27b8fd99b9061d6e29bdd092b10d66c116cc47cb8e3238",
+        "sourceSha256": "d978ec925715586bc02cecdf8b9391516b94e7223e70def0e7029ffa399612d7"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-atlas",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-atlas.json",
+        "sha256": "2c6cb4e3ea3d605559fb4db208498323d8c88865676b4b8bfdb75986890500f2"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-atlas.json",
+        "sha256": "5b57a99f16d7717200d33bfa0113184a552371efe1adf57211040b90932e7f43"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-atlas.json",
+        "sha256": "0d4031f7bff31f6e33cb146c2f998046217e0d4bbcbd8a0de38fdb416f54ac86",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-atlas/observation.json",
+        "sourceSha256": "d362095aff32e159d3578b3db9412e152cf415ac7172ac0966fb0b1116a636b6",
+        "assistantMessagesReviewed": 3,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-atlas.json",
+        "sha256": "564fce2ec9905026410ea1f62dd3d15f663ebdb4cb8edb6a8fd2abd230f76911",
+        "sourceSha256": "d362095aff32e159d3578b3db9412e152cf415ac7172ac0966fb0b1116a636b6"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.json",
+        "sha256": "a799ed3eaea61a68259fc540d03ad13d36e87bc41ee36a6a7d33aadfc57cfafb"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.json",
+        "sha256": "4ea77dc6829c2fb1f63da59a30c6ab81a2d21b61111354e0e9a50a14831dd673"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.json",
+        "sha256": "ba2d57538102b807decad502787b1e6a489387d4bae4b5251def1e11f7c55d52",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes/observation.json",
+        "sourceSha256": "0648511c720ed76b8823a283adb84cb3b3a3e77998eab5657368c79da71a5b3a",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.json",
+        "sha256": "d6d24118843936230c3a7619e74112f90f02ef390f738494c6283f01978b4928",
+        "sourceSha256": "0648511c720ed76b8823a283adb84cb3b3a3e77998eab5657368c79da71a5b3a"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.json",
+        "sha256": "13adb51c3e7fcb2e7ecd173b255ecde75b0e048d84d3b6a45de1b64bab03457d"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.json",
+        "sha256": "f1e8c93d32a76e470d88daf93175d038d0b505890f3cdc5ec857f1476d9266d9"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.json",
+        "sha256": "318c1fc26e8e34145610e0c7d2ab779d946f1c7a19b8da5353a45b6f325dea55",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas/observation.json",
+        "sourceSha256": "b465cdf393442d2831a626460983d7ae729cc2c44e7a7c8c59ee4e1588d33d07",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.json",
+        "sha256": "0a9ee9b55ddf8c2cabfdcf8552ad84cc9d8a10e45c407a6bec67ccf9060d5039",
+        "sourceSha256": "b465cdf393442d2831a626460983d7ae729cc2c44e7a7c8c59ee4e1588d33d07"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-atlas",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-atlas.json",
+        "sha256": "1f89f287fc43e31ae8ebbc6cd6c04c5ca2e66b05f3a41b0e2126d76dc11afa62"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-atlas.json",
+        "sha256": "bef3963240a053fb7bb4e03ae7b62234e982775bd773420f3da193ca634bb922"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-atlas.json",
+        "sha256": "5d4c685eb2985d8e7336726f74407b5a3a9dc17fecb1f190411fde474cdbb83f",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-atlas/observation.json",
+        "sourceSha256": "d7b60712413f2fa93a8f93dd32fc3e1cafcff058a4272c3bbcac3a3c252e723e",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-atlas.json",
+        "sha256": "0823068d0f6d26affd3cd3e0e0784251a6e491039f5b4df3d98eda7983482e92",
+        "sourceSha256": "d7b60712413f2fa93a8f93dd32fc3e1cafcff058a4272c3bbcac3a3c252e723e"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes.json",
+        "sha256": "12ab926f831f89e346882699fbed406d1b12b6ecc92463b087eb8a7d4c53b3b4"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes.json",
+        "sha256": "30c9320845b822cd914bbebc59d88d1d0eb92c2e3089276df66ecc8a0f148af2"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes.json",
+        "sha256": "4875d55fa993965ab34abd6db5bb01e7f4e4061877bac05d648e4e4c2ae427ab",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes/observation.json",
+        "sourceSha256": "382257536fe40348108b382cf31e03f245ccba044236f81a6f330ff2b52ac870",
+        "assistantMessagesReviewed": 3,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes.json",
+        "sha256": "65fc64c2594cc9926b1fbf0f665ebad25d316ebc530fd87501b283054e3a5b34",
+        "sourceSha256": "382257536fe40348108b382cf31e03f245ccba044236f81a6f330ff2b52ac870"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes.json",
+        "sha256": "b5a0017b0ead664c2a8efed6c7ef53911d355c06a77d30bdb3afb425b57b6506"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes.json",
+        "sha256": "9916f0a7a732214c4f205ee9d4227a7a46afc6601a94a85fb34b962a8fcf39ac"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes.json",
+        "sha256": "0fe7426a90316c521133f191655453ab639558b8be5ccc72fd72be4bff6ca3b4",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes/observation.json",
+        "sourceSha256": "71038e607c905bd253f1a884869096f9c1a80fb774fe8a513ddfdd613bdc369a",
+        "assistantMessagesReviewed": 3,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes.json",
+        "sha256": "13b4e9a263ccd27c727550ba6d0475d5dfdc1311434289519470551c0d91c879",
+        "sourceSha256": "71038e607c905bd253f1a884869096f9c1a80fb774fe8a513ddfdd613bdc369a"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-atlas",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-atlas.json",
+        "sha256": "e6b0d43c152a3fdcd104d71daef3734c94d9cf768a30ee10b9f32d39bdd3a123"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-atlas.json",
+        "sha256": "0393b605096286e97d9d31c696d3d431e1057d3dfcfab6c4cee5638660c4a0a7"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-atlas.json",
+        "sha256": "009d2ca43332556003699a46a8780f48b26bf7ff7afe21d17630810d75ecc23a",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-atlas/observation.json",
+        "sourceSha256": "0c2b8dbc32387587e6022e64d1b0aa8ab3e2865628f98ad3e7e1e30172784872",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-atlas.json",
+        "sha256": "57529f90109993068f86a6457a27813f458e2c9180a92b30a5a56a9c084e5df8",
+        "sourceSha256": "0c2b8dbc32387587e6022e64d1b0aa8ab3e2865628f98ad3e7e1e30172784872"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-atlas",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+        "sha256": "80a61cd21410a3eb6345cfea01e77de7c0d6442039baf14b73723aa30f619701"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+        "sha256": "e4214c1b37725fd5002ee6000b3c627bee712b7b501b85e69a983a528c0bde3b"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+        "sha256": "91a34851d530f4a7c47a8151500d9d699bd986aff0b97ea267d62c37544778e1",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-atlas/observation.json",
+        "sourceSha256": "531afd249d06a6efa43358b02bdabe5d9a9ea8a37dd2a949c77ef66e3240c401",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+        "sha256": "0359af44d660e89831f2aea623fa088e0ddb819e4035e60c8300e9a503684f75",
+        "sourceSha256": "531afd249d06a6efa43358b02bdabe5d9a9ea8a37dd2a949c77ef66e3240c401"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+        "sha256": "a7c88c8f43897b13bb85ff0ccf826287a0905d22d4fbef5977cefb0ced4d238a"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+        "sha256": "9687adf08dcce6793607787583f411f0afd020a22b8a570b219f5f1c4ee21054"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+        "sha256": "9c18afe21d0a0293fb9c04edb9020e5a5ec0bea5631a85133dc4028d9414eaa2",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes/observation.json",
+        "sourceSha256": "a7b95703d02aaad4025a298b898b4022d626bc295fcfbb873d2e0834971f4cb2",
+        "assistantMessagesReviewed": 3,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+        "sha256": "cef66a97a6523a569712ac3d75e026f48a5448ec483aae55ab6679dececd098c",
+        "sourceSha256": "a7b95703d02aaad4025a298b898b4022d626bc295fcfbb873d2e0834971f4cb2"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-hermes",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+        "sha256": "129cc23c9fc1ec81a5c45456ef7018ce76ca4398f5b2857be7d6a3a178faad6d"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+        "sha256": "aaf17f082f83280afdfd22ccbcb7299d744b1d0e5c94630ff4d462803a2e1b20"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+        "sha256": "173adeff4760e426cbf41be0bb35914105a456a44531431bd59c2252a4080c1c",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-hermes/observation.json",
+        "sourceSha256": "6a8803fd27b2ccf62ad20b0313474a794e75be13960367c7c73d92f3defd1d3b",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-hermes.json",
+        "sha256": "21621e1cae8926ef1927206b12327ee6a1bec2d61c553660375e48d6e00104da",
+        "sourceSha256": "6a8803fd27b2ccf62ad20b0313474a794e75be13960367c7c73d92f3defd1d3b"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-atlas",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+        "sha256": "4ebdbd002e16a44d20ab54c5155c958067f3bff9b2c572c1b846ddf0223bb8bb"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+        "sha256": "0ee1bd19b794ad718eb631481d043749311cf9fcbf7c719a0c08899d883e28d6"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-messages/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+        "sha256": "2b8b543e894bde5a4c79e45fa08e22b28203a64c3b903e60463ecd33e56255f0",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-atlas/observation.json",
+        "sourceSha256": "c93a63d507b01320ab2f8eb4590005bf99e0c7399406bc496476e67e440d3a30",
+        "assistantMessagesReviewed": 3,
+        "limit": "Retained assistant content is reviewed; independent UI rendering and earliest streaming-fragment timing are not reconstructed."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-atlas.json",
+        "sha256": "a976a024102715d4d7a96b881f11c46ea0083e14fff7d994e6e8eb3ffea0687b",
+        "sourceSha256": "c93a63d507b01320ab2f8eb4590005bf99e0c7399406bc496476e67e440d3a30"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-hermes",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-hermes.json",
+        "sha256": "8330608e998ce6ec02a05f5196c38bc35d363b1b8b58c34c5b4c71292d244dbc"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-hermes.json",
+        "sha256": "fb399f3393b75f0aca827b17545381d042be8fc182ce05bb15cff17cf81c9124"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-hermes.json",
+        "sha256": "07da4798ce5184a7512957460de888e55a963c371b3c151e190fa97b04000547",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-hermes/observation.json",
+        "sourceSha256": "4cf594702694380ab1b85c0ecf32ed05e98c8c839faf583419ce5b1c6a6af623",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is not independent UI rendering or emission timing proof."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-hermes.json",
+        "sha256": "07da4798ce5184a7512957460de888e55a963c371b3c151e190fa97b04000547",
+        "sourceSha256": "4cf594702694380ab1b85c0ecf32ed05e98c8c839faf583419ce5b1c6a6af623"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-atlas",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-atlas.json",
+        "sha256": "7c263f7d753822b0fa556cc98903f3c885fd54044fc33e0e28e1029756875245"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-atlas.json",
+        "sha256": "ad5dedba168ec0064276ad509c000028db11c0453c0fd3e1abe3c34ebc16cfba"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-atlas.json",
+        "sha256": "832f1b6a7534fb3e5bb8f6f18f45f9e3b71ad290501b2e5cd834118a44a4c1a0",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-atlas/observation.json",
+        "sourceSha256": "093f1dfd6e84e1ab1cd6ea30c91c01d705a0b3d94ec95cddf2578553d60d6c80",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is not independent UI rendering or emission timing proof."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-user-r0-atlas.json",
+        "sha256": "832f1b6a7534fb3e5bb8f6f18f45f9e3b71ad290501b2e5cd834118a44a4c1a0",
+        "sourceSha256": "093f1dfd6e84e1ab1cd6ea30c91c01d705a0b3d94ec95cddf2578553d60d6c80"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-atlas",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-atlas.json",
+        "sha256": "8f58a1f59da2e48f7dcddb05ea03ed100e2c49e0e61ee6466aa797e10189fe58"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-atlas.json",
+        "sha256": "2b563950e768dafabd7137b34dff624d6520ffca24bd1ce545f06248d6648d94"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-atlas.json",
+        "sha256": "fe6cdf137e64d13d40f349f9fb071fae81ca97a08ffb781a647cdd6368f774f0",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-atlas/observation.json",
+        "sourceSha256": "33143312ded61142b9aac9bd63a98e0daea6c26d2dcc52d169227f32bd8a2a0e",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is not independent UI rendering or emission timing proof."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-atlas.json",
+        "sha256": "fe6cdf137e64d13d40f349f9fb071fae81ca97a08ffb781a647cdd6368f774f0",
+        "sourceSha256": "33143312ded61142b9aac9bd63a98e0daea6c26d2dcc52d169227f32bd8a2a0e"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-hermes",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-hermes.json",
+        "sha256": "3f06c261e56112330639ddce186bd5eeb8cc9700d3b49fce5fb40b9174dec263"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-hermes.json",
+        "sha256": "3e049dfcd960d32e14ba4fa68edf9a95c0dfe612d56ee831c0b968265c4c1882"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-hermes.json",
+        "sha256": "b9836fd26b77bccd8972ca46b0121a4d33a28098db67574a021fd943817bdb73",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-hermes/observation.json",
+        "sourceSha256": "890c5eb2227bab6c6ee79bbbe6c51a1b4bb722e10f1a1976981f003f3bd1e118",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is not independent UI rendering or emission timing proof."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-identity-different-organization-r0-hermes.json",
+        "sha256": "b9836fd26b77bccd8972ca46b0121a4d33a28098db67574a021fd943817bdb73",
+        "sourceSha256": "890c5eb2227bab6c6ee79bbbe6c51a1b4bb722e10f1a1976981f003f3bd1e118"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-hermes",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-hermes.json",
+        "sha256": "435f662ff5331756c262180cc23810d7deef775783b7104ea17c8950adfc4afa"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-hermes.json",
+        "sha256": "4e0f280c6a09cf34106e2ca97ab1f0835f3f123c62a76e83ee988a5c7caf1673"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-hermes.json",
+        "sha256": "15ce04a779a826c878305611466e5364881b6b0b267f623f90aa84cd6f61b251",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-hermes/observation.json",
+        "sourceSha256": "6e16ac8062c60a8f035c1aa55d9ce22be335e6c2d8b352d808567e214586b21e",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is not independently observed UI rendering/emission timing."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-hermes.json",
+        "sha256": "15ce04a779a826c878305611466e5364881b6b0b267f623f90aa84cd6f61b251",
+        "sourceSha256": "6e16ac8062c60a8f035c1aa55d9ce22be335e6c2d8b352d808567e214586b21e"
+      }
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-atlas",
+      "manual": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-atlas.json",
+        "sha256": "2c8770ad7abe789ac6d2a83d848279edc3286f7dcc93a050b910e4edff107f0d"
+      },
+      "projection": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-atlas.json",
+        "sha256": "bb4ed4cb2aade4d079089e67c2bb8b4519b69eedd128791a026669bf5be50d00"
+      },
+      "publicSupplement": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-atlas.json",
+        "sha256": "aa81e818cba0bc3b0be9776780eb774f3aa2700a147d68e2f8bad8514fa89e5d",
+        "sourcePath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-atlas/observation.json",
+        "sourceSha256": "c3eeac3001b6fa8a0cb98fa9c6094591f0ce2ce4c6f8b451e14038f07b69bb3d",
+        "assistantMessagesReviewed": 2,
+        "limit": "Retained assistant content is not independently observed UI rendering/emission timing."
+      },
+      "publicChronology": {
+        "path": "/private/tmp/atlas-native-memory-mimo-process-audit/public-chronology/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-user-r0-atlas.json",
+        "sha256": "aa81e818cba0bc3b0be9776780eb774f3aa2700a147d68e2f8bad8514fa89e5d",
+        "sourceSha256": "c3eeac3001b6fa8a0cb98fa9c6094591f0ce2ce4c6f8b451e14038f07b69bb3d"
+      }
+    }
+  ],
+  "revisionBindings": [
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "sha256": "1e1fad2d3a4f51792e815b0972e817e690b32a3bf1f51d73c23352e123770537"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-explicit-memory-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "sha256": "81730c9dd8a67d1c241a741835483ba404c5d228b3a0fde18d5e95c9c14896f6"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "sha256": "50d6d2575f34d3195c18330d93f636d84609bcb143cc3c2203973d5752c9f17f"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "sha256": "022032d138898fb907163aa1551323bff3fc4cdda7d74684c72bcab2d095576f"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-atlas.before-public-supplement.json",
+      "sha256": "1f65bdc0d220e2f4dcac2123495f29ea5bd7903bc9e519bb6659de78f0e517f1"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-1907-native-default-identity-different-organization-r0-hermes.before-public-supplement.json",
+      "sha256": "9b868446451ec63049275bfb9e45344b5d7f7378137955f3943faa17ebaf4f8e"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "sha256": "0da243e5530a5baf4cfc98388da33e33dfbaebc07806476edab39c744230973d"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes.after-public-supplement-before-chronology.json",
+      "sha256": "454940cd9be749841f0cad3bcbbdd0609e021b9e1c48cd4a3aeb7c9409f23070"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "sha256": "8343aadb1ba6d4cf7f8f12b9248f9e3bff3d5f7c2b76f393537f134e9a2444a7"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-atlas.before-public-supplement.json",
+      "sha256": "e236e2a5a464f3d2a39dce915889480becba65ad08474ed21093b941b227645e"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes.before-public-supplement.json",
+      "sha256": "267ee8621dcdc082e2978d631c8cc5993d4dae894920631196ad816daa7db945"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes.initial-judgment-superseded.json",
+      "sha256": "0f42fb4b77781c4fe10855f3e4812298742fe348d2054c68126c87705de90f06"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-atlas.before-public-supplement.json",
+      "sha256": "5c8f111910632384ee406790a8887dd1acfea1cd5d4d313436e27ae9c4998883"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes.before-public-supplement.json",
+      "sha256": "46e4e9678a4110ffbd8905c324567a3544ef1af6f27bfe2b2b2db2f0e0c60252"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes.initial-judgment-superseded.json",
+      "sha256": "e8b359f27e9315871c26c2e0222704ffea6dfe0d3d653cee557d2b808b78b6ab"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "sha256": "164ebaa4837e94e83d6618e5625bfc639f86690bcf961add27fb1a867235c1bc"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "sha256": "b6d7a17517d1d3035b215ea6e953d4beb25facfb955f9bdd6dfc4fe65890e431"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.before-public-supplement.json",
+      "sha256": "9fa074424ada2ac2b047028969eef51cf07b5a3c72b84063a216efc230df88c1"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.before-public-supplement.json",
+      "sha256": "e96997652acd4b00f99638186e83a737399dd9fc927dd234cfa6999c095cd01a"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-atlas.before-public-supplement.json",
+      "sha256": "151bcd46ce5131de2c2ade0dbee7f1cae66a30e4610b98ca9ebd78d4f87c6279"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-native-default-identity-different-user-r0-hermes.before-public-supplement.json",
+      "sha256": "9d6516c0760b2ecc01031132763acfb55a832ba1559e0bf180447494cec97155"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "sha256": "4f863fb5a2113f78f43b75fc7ecf6ec463641850b8772c438ddb46f97616d212"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-explicit-memory-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "sha256": "0588f9956fbe203aa0e746d6d0c5c4b99c61fd23f025d2ef2791d467c44d6f76"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "sha256": "eb3ab88acd4e89de299e6ff8a485e7d1ac7a6784cd30e073eebb9eb8011ce5d2"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-1907-native-default-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "sha256": "25ccdf1f768737a3613cf891d193c906a4a1f1abda9ea10b70db0d4acb30d338"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "sha256": "19a51a03e96ca423bb3489356571131a443b823b4dc4d7f1c7fd71b0904a4fa6"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "sha256": "7e0708c09775445a4985d168f92f1722d9b7571b3847932335355cb25241f18d"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-atlas.before-public-supplement.json",
+      "sha256": "c53465e022c70da118a20787c9a8221ef86fcec031f0dba8287fa8abc7d7b653"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes.before-public-supplement.json",
+      "sha256": "77f37864d7375a2b5f65fcf86b67eafd8ec2716b51a82631776d48a93863d8fc"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes.initial-order-wording-superseded.json",
+      "sha256": "cecffc0719ffb50b9afb5eefcf06f14e97db3f9e0fada5729387e280a8f56194"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/manual/revisions/revision-byte-restoration.json",
+      "sha256": "3e930eca163e44b867e201967dee25bb2980026d2148530d0b4b0080b4bba9be"
+    }
+  ],
+  "priorReportBindings": [
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/exploratory-report-checkpoint-002.json",
+      "sha256": "21951b0be7b208a1cd704d8a8432139e149322ee3bffbfcc9849d6975a09ecc6"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/exploratory-report-checkpoint-002.md",
+      "sha256": "1129b152ff96436510438d967d11523c7890e3e8e5e0ffbedeef115d04eb0ea7"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/exploratory-report-checkpoint-003.json",
+      "sha256": "32395184cbcbb823747f7cfa7a77ec92651b2f18985aaa77704c2b7984282c9d"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/exploratory-report-checkpoint-003.md",
+      "sha256": "e40d27caf454e5ed3604f54018f562e70465f141be8b748eac3af5a3ebef711b"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/exploratory-report-checkpoint-004.json",
+      "sha256": "7679f5b16162c2e14943a88b8f83f6846b13c43c57d8578cff10ca39fb47a706"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/exploratory-report-checkpoint-004.md",
+      "sha256": "26fa83945c4193097217ffdeba053707af7052f0841ea9222295c5ad31048381"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/exploratory-report-checkpoint-005-supplement.json",
+      "sha256": "55a847a8c915187eda1b978bc0a45740264dbbb617553c70369eba44df2cd2c2"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/exploratory-report-checkpoint-005-supplement.md",
+      "sha256": "6ad0977210005695ab958cdf8833e88d8f87e50c45a87775b512a4d8df1d8973"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/exploratory-report-checkpoint-005.json",
+      "sha256": "65b401c1bb81cf540529654cfa72472186db72b4e55b410ec110cc439f98e3f6"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/exploratory-report-checkpoint-005.md",
+      "sha256": "85924f4b2487671018581b98d82a0412be7280fa3a9caf63df31ed4b59e676e1"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/exploratory-report-checkpoint-006.json",
+      "sha256": "ed745056321138aa7f2d92ddac5c3aab0b9744c9d20d7602bda822440db0fbc2"
+    },
+    {
+      "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/exploratory-report-checkpoint-006.md",
+      "sha256": "36a254539975c28b5e81544dafc16c23b769dda1d8bfcf06d239b98f6276fe10"
+    }
+  ],
+  "sourceProofScope": "All source paths/hashes taken from whitelisted projections. Underlying observation SHA matches every supplementary chronology. Original live observations not reread.",
+  "noScoresChanged": true
+}

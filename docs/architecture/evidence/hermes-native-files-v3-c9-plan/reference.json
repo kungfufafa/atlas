@@ -1,0 +1,9 @@
+{
+  "copiedAt": "2026-09-07T05:32:54.908908+00:00",
+  "source": "/private/tmp/atlas-native-file-v3-final-study-decision/prospective-study.md",
+  "sha256": "5706e9947b0044b8f2bddd4e7c5a83751ab01060aace8a117d28dd83ac03587c",
+  "selectedCandidate": "e2daf1b902a087eb279724f17d61e50b9a27f7c1d64828f6958b61b22225eb98",
+  "paidAdmission": false,
+  "finalControlFreeze": false,
+  "scope": "Exact prospective root decision before C9 paid calls or confirmation content inspection. Pilot, development and confirmation schedule definitions are to be fully frozen before the live pilot. Final C9 control gates, independent review and exact admission remain pending."
+}

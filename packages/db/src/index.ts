@@ -8,10 +8,22 @@ import type { DatabaseAdapter } from "./types";
 
 export { createInMemoryDatabaseAdapter } from "./adapters/in-memory";
 export { createSqliteDatabase } from "./adapters/sqlite";
+export { publicationSourceEvidenceFingerprint } from "./artifact-publication-evidence";
+export {
+  MAX_PUBLICATION_BYTES,
+  MAX_PUBLICATION_OUTPUTS,
+  publicationIdentity,
+  validatePublicationPath,
+} from "./artifact-publication-identity";
 export * from "./automation-store";
 export * from "./constants";
 export type { ResolveDatabasePathOptions } from "./database-url";
 export * from "./local-client";
+export {
+  memoryResultLimit,
+  rankMemoryMatches,
+  tokenizeMemoryQuery,
+} from "./memory-search";
 export * from "./org-profiles";
 export * from "./seed";
 export * from "./skill-rank-fts5";

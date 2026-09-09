@@ -1,0 +1,27 @@
+{
+  "sealedAt": "2026-09-07T02:30:18.784745+00:00",
+  "status": "source-only activation patch plan sealed; production activation remains blocked by explicit admission prerequisites",
+  "files": {
+    "activation-patch-plan.md": "20111353d09b10a87b92c0f86f74ca74168c63078e76a225845799476cd606c2",
+    "c5-excerpts.txt": "c6c24f72c3bfa54c014127b4a852935d9486c7c6fd98eb319bc8eeca25846c1a",
+    "inspection-errors.json": "484f05164639809849cedf465e1aed5189c27eb824ae1e095313bf57748a891d",
+    "parent-interface-reference.json": "830e549aa6a546c8f9f93ccb8331bec9fecaa071fbfa2bd167cf97bf658d4108",
+    "registration.json": "881baec28439c4f0d72787e4003b261e793a95b2128a340355a211b45a007eba",
+    "scope-before-analysis.md": "22c880ee1a8ee81deceb40f816e62e29965c125a4edbc6233e7b2cbeca3b24cb",
+    "source-bindings.json": "8a81df43455d05be069fb3ed7856f4f2fe0fb5db248e8ac2c4a48ea4f80a80b9"
+  },
+  "rootC5ListedFilesVerified": 2078,
+  "assemblyListedFilesVerified": 2103,
+  "testsRun": 0,
+  "providerCalls": 0,
+  "rootSourceEdits": 0,
+  "componentSourceEdits": 0,
+  "credentialLiteralScan": "passed; key file/value excluded",
+  "activeParentScratchInspected": false,
+  "limitations": [
+    "Planned principal interface is parent-reported, not source-reviewed here.",
+    "Pre-load/pre-spawn and staging admission not implemented by this plan.",
+    "Initial scope ordinary persisted human/worker chat only; no consumer UI/channel cutover claim.",
+    "No parity, atomic snapshot, lease ownership or atomic revocation claim."
+  ]
+}

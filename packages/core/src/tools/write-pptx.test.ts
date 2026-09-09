@@ -50,7 +50,7 @@ describe("write_pptx tool validation", () => {
           slides: [{ title: "Slide 1" }],
           title: "Test",
         },
-        {}
+        { orgId: "org_fixture", profileId: "profile_fixture" }
       )
     ).rejects.toThrow(/\.pptx/);
   });

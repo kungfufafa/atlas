@@ -25,10 +25,16 @@ import {
 } from "./mcp-client-manager";
 
 export class McpService {
+  private onConfigurationChanged?: (orgId: string) => void;
+
   constructor(
     private readonly db: DatabaseAdapter,
     private readonly manager: McpClientManager
   ) {}
+
+  setConfigurationChangeListener(listener: (orgId: string) => void): void {
+    this.onConfigurationChanged = listener;
+  }
 
   async listServers(orgId: string): Promise<ListMcpServersResponse> {
     const servers = await this.db.listMcpServersForOrg(orgId);
@@ -98,6 +104,7 @@ export class McpService {
     }
 
     await this.db.upsertMcpServer(record);
+    this.onConfigurationChanged?.(orgId);
 
     return this.getServer(orgId, record.id);
   }
@@ -162,6 +169,7 @@ export class McpService {
     }
 
     await this.db.upsertMcpServer(updated);
+    this.onConfigurationChanged?.(orgId);
 
     return this.getServer(orgId, serverId);
   }
@@ -199,6 +207,7 @@ export class McpService {
     if (!deleted) {
       throw new AtlasApiError("MCP server not found.", 404);
     }
+    this.onConfigurationChanged?.(orgId);
   }
 
   async connectServer(
@@ -233,6 +242,7 @@ export class McpService {
       };
 
       await this.db.upsertMcpServer(updated);
+      this.onConfigurationChanged?.(orgId);
 
       return { server: toMcpServerDetail(updated) };
     } catch (error) {
@@ -332,6 +342,7 @@ export class McpService {
 
     await this.requireServer(orgId, serverId);
     await this.db.assignMcpServerToProfile(profileId, serverId);
+    this.onConfigurationChanged?.(orgId);
   }
 
   async unassignServerFromProfile(
@@ -353,6 +364,7 @@ export class McpService {
     if (!removed) {
       throw new Error("MCP server is not assigned to this profile.");
     }
+    this.onConfigurationChanged?.(orgId);
   }
 
   async getStatusSummary(orgId?: string): Promise<{
@@ -412,6 +424,9 @@ export class McpService {
       };
 
       await this.db.upsertMcpServer(updated);
+      if (server.orgId) {
+        this.onConfigurationChanged?.(server.orgId);
+      }
 
       return { server: toMcpServerDetail(updated) };
     } catch (error) {

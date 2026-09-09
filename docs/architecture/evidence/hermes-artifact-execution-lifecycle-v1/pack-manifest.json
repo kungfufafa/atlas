@@ -1,0 +1,112 @@
+{
+  "createdAt": "2026-09-07T00:43:10.101745+00:00",
+  "scope": "offline-component",
+  "candidateSourceHash": "e4e71ba4a50de2d8fc6e0280af734a714b36559cc842e3486e72b14d17ce261d",
+  "files": {
+    "README.md": {
+      "sha256": "cea7229d140c03708724f1c3cba70fc0089504cd0f2bf978aa70e4c73f05d22c",
+      "bytes": 2030
+    },
+    "gate-summary.json": {
+      "sha256": "9770c047bdca14be90f362ac020d39168cf61a92404fdc8e9f1dce6b10e34303",
+      "bytes": 757
+    },
+    "independent-review/bindings.json": {
+      "sha256": "b3591c987db76cd02bc2014e00f38ffc6c647a6a2cc70dc0b1e05fa0d2b17b2c",
+      "bytes": 3443
+    },
+    "independent-review/evidence-reference.json": {
+      "sha256": "6b9366801a9e5509d8e9809515714bbeac7e3a1a746235af841180eeef0a4d9b",
+      "bytes": 428
+    },
+    "independent-review/patch-application-check.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "independent-review/review.json": {
+      "sha256": "670d38af89f78d195e0df4f3ddcecc7116af5f7489b16e990d3ec10fbd60dbdd",
+      "bytes": 7334
+    },
+    "independent-review/review.md": {
+      "sha256": "55eca984d5c9d8a8e41aff5ec2552ba6982be38fcb799216323983712f4706d3",
+      "bytes": 3371
+    },
+    "owner/component.patch": {
+      "sha256": "89790484b6f1ae5ab690fcf2267d3a60d06d41eab9a3f3711878323c9f4d58aa",
+      "bytes": 40506
+    },
+    "owner/final-lint.log": {
+      "sha256": "b3be4d9a9c14c0c7de2fbfbb94011c10ece1020378284f03b84a1d4a11379a74",
+      "bytes": 45
+    },
+    "owner/final-scoped-regressions.log": {
+      "sha256": "e7758c3e02b22256d8fb2b2faae73bf76b02470fe5edd628abedec4bfd0b07de",
+      "bytes": 7152
+    },
+    "owner/final-scoped-typecheck.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "owner/implementation-notes.md": {
+      "sha256": "042de92cea674583848766d7ebf749a71404cd2f1dba175bca186babeb9f0234",
+      "bytes": 3814
+    },
+    "owner/initial-agent-tests.log": {
+      "sha256": "af48395c0ca15c875cec80c95e7e6544c7381bcb90f5165bfe4e52107fbf1cb6",
+      "bytes": 2183
+    },
+    "owner/initial-integration-tests.log": {
+      "sha256": "2ad96ed376ffc7544f3e5bfb687127cca23e73ddb0ab3548c75221356fd0c74c",
+      "bytes": 1646
+    },
+    "owner/interim-producer-seam-binding-v2.json": {
+      "sha256": "e43ec6374f87dd7d34c2fa571ec659fe04f48adb1b5c9b99644b3b84b0f78230",
+      "bytes": 399
+    },
+    "owner/interim-producer-seam-binding.json": {
+      "sha256": "477dff5c5518dc94cd2d1e4da53c784bfee916d3731126adede8a71356fb0925",
+      "bytes": 642
+    },
+    "owner/production.patch": {
+      "sha256": "14801b48eba8bd00253bb704a1219819a948276640a66565074f100cbf532ae0",
+      "bytes": 15487
+    },
+    "owner/readiness-before-review.json": {
+      "sha256": "f0b7386f5fe19da50357c6229bcb232c9024dab0bfa40f93db60693ec8fc1ba1",
+      "bytes": 3853
+    },
+    "owner/readiness-final.json": {
+      "sha256": "e891e43fdf0dc41bef01b8d28eac3279425b251c49f4fdc230647948c57d36d9",
+      "bytes": 4046
+    },
+    "owner/source-inventory.json": {
+      "sha256": "14d2143e72536efd2c2729bdfa67c0b0acb79eb2b34f36a4769a3d5425f68a00",
+      "bytes": 255678
+    },
+    "owner/v2-lint.log": {
+      "sha256": "cff86b9c46f3eaf0ca1c114d33c8c7417b1815f6e2a84e260954a2257792e420",
+      "bytes": 44
+    },
+    "owner/v2-scoped-regressions.log": {
+      "sha256": "e401d9302fe3b6cda377f947b2705198465f965fa4e14627bb61bac9aca533f4",
+      "bytes": 6678
+    },
+    "owner/v2-scoped-typecheck.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "source-copies.json": {
+      "sha256": "ef74f9e1df34f131e96e584ffff7d70231ac7933b1eccbc366fee4482066a65e",
+      "bytes": 6558
+    }
+  },
+  "copiedFiles": 21,
+  "totalPayloadBytes": 366094,
+  "exactCopyHashesVerified": true,
+  "privateCredentialLiteralScan": "passed; value not copied or printed",
+  "sourceOriginalsRetained": true,
+  "sourceOrControlEdits": false,
+  "newProviderCalls": 0,
+  "testReruns": false,
+  "claimLimits": "Main/task/subagent/playground activation, actual authorizer/root inventory, selected capture and authoritative consumers remain pending. Legacy artifact JSON still reaches legacy consumers. No durable owned-chat fencing or universal cancellation guarantee."
+}

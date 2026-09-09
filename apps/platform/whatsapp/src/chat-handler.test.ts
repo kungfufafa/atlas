@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { ChatMessage, ProfileSummary } from "@atlas/core/contract";
 import { MAX_DOCUMENT_BYTES } from "@atlas/core/message-content";
@@ -2010,14 +2010,13 @@ describe("bridge API integration", () => {
 
       expect(calls.sendStream).toBe(1);
       expect(getLastStreamInput()).toEqual({
-        documents: [
-          {
-            data: pdfBytes.toString("base64"),
-            filename: "report.pdf",
-            mediaType: "application/pdf",
-          },
-        ],
-        message: "Summarize",
+        message: formatSavedWhatsAppDocumentMessage({
+          caption: "Summarize",
+          filename: "report.pdf",
+          mediaType: "application/pdf",
+          relativePath: "artifacts/report.pdf",
+          sizeBytes: pdfBytes.byteLength,
+        }),
       });
       expect(sent.at(-1)?.text).toBe("Agent reply");
     });
@@ -2066,14 +2065,13 @@ describe("bridge API integration", () => {
 
       expect(calls.sendStream).toBe(1);
       expect(getLastStreamInput()).toEqual({
-        documents: [
-          {
-            data: pdfBytes.toString("base64"),
-            filename: "report.pdf",
-            mediaType: "application/pdf",
-          },
-        ],
-        message: "",
+        message: formatSavedWhatsAppDocumentMessage({
+          caption: "",
+          filename: "report.pdf",
+          mediaType: "application/pdf",
+          relativePath: "artifacts/report.pdf",
+          sizeBytes: pdfBytes.byteLength,
+        }),
       });
     });
   });
@@ -2123,15 +2121,14 @@ describe("bridge API integration", () => {
 
       expect(calls.sendStream).toBe(1);
       expect(getLastStreamInput()).toEqual({
-        documents: [
-          {
-            data: xlsxBytes.toString("base64"),
-            filename: "sales.xlsx",
-            mediaType:
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          },
-        ],
-        message: "Analyze",
+        message: formatSavedWhatsAppDocumentMessage({
+          caption: "Analyze",
+          filename: "sales.xlsx",
+          mediaType:
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          relativePath: "artifacts/sales.xlsx",
+          sizeBytes: xlsxBytes.byteLength,
+        }),
       });
     });
   });
@@ -2207,7 +2204,7 @@ describe("bridge API integration", () => {
     });
   });
 
-  test("extracts oversized open-mode guest documents without consuming artifact storage", async () => {
+  test("saves authorized open-mode files without requiring paired identity", async () => {
     await withTempHome(async (homeDir) => {
       await writeWhatsAppConfigIni(homeDir, {
         accessMode: "open",
@@ -2252,12 +2249,11 @@ describe("bridge API integration", () => {
       });
 
       expect(calls.sendStream).toBe(1);
-      expect(getLastStreamInput()).toMatchObject({
-        message: expect.stringContaining("[File: notes.txt]"),
-      });
-      expect(JSON.stringify(getLastStreamInput())).not.toContain(
-        "[Saved WhatsApp file:"
+      expect(JSON.stringify(getLastStreamInput())).toContain(
+        "artifacts/notes.txt"
       );
+      expect(JSON.stringify(getLastStreamInput())).toContain("read_file");
+      expect(JSON.stringify(getLastStreamInput())).not.toContain("[File:");
       await expect(
         readFile(
           path.join(
@@ -2271,7 +2267,7 @@ describe("bridge API integration", () => {
             "notes.txt"
           )
         )
-      ).rejects.toThrow();
+      ).resolves.toEqual(textBytes);
     });
   });
 
@@ -2316,56 +2312,186 @@ describe("bridge API integration", () => {
         images: [
           { data: imageBytes.toString("base64"), mediaType: "image/jpeg" },
         ],
-        message: "",
+        message: formatSavedWhatsAppDocumentMessage({
+          caption: "",
+          filename: "image.jpg",
+          mediaType: "image/jpeg",
+          relativePath: "artifacts/image.jpg",
+          sizeBytes: imageBytes.byteLength,
+        }),
       });
     });
   });
 
-  test("transcribes a voice note and forwards text to the agent", async () => {
-    await withTempHome(async (homeDir) => {
-      await writeWhatsAppConfigIni(homeDir, {
-        pairedJid: PAIRED_JID,
-        phoneNumber: "1234567890",
-      });
+  test.each([
+    { accessMode: "pairing" as const, jid: PAIRED_JID },
+    { accessMode: "open" as const, jid: "628555555555@s.whatsapp.net" },
+  ])(
+    "saves authorized $accessMode audio before transcription",
+    async ({ accessMode, jid }) => {
+      await withTempHome(async (homeDir) => {
+        await writeWhatsAppConfigIni(homeDir, {
+          accessMode,
+          pairedJid: PAIRED_JID,
+          phoneNumber: "1234567890",
+        });
 
-      const authStore = new WhatsAppAuthStore();
-      await authStore.reload();
-      const { client, calls, getLastStreamInput } = createMockClient();
-      const sessionStore = new SessionStore(
-        path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
-      );
-      const orgStore = createTestOrgStore(homeDir);
-      await orgStore.load();
-      const { socket } = createMockSocket();
-      const handleMessage = createChatHandler({
-        authStore,
-        client,
-        config: { phoneNumber: "1234567890", profileId: "default" },
-        downloadMedia: async () => Buffer.from("ogg-bytes"),
-        getSocket: () => socket as any,
-        orgStore,
-        sessionStore,
-      });
+        const authStore = new WhatsAppAuthStore();
+        await authStore.reload();
+        const { client, calls, getLastStreamInput } = createMockClient();
+        const sessionStore = new SessionStore(
+          path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+        );
+        const orgStore = createTestOrgStore(homeDir);
+        await orgStore.load();
+        const { socket } = createMockSocket();
+        const audioBytes = Buffer.from([0, 255, 79, 103, 103, 83, 0, 33]);
+        const audioPath = path.join(
+          homeDir,
+          ".atlas",
+          "orgs",
+          "org_test",
+          "profiles",
+          "default",
+          "artifacts",
+          "voice.ogg"
+        );
+        const transcribe = client.transcribeAudio.bind(client);
+        client.transcribeAudio = async (input) => {
+          expect(await readFile(audioPath)).toEqual(audioBytes);
+          return transcribe(input);
+        };
+        let fileAuthorizations = 0;
+        const authorize = client.authorizeChannelPrincipal.bind(client);
+        client.authorizeChannelPrincipal = async (input) => {
+          if (input.intent === "files") {
+            fileAuthorizations += 1;
+            expect(input).toMatchObject({
+              channelChatId: jid,
+              channelUserId: jid,
+              profileId: "default",
+              sessionId: "session_test",
+            });
+          }
+          return authorize(input);
+        };
+        const handleMessage = createChatHandler({
+          authStore,
+          client,
+          config: { phoneNumber: "1234567890", profileId: "default" },
+          downloadMedia: async () => {
+            expect(fileAuthorizations).toBe(1);
+            return audioBytes;
+          },
+          getSocket: () => socket as any,
+          orgStore,
+          sessionStore,
+        });
 
-      await handleMessage({
-        inbound: {
-          key: { fromMe: false, id: "voice-1", remoteJid: PAIRED_JID },
-          message: { audioMessage: { mimetype: "audio/ogg", ptt: true } },
-        },
-        jid: PAIRED_JID,
-        text: "",
-      });
+        await handleMessage({
+          inbound: {
+            key: { fromMe: false, id: "voice-1", remoteJid: jid },
+            message: { audioMessage: { mimetype: "audio/ogg", ptt: true } },
+          },
+          jid,
+          text: "",
+        });
 
-      expect(calls.transcribeAudio).toBe(1);
-      expect(calls.transcribeInputs[0]).toMatchObject({
-        sessionId: "session_test",
+        expect(calls.transcribeAudio).toBe(1);
+        expect(calls.transcribeInputs[0]).toMatchObject({
+          data: audioBytes.toString("base64"),
+          filename: "voice.ogg",
+          sessionId: "session_test",
+        });
+        expect(fileAuthorizations).toBe(2);
+        expect(calls.sendStream).toBe(1);
+        const { message } = getLastStreamInput() as { message: string };
+        expect(message).toContain("artifacts/voice.ogg");
+        expect(message.startsWith("Transcribed voice message\n\n")).toBe(true);
       });
-      expect(calls.sendStream).toBe(1);
-      expect(getLastStreamInput()).toEqual({
-        message: "Transcribed voice message",
+    }
+  );
+
+  test.each(["download", "save", "unauthorized", "revoked"] as const)(
+    "stops audio before transcription and model completion on %s failure",
+    async (failure) => {
+      await withTempHome(async (homeDir) => {
+        await writeWhatsAppConfigIni(homeDir, {
+          pairedJid: PAIRED_JID,
+          phoneNumber: "1234567890",
+        });
+        const authStore = new WhatsAppAuthStore();
+        await authStore.reload();
+        const { client, calls } = createMockClient();
+        const sessionStore = new SessionStore(
+          path.join(homeDir, ".atlas", "whatsapp", "chat-sessions.json")
+        );
+        const orgStore = createTestOrgStore(homeDir);
+        await orgStore.load();
+        const { socket, sent } = createMockSocket();
+        const artifactsPath = path.join(
+          homeDir,
+          ".atlas",
+          "orgs",
+          "org_test",
+          "profiles",
+          "default",
+          "artifacts"
+        );
+        if (failure === "save") {
+          await mkdir(path.dirname(artifactsPath), { recursive: true });
+          await writeFile(artifactsPath, "not a directory");
+        }
+        let fileAuthorizations = 0;
+        const authorize = client.authorizeChannelPrincipal.bind(client);
+        client.authorizeChannelPrincipal = async (input) => {
+          if (input.intent === "files") {
+            fileAuthorizations += 1;
+            if (
+              failure === "unauthorized" ||
+              (failure === "revoked" && fileAuthorizations === 2)
+            ) {
+              throw new Error("File access denied");
+            }
+          }
+          return authorize(input);
+        };
+        let downloads = 0;
+        const handleMessage = createChatHandler({
+          authStore,
+          client,
+          config: { phoneNumber: "1234567890", profileId: "default" },
+          downloadMedia: async () => {
+            downloads += 1;
+            if (failure === "download") {
+              throw new Error("Media unavailable");
+            }
+            return Buffer.from("original audio");
+          },
+          getSocket: () => socket as any,
+          orgStore,
+          sessionStore,
+        });
+
+        await handleMessage({
+          inbound: {
+            key: { fromMe: false, id: "voice-1", remoteJid: PAIRED_JID },
+            message: { audioMessage: { mimetype: "audio/ogg", ptt: true } },
+          },
+          jid: PAIRED_JID,
+          text: "",
+        });
+
+        expect(downloads).toBe(failure === "unauthorized" ? 0 : 1);
+        expect(calls.transcribeAudio).toBe(0);
+        expect(calls.sendStream).toBe(0);
+        expect(sent.length).toBeGreaterThan(0);
+        await expect(
+          readFile(path.join(artifactsPath, "voice.ogg"))
+        ).rejects.toThrow();
       });
-    });
-  });
+    }
+  );
 
   test("rejects unsupported documents without calling sendStream", async () => {
     await withTempHome(async (homeDir) => {
@@ -3100,6 +3226,22 @@ describe("createChatHandler group chats", () => {
       { accessMode: "open" },
       async ({ clientMock, handleMessage, sessionStore }) => {
         const secondSender = "628199999999@s.whatsapp.net";
+        const invokedPrincipals: string[] = [];
+        const createSession = clientMock.client.createSession.bind(
+          clientMock.client
+        );
+        clientMock.client.createSession = async (...args) => {
+          const session = await createSession(...args);
+          const channelUserId = args[1]?.externalPrincipal?.channelUserId ?? "";
+          return {
+            ...session,
+            id: `session_${channelUserId}`,
+            sendStream: async (...streamArgs) => {
+              invokedPrincipals.push(channelUserId);
+              return session.sendStream(...streamArgs);
+            },
+          };
+        };
 
         await handleMessage(
           groupInbound({
@@ -3127,6 +3269,11 @@ describe("createChatHandler group chats", () => {
         expect(clientMock.calls.externalPrincipalIds).toEqual([
           PAIRED_JID,
           secondSender,
+        ]);
+        expect(invokedPrincipals).toEqual([
+          PAIRED_JID,
+          secondSender,
+          PAIRED_JID,
         ]);
         expect(
           sessionStore.get(resolveWhatsAppSessionKey(GROUP_JID, PAIRED_JID))
@@ -3321,7 +3468,7 @@ describe("createChatHandler artifact delivery", () => {
       const oversizedMeta = JSON.stringify({
         mimeType: "application/pdf",
         savedAt: "2026-07-13T10:00:00.000Z",
-        sizeBytes: 6 * 1024 * 1024,
+        sizeBytes: 26 * 1024 * 1024,
       });
       const oversizedMessages: ChatMessage[] = [
         { content: "save report", role: "user" },
@@ -4032,7 +4179,7 @@ describe("createChatHandler artifact delivery", () => {
           },
           {
             content: JSON.stringify({
-              bytesWritten: 6 * 1024 * 1024,
+              bytesWritten: 26 * 1024 * 1024,
               path: "/home/.atlas/orgs/org/profiles/default/artifacts/huge.bin",
             }),
             name: "write_file",
@@ -4068,8 +4215,11 @@ describe("createChatHandler artifact delivery", () => {
       expect(calls.readProfileArtifactContent).toBe(0);
       expect(sent.some((message) => message.document)).toBe(false);
       expect(
-        sent.some((message) =>
-          message.text?.includes("File is too large for WhatsApp")
+        sent.some(
+          (message) =>
+            message.text?.includes(
+              "File is too large for Atlas WhatsApp delivery"
+            ) && message.text.includes("artifacts/huge.bin")
         )
       ).toBe(true);
     });

@@ -1,0 +1,185 @@
+{
+  "at": "2026-09-06T23:04:43.821904+00:00",
+  "knownCredentialLiteralScan": "passed selected files only",
+  "files": [
+    {
+      "file": "final-readiness/evidence-reference.json",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/evidence-reference.json",
+      "sha256": "fac21e9bd1c7157c77200839f4f1fa0acabd81de4773d56f98bea8c51f90e092",
+      "bytes": 1815
+    },
+    {
+      "file": "final-readiness/finalization.log",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/finalization.log",
+      "sha256": "0b0f7d8af7c7135baa6d6904c48ed3653e0c1c4b4cc18883b7baa4e4673522b4",
+      "bytes": 539
+    },
+    {
+      "file": "final-readiness/finalize.py",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/finalize.py",
+      "sha256": "847699ec47a71ebeb1d59c6fa97f4928804472ca2e8e615359d8d2a9b994c10a",
+      "bytes": 16654
+    },
+    {
+      "file": "final-readiness/freeze.log",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/freeze.log",
+      "sha256": "e2e124212507eca725b75a8da6bf08aa38f1679eceb2baaac0c2cc0b4c435989",
+      "bytes": 161
+    },
+    {
+      "file": "final-readiness/inspection-final-note.json",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/inspection-final-note.json",
+      "sha256": "2201cdc8dd8691080207e3086fce8b210fc9cdf407d983fef5a0ef84b700fb48",
+      "bytes": 426
+    },
+    {
+      "file": "final-readiness/inspection-notes.json",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/inspection-notes.json",
+      "sha256": "0ab2a07a9a0a55bdb9903c78b821ccd0dd7bc9b6dc4876f6cb2d9463a79729cb",
+      "bytes": 644
+    },
+    {
+      "file": "final-readiness/inspection-observation-shape-error.json",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/inspection-observation-shape-error.json",
+      "sha256": "af1edafa81e6fb43440b1adc85ede06aa59e5fc2217490139a4671c17c8c755d",
+      "bytes": 293
+    },
+    {
+      "file": "final-readiness/readiness-final.json",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/readiness-final.json",
+      "sha256": "381d960e289ecdec9f26460ceb508432e42763f3375240d2d36ef07d85d39ff7",
+      "bytes": 18957
+    },
+    {
+      "file": "final-readiness/snapshot-current.log",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/snapshot-current.log",
+      "sha256": "601a51971466de02488754bf73e69e79f9be1c3597005c978eb93d7d87cd12f0",
+      "bytes": 224
+    },
+    {
+      "file": "final-readiness/snapshot-current.ts",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/snapshot-current.ts",
+      "sha256": "55c3942f0a7857cd9285d359710a6bff190f0dddbbb33e7d2d36f7b6b0e8b0e0",
+      "bytes": 1184
+    },
+    {
+      "file": "final-readiness/source-current.json",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/source-current.json",
+      "sha256": "641ad7deb15c0205ea52ae3fb6aa99608607816a16142906276e6f796036aab5",
+      "bytes": 1167848
+    },
+    {
+      "file": "final-readiness/verification.json",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-final-readiness/verification.json",
+      "sha256": "d87af0b34d3ac6555550d2204e3d7b58444d0e255d3f2fa403ed027d5d507df3",
+      "bytes": 47201
+    },
+    {
+      "file": "candidate5-gates/atlas-native-adapter-tests.log",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/atlas-native-adapter-tests.log",
+      "sha256": "e07e3e9b39dde111e08f8e161765b3b9a647c8f3b222707d969f1e841468dc82",
+      "bytes": 580
+    },
+    {
+      "file": "candidate5-gates/code-grader-tests.log",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/code-grader-tests.log",
+      "sha256": "263333ad48368093cd87dfa59e99b4f3530cc2387891d74f19f887f543b3e77c",
+      "bytes": 1883
+    },
+    {
+      "file": "candidate5-gates/control-gates.json",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/control-gates.json",
+      "sha256": "2506084a76d8593c2923633a4c14d1afb9ba6bcc56270cc94076cd613c7e45ac",
+      "bytes": 3364
+    },
+    {
+      "file": "candidate5-gates/control-tests.log",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/control-tests.log",
+      "sha256": "640cb2a4540afa5ad789af9a77d94ecdd396e3671f8bd7979c02c20930b59b18",
+      "bytes": 5549
+    },
+    {
+      "file": "candidate5-gates/full-native-scripted-pilot.log",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/full-native-scripted-pilot.log",
+      "sha256": "3a0e5c3342dea3a0aa438175f9727adfa20032b65f2e89d257cd2099d59fde56",
+      "bytes": 11537
+    },
+    {
+      "file": "candidate5-gates/hermes-native-adapter-tests.log",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/hermes-native-adapter-tests.log",
+      "sha256": "2d2e7c964a5086f99962efa11030f2bd742b512efe087a3734a085c169212c90",
+      "bytes": 1101
+    },
+    {
+      "file": "candidate5-gates/lint.log",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/lint.log",
+      "sha256": "ab95c9c67485312989b0d7f5587e8298c8d99df526a4676a8307e296dd46c802",
+      "bytes": 45
+    },
+    {
+      "file": "candidate5-gates/native-gates.json",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/native-gates.json",
+      "sha256": "3610e0e033adde86bd1ed28b4719716a7b0075e2e8dcbd1c554886c0b8d97d8e",
+      "bytes": 1188
+    },
+    {
+      "file": "candidate5-gates/oracle-tests.log",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/oracle-tests.log",
+      "sha256": "3c48fce29203f4c853418fc493ebc40d41c82c1c22388ba9c34efde442d8549f",
+      "bytes": 3191
+    },
+    {
+      "file": "candidate5-gates/pilot-details.json",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/pilot-details.json",
+      "sha256": "18586e35d7a35e543a5c833868acaee14e0c91c364ecc7982bb45aa54554f710",
+      "bytes": 44324
+    },
+    {
+      "file": "candidate5-gates/pilot-reference.json",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/pilot-reference.json",
+      "sha256": "9fd6479421d972ca792897ff0cf5bf416644e0d44a135cce7d1c5d19da143a0f",
+      "bytes": 237
+    },
+    {
+      "file": "candidate5-gates/postpilot-inspection-initial-error.json",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/postpilot-inspection-initial-error.json",
+      "sha256": "f39e3660ddc1c0864d31bd1a4d1acc348e696444963c4c9595e823f9470c58bd",
+      "bytes": 206
+    },
+    {
+      "file": "candidate5-gates/private-pilot-bindings.json",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/private-pilot-bindings.json",
+      "sha256": "cab47abc83f57dad93755af91764d3a80715e0d048a2a5b3298e7722a4096254",
+      "bytes": 295
+    },
+    {
+      "file": "candidate5-gates/private-pilot.patch",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/private-pilot.patch",
+      "sha256": "c2a4cf92c4120298e0b88f8b92d0937d94f706da4f698d890e6935ddcbf1c054",
+      "bytes": 1267
+    },
+    {
+      "file": "candidate5-gates/source-after.json",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/source-after.json",
+      "sha256": "ca018aa018819975855540f3b9f1d12e3e7e92deb914b2f01f611c5373e2b6f6",
+      "bytes": 257459
+    },
+    {
+      "file": "candidate5-gates/source-before.json",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/source-before.json",
+      "sha256": "45933652d70209e2c57a272b64c6e254a0958f4a638eb1aaf01f8b7d2dee229d",
+      "bytes": 257059
+    },
+    {
+      "file": "candidate5-gates/typecheck.log",
+      "original": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "file": "freeze-reference.json",
+      "sha256": "2cedbf1c0e2899ada217fcb88721253bced88a504cfdb33f33275b558ee00258",
+      "bytes": 1299
+    }
+  ]
+}

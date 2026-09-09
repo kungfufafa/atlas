@@ -1,0 +1,103 @@
+bun test v1.3.1 (89fa0f34)
+
+scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:
+14 | 
+15 | function fixture(titleDelayMs = 0) {
+16 |   const requests: Array<{ messages: WireMessage[]; tools?: unknown[] }> = [];
+17 |   const mainRequests: typeof requests = [];
+18 |   let count = 0;
+19 |   const server = Bun.serve({
+                          ^
+error: Failed to start server. Is port 0 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at fixture (/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:19:22)
+      at <anonymous> (/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:137:17)
+      at <anonymous> (/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:136:94)
+(fail) actual native writes persist across reopened SQLite and fresh empty-history sessions [2.40ms]
+14 | 
+15 | function fixture(titleDelayMs = 0) {
+16 |   const requests: Array<{ messages: WireMessage[]; tools?: unknown[] }> = [];
+17 |   const mainRequests: typeof requests = [];
+18 |   let count = 0;
+19 |   const server = Bun.serve({
+                          ^
+error: Failed to start server. Is port 0 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at fixture (/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:19:22)
+      at <anonymous> (/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:194:17)
+      at <anonymous> (/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:193:103)
+(fail) cold recall has neither acquired native memory nor training history after the same A workload [0.31ms]
+14 | 
+15 | function fixture(titleDelayMs = 0) {
+16 |   const requests: Array<{ messages: WireMessage[]; tools?: unknown[] }> = [];
+17 |   const mainRequests: typeof requests = [];
+18 |   let count = 0;
+19 |   const server = Bun.serve({
+                          ^
+error: Failed to start server. Is port 0 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at fixture (/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:19:22)
+      at <anonymous> (/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:221:17)
+      at <anonymous> (/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:220:98)
+(fail) different user cannot retrieve native user DB memory but shares profile memory by design [0.15ms]
+14 | 
+15 | function fixture(titleDelayMs = 0) {
+16 |   const requests: Array<{ messages: WireMessage[]; tools?: unknown[] }> = [];
+17 |   const mainRequests: typeof requests = [];
+18 |   let count = 0;
+19 |   const server = Bun.serve({
+                          ^
+error: Failed to start server. Is port 0 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at fixture (/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:19:22)
+      at <anonymous> (/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:239:17)
+      at <anonymous> (/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:238:79)
+(fail) different tenant sees neither previous profile file nor user DB facts [0.16ms]
+14 | 
+15 | function fixture(titleDelayMs = 0) {
+16 |   const requests: Array<{ messages: WireMessage[]; tools?: unknown[] }> = [];
+17 |   const mainRequests: typeof requests = [];
+18 |   let count = 0;
+19 |   const server = Bun.serve({
+                          ^
+error: Failed to start server. Is port 0 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at fixture (/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:19:22)
+      at <anonymous> (/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:257:17)
+      at <anonymous> (/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:256:98)
+(fail) request validation rejects answer injection, wrong-model evidence and external endpoints [0.14ms]
+14 | 
+15 | function fixture(titleDelayMs = 0) {
+16 |   const requests: Array<{ messages: WireMessage[]; tools?: unknown[] }> = [];
+17 |   const mainRequests: typeof requests = [];
+18 |   let count = 0;
+19 |   const server = Bun.serve({
+                          ^
+error: Failed to start server. Is port 0 in use?
+ syscall: "listen",
+   errno: 0,
+    code: "EADDRINUSE"
+
+      at fixture (/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:19:22)
+      at <anonymous> (/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:283:17)
+      at <anonymous> (/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:282:100)
+(fail) shared deadline during a native auxiliary retains completed writes and the partial session [0.17ms]
+
+ 0 pass
+ 6 fail
+Ran 6 tests across 1 file. [1.62s]

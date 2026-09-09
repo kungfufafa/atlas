@@ -14,8 +14,13 @@ export interface TelegramRichMessenger {
 }
 
 export function createTelegramRichMessenger(
-  ctx: Context
+  ctx: Context,
+  onSent?: (messageId: number) => void
 ): TelegramRichMessenger {
+  const sent = (message: TelegramReplyMessage): TelegramReplyMessage => {
+    onSent?.(message.message_id);
+    return message;
+  };
   return {
     async edit(messageId: number, text: string): Promise<void> {
       await editRichMessage(ctx, messageId, text).catch(async () => {
@@ -23,15 +28,15 @@ export function createTelegramRichMessenger(
       });
     },
     async send(text: string): Promise<TelegramReplyMessage | undefined> {
-      return sendRichMessage(ctx, text).catch(async () =>
-        sendPlainMessage(ctx, text)
-      );
+      return sendRichMessage(ctx, text)
+        .catch(async () => sendPlainMessage(ctx, text))
+        .then(sent);
     },
     async sendPlain(text: string): Promise<TelegramReplyMessage | undefined> {
-      return sendPlainMessage(ctx, text);
+      return sent(await sendPlainMessage(ctx, text));
     },
     async sendRaw(text: string): Promise<TelegramReplyMessage | undefined> {
-      return sendRawMessage(ctx, text);
+      return sent(await sendRawMessage(ctx, text));
     },
   };
 }

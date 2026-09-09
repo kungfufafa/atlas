@@ -1,0 +1,48 @@
+bun test v1.3.1 (89fa0f34)
+
+packages/db/src/reopen.test.ts:
+(pass) database reopen after restore > reopen reads the replacement sqlite file at the same path [91.91ms]
+
+packages/db/src/organization-archive.test.ts:
+(pass) SQLite organization archive > atomically preserves one active org and hides archived memberships [13.24ms]
+
+packages/db/src/profile-atomic.test.ts:
+(pass) SQLite atomic profile creation > does not overwrite or cross-delete a profile owned by another org [9.92ms]
+(pass) profile import publication > keeps reservations hidden and prevents normal writers from publishing them [11.67ms]
+(pass) profile import publication > rejects malformed publication graphs without exposing partial state [12.10ms]
+
+apps/server/src/services/artifact-publication-service.test.ts:
+(pass) sqlite authoritative publication > overlapping sessions publish only their explicit captured bytes; workspace overwrite is harmless [27.72ms]
+(pass) sqlite authoritative publication > failed completed operations and cancellation never publish staged outputs or delete user files [40.94ms]
+(pass) sqlite authoritative publication > forged tool metadata cannot create, reassign or finalize publications [29.12ms]
+(pass) sqlite authoritative publication > exact retries across controllers are idempotent; differing bytes, metadata or output sets conflict atomically [34.74ms]
+(pass) sqlite authoritative publication > wrong scopes and guessed IDs fail; current authorization and revocation remain authoritative [19.09ms]
+(pass) sqlite authoritative publication > uncertain post-commit DB error retries persistence without replaying producer [17.46ms]
+(pass) sqlite authoritative publication > deleted and recreated sessions cannot resurrect old publication authority [19.53ms]
+(pass) sqlite authoritative publication > blob staging failure preserves existing user output and cannot publish a partial set [29.45ms]
+(pass) sqlite authoritative publication > repeated exact staging is idempotent and differing same-ordinal bytes conflict [26.74ms]
+(pass) sqlite authoritative publication > a staging error cannot be ignored to commit only the other outputs [22.28ms]
+(pass) sqlite authoritative publication > an insertion conflict rolls back every output and the execution reservation [30.70ms]
+(pass) sqlite authoritative publication > unrestricted-host tampering is detected, never mislabeled immutable [32.68ms]
+(pass) sqlite authoritative publication > revocation while a read is in flight blocks returned bytes [19.97ms]
+(pass) sqlite authoritative publication > producer buffers are captured before await and private storage cannot overlap admitted roots [31.91ms]
+(pass) memory authoritative publication > overlapping sessions publish only their explicit captured bytes; workspace overwrite is harmless [4.97ms]
+(pass) memory authoritative publication > failed completed operations and cancellation never publish staged outputs or delete user files [6.94ms]
+(pass) memory authoritative publication > forged tool metadata cannot create, reassign or finalize publications [2.20ms]
+(pass) memory authoritative publication > exact retries across controllers are idempotent; differing bytes, metadata or output sets conflict atomically [4.95ms]
+(pass) memory authoritative publication > wrong scopes and guessed IDs fail; current authorization and revocation remain authoritative [2.54ms]
+(pass) memory authoritative publication > uncertain post-commit DB error retries persistence without replaying producer [1.76ms]
+(pass) memory authoritative publication > deleted and recreated sessions cannot resurrect old publication authority [1.57ms]
+(pass) memory authoritative publication > blob staging failure preserves existing user output and cannot publish a partial set [1.18ms]
+(pass) memory authoritative publication > repeated exact staging is idempotent and differing same-ordinal bytes conflict [3.61ms]
+(pass) memory authoritative publication > a staging error cannot be ignored to commit only the other outputs [2.79ms]
+(pass) memory authoritative publication > an insertion conflict rolls back every output and the execution reservation [2.36ms]
+(pass) memory authoritative publication > unrestricted-host tampering is detected, never mislabeled immutable [2.40ms]
+(pass) memory authoritative publication > revocation while a read is in flight blocks returned bytes [1.68ms]
+(pass) memory authoritative publication > producer buffers are captured before await and private storage cannot overlap admitted roots [1.31ms]
+(pass) SQLite concurrent connections and restart preserve exact committed bytes and idempotency [44.41ms]
+
+ 34 pass
+ 0 fail
+ 210 expect() calls
+Ran 34 tests across 4 files. [1.79s]

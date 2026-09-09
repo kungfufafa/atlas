@@ -121,6 +121,9 @@ describe("McpService", () => {
 
     const stored = await db.getMcpServer(created.server.id);
 
+    if (!("headers" in updated.server.config)) {
+      throw new Error("Expected HTTP configuration with headers");
+    }
     expect(updated.server.config.headers).toEqual({
       Authorization: "••••••••",
       "X-Custom": "••••••••",

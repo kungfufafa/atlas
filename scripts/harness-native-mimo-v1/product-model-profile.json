@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "model": "mimo-v2.5",
+  "endpoint": "https://opencode.ai/zen/go/v1",
+  "userAgent": "Atlas-Hermes-Compatibility-Probe/1.0 (nonstreaming)",
+  "observedAt": "2026-09-06T16:51:20.500Z",
+  "selectionCompletedAt": "2026-09-06T16:51:42.408Z",
+  "scope": "Fixed-order compatibility-only model and header stratum; no model-only causal attribution.",
+  "contextCapacity": null,
+  "outputCapacity": null,
+  "evidenceFiles": {
+    "product-model-probe-completed.json": {
+      "source": "/private/tmp/atlas-go-compatibility-probe-v1/execution/completed.json",
+      "sha256": "3fdac17312d98760aeff0b12e080487c7b920eda5cb12251b0ce368549415a87"
+    },
+    "product-model-probe-tool-request.json": {
+      "source": "/private/tmp/atlas-go-compatibility-probe-v1/execution/03-mimo-v2.5-tool_init.request.json",
+      "sha256": "be8f079c130d3a80889a0719a32978261e8d9a321db79fcc709acd545038d266"
+    },
+    "product-model-probe-tool-response.json": {
+      "source": "/private/tmp/atlas-go-compatibility-probe-v1/execution/03-mimo-v2.5-tool_init.response.json",
+      "sha256": "2f08690013ac7a15e555f5e3fe98d65c3822dbce727ebb53ec5490ff9a57ef3c"
+    }
+  }
+}

@@ -1,0 +1,83 @@
+[
+  {
+    "name": "control-tests",
+    "command": [
+      "bun",
+      "test",
+      "scripts/harness-native-files-mimo-v2/file-delivery-markdown.test.ts",
+      "scripts/harness-native-files-mimo-v2/file-run.test.ts",
+      "scripts/harness-native-files-mimo-v2/product-analysis.test.ts",
+      "scripts/harness-native-files-mimo-v2/product-model.test.ts",
+      "scripts/harness-native-files-mimo-v2/product-proxy-queue.test.ts",
+      "scripts/harness-native-files-mimo-v2/product-proxy.test.ts"
+    ],
+    "exitCode": 0,
+    "elapsedSeconds": 16.671867250013747,
+    "log": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/control-tests.log"
+  },
+  {
+    "name": "oracle-tests",
+    "command": [
+      "/Users/apriansyahrs/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+      "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-files-mimo-v2/file-oracles-test.py"
+    ],
+    "exitCode": 0,
+    "elapsedSeconds": 1.5992997499997728,
+    "log": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/oracle-tests.log"
+  },
+  {
+    "name": "code-grader-tests",
+    "command": [
+      "/Users/apriansyahrs/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+      "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-files-mimo-v2/file-code-check-test.py"
+    ],
+    "exitCode": 0,
+    "elapsedSeconds": 4.502999499993166,
+    "log": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/code-grader-tests.log"
+  },
+  {
+    "name": "typecheck",
+    "command": [
+      "bun",
+      "x",
+      "--no-install",
+      "tsc",
+      "-p",
+      "/private/tmp/atlas-native-file-delivery-audit/tsconfig-focused-v2.json",
+      "--pretty",
+      "false"
+    ],
+    "exitCode": 0,
+    "elapsedSeconds": 4.812593041002401,
+    "log": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/typecheck.log"
+  },
+  {
+    "name": "lint",
+    "command": [
+      "bun",
+      "x",
+      "--no-install",
+      "ultracite",
+      "check",
+      "scripts/harness-native-files-mimo-v2/file-atlas-runner.test.ts",
+      "scripts/harness-native-files-mimo-v2/file-atlas-runner.ts",
+      "scripts/harness-native-files-mimo-v2/file-delivery-markdown.test.ts",
+      "scripts/harness-native-files-mimo-v2/file-delivery-markdown.ts",
+      "scripts/harness-native-files-mimo-v2/file-markdown-dependency.ts",
+      "scripts/harness-native-files-mimo-v2/file-run.test.ts",
+      "scripts/harness-native-files-mimo-v2/file-run.ts",
+      "scripts/harness-native-files-mimo-v2/product-analysis.test.ts",
+      "scripts/harness-native-files-mimo-v2/product-analysis.ts",
+      "scripts/harness-native-files-mimo-v2/product-identity.ts",
+      "scripts/harness-native-files-mimo-v2/product-model.test.ts",
+      "scripts/harness-native-files-mimo-v2/product-model.ts",
+      "scripts/harness-native-files-mimo-v2/product-proxy-broker.ts",
+      "scripts/harness-native-files-mimo-v2/product-proxy-queue.test.ts",
+      "scripts/harness-native-files-mimo-v2/product-proxy.test.ts",
+      "scripts/harness-native-files-mimo-v2/product-proxy.ts"
+    ],
+    "exitCode": 0,
+    "elapsedSeconds": 1.5677010829967912,
+    "log": "/private/tmp/atlas-native-file-delivery-audit/v2-candidate5-20260906T192749Z/lint.log"
+  }
+]

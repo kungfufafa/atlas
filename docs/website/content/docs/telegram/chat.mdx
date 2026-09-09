@@ -3,7 +3,7 @@ title: "Chat behavior & commands"
 description: "How the Atlas Telegram bot behaves in private chats, groups, and topics — plus the commands and message types it supports."
 ---
 
-Once the bridge is running and your account is paired, here is how the bot behaves and what you can send it.
+Once the bridge is running and your account is authorized, here is how the bot behaves and what you can send it.
 
 ## Private chat behavior
 
@@ -21,13 +21,13 @@ If an unlinked user opens the bot, Atlas asks for the chat access code instead o
 
 Atlas supports Telegram groups, but it is intentionally conservative about when it replies.
 
-In a group, the bot responds only when the message is:
+By default, in a group, the bot responds when the message is:
 
 - a slash command like `/status`
 - a reply to one of the bot's messages
 - a direct mention like `@your_bot_name hello`
 
-This keeps group chats usable without making the bot noisy.
+If Atlas receives an otherwise authorized file without the required mention or reply, it explains why the file was ignored. Resend it with a mention in the caption, or ask an administrator to disable **Channel controls → Groups → Require mention or reply**. Telegram must deliver the message to the bot; check bot privacy settings if group files never arrive.
 
 ### Group topics and profiles
 
@@ -66,7 +66,15 @@ Supported inputs include:
 - voice notes and audio messages
 - supported documents such as `pdf`, `docx`, `xls`, `xlsx`, `csv`, `txt`, and `md`
 
-Small supported documents are downloaded and forwarded into the Atlas chat flow. Voice notes and audio messages are first transcribed, then handled like text. When the agent saves a file, Atlas sends it in the Telegram chat (when it is within 5 MB) and posts a share link. Unsupported media gets a friendly rejection message instead of silently failing.
+Use Telegram's **File** attachment option for the original document, or send a photo. Add the requested job in its caption, such as “Summarize this PDF and send a Word report.” Pasted preview text does not provide the original file.
+
+Supported work files include `.xlsx`, `.xls`, `.xlsm`, `.xlsb`, `.csv`, `.pdf`, `.docx`, `.txt`, `.md`, and `.jpg`, `.jpeg`, `.png`, `.webp`, `.gif` images. Atlas saves originals to the replying profile's **Artifacts**, uses the matching reader, and saves finished deliverables there. Photos also reach the model as real image bytes. Voice notes and audio originals are saved before their existing transcription flow.
+
+The hosted Telegram bridge accepts documents and audio up to **20 MB**, and images up to **5 MB**. Atlas itself caps audio at **25 MB**. All authorized senders can submit file jobs without a separate account pairing; blocked senders and read-only viewers cannot. Workspace tool restrictions still apply. Unsupported types and failed downloads or saves receive a rejection instead of a guess.
+
+Legacy Excel workbooks are read or converted to a new `.xlsx` for editing; macros are not executed or carried into the result. Self-hosted XLS/XLSB conversion requires LibreOffice, which is included in the Atlas container.
+
+Continue edits in the same chat or topic so Atlas can use the current file job. Finished spreadsheets, Word documents, slide decks, summaries, and images return through the existing artifact delivery flow.
 
 ## Rich Markdown replies
 
@@ -86,7 +94,7 @@ If Telegram rejects the rich rendering, Atlas falls back to plain text.
 
 ## Saved artifacts and share links
 
-When the agent saves a file (spreadsheet, document, deck, or other artifact), Atlas sends that file in the Telegram chat when it is within 5 MB, then posts a **Publish-style share link**.
+When the agent saves a file (spreadsheet, document, deck, or other artifact), Atlas sends that file in the Telegram chat when it is within 25 MB, then posts a **Publish-style share link**.
 
 - The link uses the same unguessable `/s/{token}` URLs as dashboard Publish — no Atlas login required to open it.
 - Anyone who can read the Telegram message can open the link until the share is revoked from the web app.

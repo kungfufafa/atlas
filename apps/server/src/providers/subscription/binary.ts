@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { SubscriptionProviderKind } from "@atlas/core";
 import { ensureProcessPath } from "../../lib/ensure-process-path";
-import { buildSubscriptionRuntimeEnv } from "./env";
+import { buildSubscriptionRuntimeEnv, subscriptionRuntimeHome } from "./env";
 
 const VERSION_TIMEOUT_MS = 8000;
 const FORCE_KILL_DELAY_MS = 1000;
@@ -90,6 +90,14 @@ export function claudeLoginCommand(
     searchPath: options.searchPath,
   });
   const command = formatShellCommand([
+    "env",
+    "-u",
+    "ANTHROPIC_API_KEY",
+    "-u",
+    "ANTHROPIC_AUTH_TOKEN",
+    "-u",
+    "CLAUDE_CODE_OAUTH_TOKEN",
+    `CLAUDE_CONFIG_DIR=${subscriptionRuntimeHome("claude", env)}`,
     launch?.command ?? "claude",
     ...(launch?.prefixArgs ?? []),
     "auth",

@@ -1,0 +1,9 @@
+{
+  "status": "CLOSED",
+  "sourceHash": "092cddfec661d7e35a8061f16e52d4389c158a3b64a7c102523b8a4b31b9233c",
+  "reviewSha256": "39f5afa6444886197fc14f65a977ca8c02fee837f85c4894a509810453da12b5",
+  "manifestSha256": "dd16d6d97afe3be8dc5cd9d08d5110d4c1ef57780d1b74d304dbd879b12391be",
+  "files": 12,
+  "sourceEdits": 0,
+  "providerCalls": 0
+}

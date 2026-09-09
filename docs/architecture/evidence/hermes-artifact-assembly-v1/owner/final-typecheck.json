@@ -1,0 +1,17 @@
+{
+  "name": "final-typecheck",
+  "command": [
+    "bun",
+    "x",
+    "--no-install",
+    "tsc",
+    "--noEmit",
+    "-p",
+    "tsconfig.selected-publication.json"
+  ],
+  "startedAt": "2026-09-07T02:08:29.120619+00:00",
+  "endedAt": "2026-09-07T02:08:40.332540+00:00",
+  "exitCode": 0,
+  "log": "final-typecheck.log",
+  "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

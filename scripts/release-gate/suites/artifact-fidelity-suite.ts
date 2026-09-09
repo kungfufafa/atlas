@@ -1,7 +1,6 @@
 import {
   createPptxBuffer,
   PresentationPreviewer,
-  PreviewService,
   SpreadsheetPreviewer,
 } from "../../../packages/core/src/index";
 import type { ReleaseGateCheck } from "../decision-engine";
@@ -10,7 +9,6 @@ export async function runArtifactFidelitySuite(): Promise<ReleaseGateCheck> {
   const start = Date.now();
 
   try {
-    const previewService = new PreviewService();
     const presentationPreviewer = new PresentationPreviewer();
     const spreadsheetPreviewer = new SpreadsheetPreviewer();
 
@@ -108,7 +106,7 @@ export async function runArtifactFidelitySuite(): Promise<ReleaseGateCheck> {
       durationMs: Date.now() - start,
       id: "artifact_fidelity_suite",
       message:
-        "Office presentation, spreadsheet, and document fidelity preview engines verified",
+        "PPTX semantic preview slide count and CSV preview row count verified; editing, rendering fidelity and DOCX/PDF operations are not covered",
       required: true,
       status: "pass",
     };

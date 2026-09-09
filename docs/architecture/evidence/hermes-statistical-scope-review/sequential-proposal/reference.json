@@ -1,0 +1,67 @@
+{
+  "createdAt": "2026-09-06T19:16:54.703751+00:00",
+  "status": "design-only, not adopted or implemented",
+  "knownCredentialLiteralScan": "passed selected files only; not exhaustive secret detection",
+  "files": [
+    {
+      "file": "prospective-note.md",
+      "original": "/private/tmp/atlas-sequential-claim-design/prospective-note.md",
+      "sha256": "a9b707f70e6c3549efd5d356ce8468634a5639d008dc7e74bcef2b6440fb8d17",
+      "bytes": 5551
+    },
+    {
+      "file": "calculate.py",
+      "original": "/private/tmp/atlas-sequential-claim-design/calculate.py",
+      "sha256": "ee1e9f941667cd8f1364ab006d0abf5beb29965393210a6d1734ff5643b1abcc",
+      "bytes": 1487
+    },
+    {
+      "file": "illustrative-calculations.json",
+      "original": "/private/tmp/atlas-sequential-claim-design/illustrative-calculations.json",
+      "sha256": "c83e9b8ff1fd4895b7584c8b5690c4e9f51cbc0306ca06a754297bf8175db7fb",
+      "bytes": 3753
+    },
+    {
+      "file": "reproduction.log",
+      "original": "/private/tmp/atlas-sequential-claim-design/reproduction.log",
+      "sha256": "1b59da008a8ca4a078321811f8295bab6299770a39bea6fc0e12b999ac5be9ab",
+      "bytes": 63
+    },
+    {
+      "file": "sources.json",
+      "original": "/private/tmp/atlas-sequential-claim-design/sources.json",
+      "sha256": "8e345f5670b655382a9104a573690b365084c3be95e481204c55a91ef635c94e",
+      "bytes": 1925
+    },
+    {
+      "file": "sources-with-scope-clarification.json",
+      "original": "/private/tmp/atlas-sequential-claim-design/sources-with-scope-clarification.json",
+      "sha256": "8b97850877db3bcd628396f49c9c04b01704b27ab9ce98dee3c2c56d142bad6b",
+      "bytes": 1925
+    },
+    {
+      "file": "independent-review.md",
+      "original": "/private/tmp/atlas-sequential-claim-design/independent-review.md",
+      "sha256": "30403759a4431851b91d0d7bf9ef48ceae1f53b342a5e9356e79bb0d5e088ee5",
+      "bytes": 8343
+    },
+    {
+      "file": "independent-review.json",
+      "original": "/private/tmp/atlas-sequential-claim-design/independent-review.json",
+      "sha256": "a44b7f1c751d73d07677506bd394be71acdf354e2b40b91e7ab7bedaa1be9a1e",
+      "bytes": 1112
+    },
+    {
+      "file": "independent-scope-addendum.md",
+      "original": "/private/tmp/atlas-sequential-claim-design/independent-scope-addendum.md",
+      "sha256": "f27eeb9f83d78bd0c8dc85e20a446f35ff76d8f7ea5a2322da6b52dffec3e684",
+      "bytes": 1345
+    },
+    {
+      "file": "independent-review-final.json",
+      "original": "/private/tmp/atlas-sequential-claim-design/independent-review-final.json",
+      "sha256": "de2ae7449e8aebc3e79613e68e27bf9a8bf3f145fa1db995b91e8b7df6396180",
+      "bytes": 1043
+    }
+  ]
+}

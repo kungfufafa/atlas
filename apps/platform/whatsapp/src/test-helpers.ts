@@ -85,6 +85,7 @@ export function createMockClient(
   } = {}
 ) {
   const calls = {
+    authorizeChannelPrincipal: [] as unknown[],
     bindChannelPrincipal: 0,
     bindExpectedUserIds: [] as string[],
     bindPairingAssertions: [] as string[],
@@ -231,6 +232,16 @@ export function createMockClient(
   const currentOrgId = () => orgIdScope.getStore()?.orgId ?? activeOrgId;
 
   const client = {
+    authorizeChannelPrincipal: async (input: unknown) => {
+      calls.authorizeChannelPrincipal.push(input);
+      return {
+        isPlatformAdmin: false,
+        orgId: currentOrgId() ?? "org_test",
+        orgRole: "member" as const,
+        userId: "user_test",
+      };
+    },
+    bindChannelActionContext: async () => ({ bound: true as const }),
     bindChannelPrincipal: async (input: {
       expectedUserId?: string;
       pairingAssertion?: string;
@@ -246,7 +257,7 @@ export function createMockClient(
         userId: options.boundPrincipalUserId ?? "user_test",
       };
     },
-    createChatSession: () => session,
+    createChatSession: (sessionId: string) => ({ ...session, id: sessionId }),
     createSession: async (
       _channel: unknown,
       sessionOptions: {

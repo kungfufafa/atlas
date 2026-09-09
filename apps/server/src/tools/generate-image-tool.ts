@@ -10,6 +10,7 @@ import {
   type ToolDefinition,
   type UserConfig,
 } from "@atlas/core";
+import { stageToolArtifact } from "@atlas/core/artifact-publication";
 import type { DatabaseAdapter } from "@atlas/db";
 import { createAttachmentSaver } from "../services/attachment-service";
 import {
@@ -169,6 +170,7 @@ export async function runGenerateImageTool(
     };
   }
 
+  const bytes = Buffer.from(result.data);
   const workspaceRoot =
     context.workspaceRoot?.trim() || getProfileSoulDir(orgId, profileId);
   if (!path.isAbsolute(workspaceRoot)) {
@@ -186,12 +188,12 @@ export async function runGenerateImageTool(
   );
   const metaPath = `${targetPath}${ARTIFACT_META_SUFFIX}`;
   const savedAt = new Date().toISOString();
-  const sizeBytes = result.data.byteLength;
+  const sizeBytes = bytes.byteLength;
 
   await mkdir(artifactsDir, { recursive: true });
 
   try {
-    await writeFile(targetPath, result.data);
+    await writeFile(targetPath, bytes);
     await writeFile(
       metaPath,
       JSON.stringify(
@@ -223,7 +225,7 @@ export async function runGenerateImageTool(
         sessionId,
       });
       const saved = await save({
-        bytes: Buffer.from(result.data),
+        bytes: Buffer.from(bytes),
         filename: path.basename(targetPath),
         kind: "image",
         mediaType: result.mediaType,
@@ -250,6 +252,10 @@ export async function runGenerateImageTool(
     }
   );
 
+  await stageToolArtifact(context.artifactPublisher, {
+    bytes,
+    sourcePath: relativePath,
+  });
   return {
     attachmentId,
     mimeType: result.mediaType,

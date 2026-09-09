@@ -1,0 +1,37 @@
+bun test v1.3.1 (89fa0f34)
+
+apps/server/src/services/artifact-publication-service.test.ts:
+(pass) sqlite authoritative publication > overlapping sessions publish only their explicit captured bytes; workspace overwrite is harmless [40.94ms]
+(pass) sqlite authoritative publication > failed completed operations and cancellation never publish staged outputs or delete user files [19.51ms]
+(pass) sqlite authoritative publication > forged tool metadata cannot create, reassign or finalize publications [14.71ms]
+(pass) sqlite authoritative publication > exact retries across controllers are idempotent; differing bytes, metadata or output sets conflict atomically [19.64ms]
+(pass) sqlite authoritative publication > wrong scopes and guessed IDs fail; current authorization and revocation remain authoritative [19.77ms]
+78 |  });
+79 |  test("uncertain post-commit DB error retries persistence without replaying producer",async()=>{
+80 |   await fixture(kind,async({db,service,workspace})=>{
+81 |    const original=db.commitArtifactPublications.bind(db);let calls=0;db.commitArtifactPublications=async(...args)=>{const result=await original(...args);if(++calls===1)throw new Error("Connection lost after commit");return result;};
+82 |    const owner=identity();let producerCalls=0;const ex=await service.beginExecution(owner,[workspace]);producerCalls++;await ex.producer.stageBytes({bytes:Buffer.from("effect"),sourcePath:"artifacts/output.txt",outputOrdinal:0});
+83 |    expect((await ex.finalize({success:true,data:{effect:"retained"}})).status).toBe("failed");const recovered=await ex.retryPublication();expect(recovered.status).toBe("committed");expect(producerCalls).toBe(1);expect(calls).toBe(2);expect((await service.read(owner,recovered.publications[0]!.id))?.bytes.toString()).toBe("effect");
+                                                                                    ^
+error: expect(received).toBe(expected)
+
+Expected: "failed"
+Received: "committed"
+
+      at <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:83:80)
+      at async fixture (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:23:12)
+      at async <anonymous> (/private/tmp/atlas-artifact-publication-foundation/source/apps/server/src/services/artifact-publication-service.test.ts:80:9)
+(fail) sqlite authoritative publication > uncertain post-commit DB error retries persistence without replaying producer [21.03ms]
+(pass) sqlite authoritative publication > producer buffers are captured before await and private storage cannot overlap admitted roots [20.85ms]
+(pass) memory authoritative publication > overlapping sessions publish only their explicit captured bytes; workspace overwrite is harmless [4.99ms]
+(pass) memory authoritative publication > failed completed operations and cancellation never publish staged outputs or delete user files [2.50ms]
+(pass) memory authoritative publication > forged tool metadata cannot create, reassign or finalize publications [1.32ms]
+(pass) memory authoritative publication > exact retries across controllers are idempotent; differing bytes, metadata or output sets conflict atomically [2.38ms]
+(pass) memory authoritative publication > wrong scopes and guessed IDs fail; current authorization and revocation remain authoritative [1.40ms]
+(pass) memory authoritative publication > uncertain post-commit DB error retries persistence without replaying producer [1.41ms]
+(pass) memory authoritative publication > producer buffers are captured before await and private storage cannot overlap admitted roots [1.63ms]
+
+ 13 pass
+ 1 fail
+ 84 expect() calls
+Ran 14 tests across 1 file. [950.00ms]

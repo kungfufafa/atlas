@@ -1,0 +1,88 @@
+bun test v1.3.1 (89fa0f34)
+
+packages/agent/src/chat-tool-loop.test.ts:
+(pass) agent chat tool loop > handles a single tool call then a final reply [71.80ms]
+(pass) agent chat tool loop > fires tool stream handlers [1.49ms]
+(pass) agent chat tool loop > emits artifacts only for successful tool results (failed=%s) [1.97ms]
+(pass) agent chat tool loop > emits artifacts only for successful tool results (failed=%s) [2.55ms]
+(pass) agent chat tool loop > fires parallel tool stream handlers [18.17ms]
+(pass) agent chat tool loop > runs parallelSafe tool calls concurrently and preserves history order [29.29ms]
+(pass) agent chat tool loop > falls back to sequential execution when any tool is not parallelSafe [26.74ms]
+(pass) agent chat tool loop > retains completed tool evidence when the follow-up provider call fails [2.72ms]
+(pass) agent chat tool loop > persists approval metadata without executing the guarded tool [1.83ms]
+(pass) agent chat tool loop > appends resolvePromptContext to the system prompt each turn [0.65ms]
+
+packages/agent/src/chat-stop-semantics.test.ts:
+(pass) send preserves strings/history and reports one typed stop only for that invocation [2.39ms]
+(pass) stream preserves strings/history and reports one typed stop only for that invocation [1.58ms]
+(pass) iteration limit has a distinct typed reason without additional generation [33.34ms]
+(pass) native-stop distinguishes rejected additional dispatch from a natural finish [2.41ms]
+(pass) native-natural distinguishes rejected additional dispatch from a natural finish [1.33ms]
+(pass) native-limit distinguishes rejected additional dispatch from a natural finish [5.51ms]
+(pass) observer failure does not replace final output, usage or cleanup (async=%s) [6.49ms]
+(pass) observer failure does not replace final output, usage or cleanup (async=%s) [3.05ms]
+(pass) send failed finalization retains original error and completed effects [3.86ms]
+(pass) stream failed finalization retains original error and completed effects [1.91ms]
+(pass) send cancellation after stop prevents finalization and retains tool evidence [1.96ms]
+(pass) stream cancellation after stop prevents finalization and retains tool evidence [1.37ms]
+
+packages/agent/src/chat-runtime-tools.test.ts:
+(pass) runtime tools share Atlas history and await approved before a filesystem effect [10.37ms]
+(pass) runtime tools share Atlas history and await denied before a filesystem effect [5.23ms]
+(pass) duplicate runtime call IDs share one execution and one history pair [1.53ms]
+(pass) a changed request under the same ID rejects even if the runtime swallows the error [1.01ms]
+(pass) runtime tools cannot bypass schema validation [1.50ms]
+(pass) completed work is checkpointed before a runtime failure escapes [2.32ms]
+(pass) a callback captured from a finished turn cannot execute later [0.72ms]
+(pass) native tool loops are bounded (changing results=%s) [7.57ms]
+(pass) native tool loops are bounded (changing results=%s) [1.53ms]
+(pass) an old tool cannot overlap a new turn (clear=%s) [4.80ms]
+(pass) an old tool cannot overlap a new turn (clear=%s) [2.04ms]
+(pass) unassigned tool requests are rejected before approval [1.10ms]
+(pass) schema tool requests are rejected before approval [1.53ms]
+(pass) guest tool requests are rejected before approval [1.22ms]
+(pass) principal tool requests are rejected before approval [3.08ms]
+(pass) API tool batches retain completed effects when a later approval is interrupted [1.72ms]
+
+packages/agent/src/tool-loop.test.ts:
+(pass) tool-loop > counts unsuccessful handler results as failures without replacing their evidence [1.08ms]
+(pass) tool-loop > serializes absent tool results into valid history content [0.08ms]
+(pass) tool-loop > does not report completed side effects as failed when output serialization fails [0.66ms]
+(pass) tool-loop > returns serializable successful data for custom BigInt and circular results [1.18ms]
+(pass) tool-loop > rejects invalid advertised arguments before running the handler [0.08ms]
+(pass) tool-loop > canRunToolCallsInParallel requires more than one parallelSafe tool
+(pass) tool-loop > executeToolCall runs a known tool [0.20ms]
+(pass) tool-loop > executeToolCall returns an error for unknown tools [0.03ms]
+(pass) tool-loop > executeToolCall catches handler errors [0.29ms]
+(pass) tool-loop > revalidates the organization immediately before invoking a tool [0.14ms]
+(pass) tool-loop > revalidates again before a retried tool attempt [5.34ms]
+(pass) tool-loop > keeps detected artifacts when a tool returns plain text [5.00ms]
+
+packages/agent/src/tool-execution-lifecycle.test.ts:
+(pass) API send completes actual invocations before checkpoints [4.61ms]
+(pass) API stream completes actual invocations before checkpoints [3.10ms]
+(pass) native send completes actual invocations before checkpoints [1.56ms]
+(pass) native stream completes actual invocations before checkpoints [1.87ms]
+(pass) parallel invocations receive separate publishers and no inherited capability [0.95ms]
+(pass) API chat parallel batches propagate the host lifecycle to each invocation [1.74ms]
+(pass) publication completion sees protected rejection and failed data without bypassing guards [1.28ms]
+(pass) begin and diagnostic failures preserve the actual effect exactly once [0.57ms]
+(pass) complete and diagnostic failures preserve the actual effect exactly once [1.96ms]
+
+apps/server/src/services/artifact-publication-lifecycle.test.ts:
+(pass) overlapping sessions bind original bytes and distinct executions despite a repeated provider call ID [43.17ms]
+(pass) lazy initialization captures bytes and identity before caller mutation [25.68ms]
+(pass) forged artifact metadata and a no-write tool cannot create publication authority [20.14ms]
+(pass) returned-failure retains the actual file and receipt without partial publication or producer replay [20.14ms]
+(pass) initialization retains the actual file and receipt without partial publication or producer replay [16.16ms]
+(pass) later-stage retains the actual file and receipt without partial publication or producer replay [18.57ms]
+(pass) throwing-input retains the actual file and receipt without partial publication or producer replay [21.72ms]
+(pass) staging that starts after protected completion cannot reopen the publication set [18.26ms]
+(pass) in-flight staging finishes before commit even when a producer omits its await [19.86ms]
+(pass) an invalid first stage reports publication failure without initialization or losing the receipt [24.55ms]
+(pass) cancellation releases lazy initialization and a late resolver cannot publish [20.99ms]
+
+ 70 pass
+ 0 fail
+ 331 expect() calls
+Ran 70 tests across 6 files. [2.34s]

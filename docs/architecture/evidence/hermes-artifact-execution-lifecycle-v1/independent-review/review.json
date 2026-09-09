@@ -1,0 +1,103 @@
+{
+  "at": "2026-09-07T00:14:50.000341+00:00",
+  "status": "independent-source-review-complete-no-blocker-within-unwired-scope",
+  "sourceHash": "e4e71ba4a50de2d8fc6e0280af734a714b36559cc842e3486e72b14d17ce261d",
+  "sourceFiles": 2089,
+  "readinessSha256": "f0b7386f5fe19da50357c6229bcb232c9024dab0bfa40f93db60693ec8fc1ba1",
+  "componentPatchSha256": "89790484b6f1ae5ab690fcf2267d3a60d06d41eab9a3f3711878323c9f4d58aa",
+  "productionPatchSha256": "14801b48eba8bd00253bb704a1219819a948276640a66565074f100cbf532ae0",
+  "bindingsSha256": "b3591c987db76cd02bc2014e00f38ffc6c647a6a2cc70dc0b1e05fa0d2b17b2c",
+  "findings": [
+    {
+      "area": "Trusted lifecycle ownership",
+      "disposition": "no blocker found",
+      "evidence": [
+        "packages/agent/src/tool-execution-lifecycle.ts",
+        "packages/agent/src/tool-loop.ts",
+        "packages/agent/src/chat.ts"
+      ],
+      "assessment": "Lifecycle exists on host session options; only a publisher is installed in a fresh tool context. Missing or failed begin clears inherited publishers. API/native send/stream and sequential/parallel paths forward the lifecycle. Server begin captures identity before tool code and allocates an execution UUID independently of provider call ID."
+    },
+    {
+      "area": "Actual protected outcome and receipt preservation",
+      "disposition": "no blocker found",
+      "evidence": [
+        "packages/agent/src/tool-loop.ts",
+        "packages/core/src/tools/execution.ts",
+        "apps/server/src/services/artifact-publication-service.ts"
+      ],
+      "assessment": "Protected execution retains existing schema, principal, approval and beforeToolCall checks. Complete receives its actual envelope before distillation and foundation requires outer success plus canonical non-failed data. Begin, complete and diagnostic callback rejection do not substitute a publication error for the tool result or add producer replay. Known mutating tools remain single-attempt under existing protected retry policy."
+    },
+    {
+      "area": "Lazy capture and all-output failure boundary",
+      "disposition": "no blocker found",
+      "evidence": [
+        "apps/server/src/services/artifact-publication-lifecycle.ts",
+        "packages/core/src/artifact-publication.ts"
+      ],
+      "assessment": "Byte/path/ordinal capture occurs synchronously inside the low-level failure boundary; size and output count are checked before allocation. Malformed first input reports a failure without lazy initialization. Rejected later staging aborts the publication signal, preventing a prior subset commit. Pending stages are awaited even when producer code omitted its own await; complete closes the set and is idempotent. Late stages reject without reopening."
+    },
+    {
+      "area": "Abort and separate diagnostics",
+      "disposition": "no blocker found within stated limits",
+      "evidence": [
+        "apps/server/src/services/artifact-publication-lifecycle.ts",
+        "packages/core/src/download-deadline.ts"
+      ],
+      "assessment": "Abort releases lazy-root initialization wait and a late resolver checks cancellation before entering the service. Detached initialization rejection is observed. Real filesystem/DB I/O is not universally interruptible, and host diagnostic callbacks are not durable publication-failure receipts."
+    },
+    {
+      "area": "Authority and integration scope",
+      "disposition": "no blocker within unwired component",
+      "evidence": [
+        "apps/server/src/services/artifact-publication-lifecycle.ts",
+        "implementation-notes.md"
+      ],
+      "assessment": "Returned artifacts JSON is not read for publication authority. Current authorization and actual admitted roots remain mandatory host configuration. Legacy artifacts still pass to existing consumers; no strict delivery cutover, main AgentService activation, owned-chat fencing or restart guarantee is established."
+    }
+  ],
+  "blockingFindings": [],
+  "ownerGates": {
+    "tests": 70,
+    "assertions": 331,
+    "files": 6,
+    "newTests": 20,
+    "regressionExitCode": 0,
+    "scopedTypecheckExitCode": 0,
+    "lintExitCode": 0,
+    "fullProductionTypecheckRun": false
+  },
+  "independentChecks": {
+    "sourceFilesVerified": 2089,
+    "rootC5FilesUnchanged": 2078,
+    "foundationFilesUnchanged": 2085,
+    "producerFilesUnchanged": 2086,
+    "exactSeamDependencyFiles": 2,
+    "exactComponentPatchOwnedPaths": 7,
+    "patchApplicationCheckExitCode": 0,
+    "testsRerun": false
+  },
+  "limitations": [
+    "Independent work consisted of source review, exact-byte/hash checks and read-only patch applicability. Owner tests were inspected, not independently rerun; owner 70 tests/331 assertions is not an additional independent passing suite.",
+    "Owner bounded union includes 20 new tests across two new files and 50 existing regressions; no full production TypeScript, live provider/native SDK, real browser/channel or OS confinement test is proved here.",
+    "Only the two shared core seam files are present in this owner source; component.patch applies its seven owned paths atop the separately frozen complete producer source. This is patch compatibility evidence, not combined runtime activation or combined regression evidence.",
+    "Production authorizer/root inventory, main/task/subagent/playground wiring, selected-existing-file capture, durable session listing and HTTP/channel/share/history/UI consumer migration remain required before strict artifact attribution claims.",
+    "Existing legacy artifacts, including forged copied metadata, still reach legacy consumers unchanged. Absence of new DB publication authority does not make those consumers safe.",
+    "Current role/revocation checks retain foundation non-atomic callback windows. Run/session IDs do not constitute versioned execution ownership or durable lease fencing.",
+    "Generic trusted lifecycle hooks can block if their own promises never settle; concrete lazy initialization has abort handling, but this is not universal I/O timeout or cancellation proof.",
+    "Publication diagnostics are separate, non-blocking observers rather than an atomic durable failure log. Distillation may still fail after successful publication; future delivery must query durable publication authority rather than depend solely on copied history metadata.",
+    "No Atlas/Hermes parity, superiority, provider-independent quality, complete artifact race fix, or restart/power-loss claim follows from this isolated component."
+  ],
+  "inspectionErrorsRetained": [
+    "Initial source inspection guessed packages/core/src/tools/executor.ts and tool-executor.ts, which do not exist; corrected through file search to execution.ts.",
+    "An earlier broad patch read was truncated; full production files and focused test sections were reread before assessment. These were inspection issues, not owner gate failures."
+  ],
+  "ownerInitialFailuresRetained": [
+    "Initial API fixtures asserted an exact checkpoint count instead of completion ordering; owner retained failing logs and corrected tests.",
+    "An intermediate parallel fixture produced an empty final response rejected by existing provider-final contract; owner retained log and corrected fixture."
+  ],
+  "sourceEdits": 0,
+  "providerCalls": 0,
+  "rootApplied": false,
+  "productionActivated": false
+}

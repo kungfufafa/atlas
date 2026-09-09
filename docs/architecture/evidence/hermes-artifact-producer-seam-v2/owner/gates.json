@@ -1,0 +1,86 @@
+[
+  {
+    "at": "2026-09-07T00:17:13.732659+00:00",
+    "name": "initial-behavior-tests",
+    "command": [
+      "bun",
+      "test",
+      "apps/server/src/services/artifact-producer-seam.test.ts"
+    ],
+    "exitCode": 0,
+    "log": "initial-tests.log"
+  },
+  {
+    "at": "2026-09-07T00:17:28.113423+00:00",
+    "name": "format",
+    "command": [
+      "bun",
+      "x",
+      "--no-install",
+      "ultracite",
+      "fix",
+      "packages/core/src/files/assets.ts",
+      "packages/core/src/tools/spreadsheet-io.ts",
+      "apps/server/src/services/artifact-producer-seam.test.ts"
+    ],
+    "exitCode": 0,
+    "log": "format.log"
+  },
+  {
+    "at": "2026-09-07T00:17:50.006815+00:00",
+    "name": "final-regressions",
+    "command": [
+      "bun",
+      "test",
+      "apps/server/src/services/artifact-producer-seam.test.ts",
+      "packages/core/src/tools/builtin-publication.test.ts",
+      "packages/core/src/tools/spreadsheet-io.test.ts",
+      "apps/server/src/tools/generate-image-tool.test.ts",
+      "apps/server/src/services/artifact-service.test.ts",
+      "apps/server/src/services/artifact-publication-service.test.ts"
+    ],
+    "exitCode": 0,
+    "log": "final-regressions.log",
+    "logSha256": "03167e9cfd0e7f056b9a17c832a3c8559d7d375affec24fa41d5ee708423c8c4"
+  },
+  {
+    "at": "2026-09-07T00:17:54.444800+00:00",
+    "name": "final-typecheck",
+    "command": [
+      "bun",
+      "x",
+      "--no-install",
+      "tsc",
+      "--noEmit",
+      "-p",
+      "tsconfig.producer.json"
+    ],
+    "exitCode": 0,
+    "log": "final-typecheck.log",
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "at": "2026-09-07T00:17:48.321834+00:00",
+    "name": "final-lint",
+    "command": [
+      "bun",
+      "x",
+      "--no-install",
+      "ultracite",
+      "check",
+      "packages/core/src/files/assets.ts",
+      "packages/core/src/tools/spreadsheet-io.ts",
+      "apps/server/src/services/artifact-producer-seam.test.ts"
+    ],
+    "exitCode": 0,
+    "log": "final-lint.log",
+    "logSha256": "b6cc38659ce53231df54d50e31b927c4ecb6dbded04a27c3344d2ee79c67e119"
+  },
+  {
+    "name": "patch-check",
+    "exitCode": 0,
+    "command": "git apply --check component.patch against frozen producer v1 source",
+    "log": "patch-check.log",
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

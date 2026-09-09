@@ -1,0 +1,12 @@
+{
+  "archive": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-07/file-v3-c9-freeze",
+  "at": "2026-09-07T06:07:41.590928+00:00",
+  "bytes": 219468015,
+  "files": 2747,
+  "manifestSha256": "938768f677118f3dc3e5e2d6fea0af93e21d08bf45d5f73ac6cfcaaa7e0ffe3a",
+  "postPromotionHashesModesMemberCensusVerified": true,
+  "providerCalls": 0,
+  "scannerBytes": 1315054821,
+  "scannerStreams": 44166,
+  "sourceRetained": true
+}

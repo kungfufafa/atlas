@@ -3,6 +3,7 @@ import type {
   UpdateTelegramSettingsRequest,
 } from "@atlas/core/contract";
 import { useEffect, useState } from "react";
+import { ChannelNativePolicyDialog } from "@/components/ChannelNativePolicyDialog";
 import { SETTINGS_CARD_LOADING_SKELETON } from "@/components/integration-settings.shared";
 import {
   type AllowedTelegramUser,
@@ -289,6 +290,7 @@ export function TelegramSettingsCard({
         <div className="space-y-2">
           <p className="text-muted-foreground text-xs">{headerSubtitle}</p>
           {content}
+          <ChannelNativePolicyDialog channel="telegram" />
         </div>
         {allowedUsersDialog}
         {blockedUsersDialog}
@@ -299,6 +301,7 @@ export function TelegramSettingsCard({
   return (
     <>
       {content}
+      <ChannelNativePolicyDialog channel="telegram" />
       {allowedUsersDialog}
       {blockedUsersDialog}
     </>

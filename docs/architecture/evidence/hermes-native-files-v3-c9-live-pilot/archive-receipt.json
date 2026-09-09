@@ -1,0 +1,17 @@
+{
+  "archive": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-07/file-v3-c9-live-pilot",
+  "archiverProviderCalls": 0,
+  "archiverRescores": 0,
+  "archiverTests": 0,
+  "at": "2026-09-07T06:19:29.602155+00:00",
+  "bytes": 51293566,
+  "copiedRuntimeRegularFiles": 54,
+  "files": 278,
+  "manifestSha256": "0e0f3cb73c19c375739ca8edb817746e67235413e2ddafa3dcbb338549bca0c8",
+  "nativeRoots": 4,
+  "postPromotionHashesModesCensusVerified": true,
+  "recordedSymlinks": 0,
+  "scannerBytes": 304261373,
+  "scannerStreams": 10130,
+  "sourceRetained": true
+}

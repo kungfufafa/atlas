@@ -1,0 +1,23 @@
+{
+  "createdAt": "2026-09-07T02:49:56.324593+00:00",
+  "independent": {
+    "scope": "source/hash/dependency-link review plus read-only patch checks; owner gates were inspected, not rerun",
+    "testsRun": 0
+  },
+  "limits": [
+    "Two historical initial test versions survive as hash/log bindings only; their exact original test snapshots are missing. The current source and corrected guard-order fixture/old source are preserved separately.",
+    "The guard receives a frozen base session context before the current runId, composed signal and clientOrigin are added; it is not final dispatch context or an actual filesystem grant receipt.",
+    "Existing guard runs first, fresh current guard last. validateContext already calls beforeToolCall; future wiring must not add it a second time.",
+    "The guard is before tool.run but after legacy pre-scan/approval and does not authorize earlier metadata import, MCP startup or arbitrary-code spawn. Lifecycle begin failure is not a denial gate.",
+    "No atomic ACL/effect transaction, durable lease, runtime confinement, persisted-wrapper integration, AgentService/HTTP/UI activation or Hermes parity is established."
+  ],
+  "newProviderCalls": 0,
+  "owner": {
+    "assertions": 322,
+    "files": 5,
+    "newTests": 28,
+    "source": "owner/union-v4.log",
+    "tests": 65
+  },
+  "packagingReranTests": false
+}

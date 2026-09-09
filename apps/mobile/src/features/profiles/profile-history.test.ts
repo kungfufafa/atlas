@@ -35,8 +35,10 @@ test("formats empty, text, and structured history values", () => {
 test("formats timestamps predictably and handles invalid input", () => {
   const options = { locale: "en-US", timeZone: "UTC" };
 
-  expect(formatProfileChangeTime("2026-08-30T14:05:00.000Z", options)).toBe(
-    "Aug 30, 2026, 2:05 PM"
+  // ICU versions use either a comma or "at" between the date and time.
+  // Keep the actual calendar/time behavior fixed without pinning ICU punctuation.
+  expect(formatProfileChangeTime("2026-08-30T14:05:00.000Z", options)).toMatch(
+    /^Aug 30, 2026(?:,| at) 2:05 PM$/
   );
   expect(
     formatProfileChangeMetadata(
@@ -47,7 +49,13 @@ test("formats timestamps predictably and handles invalid input", () => {
       },
       options
     )
-  ).toBe("Aug 30, 2026, 2:05 PM · Dashboard · System");
+  ).toMatch(/^Aug 30, 2026(?:,| at) 2:05 PM · Dashboard · System$/);
+  expect(
+    formatProfileChangeTime("2026-08-30T20:05:00.000Z", {
+      locale: "en-US",
+      timeZone: "Asia/Jakarta",
+    })
+  ).toMatch(/^Aug 31, 2026(?:,| at) 3:05 AM$/);
   expect(formatProfileChangeTime("not-a-date", options)).toBe("Unknown time");
 });
 

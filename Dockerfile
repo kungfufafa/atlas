@@ -19,15 +19,35 @@ FROM oven/bun:1.3-slim AS runtime
 WORKDIR /app
 
 # LibreOffice is required for PPTX/DOCX/XLSX fidelity previews and thumbnails.
+# Bun cc needs libc6-dev's linker files for the required Linux sandbox launchers.
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     ca-certificates \
+    ffmpeg \
+    fonts-dejavu-core \
     fonts-liberation \
+    fonts-noto-core \
+    fonts-noto-cjk \
+    libc6-dev \
     libreoffice-calc \
     libreoffice-impress \
     libreoffice-writer \
+    poppler-utils \
+    python3 \
+    python3-venv \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    tesseract-ocr-ind \
   && rm -rf /var/lib/apt/lists/* \
-  && soffice --version
+  && soffice --version \
+  && pdftoppm -v \
+  && tesseract --version
+
+COPY scripts/file-runtime/requirements.txt /opt/atlas-file-runtime/requirements.txt
+RUN python3 -m venv /opt/atlas-file-runtime/python \
+  && /opt/atlas-file-runtime/python/bin/python3 -m pip install --no-cache-dir --disable-pip-version-check -r /opt/atlas-file-runtime/requirements.txt \
+  && /opt/atlas-file-runtime/python/bin/python3 -m pip check
+ENV ATLAS_PYTHON_PATH=/opt/atlas-file-runtime/python/bin/python3
 
 # Optional tool-output optimiser. Empty by default, so the published image is
 # unchanged and carries no binary most deployments would never run. Build with
@@ -53,7 +73,8 @@ RUN if [ -n "$OMNI_VERSION" ]; then \
       omni --version; \
     fi
 
-COPY package.json bun.lock bunfig.toml ./
+# The source entrypoint uses the repository's Bun/TypeScript path aliases.
+COPY package.json bun.lock bunfig.toml tsconfig.json ./
 COPY apps/server apps/server
 COPY apps/platform/automation apps/platform/automation
 COPY apps/platform/telegram apps/platform/telegram
@@ -61,6 +82,7 @@ COPY apps/platform/whatsapp apps/platform/whatsapp
 COPY apps/platform/discord apps/platform/discord
 COPY packages packages
 # Workspace stubs keep the lockfile valid without pulling web/cli/mobile sources.
+COPY scripts/file-runtime scripts/file-runtime
 COPY apps/web/package.json apps/web/
 COPY apps/cli/package.json apps/cli/
 COPY apps/mobile/package.json apps/mobile/

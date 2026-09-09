@@ -51,6 +51,9 @@ function capabilityConfig(apiKey: string): UserConfig {
   const instance: ProviderInstance = {
     apiKey,
     createdAt: "2026-08-27T00:00:00.000Z",
+    // This cassette exercises image transport, with explicit test configuration.
+    // It is not a recording of the provider's model-discovery endpoint.
+    customModels: [{ id: model, supportsVision: true }],
     id: "cassette-gemini",
     label: "Gemini cassette",
     type: "gemini",

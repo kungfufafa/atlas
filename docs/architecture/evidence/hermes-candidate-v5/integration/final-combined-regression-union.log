@@ -1,0 +1,262 @@
+bun test v1.3.1 (89fa0f34)
+
+packages/agent/src/chat-output-limit.test.ts:
+(pass) send recovers once from completed receipts without executing partial calls [80.43ms]
+(pass) stream recovers once from completed receipts without executing partial calls [2.93ms]
+(pass) a second output limit fails and retains both attempt diagnostics [1.81ms]
+(pass) does not retry ordinary content_filter failures [0.37ms]
+(pass) does not retry ordinary context limit failures [0.09ms]
+(pass) does not retry ordinary network length timeout failures [0.27ms]
+(pass) abort during incomplete evidence observation prevents another generation [1.15ms]
+(pass) clear during incomplete evidence observation prevents another generation [0.62ms]
+(pass) runtime managed context prevents retries even without a tool call [0.50ms]
+(pass) a native dispatched effect is checkpointed and never retried after truncation [3.39ms]
+(pass) visible streamed final text cannot be silently replaced even if error evidence omits it [0.96ms]
+(pass) a failed completed tool result is retained across bounded recovery [2.90ms]
+(pass) tool-free finalization shares the same one-retry budget [4.86ms]
+(pass) tool-free finalization can recover once when the retry budget is unused [18.63ms]
+(pass) a visible streamed tool draft is not left orphaned by an automatic retry [0.76ms]
+(pass) an output limit followed by a transport failure retains usage but cannot retry [0.70ms]
+(pass) a native callback failure takes precedence without discarding the failed model attempt's usage [4.03ms]
+(pass) a tool-free finalization that emits an unexpected tool draft also cannot retry [13.64ms]
+
+packages/agent/src/chat-abort.test.ts:
+(pass) agent chat cancellation > stops the tool loop and hands the signal to tools [1.82ms]
+(pass) agent chat cancellation > hands the signal to the provider so the request can be aborted [8.20ms]
+(pass) agent chat cancellation > hands cancellation to the provider for non-stream turns [0.59ms]
+(pass) agent chat cancellation > runs to completion when nothing aborts [1.40ms]
+
+packages/agent/src/chat-harness-reliability.test.ts:
+(pass) send keeps repeated polling when results are changing [6.57ms]
+(pass) stream keeps repeated polling when results are changing [4.29ms]
+(pass) identical outcomes stop with a grounded final response and a complete tool transcript [5.52ms]
+(pass) iteration exhaustion produces one tool-free finalization instead of returning a preamble [53.27ms]
+(pass) duplicate IDs reject before executing a batch (parallel=%s) [0.62ms]
+(pass) duplicate IDs reject before executing a batch (parallel=%s)
+(pass) tool failures produce failed activities without announcing saved memory (parallel=%s) [6.31ms]
+(pass) tool failures produce failed activities without announcing saved memory (parallel=%s) [4.35ms]
+(pass) a failed model follow-up retains completed action evidence for the next turn [1.83ms]
+(pass) invalid terminal output is not treated as successful (empty) [0.62ms]
+(pass) invalid terminal output is not treated as successful (unavailable-tool) [0.17ms]
+(pass) a long tool turn compacts before the next model request and preserves the current task and latest batch [3.36ms]
+(pass) invalid loop finalization retains executed results and propagates failure (empty) [1.71ms]
+(pass) invalid loop finalization retains executed results and propagates failure (more-tools) [1.79ms]
+(pass) disconnected tool observers cannot erase completed batch results (parallel=%s) [1.58ms]
+(pass) disconnected tool observers cannot erase completed batch results (parallel=%s) [1.21ms]
+(pass) a failed first request discards archives containing its rejected user message [0.80ms]
+(pass) clear during a delayed model follow-up cannot restore executed history or overwrite a fresh turn [2.22ms]
+
+packages/agent/src/chat-stop-semantics.test.ts:
+(pass) send preserves strings/history and reports one typed stop only for that invocation [4.00ms]
+(pass) stream preserves strings/history and reports one typed stop only for that invocation [2.16ms]
+(pass) iteration limit has a distinct typed reason without additional generation [23.38ms]
+(pass) native-stop distinguishes rejected additional dispatch from a natural finish [1.86ms]
+(pass) native-natural distinguishes rejected additional dispatch from a natural finish [0.87ms]
+(pass) native-limit distinguishes rejected additional dispatch from a natural finish [7.10ms]
+(pass) observer failure does not replace final output, usage or cleanup (async=%s) [2.07ms]
+(pass) observer failure does not replace final output, usage or cleanup (async=%s) [1.32ms]
+(pass) send failed finalization retains original error and completed effects [1.62ms]
+(pass) stream failed finalization retains original error and completed effects [1.34ms]
+(pass) send cancellation after stop prevents finalization and retains tool evidence [1.10ms]
+(pass) stream cancellation after stop prevents finalization and retains tool evidence [2.42ms]
+
+packages/agent/src/chat-runtime-tools.test.ts:
+(pass) runtime tools share Atlas history and await approved before a filesystem effect [11.07ms]
+(pass) runtime tools share Atlas history and await denied before a filesystem effect [8.65ms]
+(pass) duplicate runtime call IDs share one execution and one history pair [1.50ms]
+(pass) a changed request under the same ID rejects even if the runtime swallows the error [0.90ms]
+(pass) runtime tools cannot bypass schema validation [1.95ms]
+(pass) completed work is checkpointed before a runtime failure escapes [1.06ms]
+(pass) a callback captured from a finished turn cannot execute later [0.46ms]
+(pass) native tool loops are bounded (changing results=%s) [4.95ms]
+(pass) native tool loops are bounded (changing results=%s) [1.27ms]
+(pass) an old tool cannot overlap a new turn (clear=%s) [1.51ms]
+(pass) an old tool cannot overlap a new turn (clear=%s) [1.03ms]
+(pass) unassigned tool requests are rejected before approval [0.67ms]
+(pass) schema tool requests are rejected before approval [1.27ms]
+(pass) guest tool requests are rejected before approval [0.35ms]
+(pass) principal tool requests are rejected before approval [0.66ms]
+(pass) API tool batches retain completed effects when a later approval is interrupted [0.87ms]
+
+packages/agent/src/chat-failure-rollback.test.ts:
+(pass) failed turn history rollback > restores exact pre-turn history after compaction and prompt setup failure [0.43ms]
+
+packages/db/src/memory-search.test.ts:
+(pass) numeric identifiers remain searchable alongside natural words [1.56ms]
+(pass) numeric support retains stop-word, literal punctuation and query bounds [0.03ms]
+
+packages/db/src/conversation-history.test.ts:
+(pass) SQLite conversation history authorization > direct history applies optional caller ownership without narrowing trusted org reads [0.71ms]
+(pass) SQLite conversation history authorization > search and direct history share user and Super Agent filters [1.10ms]
+(pass) SQLite conversation history authorization > retrieves compacted evidence without adding archives to active model history [1.45ms]
+(pass) SQLite conversation history authorization > archive retrieval and search enforce tenant, owner, and Super Agent boundaries [1.14ms]
+(pass) SQLite conversation history authorization > archive replacement is atomic and rejects changes to an immutable snapshot [0.39ms]
+(pass) SQLite conversation history authorization > clear removes archived history as well as active messages [0.51ms]
+(pass) SQLite conversation history authorization > delete removes archived history as well as active messages [0.30ms]
+(pass) in-memory conversation history authorization > direct history applies optional caller ownership without narrowing trusted org reads [0.16ms]
+(pass) in-memory conversation history authorization > search and direct history share user and Super Agent filters [0.29ms]
+(pass) in-memory conversation history authorization > retrieves compacted evidence without adding archives to active model history [0.22ms]
+(pass) in-memory conversation history authorization > archive retrieval and search enforce tenant, owner, and Super Agent boundaries [0.30ms]
+(pass) in-memory conversation history authorization > archive replacement is atomic and rejects changes to an immutable snapshot
+(pass) in-memory conversation history authorization > clear removes archived history as well as active messages [0.10ms]
+(pass) in-memory conversation history authorization > delete removes archived history as well as active messages [0.12ms]
+
+packages/db/src/memory-preservation.test.ts:
+(pass) in-memory preserving memory creation > reuses an exact fact without replacing its ID or metadata [0.63ms]
+(pass) in-memory preserving memory creation > preserves changed content even when the subject is the same [1.21ms]
+(pass) in-memory preserving memory creation > keeps content case and internal whitespace significant
+(pass) in-memory preserving memory creation > compares normalized subject identity but preserves the original representation [1.22ms]
+(pass) in-memory preserving memory creation > treats absent and empty subjects as the same identity [0.36ms]
+(pass) in-memory preserving memory creation > isolates exact fact reuse by organization, owner, and scope [0.21ms]
+(pass) in-memory preserving memory creation > finds an identical retry beyond fifty more recent unrelated facts [1.32ms]
+(pass) in-memory preserving memory creation > coalesces simultaneous identical creations with distinct candidate IDs [0.71ms]
+(pass) in-memory preserving memory creation > rejects a colliding candidate ID without replacing another fact or tenant [0.19ms]
+(pass) sqlite preserving memory creation > reuses an exact fact without replacing its ID or metadata [8.45ms]
+(pass) sqlite preserving memory creation > preserves changed content even when the subject is the same [9.30ms]
+(pass) sqlite preserving memory creation > keeps content case and internal whitespace significant [7.34ms]
+(pass) sqlite preserving memory creation > compares normalized subject identity but preserves the original representation [9.69ms]
+(pass) sqlite preserving memory creation > treats absent and empty subjects as the same identity [8.43ms]
+(pass) sqlite preserving memory creation > isolates exact fact reuse by organization, owner, and scope [10.38ms]
+(pass) sqlite preserving memory creation > finds an identical retry beyond fifty more recent unrelated facts [12.47ms]
+(pass) sqlite preserving memory creation > coalesces simultaneous identical creations with distinct candidate IDs [9.10ms]
+(pass) sqlite preserving memory creation > rejects a colliding candidate ID without replacing another fact or tenant [8.14ms]
+(pass) SQLite preserves exact-reuse identity and independent facts after close and reopen [25.54ms]
+
+packages/db/src/conversation-keyword-search.test.ts:
+(pass) conversation keywords: in-memory > preserves legacy scalar message text and type across search and transcript retrieval [0.63ms]
+(pass) conversation keywords: in-memory > uses identical binary ID ordering for equal-date duplicate messages
+(pass) conversation keywords: in-memory > native topic lookup finds separated terms and ranks before limiting older history [3.59ms]
+(pass) conversation keywords: in-memory > keeps tenant, caller, profile and Super Agent filters before ranking [0.45ms]
+(pass) conversation keywords: in-memory > archives remain searchable after reopen with stable active duplicate preference and date bounds [0.36ms]
+(pass) conversation keywords: in-memory > normalizes lexical spelling, keeps punctuation literal and excludes metadata-only matches [0.13ms]
+(pass) conversation keywords: in-memory > chooses the newest identical current message before applying date filters [0.43ms]
+(pass) conversation keywords: sqlite > preserves legacy scalar message text and type across search and transcript retrieval [24.50ms]
+(pass) conversation keywords: sqlite > uses identical binary ID ordering for equal-date duplicate messages [18.61ms]
+(pass) conversation keywords: sqlite > native topic lookup finds separated terms and ranks before limiting older history [21.89ms]
+(pass) conversation keywords: sqlite > keeps tenant, caller, profile and Super Agent filters before ranking [16.60ms]
+(pass) conversation keywords: sqlite > archives remain searchable after reopen with stable active duplicate preference and date bounds [20.82ms]
+(pass) conversation keywords: sqlite > normalizes lexical spelling, keeps punctuation literal and excludes metadata-only matches [15.49ms]
+(pass) conversation keywords: sqlite > chooses the newest identical current message before applying date filters [13.67ms]
+
+packages/db/src/profile-atomic.test.ts:
+(pass) SQLite atomic profile creation > does not overwrite or cross-delete a profile owned by another org [7.60ms]
+(pass) profile import publication > keeps reservations hidden and prevents normal writers from publishing them [9.05ms]
+(pass) profile import publication > rejects malformed publication graphs without exposing partial state [8.28ms]
+
+apps/server/src/tools/memory-tools.test.ts:
+(pass) memory tools fail closed > memory_search without principal throws [1.12ms]
+(pass) memory tools ownership > member cannot update another user's memory [1.26ms]
+(pass) memory tools ownership > member cannot write organization-scope memory [0.71ms]
+(pass) memory tools ownership > platform admin can write organization-scope memory [0.25ms]
+
+apps/server/src/tools/memory-scope-contract.test.ts:
+(pass) in-memory native memory scope contract > supported audiences persist across sessions without widening user, profile or organization access [13.09ms]
+(pass) in-memory native memory scope contract > unbound project writes and any supplied projectId fail without inserting or changing records [2.58ms]
+(pass) in-memory native memory scope contract > organization writes, corrections and erasure preserve administrator authority [1.84ms]
+(pass) in-memory native memory scope contract > legacy session-owned project rows remain explicitly accessible only in their original session [12.62ms]
+(pass) sqlite native memory scope contract > supported audiences persist across sessions without widening user, profile or organization access [35.14ms]
+(pass) sqlite native memory scope contract > unbound project writes and any supplied projectId fail without inserting or changing records [20.97ms]
+(pass) sqlite native memory scope contract > organization writes, corrections and erasure preserve administrator authority [35.98ms]
+(pass) sqlite native memory scope contract > legacy session-owned project rows remain explicitly accessible only in their original session [50.84ms]
+
+apps/server/src/tools/memory-tools-dedup.test.ts:
+(pass) sqlite explicit-subject memory identity > native saves preserve separate entities with highly similar fact templates after reopen and recall [35.91ms]
+(pass) sqlite explicit-subject memory identity > even identical text cannot replace a genuinely different explicit subject [20.23ms]
+(pass) sqlite explicit-subject memory identity > equivalent Unicode subjects reuse an exact fact and corrections update by ID [24.36ms]
+(pass) sqlite explicit-subject memory identity > different Unicode subjects remain separate even when their content is identical [13.63ms]
+(pass) sqlite explicit-subject memory identity > explicit corrections and unlabelled exact duplicate saves retain one ID [25.19ms]
+(pass) sqlite explicit-subject memory identity > native saves preserve independent same-subject facts after reopen and recall [30.41ms]
+(pass) sqlite explicit-subject memory identity > deduplication does not cross organization, user or agent ownership [24.64ms]
+(pass) in-memory explicit-subject memory identity > native saves preserve separate entities with highly similar fact templates after reopen and recall [3.38ms]
+(pass) in-memory explicit-subject memory identity > even identical text cannot replace a genuinely different explicit subject [0.85ms]
+(pass) in-memory explicit-subject memory identity > equivalent Unicode subjects reuse an exact fact and corrections update by ID [2.17ms]
+(pass) in-memory explicit-subject memory identity > different Unicode subjects remain separate even when their content is identical [0.95ms]
+(pass) in-memory explicit-subject memory identity > explicit corrections and unlabelled exact duplicate saves retain one ID [0.25ms]
+(pass) in-memory explicit-subject memory identity > native saves preserve independent same-subject facts after reopen and recall [1.89ms]
+(pass) in-memory explicit-subject memory identity > deduplication does not cross organization, user or agent ownership [0.93ms]
+
+apps/server/src/tools/conversation-tools.test.ts:
+(pass) conversation retrieval tools > finds and reads never-persisted tool evidence captured before successful compaction [1.46ms]
+(pass) conversation retrieval tools > searches and retrieves the caller's own regular conversation [0.37ms]
+(pass) conversation retrieval tools > direct retrieval cannot read another user's session in the same org [0.63ms]
+(pass) conversation retrieval tools > org admin remains user-scoped at the tool boundary
+(pass) conversation retrieval tools > member cannot search or retrieve Super Agent history [0.18ms]
+(pass) conversation retrieval tools > org and platform admins can retrieve their own Super Agent history [0.46ms]
+(pass) conversation retrieval tools > cannot search or retrieve conversation history across orgs [4.98ms]
+
+apps/server/src/tools/memory-tools-update.test.ts:
+(pass) sqlite partial native memory updates > importance-only preserves content and uncertain metadata [36.38ms]
+(pass) sqlite partial native memory updates > content-only preserves metadata and updates native search [36.72ms]
+(pass) sqlite partial native memory updates > explicit null clears subject without resetting other fields [42.39ms]
+(pass) sqlite partial native memory updates > omitted subject preserves an already-cleared subject [29.36ms]
+(pass) sqlite partial native memory updates > explicit zero confidence persists through a later partial update [24.80ms]
+(pass) sqlite partial native memory updates > explicit undefined optional tool fields leave their stored values intact [26.28ms]
+(pass) sqlite partial native memory updates > service callers can omit fields using undefined [42.57ms]
+(pass) sqlite partial native memory updates > adapter updates ignore inherited and undefined properties but preserve zero and null [28.05ms]
+(pass) in-memory partial native memory updates > importance-only preserves content and uncertain metadata [0.64ms]
+(pass) in-memory partial native memory updates > content-only preserves metadata and updates native search [0.95ms]
+(pass) in-memory partial native memory updates > explicit null clears subject without resetting other fields [0.95ms]
+(pass) in-memory partial native memory updates > omitted subject preserves an already-cleared subject [1.37ms]
+(pass) in-memory partial native memory updates > explicit zero confidence persists through a later partial update [0.89ms]
+(pass) in-memory partial native memory updates > explicit undefined optional tool fields leave their stored values intact [0.43ms]
+(pass) in-memory partial native memory updates > service callers can omit fields using undefined [0.37ms]
+(pass) in-memory partial native memory updates > adapter updates ignore inherited and undefined properties but preserve zero and null [0.53ms]
+
+apps/server/src/services/session-persistence.test.ts:
+(pass) wrapPersistedSession > does not mistake cloned archived tool history for effects from a failed new turn [0.99ms]
+(pass) wrapPersistedSession > clear blocks an older send from restoring history or archives after the persistence guard resolves [1.00ms]
+(pass) wrapPersistedSession > clear blocks an older stream from restoring history or archives after the persistence guard resolves [0.08ms]
+(pass) wrapPersistedSession > clear blocks an older compact from restoring history or archives after the persistence guard resolves [0.19ms]
+(pass) wrapPersistedSession > a cleared send cannot acknowledge archives or alter retry state after an in-flight DB write returns [0.26ms]
+(pass) wrapPersistedSession > an older provider failure cannot retain or persist tools belonging to the conversation after clear [0.21ms]
+(pass) wrapPersistedSession > persists pending archives atomically with the active transcript and redacts archive contents [0.22ms]
+(pass) wrapPersistedSession > retries a failed compaction archive save even when the next compaction makes no change [0.27ms]
+(pass) wrapPersistedSession > retains completed effects after a successful reply cannot be saved, including compacted=%s
+(pass) wrapPersistedSession > retains completed effects after a successful reply cannot be saved, including compacted=%s [0.49ms]
+(pass) wrapPersistedSession > persists completed tool evidence after a failed send without pretending the reply succeeded
+(pass) wrapPersistedSession > persists completed tool evidence after a failed stream without pretending the reply succeeded [0.33ms]
+(pass) wrapPersistedSession > does not persist pre-tool failures, incomplete batches, or unchanged old tool evidence [0.23ms]
+(pass) wrapPersistedSession > replaces history when a failed turn retained tool evidence after compaction [0.16ms]
+(pass) wrapPersistedSession > guards checkpoint persistence and retries unsaved evidence with a full replacement [0.18ms]
+(pass) wrapPersistedSession > clear leaves the delete to clearSession instead of firing it unawaited
+(pass) wrapPersistedSession > does not persist a completed reply after the organization is archived [0.29ms]
+(pass) wrapPersistedSession > rolls back a completed turn when persist fails so a follow-up does not skip it [0.10ms]
+(pass) wrapPersistedSession > notifies rejection for underlying send and stream failures
+(pass) wrapPersistedSession > releases rejection cleanup after the underlying send succeeds
+(pass) wrapPersistedSession > revalidates after reading existing history and immediately before append
+(pass) runtime receipts reach persistence before SDK acknowledgement (disconnect=%s) [2.42ms]
+(pass) runtime receipts reach persistence before SDK acknowledgement (disconnect=%s) [0.68ms]
+(pass) persistence failure prevents SDK acknowledgement and retains completed evidence for recovery [1.31ms]
+
+apps/server/src/services/task-service.test.ts:
+(pass) TaskService > create defaults to backlog with position 0 [0.95ms]
+(pass) TaskService > create second task in backlog gets position 1
+(pass) TaskService > create rejects empty title
+(pass) TaskService > create rejects unknown profile
+(pass) TaskService > list orders by status then position [0.63ms]
+(pass) TaskService > lists tasks only for the active org [0.13ms]
+(pass) TaskService > update status backlog to todo appends position in todo column
+(pass) TaskService > update honors explicit position
+(pass) TaskService > does not let actor B claim actor A's task [0.59ms]
+(pass) TaskService > lets actor A first-claim a legacy task and then rejects actor B [0.12ms]
+(pass) TaskService > update not found throws [0.29ms]
+(pass) TaskService > delete existing task returns true [0.10ms]
+(pass) TaskService > delete missing task returns false
+(pass) TaskRunner > writes completed run records and moves task to done [0.83ms]
+(pass) TaskRunner > writes failed run records and moves task to failed [0.26ms]
+(pass) TaskRunner > skips duplicate run on same task [3.26ms]
+(pass) TaskRunner > runs different tasks in parallel [2.32ms]
+(pass) TaskRunner > does not let actor B run actor A's task [0.62ms]
+
+apps/server/src/services/task-stop-semantics.test.ts:
+(pass) real persisted session and TaskRunner keep stall output but do not mark task done [88.67ms]
+(pass) real persisted session and TaskRunner keep iterate output but do not mark task done [459.97ms]
+(pass) real persisted session and TaskRunner keep native-stop output but do not mark task done [60.35ms]
+(pass) a native runtime naturally ending at the detector threshold remains successful [39.15ms]
+(pass) failed finalization preserves original failure text, the reason, and persisted completed effects without invented output [28.00ms]
+(pass) concurrent task invocations do not overwrite another run's typed stop evidence [31.19ms]
+
+ 218 pass
+ 0 fail
+ 1159 expect() calls
+Ran 218 tests across 19 files. [4.28s]

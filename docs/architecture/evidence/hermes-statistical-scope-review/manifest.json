@@ -1,0 +1,39 @@
+{
+  "createdAt": "2026-09-06T17:46:23.652319+00:00",
+  "origin": "/private/tmp/atlas-harness-statistical-scope-review",
+  "scope": "Additive source review and prospective statistical planning evidence; no protocol changes",
+  "originalReviewByteIdentical": true,
+  "originalBoundSourcesUnchangedAtPreservation": true,
+  "newOutcomesOrHoldoutContentsRead": false,
+  "inferenceCalls": 0,
+  "files": {
+    "review.md": {
+      "bytes": 8873,
+      "sha256": "edaacc68a2edf842762f8f2d77cba648fe1fd5679cc2ce5930f8daee2d4b1cd1"
+    },
+    "sources.json": {
+      "bytes": 1931,
+      "sha256": "22df000bdbdbae6cfa4496490cc94ef7de035503c8fc42dadaed54a7471b4662"
+    },
+    "prospective-options.md": {
+      "bytes": 21301,
+      "sha256": "605e4a212c5981886e9d4e0672ff0b10aea077c725ff6328fea9d86d867a2bda"
+    },
+    "prospective-sources.json": {
+      "bytes": 5396,
+      "sha256": "8c75358e52f1225c55c9007c4b139fb036f402a8aaa1351ce4f417dfd4556e07"
+    },
+    "calculate-options.py": {
+      "bytes": 5561,
+      "sha256": "f9637c69202b0f46a450a1c33c698603f4941516507e9d71bc720bfac4e4d728"
+    },
+    "numeric-calculations.json": {
+      "bytes": 11101,
+      "sha256": "49bbec609054d044881583e6bd6969f3353c5ad4af1485c20833e0a18e3508c9"
+    },
+    "README.md": {
+      "bytes": 1383,
+      "sha256": "8688fc6e46d0e7824c91c3e3bba7d1497d8f4756086365fc0963bd7c5da2fb7f"
+    }
+  }
+}

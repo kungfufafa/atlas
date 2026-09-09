@@ -1,0 +1,18 @@
+{
+  "at": "2026-09-07T09:24:48.965656+00:00",
+  "status": "CLOSED health-only evidence; not phase closure or validity ruling",
+  "releasedClosedOrdinals": [51, 60],
+  "selectedLedgerLinesVerified": 10,
+  "selectedImmutableMetadataFilesVerified": 30,
+  "osWindowUTC": ["2026-09-07T08:20:00Z", "2026-09-07T09:20:00Z"],
+  "osQueryExitCode": 0,
+  "sleepEntryNextWakePairs": 5,
+  "noteSha256": "c7143720416cb640fee30fcec2df710167172acf96f75e0895078e7b35972257",
+  "lifecycleProjectionSha256": "2b4418f17f9411aa2b385b84a4d5be1c8603f3ae5c1dfa6fa3af15a698bd09a0",
+  "osProjectionSha256": "a116e1e7d48abd2b0f360d538efab0e175fba8873b83bfb56837ea02b3abfc00",
+  "manifestSha256": "4a9a4051f14eeb923fa7d78987a836299b9b14bc79f65fa18e23bc1c2327eafe",
+  "taskModelToolArtifactOracleQualityFieldsInspected": false,
+  "providerOrTestOrAnalyzerOrOracleCalls": 0,
+  "powerOrStudyProcessChanges": 0,
+  "sourceChanges": 0
+}

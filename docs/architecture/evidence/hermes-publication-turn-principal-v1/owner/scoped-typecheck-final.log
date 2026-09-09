@@ -1,0 +1,3 @@
+packages/agent/src/chat-turn-admission.test.ts(17,11): error TS2741: Property 'streamChat' is missing in type '{ generateChat(input: GenerateChatInput): Promise<{ assistantMessage: { content: string; role: "assistant"; toolCalls: { arguments: {}; id: string; name: string; }[]; }; content: string; toolCalls: { ...; }[]; }>; generateText(): Promise<...>; name: "openai_compatible"; }' but required in type 'ProviderClient'.
+packages/agent/src/chat-turn-admission.test.ts(42,11): error TS2322: Type '() => { effect: boolean; }' is not assignable to type '(input: unknown, context: ToolContext) => Promise<unknown>'.
+  Type '{ effect: boolean; }' is missing the following properties from type 'Promise<unknown>': then, catch, finally, [Symbol.toStringTag]

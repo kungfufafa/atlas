@@ -1,0 +1,20 @@
+{
+  "at": "2026-09-07T07:37:52.727523+00:00",
+  "review": {
+    "path": "/private/tmp/atlas-c9-provider-experience-claim-scope/review.json",
+    "bytes": 1184,
+    "sha256": "c3b999e39336158fd843c4bf3152cd71be864e5702deaf24a5865e6107002b42"
+  },
+  "memo": {
+    "path": "/private/tmp/atlas-c9-provider-experience-claim-scope/memo.md",
+    "bytes": 8435,
+    "sha256": "0170bdbe3a5e4f84c657090c446faca57971eba95dd3b0ff16508a8c8af5120a"
+  },
+  "manifest": {
+    "path": "/private/tmp/atlas-c9-provider-experience-claim-scope/manifest.json",
+    "bytes": 1038,
+    "sha256": "1096ccf8969b6dcea69e1c8c7c5672762aa7f79a08f47fdc06db5346a3014f42"
+  },
+  "allMembersReverified": true,
+  "allSelectedProductSourcesUnchanged": true
+}

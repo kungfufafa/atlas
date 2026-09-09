@@ -1,0 +1,31 @@
+{
+  "at": "2026-09-06T23:25:47.200785+00:00",
+  "verdict": "no-blocking-defect-found-within-unwired-foundation-scope",
+  "blockingFindings": [],
+  "reviewedSourceHash": "6cf23f28cc6a9e7c0056c29e605850437e2175e93d63b80111e6f090d7df66dd",
+  "combinedPatchSha256": "650ec0d646072bd3fc5f536023638688b3ecb89c95f23c36dcd72687243c94c6",
+  "all2085ReviewedSourceFilesMatch": true,
+  "all2078RootCandidate5FilesUnchanged": true,
+  "independentTestRuns": 0,
+  "independentTypecheckRuns": 0,
+  "modelProviderCalls": 0,
+  "sourceEdits": 0,
+  "ownerTestsObserved": {
+    "passed": 34,
+    "assertions": 210,
+    "independentlyRerun": false
+  },
+  "notClaimed": [
+    "existing artifact attribution race fixed",
+    "production producer/executor/HTTP/channel wiring",
+    "OS sandbox proof for private store",
+    "generic concurrent garbage collection",
+    "cold pending-publication resume",
+    "atomic membership authorization",
+    "fenced restart ownership",
+    "power-loss or OS multi-process SQLite proof",
+    "Atlas/Hermes parity"
+  ],
+  "reviewSha256": "246bbf596662bdb907d8cfa34c8e3789206027781489a770cf309b77c1998f73",
+  "bindingsSha256": "df38654ed00f828bb6d0c41eb01a0bd48090e1f5fdc0f4b745ba79cbe69c6285"
+}

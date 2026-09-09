@@ -1,0 +1,77 @@
+{
+  "results": [
+    {
+      "filename": "pdf-libreoffice-report.pdf",
+      "data": {
+        "complete": true,
+        "coveredPages": [1],
+        "form": {
+          "complete": true,
+          "fields": [],
+          "nextStart": null,
+          "start": 1,
+          "totalFields": 0,
+          "xfaExcluded": false
+        },
+        "formFieldsExcluded": false,
+        "nextPage": null,
+        "pages": [
+          {
+            "page": 1,
+            "text": "Synthetic review · 2026 \nOriginal footer \nSynthetic delivery report \nTotal units: 18",
+            "truncated": false,
+            "needsOcr": false
+          }
+        ],
+        "totalPages": 1,
+        "untrustedContent": true,
+        "warnings": [
+          "Text extraction does not describe images, establish table structure, or perform OCR. Empty pages may be scans; inspect them visually before treating them as blank."
+        ]
+      },
+      "metadata": {
+        "durationMs": 794,
+        "retries": 0
+      },
+      "success": true
+    },
+    {
+      "filename": "pdf-scanned-reportlab.pdf",
+      "data": {
+        "complete": false,
+        "coveredPages": [1],
+        "form": {
+          "complete": true,
+          "fields": [],
+          "nextStart": null,
+          "start": 1,
+          "totalFields": 0,
+          "xfaExcluded": false
+        },
+        "formFieldsExcluded": false,
+        "nextPage": null,
+        "pages": [
+          {
+            "page": 1,
+            "text": "",
+            "truncated": false,
+            "needsOcr": true
+          }
+        ],
+        "totalPages": 1,
+        "untrustedContent": true,
+        "warnings": [
+          "Text extraction does not describe images, establish table structure, or perform OCR. Empty pages may be scans; inspect them visually before treating them as blank."
+        ]
+      },
+      "metadata": {
+        "durationMs": 300,
+        "retries": 0
+      },
+      "success": true
+    }
+  ],
+  "scope": "Full server compilation plus real protected PDF extraction from a bundled entry under the server package; no HTTP/model invocation",
+  "serverBytes": 20345312,
+  "stderr": ""
+}

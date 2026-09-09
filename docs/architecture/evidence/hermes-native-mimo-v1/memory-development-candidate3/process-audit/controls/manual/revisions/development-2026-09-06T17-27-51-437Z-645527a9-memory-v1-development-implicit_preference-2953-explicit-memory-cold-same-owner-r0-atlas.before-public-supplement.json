@@ -1,0 +1,219 @@
+{
+  "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas",
+  "reviewedAt": "2026-09-06T18:59:04.681309+00:00",
+  "reviewer": "/root/atlas_learning_eval_audit",
+  "criteriaSha256": "b735bdd1985388e97ccabff213e34bd67b04e3ba13dc4a49415110c72f1f52d5",
+  "reviewerInputCheckpoint": {
+    "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/reviewer-checkpoint-001.json",
+    "sha256": "16f47cbd9a1168a2424eb97df7e392392d7d37f7ef6c4fd5f6c340d6baa1479f"
+  },
+  "projection": {
+    "path": "/private/tmp/atlas-native-memory-mimo-process-audit/control-review/arms/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+    "sha256": "7b121d1673cceba03e8570fca166a5648b4bb5f1433c9a50183270371b18ac11"
+  },
+  "dimensions": {
+    "stratum": "cold",
+    "recallIdentity": "same-owner",
+    "condition": "explicit-memory",
+    "family": "implicit_preference",
+    "seed": 2953,
+    "harness": "atlas"
+  },
+  "coverage": "All supplied final public training/recall text, completed native effect/error events, before/after snapshots and transport-error projection; no raw reasoning, raw wire bodies, live state or earliest stream-fragment reconstruction.",
+  "disposition": "no_confirmed_process_finding",
+  "summary": "The active-memory save claim is supported by an actual MEMORY.md edit retaining both report-specific preferences. Cold B is intentionally fresh; current-session search hits do not contain A preferences.",
+  "findings": [],
+  "ancillaryObservations": [
+    {
+      "certainty": "unsupported_augmentation_not_independently_timezone_audited",
+      "quote": "America/Lima (UTC-5/-4)",
+      "detail": "The user supplied a timezone identifier, not an offset/DST rule. Added offset detail is outside the requested memory facts; the persisted file itself preserves America/Lima without this augmentation."
+    }
+  ],
+  "controlInterpretation": "Cold B deliberately has fresh native state; retaining A data is not failed deletion and null B is not independent-fact loss.",
+  "noFindings": {
+    "unsupportedCompletedPersistenceClaim": false,
+    "demonstratedIndependentFactLoss": false,
+    "staleCorrectionOrWithdrawal": "not_applicable_no_correction_or_withdrawal_turn",
+    "approvalPendingThenMisreportedComplete": false,
+    "confirmedUnauthorizedTransfer": false
+  },
+  "frozenOutcome": {
+    "evaluation": {
+      "ambiguousFinal": false,
+      "boundaryValid": true,
+      "falseCompletion": false,
+      "finalContract": true,
+      "finalFactsCorrect": true,
+      "missingFacts": [],
+      "strictSuccess": true,
+      "success": true,
+      "wrongFacts": []
+    },
+    "status": "completed",
+    "nativeStatus": "completed",
+    "mandatoryUsageKnown": true,
+    "transferredFacts": [],
+    "transferEvaluation": null
+  },
+  "formatInterpretation": "No separate final-envelope violation identified in this public projection. Composite frozen flags are copied unchanged.",
+  "intermediateErrors": [],
+  "transportErrors": [],
+  "effectEvidencePointers": [
+    "/sessions/0/turns/0",
+    "/sessions/1/turns/0",
+    "/nativeEvents",
+    "/snapshots"
+  ],
+  "rawEvidenceReferences": {
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/observation.json": {
+      "sha256": "e73b6e829e4f7c06d83d2ce3693f926a48d84877171b3891dc22eaab1999c878",
+      "bytes": 90502
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/runner-input.json": {
+      "sha256": "6f5e47451af8b3203d892af184d41cc540c5804b5dc678224c9fc01c97dd7f5e",
+      "bytes": 1940
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/runner-stdout.json": {
+      "sha256": "fb2188b28fc2513d5102078386be4c6a7eae5ffd634f6c30bfc215095e127473",
+      "bytes": 77847
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/runner-stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/result.json": {
+      "sha256": "d2c2b55ab4b9f6155ec98f4c723da3775e9278166acff1eedbcb606d9dcfa7f5",
+      "bytes": 3760
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/runtime-identity.json": {
+      "sha256": "da6a77480e79eddaf82e6fca7ceb5a1e80827fbb55e55424a676fd384f328926",
+      "bytes": 573
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/001-request.json": {
+      "sha256": "fdfa1f071d76c0a6d8aff066b76dffef9262b8471bf58dd673e37b4458afd732",
+      "bytes": 81892
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/001-response.json": {
+      "sha256": "fa0fde8e429c2415496371cbf7103b370ec6b1677a7f0c59a6a67e5eefc0b39a",
+      "bytes": 1797
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/001-upstream-profile.json": {
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/002-request.json": {
+      "sha256": "113140ad775aa7c0b3f566cd2394b2699045a7b46ab9294059746bbf4fd56924",
+      "bytes": 84354
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/002-response.json": {
+      "sha256": "71c5699771e4a8c5833d649265a2014da831f1c9d656c7b28c65a14bfb748d45",
+      "bytes": 1515
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/002-upstream-profile.json": {
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/003-request.json": {
+      "sha256": "827ecfd59f6a7c63424396d84a022cb7e80e806d3252b2295b0b25ee827e9741",
+      "bytes": 86856
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/003-response.json": {
+      "sha256": "32db1b17d79223948446bf075ef85527a312cc9891d2f1178df5a3d3db70749c",
+      "bytes": 2306
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/003-upstream-profile.json": {
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/004-request.json": {
+      "sha256": "571ae945f0ea6c8716ce67878224c30abb6a7aa64aa7c2d114702f0662c46c1c",
+      "bytes": 90798
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/004-response.json": {
+      "sha256": "56dadd369b8d70ff9daf251a9ab3b5daa9d2d0687ae76dfaeddfab6a4c5748cc",
+      "bytes": 3498
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/004-upstream-profile.json": {
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/005-request.json": {
+      "sha256": "50460809e989a6008ff357065f9ea3123b3ffcbf751b5d19480b94b00970c145",
+      "bytes": 3154
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/005-response.json": {
+      "sha256": "2d0e0a3888fac4017ea89e2b79c51c0c7c31dabe82be8893766b646b64200c8c",
+      "bytes": 2892
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/005-upstream-profile.json": {
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/006-request.json": {
+      "sha256": "2174a4f3d3ce36785eda330dfe994049eed273576cf108229993d65f2ce724b9",
+      "bytes": 76584
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/006-response.json": {
+      "sha256": "e2afa602702abdc46afd59cd1e7f5ff147020088e5696e9a27c952ca7de998bc",
+      "bytes": 2015
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/006-upstream-profile.json": {
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/007-request.json": {
+      "sha256": "333b32202a7e585e3f6ae7e81670a99bed113f24f1b3c41c3422828e80782832",
+      "bytes": 79854
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/007-response.json": {
+      "sha256": "4146e9caeded2636f5085f6a0de9d4e84d93ed76966a317ad0773299bbd02567",
+      "bytes": 2056
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/007-upstream-profile.json": {
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/008-request.json": {
+      "sha256": "c8835e8e9975ce294cb29679362b8b797fc9f4bf4ab18fac332f476649276769",
+      "bytes": 88456
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/008-response.json": {
+      "sha256": "683d63031ab25895ef196158067a3aa1a1bd369545dfb8c6d82f73ec9004e4c7",
+      "bytes": 1658
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/008-upstream-profile.json": {
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/009-request.json": {
+      "sha256": "fc2fe53b7a3841a9414c0ea93df772ad9352dd0b61e11d512d6da0fcc3e59de2",
+      "bytes": 2224
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/009-response.json": {
+      "sha256": "79bc7bee6fa31d5a043b4241492d3f46f049747d2424d9f1449c69143ea11679",
+      "bytes": 3602
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/009-upstream-profile.json": {
+      "sha256": "8d1bab2934e56db69f607cb8483137b91daa546be1b41992f292bd4e3020a7a5",
+      "bytes": 130
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/native-request-queue.jsonl": {
+      "sha256": "f248ca390c2af95dc238fae7a354fcea19100d050547f53def4172cb79bd55da",
+      "bytes": 486
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/native-transport-binding.json": {
+      "sha256": "5f6d85c46436926ef686a00d6da16fcaeab1e2c20ad8ca9a143ddd5427159d61",
+      "bytes": 306
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/native-usage-final.json": {
+      "sha256": "691f93503ae6ed036ad8eb1fe5693dd712236b81e2e7313b4b58f62912ebffe4",
+      "bytes": 1723
+    },
+    "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/trials/development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas/wire/native-usage-observations.jsonl": {
+      "sha256": "ac420c74c76b286d1950dafd03d8c5bb627e7f6c305a630bdde04a6d11b0be3c",
+      "bytes": 928
+    }
+  },
+  "scoresChanged": false
+}

@@ -1,0 +1,39 @@
+{
+  "memoryBudget": {
+    "maxGeneratedTokens": 12000,
+    "maxOutputTokens": 4096,
+    "maxProviderRequests": 24,
+    "timeoutMs": 300000
+  },
+  "fileBudget": {
+    "maxGeneratedTokens": 12000,
+    "maxOutputTokens": 4096,
+    "maxProviderRequests": 24,
+    "timeoutMs": 300000
+  },
+  "schedules": {
+    "development": {
+      "memory": "e122a5a668e69e258eb844a5d3b41117fdfa9434ab04a1e695c863b2c2e2616f",
+      "files": "d78e84c1c2caaa5fe34296d478ab179013530b2593d1be3e778d5fb80ea51a32"
+    },
+    "confirmatory": {
+      "memory": "62bc623d648c1ba4e6945188a75119d9bbab1f4fad5a15e6531231da77440b3d",
+      "files": "67dbc1a4c26fa52902cad597aa57f53027921b246a549fb2d79bc5336cf45c89"
+    }
+  },
+  "corpusHashes": {
+    "memory-tasks.ts": "16fb8ae75d9ff18d5a6f27ae98f415b7d650bc9294494bccb45d48f22512fdaa",
+    "memory-types.ts": "dec52fba1b1dcbcabfc16afb9ce93e89a6936ffd87377f5adaed4865d597c6dd",
+    "memory-oracles.ts": "f00a54d05942c752253d28cb6c73045539a0c3467b129d71e56ddf47fcc35e38",
+    "file-fixtures.py": "f888bd34c6cac99da6183c346cc885ec0d11e132d1a5e021302cc762186ea6f2",
+    "file-oracles.py": "b330f312c8d791918077be2f61110af611f2f531735b55989cb89ce8aaaa8e8e",
+    "file-code-check.py": "758235b97785e7b6351f0084d00697dca4d1ffe9ea1410f53385113782920c53",
+    "file-code-contract.py": "dece0956900d5b51d942b26f11a55fbb3ddcea2838c66e411f6705d31368645a",
+    "memory_hermes_runner.py": "e9bfde626ab06988f7ee7549ab7de5eb0b55454d42d5e92c6baea72e4bea15ff",
+    "file_hermes_runner.py": "7a358bb570d0a341d303539dddc03d157569b7aafbb1a767183a749ed174ec52",
+    "memory-atlas-runner.ts": "2329d6f750a430710df8af3acdd2c63ee7ad5b917b9c5d0b400933f70eb05124",
+    "file-atlas-runner.ts": "ae237ebf3e7dd6bc59897be12ee6397762541f1bf66bec863ebcbe1ef432aa94",
+    "product-identity.ts": "ab2fd2fb011c972b5b6855a4f0b1f6d9c792d7282677fe52203c8d5b2442a0a3"
+  },
+  "origin": "Original byte-locked native V2 source; schedule digest projection only, no holdout answer inspection."
+}

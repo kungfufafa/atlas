@@ -1,12 +1,81 @@
 import { join } from "node:path";
 import { type Subprocess, spawn } from "bun";
+import { ATLAS_API_VERSION } from "../../packages/core/src/contract";
 import { redactStringValue } from "../../packages/core/src/secret-redaction";
 import type { ProvisionedEnvironment } from "./environment-provisioner";
 import { getFreePort, isPortAvailable } from "./free-port";
 
 export interface ServerHarnessOptions {
-  env: ProvisionedEnvironment;
+  env: Pick<ProvisionedEnvironment, "configDir" | "databaseUrl" | "tmpDir">;
   preferredPort?: number;
+  /** Optional test-process boundary setup; production server defaults stay unchanged. */
+  preloadPath?: string;
+}
+
+async function isAtlasHealthy(
+  baseUrl: string,
+  timeoutMs: number
+): Promise<boolean> {
+  try {
+    const response = await fetch(`${baseUrl}/health`, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (
+      response.status !== 200 ||
+      !response.headers.get("content-type")?.includes("application/json")
+    ) {
+      await response.body?.cancel();
+      return false;
+    }
+    const payload: unknown = await response.json();
+    return (
+      typeof payload === "object" &&
+      payload !== null &&
+      "ok" in payload &&
+      payload.ok === true &&
+      "apiVersion" in payload &&
+      payload.apiVersion === ATLAS_API_VERSION
+    );
+  } catch {
+    return false;
+  }
+}
+
+async function waitForExit(
+  process: Subprocess,
+  timeoutMs: number
+): Promise<boolean> {
+  if (process.exitCode !== null) {
+    return true;
+  }
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      process.exited.then(() => true),
+      new Promise<boolean>((resolve) => {
+        timer = setTimeout(() => resolve(false), timeoutMs);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function releaseProcess(
+  process: Subprocess,
+  timeoutMs: number
+): Promise<void> {
+  if (process.exitCode === null) {
+    process.kill("SIGTERM");
+  }
+  if (await waitForExit(process, timeoutMs)) {
+    return;
+  }
+  process.kill("SIGKILL");
+  if (!(await waitForExit(process, timeoutMs))) {
+    throw new Error("Atlas server process did not exit after SIGKILL");
+  }
 }
 
 export class AtlasServerHarness {
@@ -17,125 +86,128 @@ export class AtlasServerHarness {
 
   constructor(private readonly options: ServerHarnessOptions) {}
 
-  async start(timeoutMs = 30_000): Promise<{ baseUrl: string; port: number }> {
-    this.port = this.options.preferredPort ?? (await getFreePort());
-    this.baseUrl = `http://127.0.0.1:${this.port}`;
-
-    const projectRoot = join(import.meta.dir, "../..");
-    const serverEntry = join(projectRoot, "apps/server/src/index.ts");
-
-    const serverEnv = {
-      ...process.env,
-      ATLAS_CONFIG_DIR: this.options.env.configDir,
-      ATLAS_ENV: "e2e",
-      ATLAS_HOST: "127.0.0.1",
-      ATLAS_PORT: String(this.port),
-      DATABASE_URL: this.options.env.databaseUrl,
-      NODE_ENV: "test",
-      TMPDIR: this.options.env.tmpDir,
-    };
-
-    this.process = spawn(["bun", serverEntry], {
-      cwd: projectRoot,
-      env: serverEnv,
-      stderr: "pipe",
-      stdout: "pipe",
-    });
-
-    // Stream and sanitize logs
-    const captureStream = async (
-      stream: ReadableStream<Uint8Array> | null,
-      type: "stdout" | "stderr"
-    ) => {
-      if (!stream) {
-        return;
-      }
-      const reader = stream.getReader();
-      const decoder = new TextDecoder();
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            break;
-          }
-          const text = decoder.decode(value);
-          const sanitized = redactStringValue(text);
-          this.logs.push(`[${type}] ${sanitized.trim()}`);
+  private async captureStream(
+    stream: ReadableStream<Uint8Array> | null,
+    type: "stdout" | "stderr"
+  ): Promise<void> {
+    if (!stream) {
+      return;
+    }
+    const reader = stream.getReader();
+    const decoder = new TextDecoder();
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
         }
-      } catch {
-        // stream closed
-      }
-    };
-
-    captureStream(this.process.stdout, "stdout");
-    captureStream(this.process.stderr, "stderr");
-
-    // Wait for health endpoint
-    const startTime = Date.now();
-    let ready = false;
-
-    while (Date.now() - startTime < timeoutMs) {
-      if (this.process.exitCode !== null) {
-        throw new Error(
-          `Atlas server exited prematurely with code ${this.process.exitCode}. Logs:\n${this.logs.join("\n")}`
+        this.logs.push(
+          `[${type}] ${redactStringValue(decoder.decode(value)).trim()}`
         );
       }
-
-      try {
-        const res = await fetch(`${this.baseUrl}/v1/health`, {
-          headers: { Accept: "application/json" },
-          signal: AbortSignal.timeout(1000),
-        });
-        if (res.status === 200 || res.status === 404 || res.status === 401) {
-          ready = true;
-          break;
-        }
-      } catch {
-        // retry
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 200));
+    } catch {
+      // Process shutdown can close its log streams before the reader finishes.
+    } finally {
+      reader.releaseLock();
     }
-
-    if (!ready) {
-      await this.stop();
-      throw new Error(
-        `Atlas server failed to become ready within ${timeoutMs}ms on ${this.baseUrl}`
-      );
-    }
-
-    return { baseUrl: this.baseUrl, port: this.port };
   }
 
-  async stop(): Promise<void> {
+  private async waitUntilReady(timeoutMs: number): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      if (!this.process || this.process.exitCode !== null) {
+        throw new Error(
+          `Atlas server exited prematurely with code ${this.process?.exitCode}. Logs:\n${this.logs.join("\n")}`
+        );
+      }
+      const ready = await isAtlasHealthy(
+        this.baseUrl,
+        Math.max(1, Math.min(1000, deadline - Date.now()))
+      );
+      if (ready && this.process.exitCode === null) {
+        return;
+      }
+      await Bun.sleep(Math.max(0, Math.min(200, deadline - Date.now())));
+    }
+    throw new Error(
+      `Atlas server failed to become ready within ${timeoutMs}ms on ${this.baseUrl}`
+    );
+  }
+
+  async start(timeoutMs = 30_000): Promise<{ baseUrl: string; port: number }> {
+    if (this.process) {
+      throw new Error("Atlas server harness already owns a process");
+    }
+    const port = this.options.preferredPort ?? (await getFreePort());
+    if (!(await isPortAvailable(port))) {
+      throw new Error(`Atlas server harness port ${port} is already occupied`);
+    }
+    this.port = port;
+    this.baseUrl = `http://127.0.0.1:${port}`;
+    const projectRoot = join(import.meta.dir, "../..");
+    const serverEntry = join(projectRoot, "apps/server/src/index.ts");
+    const command = this.options.preloadPath
+      ? ["bun", "--preload", this.options.preloadPath, serverEntry]
+      : ["bun", serverEntry];
+    try {
+      const child = spawn(command, {
+        cwd: projectRoot,
+        env: {
+          ...process.env,
+          ATLAS_CONFIG_DIR: this.options.env.configDir,
+          ATLAS_ENV: "e2e",
+          ATLAS_HOST: "127.0.0.1",
+          ATLAS_PORT: String(port),
+          DATABASE_URL: this.options.env.databaseUrl,
+          NODE_ENV: "test",
+          TMPDIR: this.options.env.tmpDir,
+        },
+        stderr: "pipe",
+        stdout: "pipe",
+      });
+      this.process = child;
+      this.captureStream(child.stdout, "stdout");
+      this.captureStream(child.stderr, "stderr");
+      await this.waitUntilReady(timeoutMs);
+      return { baseUrl: this.baseUrl, port };
+    } catch (error) {
+      try {
+        await this.stop();
+      } catch (cleanupError) {
+        throw new AggregateError(
+          [error, cleanupError],
+          "Atlas server startup failed and cleanup also failed",
+          { cause: error }
+        );
+      }
+      throw error;
+    }
+  }
+
+  async stop(timeoutMs = 3000): Promise<void> {
+    const errors: unknown[] = [];
     if (this.process) {
       try {
-        this.process.kill("SIGTERM");
-        // Wait up to 3s for process to exit
-        const start = Date.now();
-        while (this.process.exitCode === null && Date.now() - start < 3000) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
-
-        if (this.process.exitCode === null) {
-          this.process.kill("SIGKILL");
-        }
-      } catch {
-        // ignore
+        await releaseProcess(this.process, timeoutMs);
+        this.process = null;
+      } catch (error) {
+        errors.push(error);
       }
-      this.process = null;
     }
-
-    // Verify port is freed
     if (this.port > 0) {
-      const start = Date.now();
-      while (Date.now() - start < 3000) {
-        const available = await isPortAvailable(this.port);
-        if (available) {
+      const deadline = Date.now() + timeoutMs;
+      while (!(await isPortAvailable(this.port))) {
+        if (Date.now() >= deadline) {
+          errors.push(
+            new Error(`Atlas server harness port ${this.port} remains occupied`)
+          );
           break;
         }
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        await Bun.sleep(Math.max(0, Math.min(100, deadline - Date.now())));
       }
+    }
+    if (errors.length > 0) {
+      throw new AggregateError(errors, "Atlas server harness cleanup failed");
     }
   }
 }

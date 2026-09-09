@@ -317,7 +317,7 @@ describe("CodexAppServer protocol", () => {
       contextUsage: { contextWindow: 258_400, usedTokens: 5 },
       text: " alpha ",
       thinking: "think-alpha",
-      usage: { inputTokens: 2, outputTokens: 3, totalTokens: 5 },
+      usage: undefined,
     });
     expect(beta).toMatchObject({
       contextUsage: { contextWindow: 950_000, usedTokens: 5 },

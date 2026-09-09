@@ -1,0 +1,58 @@
+{
+  "candidateSourceHash": null,
+  "createdAt": "2026-09-07T02:49:56.324593+00:00",
+  "exactCopiedBytes": 93588,
+  "files": {
+    "README.md": {
+      "bytes": 2058,
+      "sha256": "865327729d83a198c4115532f838fe8c0816927a5383bad7782848e368a03a72"
+    },
+    "design/activation-patch-plan.md": {
+      "bytes": 20838,
+      "sha256": "20111353d09b10a87b92c0f86f74ca74168c63078e76a225845799476cd606c2"
+    },
+    "design/c5-excerpts.txt": {
+      "bytes": 60746,
+      "sha256": "c6c24f72c3bfa54c014127b4a852935d9486c7c6fd98eb319bc8eeca25846c1a"
+    },
+    "design/inspection-errors.json": {
+      "bytes": 1434,
+      "sha256": "484f05164639809849cedf465e1aed5189c27eb824ae1e095313bf57748a891d"
+    },
+    "design/manifest.json": {
+      "bytes": 1520,
+      "sha256": "5caae9854ab1c2ca59a1a33b556c50f1cd53f6648612261f79f3d27665130ea2"
+    },
+    "design/parent-interface-reference.json": {
+      "bytes": 945,
+      "sha256": "830e549aa6a546c8f9f93ccb8331bec9fecaa071fbfa2bd167cf97bf658d4108"
+    },
+    "design/registration.json": {
+      "bytes": 349,
+      "sha256": "881baec28439c4f0d72787e4003b261e793a95b2128a340355a211b45a007eba"
+    },
+    "design/scope-before-analysis.md": {
+      "bytes": 898,
+      "sha256": "22c880ee1a8ee81deceb40f816e62e29965c125a4edbc6233e7b2cbeca3b24cb"
+    },
+    "design/source-bindings.json": {
+      "bytes": 6858,
+      "sha256": "8a81df43455d05be069fb3ed7856f4f2fe0fb5db248e8ac2c4a48ea4f80a80b9"
+    },
+    "gate-summary.json": {
+      "bytes": 1165,
+      "sha256": "6ed79b24d865ee3d74eb1cabccebac2383fc4b11b096d09928ce85e45222aa15"
+    },
+    "reference.json": {
+      "bytes": 1823,
+      "sha256": "7c06c822c5563480d8ba1be7365558f2669c51f680ef0fd4c0ed8b0fc7325bfa"
+    },
+    "source-copies.json": {
+      "bytes": 2640,
+      "sha256": "dbcc382d5ba53bc3292859f7ce279e95718e8a9b6b69ab54fc398dcacbd13078"
+    }
+  },
+  "manifestDoesNotHashItself": true,
+  "scope": "source-only-prospective-design",
+  "selectedRegularFiles": 8
+}

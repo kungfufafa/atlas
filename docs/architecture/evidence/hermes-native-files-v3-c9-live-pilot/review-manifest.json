@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "entries": {
+    "check_live_metadata.py": {
+      "bytes": 6576,
+      "sha256": "978727c2f3a1358c98dc563940a2eb7afb9b4f5b8eb5aa1217b9919f6fb742f0"
+    },
+    "check_wire_and_close.py": {
+      "bytes": 11238,
+      "sha256": "4e571449945b4cd15b8cabec36e4922f4606e649d4a4b43818d92e11760f01b2"
+    },
+    "metadata-verification.json": {
+      "bytes": 77053,
+      "sha256": "e484bdd1737c04991a730147ee4a4a6242fd02ab2bd422a486a4c8419a3d1d43"
+    },
+    "registration.json": {
+      "bytes": 2073,
+      "sha256": "f26bc887699a49c5ab204e4646ee5de7cf6d714895d2617ab7c2a1f165bfbdc8"
+    },
+    "review.json": {
+      "bytes": 3704,
+      "sha256": "1aa27eba4eba8360ec7db946cb345eb2fa2293ecab42b11625ab06afbd574543"
+    },
+    "review.md": {
+      "bytes": 1137,
+      "sha256": "032759efd4340040aa1680d9d9ebc8794b8263aec0a706b5629deb8df242da85"
+    },
+    "selected-evidence/analysis-final.json": {
+      "bytes": 17624,
+      "sha256": "0835662e035ccd55ca11d4ff6bee15d8e54d3b2262b213eb8f742596834186ec"
+    },
+    "selected-evidence/batch.json": {
+      "bytes": 1177913,
+      "sha256": "5ae6d67e2c3444fb27c8566df5e97d9dcf8e638d09d57d720645ff2dad813c6d"
+    },
+    "selected-evidence/completed.json": {
+      "bytes": 301,
+      "sha256": "b987363b6dddb4bd99c5cb3db7862743b6b6bcdd2d3509ac35ee14f2cb9e5eea"
+    },
+    "selected-evidence/frozen-manifest.json": {
+      "bytes": 1177733,
+      "sha256": "b50f7517975762665cd627e4c0493f5cbe6228d22c9581781b9100946d07b30f"
+    },
+    "selected-evidence/frozen-pilot-schedule.json": {
+      "bytes": 412,
+      "sha256": "addc8826de71b37cc3d9a3e024e27e31bcecfa158fc97dcfcfcce02aae76f4a5"
+    },
+    "selected-evidence/phase-admission.json": {
+      "bytes": 182,
+      "sha256": "0cb91bf47eee365b88872152a78a9e01b75aa2b1a1a1c3cfa58a645073ac5c8d"
+    },
+    "selected-evidence/root-live-admission.json": {
+      "bytes": 3164,
+      "sha256": "3e58bafebdcc2d2f2be24d016b7b6214b328b84af50f2fa304438a6c3cf07011"
+    },
+    "selected-evidence/runtime-identities.json": {
+      "bytes": 799,
+      "sha256": "69e7be0d5d0c5f07540cd4904e66e9a726232a64d5a2f52922aad1dc19c90432"
+    },
+    "selected-evidence/scheduled-arms.json": {
+      "bytes": 829,
+      "sha256": "5997ebf75e5b3cdb8e656a8092ea4745dccaf85c36d121ddecb8a2bef9180dea"
+    },
+    "selected-evidence/source-archives.json": {
+      "bytes": 290,
+      "sha256": "9c5d87a4988414d700eb2eba73567e9c72845af512a7def5dc4636cdb786b219"
+    },
+    "wire-identity-verification.json": {
+      "bytes": 21568,
+      "sha256": "c243288056e480606499b5df7aa20d669f7e8024dc3e09cbd768e1cc061ae665"
+    }
+  },
+  "excludesSelfAndSeal": true
+}

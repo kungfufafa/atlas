@@ -1,0 +1,58 @@
+bun test v1.3.1 (89fa0f34)
+
+packages/agent/src/tool-execution-lifecycle.test.ts:
+94 |       expect(reply).toBe("Done.");
+95 |       expect(calls).toEqual(["provider-call"]);
+96 |       expect(captured).toHaveLength(1);
+97 |       expect(captured[0]?.success).toBe(true);
+98 |       expect(captured[0]?.data).toEqual({ actual: "effect receipt" });
+99 |       expect(order).toEqual(["effect", "stage", "complete", "checkpoint"]);
+                         ^
+error: expect(received).toEqual(expected)
+
+  [
+    "effect",
+    "stage",
+    "complete",
+    "checkpoint",
++   "checkpoint",
+  ]
+
+- Expected  - 0
++ Received  + 1
+
+      at <anonymous> (/private/tmp/atlas-artifact-execution-integration/source/packages/agent/src/tool-execution-lifecycle.test.ts:99:21)
+(fail) API send completes actual invocations before checkpoints [44.30ms]
+94 |       expect(reply).toBe("Done.");
+95 |       expect(calls).toEqual(["provider-call"]);
+96 |       expect(captured).toHaveLength(1);
+97 |       expect(captured[0]?.success).toBe(true);
+98 |       expect(captured[0]?.data).toEqual({ actual: "effect receipt" });
+99 |       expect(order).toEqual(["effect", "stage", "complete", "checkpoint"]);
+                         ^
+error: expect(received).toEqual(expected)
+
+  [
+    "effect",
+    "stage",
+    "complete",
+    "checkpoint",
++   "checkpoint",
+  ]
+
+- Expected  - 0
++ Received  + 1
+
+      at <anonymous> (/private/tmp/atlas-artifact-execution-integration/source/packages/agent/src/tool-execution-lifecycle.test.ts:99:21)
+(fail) API stream completes actual invocations before checkpoints [1.87ms]
+(pass) native send completes actual invocations before checkpoints [0.81ms]
+(pass) native stream completes actual invocations before checkpoints [0.24ms]
+(pass) parallel invocations receive separate publishers and no inherited capability [1.30ms]
+(pass) publication completion sees protected rejection and failed data without bypassing guards [0.55ms]
+(pass) begin and diagnostic failures preserve the actual effect exactly once [0.47ms]
+(pass) complete and diagnostic failures preserve the actual effect exactly once [0.43ms]
+
+ 6 pass
+ 2 fail
+ 56 expect() calls
+Ran 8 tests across 1 file. [934.00ms]

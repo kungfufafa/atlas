@@ -1,0 +1,32 @@
+{
+  "closedAt": "2026-09-07T10:26:54.496508+00:00",
+  "status": "closed",
+  "memo": {
+    "path": "/private/tmp/atlas-c10-title-ux-assessment/memo.md",
+    "bytes": 7317,
+    "sha256": "5dfac435fe6ed98338f18a3ad5927306a75489bd0b2bd601b0e8ba33fb764202"
+  },
+  "whitespaceWordCount": 702,
+  "sourceBindings": {
+    "path": "/private/tmp/atlas-c10-title-ux-assessment/source-bindings.json",
+    "bytes": 11713,
+    "sha256": "975aae3455d85a6eb5e1008802d7c974af4a22d6bab88e7dd578e77464f5c654"
+  },
+  "closedTitleFailureProjection": {
+    "path": "/private/tmp/atlas-c10-title-ux-assessment/closed-title-failure-projection.json",
+    "bytes": 4235,
+    "sha256": "6031a64028cd5f4b1f7fa11a19e14868b4f7d72e42df952835e40b7c96aa2e98"
+  },
+  "direction": "Retain background AI title generation; bounded title cancellation with deterministic fallback on failure, exact current provider selection/manual-title/tenant guards and explicit accounting uncertainty.",
+  "implementation": false,
+  "newTestsOrModelCalls": 0,
+  "newEvaluationOrPreregistration": false,
+  "liveGainEstablished": false,
+  "sourceChanges": false,
+  "scoreChanges": false,
+  "limits": {
+    "path": "/private/tmp/atlas-c10-title-ux-assessment/inspection-limitations.json",
+    "bytes": 911,
+    "sha256": "794d82e593c40534e875472540e4b7d4186525eae7fc7d3e493353625b0274f2"
+  }
+}

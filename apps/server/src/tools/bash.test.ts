@@ -172,7 +172,8 @@ describe("bash tool", () => {
       );
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toStartWith("|||preserved|/tmp/host-native-codex");
+      expect(result.stdout).toStartWith("|||preserved|\n");
+      expect(result.stdout).not.toContain("/tmp/host-native-codex");
       expect(result.stdout).not.toContain("sk-host-operator");
       expect(result.stdout).not.toContain("sk-or-host-operator");
     } finally {

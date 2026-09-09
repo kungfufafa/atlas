@@ -1,0 +1,21 @@
+{
+  "entries": [
+    {
+      "attemptId": "pilot-2026-09-06T19-32-47-518Z-581f811c-memory-transport-pilot-native-default-warm-same-owner-r0-atlas",
+      "identitySha256": "9e3b5646818f8f02ec27ada19f0780107f6b3b86404623ad56c90acee39746b7"
+    },
+    {
+      "attemptId": "pilot-2026-09-06T19-32-47-518Z-581f811c-memory-transport-pilot-native-default-warm-same-owner-r0-hermes",
+      "identitySha256": "84382132f993b6f9dce0d2216e73ac81007af13e6d0cba00f7213276b5d79cf1"
+    },
+    {
+      "attemptId": "pilot-2026-09-06T19-32-47-518Z-581f811c-memory-transport-pilot-explicit-memory-warm-same-owner-r0-hermes",
+      "identitySha256": "4c3dd7f144c9b88d97486d1f5ee86a7fd71d9c556cd2f5582173dedcd2fa9069"
+    },
+    {
+      "attemptId": "pilot-2026-09-06T19-32-47-518Z-581f811c-memory-transport-pilot-explicit-memory-warm-same-owner-r0-atlas",
+      "identitySha256": "08c597b4af28959fb87549455f926c44aef7850cf9147f25249b3c55d169ce6a"
+    }
+  ],
+  "schemaVersion": 1
+}

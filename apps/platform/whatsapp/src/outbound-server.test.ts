@@ -8,6 +8,7 @@ import {
   ensureWhatsAppOutboundToken,
   getWhatsAppConfigDir,
   getWhatsAppConfigPath,
+  saveWhatsAppConfig,
 } from "@atlas/core/whatsapp-config";
 import { startWhatsAppOutboundServer } from "./outbound-server";
 
@@ -59,6 +60,56 @@ describe("WhatsApp outbound server destination send", () => {
       await rm(tempHome, { force: true, recursive: true });
       tempHome = "";
     }
+  });
+
+  test("revoked denylist access stops both queued requests and remaining chunks", async () => {
+    tempHome = await mkdtemp(
+      path.join(os.tmpdir(), "atlas-wa-outbound-revoke-")
+    );
+    homedirSpy = spyOn(os, "homedir").mockReturnValue(tempHome);
+    const orgId = "org_revoke";
+    const destination = "6289500000001";
+    await writePairedWorkspaceConfig(orgId);
+    const firstSend = createDeferred();
+    const releaseSend = createDeferred();
+    const sent: string[] = [];
+    const server = await startWhatsAppOutboundServer({
+      authorizationToken: AUTH_TOKEN,
+      getSendHandle: () => ({
+        invalidate: () => true,
+        sendMessage: async (_jid, content) => {
+          sent.push(content.text);
+          firstSend.resolve();
+          await releaseSend.promise;
+        },
+      }),
+      maxConcurrentSends: 1,
+      orgId,
+      queueTimeoutMs: 2000,
+    });
+    stop = server.stop;
+    const headers = await authorizedHeaders(orgId);
+    const url = `http://127.0.0.1:${server.port}/send`;
+    const first = fetch(url, {
+      body: JSON.stringify({ text: "A".repeat(5000), to: destination }),
+      headers,
+      method: "POST",
+    });
+    await firstSend.promise;
+    const queued = fetch(url, {
+      body: JSON.stringify({ text: "queued", to: destination }),
+      headers,
+      method: "POST",
+    });
+    await saveWhatsAppConfig(
+      { accessMode: "denylist", blockedNumbers: [destination] },
+      orgId
+    );
+    releaseSend.resolve();
+    const responses = await Promise.all([first, queued]);
+    expect(responses[0]!.status).toBe(403);
+    expect([400, 403]).toContain(responses[1]!.status);
+    expect(sent).toHaveLength(1);
   });
 
   test("sends from the paired workspace number to the requested phone", async () => {

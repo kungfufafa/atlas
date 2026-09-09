@@ -1,0 +1,19 @@
+{
+  "status": "Conditional mathematical approval; no experiment adopted",
+  "currentInputHashes": {
+    "prospective-note.md": "a9b707f70e6c3549efd5d356ce8468634a5639d008dc7e74bcef2b6440fb8d17",
+    "calculate.py": "ee1e9f941667cd8f1364ab006d0abf5beb29965393210a6d1734ff5643b1abcc",
+    "illustrative-calculations.json": "c83e9b8ff1fd4895b7584c8b5690c4e9f51cbc0306ca06a754297bf8175db7fb",
+    "reproduction.log": "1b59da008a8ca4a078321811f8295bab6299770a39bea6fc0e12b999ac5be9ab"
+  },
+  "reviewFiles": {
+    "independent-review.md": "30403759a4431851b91d0d7bf9ef48ceae1f53b342a5e9356e79bb0d5e088ee5",
+    "independent-review.json": "a44b7f1c751d73d07677506bd394be71acdf354e2b40b91e7ab7bedaa1be9a1e",
+    "independent-scope-addendum.md": "f27eeb9f83d78bd0c8dc85e20a446f35ff76d8f7ea5a2322da6b52dffec3e684",
+    "sources-with-scope-clarification.json": "8b97850877db3bcd628396f49c9c04b01704b27ab9ce98dee3c2c56d142bad6b"
+  },
+  "calculationExecuted": false,
+  "newTestsOrSimulation": false,
+  "liveOutcomeOrHoldoutRead": false,
+  "paidCalls": 0
+}

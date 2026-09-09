@@ -1,0 +1,16 @@
+{
+  "name": "final-regressions",
+  "command": [
+    "bun",
+    "test",
+    "apps/server/src/services/artifact-publication-service.test.ts",
+    "apps/server/src/services/selected-artifact-capture.test.ts",
+    "apps/server/src/services/selected-artifact-publication.test.ts",
+    "packages/db/src/artifact-publication-page.test.ts"
+  ],
+  "startedAt": "2026-09-07T02:08:29.120609+00:00",
+  "endedAt": "2026-09-07T02:08:47.589384+00:00",
+  "exitCode": 0,
+  "log": "final-regressions.log",
+  "sha256": "d869b65da4e3dca6f5c6c046190c6c3d887bd8ac0fb4d865fec9d2885d1fb7bc"
+}

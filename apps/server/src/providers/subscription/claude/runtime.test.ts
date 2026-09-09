@@ -92,6 +92,62 @@ async function withTemporaryConfig<T>(run: () => Promise<T>): Promise<T> {
 }
 
 describe("Claude subscription runtime", () => {
+  test("strict model discovery returns only native metadata and closes the discovery process", async () => {
+    let queryCount = 0;
+    let closeCount = 0;
+    const runtime = new AuthenticatedClaudeRuntime({
+      sdk: {
+        query: () => {
+          queryCount += 1;
+          return {
+            ...queryHandle([]),
+            close: () => {
+              closeCount += 1;
+            },
+            supportedModels: async () => [
+              { displayName: "Runtime model", value: "native-account-model" },
+            ],
+          };
+        },
+      },
+    });
+    const models = await withTemporaryConfig(() =>
+      runtime.listModels({ requireRuntimeMetadata: true })
+    );
+    expect(models.map((model) => model.id)).toEqual(["native-account-model"]);
+    expect(queryCount).toBe(1);
+    expect(closeCount).toBe(1);
+  });
+
+  test("strict model discovery refuses a fallback catalog when native metadata is absent", async () => {
+    const runtime = new AuthenticatedClaudeRuntime({
+      sdk: { query: () => queryHandle([]) },
+    });
+    await withTemporaryConfig(async () => {
+      await expect(
+        runtime.listModels({ requireRuntimeMetadata: true })
+      ).rejects.toMatchObject({ code: "model_unavailable" });
+      expect((await runtime.listModels()).length).toBeGreaterThan(0);
+    });
+  });
+
+  test("strict model discovery refuses an explicitly empty native catalog", async () => {
+    const runtime = new AuthenticatedClaudeRuntime({
+      sdk: {
+        query: () => ({
+          ...queryHandle([]),
+          supportedModels: async () => [],
+        }),
+      },
+    });
+    await withTemporaryConfig(async () => {
+      await expect(
+        runtime.listModels({ requireRuntimeMetadata: true })
+      ).rejects.toMatchObject({ code: "model_unavailable" });
+      expect(await runtime.listModels()).toEqual([]);
+    });
+  });
+
   test("disables native capabilities while preserving Atlas tool execution", async () => {
     let capturedOptions: Record<string, unknown> | undefined;
     const sdk: ClaudeAgentSdk = {

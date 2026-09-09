@@ -1,0 +1,30 @@
+bun test v1.3.1 (89fa0f34)
+
+packages/agent/src/chat-turn-admission.test.ts:
+1192 |       }
+1193 |       history.push(result.assistantMessage);
+1194 | 
+1195 |       if (!enableToolLoop || result.toolCalls.length === 0) {
+1196 |         if (!result.content.trim()) {
+1197 |           throw new Error("Provider finished without a final response.");
+                           ^
+error: Provider finished without a final response.
+      at runConversation (/private/tmp/atlas-publication-turn-principal-c5/source/packages/agent/src/chat.ts:1197:21)
+      at async sendMessage (/private/tmp/atlas-publication-turn-principal-c5/source/packages/agent/src/chat.ts:806:25)
+(fail) API admission observes revocation during an existing awaited guard [43.45ms]
+1192 |       }
+1193 |       history.push(result.assistantMessage);
+1194 | 
+1195 |       if (!enableToolLoop || result.toolCalls.length === 0) {
+1196 |         if (!result.content.trim()) {
+1197 |           throw new Error("Provider finished without a final response.");
+                           ^
+error: Provider finished without a final response.
+      at runConversation (/private/tmp/atlas-publication-turn-principal-c5/source/packages/agent/src/chat.ts:1197:21)
+      at async sendMessage (/private/tmp/atlas-publication-turn-principal-c5/source/packages/agent/src/chat.ts:806:25)
+(fail) native admission observes revocation during an existing awaited guard [1.09ms]
+
+ 0 pass
+ 4 filtered out
+ 2 fail
+Ran 2 tests across 1 file. [767.00ms]

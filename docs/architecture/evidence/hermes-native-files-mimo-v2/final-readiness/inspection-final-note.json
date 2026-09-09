@@ -1,0 +1,7 @@
+{
+  "at": "2026-09-06T22:59:50.005893+00:00",
+  "operation": "Bounded observation inspection accidentally included nested session histories and tool display was truncated.",
+  "resolution": "Subsequent inspections selected only session identity/count and cleanup fields. The final verifier processed complete underlying JSON without relying on displayed excerpts.",
+  "gateOrPilotReruns": 0,
+  "sourceOrScoreChanges": false
+}

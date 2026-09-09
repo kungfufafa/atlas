@@ -113,7 +113,6 @@ export function createToolSearchTool(
     description:
       "Search the available tool catalog for specific capabilities, tools, and connectors (e.g. calculator, python, spreadsheet, files, browser, automations). Automatically activates matched tools into the current session.",
     name: "tool_search",
-    parallelSafe: true,
     parameters: jsonSchemaFromZod(toolSearchInputSchema),
     async run(input: unknown, context: ToolContext): Promise<ToolSearchOutput> {
       const parsed = parseToolInput(toolSearchInputSchema, input);

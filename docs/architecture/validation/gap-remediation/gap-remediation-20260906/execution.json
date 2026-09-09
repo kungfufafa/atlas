@@ -1,0 +1,2034 @@
+{
+  "attempt": "gap-remediation-20260906",
+  "boundary": "executeProtectedTool",
+  "converter": "/Users/apriansyahrs/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override/soffice",
+  "records": [
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/D01",
+      "durationMs": 347,
+      "id": "D01",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.docx",
+            "edits": [
+              {
+                "expectedMatches": 1,
+                "find": "Résumé en attente",
+                "kind": "replace_text",
+                "paragraph": 1,
+                "replace": "Résumé validé"
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T06:48:58.892Z",
+                "filename": "input-edited.docx",
+                "id": "3544124e-2fd8-473e-8478-50ad54121947",
+                "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "path": "artifacts/input-edited.docx",
+                "sizeBytes": 38798
+              }
+            ],
+            "bytesWritten": 38798,
+            "path": "artifacts/input-edited.docx",
+            "revision": "845f39b6dbbd93864a551fed7d94f27e12a308dabc41816916435578cc888e14",
+            "changedParts": ["word/document.xml"],
+            "editCount": 1,
+            "format": "docx",
+            "sourcePreserved": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/input-edited.docx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "docx",
+            "section": "content",
+            "unit": 1,
+            "unitKind": "document",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Text inside insertions creates new Atlas revisions, retaining earlier author history. trackChanges records plain text edits too. Structural layout changes, tracked moves, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 4,
+              "start": 1,
+              "total": 4
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 24,
+                "text": "Résumé validé — 東京 مرحبا",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "characters": 25,
+                "text": "Reference: Reference page",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "characters": 10,
+                "text": "First item",
+                "truncated": false
+              },
+              {
+                "index": 4,
+                "characters": 0,
+                "text": "",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 0,
+              "start": 1,
+              "total": 0
+            },
+            "tables": [],
+            "untrustedContent": true
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/D02",
+      "durationMs": 207,
+      "id": "D02",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.docx",
+            "edits": [
+              {
+                "column": 2,
+                "expectedText": "Inner draft",
+                "kind": "set_table_cell",
+                "row": 2,
+                "table": 2,
+                "text": "Inner approved"
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T06:48:59.105Z",
+                "filename": "input-edited.docx",
+                "id": "d79a1cb3-69c4-4d4f-81e6-c0ffbd5a3a70",
+                "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "path": "artifacts/input-edited.docx",
+                "sizeBytes": 38201
+              }
+            ],
+            "bytesWritten": 38201,
+            "path": "artifacts/input-edited.docx",
+            "revision": "a679dafecdf7ba141301c6202e514e6adf3c73666ed143af78eb574993068a8f",
+            "changedParts": ["word/document.xml"],
+            "editCount": 1,
+            "format": "docx",
+            "sourcePreserved": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/input-edited.docx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "docx",
+            "section": "content",
+            "unit": 1,
+            "unitKind": "document",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Text inside insertions creates new Atlas revisions, retaining earlier author history. trackChanges records plain text edits too. Structural layout changes, tracked moves, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 10,
+              "start": 1,
+              "total": 10
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 24,
+                "text": "Nested approval register",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "characters": 12,
+                "text": "Outer header",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "characters": 9,
+                "text": "Unchanged",
+                "truncated": false
+              },
+              {
+                "index": 4,
+                "characters": 12,
+                "text": "Outer keeper",
+                "truncated": false
+              },
+              {
+                "index": 5,
+                "characters": 0,
+                "text": "",
+                "truncated": false
+              },
+              {
+                "index": 6,
+                "characters": 4,
+                "text": "Item",
+                "truncated": false
+              },
+              {
+                "index": 7,
+                "characters": 5,
+                "text": "State",
+                "truncated": false
+              },
+              {
+                "index": 8,
+                "characters": 6,
+                "text": "Nested",
+                "truncated": false
+              },
+              {
+                "index": 9,
+                "characters": 14,
+                "text": "Inner approved",
+                "truncated": false
+              },
+              {
+                "index": 10,
+                "characters": 0,
+                "text": "",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 2,
+              "start": 1,
+              "total": 2
+            },
+            "tables": [
+              {
+                "index": 1,
+                "rows": 2
+              },
+              {
+                "index": 2,
+                "rows": 2
+              }
+            ],
+            "untrustedContent": true
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/D03",
+      "durationMs": 137,
+      "id": "D03",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.docx",
+            "edits": [
+              {
+                "expectedMatches": 1,
+                "find": "Inserted draft",
+                "kind": "replace_text",
+                "replace": "Inserted approved"
+              }
+            ],
+            "operation": "edit",
+            "revisionAuthor": "Atlas",
+            "trackChanges": true
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T06:48:59.303Z",
+                "filename": "input-edited.docx",
+                "id": "a563ef17-71c6-48a9-8c1d-f0d2fa070473",
+                "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "path": "artifacts/input-edited.docx",
+                "sizeBytes": 38061
+              }
+            ],
+            "bytesWritten": 38061,
+            "path": "artifacts/input-edited.docx",
+            "revision": "8636a059d933ad12c7820aa2a504d03981f65e9f0c84780ed6bbf18639f0e737",
+            "changedParts": ["word/document.xml"],
+            "editCount": 1,
+            "format": "docx",
+            "sourcePreserved": true
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/D04",
+      "durationMs": 371,
+      "id": "D04",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.docx",
+            "limit": 100,
+            "operation": "inspect",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 4,
+              "start": 1,
+              "total": 4
+            },
+            "format": "docx",
+            "imageParts": 0,
+            "packageParts": 20,
+            "units": [
+              {
+                "index": 1,
+                "kind": "document",
+                "notesAvailable": false,
+                "paragraphs": 3,
+                "tables": 0
+              },
+              {
+                "index": 2,
+                "kind": "header",
+                "notesAvailable": false,
+                "paragraphs": 1,
+                "tables": 0
+              },
+              {
+                "index": 3,
+                "kind": "footer",
+                "notesAvailable": false,
+                "paragraphs": 1,
+                "tables": 0
+              },
+              {
+                "index": 4,
+                "kind": "header",
+                "notesAvailable": false,
+                "paragraphs": 1,
+                "tables": 0
+              }
+            ],
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Text inside insertions creates new Atlas revisions, retaining earlier author history. trackChanges records plain text edits too. Structural layout changes, tracked moves, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "untrustedContent": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "input.docx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1,
+            "unit": 2
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "docx",
+            "section": "content",
+            "unit": 2,
+            "unitKind": "header",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Text inside insertions creates new Atlas revisions, retaining earlier author history. trackChanges records plain text edits too. Structural layout changes, tracked moves, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 1,
+              "start": 1,
+              "total": 1
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 18,
+                "text": "First section keep",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 0,
+              "start": 1,
+              "total": 0
+            },
+            "tables": [],
+            "untrustedContent": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "input.docx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1,
+            "unit": 4
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "docx",
+            "section": "content",
+            "unit": 4,
+            "unitKind": "header",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Text inside insertions creates new Atlas revisions, retaining earlier author history. trackChanges records plain text edits too. Structural layout changes, tracked moves, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 1,
+              "start": 1,
+              "total": 1
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 20,
+                "text": "Second section draft",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 0,
+              "start": 1,
+              "total": 0
+            },
+            "tables": [],
+            "untrustedContent": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "input.docx",
+            "edits": [
+              {
+                "expectedMatches": 1,
+                "find": "Second section draft",
+                "kind": "replace_text",
+                "replace": "Second section approved",
+                "unit": 4
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T06:48:59.619Z",
+                "filename": "input-edited.docx",
+                "id": "ca240bce-3213-4285-8efc-480d6f2656a7",
+                "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "path": "artifacts/input-edited.docx",
+                "sizeBytes": 38512
+              }
+            ],
+            "bytesWritten": 38512,
+            "path": "artifacts/input-edited.docx",
+            "revision": "7bf6f8af4f068fd53e10020ea93643973ec2ace4ad152eea8f12c686d08be3c1",
+            "changedParts": ["word/header2.xml"],
+            "editCount": 1,
+            "format": "docx",
+            "sourcePreserved": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/input-edited.docx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "docx",
+            "section": "content",
+            "unit": 1,
+            "unitKind": "document",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Text inside insertions creates new Atlas revisions, retaining earlier author history. trackChanges records plain text edits too. Structural layout changes, tracked moves, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 3,
+              "start": 1,
+              "total": 3
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 18,
+                "text": "First section body",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "characters": 0,
+                "text": "",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "characters": 19,
+                "text": "Second section body",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 0,
+              "start": 1,
+              "total": 0
+            },
+            "tables": [],
+            "untrustedContent": true
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/P01",
+      "durationMs": 43,
+      "id": "P01",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.pptx",
+            "edits": [
+              {
+                "expectedMatches": 1,
+                "find": "Quarter draft",
+                "kind": "replace_text",
+                "replace": "Quarter approved"
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T06:48:59.709Z",
+                "filename": "input-edited.pptx",
+                "id": "64eebe97-2453-454a-a053-e93d11681884",
+                "mimeType": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "path": "artifacts/input-edited.pptx",
+                "sizeBytes": 39822
+              }
+            ],
+            "bytesWritten": 39822,
+            "path": "artifacts/input-edited.pptx",
+            "revision": "1a666cfac0270d780fe1ab6d9643c768a689972f7210224b21bdcec7202c3b51",
+            "changedParts": ["ppt/slides/slide1.xml"],
+            "editCount": 1,
+            "format": "pptx",
+            "sourcePreserved": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/input-edited.pptx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "pptx",
+            "section": "content",
+            "unit": 1,
+            "unitKind": "slide",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Text inside insertions creates new Atlas revisions, retaining earlier author history. trackChanges records plain text edits too. Structural layout changes, tracked moves, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 1,
+              "start": 1,
+              "total": 1
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 16,
+                "text": "Quarter approved",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 0,
+              "start": 1,
+              "total": 0
+            },
+            "tables": [],
+            "untrustedContent": true
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/P02",
+      "durationMs": 37,
+      "id": "P02",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.pptx",
+            "edits": [
+              {
+                "expectedMatches": 1,
+                "find": "Grouped draft",
+                "kind": "replace_text",
+                "replace": "Grouped approved"
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T06:48:59.747Z",
+                "filename": "input-edited.pptx",
+                "id": "dab7cc08-5670-4c32-a000-df6a5d5dabde",
+                "mimeType": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "path": "artifacts/input-edited.pptx",
+                "sizeBytes": 34160
+              }
+            ],
+            "bytesWritten": 34160,
+            "path": "artifacts/input-edited.pptx",
+            "revision": "4c0eb14c885fb9a19403c646e732a2c6c74305e724539ee7bcdeee7d07afedb4",
+            "changedParts": ["ppt/slides/slide1.xml"],
+            "editCount": 1,
+            "format": "pptx",
+            "sourcePreserved": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/input-edited.pptx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "pptx",
+            "section": "content",
+            "unit": 1,
+            "unitKind": "slide",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Text inside insertions creates new Atlas revisions, retaining earlier author history. trackChanges records plain text edits too. Structural layout changes, tracked moves, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 3,
+              "start": 1,
+              "total": 3
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 14,
+                "text": "Grouped report",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "characters": 16,
+                "text": "Grouped approved",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "characters": 14,
+                "text": "Grouped keeper",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 0,
+              "start": 1,
+              "total": 0
+            },
+            "tables": [],
+            "untrustedContent": true
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/P03",
+      "durationMs": 36,
+      "id": "P03",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.pptx",
+            "edits": [
+              {
+                "column": 1,
+                "expectedText": "Merged draft",
+                "kind": "set_table_cell",
+                "row": 1,
+                "table": 1,
+                "text": "Merged approved"
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T06:48:59.784Z",
+                "filename": "input-edited.pptx",
+                "id": "8dc558fd-2033-4433-b2e1-5e88d724ad68",
+                "mimeType": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "path": "artifacts/input-edited.pptx",
+                "sizeBytes": 33833
+              }
+            ],
+            "bytesWritten": 33833,
+            "path": "artifacts/input-edited.pptx",
+            "revision": "af6649da9d9ba063a04035634100bb88088c1c9021c7ddb09b3b6dd17d0ec0d9",
+            "changedParts": ["ppt/slides/slide1.xml"],
+            "editCount": 1,
+            "format": "pptx",
+            "sourcePreserved": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/input-edited.pptx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "pptx",
+            "section": "content",
+            "unit": 1,
+            "unitKind": "slide",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Text inside insertions creates new Atlas revisions, retaining earlier author history. trackChanges records plain text edits too. Structural layout changes, tracked moves, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 7,
+              "start": 1,
+              "total": 7
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 20,
+                "text": "Merged-cell register",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "characters": 15,
+                "text": "Merged approved",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "characters": 0,
+                "text": "",
+                "truncated": false
+              },
+              {
+                "index": 4,
+                "characters": 6,
+                "text": "Keeper",
+                "truncated": false
+              },
+              {
+                "index": 5,
+                "characters": 0,
+                "text": "",
+                "truncated": false
+              },
+              {
+                "index": 6,
+                "characters": 0,
+                "text": "",
+                "truncated": false
+              },
+              {
+                "index": 7,
+                "characters": 0,
+                "text": "",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 1,
+              "start": 1,
+              "total": 1
+            },
+            "tables": [
+              {
+                "index": 1,
+                "rows": 2
+              }
+            ],
+            "untrustedContent": true
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/P04",
+      "durationMs": 36,
+      "id": "P04",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.pptx",
+            "edits": [
+              {
+                "expectedMatches": 1,
+                "find": "قيد المراجعة",
+                "kind": "replace_text",
+                "replace": "تمت المراجعة"
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T06:48:59.822Z",
+                "filename": "input-edited.pptx",
+                "id": "4b3aa1d0-154b-4f9d-9b3a-b003eb80ea97",
+                "mimeType": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "path": "artifacts/input-edited.pptx",
+                "sizeBytes": 34320
+              }
+            ],
+            "bytesWritten": 34320,
+            "path": "artifacts/input-edited.pptx",
+            "revision": "5bcaaf39e55e7c5fcb35e1ed46f819aaed12eb764a8937f857d1dc515a13724c",
+            "changedParts": ["ppt/slides/slide1.xml"],
+            "editCount": 1,
+            "format": "pptx",
+            "sourcePreserved": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/input-edited.pptx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "pptx",
+            "section": "content",
+            "unit": 1,
+            "unitKind": "slide",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Text inside insertions creates new Atlas revisions, retaining earlier author history. trackChanges records plain text edits too. Structural layout changes, tracked moves, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 1,
+              "start": 1,
+              "total": 1
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 22,
+                "text": "تمت المراجعة — 東京 café",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 0,
+              "start": 1,
+              "total": 0
+            },
+            "tables": [],
+            "untrustedContent": true
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/X01",
+      "durationMs": 80,
+      "id": "X01",
+      "steps": [
+        {
+          "input": {
+            "action": "read_range",
+            "path": "input.xlsx",
+            "range": "A1:D2",
+            "sheetName": "Records"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "path": "input.xlsx",
+            "revision": "731657b4f3ffb8671f1d0f1ea34358bcc99e3423f9288f8ae0103dfd609b6674",
+            "endCol": 4,
+            "endRow": 2,
+            "startCol": 1,
+            "startRow": 1,
+            "hasMoreColumns": false,
+            "hasMoreRows": false,
+            "rows": [
+              ["ID", "Date", "Units", "State"],
+              ["000042", "2026-09-06T00:00:00.000Z", 7, "Draft"]
+            ],
+            "sheetName": "Records"
+          }
+        },
+        {
+          "input": {
+            "action": "write_range",
+            "path": "input.xlsx",
+            "range": "C2",
+            "sheetName": "Records",
+            "values": [[11]]
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "cellsUpdated": 1,
+            "sheetName": "Records",
+            "status": "updated",
+            "bytesWritten": 9127,
+            "path": "input-v2.xlsx",
+            "revision": "dc5a81e82512a98c2d67a54417325cb68c7b866779b9e0eefdc22093726fa8d6",
+            "sourcePath": "input.xlsx"
+          }
+        },
+        {
+          "input": {
+            "action": "read_range",
+            "path": "input-v2.xlsx",
+            "range": "A1:D2",
+            "sheetName": "Records"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "path": "input-v2.xlsx",
+            "revision": "dc5a81e82512a98c2d67a54417325cb68c7b866779b9e0eefdc22093726fa8d6",
+            "endCol": 4,
+            "endRow": 2,
+            "startCol": 1,
+            "startRow": 1,
+            "hasMoreColumns": false,
+            "hasMoreRows": false,
+            "rows": [
+              ["ID", "Date", "Units", "State"],
+              ["000042", "2026-09-06T00:00:00.000Z", 11, "Draft"]
+            ],
+            "sheetName": "Records"
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/X02",
+      "durationMs": 1175,
+      "id": "X02",
+      "steps": [
+        {
+          "input": {
+            "action": "write_range",
+            "path": "input.xlsx",
+            "range": "C2",
+            "sheetName": "Data",
+            "values": [[11]]
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "cellsUpdated": 1,
+            "sheetName": "Data",
+            "status": "updated",
+            "bytesWritten": 7445,
+            "path": "input-v2.xlsx",
+            "revision": "420b9ead462df5208f98422fecbaad8e27531ce12bed918ba490e82a1fd8ecfe",
+            "sourcePath": "input.xlsx"
+          }
+        },
+        {
+          "input": {
+            "action": "recalculate",
+            "path": "input-v2.xlsx"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "status": "recalculated",
+            "calculationStatus": "recalculated",
+            "engine": "LibreOffice Calc",
+            "formulaErrorCount": 0,
+            "formulaErrors": [],
+            "bytesWritten": 7395,
+            "path": "input-v2-v2.xlsx",
+            "revision": "42f6a8648a72b7054e7b1881e368c35e8961fd70f1eb8466bf3a05556470b015",
+            "sourcePath": "input-v2.xlsx"
+          }
+        },
+        {
+          "input": {
+            "action": "read_range",
+            "path": "input-v2-v2.xlsx",
+            "range": "B2:B4",
+            "sheetName": "Summary"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "path": "input-v2-v2.xlsx",
+            "revision": "42f6a8648a72b7054e7b1881e368c35e8961fd70f1eb8466bf3a05556470b015",
+            "endCol": 2,
+            "endRow": 4,
+            "startCol": 2,
+            "startRow": 2,
+            "hasMoreColumns": false,
+            "hasMoreRows": false,
+            "rows": [
+              [
+                {
+                  "calculationStatus": "recalculated",
+                  "formula": "=SUMIFS(Data!C2:C4,Data!A2:A4,\"North\")",
+                  "cachedResult": 19
+                }
+              ],
+              [
+                {
+                  "calculationStatus": "recalculated",
+                  "formula": "=IF(B2>=20,\"Ready\",\"Review\")",
+                  "cachedResult": "Review"
+                }
+              ],
+              [
+                {
+                  "calculationStatus": "recalculated",
+                  "formula": "=DATE(2026,9,6)",
+                  "cachedResult": "2026-09-06T00:00:00.000Z"
+                }
+              ]
+            ],
+            "sheetName": "Summary"
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/X03",
+      "durationMs": 21,
+      "id": "X03",
+      "steps": [
+        {
+          "input": {
+            "action": "inspect",
+            "path": "input.xlsx"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "path": "input.xlsx",
+            "revision": "9d0bbd5e2f634da968f3192a2ac3c5b72d943a6e6afbea85f09196cb1bf780e1",
+            "sheetCount": 1,
+            "sheets": [
+              {
+                "columnCount": 2,
+                "columns": ["Item", "Units"],
+                "name": "Chart data",
+                "rowCount": 3
+              }
+            ],
+            "editable": true,
+            "supportedActions": [
+              "inspect",
+              "read_range",
+              "write_range",
+              "export_csv"
+            ]
+          }
+        },
+        {
+          "input": {
+            "action": "write_range",
+            "path": "input.xlsx",
+            "range": "B2",
+            "sheetName": "Chart data",
+            "values": [[12]]
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "cellsUpdated": 1,
+            "sheetName": "Chart data",
+            "status": "updated",
+            "chartDataStatus": "refresh_on_open",
+            "formulaCalculationStatus": "stale",
+            "preservedFeatures": ["charts", "drawings", "relationships"],
+            "bytesWritten": 6498,
+            "path": "input-v2.xlsx",
+            "revision": "ac98d8034bda78c0a860b46cabffa3ab3eda410e0332f6d6783585d8c067b0a9",
+            "sourcePath": "input.xlsx"
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/X04",
+      "durationMs": 651,
+      "id": "X04",
+      "steps": [
+        {
+          "input": {
+            "action": "write_range",
+            "path": "input.xlsx",
+            "range": "B2",
+            "sheetName": "Table data",
+            "values": [[12]]
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "cellsUpdated": 1,
+            "sheetName": "Table data",
+            "status": "updated",
+            "bytesWritten": 7783,
+            "path": "input-v2.xlsx",
+            "revision": "ec3611596ec89e4566ba5e6ef8d4672dcc27dccc524f9e769d269be335229637",
+            "sourcePath": "input.xlsx"
+          }
+        },
+        {
+          "input": {
+            "action": "recalculate",
+            "path": "input-v2.xlsx"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "status": "recalculated",
+            "calculationStatus": "recalculated",
+            "engine": "LibreOffice Calc",
+            "formulaErrorCount": 0,
+            "formulaErrors": [],
+            "bytesWritten": 7583,
+            "path": "input-v2-v2.xlsx",
+            "revision": "a5d86d3da130a4ec114ed0bc8542f7921bbccdce69a25b4aa7df1d717210828d",
+            "sourcePath": "input-v2.xlsx"
+          }
+        },
+        {
+          "input": {
+            "action": "read_range",
+            "path": "input-v2-v2.xlsx",
+            "range": "A1:B4",
+            "sheetName": "Table data"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "path": "input-v2-v2.xlsx",
+            "revision": "a5d86d3da130a4ec114ed0bc8542f7921bbccdce69a25b4aa7df1d717210828d",
+            "endCol": 2,
+            "endRow": 4,
+            "startCol": 1,
+            "startRow": 1,
+            "hasMoreColumns": false,
+            "hasMoreRows": false,
+            "rows": [
+              ["ID", "Qty"],
+              ["0001", 12],
+              ["0002", 5],
+              [
+                "Total",
+                {
+                  "calculationStatus": "recalculated",
+                  "formula": "=SUBTOTAL(109,TasksTable[Qty])",
+                  "cachedResult": 17
+                }
+              ]
+            ],
+            "sheetName": "Table data"
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/C01",
+      "durationMs": 24,
+      "id": "C01",
+      "steps": [
+        {
+          "input": {
+            "action": "import_csv",
+            "csvPath": "input.csv",
+            "delimiter": ";",
+            "path": "imported.xlsx"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "importedRows": 3,
+            "sheetName": "input",
+            "status": "csv_imported",
+            "layout": {
+              "columnsSized": 4,
+              "estimated": true,
+              "rowsClamped": 0,
+              "wrapped": true
+            },
+            "bytesWritten": 6730,
+            "path": "artifacts/imported.xlsx",
+            "revision": "8c3a41b4b039646428d3486038f6cd948a05d66bc3a626cea1d69c5286f76b3b"
+          }
+        },
+        {
+          "input": {
+            "action": "read_range",
+            "path": "artifacts/imported.xlsx",
+            "range": "A1:D3"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "path": "artifacts/imported.xlsx",
+            "revision": "8c3a41b4b039646428d3486038f6cd948a05d66bc3a626cea1d69c5286f76b3b",
+            "endCol": 4,
+            "endRow": 3,
+            "startCol": 1,
+            "startRow": 1,
+            "hasMoreColumns": false,
+            "hasMoreRows": false,
+            "rows": [
+              ["ID", "Long ID", "Description", "Code"],
+              [
+                "00012",
+                "12345678901234567890",
+                "café; 東京\nsecond line",
+                "=SUM(A1:A2)"
+              ],
+              ["00013", "00000000000000000009", "He said \"ready\"", "-0042"]
+            ],
+            "sheetName": "input"
+          }
+        },
+        {
+          "input": {
+            "action": "export_csv",
+            "delimiter": ";",
+            "escapeCsvFormulas": false,
+            "path": "artifacts/imported.xlsx",
+            "targetCsvPath": "exported.csv"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "status": "csv_exported",
+            "csvEscapedCellCount": 0,
+            "bytesWritten": 147,
+            "path": "artifacts/exported.csv",
+            "revision": "4e4533721fda8aa24efc08578326d4a0298ad0223ec0e7b09dbffcefcd3ec79a",
+            "sourcePath": "artifacts/imported.xlsx",
+            "exportedRows": 3,
+            "targetCsvPath": "artifacts/exported.csv"
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/C02",
+      "durationMs": 6,
+      "id": "C02",
+      "steps": [
+        {
+          "input": {
+            "action": "import_csv",
+            "columnTypes": ["text", "number"],
+            "csvHeader": true,
+            "csvPath": "input.csv",
+            "decimalSeparator": ",",
+            "delimiter": ";",
+            "path": "imported.xlsx"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "importedRows": 3,
+            "sheetName": "input",
+            "status": "csv_imported",
+            "layout": {
+              "columnsSized": 2,
+              "estimated": true,
+              "rowsClamped": 0,
+              "wrapped": true
+            },
+            "bytesWritten": 6550,
+            "path": "artifacts/imported.xlsx",
+            "revision": "862a057fa6727136c1e9aac11777c04c68cb19fdc6bec27afb4f44e6082ba455"
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/C03",
+      "durationMs": 19,
+      "id": "C03",
+      "steps": [
+        {
+          "input": {
+            "action": "import_csv",
+            "csvPath": "input.csv",
+            "delimiter": "\t",
+            "path": "imported.xlsx"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "importedRows": 3,
+            "sheetName": "input",
+            "status": "csv_imported",
+            "layout": {
+              "columnsSized": 4,
+              "estimated": true,
+              "rowsClamped": 0,
+              "wrapped": true
+            },
+            "bytesWritten": 6671,
+            "path": "artifacts/imported.xlsx",
+            "revision": "45b16d8b16b6df7b06bc821df6530a547ab7a7c19505e41434fd543f5939ca8c"
+          }
+        },
+        {
+          "input": {
+            "action": "read_range",
+            "path": "artifacts/imported.xlsx",
+            "range": "A1:D3"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "path": "artifacts/imported.xlsx",
+            "revision": "45b16d8b16b6df7b06bc821df6530a547ab7a7c19505e41434fd543f5939ca8c",
+            "endCol": 4,
+            "endRow": 3,
+            "startCol": 1,
+            "startRow": 1,
+            "hasMoreColumns": false,
+            "hasMoreRows": false,
+            "rows": [
+              ["ID", "Description", "Expression", "Trailing"],
+              ["001", "a\tb\nnext", "@SUM(A1)", ""],
+              ["002", "\"quoted\"", "+0012", ""]
+            ],
+            "sheetName": "input"
+          }
+        },
+        {
+          "input": {
+            "action": "export_csv",
+            "delimiter": "\t",
+            "escapeCsvFormulas": false,
+            "path": "artifacts/imported.xlsx",
+            "targetCsvPath": "exported.csv"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "status": "csv_exported",
+            "csvEscapedCellCount": 0,
+            "bytesWritten": 83,
+            "path": "artifacts/exported.csv",
+            "revision": "9aa710b3e826ba8d5ce239752141e4fb60600c9cbb9f0a9b70b4229975574e24",
+            "sourcePath": "artifacts/imported.xlsx",
+            "exportedRows": 3,
+            "targetCsvPath": "artifacts/exported.csv"
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/F01",
+      "durationMs": 514,
+      "id": "F01",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.pdf",
+            "operation": "extract",
+            "pages": [3, 2]
+          },
+          "tool": "pdf_document",
+          "output": {
+            "complete": false,
+            "coveredPages": [3, 2],
+            "form": {
+              "complete": true,
+              "fields": [],
+              "nextStart": null,
+              "start": 1,
+              "totalFields": 0,
+              "xfaExcluded": false
+            },
+            "formFieldsExcluded": false,
+            "nextPage": 1,
+            "pages": [
+              {
+                "page": 3,
+                "text": "Page three café naïve",
+                "truncated": false,
+                "needsOcr": false
+              },
+              {
+                "page": 2,
+                "text": "Rotated beta table",
+                "truncated": false,
+                "needsOcr": false
+              }
+            ],
+            "totalPages": 3,
+            "untrustedContent": true,
+            "warnings": [
+              "Text extraction does not describe images or establish table structure. OCR text is probabilistic; review low-confidence results and pages containing both images and an existing text layer."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/F02",
+      "durationMs": 313,
+      "id": "F02",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.pdf",
+            "operation": "inspect"
+          },
+          "tool": "pdf_document",
+          "output": {
+            "filename": "input.pdf",
+            "form": {
+              "complete": true,
+              "fields": [
+                {
+                  "name": "reviewer",
+                  "readable": true,
+                  "truncated": false,
+                  "type": "text",
+                  "value": "Maya Synthetic"
+                },
+                {
+                  "name": "status",
+                  "readable": true,
+                  "truncated": false,
+                  "type": "text",
+                  "value": "Approved"
+                }
+              ],
+              "nextStart": null,
+              "start": 1,
+              "totalFields": 2,
+              "xfaExcluded": false
+            },
+            "pageCount": 1,
+            "pages": [
+              {
+                "page": 1,
+                "width": 595.2756,
+                "height": 841.8898
+              }
+            ],
+            "revision": "e1536003290c3591887c128e52b77d02f575014f76dbe73800368a68d28fd3d9"
+          }
+        },
+        {
+          "input": {
+            "documentRef": "input.pdf",
+            "operation": "extract"
+          },
+          "tool": "pdf_document",
+          "output": {
+            "complete": true,
+            "coveredPages": [1],
+            "form": {
+              "complete": true,
+              "fields": [
+                {
+                  "name": "reviewer",
+                  "readable": true,
+                  "truncated": false,
+                  "type": "text",
+                  "value": "Maya Synthetic"
+                },
+                {
+                  "name": "status",
+                  "readable": true,
+                  "truncated": false,
+                  "type": "text",
+                  "value": "Approved"
+                }
+              ],
+              "nextStart": null,
+              "start": 1,
+              "totalFields": 2,
+              "xfaExcluded": false
+            },
+            "formFieldsExcluded": false,
+            "nextPage": null,
+            "pages": [
+              {
+                "page": 1,
+                "text": "Review approval form",
+                "truncated": false,
+                "needsOcr": false
+              }
+            ],
+            "totalPages": 1,
+            "untrustedContent": true,
+            "warnings": [
+              "Text extraction does not describe images or establish table structure. OCR text is probabilistic; review low-confidence results and pages containing both images and an existing text layer."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/F03",
+      "durationMs": 973,
+      "id": "F03",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.pdf",
+            "operation": "extract"
+          },
+          "tool": "pdf_document",
+          "output": {
+            "complete": true,
+            "coveredPages": [1],
+            "form": {
+              "complete": true,
+              "fields": [],
+              "nextStart": null,
+              "start": 1,
+              "totalFields": 0,
+              "xfaExcluded": false
+            },
+            "formFieldsExcluded": false,
+            "nextPage": null,
+            "pages": [
+              {
+                "page": 1,
+                "text": "SCAN REVIEW 8642",
+                "truncated": false,
+                "needsOcr": false,
+                "method": "ocr",
+                "ocrLanguage": "eng",
+                "ocrConfidence": 96.312813,
+                "ocrReviewRequired": false
+              }
+            ],
+            "totalPages": 1,
+            "untrustedContent": true,
+            "warnings": [
+              "Text extraction does not describe images or establish table structure. OCR text is probabilistic; review low-confidence results and pages containing both images and an existing text layer."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/F04",
+      "durationMs": 152,
+      "id": "F04",
+      "steps": [
+        {
+          "input": {
+            "operation": "merge",
+            "outputFilename": "combined.pdf",
+            "sources": ["input.pdf", "appendix.pdf"]
+          },
+          "tool": "pdf_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T06:49:03.771Z",
+                "filename": "combined.pdf",
+                "id": "a29215f2-1865-4d17-b28d-53863cbf8ede",
+                "mimeType": "application/pdf",
+                "path": "artifacts/combined.pdf",
+                "sizeBytes": 3429
+              }
+            ],
+            "bytesWritten": 3429,
+            "path": "artifacts/combined.pdf",
+            "revision": "b4379d37586ff452f3d581a8eaaa813c11f423b11c603e31f0ee9974b41cf777",
+            "pageCount": 3,
+            "coverage": "Page content, outlines, named destinations, internal navigation and embedded attachment filespecs preserved. First-source document metadata and view settings retained. Forms and conflicting named destinations require preparation before merging."
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/F05",
+      "durationMs": 2967,
+      "id": "F05",
+      "steps": [
+        {
+          "input": {
+            "fontRef": "covering.ttf",
+            "operation": "create",
+            "outputFilename": "multilingual.pdf",
+            "textPages": ["Révision approuvée — تمت المراجعة — 東京"]
+          },
+          "tool": "pdf_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T06:49:06.739Z",
+                "filename": "multilingual.pdf",
+                "id": "7805e0dc-c259-459c-aed5-1cd1a12f8c34",
+                "mimeType": "application/pdf",
+                "path": "artifacts/multilingual.pdf",
+                "sizeBytes": 21872
+              }
+            ],
+            "bytesWritten": 21872,
+            "path": "artifacts/multilingual.pdf",
+            "revision": "a2c0a2de686e2a048de5eebedc7499b4bcc9cab6bb097802864838e989e543a9",
+            "pageCount": 1,
+            "font": "covering.ttf"
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/tmp/atlas-daily-files-corpus/attempts/gap-remediation-20260906/W01",
+      "durationMs": 2016,
+      "id": "W01",
+      "steps": [
+        {
+          "input": {
+            "action": "import_csv",
+            "columnTypes": ["text", "number"],
+            "csvHeader": true,
+            "csvPath": "records.csv",
+            "path": "summary.xlsx"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "importedRows": 4,
+            "sheetName": "records",
+            "status": "csv_imported",
+            "layout": {
+              "columnsSized": 2,
+              "estimated": true,
+              "rowsClamped": 0,
+              "wrapped": true
+            },
+            "bytesWritten": 6561,
+            "path": "artifacts/summary.xlsx",
+            "revision": "b72f35858382e9fb927262214d4ee7d0246ed60695d12d22d81033104157eefd"
+          }
+        },
+        {
+          "input": {
+            "action": "write_range",
+            "path": "artifacts/summary.xlsx",
+            "range": "B5",
+            "sheetName": "records",
+            "values": [["=SUM(B2:B4)"]]
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "cellsUpdated": 1,
+            "sheetName": "records",
+            "status": "updated",
+            "bytesWritten": 6709,
+            "path": "artifacts/summary-v2.xlsx",
+            "revision": "309fdcc4f93fa4272af2a9d34a0c6a5fabd953ccd392119867b1a257d738046e",
+            "sourcePath": "artifacts/summary.xlsx"
+          }
+        },
+        {
+          "input": {
+            "action": "recalculate",
+            "path": "artifacts/summary-v2.xlsx"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "status": "recalculated",
+            "calculationStatus": "recalculated",
+            "engine": "LibreOffice Calc",
+            "formulaErrorCount": 0,
+            "formulaErrors": [],
+            "bytesWritten": 6231,
+            "path": "artifacts/summary-v2-v2.xlsx",
+            "revision": "1d883e17344bb6392a06d2a9a4f6c4aeae9e2e364a3bac41257b0f5a4893da54",
+            "sourcePath": "artifacts/summary-v2.xlsx"
+          }
+        },
+        {
+          "input": {
+            "action": "read_range",
+            "path": "artifacts/summary-v2-v2.xlsx",
+            "range": "B5",
+            "sheetName": "records"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "path": "artifacts/summary-v2-v2.xlsx",
+            "revision": "1d883e17344bb6392a06d2a9a4f6c4aeae9e2e364a3bac41257b0f5a4893da54",
+            "endCol": 2,
+            "endRow": 5,
+            "startCol": 2,
+            "startRow": 5,
+            "hasMoreColumns": false,
+            "hasMoreRows": false,
+            "rows": [
+              [
+                {
+                  "calculationStatus": "recalculated",
+                  "formula": "=SUM(B2:B4)",
+                  "cachedResult": 18
+                }
+              ]
+            ],
+            "sheetName": "records"
+          }
+        },
+        {
+          "input": {
+            "documentRef": "report.docx",
+            "edits": [
+              {
+                "expectedMatches": 1,
+                "find": "PLACEHOLDER",
+                "kind": "replace_text",
+                "replace": "18"
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T06:49:07.543Z",
+                "filename": "report-edited.docx",
+                "id": "4231439d-063b-470b-b70d-2370e69c243d",
+                "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "path": "artifacts/report-edited.docx",
+                "sizeBytes": 38651
+              }
+            ],
+            "bytesWritten": 38651,
+            "path": "artifacts/report-edited.docx",
+            "revision": "3c553e6a7f46a6154ff61e0e9cba5157f45b40d26069e2a27618f1a2b454996c",
+            "changedParts": ["word/document.xml"],
+            "editCount": 1,
+            "format": "docx",
+            "sourcePreserved": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/report-edited.docx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "docx",
+            "section": "content",
+            "unit": 1,
+            "unitKind": "document",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Text inside insertions creates new Atlas revisions, retaining earlier author history. trackChanges records plain text edits too. Structural layout changes, tracked moves, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 3,
+              "start": 1,
+              "total": 3
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 25,
+                "text": "Synthetic delivery report",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "characters": 15,
+                "text": "Total units: 18",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "characters": 0,
+                "text": "",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 0,
+              "start": 1,
+              "total": 0
+            },
+            "tables": [],
+            "untrustedContent": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "summary.pptx",
+            "edits": [
+              {
+                "expectedMatches": 1,
+                "find": "PLACEHOLDER",
+                "kind": "replace_text",
+                "replace": "18"
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T06:49:07.642Z",
+                "filename": "summary-edited.pptx",
+                "id": "e5947feb-a4fd-43d7-8cf5-ecbe7c96f486",
+                "mimeType": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "path": "artifacts/summary-edited.pptx",
+                "sizeBytes": 34055
+              }
+            ],
+            "bytesWritten": 34055,
+            "path": "artifacts/summary-edited.pptx",
+            "revision": "d6a63bce95894e386e71814304747c9dad410a13e600e8a345f472dc75b2be90",
+            "changedParts": ["ppt/slides/slide1.xml"],
+            "editCount": 1,
+            "format": "pptx",
+            "sourcePreserved": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/summary-edited.pptx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "pptx",
+            "section": "content",
+            "unit": 1,
+            "unitKind": "slide",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Text inside insertions creates new Atlas revisions, retaining earlier author history. trackChanges records plain text edits too. Structural layout changes, tracked moves, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 1,
+              "start": 1,
+              "total": 1
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 15,
+                "text": "Total units: 18",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 0,
+              "start": 1,
+              "total": 0
+            },
+            "tables": [],
+            "untrustedContent": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/report-edited.docx",
+            "operation": "convert",
+            "outputFilename": "report.pdf"
+          },
+          "tool": "pdf_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T06:49:08.460Z",
+                "filename": "report.pdf",
+                "id": "5d9594e8-7103-48e4-89d1-a6cc8d257545",
+                "mimeType": "application/pdf",
+                "path": "artifacts/report.pdf",
+                "sizeBytes": 18249
+              }
+            ],
+            "bytesWritten": 18249,
+            "path": "artifacts/report.pdf",
+            "revision": "e82b0ec1eaffd8914119c660b661dbe24a95862ca286f2ef136aaa1a7bdfc6f4",
+            "pageCount": 1
+          }
+        },
+        {
+          "input": {
+            "operation": "merge",
+            "outputFilename": "packet.pdf",
+            "sources": ["artifacts/report.pdf", "appendix.pdf"]
+          },
+          "tool": "pdf_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T06:49:08.469Z",
+                "filename": "packet.pdf",
+                "id": "0dd75aac-6817-4066-b33d-47480c6234c8",
+                "mimeType": "application/pdf",
+                "path": "artifacts/packet.pdf",
+                "sizeBytes": 10936
+              }
+            ],
+            "bytesWritten": 10936,
+            "path": "artifacts/packet.pdf",
+            "revision": "7ffb1572e14e92728c627cb99d9f86285c088545ae6a8f795f3717502735ed13",
+            "pageCount": 2,
+            "coverage": "Page content copied in source order; sources contain no navigation, attachments or forms."
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/packet.pdf",
+            "operation": "extract"
+          },
+          "tool": "pdf_document",
+          "output": {
+            "complete": true,
+            "coveredPages": [1, 2],
+            "form": {
+              "complete": true,
+              "fields": [],
+              "nextStart": null,
+              "start": 1,
+              "totalFields": 0,
+              "xfaExcluded": false
+            },
+            "formFieldsExcluded": false,
+            "nextPage": null,
+            "pages": [
+              {
+                "page": 1,
+                "text": "Synthetic review · 2026 \nOriginal footer \nSynthetic delivery report \nTotal units: 18",
+                "truncated": false,
+                "needsOcr": false
+              },
+              {
+                "page": 2,
+                "text": "Independent appendix retained",
+                "truncated": false,
+                "needsOcr": false
+              }
+            ],
+            "totalPages": 2,
+            "untrustedContent": true,
+            "warnings": [
+              "Text extraction does not describe images or establish table structure. OCR text is probabilistic; review low-confidence results and pages containing both images and an existing text layer."
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

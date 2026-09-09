@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-09-07T06:12:37.223432+00:00",
+  "status": "CLOSED: live pilot instrumentation verified; no structural/authentication/endpoint blocker found in reviewed evidence",
+  "batch": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/pilot-1788760838773-224fd017",
+  "registrationSha256": "f26bc887699a49c5ab204e4646ee5de7cf6d714895d2617ab7c2a1f165bfbdc8",
+  "analysisSha256": "0835662e035ccd55ca11d4ff6bee15d8e54d3b2262b213eb8f742596834186ec",
+  "completedSha256": "b987363b6dddb4bd99c5cb3db7862743b6b6bcdd2d3509ac35ee14f2cb9e5eea",
+  "rootAdmissionSha256": "3e58bafebdcc2d2f2be24d016b7b6214b328b84af50f2fa304438a6c3cf07011",
+  "frozenManifestSha256": "b50f7517975762665cd627e4c0493f5cbe6228d22c9581781b9100946d07b30f",
+  "metadataVerificationSha256": "e484bdd1737c04991a730147ee4a4a6242fd02ab2bd422a486a4c8419a3d1d43",
+  "wireIdentityVerificationSha256": "c243288056e480606499b5df7aa20d669f7e8024dc3e09cbd768e1cc061ae665",
+  "observations": {
+    "originalScheduledArms": 4,
+    "originalStarts": 4,
+    "originalEnds": 4,
+    "duplicateOrReplacementArms": 0,
+    "originalNativeSpawns": 4,
+    "nativeAndParentIdentityBindings": "all four exact original transport/framework identities bound, parent receipt complete, child close observed",
+    "originalParentCallerReferencesRehashed": 36,
+    "originalWireTraceSets": 33,
+    "wireTraceFilesRehashed": 99,
+    "allRecordedHttpStatuses": 200,
+    "requestedEffectiveReportedModel": "mimo-v2.5",
+    "upstreamEndpoint": "https://opencode.ai/zen/go/v1",
+    "userAgent": "Atlas-Hermes-Compatibility-Probe/1.0 (nonstreaming)",
+    "temperature": 0.2,
+    "maxResponseTokens": 4096,
+    "stream": false,
+    "finalMandatoryUsageKnownArms": 4,
+    "unknownUsageArms": 0,
+    "costKnown": false,
+    "usage": {
+      "atlas": {
+        "requests": 13,
+        "promptTokens": 82673,
+        "generatedTokens": 5437
+      },
+      "hermes": {
+        "requests": 20,
+        "promptTokens": 143800,
+        "generatedTokens": 5725
+      }
+    },
+    "rootAnalysisValidity": {
+      "issues": [],
+      "valid": true
+    },
+    "sourceControlBindings": "Exact frozen C9 Atlas/control/Hermes maps and original source-archive hashes match batch metadata. Archive contents were checked by original frozen analyzer; reviewer rehashed compressed bytes, did not execute or extract archived code."
+  },
+  "limits": [
+    "Instrumentation-only review: no artifact/task-oracle semantic reevaluation or score-based admission selection.",
+    "Native request/auxiliary calls are retained within the same original arms; four single recorded spawn attempts and four start/end pairs show no evaluator substitution/retry in this batch. No claim about unobservable provider-internal operations.",
+    "Usage totals are reported mandatory counters; cost remains unknown. Existing unknown-usage failure rule remains unchanged; this pilot had no unknown-usage arm.",
+    "Direct child close does not prove all descendants gone; native receipt explicitly retains allDescendantsGone:unproved.",
+    "No new paid calls, tests, analyzer reruns, source/root/evidence modifications, confirmation inputs/answers or hidden reasoning inspection. Closed offline review unchanged."
+  ],
+  "conclusion": "No instrumentation blocker found. This unscored pilot is not a quality/parity result and its scores do not filter development. Any development execution remains subject to the root prospective sequence and separate API admission.",
+  "reviewerProviderCalls": 0,
+  "reviewerTests": 0,
+  "reviewerRescores": 0,
+  "independentOfRootExecution": true,
+  "paidExecutionAuthorizedByThisReview": false,
+  "parityClaimEstablished": false
+}

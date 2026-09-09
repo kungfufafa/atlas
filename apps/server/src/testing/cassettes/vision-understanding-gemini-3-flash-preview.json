@@ -1,6 +1,6 @@
 {
   "name": "vision-understanding-gemini-3-flash-preview",
-  "recordedAt": "2026-08-27T00:44:24.951Z",
+  "recordedAt": "2026-09-06T08:08:36.261Z",
   "request": {
     "body": {
       "contents": [
@@ -24,11 +24,7 @@
         ],
         "role": "user"
       },
-      "generationConfig": {
-        "thinkingConfig": {
-          "thinkingBudget": 0
-        }
-      }
+      "generationConfig": {}
     },
     "method": "POST",
     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent"
@@ -40,8 +36,8 @@
           "content": {
             "parts": [
               {
-                "text": "This is a simple, digital image consisting of a solid, uniform square of color. There are no patterns, textures, gradients, UI elements, text, or shapes present.\n\n**Visual details:**\n*   **Color:** A warm, vibrant shade of coral or salmon pink.\n*   **Hex Code (approximate):** #FF827E\n*   **Composition:** A flat, monochromatic fill covering the entire frame.",
-                "thoughtSignature": "EmUKYwERTTIPhxgSzGc96/Y+brLg2IPlLYXKaF7YRf3sPm221CCuC3PtehT7T0345nVHGG04IbIMY7P7bi+ZgRe9sj8M7gZ+Qhg9FyzkcqNboxrRF1q81vOlADgWXEuzIoKBCl4AvQ=="
+                "text": "This is a single-color, monochromatic image featuring a solid, uniform square of coral or salmon pink. There are no patterns, text, UI elements, gradients, or other visual features. The entire surface is a flat, consistent shade of warm pinkish-orange.",
+                "thoughtSignature": "EvQHCvEHARFNMg9c7HJr/zwDEJ5dJ5Bu1T3wwyvPkEjpBV0v8qU9qItsLi9frbm4dWnz80AzXtK3mPsw/t9kbNxTOcCoRbaC9qo8zjSo25QoGGv/kY9mkgymWWIJbgPay7Kh0v//bIp/vxL5SMoxe5IL+tlfpQHOZ0I5ZEIyKpW/2hiw2c6ZevX4S5nQIt5/GLNk8/7uB5zZoxR7/eucpdcyJxBvWDfYexW1k7DQoGwSU4LrLwjmg0exU7zzJWnbFHUEmiaadGyvfIyMXPhtsLtB4jxavTZlIw9jwnjNbxMhQRsuszBkkprD0UK5FrPg9eROoDkSdMSX/k4r2izUeQYmFgbkVKosaf6FoNppAPpaoZ+U6mZlaR9s7kGLCUD5o21dUPA8s7Gb4dNZ85ZzRMjHehrdjyOO2YqN7yrZM05Qbbfubs6PR+M2dS2oQdplxOIH7iV0/myb1AVlKleqwfoh5Bp3CbtSpt/ZYgZyJQ0CY4QYC1eynd2KOcCQ2MJxKI4w1AHSNBnhPSfp/hV/YbEOBGmfIhR7dnwD0wSSI10JMT5u7K2qOrUhbZsjIpdQHeAtm2cKjGVwsAcntl8wwF0ZYjW7y3cygjsfGOHh5omsdvSiagf4h+YeBAywjbfE0ZHdtvYPdb4CL67si3UW/1CMkQTzF5SAoI5IiBMLoJpoQuRqgu1gC22mhBOl754+XW/yY0Q4SR+tIYFGkyq9ReQ5rLqjkvTijGSFrq12IZLqNvAwHIBHVlO3A2cEwZ1QslXqH8VZnLGu7xnHaBXB2GPRqAuU+OXvqpmygZ3AxCQB7eOPHNNT3jn+zD9g8RlZBe+CKer3eokKZ6QnnF+r9ntzEl0pk0x1NNRMDCKSdaddnyiwNeRljOg5jkMmv2gaSq0JJLYHeqCezBqd3F8ijpXiGzHy3TE5t889QhnjJA42iJMBy/SV68Cm+HCqHywb+qImHb7HX2nDMtM5Pw2juLbTbDjoWakdEkAF/U/00Sc6O3UnwV5zvxmOQi88K6WVfdmU1Gm7sxxqrrw+QEGhKIJvq4L1UbC78dca5Ya6AVvb+j5oXqlcPYc0xaH7oVz7djlAB4aUU7QcvY0MDm9o8V4N/UQhCxcVFbOejsh5f1ckYOzpp7sNmBHyY4eDj8LkInx957Q8AdHfyeG97o86ItZ+xF11eM1NbP9cC6Tr/y1mQgWKZ6mxQVt6NJYOQC9MlCBAWzRdEhePxhAnc9iXsuWEOST8rI1/0qXc4aUga2sEMKD6/XqcvLrT3eOWSRDwUoSJB/WO00UdfOc6bK/H+f8wZ26QuBaab7yKpQR31j26R0hlVvz45A46hkJemz44kLqBD95xLQ=="
               }
             ],
             "role": "model"
@@ -52,8 +48,8 @@
       ],
       "usageMetadata": {
         "promptTokenCount": 1128,
-        "candidatesTokenCount": 90,
-        "totalTokenCount": 1218,
+        "candidatesTokenCount": 54,
+        "totalTokenCount": 1415,
         "promptTokensDetails": [
           {
             "modality": "IMAGE",
@@ -64,11 +60,13 @@
             "tokenCount": 39
           }
         ],
+        "thoughtsTokenCount": 233,
         "serviceTier": "standard"
       },
       "modelVersion": "gemini-3-flash-preview",
-      "responseId": "XYiPaviZJZnQg8UP3ImOiQE"
+      "responseId": "fx-dap_YEebmjuMPh8WYiAs"
     },
+    "encoding": "json",
     "status": 200
   },
   "version": 1

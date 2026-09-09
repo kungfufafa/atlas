@@ -4,20 +4,60 @@ import type {
   McpStdioConfig,
   McpTransport,
 } from "@atlas/core";
-import { getProfileSoulDir } from "@atlas/core";
 import type { CachedMcpTool, StoredMcpServerRecord } from "@atlas/db";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 
-interface ConnectedMcpClient {
+import {
+  createMcpStdioTransportPreparer,
+  type McpStdioAdmissionPolicy,
+} from "./mcp-stdio-runtime";
+import {
+  getRestrictedProcessAdmissionEvidence,
+  type RestrictedProcessAdmissionReceipt,
+} from "./restricted-process";
+
+export interface McpClientManagerOptions {
+  /** Trusted server startup options, never MCP config or model JSON. */
+  stdioAdmission?: McpStdioAdmissionPolicy;
+}
+
+interface ManagedMcpTransport {
+  cleanup?(): Promise<void>;
+  getAdmissionReceipt?(): RestrictedProcessAdmissionReceipt | undefined;
+  transport: Transport;
+}
+
+interface ConnectedMcpClient extends ManagedMcpTransport {
   client: Client;
   transport: Transport;
 }
 
 export class McpClientManager {
   private readonly connections = new Map<string, ConnectedMcpClient>();
+  private readonly prepareStdio: ReturnType<
+    typeof createMcpStdioTransportPreparer
+  >;
+
+  constructor(options: McpClientManagerOptions = {}) {
+    this.prepareStdio = createMcpStdioTransportPreparer(options.stdioAdmission);
+  }
+
+  /** Trusted host lookup only. No receipt is included in tools, results or HTTP records. */
+  getRuntimeAdmissionReceipt(
+    serverId: string,
+    profileId?: string,
+    orgId?: string
+  ): RestrictedProcessAdmissionReceipt | undefined {
+    const receipt = this.connections
+      .get(connectionKey(serverId, "stdio", profileId, orgId))
+      ?.getAdmissionReceipt?.();
+    if (receipt) {
+      getRestrictedProcessAdmissionEvidence(receipt);
+    }
+    return receipt;
+  }
 
   isConnected(
     serverId: string,
@@ -50,27 +90,56 @@ export class McpClientManager {
     server: StoredMcpServerRecord,
     options?: { orgId?: string; profileId?: string }
   ): Promise<CachedMcpTool[]> {
+    const capturedOptions = options ? { ...options } : undefined;
+    const transportKind = server.transport;
+    const config =
+      transportKind === "stdio"
+        ? readStdioConfig(server.config)
+        : server.config;
     const key = connectionKey(
       server.id,
-      server.transport,
-      options?.profileId,
-      options?.orgId
+      transportKind,
+      capturedOptions?.profileId,
+      capturedOptions?.orgId
     );
+    if (capturedOptions?.orgId && server.orgId !== capturedOptions.orgId) {
+      throw new Error(
+        "MCP server does not belong to the requested organization."
+      );
+    }
     await this.disconnectKey(key);
-
-    const transport = createTransport(server.transport, server.config, options);
+    const managed = await createTransport(
+      transportKind,
+      config,
+      this.prepareStdio,
+      capturedOptions
+    );
+    const { transport } = managed;
+    const previousOnClose = transport.onclose;
+    transport.onclose = () => {
+      previousOnClose?.();
+      if (this.connections.get(key)?.transport === transport) {
+        this.connections.delete(key);
+      }
+      // The callback cannot await cleanup. Explicit disconnect also awaits the
+      // same retained promise; natural-exit cleanup is best effort.
+      void managed.cleanup?.().catch(() => {});
+    };
     const client = new Client({
       name: "atlas",
       version: "1.0.0",
     });
 
-    await client.connect(transport);
-    const result = await client.listTools();
-    const tools = normalizeListedTools(result.tools);
-
-    this.connections.set(key, { client, transport });
-
-    return tools;
+    try {
+      await client.connect(transport);
+      const result = await client.listTools();
+      const tools = normalizeListedTools(result.tools);
+      this.connections.set(key, { client, ...managed });
+      return tools;
+    } catch (error) {
+      await closeManagedTransport(managed);
+      throw error;
+    }
   }
 
   async disconnect(serverId: string): Promise<void> {
@@ -139,7 +208,8 @@ export class McpClientManager {
     transport: McpTransport,
     config: unknown
   ): Promise<CachedMcpTool[]> {
-    const mcpTransport = createTransport(transport, config);
+    const managed = await createTransport(transport, config, this.prepareStdio);
+    const { transport: mcpTransport } = managed;
     const client = new Client({
       name: "atlas",
       version: "1.0.0",
@@ -150,11 +220,7 @@ export class McpClientManager {
       const result = await client.listTools();
       return normalizeListedTools(result.tools);
     } finally {
-      try {
-        await mcpTransport.close();
-      } catch {
-        // Ignore transport shutdown errors.
-      }
+      await closeManagedTransport(managed);
     }
   }
 
@@ -257,11 +323,7 @@ export class McpClientManager {
 
     this.connections.delete(key);
 
-    try {
-      await connection.transport.close();
-    } catch {
-      // Ignore transport shutdown errors.
-    }
+    await closeManagedTransport(connection);
   }
 }
 
@@ -278,35 +340,40 @@ function connectionKey(
   return serverId;
 }
 
-function createTransport(
+async function createTransport(
   transport: McpTransport,
   config: unknown,
+  prepareStdio: ReturnType<typeof createMcpStdioTransportPreparer>,
   options?: { orgId?: string; profileId?: string }
-): Transport {
+): Promise<ManagedMcpTransport> {
   if (transport === "http") {
     const http = readHttpConfig(config);
 
-    return new StreamableHTTPClientTransport(new URL(http.url), {
-      requestInit: {
-        headers: http.headers,
-      },
-    });
+    return {
+      transport: new StreamableHTTPClientTransport(new URL(http.url), {
+        requestInit: { headers: http.headers },
+      }),
+    };
   }
 
   if (transport === "stdio") {
     const stdio = readStdioConfig(config);
-    const cwd =
-      options?.orgId && options?.profileId
-        ? getProfileSoulDir(options.orgId, options.profileId)
-        : undefined;
-
-    return new StdioClientTransport({
-      ...stdio,
-      ...(cwd ? { cwd } : {}),
-    });
+    return prepareStdio(stdio, options);
   }
 
   throw new Error(`Unsupported MCP transport: ${transport}`);
+}
+
+async function closeManagedTransport(
+  managed: ManagedMcpTransport
+): Promise<void> {
+  try {
+    await managed.transport.close();
+  } catch {
+    // Preserve existing transport shutdown behavior, including the original connection error.
+  } finally {
+    await managed.cleanup?.();
+  }
 }
 
 function readStdioConfig(config: unknown): McpStdioConfig {

@@ -1,0 +1,846 @@
+--- /dev/null
++++ b/apps/server/src/services/selected-artifact-capture-worker.ts
+@@ -0,0 +1,116 @@
++/** Static trusted reader. No profile code, module search, or executable input. */
++export const SELECTED_ARTIFACT_CAPTURE_SCRIPT = String.raw`
++import base64, hashlib, json, os, stat, sys
++
++LIMIT = 25 * 1024 * 1024
++class Rejected(Exception):
++    pass
++def require(condition, code):
++    if not condition:
++        raise Rejected(code)
++def identity(value):
++    return {"device": str(value.st_dev), "inode": str(value.st_ino)}
++def metadata(value):
++    return dict(identity(value), sizeBytes=value.st_size, mtimeNs=str(value.st_mtime_ns),
++                ctimeNs=str(value.st_ctime_ns), linkCount=value.st_nlink)
++def same_identity(left, right):
++    return identity(left) == identity(right)
++def visible_path(value):
++    require(isinstance(value, str) and len(value) <= 4096, "INVALID_PATH")
++    parts = value.split("/")
++    require(len(parts) >= 2 and parts[0] == "artifacts" and len(parts) <= 64, "INVALID_PATH")
++    require(all(part and not part.startswith(".") and "\\" not in part
++                and all(ord(c) >= 32 and ord(c) != 127 for c in part) for part in parts), "INVALID_PATH")
++    require(not parts[-1].lower().endswith(".atlas-meta.json"), "INVALID_PATH")
++    return parts
++def main(request):
++    require(sys.platform in ("darwin", "linux"), "UNSUPPORTED_HOST")
++    require(os.open in os.supports_dir_fd and os.stat in os.supports_dir_fd
++            and os.stat in os.supports_follow_symlinks
++            and all(hasattr(os, key) for key in ("O_NOFOLLOW", "O_DIRECTORY", "O_NONBLOCK", "O_CLOEXEC")), "UNSUPPORTED_HOST")
++    root = request.get("root")
++    require(isinstance(root, str) and root.startswith("/") and root != "/"
++            and len(root) <= 4096 and all(ord(c) >= 32 and ord(c) != 127 for c in root), "INVALID_ROOT")
++    root_parts = root[1:].split("/")
++    require(len(root_parts) <= 64 and all(part not in ("", ".", "..") for part in root_parts), "INVALID_ROOT")
++    directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
++    descriptors, links, observed_directories = [], [], []
++    def open_directory(parent, name):
++        fd = os.open(name, directory_flags, dir_fd=parent)
++        descriptors.append(fd)
++        value = os.fstat(fd)
++        require(stat.S_ISDIR(value.st_mode), "NOT_DIRECTORY")
++        links.append((parent, name, fd, value))
++        return fd, value
++    def verify():
++        for parent, name, fd, before in links:
++            current = os.stat(name, dir_fd=parent, follow_symlinks=False)
++            require(stat.S_ISDIR(current.st_mode) and same_identity(current, before)
++                    and same_identity(os.fstat(fd), before), "DIRECTORY_REPLACED")
++        for fd, before in observed_directories:
++            require(metadata(os.fstat(fd)) == metadata(before), "DIRECTORY_CHANGED")
++    try:
++        parent = os.open("/", directory_flags)
++        descriptors.append(parent)
++        for name in root_parts:
++            parent, root_stat = open_directory(parent, name)
++        root_fd = parent
++        # Test fixtures may pause here; the production script has no external barrier input.
++        # CAPTURE_ROOT_OPENED
++        if request.get("operation") == "anchor":
++            verify()
++            return {"rootIdentity": identity(root_stat)}
++        require(request.get("operation") == "capture", "INVALID_OPERATION")
++        require(request.get("expectedRoot") == identity(root_stat), "ROOT_REPLACED")
++        observed_directories.append((root_fd, root_stat))
++        parts = visible_path(request.get("sourcePath"))
++        for name in parts[:-1]:
++            parent, value = open_directory(parent, name)
++            observed_directories.append((parent, value))
++            # CAPTURE_PARENT_OPENED
++        verify()
++        flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC | getattr(os, "O_NOCTTY", 0)
++        file_fd = os.open(parts[-1], flags, dir_fd=parent)
++        descriptors.append(file_fd)
++        before = os.fstat(file_fd)
++        require(stat.S_ISREG(before.st_mode), "NOT_REGULAR_FILE")
++        require(before.st_nlink == 1, "HARDLINK_REJECTED")
++        require(0 <= before.st_size <= LIMIT, "TOO_LARGE")
++        # CAPTURE_FILE_OPENED
++        chunks, size = [], 0
++        while True:
++            chunk = os.read(file_fd, min(65536, LIMIT + 1 - size))
++            if not chunk:
++                break
++            chunks.append(chunk)
++            size += len(chunk)
++            require(size <= LIMIT, "TOO_LARGE")
++            # CAPTURE_CHUNK_READ
++        after = os.fstat(file_fd)
++        require(stat.S_ISREG(after.st_mode) and after.st_nlink == 1
++                and metadata(after) == metadata(before) and size == before.st_size, "FILE_CHANGED")
++        named = os.stat(parts[-1], dir_fd=parent, follow_symlinks=False)
++        require(stat.S_ISREG(named.st_mode) and metadata(named) == metadata(after), "FILE_REPLACED")
++        verify()
++        captured = b"".join(chunks)
++        return {"bytesBase64": base64.b64encode(captured).decode("ascii"), "evidence": {
++            "kind": "selected_workspace_capture", "version": 1, "sourcePath": request["sourcePath"],
++            "rootIdentity": identity(root_stat), "file": metadata(after),
++            "sha256": hashlib.sha256(captured).hexdigest(), "sizeBytes": len(captured),
++            "reader": "posix_dirfd_nofollow", "observedMetadataStable": True}}
++    finally:
++        for fd in reversed(descriptors):
++            os.close(fd)
++
++try:
++    raw = sys.stdin.buffer.read(16385)
++    require(len(raw) <= 16384, "REQUEST_TOO_LARGE")
++    response = main(json.loads(raw))
++    sys.stdout.write(json.dumps(response, separators=(",", ":")))
++except Rejected as error:
++    sys.stdout.write(json.dumps({"error": {"code": str(error)}}))
++    sys.exit(2)
++except Exception:
++    sys.stdout.write(json.dumps({"error": {"code": "CAPTURE_IO_REJECTED"}}))
++    sys.exit(2)
++`;
+--- /dev/null
++++ b/apps/server/src/services/selected-artifact-capture.test.ts
+@@ -0,0 +1,449 @@
++import { expect, test } from "bun:test";
++import { execFileSync, spawn } from "node:child_process";
++import { createHash } from "node:crypto";
++import {
++  chmod,
++  link,
++  mkdir,
++  mkdtemp,
++  readFile,
++  realpath,
++  rename,
++  rm,
++  stat,
++  symlink,
++  truncate,
++  writeFile,
++} from "node:fs/promises";
++import { join } from "node:path";
++import type { Readable, Writable } from "node:stream";
++import { resolvePythonRuntime } from "../tools/python-execute-tool";
++import { resolveRestrictedExecutable } from "./restricted-process";
++import { createSelectedArtifactCapture } from "./selected-artifact-capture";
++import { SELECTED_ARTIFACT_CAPTURE_SCRIPT } from "./selected-artifact-capture-worker";
++
++async function fixture(
++  run: (profile: string, foreign: string, directory: string) => Promise<void>
++) {
++  const directory = await realpath(
++    await mkdtemp("/private/tmp/atlas-selected-capture-test-")
++  );
++  const profile = join(directory, "profile");
++  const foreign = join(directory, "foreign");
++  await mkdir(join(profile, "artifacts", "nested"), { recursive: true });
++  await mkdir(join(foreign, "artifacts", "nested"), { recursive: true });
++  await writeFile(
++    join(profile, "artifacts", "nested", "selected.txt"),
++    "selected existing bytes"
++  );
++  await writeFile(
++    join(foreign, "artifacts", "nested", "selected.txt"),
++    "foreign secret must not escape"
++  );
++  try {
++    await run(profile, foreign, directory);
++  } finally {
++    await rm(directory, { force: true, recursive: true });
++  }
++}
++async function expectedRoot(profile: string) {
++  const value = await stat(profile, { bigint: true });
++  return { device: String(value.dev), inode: String(value.ino) };
++}
++
++// A fixture copy inserts a deterministic OS-pipe barrier into the exact static
++// worker. No barrier/environment hook exists in the production capture API.
++async function barrierCapture(
++  profile: string,
++  marker: string,
++  mutate: () => Promise<void>,
++  sourcePath = "artifacts/nested/selected.txt"
++) {
++  const insertion = `os.write(3, b"barrier\\n"); require(os.read(4, 1) == b"x", "TEST_NO_ACK")`;
++  const token = `# ${marker}`;
++  expect(SELECTED_ARTIFACT_CAPTURE_SCRIPT.split(token).length).toBe(2);
++  const script = SELECTED_ARTIFACT_CAPTURE_SCRIPT.replace(
++    token,
++    marker === "CAPTURE_PARENT_OPENED"
++      ? `if name == "nested": ${insertion}`
++      : marker === "CAPTURE_CHUNK_READ"
++        ? `if len(chunks) == 1: ${insertion}`
++        : insertion
++  );
++  const runtime = await resolveRestrictedExecutable(resolvePythonRuntime());
++  const input = {
++    expectedRoot: await expectedRoot(profile),
++    operation: "capture",
++    root: profile,
++    sourcePath,
++  };
++  const child = spawn(runtime, ["-I", "-S", "-u", "-c", script], {
++    cwd: "/",
++    env: { PATH: "/usr/bin:/bin" },
++    stdio: ["pipe", "pipe", "pipe", "pipe", "pipe"],
++  });
++  const output: Buffer[] = [];
++  const diagnostics: Buffer[] = [];
++  child.stdout!.on("data", (chunk: Buffer) => output.push(chunk));
++  child.stderr!.on("data", (chunk: Buffer) => diagnostics.push(chunk));
++  const done = new Promise<number | null>((resolve, reject) => {
++    child.on("error", reject);
++    child.on("close", resolve);
++  });
++  let timer: ReturnType<typeof setTimeout> | undefined;
++  try {
++    const reached = new Promise<void>((resolve, reject) => {
++      (child.stdio[3] as Readable).once("data", () => resolve());
++      child.once("close", (code) =>
++        reject(
++          new Error(
++            `Reader exited before barrier: ${code} ${Buffer.concat(diagnostics).toString()}`
++          )
++        )
++      );
++      timer = setTimeout(
++        () => reject(new Error("Reader barrier timeout")),
++        5000
++      );
++    });
++    child.stdin!.end(JSON.stringify(input));
++    await reached;
++    expect(child.exitCode).toBeNull();
++    await mutate();
++    (child.stdio[4] as Writable).end("x");
++    const code = await done;
++    const result = JSON.parse(Buffer.concat(output).toString("utf8")) as {
++      error?: { code: string };
++      bytesBase64?: string;
++    };
++    expect(code).toBe(2);
++    expect(result.error).toBeDefined();
++    expect(result.bytesBase64).toBeUndefined();
++    return result.error!.code;
++  } finally {
++    clearTimeout(timer);
++    child.kill("SIGKILL");
++    await done;
++  }
++}
++
++test("captures explicit existing bytes with bound identity, size and digest while preserving source", async () =>
++  fixture(async (profile) => {
++    const capture = await createSelectedArtifactCapture(profile);
++    const result = await capture.capture("artifacts/nested/selected.txt");
++    expect(result.bytes.toString()).toBe("selected existing bytes");
++    expect(result.evidence.kind).toBe("selected_workspace_capture");
++    expect(result.evidence.reader).toBe("posix_dirfd_nofollow");
++    expect(result.evidence.rootIdentity).toEqual(await expectedRoot(profile));
++    expect(result.evidence.sha256).toBe(
++      createHash("sha256").update(result.bytes).digest("hex")
++    );
++    expect(result.evidence.sizeBytes).toBe(result.bytes.length);
++    expect(result.evidence.observedMetadataStable).toBe(true);
++    await writeFile(
++      join(profile, "artifacts", "nested", "selected.txt"),
++      "changed later"
++    );
++    expect(result.bytes.toString()).toBe("selected existing bytes");
++    expect(
++      (await capture.capture("artifacts/nested/selected.txt")).bytes.toString()
++    ).toBe("changed later");
++  }));
++
++test("rejects noncanonical, hidden, sidecar, traversal and absolute selections", async () =>
++  fixture(async (profile, foreign) => {
++    const capture = await createSelectedArtifactCapture(profile);
++    for (const name of [
++      "../foreign/artifacts/nested/selected.txt",
++      join(foreign, "artifacts/nested/selected.txt"),
++      "artifacts/../selected.txt",
++      "artifacts//selected.txt",
++      "artifacts/.sources/private.pdf",
++      "artifacts/nested/.hidden",
++      "artifacts/file.atlas-meta.json",
++      "artifacts/file.ATLAS-META.JSON",
++      "artifacts/file\\name",
++      "artifacts/file\u0000name",
++      "SOUL.md",
++    ]) {
++      await expect(capture.capture(name)).rejects.toThrow();
++    }
++  }));
++
++test("rejects root/parent/final symlinks and hardlinked foreign files", async () =>
++  fixture(async (profile, foreign, directory) => {
++    await symlink(profile, join(directory, "root-link"));
++    await expect(
++      createSelectedArtifactCapture(join(directory, "root-link"))
++    ).rejects.toThrow();
++    const capture = await createSelectedArtifactCapture(profile);
++    await symlink(
++      join(foreign, "artifacts"),
++      join(profile, "artifacts", "foreign")
++    );
++    await symlink(
++      join(foreign, "artifacts", "nested", "selected.txt"),
++      join(profile, "artifacts", "linked.txt")
++    );
++    await link(
++      join(foreign, "artifacts", "nested", "selected.txt"),
++      join(profile, "artifacts", "hardlinked.txt")
++    );
++    for (const name of [
++      "artifacts/foreign/nested/selected.txt",
++      "artifacts/linked.txt",
++      "artifacts/hardlinked.txt",
++      "artifacts/nested",
++    ]) {
++      await expect(capture.capture(name)).rejects.toThrow();
++    }
++    expect(
++      await readFile(
++        join(foreign, "artifacts", "nested", "selected.txt"),
++        "utf8"
++      )
++    ).toBe("foreign secret must not escape");
++  }));
++
++test("replacing the profile root cannot refresh the captured root authority", async () =>
++  fixture(async (profile, foreign, directory) => {
++    const capture = await createSelectedArtifactCapture(profile);
++    await rename(profile, join(directory, "old-profile"));
++    await rename(foreign, profile);
++    await expect(
++      capture.capture("artifacts/nested/selected.txt")
++    ).rejects.toThrow();
++  }));
++
++test("directory rename and foreign symlink replacement after open returns no usable bytes", async () =>
++  fixture(async (profile, foreign) => {
++    const code = await barrierCapture(
++      profile,
++      "CAPTURE_PARENT_OPENED",
++      async () => {
++        const nested = join(profile, "artifacts", "nested");
++        await rename(nested, join(profile, "artifacts", "original"));
++        await symlink(join(foreign, "artifacts", "nested"), nested);
++      }
++    );
++    expect(["DIRECTORY_REPLACED", "DIRECTORY_CHANGED"]).toContain(code);
++  }));
++
++test("directory rename and real foreign-directory replacement after open returns no usable bytes", async () =>
++  fixture(async (profile, foreign) => {
++    const code = await barrierCapture(
++      profile,
++      "CAPTURE_PARENT_OPENED",
++      async () => {
++        const nested = join(profile, "artifacts", "nested");
++        await rename(nested, join(profile, "artifacts", "original"));
++        await rename(join(foreign, "artifacts", "nested"), nested);
++      }
++    );
++    expect(["DIRECTORY_REPLACED", "DIRECTORY_CHANGED"]).toContain(code);
++  }));
++
++test("root replacement after its descriptor is opened returns no usable bytes", async () =>
++  fixture(async (profile, foreign, directory) => {
++    const code = await barrierCapture(
++      profile,
++      "CAPTURE_ROOT_OPENED",
++      async () => {
++        await rename(profile, join(directory, "old-profile"));
++        await symlink(foreign, profile);
++      }
++    );
++    expect(code).toBe("DIRECTORY_REPLACED");
++  }));
++
++test("an added hardlink after open fails the post-read identity check", async () =>
++  fixture(async (profile) => {
++    const code = await barrierCapture(
++      profile,
++      "CAPTURE_FILE_OPENED",
++      async () => {
++        await link(
++          join(profile, "artifacts", "nested", "selected.txt"),
++          join(profile, "artifacts", "extra-link.txt")
++        );
++      }
++    );
++    expect(code).toBe("FILE_CHANGED");
++  }));
++
++test("same-size mutation during a bounded multichunk read returns no partial bytes", async () =>
++  fixture(async (profile) => {
++    const file = join(profile, "artifacts", "nested", "selected.txt");
++    await writeFile(file, Buffer.alloc(256 * 1024, 65));
++    const code = await barrierCapture(
++      profile,
++      "CAPTURE_CHUNK_READ",
++      async () => {
++        await writeFile(file, Buffer.alloc(256 * 1024, 66));
++      }
++    );
++    expect(code).toBe("FILE_CHANGED");
++  }));
++
++test("oversized files and cancelled requests never return captured bytes", async () =>
++  fixture(async (profile) => {
++    const capture = await createSelectedArtifactCapture(profile);
++    await truncate(
++      join(profile, "artifacts", "nested", "selected.txt"),
++      25 * 1024 * 1024 + 1
++    );
++    await expect(
++      capture.capture("artifacts/nested/selected.txt")
++    ).rejects.toThrow();
++    const controller = new AbortController();
++    controller.abort();
++    await expect(
++      capture.capture("artifacts/nested/selected.txt", controller.signal)
++    ).rejects.toThrow();
++  }));
++
++test("captures empty and exactly maximum-size regular files", async () =>
++  fixture(async (profile) => {
++    const capture = await createSelectedArtifactCapture(profile);
++    const file = join(profile, "artifacts", "nested", "selected.txt");
++    await truncate(file, 0);
++    expect(
++      (await capture.capture("artifacts/nested/selected.txt")).bytes.length
++    ).toBe(0);
++    await truncate(file, 25 * 1024 * 1024);
++    const result = await capture.capture("artifacts/nested/selected.txt");
++    expect(result.bytes.length).toBe(25 * 1024 * 1024);
++    expect(result.evidence.sizeBytes).toBe(25 * 1024 * 1024);
++  }));
++
++test("FIFO capture rejects without waiting for another process to open it", async () =>
++  fixture(async (profile) => {
++    const runtime = await resolveRestrictedExecutable(resolvePythonRuntime());
++    execFileSync(runtime, [
++      "-I",
++      "-S",
++      "-c",
++      "import os,sys; os.mkfifo(sys.argv[1])",
++      join(profile, "artifacts", "pipe"),
++    ]);
++    const capture = await createSelectedArtifactCapture(profile);
++    await expect(capture.capture("artifacts/pipe")).rejects.toThrow();
++  }));
++
++test("renaming a parent away and back is detected even when its final inode matches", async () =>
++  fixture(async (profile) => {
++    const code = await barrierCapture(
++      profile,
++      "CAPTURE_PARENT_OPENED",
++      async () => {
++        const nested = join(profile, "artifacts", "nested");
++        const other = join(profile, "artifacts", "temporary");
++        await rename(nested, other);
++        await rename(other, nested);
++      }
++    );
++    expect(code).toBe("DIRECTORY_CHANGED");
++  }));
++
++test("file replacement after open cannot substitute a different selected file", async () =>
++  fixture(async (profile, foreign) => {
++    const code = await barrierCapture(
++      profile,
++      "CAPTURE_FILE_OPENED",
++      async () => {
++        const selected = join(profile, "artifacts", "nested", "selected.txt");
++        await rename(
++          selected,
++          join(profile, "artifacts", "nested", "original.txt")
++        );
++        await symlink(
++          join(foreign, "artifacts", "nested", "selected.txt"),
++          selected
++        );
++      }
++    );
++    expect(["FILE_CHANGED", "FILE_REPLACED"]).toContain(code);
++  }));
++
++async function fakeRuntime(
++  directory: string,
++  code: string,
++  run: () => Promise<void>
++) {
++  const runtime = await resolveRestrictedExecutable(resolvePythonRuntime());
++  const wrapper = join(directory, "trusted-test-runtime");
++  await writeFile(wrapper, `#!${runtime}\nimport os,sys,json,time\n${code}\n`);
++  await chmod(wrapper, 0o700);
++  const old = process.env.ATLAS_PYTHON_PATH;
++  process.env.ATLAS_PYTHON_PATH = wrapper;
++  try {
++    await run();
++  } finally {
++    if (old === undefined) {
++      delete process.env.ATLAS_PYTHON_PATH;
++    } else {
++      process.env.ATLAS_PYTHON_PATH = old;
++    }
++  }
++}
++
++test("worker stdout and stderr overruns fail closed with no usable capture", async () =>
++  fixture(async (profile, _foreign, directory) => {
++    for (const code of [
++      'sys.stdout.buffer.write(b"x" * (36 * 1024 * 1024)); sys.stdout.flush(); time.sleep(30)',
++      'sys.stderr.write("x" * 8193); sys.stderr.flush(); time.sleep(30)',
++    ]) {
++      await fakeRuntime(directory, code, async () => {
++        await expect(createSelectedArtifactCapture(profile)).rejects.toThrow();
++      });
++    }
++  }));
++
++test("cancelling an in-flight worker waits for termination and returns no bytes", async () =>
++  fixture(async (profile, _foreign, directory) => {
++    const ready = join(directory, "reader-ready");
++    const code = `request=json.load(sys.stdin)\nif request["operation"] == "anchor":\n print(json.dumps({"rootIdentity":{"device":"1","inode":"2"}}))\nelse:\n open(${JSON.stringify(ready)}, "w").write(str(os.getpid()))\n time.sleep(30)`;
++    await fakeRuntime(directory, code, async () => {
++      const capture = await createSelectedArtifactCapture(profile);
++      const controller = new AbortController();
++      const outcome = capture
++        .capture("artifacts/nested/selected.txt", controller.signal)
++        .then(
++          (value) => ({ value }),
++          (error) => ({ error })
++        );
++      let pid: number | undefined;
++      for (let attempt = 0; attempt < 100; attempt += 1) {
++        const value = await readFile(ready, "utf8").catch(() => "");
++        if (value) {
++          pid = Number(value);
++          break;
++        }
++        await Bun.sleep(10);
++      }
++      expect(pid).toBeDefined();
++      controller.abort();
++      expect("error" in (await outcome)).toBe(true);
++      expect(() => process.kill(pid!, 0)).toThrow();
++    });
++  }));
++
++test(
++  "the fixed deadline terminates a stalled worker",
++  async () =>
++    fixture(async (profile, _foreign, directory) => {
++      const ready = join(directory, "timeout-reader");
++      await fakeRuntime(
++        directory,
++        `open(${JSON.stringify(ready)}, "w").write(str(os.getpid()))\ntime.sleep(30)`,
++        async () => {
++          await expect(
++            createSelectedArtifactCapture(profile)
++          ).rejects.toThrow();
++          const pid = Number(await readFile(ready, "utf8"));
++          expect(() => process.kill(pid, 0)).toThrow();
++        }
++      );
++    }),
++  15_000
++);
+--- /dev/null
++++ b/apps/server/src/services/selected-artifact-capture.ts
+@@ -0,0 +1,272 @@
++import { spawn } from "node:child_process";
++import { createHash } from "node:crypto";
++import path from "node:path";
++import { z } from "zod";
++import { resolvePythonRuntime } from "../tools/python-execute-tool";
++import { resolveRestrictedExecutable } from "./restricted-process";
++import { SELECTED_ARTIFACT_CAPTURE_SCRIPT } from "./selected-artifact-capture-worker";
++
++const MAX_BYTES = 25 * 1024 * 1024;
++const MAX_STDOUT = Math.ceil(MAX_BYTES / 3) * 4 + 65_536;
++const MAX_STDERR = 8192;
++const MAX_ACTIVE = 2;
++const INVALID_BASE64 = /[^A-Za-z0-9+/]/;
++const BASE64_PADDING = /[=]{1,2}$/;
++const DIGITS = /^\d+$/;
++const SHA256 = /^[a-f0-9]{64}$/;
++const CONTROL = /[\x00-\x1f\x7f]/;
++let active = 0;
++
++const rootIdentity = z
++  .object({ device: z.string().regex(DIGITS), inode: z.string().regex(DIGITS) })
++  .strict();
++const evidenceSchema = z
++  .object({
++    file: rootIdentity
++      .extend({
++        ctimeNs: z.string().regex(/^-?\d+$/),
++        linkCount: z.literal(1),
++        mtimeNs: z.string().regex(/^-?\d+$/),
++        sizeBytes: z.number().int().min(0).max(MAX_BYTES),
++      })
++      .strict(),
++    kind: z.literal("selected_workspace_capture"),
++    observedMetadataStable: z.literal(true),
++    reader: z.literal("posix_dirfd_nofollow"),
++    rootIdentity,
++    sha256: z.string().regex(SHA256),
++    sizeBytes: z.number().int().min(0).max(MAX_BYTES),
++    sourcePath: z.string(),
++    version: z.literal(1),
++  })
++  .strict();
++
++/** Captured existing bytes, never a claim that a tool/session generated the file. */
++export type SelectedArtifactCaptureEvidence = z.infer<typeof evidenceSchema>;
++export interface SelectedArtifactCapture {
++  /** Explicit selection only. This capability is server-only and never enters ToolContext/tool JSON. */
++  capture(
++    sourcePath: string,
++    signal?: AbortSignal
++  ): Promise<{
++    bytes: Buffer;
++    evidence: SelectedArtifactCaptureEvidence;
++  }>;
++}
++
++function selectedPath(sourcePath: string): void {
++  const parts = sourcePath.split("/");
++  if (
++    sourcePath.length > 4096 ||
++    parts.length < 2 ||
++    parts.length > 64 ||
++    parts[0] !== "artifacts" ||
++    parts.some(
++      (part) =>
++        !part ||
++        part.startsWith(".") ||
++        part.includes("\\") ||
++        CONTROL.test(part)
++    ) ||
++    parts.at(-1)!.toLowerCase().endsWith(".atlas-meta.json")
++  ) {
++    throw new Error("Select a canonical visible artifacts/ file.");
++  }
++}
++
++async function worker(input: unknown, signal?: AbortSignal): Promise<unknown> {
++  signal?.throwIfAborted();
++  if (process.platform !== "darwin" && process.platform !== "linux") {
++    throw new Error(
++      "Selected artifact capture requires supported POSIX directory descriptor operations."
++    );
++  }
++  if (active >= MAX_ACTIVE) {
++    throw new Error("Selected artifact capture capacity is busy.");
++  }
++  const request = JSON.stringify(input);
++  if (Buffer.byteLength(request) > 16_384) {
++    throw new Error("Selected artifact capture request exceeds its bound.");
++  }
++  active += 1;
++  try {
++    const runtime = await resolveRestrictedExecutable(resolvePythonRuntime());
++    signal?.throwIfAborted();
++    return await new Promise((resolve, reject) => {
++      const child = spawn(
++        runtime,
++        ["-I", "-S", "-u", "-c", SELECTED_ARTIFACT_CAPTURE_SCRIPT],
++        {
++          cwd: "/",
++          env: { LANG: "en_US.UTF-8", PATH: "/usr/bin:/bin" },
++          stdio: ["pipe", "pipe", "pipe"],
++        }
++      );
++      let failure: Error | undefined;
++      const output: Buffer[] = [];
++      let stdoutBytes = 0;
++      let stderrBytes = 0;
++      const stop = (error: Error) => {
++        failure ??= error;
++        child.kill("SIGKILL");
++      };
++      const abort = () =>
++        stop(new Error("Selected artifact capture cancelled."));
++      const timer = setTimeout(
++        () =>
++          stop(new Error("Selected artifact capture exceeded its deadline.")),
++        10_000
++      );
++      const cleanup = () => {
++        clearTimeout(timer);
++        signal?.removeEventListener("abort", abort);
++      };
++      signal?.addEventListener("abort", abort, { once: true });
++      child.stdout.on("data", (chunk: Buffer) => {
++        stdoutBytes += chunk.length;
++        if (stdoutBytes > MAX_STDOUT) {
++          stop(
++            new Error("Selected artifact capture response exceeds its bound.")
++          );
++        } else if (!failure) {
++          output.push(chunk);
++        }
++      });
++      child.stderr.on("data", (chunk: Buffer) => {
++        stderrBytes += chunk.length;
++        if (stderrBytes > MAX_STDERR) {
++          stop(
++            new Error(
++              "Selected artifact capture diagnostics exceed their bound."
++            )
++          );
++        }
++      });
++      child.stdin.on("error", (error) => stop(error));
++      child.on("error", (error) => {
++        cleanup();
++        reject(error);
++      });
++      child.on("close", (code) => {
++        cleanup();
++        if (failure) {
++          reject(failure);
++          return;
++        }
++        try {
++          const response: unknown = JSON.parse(
++            Buffer.concat(output).toString("utf8")
++          );
++          if (code !== 0) {
++            const error = z
++              .object({
++                error: z.object({ code: z.string().max(64) }).strict(),
++              })
++              .strict()
++              .parse(response);
++            reject(
++              new Error(
++                `Selected artifact capture rejected: ${error.error.code}`
++              )
++            );
++            return;
++          }
++          resolve(response);
++        } catch {
++          reject(
++            new Error("Selected artifact capture returned an invalid response.")
++          );
++        }
++      });
++      child.stdin.end(request);
++      if (signal?.aborted) {
++        abort();
++      }
++    });
++  } finally {
++    active -= 1;
++  }
++}
++
++/**
++ * The host supplies an already authorized, canonical profile root. Initial anchor
++ * acquisition and every capture traverse all parents with directory descriptors
++ * and no-follow opens. Later root replacement never refreshes this authority.
++ * This is a trusted static worker, not execution of arbitrary profile Python.
++ */
++export async function createSelectedArtifactCapture(
++  authorizedProfileRoot: string,
++  signal?: AbortSignal
++): Promise<SelectedArtifactCapture> {
++  if (
++    !path.isAbsolute(authorizedProfileRoot) ||
++    path.normalize(authorizedProfileRoot) !== authorizedProfileRoot ||
++    authorizedProfileRoot === "/" ||
++    authorizedProfileRoot.endsWith("/") ||
++    CONTROL.test(authorizedProfileRoot)
++  ) {
++    throw new Error("An authorized canonical profile root is required.");
++  }
++  const anchor = z
++    .object({ rootIdentity })
++    .strict()
++    .parse(
++      await worker(
++        {
++          operation: "anchor",
++          root: authorizedProfileRoot,
++        },
++        signal
++      )
++    );
++  const expectedRoot = Object.freeze({ ...anchor.rootIdentity });
++  signal?.throwIfAborted();
++  return Object.freeze({
++    async capture(sourcePath: string, captureSignal?: AbortSignal) {
++      selectedPath(sourcePath);
++      const response = z
++        .object({
++          bytesBase64: z.string().max(Math.ceil(MAX_BYTES / 3) * 4),
++          evidence: evidenceSchema,
++        })
++        .strict()
++        .parse(
++          await worker(
++            {
++              expectedRoot,
++              operation: "capture",
++              root: authorizedProfileRoot,
++              sourcePath,
++            },
++            captureSignal
++          )
++        );
++      if (
++        response.bytesBase64.length % 4 !== 0 ||
++        INVALID_BASE64.test(response.bytesBase64.replace(BASE64_PADDING, "")) ||
++        response.evidence.sourcePath !== sourcePath ||
++        response.evidence.rootIdentity.device !== expectedRoot.device ||
++        response.evidence.rootIdentity.inode !== expectedRoot.inode
++      ) {
++        throw new Error(
++          "Selected artifact capture evidence does not match the selection."
++        );
++      }
++      const bytes = Buffer.from(response.bytesBase64, "base64");
++      if (
++        bytes.length > MAX_BYTES ||
++        bytes.toString("base64") !== response.bytesBase64 ||
++        bytes.length !== response.evidence.sizeBytes ||
++        bytes.length !== response.evidence.file.sizeBytes ||
++        createHash("sha256").update(bytes).digest("hex") !==
++          response.evidence.sha256
++      ) {
++        throw new Error(
++          "Selected artifact captured bytes do not match their evidence."
++        );
++      }
++      captureSignal?.throwIfAborted();
++      return { bytes, evidence: response.evidence };
++    },
++  });
++}

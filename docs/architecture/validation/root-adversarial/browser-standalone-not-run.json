@@ -1,0 +1,19 @@
+{
+  "browserErrors": [],
+  "completedDisplayObservations": [],
+  "failure": "Missing fixture prerequisite: ATLAS_TEST_BASE_URL",
+  "fileContentAndFidelity": "NOT_VERIFIED",
+  "missingScenarios": [
+    "calculator",
+    "text_file",
+    "python",
+    "spreadsheet",
+    "tool_search"
+  ],
+  "persistedToolExecution": "NOT_VERIFIED",
+  "providerInference": "NOT_VERIFIED",
+  "pythonIsolation": "NOT_VERIFIED",
+  "scope": "Fixture login, chat navigation and new assistant text/screenshot observations. Displayed filenames or numbers do not prove tool execution, saved bytes or sandboxing.",
+  "status": "NOT_RUN",
+  "observations": []
+}

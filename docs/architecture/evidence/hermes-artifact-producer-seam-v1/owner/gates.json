@@ -1,0 +1,34 @@
+[
+  {
+    "name": "owner-regressions",
+    "command": "bun test apps/server/src/services/artifact-producer-seam.test.ts packages/core/src/tools/builtin-publication.test.ts packages/core/src/tools/spreadsheet-io.test.ts apps/server/src/tools/generate-image-tool.test.ts apps/server/src/services/artifact-service.test.ts apps/server/src/services/artifact-publication-service.test.ts",
+    "exitCode": 0,
+    "log": "final-regressions.log",
+    "tests": 70,
+    "assertions": 325,
+    "files": 6,
+    "newSeamTests": 16,
+    "logSha256": "2bccbee530c99703acad2416d5ab2f70d71518374c2f65b95d2fad4c18c9664b"
+  },
+  {
+    "name": "scoped-types",
+    "command": "bun x --no-install tsc --noEmit -p tsconfig.producer.json",
+    "exitCode": 0,
+    "log": "final-typecheck.log",
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "scoped-lint",
+    "exitCode": 0,
+    "log": "final-lint.log",
+    "files": 12,
+    "logSha256": "4e07ac9498f4ceb2bcb8405851a3904ca0191770c25f5b27f6a5fdbb819693c9"
+  },
+  {
+    "name": "patch-check",
+    "command": "git apply --check combined.patch (cwd frozen foundation source; read-only)",
+    "exitCode": 0,
+    "log": "patch-check.log",
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

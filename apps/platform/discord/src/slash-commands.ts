@@ -17,6 +17,8 @@ const COMMAND_NAMES = [
   "status",
   "attach",
   "allow",
+  "voice_join",
+  "voice_leave",
 ] as const;
 
 export function buildSlashCommands(): SlashCommandBuilder[] {
@@ -31,6 +33,8 @@ export function buildSlashCommands(): SlashCommandBuilder[] {
     start: "Welcome and pairing help",
     status: "Show server and model status",
     stop: "Stop the current agent reply",
+    voice_join: "Join your voice channel and listen only to your voice",
+    voice_leave: "Disconnect your voice session",
   };
 
   return COMMAND_NAMES.map((name) => {
@@ -38,6 +42,9 @@ export function buildSlashCommands(): SlashCommandBuilder[] {
       .setName(name)
       .setDescription(descriptions[name])
       .setContexts(InteractionContextType.Guild, InteractionContextType.BotDM);
+    if (name === "voice_join" || name === "voice_leave") {
+      builder.setContexts(InteractionContextType.Guild);
+    }
 
     if (name === "allow") {
       builder.addUserOption((option) =>

@@ -1,4 +1,8 @@
-import type { ImageAttachment } from "@atlas/core/contract";
+import {
+  prepareChannelImage,
+  type SaveInboundDocument,
+} from "@atlas/core/attachments/inbound-document";
+import type { ImageAttachment, SendMessageInput } from "@atlas/core/contract";
 import {
   MAX_IMAGE_BYTES,
   normalizeImageMediaType,
@@ -6,40 +10,88 @@ import {
 import type { Context } from "grammy";
 import {
   downloadTelegramFile,
+  isTelegramImageDocument,
   OversizedTelegramFileError,
   type TelegramDownloadOptions,
 } from "./attachments";
 
-export interface TelegramImageInput {
-  images: ImageAttachment[];
-  message: string;
+export const OVERSIZED_IMAGE_REPLY =
+  "Image is too large. Maximum size is 5 MB.";
+
+export function hasTelegramImage(ctx: Context): boolean {
+  return Boolean(
+    ctx.message?.sticker ||
+      ctx.message?.photo?.length ||
+      isTelegramImageDocument(ctx)
+  );
 }
 
 export async function buildTelegramImageInput(
   ctx: Context,
-  options: TelegramDownloadOptions = {}
-): Promise<TelegramImageInput | null> {
+  options: TelegramDownloadOptions & {
+    saveInboundDocument?: SaveInboundDocument;
+  } = {}
+): Promise<
+  | { kind: "input"; input: SendMessageInput }
+  | { kind: "reject"; message: string }
+  | null
+> {
+  const sticker = ctx.message?.sticker;
+  if (sticker && (sticker.is_animated || sticker.is_video)) {
+    return {
+      kind: "reject",
+      message:
+        "Animated and video stickers are not supported. Send a static sticker, image, or video file instead.",
+    };
+  }
   const photos = ctx.message?.photo;
-
-  if (photos?.length) {
-    const largest = photos[photos.length - 1]!;
-
-    return {
-      images: [await downloadTelegramImage(ctx, largest.file_id, options)],
-      message: ctx.message?.caption?.trim() ?? "",
-    };
+  const photo = photos?.[photos.length - 1];
+  const document = isTelegramImageDocument(ctx)
+    ? ctx.message?.document
+    : undefined;
+  const source = sticker ?? photo ?? document;
+  if (!source) {
+    return null;
+  }
+  if (source.file_size !== undefined && source.file_size > MAX_IMAGE_BYTES) {
+    return { kind: "reject", message: OVERSIZED_IMAGE_REPLY };
   }
 
-  const document = ctx.message?.document;
+  try {
+    const downloaded = await downloadTelegramFile(
+      ctx,
+      source.file_id,
+      MAX_IMAGE_BYTES,
+      options
+    );
+    const mediaType = sticker
+      ? "image/webp"
+      : inferMediaType(
+          document?.file_name ?? downloaded.filePath,
+          document?.mime_type ?? downloaded.contentType
+        );
+    const filename =
+      document?.file_name?.trim() ||
+      (sticker ? "sticker.webp" : `photo.${mediaType.split("/")[1]}`);
+    const caption = sticker
+      ? `Describe this sticker.${sticker.emoji ? ` Telegram emoji label: ${sticker.emoji}` : ""}`
+      : (ctx.message?.caption?.trim() ?? "");
 
-  if (document?.mime_type?.startsWith("image/")) {
-    return {
-      images: [await downloadTelegramImage(ctx, document.file_id, options)],
-      message: ctx.message?.caption?.trim() ?? "",
-    };
+    return await prepareChannelImage({
+      bytes: Buffer.from(downloaded.bytes),
+      caption,
+      channel: "Telegram",
+      filename,
+      mediaType,
+      saveInboundDocument: options.saveInboundDocument,
+      signal: options.signal,
+    });
+  } catch (error) {
+    if (error instanceof OversizedTelegramFileError) {
+      return { kind: "reject", message: OVERSIZED_IMAGE_REPLY };
+    }
+    throw error;
   }
-
-  return null;
 }
 
 export async function downloadTelegramImage(
@@ -54,21 +106,14 @@ export async function downloadTelegramImage(
       MAX_IMAGE_BYTES,
       options
     );
-    const mediaType = inferMediaType(
-      downloaded.filePath,
-      downloaded.contentType
-    );
-
-    // Base64 here is transport-only; the server persists bytes and stores image_ref in session history.
     return {
       data: Buffer.from(downloaded.bytes).toString("base64"),
-      mediaType,
+      mediaType: inferMediaType(downloaded.filePath, downloaded.contentType),
     };
   } catch (error) {
     if (error instanceof OversizedTelegramFileError) {
-      throw new Error("Image is too large. Maximum size is 5 MB.");
+      throw new Error(OVERSIZED_IMAGE_REPLY);
     }
-
     throw error;
   }
 }
@@ -80,7 +125,6 @@ function inferMediaType(filePath: string, headerType: string | null): string {
   }
 
   const extension = filePath.slice(filePath.lastIndexOf(".")).toLowerCase();
-
   switch (extension) {
     case ".jpg":
     case ".jpeg":

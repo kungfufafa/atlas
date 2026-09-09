@@ -100,3 +100,35 @@ test("ask_user_question schema stays compact", async () => {
   expect(estimate.tokens).toBeLessThan(140);
   expect(estimate.parametersChars).toBeLessThan(400);
 });
+
+for (const multi of [true, false]) {
+  test(`compact multi=${multi} becomes an explicit persisted selection mode`, async () => {
+    const { tool, state } = await createTool();
+    await tool.run(
+      {
+        questions: [{ choices: ["Red", "Blue"], multi, prompt: "Colors?" }],
+        title: "Choose",
+      },
+      { sessionId: "session_test" }
+    );
+    expect((await state.get("session_test"))?.questions[0]?.selectionMode).toBe(
+      multi ? "multiple" : "single"
+    );
+    await expect(
+      tool.run(
+        {
+          questions: [
+            {
+              choices: ["Red", "Blue"],
+              multi,
+              prompt: "Colors?",
+              selectionMode: multi ? "single" : "multiple",
+            },
+          ],
+          title: "Choose",
+        },
+        { sessionId: "session_test" }
+      )
+    ).rejects.toThrow();
+  });
+}

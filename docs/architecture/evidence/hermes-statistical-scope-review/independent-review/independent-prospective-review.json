@@ -1,0 +1,24 @@
+{
+  "at": "2026-09-06T18:17:35.707935+00:00",
+  "status": "analytic-design-scoped-approval-launch-decisions-pending",
+  "inputAndReportHashes": {
+    "prospective-options.md": "605e4a212c5981886e9d4e0672ff0b10aea077c725ff6328fea9d86d867a2bda",
+    "calculate-options.py": "f9637c69202b0f46a450a1c33c698603f4941516507e9d71bc720bfac4e4d728",
+    "numeric-calculations.json": "49bbec609054d044881583e6bd6969f3353c5ad4af1485c20833e0a18e3508c9",
+    "prospective-sources.json": "8c75358e52f1225c55c9007c4b139fb036f402a8aaa1351ce4f417dfd4556e07",
+    "independent-prospective-review.md": "5686981a2211cb31ae41042974712edd9544c7db32b38dc41690432a963892c8"
+  },
+  "executedCalculator": false,
+  "testsOrSimulations": false,
+  "modelCalls": 0,
+  "currentOutcomeOrHoldoutInspection": false,
+  "globalBlindingClaim": false,
+  "productionOrFrozenControlEdits": false,
+  "primaryFinding": "Loss-only fixed-quota KL argument is valid under stated independence/weighting assumptions; certified-completion NI can coexist with more than5pp factual inferiority even when observed quality floors pass.",
+  "recommendation": "Choose an operational versus factual estimand and independent task frame first; keep a factual NI guard for a factual parity headline, predeclare candidate/claim alpha and fixed powered sample.",
+  "webSources": [
+    "https://www.cs.rpi.edu/academics/courses/spring06/random/hoefding.pdf",
+    "https://itl.nist.gov/div898/software/dataplot/refman2/auxillar/exacbino.htm",
+    "https://database.ich.org/sites/default/files/E9-R1_Step4_Guideline_2019_1203.pdf"
+  ]
+}

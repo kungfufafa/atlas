@@ -1,4 +1,18 @@
 import type { Transform } from "node:stream";
+import {
+  CHANNEL_DOCUMENT_OVERSIZED_REPLY,
+  CHANNEL_DOCUMENT_SAVE_FAILED_REPLY,
+  CHANNEL_DOCUMENT_UNREADABLE_REPLY,
+  CHANNEL_DOCUMENT_UNSUPPORTED_REPLY,
+  formatSavedChannelDocumentMessage,
+  prepareChannelDocument,
+  prepareChannelImage,
+  type SavedInboundDocument,
+  type SaveInboundDocument,
+} from "@atlas/core/attachments/inbound-document";
+
+export { savedWorkspaceDocumentHint } from "@atlas/core/attachments/inbound-document";
+
 import type { SendMessageInput } from "@atlas/core/contract";
 import {
   createDownloadDeadline,
@@ -7,18 +21,14 @@ import {
   waitForAbortable,
 } from "@atlas/core/download-deadline";
 import {
-  extractInboundDocumentText,
-  isSpreadsheetDocumentMediaType,
+  type extractInboundDocumentText,
   isSupportedDocumentMediaType,
   isSupportedImageMediaType,
-  MAX_DOCUMENT_BYTES,
   MAX_DOCUMENT_INGEST_BYTES,
   MAX_IMAGE_BYTES,
   normalizeDocumentMediaType,
   normalizeImageMediaType,
   SUPPORTED_DOCUMENT_TYPE_LABEL,
-  validateDocumentAttachments,
-  validateImageAttachments,
 } from "@atlas/core/message-content";
 import {
   downloadMediaMessage,
@@ -27,28 +37,29 @@ import {
 } from "@whiskeysockets/baileys";
 import { inspectInboundWhatsAppMedia } from "./inbound-message";
 import { BoundedWorkQueue } from "./inbound-work-queue";
+import {
+  decodeWhatsAppVisual,
+  extractWhatsAppVideoAudio,
+} from "./native-media";
 
 export const WHATSAPP_DOCUMENT_INGEST_MAX_BYTES = MAX_DOCUMENT_INGEST_BYTES;
 export const WHATSAPP_IMAGE_MAX_BYTES = MAX_IMAGE_BYTES;
-export const WHATSAPP_DOCUMENT_INLINE_MAX_BYTES = MAX_DOCUMENT_BYTES;
 
-export const UNSUPPORTED_DOCUMENT_TYPES_REPLY = `Unsupported file type. Send ${SUPPORTED_DOCUMENT_TYPE_LABEL} (max 25 MB).`;
+export const UNSUPPORTED_DOCUMENT_TYPES_REPLY =
+  CHANNEL_DOCUMENT_UNSUPPORTED_REPLY;
 
-export const OVERSIZED_FILE_REPLY =
-  "That file is too large to process here (max 25 MB). Send a smaller file, or a link.";
+export const OVERSIZED_FILE_REPLY = CHANNEL_DOCUMENT_OVERSIZED_REPLY;
 
 export const OVERSIZED_IMAGE_REPLY =
-  "That photo is too large (max 5 MB). Send a compressed photo, or attach it as a document.";
+  "That image is too large (max 5 MB). Send a smaller image.";
 
-export const UNREADABLE_DOCUMENT_REPLY =
-  "Could not read text from that file. Try a text-based PDF, Word, or Excel file. Scanned/image-only PDFs are not supported.";
+export const UNREADABLE_DOCUMENT_REPLY = CHANNEL_DOCUMENT_UNREADABLE_REPLY;
+export const SAVE_FAILED_DOCUMENT_REPLY = CHANNEL_DOCUMENT_SAVE_FAILED_REPLY;
 
-export const SAVE_FAILED_DOCUMENT_REPLY =
-  "Could not save that file. Try sending it again.";
+export const UNSUPPORTED_MEDIA_REPLY = `Send text, a photo or WebP sticker (max 5 MB), a voice note, an MP4 video, or a supported document (${SUPPORTED_DOCUMENT_TYPE_LABEL} — max 25 MB).`;
 
-export const UNSUPPORTED_MEDIA_REPLY = `Send text, a photo (max 5 MB), a voice note, or a supported document (${SUPPORTED_DOCUMENT_TYPE_LABEL} — max 25 MB).`;
-
-export const DOWNLOAD_FAILED_REPLY = "Could not download that file. Try again.";
+export const DOWNLOAD_FAILED_REPLY =
+  "The file did not arrive. Please send the attachment again.";
 
 export const PAIRING_MEDIA_REPLY =
   "Send the chat access code as text to authorize this chat.";
@@ -94,10 +105,7 @@ export type WhatsAppMediaBuildResult =
   | { kind: "reject"; message: string }
   | null;
 
-export interface WhatsAppSavedInboundDocument {
-  relativePath: string;
-  sizeBytes: number;
-}
+export type WhatsAppSavedInboundDocument = SavedInboundDocument;
 
 export interface WhatsAppMediaInputOptions {
   downloadOverallTimeoutMs?: number;
@@ -105,27 +113,24 @@ export interface WhatsAppMediaInputOptions {
   imageMaxBytes?: number;
   ingestMaxBytes?: number;
   inlineMaxBytes?: number;
-  saveInboundDocument?: (input: {
-    bytes: Buffer;
+  saveInboundDocument?: SaveInboundDocument;
+  signal?: AbortSignal;
+  transcribeVideoAudio?: (input: {
+    data: string;
     filename: string;
     mediaType: string;
-  }) => Promise<WhatsAppSavedInboundDocument>;
-  signal?: AbortSignal;
+  }) => Promise<{ text: string }>;
 }
 
 export function resolveWhatsAppDocumentHandling(
   byteLength: number,
-  limits: { ingestMaxBytes: number; inlineMaxBytes: number }
-): "inline" | "extract" | "reject" {
+  limits: { ingestMaxBytes: number }
+): "save" | "reject" {
   if (byteLength > limits.ingestMaxBytes) {
     return "reject";
   }
 
-  if (byteLength > limits.inlineMaxBytes) {
-    return "extract";
-  }
-
-  return "inline";
+  return "save";
 }
 
 export async function buildWhatsAppMediaInput(
@@ -139,12 +144,12 @@ export async function buildWhatsAppMediaInput(
   }
 
   const imageMaxBytes = options.imageMaxBytes ?? WHATSAPP_IMAGE_MAX_BYTES;
-  const inlineMaxBytes =
-    options.inlineMaxBytes ?? WHATSAPP_DOCUMENT_INLINE_MAX_BYTES;
   const ingestMaxBytes =
     options.ingestMaxBytes ?? WHATSAPP_DOCUMENT_INGEST_MAX_BYTES;
-  const extractDocumentText =
-    options.extractDocumentText ?? extractInboundDocumentText;
+
+  if (media.kind === "video" || media.kind === "sticker") {
+    return buildWhatsAppVisualInput(inbound, download, media, options);
+  }
 
   if (media.kind === "image") {
     const mediaType = inferImageMediaType(media.mimetype, media.filename);
@@ -161,7 +166,6 @@ export async function buildWhatsAppMediaInput(
     media.fileLength !== null &&
     resolveWhatsAppDocumentHandling(media.fileLength, {
       ingestMaxBytes,
-      inlineMaxBytes,
     }) === "reject"
   ) {
     return { kind: "reject", message: OVERSIZED_FILE_REPLY };
@@ -199,20 +203,19 @@ export async function buildWhatsAppMediaInput(
     }
 
     const mediaType = inferImageMediaType(media.mimetype, media.filename);
-    const images = [{ data: bytes.toString("base64"), mediaType }];
-
-    try {
-      validateImageAttachments(images);
-    } catch {
-      return { kind: "reject", message: UNSUPPORTED_MEDIA_REPLY };
-    }
-
-    return { input: { images, message: media.caption }, kind: "input" };
+    return prepareChannelImage({
+      bytes,
+      caption: media.caption,
+      channel: "WhatsApp",
+      filename: media.filename,
+      mediaType,
+      saveInboundDocument: options.saveInboundDocument,
+      signal: options.signal,
+    });
   }
 
   const handling = resolveWhatsAppDocumentHandling(bytes.byteLength, {
     ingestMaxBytes,
-    inlineMaxBytes,
   });
 
   if (handling === "reject") {
@@ -221,42 +224,107 @@ export async function buildWhatsAppMediaInput(
 
   const mediaType = normalizeDocumentMediaType(media.mimetype, media.filename);
 
-  if (handling === "extract") {
-    return buildExtractedWhatsAppDocumentInput({
-      bytes,
-      caption: media.caption,
-      extractDocumentText,
-      filename: media.filename,
-      mediaType,
-      saveInboundDocument: options.saveInboundDocument,
-      signal: options.signal,
-    });
-  }
-
-  const documents = [
-    { data: bytes.toString("base64"), filename: media.filename, mediaType },
-  ];
-
-  try {
-    validateDocumentAttachments(documents);
-  } catch {
-    return { kind: "reject", message: UNSUPPORTED_DOCUMENT_TYPES_REPLY };
-  }
-
-  return { input: { documents, message: media.caption }, kind: "input" };
+  return prepareChannelDocument({
+    bytes,
+    caption: media.caption,
+    channel: "WhatsApp",
+    filename: media.filename,
+    ingestMaxBytes,
+    mediaType,
+    saveInboundDocument: options.saveInboundDocument,
+    signal: options.signal,
+  });
 }
 
-export function formatExtractedWhatsAppDocumentMessage(input: {
-  caption: string;
-  filename: string;
-  text: string;
-  truncated: boolean;
-}): string {
-  const body = `[File: ${input.filename}]\n${input.text}${
-    input.truncated ? "\n\n[Extracted text was truncated.]" : ""
-  }`;
-
-  return input.caption ? `${input.caption}\n\n${body}` : body;
+async function buildWhatsAppVisualInput(
+  inbound: WAMessage,
+  download: WhatsAppMediaDownload,
+  media: NonNullable<ReturnType<typeof inspectInboundWhatsAppMedia>>,
+  options: WhatsAppMediaInputOptions
+): Promise<WhatsAppMediaBuildResult> {
+  const kind = media.kind === "sticker" ? "sticker" : "video";
+  const maxBytes =
+    kind === "sticker"
+      ? (options.imageMaxBytes ?? WHATSAPP_IMAGE_MAX_BYTES)
+      : (options.ingestMaxBytes ?? WHATSAPP_DOCUMENT_INGEST_MAX_BYTES);
+  if (media.fileLength !== null && media.fileLength > maxBytes) {
+    return { kind: "reject", message: OVERSIZED_FILE_REPLY };
+  }
+  if (
+    media.mimetype.split(";")[0]?.trim() !==
+    (kind === "sticker" ? "image/webp" : "video/mp4")
+  ) {
+    return { kind: "reject", message: UNSUPPORTED_MEDIA_REPLY };
+  }
+  try {
+    const bytes = await downloadWhatsAppMediaWithinDeadline(download, inbound, {
+      maxBytes,
+      overallTimeoutMs: options.downloadOverallTimeoutMs,
+      signal: options.signal,
+    });
+    if (bytes.byteLength > maxBytes) {
+      return { kind: "reject", message: OVERSIZED_FILE_REPLY };
+    }
+    const image = await decodeWhatsAppVisual(bytes, kind, {
+      signal: options.signal,
+    });
+    const parts = [
+      media.caption,
+      kind === "sticker"
+        ? "[WhatsApp sticker: first frame shown; animation is not represented.]"
+        : "[WhatsApp video: first frame shown; this image does not represent the complete video.]",
+    ].filter(Boolean);
+    if (kind === "video") {
+      let audio: Buffer | undefined;
+      try {
+        audio = await extractWhatsAppVideoAudio(bytes, {
+          signal: options.signal,
+        });
+      } catch {
+        if (options.signal) {
+          throwIfSignalAborted(options.signal);
+        }
+        parts.push(
+          "[Audio transcription is unavailable: extraction failed or the video has no audio track.]"
+        );
+      }
+      if (audio && options.transcribeVideoAudio) {
+        const pending = options.transcribeVideoAudio({
+          data: audio.toString("base64"),
+          filename: "video-audio.wav",
+          mediaType: "audio/wav",
+        });
+        const result = options.signal
+          ? await waitForAbortable(pending, options.signal)
+          : await pending;
+        parts.push(
+          result.text.trim()
+            ? `Video audio transcript:\n${result.text.trim()}`
+            : "[The video audio transcription was empty.]"
+        );
+      } else if (audio) {
+        parts.push("[Audio is present, but transcription is unavailable.]");
+      }
+    }
+    return {
+      input: {
+        images: [{ data: image.toString("base64"), mediaType: "image/png" }],
+        message: parts.join("\n\n"),
+      },
+      kind: "input",
+    };
+  } catch (error) {
+    if (options.signal) {
+      throwIfSignalAborted(options.signal);
+    }
+    return {
+      kind: "reject",
+      message:
+        error instanceof OversizedWhatsAppMediaError
+          ? OVERSIZED_FILE_REPLY
+          : "Could not process that video or sticker. Try another file or send text.",
+    };
+  }
 }
 
 export function formatSavedWhatsAppDocumentMessage(input: {
@@ -266,37 +334,7 @@ export function formatSavedWhatsAppDocumentMessage(input: {
   relativePath: string;
   sizeBytes: number;
 }): string {
-  const header = `[Saved WhatsApp file: ${input.relativePath} (${formatMegabytes(input.sizeBytes)})]`;
-  const body = `${header}\n${savedWorkspaceDocumentHint({
-    filename: input.filename,
-    mediaType: input.mediaType,
-    relativePath: input.relativePath,
-  })}`;
-
-  return input.caption ? `${input.caption}\n\n${body}` : body;
-}
-
-export function savedWorkspaceDocumentHint(input: {
-  filename: string;
-  mediaType: string;
-  relativePath: string;
-}): string {
-  const mediaType = normalizeDocumentMediaType(input.mediaType, input.filename);
-  const finish =
-    "Finish the user's request in this turn: use tools on that path, write the complete deliverable under artifacts/, and reply with a short summary. Do not dump the source file into chat. If a tool truncates or times out, continue from what you have and still finish.";
-
-  if (
-    isSpreadsheetDocumentMediaType(mediaType, input.filename) ||
-    mediaType === "text/csv"
-  ) {
-    return `This spreadsheet is saved at ${input.relativePath}. Use the spreadsheet tool to inspect and process the full workbook, then write the result to a new artifacts/ file. ${finish}`;
-  }
-
-  if (mediaType === "text/plain" || mediaType === "text/markdown") {
-    return `This file is saved at ${input.relativePath}. Read it from the profile workspace. ${finish}`;
-  }
-
-  return `This file is saved at ${input.relativePath}. Use extract_document_text with documentRef ${input.relativePath}. ${finish}`;
+  return formatSavedChannelDocumentMessage({ ...input, channel: "WhatsApp" });
 }
 
 export function mergeWhatsAppUserMessage(
@@ -319,127 +357,6 @@ export function mergeWhatsAppUserMessage(
   }
 
   return `${trimmed}\n\n${media}`;
-}
-
-async function buildExtractedWhatsAppDocumentInput(input: {
-  bytes: Buffer;
-  caption: string;
-  extractDocumentText: typeof extractInboundDocumentText;
-  filename: string;
-  mediaType: string;
-  saveInboundDocument?: WhatsAppMediaInputOptions["saveInboundDocument"];
-  signal?: AbortSignal;
-}): Promise<WhatsAppMediaBuildResult> {
-  const saveInboundDocument = input.saveInboundDocument;
-  if (saveInboundDocument) {
-    return buildSavedWhatsAppDocumentInput({
-      ...input,
-      saveInboundDocument,
-    });
-  }
-
-  let extracted: { text: string; truncated: boolean } | null = null;
-
-  try {
-    const extraction = input.extractDocumentText({
-      bytes: input.bytes,
-      filename: input.filename,
-      mediaType: input.mediaType,
-    });
-    extracted = input.signal
-      ? await waitForAbortable(extraction, input.signal)
-      : await extraction;
-  } catch {
-    if (input.signal?.aborted) {
-      throwIfSignalAborted(input.signal);
-    }
-    extracted = null;
-  }
-
-  if (!extracted?.text.trim()) {
-    return { kind: "reject", message: UNREADABLE_DOCUMENT_REPLY };
-  }
-
-  return {
-    input: {
-      message: formatExtractedWhatsAppDocumentMessage({
-        caption: input.caption,
-        filename: input.filename,
-        text: extracted.text,
-        truncated: extracted.truncated,
-      }),
-    },
-    kind: "input",
-  };
-}
-
-async function buildSavedWhatsAppDocumentInput(input: {
-  bytes: Buffer;
-  caption: string;
-  filename: string;
-  mediaType: string;
-  saveInboundDocument: NonNullable<
-    WhatsAppMediaInputOptions["saveInboundDocument"]
-  >;
-  signal?: AbortSignal;
-}): Promise<WhatsAppMediaBuildResult> {
-  let saved: WhatsAppSavedInboundDocument;
-
-  try {
-    const saving = input.saveInboundDocument({
-      bytes: input.bytes,
-      filename: input.filename,
-      mediaType: input.mediaType,
-    });
-    saved = input.signal
-      ? await waitForAbortable(saving, input.signal)
-      : await saving;
-  } catch {
-    if (input.signal?.aborted) {
-      throwIfSignalAborted(input.signal);
-    }
-    return { kind: "reject", message: SAVE_FAILED_DOCUMENT_REPLY };
-  }
-
-  if (!isSafeSavedRelativePath(saved.relativePath)) {
-    return { kind: "reject", message: SAVE_FAILED_DOCUMENT_REPLY };
-  }
-
-  const sizeBytes =
-    Number.isFinite(saved.sizeBytes) && saved.sizeBytes >= 0
-      ? saved.sizeBytes
-      : input.bytes.byteLength;
-
-  return {
-    input: {
-      message: formatSavedWhatsAppDocumentMessage({
-        caption: input.caption,
-        filename: input.filename,
-        mediaType: input.mediaType,
-        relativePath: saved.relativePath,
-        sizeBytes,
-      }),
-    },
-    kind: "input",
-  };
-}
-
-function isSafeSavedRelativePath(relativePath: string): boolean {
-  const normalized = relativePath.replaceAll("\\", "/").trim();
-  const [folder, filename, ...rest] = normalized.split("/");
-
-  return (
-    rest.length === 0 &&
-    folder === "artifacts" &&
-    typeof filename === "string" &&
-    filename.length > 0 &&
-    filename !== "." &&
-    filename !== ".."
-  );
-}
-
-function formatMegabytes(bytes: number): string {
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export async function downloadWhatsAppMedia(
@@ -631,6 +548,9 @@ function inferImageMediaType(mimetype: string, filename: string): string {
   const extension = filename.slice(filename.lastIndexOf(".")).toLowerCase();
 
   switch (extension) {
+    case ".jpg":
+    case ".jpeg":
+      return "image/jpeg";
     case ".png":
       return "image/png";
     case ".gif":

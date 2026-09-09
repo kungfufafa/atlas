@@ -820,7 +820,7 @@ function ChatAttachmentHeader({
 
           return (
             <div
-              className="relative flex max-w-full shrink-0 items-center gap-2 overflow-hidden rounded-lg border border-border bg-muted px-3 py-2"
+              className="relative flex max-w-full shrink-0 items-center gap-2 overflow-hidden rounded-lg border border-border bg-muted py-2 pr-10 pl-3"
               key={file.id}
             >
               <File01Icon

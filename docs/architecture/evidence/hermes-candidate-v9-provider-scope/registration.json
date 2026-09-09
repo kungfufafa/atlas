@@ -1,0 +1,15 @@
+{
+  "at": "2026-09-07T07:32:54.650042+00:00",
+  "scope": "Read-only claim-scope map of frozen C9 product code and already closed relevant evidence. No confirmation access, model/test/benchmark execution, source/control edits or new product work.",
+  "source": "/private/tmp/atlas-native-file-v3-c9-integration/source",
+  "candidateSourceHash": "e2daf1b902a087eb279724f17d61e50b9a27f7c1d64828f6958b61b22225eb98",
+  "boundaries": [
+    "context ownership",
+    "exact model/capability evidence",
+    "tools and authenticated turn bridge",
+    "cancellation/recovery",
+    "usage/model identity provenance",
+    "coverage limitations"
+  ],
+  "priorKnowledge": "Authored underlying optional principal and authenticated ordinary HTTP guard components; previously reviewed C9 native caller integration and closed MiMo development instrumentation. That is disclosed, not independent revalidation of authored product logic."
+}

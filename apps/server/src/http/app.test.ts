@@ -5,10 +5,12 @@ import { join } from "node:path";
 import {
   createWorkspaceWorkerAuthToken,
   loadLocalAuthToken,
+  saveWhatsAppConfig,
   verifyLocalAuthToken,
 } from "@atlas/core";
 import { createInMemoryDatabaseAdapter } from "@atlas/db";
 import { AuthService } from "../services/auth-service";
+import { IdentityService } from "../services/identity-service";
 import { OrgService } from "../services/org-service";
 import { setupTestConfigDir } from "../test-config-dir";
 import { createHonoApp } from "./app";
@@ -170,6 +172,7 @@ function createServerOptions() {
       getUserTimezone: async () => "Asia/Jakarta",
       getVisionSettings: async () => ({ vision: { model: null } }),
       getWhatsAppSettings: async () => ({ enabled: false }),
+      identityService: new IdentityService(databaseAdapter),
       initProfileSoul: async (_profileId: string) => ({ ok: true }),
       initUserContext: async (_orgId: string, _userId: string) => ({
         created: true,
@@ -193,6 +196,10 @@ function createServerOptions() {
       }),
       listSkills: async () => ({ skills: [{ id: "skill_1" }] }),
       listTools: async () => ({ tools: [{ id: "tool_1" }] }),
+      // Route smoke fixture only; real turn ACLs are covered by the persisted
+      // messages integration tests using AgentService and SQLite.
+      prepareAuthenticatedSessionTurnOptions: async () =>
+        Object.freeze({ toolExecutionGuard: async () => {} }),
       providerConfigured: true,
       purgeSession: async (_sessionId: string) => true,
       regenerateTelegramHandshake: async () => ({ enabled: false }),
@@ -404,6 +411,21 @@ describe("createHonoApp", () => {
         slug: "test-org",
         updatedAt: now,
       });
+      await options.databaseAdapter.upsertProfile({
+        createdAt: now,
+        id: "default",
+        isDefault: true,
+        isSuper: false,
+        model: null,
+        name: "Default",
+        orgId: TEST_ORG_ID,
+        systemPrompt: "",
+        updatedAt: now,
+      });
+      await saveWhatsAppConfig(
+        { accessMode: "open", profileId: "default" },
+        TEST_ORG_ID
+      );
       let observedAccess: { excludeSuperAgent?: boolean; orgRole?: string } =
         {};
       options.agent.createSession = async (
@@ -438,7 +460,13 @@ describe("createHonoApp", () => {
 
       const session = await app.fetch(
         new Request("http://localhost:4310/v1/sessions", {
-          body: JSON.stringify({ channel: "whatsapp", profileId: "default" }),
+          body: JSON.stringify({
+            channel: "whatsapp",
+            externalPrincipal: {
+              channelUserId: "6281111111111@s.whatsapp.net",
+            },
+            profileId: "default",
+          }),
           headers,
           method: "POST",
         })

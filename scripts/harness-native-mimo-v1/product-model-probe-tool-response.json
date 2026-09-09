@@ -1,0 +1,10 @@
+{
+  "slot": 3,
+  "model": "mimo-v2.5",
+  "kind": "tool_init",
+  "status": 200,
+  "receivedAt": "2026-09-06T16:51:20.500Z",
+  "raw": "{\"id\":\"f74120ad-c8ac-4b0f-9e2d-9b2d35fabc3a_b4f27d1c224e44bc9851fea0c758f4d2\",\"object\":\"chat.completion\",\"created\":1788713480,\"model\":\"mimo-v2.5\",\"choices\":[{\"index\":0,\"finish_reason\":\"tool_calls\",\"message\":{\"role\":\"assistant\",\"content\":null,\"reasoning_content\":\"The user wants me to call echo_value with value COMPAT_READY and then reply with only the returned value.\",\"tool_calls\":[{\"id\":\"call_0f226fb158c249cc93a98f85\",\"type\":\"function\",\"function\":{\"name\":\"echo_value\",\"arguments\":\"{\\\"value\\\": \\\"COMPAT_READY\\\"}\"}}]}}],\"usage\":{\"prompt_tokens\":532,\"completion_tokens\":47,\"total_tokens\":579,\"prompt_tokens_details\":{\"cached_tokens\":192},\"completion_tokens_details\":{\"reasoning_tokens\":0}},\"cost\":\"0\"}",
+  "responseSha256": "9a30ef377e5709e6cf08f5d703453fd9cf8401546f5f523dba6eb58d497719b2",
+  "transportError": null
+}

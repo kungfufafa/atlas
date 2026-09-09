@@ -1,0 +1,32 @@
+{
+  "reviewedAt": "2026-09-06T16:50:22.630042+00:00",
+  "reviewer": "hermes_harness_audit",
+  "status": "no_remaining_source_review_blocker",
+  "scope": "Read-only independent compatibility-only launch review; not execution authorization or evidence of provider behavior",
+  "files": {
+    "plan.json": "5c5981703f649a6008b07f9d66a4bfe4d396db4e0796a7f05b92d14f9e992a37",
+    "runner.ts": "54e23c0d247df09f1df32460533329878b533cf2424838497d03cae45ca13d2e",
+    "readiness.json": "f98e1e0328a397dfb7e777ddc8eb5bace45d09d9a0d6df9794608a7f980868d2",
+    "preregistration.md": "e68db837aff81e570afc5c97ee7c9b0ea50dd2fcc2dc3fad1a9bbd3cb3ce6dec",
+    "docs-source.json": "f29bb94b55ed6dd3498eb16b5f1f6622b4ef111ab8e35de745ffad3e8a5bcc74",
+    "title-native-snapshot.json": "b9fa04e8e3d1b99cee0621df0e681807eacd34c255075cacb5308d74f09cec4c"
+  },
+  "verified": [
+    "Fixed two-model order, both tested, ten interleaved slots, five calls per eligible model including two-call structured tool roundtrip",
+    "Exact pinned native title constants/schema; automatic tool choice and real assistant/tool receipt preserved",
+    "Known mandatory usage and exact returned identity required; failures retained; optional cache uncertainty separate",
+    "Durable exclusive claim before key read, immutable schedule/per-slot request/send/response/end, no retry or resume",
+    "Exact support bindings and before-send source archive; final source/elapsed/observed-overrun selection veto",
+    "Official Go documented IDs/endpoints and lower input/output rates; no universal cost claim"
+  ],
+  "limits": [
+    "No model calls, key access, or test execution by reviewer",
+    "Author reports nine offline predicate/durable-claim tests; no whole-run fake HTTP integration",
+    "Compatibility probe covers tested model/endpoint/header/payload profile, not all stock native lifecycle traffic or task quality",
+    "User-Agent also changed from old DeepSeek profile; no model-only causal claim",
+    "Crash/timeout can leave actual upstream usage unknown; retained as uncertainty, no retry",
+    "Old DeepSeek evidence stays separate and unchanged; subsequent native stratum requires own frozen controls/integration gate"
+  ],
+  "executionExistsAtReview": false,
+  "claimExistsAtReview": false
+}

@@ -1,0 +1,88 @@
+{
+  "readyForReview": true,
+  "rootApplied": false,
+  "createdAt": "2026-09-06T18:56:25.952525+00:00",
+  "sourceRoot": "/private/tmp/atlas-task-stop-semantics/source",
+  "baseSourceRoot": "/private/tmp/atlas-candidate4-integration/source",
+  "baseSourceHash": "d09f087f01f3a8590ce8e2faef7b9454ce4546c8912dfce38e824d95fecb2ce3",
+  "sourceHash": "a5b56faffdd6acbfb76237d1a0ae889d60ef136a740c325f86485a013a8678e7",
+  "fileCount": 2078,
+  "delta": {
+    "existingProductionFiles": 4,
+    "newBehaviorTestFiles": 2,
+    "publicResponseFieldChanges": 0,
+    "schemaChanges": 0
+  },
+  "gates": {
+    "newBehaviorTests": {
+      "pass": 18,
+      "fail": 0,
+      "assertions": 124
+    },
+    "regressionUnion": {
+      "pass": 117,
+      "fail": 0,
+      "assertions": 597,
+      "files": 9
+    },
+    "productionTypecheck": true,
+    "scopedTypecheckIncludingTests": true,
+    "ultraciteFiles": 6,
+    "aliasResolutionLocal": true,
+    "applyCheckAgainstCombinedCandidate4": true
+  },
+  "beforeEvidence": {
+    "actualTaskStatusRegression": {
+      "pass": 0,
+      "fail": 3
+    },
+    "initialFullFixture": {
+      "pass": 4,
+      "fail": 10
+    },
+    "retained": true
+  },
+  "isolation": {
+    "rootFilesVerifiedUnchanged": 2072,
+    "combinedCandidate4InputFilesVerifiedUnchanged": 2076,
+    "resultSourceBeforeAfterFinalGatesVerified": 2078,
+    "noPaidCalls": true,
+    "noNativeExternalAccounts": true,
+    "noFrozenControlEdits": true,
+    "noLiveProcesses": true
+  },
+  "patchHashes": {
+    "production.patch": "92c3eaa0dc52d3a02fc2406c3e4c9e0b37ee26dab91e6ed8c02b002db83657b8",
+    "tests.patch": "149de239e0df048abcb5945ab2389a0c26d599795ee1a26da451abd337a31784",
+    "combined.patch": "ae4c9aaf242b0f1a11155403c47ee27df876a0cbedb58c51f5339b880e89a62b"
+  },
+  "evidenceHashes": {
+    "README.md": "71c1dac1b2e061daef92bbb074e865c667b07afd9151232a17c27446179f041a",
+    "design.md": "40f0797b4b7520927d2f609fa819596c244345e86e8fc12e316632306a206ddc",
+    "preparation.json": "88c90cedf79960f0f1cd6317f70800d10c470898b938f18b7b1dd7888d4cb7e9",
+    "base-inventory.json": "ffd0f2bd9eed3a52ae48ee955903bc789c807c63dbad6338a5e8dcab042480b4",
+    "source-inventory.json": "90fb3a692eb6e8382e9d50080db7ba097fe8d278dac9eeefaafc8ad6567f08ab",
+    "source-verification.json": "a3b443bf25438b652bd621cc1cea6b7044e70d85b2767b7fc3b476fd2817c053",
+    "alias-verification.json": "8edffa69f0368739e6fce893c1fbd087e7c4a1b401feef1fb63d674e9a5d6ca4",
+    "before.log": "01652af469770a538877318213ad5a4304a0c33953a387b476facf63801c13be",
+    "before-task-status.log": "ce599b648e4d6ea81199c6ae4fe087a63722f8024b20739d220611c80bb79029",
+    "after-initial.log": "6bc944ce308810a5de64974e4b1d5279ff6834392c5a970164798917d6c8d0b3",
+    "after-expanded.log": "42cd500984df39077e6c96b4478ccd75fe7331308843a4bac62a891ddf6e3a61",
+    "tests-final.log": "3638782d81f157c8ccb3079cbc1e8bfdbbfa563979921501e6249f3b9cba1f4e",
+    "regressions.log": "c793696248d339ed5f33a62259717da866c57359fff0efa848b3e2132ab03c75",
+    "typecheck-scope.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "typecheck-production.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "lint-fix.log": "0f8104b78b36265509895f833ee705e7ab4e23557a7397633b0bc6ffcfc84279",
+    "lint-fix-path.log": "5abd8785296c521ad0dcb9925937d1f3064a2fa75ba3b04234fb9ed7ada82737",
+    "lint-final.log": "8412aa9a93f1c31a0063431eeaaeb7c56e20b8a0285a13d0963d37d9c937aa5a",
+    "production.patch.apply-check.log": "16e3edbe92d848d09637b5ec0801d01a735a0deb44c99bc4c374f0865de6acd8",
+    "combined.patch.apply-check.log": "16e3edbe92d848d09637b5ec0801d01a735a0deb44c99bc4c374f0865de6acd8"
+  },
+  "limits": [
+    "Only typed mechanically observed stops are reclassified; no natural-language completion or correctness checker.",
+    "Native tests exercise actual Atlas dispatcher with deterministic stubs, not paid SDK/account behavior.",
+    "Existing finalization request count, output strings, partial history, and provider/accounting policies unchanged.",
+    "Observer is asynchronous-safe but intentionally not awaited; it is not a persistence barrier.",
+    "No root integration or live quality gain claimed."
+  ]
+}

@@ -112,11 +112,16 @@ export class ComposioService {
     string,
     { fingerprint: string; endpoint: ComposioSessionMcpEndpoint }
   >();
+  private onConfigurationChanged?: (orgId: string) => void;
 
   constructor(
     private readonly databaseAdapter: DatabaseAdapter,
     private readonly authService: AuthService
   ) {}
+
+  setConfigurationChangeListener(listener: (orgId: string) => void): void {
+    this.onConfigurationChanged = listener;
+  }
 
   reloadConfiguration(): void {
     this.apiClientCache = null;
@@ -359,6 +364,7 @@ export class ComposioService {
         updatedAt: now,
       };
       await this.databaseAdapter.upsertComposioToolkit(updated);
+      this.onConfigurationChanged?.(orgId);
       return toOrgToolkitSummary(updated);
     }
 
@@ -375,6 +381,7 @@ export class ComposioService {
     };
 
     await this.databaseAdapter.upsertComposioToolkit(record);
+    this.onConfigurationChanged?.(orgId);
     return toOrgToolkitSummary(record);
   }
 
@@ -389,6 +396,7 @@ export class ComposioService {
       updatedAt: new Date().toISOString(),
     };
     await this.databaseAdapter.upsertComposioToolkit(updated);
+    this.onConfigurationChanged?.(orgId);
     return toOrgToolkitSummary(updated);
   }
 
@@ -656,6 +664,7 @@ export class ComposioService {
     }
 
     this.invalidateProfileSessionCachesForUser(payload.userId);
+    this.onConfigurationChanged?.(payload.orgId);
     return { orgId: payload.orgId, toolkitSlug: orgToolkit.toolkitSlug };
   }
 
@@ -686,6 +695,7 @@ export class ComposioService {
 
     await this.databaseAdapter.deleteComposioUserConnection(connection.id);
     this.invalidateProfileSessionCachesForUser(actingUserId);
+    this.onConfigurationChanged?.(orgId);
 
     return toOrgToolkitSummary(orgToolkit);
   }
@@ -759,6 +769,7 @@ export class ComposioService {
         options.expectedOAuthStateHash ?? updatedConnection.oauthStateHash
       );
       this.invalidateProfileSessionCachesForUser(actingUserId);
+      this.onConfigurationChanged?.(orgId);
       return toOrgToolkitSummary(updatedOrgToolkit);
     } catch (error) {
       const failureMessage = "Could not sync Composio toolkit.";
@@ -867,6 +878,7 @@ export class ComposioService {
       profile.id,
       assignments
     );
+    this.onConfigurationChanged?.(orgId);
     return this.listProfileAssignments(orgId, profile);
   }
 
@@ -876,6 +888,9 @@ export class ComposioService {
     profileId: string
   ): Promise<ComposioSessionMcpEndpoint | null> {
     const actingUserId = await this.resolveComposioActingUserId(orgId, userId);
+    if (!(await this.databaseAdapter.getProfileForOrg(profileId, orgId))) {
+      throw new AtlasApiError("Profile not found.", 404);
+    }
     const apiClient = await this.getApiClient();
 
     if (!apiClient) {
@@ -1024,6 +1039,9 @@ export class ComposioService {
     }>
   > {
     const actingUserId = await this.resolveComposioActingUserId(orgId, userId);
+    if (!(await this.databaseAdapter.getProfileForOrg(profileId, orgId))) {
+      throw new AtlasApiError("Profile not found.", 404);
+    }
     const assignments =
       await this.databaseAdapter.listProfileComposioToolkits(profileId);
     const orgToolkits =

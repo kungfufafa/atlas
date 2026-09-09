@@ -1,9 +1,12 @@
 import { nanoid } from "@atlas/core";
 import { calculateTitleSimilarity } from "@atlas/core/tools/url-utils";
-import type {
-  DatabaseAdapter,
-  MemoryScope,
-  StoredMemoryRecord,
+import {
+  type DatabaseAdapter,
+  type MemoryScope,
+  memoryResultLimit,
+  rankMemoryMatches,
+  type StoredMemoryRecord,
+  tokenizeMemoryQuery,
 } from "@atlas/db";
 
 const SENSITIVE_PATTERNS = [
@@ -32,6 +35,10 @@ export interface SearchMemoryOptions {
   scope?: MemoryScope;
 }
 
+function normalizedSubject(subject: string | null | undefined): string | null {
+  return subject?.normalize("NFKC").trim().toLowerCase() || null;
+}
+
 export class MemoryService {
   constructor(private readonly db: DatabaseAdapter) {}
 
@@ -47,7 +54,8 @@ export class MemoryService {
 
   async writeMemory(
     orgId: string,
-    input: WriteMemoryInput
+    input: WriteMemoryInput,
+    options: { strategy?: "preserve" | "legacy-upsert" } = {}
   ): Promise<StoredMemoryRecord> {
     if (!orgId?.trim()) {
       throw new Error("orgId is required for memory operations.");
@@ -58,21 +66,24 @@ export class MemoryService {
     }
 
     this.sanitizeAndValidate(cleanContent);
+    const subject = normalizedSubject(input.subject);
 
-    const existingMemories = await this.db.listMemories(
-      orgId,
-      input.scope,
-      input.ownerId,
-      50
-    );
+    // The native save tool preserves independent facts. Other callers keep
+    // their existing upsert contract until explicitly migrated.
+    const existingMemories =
+      options.strategy === "preserve"
+        ? []
+        : await this.db.listMemories(orgId, input.scope, input.ownerId, 50);
 
-    // Deduplication check
+    // Similar wording does not make two explicitly different subjects the same
+    // memory. Preserve existing same-subject replacement and unlabelled dedup.
     for (const mem of existingMemories) {
+      const existingSubject = normalizedSubject(mem.subject);
+      if (subject && existingSubject && subject !== existingSubject) {
+        continue;
+      }
       const similarity = calculateTitleSimilarity(mem.content, cleanContent);
-      const sameSubject =
-        input.subject &&
-        mem.subject &&
-        input.subject.toLowerCase() === mem.subject.toLowerCase();
+      const sameSubject = subject !== null && subject === existingSubject;
 
       if (similarity >= 0.75 || sameSubject) {
         // Update existing memory
@@ -105,6 +116,9 @@ export class MemoryService {
       updatedAt: now,
     };
 
+    if (options.strategy === "preserve") {
+      return this.db.createOrGetMemory(record);
+    }
     await this.db.createMemory(record);
     return record;
   }
@@ -119,37 +133,27 @@ export class MemoryService {
     }
 
     const cleanQuery = query.trim();
+    const limit = memoryResultLimit(options.limit, 20);
+    if (limit === 0) {
+      return [];
+    }
     if (!cleanQuery) {
       return this.listMemories(orgId, options);
     }
 
+    const terms = tokenizeMemoryQuery(cleanQuery);
+    if (terms.length === 0) {
+      return [];
+    }
     const records = await this.db.searchMemories(
       orgId,
-      cleanQuery,
+      terms,
       options.scope,
       options.ownerId,
-      options.limit ?? 20
+      limit
     );
 
-    // Rank by scope priority + importance + recency
-    const scopeWeights: Record<MemoryScope, number> = {
-      agent: 1,
-      organization: 2,
-      project: 3,
-      user: 4,
-    };
-
-    return records.sort((a, b) => {
-      const scoreA =
-        (scopeWeights[a.scope] || 1) * 2 +
-        a.importance * 1.5 +
-        (a.confidence || 1.0) * 1.2;
-      const scoreB =
-        (scopeWeights[b.scope] || 1) * 2 +
-        b.importance * 1.5 +
-        (b.confidence || 1.0) * 1.2;
-      return scoreB - scoreA;
-    });
+    return rankMemoryMatches(records, terms).slice(0, limit);
   }
 
   async listMemories(
@@ -160,7 +164,7 @@ export class MemoryService {
       orgId,
       options.scope,
       options.ownerId,
-      options.limit ?? 50
+      memoryResultLimit(options.limit, 50)
     );
   }
 
@@ -172,7 +176,10 @@ export class MemoryService {
       userId?: string | null;
     }
   ): Promise<StoredMemoryRecord[]> {
-    const limit = visibility.limit ?? 10;
+    const limit = memoryResultLimit(visibility.limit, 10);
+    if (limit === 0) {
+      return [];
+    }
     const buckets = await Promise.all([
       this.listMemories(orgId, {
         limit,
@@ -216,7 +223,13 @@ export class MemoryService {
       userId?: string | null;
     }
   ): Promise<StoredMemoryRecord[]> {
-    const limit = visibility.limit ?? 10;
+    const limit = memoryResultLimit(visibility.limit, 10);
+    if (limit === 0) {
+      return [];
+    }
+    if (!query.trim()) {
+      return this.listVisibleMemories(orgId, { ...visibility, limit });
+    }
     const buckets = await Promise.all([
       this.searchMemories(orgId, query, {
         limit,
@@ -247,7 +260,10 @@ export class MemoryService {
       seen.add(record.id);
       merged.push(record);
     }
-    return merged.slice(0, limit);
+    return rankMemoryMatches(merged, tokenizeMemoryQuery(query)).slice(
+      0,
+      limit
+    );
   }
 
   async getMemory(
@@ -264,7 +280,7 @@ export class MemoryService {
       confidence?: number;
       content?: string;
       importance?: number;
-      subject?: string;
+      subject?: string | null;
     }
   ): Promise<StoredMemoryRecord | null> {
     if (patch.content) {

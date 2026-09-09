@@ -1,0 +1,32 @@
+[
+  {
+    "root": "/private/tmp/atlas-candidate5-integration/source",
+    "name": "@atlas/agent",
+    "resolved": "/private/tmp/atlas-candidate5-integration/source/packages/agent/src/index.ts"
+  },
+  {
+    "root": "/private/tmp/atlas-candidate5-integration/source",
+    "name": "@atlas/core",
+    "resolved": "/private/tmp/atlas-candidate5-integration/source/packages/core/src/index.ts"
+  },
+  {
+    "root": "/private/tmp/atlas-candidate5-integration/source",
+    "name": "@atlas/db",
+    "resolved": "/private/tmp/atlas-candidate5-integration/source/packages/db/src/index.ts"
+  },
+  {
+    "root": "/private/tmp/atlas-candidate5-integration/source/apps/server/src/services",
+    "name": "@atlas/agent",
+    "resolved": "/private/tmp/atlas-candidate5-integration/source/packages/agent/src/index.ts"
+  },
+  {
+    "root": "/private/tmp/atlas-candidate5-integration/source/apps/server/src/services",
+    "name": "@atlas/core",
+    "resolved": "/private/tmp/atlas-candidate5-integration/source/packages/core/src/index.ts"
+  },
+  {
+    "root": "/private/tmp/atlas-candidate5-integration/source/apps/server/src/services",
+    "name": "@atlas/db",
+    "resolved": "/private/tmp/atlas-candidate5-integration/source/packages/db/src/index.ts"
+  }
+]

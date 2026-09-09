@@ -1,0 +1,1202 @@
+{
+  "label": "baseline",
+  "phaseDirectory": "/private/tmp/atlas-hermes-evaluation/runs/development-2026-09-06T12-18-54-546Z-700c14",
+  "originalLedgerSha256": "9f9d1eb80aeec5d13a682349cf7cb0cf42096222d88903fcd09e8697da201710",
+  "purpose": "Conservative derivative accounting audit. Original frozen ledgers and grades are unchanged. Any unresolved mandatory usage excludes resource-budget certification; observed task outcomes remain reported.",
+  "allMandatoryUsageKnown": false,
+  "uncertainAttempts": [
+    "development-2026-09-06T12-18-54-546Z-700c14-development-explicit_correction-1928623996-r0-atlas",
+    "development-2026-09-06T12-18-54-546Z-700c14-development-explicit_correction-1928623996-r0-hermes"
+  ],
+  "attempts": [
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-missing_evidence-3464653518-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:missing_evidence:3464653518",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 633,
+      "promptTokens": 14668,
+      "cachedTokens": 8576,
+      "observedGeneratedTokens": 633,
+      "statusCounts": {
+        "200": 5
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-missing_evidence-3464653518-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:missing_evidence:3464653518",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 654,
+      "promptTokens": 28085,
+      "cachedTokens": 23040,
+      "observedGeneratedTokens": 654,
+      "statusCounts": {
+        "200": 6
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-source_grounded_comparison-1215152541-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:source_grounded_comparison:1215152541",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1487,
+      "promptTokens": 31731,
+      "cachedTokens": 25728,
+      "observedGeneratedTokens": 1487,
+      "statusCounts": {
+        "200": 6
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-source_grounded_comparison-1215152541-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:source_grounded_comparison:1215152541",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1480,
+      "promptTokens": 13844,
+      "cachedTokens": 10624,
+      "observedGeneratedTokens": 1480,
+      "statusCounts": {
+        "200": 4
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-explicit_correction-178787654-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:explicit_correction:178787654",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 490,
+      "promptTokens": 14530,
+      "cachedTokens": 11392,
+      "observedGeneratedTokens": 490,
+      "statusCounts": {
+        "200": 5
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-explicit_correction-178787654-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:explicit_correction:178787654",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 364,
+      "promptTokens": 21759,
+      "cachedTokens": 13312,
+      "observedGeneratedTokens": 364,
+      "statusCounts": {
+        "200": 5
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-linked_workflow-3367244925-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:linked_workflow:3367244925",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 775,
+      "promptTokens": 61543,
+      "cachedTokens": 57856,
+      "observedGeneratedTokens": 775,
+      "statusCounts": {
+        "200": 13
+      },
+      "issues": [],
+      "recordedProviderStatuses": [
+        200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+      ],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-linked_workflow-3367244925-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:linked_workflow:3367244925",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1056,
+      "promptTokens": 50977,
+      "cachedTokens": 46976,
+      "observedGeneratedTokens": 1056,
+      "statusCounts": {
+        "200": 15
+      },
+      "issues": [],
+      "recordedProviderStatuses": [
+        200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200,
+        200
+      ],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-configuration_migration-1445707432-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:configuration_migration:1445707432",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 4157,
+      "promptTokens": 5417,
+      "cachedTokens": 2560,
+      "observedGeneratedTokens": 4157,
+      "statusCounts": {
+        "200": 2
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-configuration_migration-1445707432-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:configuration_migration:1445707432",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 470,
+      "promptTokens": 22844,
+      "cachedTokens": 20736,
+      "observedGeneratedTokens": 470,
+      "statusCounts": {
+        "200": 5
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-inventory_allocation-3218769636-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:inventory_allocation:3218769636",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 2367,
+      "promptTokens": 34978,
+      "cachedTokens": 28160,
+      "observedGeneratedTokens": 2367,
+      "statusCounts": {
+        "200": 6
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-inventory_allocation-3218769636-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:inventory_allocation:3218769636",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1008,
+      "promptTokens": 13459,
+      "cachedTokens": 10112,
+      "observedGeneratedTokens": 1008,
+      "statusCounts": {
+        "200": 4
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-inventory_allocation-2775083435-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:inventory_allocation:2775083435",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 901,
+      "promptTokens": 9532,
+      "cachedTokens": 3072,
+      "observedGeneratedTokens": 901,
+      "statusCounts": {
+        "200": 3
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-inventory_allocation-2775083435-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:inventory_allocation:2775083435",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 865,
+      "promptTokens": 14109,
+      "cachedTokens": 12032,
+      "observedGeneratedTokens": 865,
+      "statusCounts": {
+        "200": 3
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-portable_memory_application-3462501014-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:portable_memory_application:3462501014",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 786,
+      "promptTokens": 24017,
+      "cachedTokens": 18432,
+      "observedGeneratedTokens": 786,
+      "statusCounts": {
+        "200": 5
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-portable_memory_application-3462501014-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:portable_memory_application:3462501014",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 658,
+      "promptTokens": 9207,
+      "cachedTokens": 6144,
+      "observedGeneratedTokens": 658,
+      "statusCounts": {
+        "200": 3
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-linked_workflow-5318081-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:linked_workflow:5318081",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1122,
+      "promptTokens": 51277,
+      "cachedTokens": 47104,
+      "observedGeneratedTokens": 1122,
+      "statusCounts": {
+        "200": 15
+      },
+      "issues": [],
+      "recordedProviderStatuses": [
+        200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200,
+        200
+      ],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-linked_workflow-5318081-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:linked_workflow:5318081",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 764,
+      "promptTokens": 61482,
+      "cachedTokens": 54016,
+      "observedGeneratedTokens": 764,
+      "statusCounts": {
+        "200": 13
+      },
+      "issues": [],
+      "recordedProviderStatuses": [
+        200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+      ],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-configuration_migration-2985910843-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:configuration_migration:2985910843",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 804,
+      "promptTokens": 13629,
+      "cachedTokens": 8576,
+      "observedGeneratedTokens": 804,
+      "statusCounts": {
+        "200": 3
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-configuration_migration-2985910843-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:configuration_migration:2985910843",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 7729,
+      "promptTokens": 22449,
+      "cachedTokens": 9216,
+      "observedGeneratedTokens": 7729,
+      "statusCounts": {
+        "200": 4
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-invoice_reconciliation-607691672-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:invoice_reconciliation:607691672",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1547,
+      "promptTokens": 18071,
+      "cachedTokens": 14848,
+      "observedGeneratedTokens": 1547,
+      "statusCounts": {
+        "200": 5
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-invoice_reconciliation-607691672-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:invoice_reconciliation:607691672",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1460,
+      "promptTokens": 36332,
+      "cachedTokens": 30976,
+      "observedGeneratedTokens": 1460,
+      "statusCounts": {
+        "200": 7
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-explicit_correction-1679410104-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:explicit_correction:1679410104",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 602,
+      "promptTokens": 22687,
+      "cachedTokens": null,
+      "observedGeneratedTokens": 602,
+      "statusCounts": {
+        "200": 5
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-explicit_correction-1679410104-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:explicit_correction:1679410104",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 641,
+      "promptTokens": 14814,
+      "cachedTokens": 11776,
+      "observedGeneratedTokens": 641,
+      "statusCounts": {
+        "200": 5
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-invalid_path_recovery-2988740947-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:invalid_path_recovery:2988740947",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 2605,
+      "promptTokens": 34335,
+      "cachedTokens": 30592,
+      "observedGeneratedTokens": 2605,
+      "statusCounts": {
+        "200": 9
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-invalid_path_recovery-2988740947-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:invalid_path_recovery:2988740947",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1110,
+      "promptTokens": 33832,
+      "cachedTokens": 25344,
+      "observedGeneratedTokens": 1110,
+      "statusCounts": {
+        "200": 7
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-source_latest_policy-2373074706-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:source_latest_policy:2373074706",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1488,
+      "promptTokens": 19438,
+      "cachedTokens": 13312,
+      "observedGeneratedTokens": 1488,
+      "statusCounts": {
+        "200": 4
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-source_latest_policy-2373074706-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:source_latest_policy:2373074706",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 581,
+      "promptTokens": 9025,
+      "cachedTokens": 6016,
+      "observedGeneratedTokens": 581,
+      "statusCounts": {
+        "200": 3
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-portable_memory_application-133139522-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:portable_memory_application:133139522",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 573,
+      "promptTokens": 9003,
+      "cachedTokens": 6016,
+      "observedGeneratedTokens": 573,
+      "statusCounts": {
+        "200": 3
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-portable_memory_application-133139522-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:portable_memory_application:133139522",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 620,
+      "promptTokens": 14417,
+      "cachedTokens": 9088,
+      "observedGeneratedTokens": 620,
+      "statusCounts": {
+        "200": 3
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-invalid_path_recovery-1057376266-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:invalid_path_recovery:1057376266",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 595,
+      "promptTokens": 31712,
+      "cachedTokens": 25472,
+      "observedGeneratedTokens": 595,
+      "statusCounts": {
+        "200": 7
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-invalid_path_recovery-1057376266-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:invalid_path_recovery:1057376266",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 451,
+      "promptTokens": 17037,
+      "cachedTokens": 15360,
+      "observedGeneratedTokens": 451,
+      "statusCounts": {
+        "200": 6
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-configuration_migration-2058605768-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:configuration_migration:2058605768",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 4160,
+      "promptTokens": 5420,
+      "cachedTokens": 2560,
+      "observedGeneratedTokens": 4160,
+      "statusCounts": {
+        "200": 2
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-configuration_migration-2058605768-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:configuration_migration:2058605768",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 5958,
+      "promptTokens": 25381,
+      "cachedTokens": 19072,
+      "observedGeneratedTokens": 5958,
+      "statusCounts": {
+        "200": 5
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-paged_ledger-3663287126-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:paged_ledger:3663287126",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 8039,
+      "promptTokens": 147687,
+      "cachedTokens": 111360,
+      "observedGeneratedTokens": 8039,
+      "statusCounts": {
+        "200": 9
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-paged_ledger-3663287126-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:paged_ledger:3663287126",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 4351,
+      "promptTokens": 99295,
+      "cachedTokens": 82304,
+      "observedGeneratedTokens": 4351,
+      "statusCounts": {
+        "200": 7
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-linked_workflow-4082347135-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:linked_workflow:4082347135",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 995,
+      "promptTokens": 49118,
+      "cachedTokens": 45312,
+      "observedGeneratedTokens": 995,
+      "statusCounts": {
+        "200": 15
+      },
+      "issues": [],
+      "recordedProviderStatuses": [
+        200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200,
+        200
+      ],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-linked_workflow-4082347135-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:linked_workflow:4082347135",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1069,
+      "promptTokens": 63855,
+      "cachedTokens": 57472,
+      "observedGeneratedTokens": 1069,
+      "statusCounts": {
+        "200": 13
+      },
+      "issues": [],
+      "recordedProviderStatuses": [
+        200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+      ],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-invalid_path_recovery-2312592129-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:invalid_path_recovery:2312592129",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1897,
+      "promptTokens": 32913,
+      "cachedTokens": 26240,
+      "observedGeneratedTokens": 1897,
+      "statusCounts": {
+        "200": 7
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-invalid_path_recovery-2312592129-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:invalid_path_recovery:2312592129",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 2247,
+      "promptTokens": 21665,
+      "cachedTokens": 18432,
+      "observedGeneratedTokens": 2247,
+      "statusCounts": {
+        "200": 6
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-portable_memory_application-3089998825-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:portable_memory_application:3089998825",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 776,
+      "promptTokens": 9271,
+      "cachedTokens": 6272,
+      "observedGeneratedTokens": 776,
+      "statusCounts": {
+        "200": 3
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-portable_memory_application-3089998825-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:portable_memory_application:3089998825",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 514,
+      "promptTokens": 13732,
+      "cachedTokens": 9088,
+      "observedGeneratedTokens": 514,
+      "statusCounts": {
+        "200": 3
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-customer_order_join-1795313675-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:customer_order_join:1795313675",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 2709,
+      "promptTokens": 40944,
+      "cachedTokens": 30592,
+      "observedGeneratedTokens": 2709,
+      "statusCounts": {
+        "200": 7
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-customer_order_join-1795313675-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:customer_order_join:1795313675",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1262,
+      "promptTokens": 12910,
+      "cachedTokens": 9472,
+      "observedGeneratedTokens": 1262,
+      "statusCounts": {
+        "200": 4
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-source_latest_policy-3797653785-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:source_latest_policy:3797653785",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 802,
+      "promptTokens": 9210,
+      "cachedTokens": 6144,
+      "observedGeneratedTokens": 802,
+      "statusCounts": {
+        "200": 3
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-source_latest_policy-3797653785-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:source_latest_policy:3797653785",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 651,
+      "promptTokens": 18660,
+      "cachedTokens": 13696,
+      "observedGeneratedTokens": 651,
+      "statusCounts": {
+        "200": 4
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-customer_order_join-422778574-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:customer_order_join:422778574",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 2289,
+      "promptTokens": 33772,
+      "cachedTokens": null,
+      "observedGeneratedTokens": 2289,
+      "statusCounts": {
+        "200": 6
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-customer_order_join-422778574-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:customer_order_join:422778574",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1099,
+      "promptTokens": 12257,
+      "cachedTokens": 10240,
+      "observedGeneratedTokens": 1099,
+      "statusCounts": {
+        "200": 4
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-source_latest_policy-3931310535-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:source_latest_policy:3931310535",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 851,
+      "promptTokens": 9253,
+      "cachedTokens": 6144,
+      "observedGeneratedTokens": 851,
+      "statusCounts": {
+        "200": 3
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-source_latest_policy-3931310535-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:source_latest_policy:3931310535",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 717,
+      "promptTokens": 23333,
+      "cachedTokens": 17920,
+      "observedGeneratedTokens": 717,
+      "statusCounts": {
+        "200": 5
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-missing_evidence-674707535-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:missing_evidence:674707535",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1047,
+      "promptTokens": 34757,
+      "cachedTokens": 29184,
+      "observedGeneratedTokens": 1047,
+      "statusCounts": {
+        "200": 7
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-missing_evidence-674707535-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:missing_evidence:674707535",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 880,
+      "promptTokens": 15335,
+      "cachedTokens": null,
+      "observedGeneratedTokens": 880,
+      "statusCounts": {
+        "200": 5
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-invoice_reconciliation-529225471-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:invoice_reconciliation:529225471",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 3639,
+      "promptTokens": 18310,
+      "cachedTokens": 15104,
+      "observedGeneratedTokens": 3639,
+      "statusCounts": {
+        "200": 4
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-invoice_reconciliation-529225471-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:invoice_reconciliation:529225471",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 2050,
+      "promptTokens": 34671,
+      "cachedTokens": 27264,
+      "observedGeneratedTokens": 2050,
+      "statusCounts": {
+        "200": 7
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-invoice_reconciliation-2969597570-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:invoice_reconciliation:2969597570",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 993,
+      "promptTokens": 25375,
+      "cachedTokens": 22528,
+      "observedGeneratedTokens": 993,
+      "statusCounts": {
+        "200": 5
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-invoice_reconciliation-2969597570-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:invoice_reconciliation:2969597570",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1366,
+      "promptTokens": 16217,
+      "cachedTokens": 13056,
+      "observedGeneratedTokens": 1366,
+      "statusCounts": {
+        "200": 5
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-paged_ledger-3173603762-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:paged_ledger:3173603762",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 3904,
+      "promptTokens": 80959,
+      "cachedTokens": 64256,
+      "observedGeneratedTokens": 3904,
+      "statusCounts": {
+        "200": 6
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-paged_ledger-3173603762-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:paged_ledger:3173603762",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 5243,
+      "promptTokens": 197944,
+      "cachedTokens": null,
+      "observedGeneratedTokens": 5243,
+      "statusCounts": {
+        "200": 11
+      },
+      "issues": [],
+      "recordedProviderStatuses": [
+        200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+      ],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-inventory_allocation-1331831587-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:inventory_allocation:1331831587",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 2200,
+      "promptTokens": 43738,
+      "cachedTokens": 34304,
+      "observedGeneratedTokens": 2200,
+      "statusCounts": {
+        "200": 8
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-inventory_allocation-1331831587-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:inventory_allocation:1331831587",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1233,
+      "promptTokens": 14051,
+      "cachedTokens": 10624,
+      "observedGeneratedTokens": 1233,
+      "statusCounts": {
+        "200": 4
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-customer_order_join-3247522136-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:customer_order_join:3247522136",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1074,
+      "promptTokens": 12450,
+      "cachedTokens": 7936,
+      "observedGeneratedTokens": 1074,
+      "statusCounts": {
+        "200": 4
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-customer_order_join-3247522136-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:customer_order_join:3247522136",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 966,
+      "promptTokens": 34205,
+      "cachedTokens": 30976,
+      "observedGeneratedTokens": 966,
+      "statusCounts": {
+        "200": 7
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-paged_ledger-792071485-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:paged_ledger:792071485",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 6326,
+      "promptTokens": 136652,
+      "cachedTokens": 97408,
+      "observedGeneratedTokens": 6326,
+      "statusCounts": {
+        "200": 8
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-paged_ledger-792071485-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:paged_ledger:792071485",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 5140,
+      "promptTokens": 84518,
+      "cachedTokens": 64768,
+      "observedGeneratedTokens": 5140,
+      "statusCounts": {
+        "200": 6
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-source_grounded_comparison-1108489308-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:source_grounded_comparison:1108489308",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1484,
+      "promptTokens": 14001,
+      "cachedTokens": 10752,
+      "observedGeneratedTokens": 1484,
+      "statusCounts": {
+        "200": 4
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-source_grounded_comparison-1108489308-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:source_grounded_comparison:1108489308",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1952,
+      "promptTokens": 33616,
+      "cachedTokens": 27904,
+      "observedGeneratedTokens": 1952,
+      "statusCounts": {
+        "200": 6
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-source_grounded_comparison-1148524795-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:source_grounded_comparison:1148524795",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1037,
+      "promptTokens": 34211,
+      "cachedTokens": 31232,
+      "observedGeneratedTokens": 1037,
+      "statusCounts": {
+        "200": 7
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-source_grounded_comparison-1148524795-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:source_grounded_comparison:1148524795",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 1602,
+      "promptTokens": 13617,
+      "cachedTokens": 10368,
+      "observedGeneratedTokens": 1602,
+      "statusCounts": {
+        "200": 4
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-explicit_correction-1928623996-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:explicit_correction:1928623996",
+      "mandatoryUsageKnown": false,
+      "generatedTokens": null,
+      "promptTokens": null,
+      "cachedTokens": null,
+      "observedGeneratedTokens": 0,
+      "statusCounts": {},
+      "issues": [
+        {
+          "reason": "provider request/response count differs"
+        }
+      ],
+      "recordedProviderStatuses": [502],
+      "transportErrors": [
+        {
+          "file": "001-transport-error.json",
+          "at": "2026-09-06T12:42:01.569Z",
+          "elapsedMs": 90006,
+          "message": "The operation timed out."
+        }
+      ]
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-explicit_correction-1928623996-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:explicit_correction:1928623996",
+      "mandatoryUsageKnown": false,
+      "generatedTokens": null,
+      "promptTokens": null,
+      "cachedTokens": null,
+      "observedGeneratedTokens": 562,
+      "statusCounts": {
+        "200": 5
+      },
+      "issues": [
+        {
+          "reason": "provider request/response count differs"
+        }
+      ],
+      "recordedProviderStatuses": [200, 200, 200, 502, 200, 200],
+      "transportErrors": [
+        {
+          "file": "004-transport-error.json",
+          "at": "2026-09-06T12:43:39.159Z",
+          "elapsedMs": 90012,
+          "message": "The operation timed out."
+        }
+      ]
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-missing_evidence-1249310751-r0-hermes",
+      "harness": "hermes",
+      "taskId": "development:missing_evidence:1249310751",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 686,
+      "promptTokens": 24606,
+      "cachedTokens": null,
+      "observedGeneratedTokens": 686,
+      "statusCounts": {
+        "200": 5
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200],
+      "transportErrors": []
+    },
+    {
+      "id": "development-2026-09-06T12-18-54-546Z-700c14-development-missing_evidence-1249310751-r0-atlas",
+      "harness": "atlas",
+      "taskId": "development:missing_evidence:1249310751",
+      "mandatoryUsageKnown": true,
+      "generatedTokens": 788,
+      "promptTokens": 15237,
+      "cachedTokens": null,
+      "observedGeneratedTokens": 788,
+      "statusCounts": {
+        "200": 5
+      },
+      "issues": [],
+      "recordedProviderStatuses": [200, 200, 200, 200, 200],
+      "transportErrors": []
+    }
+  ]
+}

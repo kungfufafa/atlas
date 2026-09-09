@@ -1,5 +1,7 @@
+import { createHash } from "node:crypto";
 import type {
   ChatCompletionResult,
+  ChatMessage,
   GenerateChatInput,
   ProviderCapabilityClaim,
   ProviderCapabilityClaims,
@@ -9,9 +11,19 @@ import type {
   SubscriptionLoginStartResponse,
   SubscriptionLoginStatusResponse,
 } from "@atlas/core";
-import { ensureDir, PROVIDER_CAPABILITY_IDS, toDataUrl } from "@atlas/core";
+import {
+  computeActionHash,
+  ensureDir,
+  PROVIDER_CAPABILITY_IDS,
+  toDataUrl,
+} from "@atlas/core";
 import { validateGeneratedImageOutput } from "../../../services/image-decoder-validation";
-import { buildTokenUsage } from "../../shared";
+import {
+  captureProviderFailureEvidence,
+  getProviderFailureEvidence,
+  type ProviderFailureEvidence,
+} from "../../failure-evidence";
+import { buildChatCompletionResult, buildTokenUsage } from "../../shared";
 import {
   chatgptInstallHint,
   chatgptLoginCommand,
@@ -33,6 +45,9 @@ import {
 import {
   type CodexAccount,
   CodexAppServer,
+  type CodexDynamicTool,
+  type CodexDynamicToolCall,
+  type CodexDynamicToolResult,
   type CodexGeneratedImage,
   type CodexModel,
   type CodexTurnInput,
@@ -483,7 +498,9 @@ export class ChatgptSubscriptionRuntime {
     handlers?: StreamChatHandlers,
     model?: string
   ): Promise<ChatCompletionResult> {
-    await this.requireChatgptAccount();
+    input.signal?.throwIfAborted();
+    await this.requireChatgptAccount(input.signal);
+    input.signal?.throwIfAborted();
     const cwd = subscriptionWorkspaceDir("chatgpt");
     await ensureDir(cwd);
 
@@ -494,23 +511,36 @@ export class ChatgptSubscriptionRuntime {
     const binding = conversationId
       ? await readSubscriptionSession("chatgpt", conversationId)
       : null;
+    const toolBridge = createCodexToolBridge(input);
+    const promptInput = toolBridge ? { ...input, tools: undefined } : input;
     const prompt = await formatSubscriptionPrompt(
-      input,
+      promptInput,
       "chatgpt",
       binding?.lastMessageCount
     );
-    const selectedRuntimeModel = await this.requireRuntimeModel(model);
+    input.signal?.throwIfAborted();
+    const selectedRuntimeModel = await this.requireRuntimeModel(
+      model,
+      input.signal
+    );
+    input.signal?.throwIfAborted();
     let threadId: string | null = null;
     let resume = false;
     let startedNewThread = false;
     let sessionPersisted = false;
     let persistenceCleanupAttempted = false;
+    let completedTurnEvidence: ProviderFailureEvidence | undefined;
+    let deliveryFailed = false;
+    let deliveryFailure: unknown;
     if (conversationId && binding) {
       const historyMatches =
         Boolean(binding.historyFingerprint) &&
         binding.historyFingerprint === prompt.previousHistoryFingerprint;
-      if (historyMatches && prompt.continuation) {
+      const toolCatalogMatches =
+        binding.toolCatalogFingerprint === toolBridge?.fingerprint;
+      if (historyMatches && toolCatalogMatches && prompt.continuation) {
         try {
+          input.signal?.throwIfAborted();
           threadId = await this.server.resumeThread(binding.runtimeSessionId, {
             cwd,
             developerInstructions: prompt.developerInstructions,
@@ -538,31 +568,52 @@ export class ChatgptSubscriptionRuntime {
     );
 
     try {
+      input.signal?.throwIfAborted();
       if (!threadId) {
         threadId = await this.server.startThread({
           cwd,
           developerInstructions: prompt.developerInstructions,
           ephemeral: false,
+          ...(toolBridge ? { dynamicTools: toolBridge.tools } : {}),
           model: selectedRuntimeModel.id,
         });
         startedNewThread = true;
       }
-      const bufferText = Boolean(input.tools?.length);
+      input.signal?.throwIfAborted();
+      const bufferText = !toolBridge && Boolean(input.tools?.length);
       const turn = await this.server.startTurn({
         ...thinkingOptions,
         input: turnInput,
         model: selectedRuntimeModel.id,
         onDelta: bufferText ? undefined : handlers?.onChunk,
         onThinking: handlers?.onThinking,
+        ...(toolBridge ? { onToolCall: toolBridge.execute } : {}),
         signal: input.signal,
         threadId,
       });
+      completedTurnEvidence = {
+        content: turn.text,
+        contextUsage: turn.contextUsage,
+        thinking: turn.thinking,
+        toolInputFragments: [],
+        usage: turn.usage,
+      };
       if (conversationId) {
+        const completedPrompt = toolBridge
+          ? await formatSubscriptionPrompt(
+              { ...promptInput, messages: toolBridge.history },
+              "chatgpt"
+            )
+          : prompt;
         try {
           await writeSubscriptionSession("chatgpt", conversationId, {
-            historyFingerprint: prompt.historyFingerprint,
-            lastMessageCount: input.messages.length,
+            historyFingerprint: completedPrompt.historyFingerprint,
+            lastMessageCount:
+              toolBridge?.history.length ?? input.messages.length,
             runtimeSessionId: threadId,
+            ...(toolBridge
+              ? { toolCatalogFingerprint: toolBridge.fingerprint }
+              : {}),
           });
           sessionPersisted = true;
         } catch {
@@ -584,22 +635,77 @@ export class ChatgptSubscriptionRuntime {
           }
         }
       }
-      const usage = buildTokenUsage({
-        inputTokens: turn.usage?.inputTokens,
-        outputTokens: turn.usage?.outputTokens,
-        totalTokens: turn.usage?.totalTokens,
-      });
-      const result = parseSubscriptionResponse(turn.text, turn.thinking, usage);
+      // Missing explicit input/output counters remain unknown. Do not derive a
+      // missing counter from a total, context occupancy, or a prior snapshot.
+      const inputTokens = turn.usage?.inputTokens;
+      const outputTokens = turn.usage?.outputTokens;
+      const completeUsage =
+        typeof inputTokens === "number" &&
+        Number.isSafeInteger(inputTokens) &&
+        inputTokens >= 0 &&
+        typeof outputTokens === "number" &&
+        Number.isSafeInteger(outputTokens) &&
+        outputTokens >= 0;
+      const usage = completeUsage
+        ? buildTokenUsage({
+            inputTokens,
+            outputTokens,
+            totalTokens: turn.usage?.totalTokens,
+          })
+        : undefined;
+      const result = toolBridge
+        ? buildChatCompletionResult({
+            content: turn.text,
+            thinking: turn.thinking,
+            toolCalls: [],
+            usage,
+          })
+        : parseSubscriptionResponse(turn.text, turn.thinking, usage);
       if (turn.contextUsage) {
         result.contextUsage = turn.contextUsage;
       }
+      completedTurnEvidence.toolInputFragments = result.toolCalls.map(
+        (call) => ({
+          arguments: JSON.stringify(call.arguments),
+          id: call.id,
+          name: call.name,
+        })
+      );
       if (bufferText && result.content) {
-        handlers?.onChunk(result.content);
+        try {
+          handlers?.onChunk(result.content);
+        } catch (error) {
+          deliveryFailed = true;
+          deliveryFailure = error;
+          throw error;
+        }
       }
       return result;
     } catch (error) {
+      // A reused callback error or its cause may still carry an earlier turn's
+      // counters. Once this turn completed, its snapshot is authoritative.
+      const evidence =
+        completedTurnEvidence ?? getProviderFailureEvidence(error);
+      if (evidence) {
+        captureProviderFailureEvidence(error, evidence);
+      }
       if (conversationId && (resume || sessionPersisted)) {
-        await clearSubscriptionSession("chatgpt", conversationId);
+        try {
+          await clearSubscriptionSession("chatgpt", conversationId);
+        } catch (cleanupError) {
+          // Once invalidation is durable, native deletion can retry from the
+          // cleanup queue without converting an Atlas approval into a failure.
+          if (
+            !toolBridge?.failedWith(error) ||
+            (await readSubscriptionSession("chatgpt", conversationId))
+          ) {
+            // Cleanup still supersedes the original error; copying diagnostics
+            // does not change the cleanup/approval object's identity or cause.
+            throw evidence
+              ? captureProviderFailureEvidence(cleanupError, evidence)
+              : cleanupError;
+          }
+        }
       }
       if (
         conversationId &&
@@ -615,12 +721,22 @@ export class ChatgptSubscriptionRuntime {
           (candidate) => this.server.deleteThread(candidate.runtimeSessionId)
         ).catch(() => undefined);
       }
-      if (error instanceof SubscriptionRuntimeError) {
+      if (
+        error instanceof SubscriptionRuntimeError ||
+        toolBridge?.failedWith(error) ||
+        (deliveryFailed &&
+          error === deliveryFailure &&
+          error !== null &&
+          (typeof error === "object" || typeof error === "function"))
+      ) {
         throw error;
       }
       return throwSubscriptionError(
         "chatgpt",
-        error instanceof Error ? error.message : String(error)
+        error instanceof Error ? error.message : String(error),
+        undefined,
+        error,
+        evidence
       );
     } finally {
       if (oneShotCleanupConversationId && threadId) {
@@ -634,8 +750,12 @@ export class ChatgptSubscriptionRuntime {
     }
   }
 
-  private async requireChatgptAccount(): Promise<CodexAccount> {
-    const state = await this.getAuthState();
+  private async requireChatgptAccount(
+    signal?: AbortSignal
+  ): Promise<CodexAccount> {
+    signal?.throwIfAborted();
+    const state = await waitForChatgptPreflight(this.getAuthState(), signal);
+    signal?.throwIfAborted();
     if (state.status === "not_installed") {
       throw new SubscriptionRuntimeError(
         "chatgpt",
@@ -643,7 +763,10 @@ export class ChatgptSubscriptionRuntime {
         state.message ?? chatgptInstallHint()
       );
     }
-    const account = await this.server.account();
+    const account = await waitForChatgptPreflight(
+      this.server.account(),
+      signal
+    );
     if (!account) {
       throw new SubscriptionRuntimeError(
         "chatgpt",
@@ -671,8 +794,15 @@ export class ChatgptSubscriptionRuntime {
     }
   }
 
-  private async requireRuntimeModel(model?: string): Promise<CodexModel> {
-    const models = await this.server.listModels();
+  private async requireRuntimeModel(
+    model?: string,
+    signal?: AbortSignal
+  ): Promise<CodexModel> {
+    signal?.throwIfAborted();
+    const models = await waitForChatgptPreflight(
+      this.server.listModels(),
+      signal
+    );
     const selected = model
       ? models.find((candidate) => candidate.id === model)
       : (models.find((candidate) => candidate.isDefault) ?? models[0]);
@@ -722,6 +852,120 @@ export class ChatgptSubscriptionRuntime {
 
 function createOneShotCleanupConversationId(purpose: string): string {
   return `atlas-internal:${purpose}:${crypto.randomUUID()}`;
+}
+
+interface CodexAtlasToolBridge {
+  execute: (
+    call: CodexDynamicToolCall,
+    signal: AbortSignal
+  ) => Promise<CodexDynamicToolResult>;
+  failedWith: (error: unknown) => boolean;
+  fingerprint: string;
+  history: ChatMessage[];
+  tools: CodexDynamicTool[];
+}
+
+function createCodexToolBridge(
+  input: GenerateChatInput
+): CodexAtlasToolBridge | undefined {
+  const executeToolCall = input.executeToolCall;
+  if (!(executeToolCall && input.tools?.length)) {
+    return;
+  }
+  const tools: CodexDynamicTool[] = input.tools.map((tool) => ({
+    description: tool.description,
+    inputSchema: structuredClone(tool.parameters),
+    name: tool.name,
+    type: "function",
+  }));
+  const toolNames = new Set(tools.map((tool) => tool.name));
+  if (toolNames.size !== tools.length) {
+    throw new Error("Atlas tool names must be unique for Codex registration.");
+  }
+  const history = [...input.messages];
+  const executions = new Map<
+    string,
+    { fingerprint: string; result: Promise<CodexDynamicToolResult> }
+  >();
+  let callbackFailed = false;
+  let callbackError: unknown;
+
+  const execute = async (
+    nativeCall: CodexDynamicToolCall,
+    signal: AbortSignal
+  ): Promise<CodexDynamicToolResult> => {
+    signal.throwIfAborted();
+    input.signal?.throwIfAborted();
+    if (callbackFailed) {
+      throw callbackError;
+    }
+    if (
+      !(
+        nativeCall.callId.trim() &&
+        toolNames.has(nativeCall.tool) &&
+        isToolArguments(nativeCall.arguments)
+      )
+    ) {
+      throw new Error("Codex requested an invalid or unregistered Atlas tool.");
+    }
+    const call = {
+      arguments: structuredClone(nativeCall.arguments),
+      id: nativeCall.callId,
+      name: nativeCall.tool,
+    };
+    const fingerprint = computeActionHash({
+      args: call.arguments,
+      tool: call.name,
+    });
+    const previous = executions.get(call.id);
+    if (previous) {
+      if (previous.fingerprint !== fingerprint) {
+        throw new Error("Codex reused a tool call id for another action.");
+      }
+      return await previous.result;
+    }
+    const result = (async (): Promise<CodexDynamicToolResult> => {
+      try {
+        const canonicalCall = structuredClone(call);
+        const completed = await executeToolCall(call, signal);
+        // Match the canonical Atlas callback receipt before acknowledging the
+        // native request. The final assistant reply is appended by Atlas later.
+        history.push(
+          { content: "", role: "assistant", toolCalls: [canonicalCall] },
+          {
+            content: completed.content,
+            name: canonicalCall.name,
+            role: "tool",
+            toolCallId: canonicalCall.id,
+          }
+        );
+        return {
+          contentItems: [{ text: completed.content, type: "inputText" }],
+          success: completed.success,
+        };
+      } catch (error) {
+        callbackFailed = true;
+        callbackError = error;
+        throw error;
+      }
+    })();
+    executions.set(call.id, { fingerprint, result });
+    return await result;
+  };
+
+  return {
+    execute,
+    failedWith: (error) => callbackFailed && error === callbackError,
+    fingerprint: createHash("sha256")
+      .update(JSON.stringify({ mode: "codex-dynamic-tools-v1", tools }))
+      .digest("base64url"),
+    history,
+    tools,
+  };
+}
+
+function isToolArguments(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function runtimeModelCapabilities(
@@ -861,4 +1105,38 @@ function accountState(
     ...(account.email ? { email: account.email } : {}),
     ...(account.planType ? { plan: account.planType } : {}),
   };
+}
+
+/** Stop waiting for read-only preflight; the underlying shared RPC may still settle. */
+function waitForChatgptPreflight<T>(
+  operation: Promise<T>,
+  signal?: AbortSignal
+): Promise<T> {
+  if (!signal) {
+    return operation;
+  }
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => {
+      signal.removeEventListener("abort", onAbort);
+      reject(signal.reason);
+    };
+    signal.addEventListener("abort", onAbort, { once: true });
+    if (signal.aborted) {
+      onAbort();
+    }
+    operation.then(
+      (result) => {
+        signal.removeEventListener("abort", onAbort);
+        if (signal.aborted) {
+          reject(signal.reason);
+        } else {
+          resolve(result);
+        }
+      },
+      (error: unknown) => {
+        signal.removeEventListener("abort", onAbort);
+        reject(error);
+      }
+    );
+  });
 }

@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "status": "assembled-isolated-candidate5-final-gates-pending",
+  "createdAt": "2026-09-06T19:18:52.693838+00:00",
+  "readyForReview": true,
+  "readyForRootApplication": false,
+  "sourceRoot": "/private/tmp/atlas-candidate5-integration/source",
+  "candidate3BaseSourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+  "candidate4BaseSourceHash": "d09f087f01f3a8590ce8e2faef7b9454ce4546c8912dfce38e824d95fecb2ce3",
+  "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "sourceFiles": 2078,
+  "delta": {
+    "files": 18,
+    "changedExisting": 12,
+    "new": 6,
+    "production": 11,
+    "tests": 7,
+    "candidate4TaskStopOverlap": []
+  },
+  "integrationOnlyAmendment": "Two equivalent template literals in stoppedTaskError requested by parent; original inputs preserved.",
+  "inputHashes": {
+    "candidate3-inventory.json": "0fe2faa230fa4341b8fd6c0f0a6f18ef2daf8b12c7f0b4a5fcb1cef10e9bf2b2",
+    "candidate4-combined.patch": "be636e2a9ffc9d6566d83adb663afdec0d26dc13f5a14f238d98fc48dd25eb95",
+    "candidate4-inventory.json": "ffd0f2bd9eed3a52ae48ee955903bc789c807c63dbad6338a5e8dcab042480b4",
+    "candidate4-production.patch": "7c204d3a17e88981dd9c406d4f4f1d414a2397df81cb3e0975357222ce038a17",
+    "candidate4-readiness.json": "d32d5e3a05fc8432cd9a06007fdeb7ee34e48049c46ec5caf6f65b12f1f9acc1",
+    "task-stop-combined.patch": "ae4c9aaf242b0f1a11155403c47ee27df876a0cbedb58c51f5339b880e89a62b",
+    "task-stop-inventory.json": "90fb3a692eb6e8382e9d50080db7ba097fe8d278dac9eeefaafc8ad6567f08ab",
+    "task-stop-production.patch": "92c3eaa0dc52d3a02fc2406c3e4c9e0b37ee26dab91e6ed8c02b002db83657b8",
+    "task-stop-readiness.json": "1efbcb25471adc936ff25066e2f6aa15108deebcc9113296016b3a2a7204e7ab"
+  },
+  "patches": {
+    "combined.patch": {
+      "path": "/private/tmp/atlas-candidate5-integration/combined.patch",
+      "sha256": "7d95cdbd7fb8f0d62d4319649fb072aa7c0d1af672080ce1363aaafa182154a3"
+    },
+    "production.patch": {
+      "path": "/private/tmp/atlas-candidate5-integration/production.patch",
+      "sha256": "c94d6ee4c54a6d29f57c4c4ee0fb083673e1bdb4ee31f4800daae96859ecf41b"
+    }
+  },
+  "evidenceHashes": {
+    "README.md": "4cd5a789e3113efb966c0db45a76f6ff35da79f683a39bb48178c13410507259",
+    "gate-plan.json": "c310418ce133402ec05c2aff9f4a42e882f5a5f1b3076806a4454996399c5b14",
+    "source-inventory.json": "9b83697667ffee57e19f35738bd76d09dbb7ad3c8e74b060cb847a6ad4607f32",
+    "source-verification.json": "e4662a42c350e0cb86b11961e5e204134d32750d31d6018f440b79fdc5481212",
+    "pre-apply-source-inventory.json": "7edf13d944e3b0c52f83ea252f2e9887de234d7c18365928d4cb327b8a43773a",
+    "integration-amendment.json": "219982139ddc78a417234cc17887f9422eab36bc4aef24a74f73f9ba6cd12c06",
+    "dependency-links.json": "ca767932c5c8b4b138ab6fc5da93e586abc9662ec7b0afceee83c01c1060e26c",
+    "aliases.json": "05f6d2912be092fc9571be09618b38f15c32a7307bbfb0abb90abd33d9dc1408",
+    "task-stop-check.log": "16e3edbe92d848d09637b5ec0801d01a735a0deb44c99bc4c374f0865de6acd8",
+    "task-stop-apply.log": "16e3edbe92d848d09637b5ec0801d01a735a0deb44c99bc4c374f0865de6acd8",
+    "root-combined.patch.check.log": "16e3edbe92d848d09637b5ec0801d01a735a0deb44c99bc4c374f0865de6acd8",
+    "root-production.patch.check.log": "16e3edbe92d848d09637b5ec0801d01a735a0deb44c99bc4c374f0865de6acd8"
+  },
+  "toolingHashes": {
+    ".gitignore": "efacfbfe9dc84e2c67d1db75d0f0c43b6cdd46e42d5466ae7da6678354cff808",
+    "biome.jsonc": "e35c585fdfc0d0baabfb3cffe773c5fa15a07cdc635e1774c37311a970f062f5",
+    "tsconfig.integration-scope.json": "0abd069d1be07e506085046bc2a680a8f6e03d452351a1b0992fba03224a8db4"
+  },
+  "finalGates": {
+    "status": "held-pending-parent-paid-batch-closed",
+    "regressionUnionFiles": 19,
+    "testExecutionCount": 0,
+    "productionTypecheck": null,
+    "scopedTypecheck": null,
+    "scopedLint": null,
+    "substantiveIndependentReview": "pending"
+  },
+  "verified": {
+    "rootCandidate3FilesUnchanged": 2072,
+    "candidate4FilesUnchanged": 2076,
+    "originalStopFilesUnchanged": 2078,
+    "newSourceFilesVerified": 2078,
+    "rootApplyCheckCombined": true,
+    "rootApplyCheckProduction": true,
+    "localAtlasAliases": true
+  },
+  "rootApplied": false,
+  "frozenControlsEdited": false,
+  "paidCalls": false,
+  "nativePilots": false,
+  "heavyTestsStarted": false,
+  "activeProcesses": false
+}

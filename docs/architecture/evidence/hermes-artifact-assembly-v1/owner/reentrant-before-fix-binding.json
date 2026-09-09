@@ -1,0 +1,7 @@
+{
+  "serviceSourceSha256": "40ee3c95167d471d3c3f415961382623206fd5a59d0e95498e2929d71f60192a",
+  "retainedSource": "reentrant-before-fix-service.ts.txt",
+  "testSourceSha256": "f66829efe6071bae860c3b4aee6eb3fee816fc8f9a255e5320406e12ae1104ab",
+  "logSha256": "ce061c47d6a0571ae407e5c74c051faba8afe2ab8c57bc72e3cf58963564ff5b",
+  "observed": "finalize called from trusted authorization before ordinal registration committed an empty set"
+}

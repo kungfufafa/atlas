@@ -81,7 +81,7 @@ export async function guardFilePath(
     );
   }
 
-  const cwd = resolveSafeCwd(rawCwd, allowedDirs, defaultCwd);
+  const cwd = await resolveSafeCwd(rawCwd, allowedDirs, defaultCwd);
   const expanded = expandHome(rawPath);
   const absolute = path.resolve(cwd, expanded);
 
@@ -141,7 +141,7 @@ async function resolveDirectoryPath(dir: string): Promise<string> {
   try {
     return await realpath(dir);
   } catch {
-    return path.resolve(dir);
+    return await resolvePathThroughExistingParent(dir);
   }
 }
 
@@ -170,15 +170,20 @@ function isWithinDirs(target: string, dirs: string[]): boolean {
   return false;
 }
 
-function resolveSafeCwd(
+async function resolveSafeCwd(
   rawCwd: string | undefined | null,
   allowedDirs: string[],
   defaultCwd: string
-): string {
+): Promise<string> {
   if (rawCwd == null || rawCwd.trim() === "") {
     return defaultCwd;
   }
   const expanded = expandHome(rawCwd.trim());
-  const absolute = path.resolve(expanded);
+  let absolute: string;
+  try {
+    absolute = await realpath(path.resolve(expanded));
+  } catch {
+    absolute = await resolvePathThroughExistingParent(path.resolve(expanded));
+  }
   return isWithinDirs(absolute, allowedDirs) ? absolute : defaultCwd;
 }

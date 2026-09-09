@@ -1,0 +1,701 @@
+diff --git a/apps/server/src/services/publication-turn-principal.test.ts b/apps/server/src/services/publication-turn-principal.test.ts
+new file mode 100644
+--- /dev/null
++++ b/apps/server/src/services/publication-turn-principal.test.ts
+@@ -0,0 +1,276 @@
++import { expect, test } from "bun:test";
++import { mkdtemp, rm } from "node:fs/promises";
++import { join } from "node:path";
++import { LOCAL_CLIENT_USER_ID, type ToolContext } from "@atlas/core";
++import { createSqliteDatabase, type DatabaseAdapter } from "@atlas/db";
++import { AgentService, type SessionActor } from "./agent-service";
++import { createPublicationTurnPrincipal } from "./publication-turn-principal";
++
++const orgId = "principal-org";
++const profileId = "principal-profile";
++const sessionId = "principal-session";
++const now = "2026-01-01T00:00:00.000Z";
++const owner: SessionActor = { orgRole: "member", userId: "owner" };
++const worker: SessionActor = {
++  isPlatformAdmin: true,
++  orgRole: "admin",
++  userId: LOCAL_CLIENT_USER_ID,
++  workspaceWorkerChannel: "discord",
++};
++const context: ToolContext = {
++  orgId,
++  profileId,
++  sessionId,
++  userId: owner.userId,
++};
++
++async function fixture(
++  run: (fixture: {
++    agent: AgentService;
++    db: DatabaseAdapter;
++    session(userId: string | null, channel?: string): Promise<void>;
++    principal(
++      actor?: SessionActor
++    ): ReturnType<typeof createPublicationTurnPrincipal>;
++  }) => Promise<void>
++): Promise<void> {
++  const root = await mkdtemp("/private/tmp/atlas-turn-principal-test-");
++  const sql = await createSqliteDatabase(join(root, "state.sqlite"));
++  const db = sql.adapter;
++  try {
++    await db.upsertOrganization({
++      createdAt: now,
++      id: orgId,
++      name: "Org",
++      slug: orgId,
++      updatedAt: now,
++    });
++    for (const userId of ["owner", "other", "admin", "viewer"]) {
++      await db.createUser({
++        createdAt: now,
++        email: `${userId}@example.invalid`,
++        id: userId,
++        isPlatformAdmin: false,
++        passwordHash: "fixture",
++        updatedAt: now,
++      });
++      await db.upsertOrgMember({
++        createdAt: now,
++        orgId,
++        role:
++          userId === "admin"
++            ? "admin"
++            : userId === "viewer"
++              ? "viewer"
++              : "member",
++        userId,
++      });
++    }
++    await db.upsertProfile({
++      createdAt: now,
++      id: profileId,
++      isSuper: false,
++      model: null,
++      name: "Profile",
++      orgId,
++      systemPrompt: "",
++      updatedAt: now,
++    });
++    const session = async (userId: string | null, channel = "web") => {
++      await db.upsertSession({
++        agentQuestionnaire: null,
++        agentTodos: [],
++        channel,
++        createdAt: now,
++        id: sessionId,
++        modelOverride: null,
++        orgId,
++        profileId,
++        title: null,
++        userId,
++      });
++    };
++    await session(owner.userId);
++    const agent = new AgentService(null, null, db);
++    await run({
++      agent,
++      db,
++      principal: (actor = owner) =>
++        createPublicationTurnPrincipal({ actor, agent, db, orgId, sessionId }),
++      session,
++    });
++  } finally {
++    sql.close();
++    await rm(root, { force: true, recursive: true });
++  }
++}
++
++test("human principal binds actual persisted scope and copies the authenticated actor", () =>
++  fixture(async ({ principal }) => {
++    const actor = { ...owner };
++    const p = await principal(actor);
++    actor.userId = "other";
++    actor.orgRole = "viewer";
++    expect(p.effectUserId).toBe("owner");
++    expect(p.invoker.userId).toBe("owner");
++    expect(p.scope).toEqual({ actorId: "owner", orgId, profileId, sessionId });
++    expect(Object.isFrozen(p)).toBe(true);
++    expect(Object.isFrozen(p.scope)).toBe(true);
++    expect(Object.isFrozen(p.invoker)).toBe(true);
++    await p.validateContext(context);
++    for (const action of ["publish", "read", "revoke"] as const) {
++      await p.authorizePublication(p.scope, action);
++    }
++  }));
++
++test("worker retains channel proof while effects and publications use persisted human identity", () =>
++  fixture(async ({ principal, session }) => {
++    await session("owner", "discord");
++    const actor = { ...worker };
++    const p = await principal(actor);
++    actor.workspaceWorkerChannel = "telegram";
++    expect(p.effectUserId).toBe("owner");
++    expect(p.scope.actorId).toBe("owner");
++    expect(p.invoker.userId).toBe(LOCAL_CLIENT_USER_ID);
++    expect(p.invoker.workspaceWorkerChannel).toBe("discord");
++    await p.validateContext(context);
++    await expect(
++      p.validateContext({ ...context, userId: LOCAL_CLIENT_USER_ID })
++    ).rejects.toThrow();
++    await expect(
++      p.authorizePublication(
++        { ...p.scope, actorId: LOCAL_CLIENT_USER_ID },
++        "publish"
++      )
++    ).rejects.toThrow();
++  }));
++
++for (const mismatch of ["orgId", "profileId", "sessionId", "userId"] as const) {
++  test(`effect context rejects changed ${mismatch}`, () =>
++    fixture(async ({ principal }) => {
++      const p = await principal();
++      await expect(
++        p.validateContext({ ...context, [mismatch]: "foreign" })
++      ).rejects.toThrow();
++    }));
++}
++for (const mismatch of [
++  "orgId",
++  "profileId",
++  "sessionId",
++  "actorId",
++] as const) {
++  test(`publication rejects changed ${mismatch}`, () =>
++    fixture(async ({ principal }) => {
++      const p = await principal();
++      await expect(
++        p.authorizePublication({ ...p.scope, [mismatch]: "foreign" }, "read")
++      ).rejects.toThrow();
++    }));
++}
++
++for (const actor of [
++  { orgRole: "member", userId: "other" },
++  { orgRole: "admin", userId: "admin" },
++] satisfies SessionActor[]) {
++  test(`${actor.userId} cannot publish as the session owner`, () =>
++    fixture(async ({ principal }) => {
++      await expect(principal(actor)).rejects.toThrow();
++    }));
++}
++
++test("missing session and null owner fail initial admission", () =>
++  fixture(async ({ agent, db, principal, session }) => {
++    await expect(
++      createPublicationTurnPrincipal({
++        actor: owner,
++        agent,
++        db,
++        orgId,
++        sessionId: "missing",
++      })
++    ).rejects.toThrow();
++    await expect(
++      createPublicationTurnPrincipal({
++        actor: owner,
++        agent,
++        db,
++        orgId: "foreign",
++        sessionId,
++      })
++    ).rejects.toThrow();
++    // Session upsert preserves an existing owner when given null. Create a new
++    // ownerless row instead of mistaking the upsert behavior for an ACL failure.
++    await db.deleteSession(sessionId);
++    await session(null);
++    expect((await db.getSession(sessionId))?.userId).toBeNull();
++    await expect(principal()).rejects.toThrow();
++  }));
++
++for (const mode of ["human", "worker"] as const) {
++  for (const change of ["viewer", "removed", "owner"] as const) {
++    test(`${mode} rechecks ${change} before the next actual effect`, () =>
++      fixture(async ({ principal, db, session }) => {
++        const channel = mode === "worker" ? "discord" : "web";
++        await session("owner", channel);
++        const p = await principal(mode === "worker" ? worker : owner);
++        if (change === "viewer") {
++          await db.upsertOrgMember({
++            createdAt: now,
++            orgId,
++            role: "viewer",
++            userId: "owner",
++          });
++        }
++        if (change === "removed") {
++          await db.deleteOrgMember(orgId, "owner");
++        }
++        if (change === "owner") {
++          await session("other", channel);
++        }
++        let effects = 0;
++        const execute = async () => {
++          await p.validateContext(context);
++          effects += 1;
++        };
++        await expect(execute()).rejects.toThrow();
++        expect(effects).toBe(0);
++        await expect(
++          p.authorizePublication(p.scope, "publish")
++        ).rejects.toThrow();
++      }));
++  }
++
++  test(`${mode} rejects owner change during awaited ACL callback`, () =>
++    fixture(async ({ agent, session, principal }) => {
++      const channel = mode === "worker" ? "discord" : "web";
++      await session("owner", channel);
++      const p = await principal(mode === "worker" ? worker : owner);
++      const original = agent.canAccessSession.bind(agent);
++      agent.canAccessSession = async (...args) => {
++        const allowed = await original(...args);
++        await session("other", channel);
++        return allowed;
++      };
++      let effects = 0;
++      const execute = async () => {
++        await p.validateContext(context);
++        effects += 1;
++      };
++      await expect(execute()).rejects.toThrow();
++      expect(effects).toBe(0);
++    }));
++}
++
++test("worker must match current external channel and a member owner", () =>
++  fixture(async ({ principal, session }) => {
++    await expect(principal(worker)).rejects.toThrow();
++    await session("owner", "telegram");
++    await expect(principal(worker)).rejects.toThrow();
++    await session("viewer", "discord");
++    await expect(principal(worker)).rejects.toThrow();
++    await session("owner", "discord");
++    const p = await principal(worker);
++    await session("owner", "telegram");
++    await expect(p.beforeToolCall()).rejects.toThrow();
++  }));
+diff --git a/apps/server/src/services/publication-turn-principal.ts b/apps/server/src/services/publication-turn-principal.ts
+new file mode 100644
+--- /dev/null
++++ b/apps/server/src/services/publication-turn-principal.ts
+@@ -0,0 +1,98 @@
++import { AtlasApiError, type ToolContext } from "@atlas/core";
++import type { ArtifactPublicationScope } from "@atlas/core/artifact-publication";
++import type { DatabaseAdapter } from "@atlas/db";
++import type { AgentService, SessionActor } from "./agent-service";
++import { createPublicationAuthorizer } from "./artifact-publication-access";
++
++type PublicationAction = "publish" | "read" | "revoke";
++type PublicationAccess = ArtifactPublicationScope & { actorId: string };
++
++export interface PublicationTurnPrincipal {
++  /** Server-only callback for ArtifactPublicationService. */
++  authorizePublication(
++    scope: PublicationAccess,
++    action: PublicationAction
++  ): Promise<void>;
++  /** Mandatory pre-effect guard; publication lifecycle errors alone cannot deny a tool. */
++  beforeToolCall(): Promise<void>;
++  readonly effectUserId: string;
++  readonly invoker: Readonly<SessionActor>;
++  readonly scope: Readonly<PublicationAccess>;
++  validateContext(context: Readonly<ToolContext>): Promise<void>;
++}
++
++/** Inputs must come from authenticated host code, never a model or tool payload. */
++export async function createPublicationTurnPrincipal(options: {
++  actor: SessionActor;
++  agent: Pick<AgentService, "canAccessSession">;
++  db: DatabaseAdapter;
++  orgId: string;
++  sessionId: string;
++}): Promise<PublicationTurnPrincipal> {
++  const { db, agent, orgId, sessionId } = options;
++  const invoker = Object.freeze({ ...options.actor });
++  const initial = await db.getSession(sessionId);
++  if (!initial || initial.orgId !== orgId || !initial.userId) {
++    throw new AtlasApiError("Not found", 404);
++  }
++  const effectUserId = initial.userId;
++  const profileId = initial.profileId;
++  const scope = Object.freeze({
++    actorId: effectUserId,
++    orgId,
++    profileId,
++    sessionId,
++  });
++  const authorizeInvoker = createPublicationAuthorizer(db, agent, invoker);
++  const assertCurrentSession = async (): Promise<void> => {
++    const current = await db.getSession(sessionId);
++    if (
++      !current ||
++      current.orgId !== orgId ||
++      current.profileId !== profileId ||
++      current.userId !== effectUserId
++    ) {
++      throw new AtlasApiError("Not found", 404);
++    }
++  };
++  const authorizePublication = async (
++    requested: PublicationAccess,
++    action: PublicationAction
++  ): Promise<void> => {
++    if (
++      requested.actorId !== effectUserId ||
++      requested.orgId !== orgId ||
++      requested.profileId !== profileId ||
++      requested.sessionId !== sessionId
++    ) {
++      throw new AtlasApiError("Not found", 404);
++    }
++    await assertCurrentSession();
++    // The effect user can differ from the authenticated worker. The current
++    // session ACL must still receive the original trusted worker channel proof.
++    await authorizeInvoker({ ...scope, actorId: invoker.userId }, action);
++    // ACL resolution is asynchronous; its callbacks may have changed the
++    // persisted effect identity. This is a second check, not an atomic lease.
++    await assertCurrentSession();
++  };
++  const beforeToolCall = () => authorizePublication(scope, "publish");
++  await beforeToolCall();
++  return Object.freeze({
++    authorizePublication,
++    beforeToolCall,
++    effectUserId,
++    invoker,
++    scope,
++    async validateContext(context: Readonly<ToolContext>) {
++      if (
++        context.userId !== effectUserId ||
++        context.orgId !== orgId ||
++        context.profileId !== profileId ||
++        context.sessionId !== sessionId
++      ) {
++        throw new AtlasApiError("Not found", 404);
++      }
++      await beforeToolCall();
++    },
++  });
++}
+diff --git a/packages/agent/src/chat-turn-admission.test.ts b/packages/agent/src/chat-turn-admission.test.ts
+new file mode 100644
+--- /dev/null
++++ b/packages/agent/src/chat-turn-admission.test.ts
+@@ -0,0 +1,220 @@
++import { expect, test } from "bun:test";
++import type {
++  GenerateChatInput,
++  ProviderClient,
++  ToolExecutionResult,
++} from "@atlas/core";
++import type { SendStreamOptions } from "./chat";
++import { createAgentHarness } from "./index";
++import type { ToolExecutionLifecycle } from "./tool-execution-lifecycle";
++
++for (const native of [false, true]) {
++  test(`${native ? "native" : "API"} admission observes revocation during an existing awaited guard`, async () => {
++    let allowed = true;
++    let effects = 0;
++    let calls = 0;
++    const call = { arguments: {}, id: "guard-order", name: "effect" };
++    const provider: ProviderClient = {
++      async generateChat(input) {
++        calls += 1;
++        if (native) {
++          await input.executeToolCall!(call);
++        }
++        const toolCalls = native || calls > 1 ? [] : [call];
++        return {
++          assistantMessage: {
++            content: "Fixture finished.",
++            role: "assistant",
++            toolCalls,
++          },
++          content: "Fixture finished.",
++          toolCalls,
++        };
++      },
++      async generateText() {
++        return { content: "unused" };
++      },
++      name: "openai_compatible",
++      async streamChat() {
++        throw new Error("Stream is not used by this fixture");
++      },
++    };
++    const session = createAgentHarness({
++      provider,
++      tools: [
++        {
++          description: "Record a fixture effect",
++          name: "effect",
++          parameters: { properties: {}, type: "object" },
++          async run() {
++            effects += 1;
++            return { effect: true };
++          },
++        },
++      ],
++    }).createChatSession({
++      toolContext: {
++        async beforeToolCall() {
++          await Promise.resolve();
++          allowed = false;
++        },
++      },
++    });
++    await session.send("Run the fixture", {
++      async toolExecutionGuard() {
++        await Promise.resolve();
++        if (!allowed) {
++          throw new Error("Fixture authorization revoked");
++        }
++      },
++    });
++    expect(allowed).toBe(false);
++    expect(effects).toBe(0);
++  });
++}
++
++for (const native of [false, true]) {
++  for (const streaming of [false, true]) {
++    test(`${native ? "native" : "API"} ${streaming ? "stream" : "send"} binds fresh per-turn guards and publication lifecycles`, async () => {
++      let providerRequests = 0;
++      let effects = 0;
++      let existingGuards = 0;
++      const guards: string[] = [];
++      const stages: string[] = [];
++      const completions: Array<{
++        label: string;
++        result: ToolExecutionResult<unknown>;
++      }> = [];
++      const publisherPresence: boolean[] = [];
++      const lifecycle = (label: string): ToolExecutionLifecycle => ({
++        begin() {
++          return {
++            async complete(result) {
++              completions.push({ label, result });
++            },
++            publisher: {
++              async stageBytes() {
++                stages.push(label);
++              },
++            },
++          };
++        },
++      });
++      const call = {
++        arguments: {},
++        id: "reused-native-call-id",
++        name: "effect",
++      };
++      const end = () => ({
++        assistantMessage: {
++          content: "Turn ended.",
++          role: "assistant" as const,
++        },
++        content: "Turn ended.",
++        toolCalls: [],
++      });
++      const generate = async (input: GenerateChatInput) => {
++        providerRequests += 1;
++        if (native) {
++          await input.executeToolCall!(call);
++          return end();
++        }
++        return providerRequests % 2 === 0
++          ? end()
++          : {
++              assistantMessage: {
++                content: "",
++                role: "assistant" as const,
++                toolCalls: [call],
++              },
++              content: "",
++              toolCalls: [call],
++            };
++      };
++      const provider: ProviderClient = {
++        generateChat: generate,
++        async generateText() {
++          return { content: "unused" };
++        },
++        name: "openai_compatible",
++        async streamChat(input, handlers) {
++          const result = await generate(input);
++          handlers.onChunk(result.content);
++          return result;
++        },
++      };
++      const session = createAgentHarness({
++        provider,
++        tools: [
++          {
++            description: "Record an actual fixture effect",
++            name: "effect",
++            parameters: { properties: {}, type: "object" },
++            async run(_input, context) {
++              effects += 1;
++              publisherPresence.push(Boolean(context.artifactPublisher));
++              await context.artifactPublisher?.stageBytes({
++                bytes: new Uint8Array([1]),
++                sourcePath: "artifacts/result.bin",
++              });
++              return { actualEffect: effects };
++            },
++          },
++        ],
++      }).createChatSession({
++        toolContext: {
++          async beforeToolCall() {
++            existingGuards += 1;
++          },
++          orgId: "org",
++          profileId: "profile",
++          sessionId: "session",
++          userId: "human",
++        },
++        toolExecutionLifecycle: lifecycle("session-default"),
++      });
++      const send = (options?: SendStreamOptions) =>
++        streaming
++          ? session.sendStream("Run the fixture", { onChunk() {} }, options)
++          : session.send("Run the fixture", options);
++
++      await send({
++        async toolExecutionGuard(context, name) {
++          await Promise.resolve();
++          expect(context.userId).toBe("human");
++          expect(context.sessionId).toBe("session");
++          expect(name).toBe("effect");
++          guards.push("first");
++        },
++        toolExecutionLifecycle: lifecycle("first"),
++      });
++      expect(effects).toBe(1);
++      expect(stages).toEqual(["first"]);
++
++      await send({
++        async toolExecutionGuard() {
++          await Promise.resolve();
++          guards.push("denied");
++          throw new Error("Synthetic current authorization revoked");
++        },
++        toolExecutionLifecycle: lifecycle("denied"),
++      });
++      expect(effects).toBe(1);
++      expect(completions.at(-1)?.label).toBe("denied");
++      expect(completions.at(-1)?.result.success).toBe(false);
++
++      await send({ toolExecutionLifecycle: null });
++      await send();
++      expect(effects).toBe(3);
++      expect(existingGuards).toBe(4);
++      expect(guards).toEqual(["first", "denied"]);
++      expect(stages).toEqual(["first", "session-default"]);
++      expect(publisherPresence).toEqual([true, false, true]);
++      expect(completions.map((entry) => entry.label)).toEqual([
++        "first",
++        "denied",
++        "session-default",
++      ]);
++    });
++  }
++}
+diff --git a/packages/agent/src/chat.ts b/packages/agent/src/chat.ts
+--- a/packages/agent/src/chat.ts
++++ b/packages/agent/src/chat.ts
+@@ -219,6 +219,13 @@
+   onToolLoopStop?: (reason: ToolLoopStopReason) => void | Promise<void>;
+   /** Cancels the turn: stops the tool loop and asks running tools to abort. */
+   signal?: AbortSignal;
++  /** Trusted per-turn guard, awaited in addition to the session's existing guard. */
++  toolExecutionGuard?: (
++    context: Readonly<ToolContext>,
++    toolName?: string
++  ) => Promise<void>;
++  /** Host-only per-turn lifecycle; null explicitly disables a session default. */
++  toolExecutionLifecycle?: ToolExecutionLifecycle | null;
+ }
+ 
+ export interface ResolvePromptContextInput {
+@@ -513,6 +520,15 @@
+       return pendingHistoryArchives;
+     },
+     async send(input, sendOptions) {
++      const turnToolContext = withAdditionalToolGuard(
++        toolContext,
++        sendOptions?.toolExecutionGuard
++      );
++      const turnToolLifecycle =
++        sendOptions?.toolExecutionLifecycle === null
++          ? undefined
++          : (sendOptions?.toolExecutionLifecycle ??
++            options.toolExecutionLifecycle);
+       return withTurn(async (turnLifecycle) => {
+         const signal = sendOptions?.signal
+           ? AbortSignal.any([sendOptions.signal, turnLifecycle.signal])
+@@ -538,14 +554,23 @@
+             resolvePromptContext: options.resolvePromptContext,
+             runCompaction: (force) => runCompaction(force, signal),
+             signal,
+-            toolContext,
+-            toolExecutionLifecycle: options.toolExecutionLifecycle,
++            toolContext: turnToolContext,
++            toolExecutionLifecycle: turnToolLifecycle,
+             userTimezone: options.userTimezone,
+           }
+         );
+       });
+     },
+     async sendStream(input, handlers, streamOptions) {
++      const turnToolContext = withAdditionalToolGuard(
++        toolContext,
++        streamOptions?.toolExecutionGuard
++      );
++      const turnToolLifecycle =
++        streamOptions?.toolExecutionLifecycle === null
++          ? undefined
++          : (streamOptions?.toolExecutionLifecycle ??
++            options.toolExecutionLifecycle);
+       return withTurn(async (turnLifecycle) => {
+         const signal = streamOptions?.signal
+           ? AbortSignal.any([streamOptions.signal, turnLifecycle.signal])
+@@ -572,12 +597,30 @@
+             resolvePromptContext: options.resolvePromptContext,
+             runCompaction: (force) => runCompaction(force, signal),
+             signal,
+-            toolContext,
+-            toolExecutionLifecycle: options.toolExecutionLifecycle,
++            toolContext: turnToolContext,
++            toolExecutionLifecycle: turnToolLifecycle,
+             userTimezone: options.userTimezone,
+           }
+         );
+       });
++    },
++  };
++}
++
++function withAdditionalToolGuard(
++  context: ToolContext,
++  guard: SendStreamOptions["toolExecutionGuard"]
++): ToolContext {
++  if (!guard) {
++    return context;
++  }
++  const existing = context.beforeToolCall;
++  const captured = Object.freeze({ ...context });
++  return {
++    ...context,
++    async beforeToolCall(toolName) {
++      await existing?.(toolName);
++      await guard(captured, toolName);
+     },
+   };
+ }

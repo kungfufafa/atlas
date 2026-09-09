@@ -1,0 +1,224 @@
+{
+  "createdAt": "2026-09-06T18:02:25.369505+00:00",
+  "status": "scoped-approval-no-blocker-not-applied",
+  "scope": "Independent candidate4 native memory-write audience contract review against candidate3; no claim of live recall or learning improvement",
+  "candidateBase": {
+    "sourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+    "archivePath": "/private/tmp/atlas-hermes-evaluation/candidate-v3/atlas-source.tar.gz",
+    "archiveSha256": "e738224f0c13eeae6a2a3739900f983d879f6cab88171e5bd570adc7634e09c5",
+    "allSourceMembersVerifiedBeforeEdits": true,
+    "sourceFiles": 2072
+  },
+  "reviewerSourceEdits": false,
+  "rootProductionChangesByReview": false,
+  "inferenceCalls": 0,
+  "nativeHarnessOrProviderProcesses": 0,
+  "currentStudyOutcomesRead": false,
+  "frozenControlsChanged": false,
+  "blockingFindings": [],
+  "contractAssessment": [
+    {
+      "behavior": "Reject unsupported new audience before persistence",
+      "evidence": "Only user/agent/organization are advertised for writes. Raw scope=project or any projectId presence, including empty/null/undefined, throws before schema stripping, redaction or MemoryService.writeMemory. No alternate-scope write or retry was added.",
+      "references": [
+        {
+          "path": "/private/tmp/atlas-memory-scope-candidate4/source/apps/server/src/tools/memory-tools.ts",
+          "line": 8
+        },
+        {
+          "path": "/private/tmp/atlas-memory-scope-candidate4/source/apps/server/src/tools/memory-tools.ts",
+          "line": 68
+        },
+        {
+          "path": "/private/tmp/atlas-memory-scope-candidate4/source/apps/server/src/tools/memory-tools.ts",
+          "line": 187
+        }
+      ]
+    },
+    {
+      "behavior": "Protected execution does not silently strip the legacy projectId",
+      "evidence": "Existing validateToolArguments has removeAdditional=false, coerceTypes=false and useDefaults=false, and executeProtectedTool passes the unchanged input to tool.run after validation. Thus a legacy argument can fail at schema validation before the handler, while direct native invocation reaches its explicit fail-closed guard.",
+      "references": [
+        {
+          "path": "/private/tmp/atlas-memory-scope-candidate4/source/packages/core/src/tools/schema.ts",
+          "line": 17
+        },
+        {
+          "path": "/private/tmp/atlas-memory-scope-candidate4/source/packages/core/src/tools/execution.ts",
+          "line": 475
+        },
+        {
+          "path": "/private/tmp/atlas-memory-scope-candidate4/source/packages/core/src/tools/execution.ts",
+          "line": 572
+        }
+      ]
+    },
+    {
+      "behavior": "New owner identity stays trusted and organization authority remains enforced",
+      "evidence": "resolveOwnerId uses canonical context user/org identity and current profile. Organization writes still require org admin or platform-admin authority. The handler never uses model-supplied owner IDs or project membership. Tests deny foreign user/profile/org mutation and retain supported cross-session lookup after SQLite reopen.",
+      "references": [
+        {
+          "path": "/private/tmp/atlas-memory-scope-candidate4/source/apps/server/src/tools/memory-tools.ts",
+          "line": 91
+        },
+        {
+          "path": "/private/tmp/atlas-memory-scope-candidate4/source/apps/server/src/tools/memory-tools.ts",
+          "line": 194
+        },
+        {
+          "path": "/private/tmp/atlas-memory-scope-candidate4/source/apps/server/src/tools/memory-scope-contract.test.ts",
+          "line": 91
+        }
+      ]
+    },
+    {
+      "behavior": "Legacy session-owned project compatibility is preserved",
+      "evidence": "Read scope keeps project, resolves only context.sessionId, and fails when required session/principal is absent. Unscoped visibility still uses only organization/profile/user. Existing mutation checks retain org + matching owner, so the original session may update/delete its legacy rows while other tested sessions/organizations may not.",
+      "references": [
+        {
+          "path": "/private/tmp/atlas-memory-scope-candidate4/source/apps/server/src/tools/memory-tools.ts",
+          "line": 14
+        },
+        {
+          "path": "/private/tmp/atlas-memory-scope-candidate4/source/apps/server/src/tools/memory-tools.ts",
+          "line": 103
+        },
+        {
+          "path": "/private/tmp/atlas-memory-scope-candidate4/source/apps/server/src/tools/memory-tools.ts",
+          "line": 116
+        },
+        {
+          "path": "/private/tmp/atlas-memory-scope-candidate4/source/apps/server/src/services/memory-service.ts",
+          "line": 171
+        }
+      ]
+    },
+    {
+      "behavior": "No stored-row remapping or migration",
+      "evidence": "All2072 baseline source members were hash checked. Only the one production memory-tools.ts file and the existing dedup test differ; the only added source is the scope-contract test. DB/service/schema/migrations are unchanged. SQLite reopen verifies legacy owner/content/metadata preservation and no new access path for arbitrary-owner buckets.",
+      "evidenceFile": "/private/tmp/atlas-memory-scope-candidate4-independent-review/complete-delta-proof.json"
+    }
+  ],
+  "independentGates": [
+    {
+      "name": "exact bounded four-file memory suite",
+      "command": [
+        "bun",
+        "test",
+        "./apps/server/src/tools/memory-scope-contract.test.ts",
+        "./apps/server/src/tools/memory-tools-dedup.test.ts",
+        "./apps/server/src/tools/memory-tools.test.ts",
+        "./apps/server/src/tools/memory-tools-update.test.ts"
+      ],
+      "workingDirectory": "/private/tmp/atlas-memory-scope-candidate4/source",
+      "exitCode": 0,
+      "tests": 42,
+      "failures": 0,
+      "assertions": 221,
+      "reportedElapsedMs": 1268,
+      "log": "/private/tmp/atlas-memory-scope-candidate4-independent-review/tests.log",
+      "sha256": "903f8a1a50bc200fc8298ccaff2fec86d6d3710fa2707bef10436b0ddaf1459f"
+    },
+    {
+      "name": "scoped TypeScript",
+      "command": [
+        "bun",
+        "x",
+        "--no-install",
+        "tsc",
+        "-p",
+        "./tsconfig.scope.json",
+        "--pretty",
+        "false"
+      ],
+      "workingDirectory": "/private/tmp/atlas-memory-scope-candidate4/source",
+      "exitCode": 0,
+      "log": "/private/tmp/atlas-memory-scope-candidate4-independent-review/typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "scratch source alias resolution",
+      "evidence": "/private/tmp/atlas-memory-scope-candidate4-independent-review/aliases.json",
+      "resolved": {
+        "@atlas/core": "file:///private/tmp/atlas-memory-scope-candidate4/source/packages/core/src/index.ts",
+        "@atlas/db": "file:///private/tmp/atlas-memory-scope-candidate4/source/packages/db/src/index.ts",
+        "@atlas/core/tools/schema": "file:///private/tmp/atlas-memory-scope-candidate4/source/packages/core/src/tools/schema.ts"
+      },
+      "sha256": "acd5a0454f4140548eb5c02c730f996f94023ca458fa5f2aaef3947f55638886"
+    },
+    {
+      "name": "complete source delta hash audit",
+      "evidence": "/private/tmp/atlas-memory-scope-candidate4-independent-review/complete-delta-proof.json",
+      "sha256": "ab024105762f9f5a20bfd227442b6c8f67f4f3021494ebe83277236d7b338ce8",
+      "result": {
+        "baseMembersChecked": 2072,
+        "changedBaseMembers": [
+          "apps/server/src/tools/memory-tools-dedup.test.ts",
+          "apps/server/src/tools/memory-tools.ts"
+        ],
+        "newSourceMembers": [
+          "apps/server/src/tools/memory-scope-contract.test.ts"
+        ],
+        "elapsedSeconds": 0.3389974159945268,
+        "baselineInventoryHash": "1845cce0ec4e1ddf1bc88a55b08137b9e65a2aa8ae9ac75c2101c8e93ddeff13"
+      }
+    },
+    {
+      "name": "combined patch read-only application check",
+      "command": [
+        "git",
+        "apply",
+        "--check",
+        "/private/tmp/atlas-memory-scope-candidate4/combined.patch"
+      ],
+      "workingDirectory": "/Users/apriansyahrs/Documents/Code/atlas",
+      "exitCode": 0,
+      "filesApplied": 0
+    }
+  ],
+  "baselineEvidence": {
+    "source": "author-provided before-with-dependencies.log",
+    "reviewed": true,
+    "independentlyRerunBefore": false,
+    "pass": 6,
+    "fail": 2,
+    "interpretation": "Both adapter rejection cases previously resolved rather than rejecting. Other compatibility cases passed. This is a behavior reproduction, not a model-performance experiment.",
+    "path": "/private/tmp/atlas-memory-scope-candidate4/before-with-dependencies.log",
+    "sha256": "da274e2801530744dc246b1bec02a645c5888d76bda695f9388c881ee1e77eb7"
+  },
+  "patches": {
+    "production": {
+      "path": "/private/tmp/atlas-memory-scope-candidate4/production.patch",
+      "sha256": "43de40fdbdef32e153040138979a5776c23da9727f8d0d353e0585c9ee8ef03d"
+    },
+    "tests": {
+      "path": "/private/tmp/atlas-memory-scope-candidate4/tests.patch",
+      "sha256": "c20244c9661e47e357828b4e6d096d83151f4c53acd90b5525739328f7623359"
+    },
+    "combined": {
+      "path": "/private/tmp/atlas-memory-scope-candidate4/combined.patch",
+      "sha256": "263b1308c28cd061716a2ed1531ec298fd23d4540d4770b2cb2a4b8030ec26f5"
+    }
+  },
+  "reviewedSourceHashes": {
+    "apps/server/src/tools/memory-tools.ts": "2b9eec9d95634ed64c05e54d1ab73ed759098f2f3f5ed5c4e51b219e9e672e0b",
+    "apps/server/src/tools/memory-tools-dedup.test.ts": "b50d9bfeac4c67659aec88123e4350337f3076850c3d36e3404998dde84baa4c",
+    "apps/server/src/tools/memory-scope-contract.test.ts": "4c16434eedef9f26b68fb06ab3355a692cc12bf9cb11437b7e659e624020b7c9"
+  },
+  "readinessSha256": "42290b0faeafa7fd3741ebcf5385dcfaf3c8dc4a71ad5307df468c60b47d8b35",
+  "designSha256": "3c87a0d7f8cda15af4327dffdf92ec258d66c4ddf5b350ab9f42547c9a165ff6",
+  "sourceProof": {
+    "path": "/private/tmp/atlas-memory-scope-candidate4-independent-review/source-proof.json",
+    "sha256": "306cddfe324b0c72e53262d3ae4b9168a59285a0db89b2bd4ad212bf0a57a2e0"
+  },
+  "compatibilityAndScopeLimits": [
+    "Intentional native API contraction: new project-scope writes are rejected, not automatically mapped or migrated. Existing callers using project/projectId must choose an authorized supported audience explicitly.",
+    "Legacy arbitrary-project-owner rows remain stored and receive no newly added repair/retrieval path; this patch does not solve durable shared-project membership.",
+    "Legacy session identity is not a newly established per-user privacy boundary. Trusted session authorization remains the outer caller responsibility, as before.",
+    "Direct lower-level MemoryService/database project operations remain unchanged for trusted callers.",
+    "Tests exercise real native tool handlers with trusted synthetic ToolContext plus in-memory and reopened SQLite adapters; no full AgentService/native account lifecycle or provider was run.",
+    "No production-wide or native-heavy suite was run while the paid candidate3 study was active. Root owns later integration and candidate freeze.",
+    "design.md retains its historical pre-approval status wording; root authorization and newer readiness govern the already prepared isolated implementation. This is a documentation checkpoint, not a request to seek permission again.",
+    "Current candidate3 source/study controls and scores remain unchanged; the repair alone is not evidence of live learning or recall gains."
+  ]
+}

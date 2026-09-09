@@ -8,7 +8,9 @@ import {
   withOrgId,
 } from "./test-org-helpers";
 
-export type AppFetch = { fetch: typeof fetch };
+export type AppFetch = {
+  fetch(request: Request): Response | Promise<Response>;
+};
 
 export function extractSetCookies(response: Response): string[] {
   const headers = response.headers as Headers & {

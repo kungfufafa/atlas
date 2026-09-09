@@ -4,6 +4,7 @@ import type {
 } from "@atlas/core/contract";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { ChannelNativePolicyDialog } from "@/components/ChannelNativePolicyDialog";
 import { SETTINGS_CARD_LOADING_SKELETON } from "@/components/integration-settings.shared";
 import { WhatsAppSettingsCardContent } from "@/components/whatsapp-settings-card-content";
 import { formatWhatsAppDevicePairingCode } from "@/components/whatsapp-settings-linking.shared";
@@ -468,9 +469,15 @@ function useWhatsAppSettingsCard({
       <div className="space-y-2">
         <p className="text-muted-foreground text-xs">{headerSubtitle}</p>
         {content}
+        <ChannelNativePolicyDialog channel="whatsapp" />
       </div>
     );
   }
 
-  return content;
+  return (
+    <>
+      {content}
+      <ChannelNativePolicyDialog channel="whatsapp" />
+    </>
+  );
 }

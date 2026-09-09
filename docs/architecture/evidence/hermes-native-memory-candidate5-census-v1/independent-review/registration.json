@@ -1,0 +1,2922 @@
+{
+  "at": "2026-09-06T23:57:12.768713+00:00",
+  "transcriptsOpenedBeforeRegistration": false,
+  "inventoryPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/peer-review-inventory-64.json",
+  "inventorySha256": "507fcde2369701f9bb7fe22040d08d4814ca2cd6834edb584e89de34a1dd8ebd",
+  "checkpoint": {
+    "path": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/audit-checkpoints/20260906T235306043718Z.json",
+    "sha256": "1de0db351aa38c8b0bf2378ca632995ecf1d320a26f43437c2a122ec05aad66b",
+    "at": "2026-09-06T23:53:06.043718+00:00",
+    "counts": {
+      "warm": {
+        "scheduled": 64,
+        "endedCached": 46,
+        "reviewed": 46,
+        "pendingReviewOfCached": []
+      },
+      "controls": {
+        "scheduled": 32,
+        "endedCached": 18,
+        "reviewed": 18,
+        "pendingReviewOfCached": []
+      }
+    }
+  },
+  "sourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "scope": "16 reviewed warm arms plus 4 controls; read-only public process audit, no rescoring. Post-outcome stratification, not blinded, prevalence estimate, paired performance estimate, or replacement for full96 census.",
+  "warmRule": "From complete reviewed Atlas/Hermes pairs: one pair per each of eight families, four pairs per condition, at least one finding and one no-finding arm in each harness/condition cell. Minimize distance of total finding arms from 8, then maximize distinct existing finding kinds for diagnostic coverage, then lowest SHA256 of atlas-c5-peer-v1 plus sorted exact IDs. All criteria use metadata only.",
+  "validWarmSelections": 108,
+  "controlRule": "One complete explicit-memory cold pair and one complete native-default identity pair; require one finding and one no-finding arm per harness, then lowest SHA256 of atlas-c5-control-peer-v1 plus sorted IDs. Report separately.",
+  "validControlSelections": 2,
+  "warm": [
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-atlas",
+      "record": {
+        "at": "2026-09-06T23:43:58.033Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "native-default",
+        "event": "end",
+        "family": "corrected_fact",
+        "harness": "atlas",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-atlas",
+        "identitySha256": "8c966cebdf886e7518e87854d03053f5a2bf43aabbf3ce8c1219b74632220341",
+        "pairId": "memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0",
+        "phase": "development",
+        "recallIdentity": "same-owner",
+        "repetition": 0,
+        "seed": 2953,
+        "stratum": "warm",
+        "taskId": "memory-v1/development/corrected_fact/2953/native-default",
+        "transportId": "transport-01096b7f-11c2-4fbb-9345-fdb00a61a50d",
+        "diagnosticOnly": false,
+        "elapsedMs": 62525,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": true,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": true,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-gTT3Z6",
+        "providerStatuses": [200, 200, 200, 200, 200, 200, 200],
+        "status": "completed",
+        "totalAttemptElapsedMs": 62530,
+        "transferEvaluation": null,
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 18688,
+          "costUsd": null,
+          "generatedTokens": 2132,
+          "missingUsage": false,
+          "observedGeneratedTokens": 2132,
+          "observedPromptTokens": 37580,
+          "promptTokens": 37580,
+          "providerRequests": 7
+        },
+        "usageEvidence": {
+          "cachedTokens": 18688,
+          "finalized": true,
+          "generatedTokens": 2132,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 2132,
+          "observedPromptTokens": 37580,
+          "promptTokens": 37580,
+          "requests": [
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 124,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 6831,
+              "status": 200
+            },
+            {
+              "cachedTokens": 2048,
+              "generatedTokens": 52,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 6985,
+              "status": 200
+            },
+            {
+              "cachedTokens": 64,
+              "generatedTokens": 543,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 157,
+              "status": 200
+            },
+            {
+              "cachedTokens": 6976,
+              "generatedTokens": 288,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 7089,
+              "status": 200
+            },
+            {
+              "cachedTokens": 2048,
+              "generatedTokens": 139,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 7606,
+              "status": 200
+            },
+            {
+              "cachedTokens": 7552,
+              "generatedTokens": 219,
+              "index": 6,
+              "kind": "success",
+              "promptTokens": 8725,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 767,
+              "index": 7,
+              "kind": "success",
+              "promptTokens": 187,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": false,
+      "findingKinds": [],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-atlas.json",
+      "manualSha256": "6864c36085733d2b5fb40e199f1f5f500c746716bb5e44f4b09e57a8d6a2e286",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-atlas.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-atlas.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 3,
+        "nativeEvents": 4,
+        "snapshots": 4,
+        "publicAssistantEntries": 3,
+        "toolBearingPublicAssistantEntries": 0
+      }
+    },
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes",
+      "record": {
+        "at": "2026-09-06T23:44:16.774Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "native-default",
+        "event": "end",
+        "family": "corrected_fact",
+        "harness": "hermes",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes",
+        "identitySha256": "15172c410744a5670ac7b2cf1394a1658285bed681bc19a5cdbf4808ecb53485",
+        "pairId": "memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0",
+        "phase": "development",
+        "recallIdentity": "same-owner",
+        "repetition": 0,
+        "seed": 2953,
+        "stratum": "warm",
+        "taskId": "memory-v1/development/corrected_fact/2953/native-default",
+        "transportId": "transport-05729e36-ff17-4556-8010-5abf957a3e3c",
+        "diagnosticOnly": false,
+        "elapsedMs": 18733,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": true,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": true,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-jPiC2V",
+        "providerStatuses": [200, 200, 200, 200, 200, 200, 200],
+        "status": "completed",
+        "totalAttemptElapsedMs": 18737,
+        "transferEvaluation": null,
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 11392,
+          "costUsd": null,
+          "generatedTokens": 556,
+          "missingUsage": false,
+          "observedGeneratedTokens": 556,
+          "observedPromptTokens": 20056,
+          "promptTokens": 20056,
+          "providerRequests": 7
+        },
+        "usageEvidence": {
+          "cachedTokens": 11392,
+          "finalized": true,
+          "generatedTokens": 556,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 556,
+          "observedPromptTokens": 20056,
+          "promptTokens": 20056,
+          "requests": [
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 14,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 259,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 68,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 3695,
+              "status": 200
+            },
+            {
+              "cachedTokens": 3648,
+              "generatedTokens": 151,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 3815,
+              "status": 200
+            },
+            {
+              "cachedTokens": 3776,
+              "generatedTokens": 86,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 3995,
+              "status": 200
+            },
+            {
+              "cachedTokens": 3968,
+              "generatedTokens": 114,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 4159,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 16,
+              "index": 6,
+              "kind": "success",
+              "promptTokens": 292,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 107,
+              "index": 7,
+              "kind": "success",
+              "promptTokens": 3841,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": true,
+      "findingKinds": ["tool-argument-error-repaired-before-claim"],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes.json",
+      "manualSha256": "11841e129b70b6665156299d1b2880c0e0a7655d0f01dc3db64d544f21ff8f8b",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 3,
+        "nativeEvents": 6,
+        "snapshots": 10,
+        "publicAssistantEntries": 4,
+        "toolBearingPublicAssistantEntries": 0
+      }
+    },
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-atlas",
+      "record": {
+        "at": "2026-09-06T23:47:14.054Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "native-default",
+        "event": "end",
+        "family": "cross_language",
+        "harness": "atlas",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-atlas",
+        "identitySha256": "b8c403f38040f81271f559370c411d35d3903312b37695c6ac1a65ec2dc5b253",
+        "pairId": "memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0",
+        "phase": "development",
+        "recallIdentity": "same-owner",
+        "repetition": 0,
+        "seed": 1907,
+        "stratum": "warm",
+        "taskId": "memory-v1/development/cross_language/1907/native-default",
+        "transportId": "transport-b434281d-d2a2-4c87-be67-22ed885ca68a",
+        "diagnosticOnly": false,
+        "elapsedMs": 32405,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": true,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": true,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-hLaSEg",
+        "providerStatuses": [200, 200, 200, 200, 200],
+        "status": "completed",
+        "totalAttemptElapsedMs": 32408,
+        "transferEvaluation": null,
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 6144,
+          "costUsd": null,
+          "generatedTokens": 2094,
+          "missingUsage": false,
+          "observedGeneratedTokens": 2094,
+          "observedPromptTokens": 23262,
+          "promptTokens": 23262,
+          "providerRequests": 5
+        },
+        "usageEvidence": {
+          "cachedTokens": 6144,
+          "finalized": true,
+          "generatedTokens": 2094,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 2094,
+          "observedPromptTokens": 23262,
+          "promptTokens": 23262,
+          "requests": [
+            {
+              "cachedTokens": 2048,
+              "generatedTokens": 403,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 6866,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 920,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 350,
+              "status": 200
+            },
+            {
+              "cachedTokens": 2048,
+              "generatedTokens": 119,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 7614,
+              "status": 200
+            },
+            {
+              "cachedTokens": 2048,
+              "generatedTokens": 138,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 8227,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 514,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 205,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": false,
+      "findingKinds": [],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-atlas.json",
+      "manualSha256": "0d22e1487b2c3c868f43e31c05c2b9217c77a8f3d61d15f76288709cc103c720",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-atlas.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-atlas.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 2,
+        "nativeEvents": 2,
+        "snapshots": 4,
+        "publicAssistantEntries": 2,
+        "toolBearingPublicAssistantEntries": 0
+      }
+    },
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes",
+      "record": {
+        "at": "2026-09-06T23:46:41.645Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "native-default",
+        "event": "end",
+        "family": "cross_language",
+        "harness": "hermes",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes",
+        "identitySha256": "001eac1219bc1db07462ad25324d9af69395d8e3e6c9b22c7d9ed66e8172664f",
+        "pairId": "memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0",
+        "phase": "development",
+        "recallIdentity": "same-owner",
+        "repetition": 0,
+        "seed": 1907,
+        "stratum": "warm",
+        "taskId": "memory-v1/development/cross_language/1907/native-default",
+        "transportId": "transport-ae46f155-076b-4502-abb5-dfe2e0e7880b",
+        "diagnosticOnly": false,
+        "elapsedMs": 27691,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": true,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": true,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-ENcnog",
+        "providerStatuses": [200, 200, 200, 200, 200, 200, 200, 200],
+        "status": "completed",
+        "totalAttemptElapsedMs": 27693,
+        "transferEvaluation": null,
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 18048,
+          "costUsd": null,
+          "generatedTokens": 1188,
+          "missingUsage": false,
+          "observedGeneratedTokens": 1188,
+          "observedPromptTokens": 28367,
+          "promptTokens": 28367,
+          "providerRequests": 8
+        },
+        "usageEvidence": {
+          "cachedTokens": 18048,
+          "finalized": true,
+          "generatedTokens": 1188,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 1188,
+          "observedPromptTokens": 28367,
+          "promptTokens": 28367,
+          "requests": [
+            {
+              "cachedTokens": 192,
+              "generatedTokens": 22,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 294,
+              "status": 200
+            },
+            {
+              "cachedTokens": 192,
+              "generatedTokens": 721,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 3726,
+              "status": 200
+            },
+            {
+              "cachedTokens": 192,
+              "generatedTokens": 17,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 300,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 84,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 3732,
+              "status": 200
+            },
+            {
+              "cachedTokens": 3712,
+              "generatedTokens": 44,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 4028,
+              "status": 200
+            },
+            {
+              "cachedTokens": 3968,
+              "generatedTokens": 65,
+              "index": 6,
+              "kind": "success",
+              "promptTokens": 4840,
+              "status": 200
+            },
+            {
+              "cachedTokens": 4800,
+              "generatedTokens": 99,
+              "index": 7,
+              "kind": "success",
+              "promptTokens": 5047,
+              "status": 200
+            },
+            {
+              "cachedTokens": 4992,
+              "generatedTokens": 136,
+              "index": 8,
+              "kind": "success",
+              "promptTokens": 6400,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": false,
+      "findingKinds": [],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes.json",
+      "manualSha256": "0641567d22f26a7e9b897e9b38854276121f148abdc8bf0486404823691d2667",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 2,
+        "nativeEvents": 10,
+        "snapshots": 10,
+        "publicAssistantEntries": 2,
+        "toolBearingPublicAssistantEntries": 0
+      }
+    },
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-atlas",
+      "record": {
+        "at": "2026-09-06T23:40:46.150Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "explicit-memory",
+        "event": "end",
+        "family": "distractor_recall",
+        "harness": "atlas",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-atlas",
+        "identitySha256": "4edad18fbc7e91e62c3c0e814878fbb036b936c88972791914f197e818ed5d52",
+        "pairId": "memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0",
+        "phase": "development",
+        "recallIdentity": "same-owner",
+        "repetition": 0,
+        "seed": 2953,
+        "stratum": "warm",
+        "taskId": "memory-v1/development/distractor_recall/2953/explicit-memory",
+        "transportId": "transport-05b7f430-40c6-4729-ac9a-0f36f3fee602",
+        "diagnosticOnly": false,
+        "elapsedMs": 81533,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": true,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": true,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-Wjvl95",
+        "providerStatuses": [
+          200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200,
+          200
+        ],
+        "status": "completed",
+        "totalAttemptElapsedMs": 81536,
+        "transferEvaluation": null,
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 99584,
+          "costUsd": null,
+          "generatedTokens": 3103,
+          "missingUsage": false,
+          "observedGeneratedTokens": 3103,
+          "observedPromptTokens": 122387,
+          "promptTokens": 122387,
+          "providerRequests": 15
+        },
+        "usageEvidence": {
+          "cachedTokens": 99584,
+          "finalized": true,
+          "generatedTokens": 3103,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 3103,
+          "observedPromptTokens": 122387,
+          "promptTokens": 122387,
+          "requests": [
+            {
+              "cachedTokens": 4096,
+              "generatedTokens": 213,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 8243,
+              "status": 200
+            },
+            {
+              "cachedTokens": 8192,
+              "generatedTokens": 91,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 8489,
+              "status": 200
+            },
+            {
+              "cachedTokens": 8448,
+              "generatedTokens": 145,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 8774,
+              "status": 200
+            },
+            {
+              "cachedTokens": 8768,
+              "generatedTokens": 331,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 9094,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 566,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 311,
+              "status": 200
+            },
+            {
+              "cachedTokens": 8768,
+              "generatedTokens": 64,
+              "index": 6,
+              "kind": "success",
+              "promptTokens": 9624,
+              "status": 200
+            },
+            {
+              "cachedTokens": 4096,
+              "generatedTokens": 203,
+              "index": 7,
+              "kind": "success",
+              "promptTokens": 9930,
+              "status": 200
+            },
+            {
+              "cachedTokens": 9920,
+              "generatedTokens": 108,
+              "index": 8,
+              "kind": "success",
+              "promptTokens": 10308,
+              "status": 200
+            },
+            {
+              "cachedTokens": 10304,
+              "generatedTokens": 49,
+              "index": 9,
+              "kind": "success",
+              "promptTokens": 10615,
+              "status": 200
+            },
+            {
+              "cachedTokens": 10560,
+              "generatedTokens": 155,
+              "index": 10,
+              "kind": "success",
+              "promptTokens": 10983,
+              "status": 200
+            },
+            {
+              "cachedTokens": 10944,
+              "generatedTokens": 95,
+              "index": 11,
+              "kind": "success",
+              "promptTokens": 11313,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 60,
+              "index": 12,
+              "kind": "success",
+              "promptTokens": 7796,
+              "status": 200
+            },
+            {
+              "cachedTokens": 7744,
+              "generatedTokens": 169,
+              "index": 13,
+              "kind": "success",
+              "promptTokens": 8250,
+              "status": 200
+            },
+            {
+              "cachedTokens": 7744,
+              "generatedTokens": 235,
+              "index": 14,
+              "kind": "success",
+              "promptTokens": 8454,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 619,
+              "index": 15,
+              "kind": "success",
+              "promptTokens": 203,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": false,
+      "findingKinds": [],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "manualSha256": "8afc7769b6180427c0941151ceb5a860cfa976b7f6e4e03fb958e8f6c99956bc",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 4,
+        "nativeEvents": 9,
+        "snapshots": 4,
+        "publicAssistantEntries": 4,
+        "toolBearingPublicAssistantEntries": 0
+      }
+    },
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "record": {
+        "at": "2026-09-06T23:39:24.612Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "explicit-memory",
+        "event": "end",
+        "family": "distractor_recall",
+        "harness": "hermes",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes",
+        "identitySha256": "c38b3260a3e2ad5678ae7622a395148949f55a10d20bf61851aae7f8d5660cf9",
+        "pairId": "memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0",
+        "phase": "development",
+        "recallIdentity": "same-owner",
+        "repetition": 0,
+        "seed": 2953,
+        "stratum": "warm",
+        "taskId": "memory-v1/development/distractor_recall/2953/explicit-memory",
+        "transportId": "transport-d9df8b23-9902-4dfa-9fd5-31bfe94be481",
+        "diagnosticOnly": false,
+        "elapsedMs": 46011,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": true,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": true,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-VU6Hyj",
+        "providerStatuses": [
+          200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200
+        ],
+        "status": "completed",
+        "totalAttemptElapsedMs": 46016,
+        "transferEvaluation": null,
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 36544,
+          "costUsd": null,
+          "generatedTokens": 1857,
+          "missingUsage": false,
+          "observedGeneratedTokens": 1857,
+          "observedPromptTokens": 50213,
+          "promptTokens": 50213,
+          "providerRequests": 12
+        },
+        "usageEvidence": {
+          "cachedTokens": 36544,
+          "finalized": true,
+          "generatedTokens": 1857,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 1857,
+          "observedPromptTokens": 50213,
+          "promptTokens": 50213,
+          "requests": [
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 348,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 3727,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 15,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 301,
+              "status": 200
+            },
+            {
+              "cachedTokens": 3712,
+              "generatedTokens": 490,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 4152,
+              "status": 200
+            },
+            {
+              "cachedTokens": 4096,
+              "generatedTokens": 234,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 4841,
+              "status": 200
+            },
+            {
+              "cachedTokens": 4800,
+              "generatedTokens": 126,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 5154,
+              "status": 200
+            },
+            {
+              "cachedTokens": 5120,
+              "generatedTokens": 223,
+              "index": 6,
+              "kind": "success",
+              "promptTokens": 5479,
+              "status": 200
+            },
+            {
+              "cachedTokens": 5440,
+              "generatedTokens": 124,
+              "index": 7,
+              "kind": "success",
+              "promptTokens": 5781,
+              "status": 200
+            },
+            {
+              "cachedTokens": 192,
+              "generatedTokens": 16,
+              "index": 8,
+              "kind": "success",
+              "promptTokens": 298,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 96,
+              "index": 9,
+              "kind": "success",
+              "promptTokens": 3969,
+              "status": 200
+            },
+            {
+              "cachedTokens": 3968,
+              "generatedTokens": 45,
+              "index": 10,
+              "kind": "success",
+              "promptTokens": 4235,
+              "status": 200
+            },
+            {
+              "cachedTokens": 4224,
+              "generatedTokens": 73,
+              "index": 11,
+              "kind": "success",
+              "promptTokens": 5048,
+              "status": 200
+            },
+            {
+              "cachedTokens": 4992,
+              "generatedTokens": 67,
+              "index": 12,
+              "kind": "success",
+              "promptTokens": 7228,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": true,
+      "findingKinds": [
+        "unsupported-total-and-minimum-as-inventory",
+        "incorrect-ancillary-arithmetic"
+      ],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "manualSha256": "a24513df82f47e3c6411e73c90ed057300bb445fd1733a8fa60b5f0586f299a8",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 4,
+        "nativeEvents": 18,
+        "snapshots": 10,
+        "publicAssistantEntries": 7,
+        "toolBearingPublicAssistantEntries": 0
+      }
+    },
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas",
+      "record": {
+        "at": "2026-09-06T23:08:53.692Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "explicit-memory",
+        "event": "end",
+        "family": "durable_fact",
+        "harness": "atlas",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas",
+        "identitySha256": "7e1f419cff9e39b7bc26549350933e3a20ade28cf5c3e3fe6a6f984ca54ab229",
+        "pairId": "memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0",
+        "phase": "development",
+        "recallIdentity": "same-owner",
+        "repetition": 0,
+        "seed": 1907,
+        "stratum": "warm",
+        "taskId": "memory-v1/development/durable_fact/1907/explicit-memory",
+        "transportId": "transport-7b473a89-3aee-44b5-b0a4-cb88d89cb7a1",
+        "diagnosticOnly": false,
+        "elapsedMs": 56280,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": true,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": true,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-cqT7im",
+        "providerStatuses": [200, 200, 200, 200, 200],
+        "status": "completed",
+        "totalAttemptElapsedMs": 56284,
+        "transferEvaluation": null,
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 8192,
+          "costUsd": null,
+          "generatedTokens": 1851,
+          "missingUsage": false,
+          "observedGeneratedTokens": 1851,
+          "observedPromptTokens": 24932,
+          "promptTokens": 24932,
+          "providerRequests": 5
+        },
+        "usageEvidence": {
+          "cachedTokens": 8192,
+          "finalized": true,
+          "generatedTokens": 1851,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 1851,
+          "observedPromptTokens": 24932,
+          "promptTokens": 24932,
+          "requests": [
+            {
+              "cachedTokens": 4096,
+              "generatedTokens": 163,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 8247,
+              "status": 200
+            },
+            {
+              "cachedTokens": 4096,
+              "generatedTokens": 284,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 8461,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 686,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 310,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 145,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 7707,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 573,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 207,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": false,
+      "findingKinds": [],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "manualSha256": "607c2388256d1eac2d2bdda1ca1133d7539cc661bf9be044d2f9661b952097af",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 2,
+        "nativeEvents": 1,
+        "snapshots": 4,
+        "publicAssistantEntries": 2,
+        "toolBearingPublicAssistantEntries": 0
+      }
+    },
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "record": {
+        "at": "2026-09-06T23:07:57.407Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "explicit-memory",
+        "event": "end",
+        "family": "durable_fact",
+        "harness": "hermes",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes",
+        "identitySha256": "0de221af217cc7be90cac2efdc5905479bb15b71559baaf141318bb2de7807ef",
+        "pairId": "memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0",
+        "phase": "development",
+        "recallIdentity": "same-owner",
+        "repetition": 0,
+        "seed": 1907,
+        "stratum": "warm",
+        "taskId": "memory-v1/development/durable_fact/1907/explicit-memory",
+        "transportId": "transport-4a15d2ff-a24e-48bf-b8ef-71d836d7b7b0",
+        "diagnosticOnly": false,
+        "elapsedMs": 27151,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": true,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": true,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-BDj1sy",
+        "providerStatuses": [200, 200, 200, 200, 200],
+        "status": "completed",
+        "totalAttemptElapsedMs": 27154,
+        "transferEvaluation": null,
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 4096,
+          "costUsd": null,
+          "generatedTokens": 702,
+          "missingUsage": false,
+          "observedGeneratedTokens": 702,
+          "observedPromptTokens": 12229,
+          "promptTokens": 12229,
+          "providerRequests": 5
+        },
+        "usageEvidence": {
+          "cachedTokens": 4096,
+          "finalized": true,
+          "generatedTokens": 702,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 702,
+          "observedPromptTokens": 12229,
+          "promptTokens": 12229,
+          "requests": [
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 15,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 305,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 233,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 3737,
+              "status": 200
+            },
+            {
+              "cachedTokens": 3712,
+              "generatedTokens": 293,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 4047,
+              "status": 200
+            },
+            {
+              "cachedTokens": 192,
+              "generatedTokens": 17,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 302,
+              "status": 200
+            },
+            {
+              "cachedTokens": 192,
+              "generatedTokens": 144,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 3838,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": false,
+      "findingKinds": [],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "manualSha256": "cada25bb0da6db0f6e4c8af8bcfac0bfb415c31e5469cd782b986dac563d460e",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 2,
+        "nativeEvents": 4,
+        "snapshots": 10,
+        "publicAssistantEntries": 2,
+        "toolBearingPublicAssistantEntries": 0
+      }
+    },
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas",
+      "record": {
+        "at": "2026-09-06T23:22:13.018Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "explicit-memory",
+        "event": "end",
+        "family": "episodic_decision",
+        "harness": "atlas",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas",
+        "identitySha256": "6edc8e07cdc8371d8d287437f47627443f48e0b01c22dc84bdcb5dc11e45533e",
+        "pairId": "memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0",
+        "phase": "development",
+        "recallIdentity": "same-owner",
+        "repetition": 0,
+        "seed": 1907,
+        "stratum": "warm",
+        "taskId": "memory-v1/development/episodic_decision/1907/explicit-memory",
+        "transportId": "transport-8e4a8ac9-4188-438a-954b-350d5f4f6c42",
+        "diagnosticOnly": false,
+        "elapsedMs": 69848,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": true,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": true,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-ogQOBq",
+        "providerStatuses": [200, 200, 200, 200, 200, 200, 200],
+        "status": "completed",
+        "totalAttemptElapsedMs": 69852,
+        "transferEvaluation": null,
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 28416,
+          "costUsd": null,
+          "generatedTokens": 1322,
+          "missingUsage": false,
+          "observedGeneratedTokens": 1322,
+          "observedPromptTokens": 42091,
+          "promptTokens": 42091,
+          "providerRequests": 7
+        },
+        "usageEvidence": {
+          "cachedTokens": 28416,
+          "finalized": true,
+          "generatedTokens": 1322,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 1322,
+          "observedPromptTokens": 42091,
+          "promptTokens": 42091,
+          "requests": [
+            {
+              "cachedTokens": 4096,
+              "generatedTokens": 125,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 8255,
+              "status": 200
+            },
+            {
+              "cachedTokens": 8192,
+              "generatedTokens": 101,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 8410,
+              "status": 200
+            },
+            {
+              "cachedTokens": 8384,
+              "generatedTokens": 70,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 8560,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 147,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 246,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 72,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 7717,
+              "status": 200
+            },
+            {
+              "cachedTokens": 7680,
+              "generatedTokens": 65,
+              "index": 6,
+              "kind": "success",
+              "promptTokens": 8693,
+              "status": 200
+            },
+            {
+              "cachedTokens": 64,
+              "generatedTokens": 742,
+              "index": 7,
+              "kind": "success",
+              "promptTokens": 210,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": false,
+      "findingKinds": [],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "manualSha256": "50b8ddeb96d7a2e894ef38a850691bf3aecc0e7c90eca73d7b9025854d90baea",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 2,
+        "nativeEvents": 4,
+        "snapshots": 4,
+        "publicAssistantEntries": 2,
+        "toolBearingPublicAssistantEntries": 0
+      }
+    },
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "record": {
+        "at": "2026-09-06T23:21:03.165Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "explicit-memory",
+        "event": "end",
+        "family": "episodic_decision",
+        "harness": "hermes",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes",
+        "identitySha256": "e350542990f794ff32b8517b14935dff5ba34ce8cb500a94b72fac8fe8c5b3a1",
+        "pairId": "memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0",
+        "phase": "development",
+        "recallIdentity": "same-owner",
+        "repetition": 0,
+        "seed": 1907,
+        "stratum": "warm",
+        "taskId": "memory-v1/development/episodic_decision/1907/explicit-memory",
+        "transportId": "transport-9ae51926-3d10-4c8e-9eb1-3e55049199e2",
+        "diagnosticOnly": false,
+        "elapsedMs": 13003,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": true,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": true,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-rYaima",
+        "providerStatuses": [200, 200, 200, 200, 200],
+        "status": "completed",
+        "totalAttemptElapsedMs": 13008,
+        "transferEvaluation": null,
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 3904,
+          "costUsd": null,
+          "generatedTokens": 386,
+          "missingUsage": false,
+          "observedGeneratedTokens": 386,
+          "observedPromptTokens": 12245,
+          "promptTokens": 12245,
+          "providerRequests": 5
+        },
+        "usageEvidence": {
+          "cachedTokens": 3904,
+          "finalized": true,
+          "generatedTokens": 386,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 386,
+          "observedPromptTokens": 12245,
+          "promptTokens": 12245,
+          "requests": [
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 18,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 313,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 191,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 3748,
+              "status": 200
+            },
+            {
+              "cachedTokens": 3712,
+              "generatedTokens": 26,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 4018,
+              "status": 200
+            },
+            {
+              "cachedTokens": 192,
+              "generatedTokens": 136,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 3858,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 15,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 308,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": false,
+      "findingKinds": [],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "manualSha256": "cc2c237b1d59c19044451af790eb003252a20375967f43cc6d59a7243baa56d9",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 2,
+        "nativeEvents": 4,
+        "snapshots": 10,
+        "publicAssistantEntries": 3,
+        "toolBearingPublicAssistantEntries": 1
+      }
+    },
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-atlas",
+      "record": {
+        "at": "2026-09-06T23:25:54.958Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "native-default",
+        "event": "end",
+        "family": "forgotten_preference",
+        "harness": "atlas",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-atlas",
+        "identitySha256": "7930dab20128d33498becefe68d2fcf54c14dbc1ccb2aa04748e2aad3395ba4c",
+        "pairId": "memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0",
+        "phase": "development",
+        "recallIdentity": "same-owner",
+        "repetition": 0,
+        "seed": 1907,
+        "stratum": "warm",
+        "taskId": "memory-v1/development/forgotten_preference/1907/native-default",
+        "transportId": "transport-c169f976-1438-425e-9034-130a32ded7c4",
+        "diagnosticOnly": false,
+        "elapsedMs": 98697,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": false,
+          "falseCompletion": false,
+          "finalContract": false,
+          "finalFactsCorrect": false,
+          "missingFacts": ["current_cutoff_minutes"],
+          "strictSuccess": false,
+          "success": false,
+          "wrongFacts": []
+        },
+        "exitCode": 1,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-glntMg",
+        "providerStatuses": [200, 502],
+        "status": "failed",
+        "totalAttemptElapsedMs": 98700,
+        "transferEvaluation": null,
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": true,
+          "budgetExceeded": false,
+          "cachedTokens": null,
+          "costUsd": null,
+          "generatedTokens": null,
+          "missingUsage": true,
+          "observedGeneratedTokens": 83,
+          "observedPromptTokens": 6833,
+          "promptTokens": null,
+          "providerRequests": 2
+        },
+        "usageEvidence": {
+          "cachedTokens": null,
+          "finalized": true,
+          "generatedTokens": null,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": false,
+          "observationError": false,
+          "observedGeneratedTokens": 83,
+          "observedPromptTokens": 6833,
+          "promptTokens": null,
+          "requests": [
+            {
+              "cachedTokens": 2048,
+              "generatedTokens": 83,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 6833,
+              "status": 200
+            },
+            {
+              "cachedTokens": null,
+              "generatedTokens": null,
+              "index": 2,
+              "kind": "transport-error",
+              "promptTokens": null,
+              "status": null
+            }
+          ]
+        }
+      },
+      "hasFindings": true,
+      "findingKinds": [
+        "main-request-transport-timeout",
+        "usage-incomplete-after-transport-failure"
+      ],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-atlas.json",
+      "manualSha256": "4d5313595b91e1edf631200980b67d1659977dbf299ad422c489acf58d5c0e7f",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-atlas.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-atlas.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 1,
+        "turns": 1,
+        "nativeEvents": 1,
+        "snapshots": 2,
+        "publicAssistantEntries": 0,
+        "toolBearingPublicAssistantEntries": 0
+      }
+    },
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes",
+      "record": {
+        "at": "2026-09-06T23:24:16.256Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "native-default",
+        "event": "end",
+        "family": "forgotten_preference",
+        "harness": "hermes",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes",
+        "identitySha256": "92d52a17ae5a77e58c4820add9a0ddbc412161ddf91a50964b7d3f587f3b067c",
+        "pairId": "memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0",
+        "phase": "development",
+        "recallIdentity": "same-owner",
+        "repetition": 0,
+        "seed": 1907,
+        "stratum": "warm",
+        "taskId": "memory-v1/development/forgotten_preference/1907/native-default",
+        "transportId": "transport-a147bd9e-5223-431b-ba19-df74e34447bb",
+        "diagnosticOnly": false,
+        "elapsedMs": 123208,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": false,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": false,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-q0sWxk",
+        "providerStatuses": [200, 200, 200, 200, 200, 200, 200, 200, 200, 200],
+        "status": "completed",
+        "totalAttemptElapsedMs": 123214,
+        "transferEvaluation": null,
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 25664,
+          "costUsd": null,
+          "generatedTokens": 1088,
+          "missingUsage": false,
+          "observedGeneratedTokens": 1088,
+          "observedPromptTokens": 37306,
+          "promptTokens": 37306,
+          "providerRequests": 10
+        },
+        "usageEvidence": {
+          "cachedTokens": 25664,
+          "finalized": true,
+          "generatedTokens": 1088,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 1088,
+          "observedPromptTokens": 37306,
+          "promptTokens": 37306,
+          "requests": [
+            {
+              "cachedTokens": 192,
+              "generatedTokens": 15,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 261,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 131,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 3700,
+              "status": 200
+            },
+            {
+              "cachedTokens": 3648,
+              "generatedTokens": 275,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 4402,
+              "status": 200
+            },
+            {
+              "cachedTokens": 4352,
+              "generatedTokens": 111,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 4725,
+              "status": 200
+            },
+            {
+              "cachedTokens": 4672,
+              "generatedTokens": 106,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 5055,
+              "status": 200
+            },
+            {
+              "cachedTokens": 192,
+              "generatedTokens": 14,
+              "index": 6,
+              "kind": "success",
+              "promptTokens": 294,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 113,
+              "index": 7,
+              "kind": "success",
+              "promptTokens": 3733,
+              "status": 200
+            },
+            {
+              "cachedTokens": 3712,
+              "generatedTokens": 51,
+              "index": 8,
+              "kind": "success",
+              "promptTokens": 4090,
+              "status": 200
+            },
+            {
+              "cachedTokens": 4032,
+              "generatedTokens": 78,
+              "index": 9,
+              "kind": "success",
+              "promptTokens": 4909,
+              "status": 200
+            },
+            {
+              "cachedTokens": 4864,
+              "generatedTokens": 194,
+              "index": 10,
+              "kind": "success",
+              "promptTokens": 6137,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": true,
+      "findingKinds": [
+        "unreconciled-placeholder-write",
+        "final-extra-prose",
+        "discovery-is-not-content-search"
+      ],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes.json",
+      "manualSha256": "b2c7a51e2358fd215e36be5f660dc21172415160357102541df838015ba64ea4",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 3,
+        "nativeEvents": 16,
+        "snapshots": 10,
+        "publicAssistantEntries": 4,
+        "toolBearingPublicAssistantEntries": 0
+      }
+    },
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-atlas",
+      "record": {
+        "at": "2026-09-06T23:28:50.953Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "native-default",
+        "event": "end",
+        "family": "implicit_preference",
+        "harness": "atlas",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-atlas",
+        "identitySha256": "af1435cbd7665b41c4e38e8c0de89fe2dbb3df95478985c9e0faecde10d51fba",
+        "pairId": "memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0",
+        "phase": "development",
+        "recallIdentity": "same-owner",
+        "repetition": 0,
+        "seed": 2953,
+        "stratum": "warm",
+        "taskId": "memory-v1/development/implicit_preference/2953/native-default",
+        "transportId": "transport-084672e5-6bc1-481d-acbe-065d57ee68ba",
+        "diagnosticOnly": false,
+        "elapsedMs": 78777,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": true,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": true,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-BGhLiZ",
+        "providerStatuses": [200, 200, 200, 200, 200, 200],
+        "status": "completed",
+        "totalAttemptElapsedMs": 78780,
+        "transferEvaluation": null,
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 16512,
+          "costUsd": null,
+          "generatedTokens": 2282,
+          "missingUsage": false,
+          "observedGeneratedTokens": 2282,
+          "observedPromptTokens": 30474,
+          "promptTokens": 30474,
+          "providerRequests": 6
+        },
+        "usageEvidence": {
+          "cachedTokens": 16512,
+          "finalized": true,
+          "generatedTokens": 2282,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 2282,
+          "observedPromptTokens": 30474,
+          "promptTokens": 30474,
+          "requests": [
+            {
+              "cachedTokens": 2048,
+              "generatedTokens": 132,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 6833,
+              "status": 200
+            },
+            {
+              "cachedTokens": 6784,
+              "generatedTokens": 849,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 7016,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 684,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 262,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 101,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 7683,
+              "status": 200
+            },
+            {
+              "cachedTokens": 7680,
+              "generatedTokens": 62,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 8490,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 454,
+              "index": 6,
+              "kind": "success",
+              "promptTokens": 190,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": true,
+      "findingKinds": ["ancillary-public-identifier-typo"],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-atlas.json",
+      "manualSha256": "f304d7fddc8a77f700f8175c7e0d45e159d98272da62aa5aea508d6b699a2f09",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-atlas.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-atlas.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 2,
+        "nativeEvents": 3,
+        "snapshots": 4,
+        "publicAssistantEntries": 2,
+        "toolBearingPublicAssistantEntries": 0
+      }
+    },
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes",
+      "record": {
+        "at": "2026-09-06T23:27:32.171Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "native-default",
+        "event": "end",
+        "family": "implicit_preference",
+        "harness": "hermes",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes",
+        "identitySha256": "1daf99bd84b97c0190f4381e3e223c230e7daa7f60524fb248cc1d512c6d329f",
+        "pairId": "memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0",
+        "phase": "development",
+        "recallIdentity": "same-owner",
+        "repetition": 0,
+        "seed": 2953,
+        "stratum": "warm",
+        "taskId": "memory-v1/development/implicit_preference/2953/native-default",
+        "transportId": "transport-911173fc-8e88-453e-b173-cb9652a21052",
+        "diagnosticOnly": false,
+        "elapsedMs": 97197,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": true,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": true,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-8tI8jb",
+        "providerStatuses": [200, 200, 200, 200, 200, 200, 200],
+        "status": "completed",
+        "totalAttemptElapsedMs": 97202,
+        "transferEvaluation": null,
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 12032,
+          "costUsd": null,
+          "generatedTokens": 1155,
+          "missingUsage": false,
+          "observedGeneratedTokens": 1155,
+          "observedPromptTokens": 21713,
+          "promptTokens": 21713,
+          "providerRequests": 7
+        },
+        "usageEvidence": {
+          "cachedTokens": 12032,
+          "finalized": true,
+          "generatedTokens": 1155,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 1155,
+          "observedPromptTokens": 21713,
+          "promptTokens": 21713,
+          "requests": [
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 22,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 261,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 107,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 3704,
+              "status": 200
+            },
+            {
+              "cachedTokens": 3648,
+              "generatedTokens": 63,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 4122,
+              "status": 200
+            },
+            {
+              "cachedTokens": 4096,
+              "generatedTokens": 744,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 4324,
+              "status": 200
+            },
+            {
+              "cachedTokens": 4288,
+              "generatedTokens": 36,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 5147,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 15,
+              "index": 6,
+              "kind": "success",
+              "promptTokens": 296,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 168,
+              "index": 7,
+              "kind": "success",
+              "promptTokens": 3859,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": true,
+      "findingKinds": ["assistant-proposal-persisted-without-provenance"],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes.json",
+      "manualSha256": "d674c07885220584a7629230dc4c00cd05a982cf791e6e0b648775a7bf0ab813",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 2,
+        "nativeEvents": 8,
+        "snapshots": 10,
+        "publicAssistantEntries": 3,
+        "toolBearingPublicAssistantEntries": 1
+      }
+    },
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-atlas",
+      "record": {
+        "at": "2026-09-06T23:46:00.494Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "explicit-memory",
+        "event": "end",
+        "family": "unsupported_fact",
+        "harness": "atlas",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-atlas",
+        "identitySha256": "81b415a25a3c59560fa844cc93adf0139661a3f503bb687aa3745559e719b107",
+        "pairId": "memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0",
+        "phase": "development",
+        "recallIdentity": "same-owner",
+        "repetition": 0,
+        "seed": 2953,
+        "stratum": "warm",
+        "taskId": "memory-v1/development/unsupported_fact/2953/explicit-memory",
+        "transportId": "transport-e92e0bcb-a021-4d37-a20b-8da5193a5727",
+        "diagnosticOnly": false,
+        "elapsedMs": 31100,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": true,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": true,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-2nqs5F",
+        "providerStatuses": [200, 200, 200, 200, 200, 200, 200, 200],
+        "status": "completed",
+        "totalAttemptElapsedMs": 31103,
+        "transferEvaluation": null,
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 39488,
+          "costUsd": null,
+          "generatedTokens": 1697,
+          "missingUsage": false,
+          "observedGeneratedTokens": 1697,
+          "observedPromptTokens": 51191,
+          "promptTokens": 51191,
+          "providerRequests": 8
+        },
+        "usageEvidence": {
+          "cachedTokens": 39488,
+          "finalized": true,
+          "generatedTokens": 1697,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 1697,
+          "observedPromptTokens": 51191,
+          "promptTokens": 51191,
+          "requests": [
+            {
+              "cachedTokens": 6144,
+              "generatedTokens": 110,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 8241,
+              "status": 200
+            },
+            {
+              "cachedTokens": 8192,
+              "generatedTokens": 315,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 8566,
+              "status": 200
+            },
+            {
+              "cachedTokens": 8512,
+              "generatedTokens": 38,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 9053,
+              "status": 200
+            },
+            {
+              "cachedTokens": 9024,
+              "generatedTokens": 50,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 9332,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 598,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 249,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 214,
+              "index": 6,
+              "kind": "success",
+              "promptTokens": 7657,
+              "status": 200
+            },
+            {
+              "cachedTokens": 7616,
+              "generatedTokens": 212,
+              "index": 7,
+              "kind": "success",
+              "promptTokens": 7904,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 160,
+              "index": 8,
+              "kind": "success",
+              "promptTokens": 189,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": true,
+      "findingKinds": ["unsupported-ancillary-inspection-status"],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "manualSha256": "fe0b3dea40549028abb09fc1c0b1bc6719b9fa846025d12288a68f5fcb9a1ec7",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 2,
+        "nativeEvents": 5,
+        "snapshots": 4,
+        "publicAssistantEntries": 3,
+        "toolBearingPublicAssistantEntries": 1
+      }
+    },
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "record": {
+        "at": "2026-09-06T23:46:13.945Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "explicit-memory",
+        "event": "end",
+        "family": "unsupported_fact",
+        "harness": "hermes",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes",
+        "identitySha256": "514e3c92bfc388c877ab87a002802f7b6c4cf49582ba9de69130ffa6e041a6fe",
+        "pairId": "memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0",
+        "phase": "development",
+        "recallIdentity": "same-owner",
+        "repetition": 0,
+        "seed": 2953,
+        "stratum": "warm",
+        "taskId": "memory-v1/development/unsupported_fact/2953/explicit-memory",
+        "transportId": "transport-c3a88317-dff8-4023-acfc-4a6bf1e5c1d0",
+        "diagnosticOnly": false,
+        "elapsedMs": 13444,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": true,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": true,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-boJ14y",
+        "providerStatuses": [200, 200, 200, 200, 200],
+        "status": "completed",
+        "totalAttemptElapsedMs": 13449,
+        "transferEvaluation": null,
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 3712,
+          "costUsd": null,
+          "generatedTokens": 426,
+          "missingUsage": false,
+          "observedGeneratedTokens": 426,
+          "observedPromptTokens": 12119,
+          "promptTokens": 12119,
+          "providerRequests": 5
+        },
+        "usageEvidence": {
+          "cachedTokens": 3712,
+          "finalized": true,
+          "generatedTokens": 426,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 426,
+          "observedPromptTokens": 12119,
+          "promptTokens": 12119,
+          "requests": [
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 18,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 299,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 174,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 3727,
+              "status": 200
+            },
+            {
+              "cachedTokens": 3712,
+              "generatedTokens": 119,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 3978,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 18,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 298,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 97,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 3817,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": true,
+      "findingKinds": ["unsupported-ancillary-operational-status"],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "manualSha256": "276bf2ebb0187b5af11f8af270e35327a7741b1c4501a821dbc1f1f023492a10",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 2,
+        "nativeEvents": 4,
+        "snapshots": 10,
+        "publicAssistantEntries": 2,
+        "toolBearingPublicAssistantEntries": 0
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas",
+      "record": {
+        "at": "2026-09-06T23:42:55.491Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "native-default",
+        "event": "end",
+        "family": "durable_fact",
+        "harness": "atlas",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas",
+        "identitySha256": "4e521f939fa24678a497d3d205aaec160a0fa626a3e39c597aa56778df65cb05",
+        "pairId": "memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0",
+        "phase": "development",
+        "recallIdentity": "different-organization",
+        "repetition": 0,
+        "seed": 2953,
+        "stratum": "identity",
+        "taskId": "memory-v1/development/durable_fact/2953/native-default",
+        "transportId": "transport-f8713aea-6fa6-408e-9db4-c001802bd8ce",
+        "diagnosticOnly": true,
+        "elapsedMs": 61190,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": false,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": false,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-a9ghoa",
+        "providerStatuses": [200, 200, 200, 200, 200, 200],
+        "status": "completed",
+        "totalAttemptElapsedMs": 61193,
+        "transferEvaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": true,
+          "finalContract": false,
+          "finalFactsCorrect": false,
+          "missingFacts": [],
+          "strictSuccess": false,
+          "success": false,
+          "wrongFacts": ["crates", "inspection_date"]
+        },
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 18496,
+          "costUsd": null,
+          "generatedTokens": 2357,
+          "missingUsage": false,
+          "observedGeneratedTokens": 2357,
+          "observedPromptTokens": 29916,
+          "promptTokens": 29916,
+          "providerRequests": 6
+        },
+        "usageEvidence": {
+          "cachedTokens": 18496,
+          "finalized": true,
+          "generatedTokens": 2357,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 2357,
+          "observedPromptTokens": 29916,
+          "promptTokens": 29916,
+          "requests": [
+            {
+              "cachedTokens": 2048,
+              "generatedTokens": 157,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 6846,
+              "status": 200
+            },
+            {
+              "cachedTokens": 6784,
+              "generatedTokens": 338,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 7056,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 750,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 284,
+              "status": 200
+            },
+            {
+              "cachedTokens": 2048,
+              "generatedTokens": 169,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 7617,
+              "status": 200
+            },
+            {
+              "cachedTokens": 7616,
+              "generatedTokens": 150,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 7864,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 793,
+              "index": 6,
+              "kind": "success",
+              "promptTokens": 249,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": true,
+      "findingKinds": ["final-extra-prose"],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.json",
+      "manualSha256": "26bc2874a118898b75971828e237b628b25261f46a01cecca455007abbd74500",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 2,
+        "nativeEvents": 5,
+        "snapshots": 4,
+        "publicAssistantEntries": 2,
+        "toolBearingPublicAssistantEntries": 0
+      }
+    },
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes",
+      "record": {
+        "at": "2026-09-06T23:41:54.296Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "native-default",
+        "event": "end",
+        "family": "durable_fact",
+        "harness": "hermes",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes",
+        "identitySha256": "beeb1e8d09c025d07eb0a681ec5e29938d61dd56193b06a0826c893e0c56ec86",
+        "pairId": "memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0",
+        "phase": "development",
+        "recallIdentity": "different-organization",
+        "repetition": 0,
+        "seed": 2953,
+        "stratum": "identity",
+        "taskId": "memory-v1/development/durable_fact/2953/native-default",
+        "transportId": "transport-e119985a-7fec-48c6-b932-9005694c0431",
+        "diagnosticOnly": true,
+        "elapsedMs": 68129,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": true,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": true,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-tt2T2z",
+        "providerStatuses": [200, 200, 200, 200, 200, 200, 200, 200, 200, 200],
+        "status": "completed",
+        "totalAttemptElapsedMs": 68133,
+        "transferEvaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": true,
+          "finalContract": false,
+          "finalFactsCorrect": false,
+          "missingFacts": [],
+          "strictSuccess": false,
+          "success": false,
+          "wrongFacts": ["crates", "inspection_date"]
+        },
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 28352,
+          "costUsd": null,
+          "generatedTokens": 1033,
+          "missingUsage": false,
+          "observedGeneratedTokens": 1033,
+          "observedPromptTokens": 38360,
+          "promptTokens": 38360,
+          "providerRequests": 10
+        },
+        "usageEvidence": {
+          "cachedTokens": 28352,
+          "finalized": true,
+          "generatedTokens": 1033,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 1033,
+          "observedPromptTokens": 38360,
+          "promptTokens": 38360,
+          "requests": [
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 16,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 274,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 470,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 3706,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 16,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 303,
+              "status": 200
+            },
+            {
+              "cachedTokens": 192,
+              "generatedTokens": 97,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 3738,
+              "status": 200
+            },
+            {
+              "cachedTokens": 3712,
+              "generatedTokens": 54,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 4007,
+              "status": 200
+            },
+            {
+              "cachedTokens": 3968,
+              "generatedTokens": 75,
+              "index": 6,
+              "kind": "success",
+              "promptTokens": 4829,
+              "status": 200
+            },
+            {
+              "cachedTokens": 4800,
+              "generatedTokens": 87,
+              "index": 7,
+              "kind": "success",
+              "promptTokens": 5045,
+              "status": 200
+            },
+            {
+              "cachedTokens": 4992,
+              "generatedTokens": 81,
+              "index": 8,
+              "kind": "success",
+              "promptTokens": 5267,
+              "status": 200
+            },
+            {
+              "cachedTokens": 5248,
+              "generatedTokens": 85,
+              "index": 9,
+              "kind": "success",
+              "promptTokens": 5486,
+              "status": 200
+            },
+            {
+              "cachedTokens": 5440,
+              "generatedTokens": 52,
+              "index": 10,
+              "kind": "success",
+              "promptTokens": 5705,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": false,
+      "findingKinds": [],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.json",
+      "manualSha256": "0ff968440b73fea3e53459146820bcec63382cc3ace959cde32b25901ca2c7a9",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 2,
+        "nativeEvents": 12,
+        "snapshots": 10,
+        "publicAssistantEntries": 2,
+        "toolBearingPublicAssistantEntries": 0
+      }
+    },
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas",
+      "record": {
+        "at": "2026-09-06T23:13:19.850Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "explicit-memory",
+        "event": "end",
+        "family": "implicit_preference",
+        "harness": "atlas",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas",
+        "identitySha256": "ec91c1f3bc35d69f744204241ed1b40f6c9c08c3e14e0df4f1abf02a60d09c67",
+        "pairId": "memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0",
+        "phase": "development",
+        "recallIdentity": "same-owner",
+        "repetition": 0,
+        "seed": 2953,
+        "stratum": "cold",
+        "taskId": "memory-v1/development/implicit_preference/2953/explicit-memory",
+        "transportId": "transport-4dfc2720-b5a6-4028-bd01-30a6e0893893",
+        "diagnosticOnly": false,
+        "elapsedMs": 49372,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": true,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": true,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-0iUtWY",
+        "providerStatuses": [200, 200, 200, 200, 200, 200, 200, 200, 200, 200],
+        "status": "completed",
+        "totalAttemptElapsedMs": 49377,
+        "transferEvaluation": null,
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 49472,
+          "costUsd": null,
+          "generatedTokens": 2218,
+          "missingUsage": false,
+          "observedGeneratedTokens": 2218,
+          "observedPromptTokens": 67259,
+          "promptTokens": 67259,
+          "providerRequests": 10
+        },
+        "usageEvidence": {
+          "cachedTokens": 49472,
+          "finalized": true,
+          "generatedTokens": 2218,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 2218,
+          "observedPromptTokens": 67259,
+          "promptTokens": 67259,
+          "requests": [
+            {
+              "cachedTokens": 4096,
+              "generatedTokens": 55,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 8235,
+              "status": 200
+            },
+            {
+              "cachedTokens": 8192,
+              "generatedTokens": 65,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 8486,
+              "status": 200
+            },
+            {
+              "cachedTokens": 8448,
+              "generatedTokens": 215,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 8586,
+              "status": 200
+            },
+            {
+              "cachedTokens": 8576,
+              "generatedTokens": 395,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 9010,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 466,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 290,
+              "status": 200
+            },
+            {
+              "cachedTokens": 2048,
+              "generatedTokens": 96,
+              "index": 6,
+              "kind": "success",
+              "promptTokens": 7610,
+              "status": 200
+            },
+            {
+              "cachedTokens": 2048,
+              "generatedTokens": 103,
+              "index": 7,
+              "kind": "success",
+              "promptTokens": 7900,
+              "status": 200
+            },
+            {
+              "cachedTokens": 7872,
+              "generatedTokens": 71,
+              "index": 8,
+              "kind": "success",
+              "promptTokens": 8225,
+              "status": 200
+            },
+            {
+              "cachedTokens": 8192,
+              "generatedTokens": 65,
+              "index": 9,
+              "kind": "success",
+              "promptTokens": 8725,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 687,
+              "index": 10,
+              "kind": "success",
+              "promptTokens": 192,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": false,
+      "findingKinds": [],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+      "manualSha256": "bffcaaf8bebae4ab04af9ff9ad91734df75910a2b9e0edd2995d450889bd19bb",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 2,
+        "nativeEvents": 7,
+        "snapshots": 4,
+        "publicAssistantEntries": 2,
+        "toolBearingPublicAssistantEntries": 0
+      }
+    },
+    {
+      "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes",
+      "record": {
+        "at": "2026-09-06T23:12:30.472Z",
+        "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+        "condition": "explicit-memory",
+        "event": "end",
+        "family": "implicit_preference",
+        "harness": "hermes",
+        "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes",
+        "identitySha256": "498a49f2f14168b05972322b05ee4adf7fbf80eeb951c1e12d14451a925e5715",
+        "pairId": "memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0",
+        "phase": "development",
+        "recallIdentity": "same-owner",
+        "repetition": 0,
+        "seed": 2953,
+        "stratum": "cold",
+        "taskId": "memory-v1/development/implicit_preference/2953/explicit-memory",
+        "transportId": "transport-e37de86b-8ffc-4289-8adc-6d79b0fe4da0",
+        "diagnosticOnly": false,
+        "elapsedMs": 35926,
+        "evaluation": {
+          "ambiguousFinal": false,
+          "boundaryValid": true,
+          "falseCompletion": false,
+          "finalContract": false,
+          "finalFactsCorrect": true,
+          "missingFacts": [],
+          "strictSuccess": false,
+          "success": true,
+          "wrongFacts": []
+        },
+        "exitCode": 0,
+        "infrastructureError": null,
+        "nativeStateParent": "/private/tmp/agent-runtime-UYfqTH/state-HF8pAm",
+        "providerStatuses": [200, 200, 200, 200, 200, 200, 200, 200, 200],
+        "status": "completed",
+        "totalAttemptElapsedMs": 35929,
+        "transferEvaluation": null,
+        "transferredFacts": [],
+        "transportAdmitted": true,
+        "unavailable": false,
+        "usage": {
+          "accountingUncertain": false,
+          "budgetExceeded": false,
+          "cachedTokens": 21248,
+          "costUsd": null,
+          "generatedTokens": 1034,
+          "missingUsage": false,
+          "observedGeneratedTokens": 1034,
+          "observedPromptTokens": 31271,
+          "promptTokens": 31271,
+          "providerRequests": 9
+        },
+        "usageEvidence": {
+          "cachedTokens": 21248,
+          "finalized": true,
+          "generatedTokens": 1034,
+          "inFlightRequests": 0,
+          "mandatoryUsageKnown": true,
+          "observationError": false,
+          "observedGeneratedTokens": 1034,
+          "observedPromptTokens": 31271,
+          "promptTokens": 31271,
+          "requests": [
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 117,
+              "index": 1,
+              "kind": "success",
+              "promptTokens": 3723,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 14,
+              "index": 2,
+              "kind": "success",
+              "promptTokens": 293,
+              "status": 200
+            },
+            {
+              "cachedTokens": 3712,
+              "generatedTokens": 404,
+              "index": 3,
+              "kind": "success",
+              "promptTokens": 3917,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 15,
+              "index": 4,
+              "kind": "success",
+              "promptTokens": 296,
+              "status": 200
+            },
+            {
+              "cachedTokens": 0,
+              "generatedTokens": 59,
+              "index": 5,
+              "kind": "success",
+              "promptTokens": 3727,
+              "status": 200
+            },
+            {
+              "cachedTokens": 3712,
+              "generatedTokens": 96,
+              "index": 6,
+              "kind": "success",
+              "promptTokens": 3981,
+              "status": 200
+            },
+            {
+              "cachedTokens": 3968,
+              "generatedTokens": 83,
+              "index": 7,
+              "kind": "success",
+              "promptTokens": 4845,
+              "status": 200
+            },
+            {
+              "cachedTokens": 4800,
+              "generatedTokens": 143,
+              "index": 8,
+              "kind": "success",
+              "promptTokens": 5070,
+              "status": 200
+            },
+            {
+              "cachedTokens": 5056,
+              "generatedTokens": 103,
+              "index": 9,
+              "kind": "success",
+              "promptTokens": 5419,
+              "status": 200
+            }
+          ]
+        }
+      },
+      "hasFindings": true,
+      "findingKinds": ["final-envelope-extra-prose"],
+      "manualPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+      "manualSha256": "853f5521313069b09788d89bbc219cca1c7b98aadf882ab0cbc1ea53861f42d7",
+      "projectionPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+      "publicChronologyPath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+      "reviewedEvidenceCounts": {
+        "sessions": 2,
+        "turns": 2,
+        "nativeEvents": 16,
+        "snapshots": 10,
+        "publicAssistantEntries": 2,
+        "toolBearingPublicAssistantEntries": 0
+      }
+    }
+  ]
+}

@@ -3,19 +3,27 @@ import path from "node:path";
 import { z } from "zod";
 import { isDocxFile, isLegacyDocFile } from "../artifact-mime";
 import { coerceDeliverableArtifactPath } from "../artifact-path";
+import {
+  isArtifactPublicationPath,
+  stageToolArtifact,
+} from "../artifact-publication";
 import type { ToolContext, ToolDefinition } from "../contract";
 import { convertDocxToMarkdown } from "../docx-text";
 import { markdownToDocx } from "../docx-write";
-import { pathExists } from "../fs";
+import { loadFileAsset } from "../files/assets";
+import { writeNewArtifactVersion } from "../files/versioned-write";
+import { MAX_DOCUMENT_INGEST_BYTES } from "../message-content-limits";
 import { isOmniEnabled, omniRetrieveTool } from "../omni";
 import { createPptxBuffer } from "../presentation-engine";
 import { withProfileSoulMutationLock } from "../soul/mutation-lock";
 import { getProfileSoulDir } from "../soul/resolve";
 import { browserTool } from "./browser-tool";
 import { calculatorTool } from "./calculator";
+import { channelActionTool } from "./channel-action";
 import { deepResearchTool } from "./deep-research";
 import { emailTool } from "./email";
 import { extractDocumentTextTool } from "./extract-document-text";
+import { fileAssetTool } from "./file-asset";
 import {
   copyFileTool,
   createDirectoryTool,
@@ -25,7 +33,9 @@ import {
   moveFileTool,
 } from "./filesystem";
 import { knowledgeBaseSearchTool } from "./knowledge-base-search";
+import { officeDocumentTool } from "./office-document";
 import { guardFilePath, PathGuardError, type PathGuardOptions } from "./paths";
+import { pdfDocumentTool } from "./pdf-document";
 import {
   jsonSchemaFromZod,
   parseToolInput,
@@ -43,8 +53,14 @@ import { writePptxInputSchema, writePptxTool } from "./write-pptx";
 
 export const writeFileInputSchema = z
   .object({
-    content: requiredTrimmedString("content"),
+    content: z.string({ error: "content is required." }),
     cwd: trimmedOptionalString,
+    deliverable: z
+      .boolean()
+      .optional()
+      .describe(
+        "Publish this completed user deliverable under artifacts/. Omit for intermediate or support files."
+      ),
     path: requiredTrimmedString("path"),
   })
   .strict();
@@ -69,6 +85,12 @@ export const deleteFileInputSchema = z
 export const editFileInputSchema = z
   .object({
     cwd: trimmedOptionalString,
+    deliverable: z
+      .boolean()
+      .optional()
+      .describe(
+        "Publish this completed user deliverable under artifacts/. Omit for intermediate or support files."
+      ),
     edits: z
       .array(
         z
@@ -135,41 +157,45 @@ const BLOCKED_READ_BASENAMES = ["config.ini"];
 const ARTIFACT_META_SUFFIX = ".atlas-meta.json";
 const artifactRemap = new Map<string, string>();
 
-function normalizeArtifactPath(relativePath: string): string {
-  return relativePath.replace(/\\/g, "/").replace(/^\.\//, "");
+async function publicationRoot(options: PathGuardOptions): Promise<string> {
+  return (await guardFilePath(".", null, undefined, options)).resolved;
 }
 
-function isArtifactPath(relativePath: string): boolean {
-  const normalized = normalizeArtifactPath(relativePath);
+function requireDeliverableDestination(filePath: string, root: string): void {
+  if (
+    !isArtifactPublicationPath(
+      path.relative(root, filePath).split(path.sep).join("/")
+    )
+  ) {
+    throw new Error(
+      "deliverable requires a visible content file under artifacts/ in the profile workspace."
+    );
+  }
+}
+
+async function isArtifactDestination(
+  resolvedPath: string,
+  options: PathGuardOptions
+): Promise<boolean> {
+  const root = await guardFilePath(".", null, undefined, options);
+  const relative = path.relative(root.resolved, resolvedPath);
   return (
-    normalized.startsWith("artifacts/") &&
-    !normalized.endsWith(ARTIFACT_META_SUFFIX)
+    !(relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) &&
+    path.dirname(relative).split(path.sep).includes("artifacts") &&
+    !resolvedPath.endsWith(ARTIFACT_META_SUFFIX)
   );
 }
 
-function artifactRemapKey(context: ToolContext, relativePath: string): string {
-  return `${context.sessionId ?? "default"}:${normalizeArtifactPath(relativePath)}`;
-}
-
-async function uniqueArtifactPath(filePath: string): Promise<string> {
-  if (!(await pathExists(filePath))) {
-    return filePath;
-  }
-
-  const date = new Date().toISOString().slice(0, 10);
-  const directory = path.dirname(filePath);
-  const extension = path.extname(filePath);
-  const baseName = path.basename(filePath, extension);
-
-  for (let attempt = 0; attempt < 100; attempt += 1) {
-    const suffix = attempt === 0 ? date : `${date}-${attempt + 1}`;
-    const candidate = path.join(directory, `${baseName}-${suffix}${extension}`);
-    if (!(await pathExists(candidate))) {
-      return candidate;
-    }
-  }
-
-  throw new Error(`Unable to find available artifact filename for ${filePath}`);
+function artifactRemapKey(
+  context: ToolContext,
+  resolvedContentPath: string
+): string {
+  return JSON.stringify([
+    context.orgId,
+    context.profileId,
+    context.sessionId ?? "default",
+    resolvedContentPath,
+  ]);
 }
 
 export function setDefaultFileGuardOptions(options: PathGuardOptions): void {
@@ -257,7 +283,9 @@ function buildFileGuardOptions(
 ): PathGuardOptions {
   const { orgId, profileId } = requireProfileScope(context);
   const workspaceRoot =
-    options.workspaceRoot ?? getProfileSoulDir(orgId, profileId);
+    options.workspaceRoot ??
+    context.workspaceRoot ??
+    getProfileSoulDir(orgId, profileId);
   assertAbsoluteWorkspaceRoot(workspaceRoot);
 
   return {
@@ -292,6 +320,23 @@ export const writeFileTool: ToolDefinition<WriteFileInput, WriteFileOutput> = {
  */
 function refuseWordExtension(targetPath: string): void {
   const filename = path.basename(targetPath);
+
+  const binaryWriters: Record<string, string> = {
+    ".pdf": "pdf_document",
+    ".ppt": "write_pptx to create .pptx",
+    ".pptx": "write_pptx or office_document",
+    ".xls": "spreadsheet to create .xlsx",
+    ".xlsb": "spreadsheet to create .xlsx",
+    ".xlsm": "spreadsheet to create .xlsx",
+    ".xlsx": "spreadsheet",
+    ".zip": "a ZIP library through an assigned compute tool",
+  };
+  const writer = binaryWriters[path.extname(filename).toLowerCase()];
+  if (writer) {
+    throw new Error(
+      `This is a binary format; UTF-8 text writes would corrupt it. Use ${writer}.`
+    );
+  }
 
   if (isDocxFile(filename)) {
     throw new Error(
@@ -335,42 +380,38 @@ async function runWriteFileUnlocked(
   );
   refuseProfileSkillMarkdownWrite(context, guarded.resolved);
   refuseSkillLocalToolFileWrite(guarded.resolved);
-  const { orgId, profileId } = requireProfileScope(context);
-  const workspaceRoot =
-    options.workspaceRoot ?? getProfileSoulDir(orgId, profileId);
+  const publishRoot = await publicationRoot(guardOptions);
+  if (parsed.deliverable) {
+    requireDeliverableDestination(guarded.resolved, publishRoot);
+  }
   let filePath = guarded.resolved;
-  const normalizedPath = normalizeArtifactPath(parsed.path);
+  const isSidecar = filePath.endsWith(ARTIFACT_META_SUFFIX);
+  const originalContentPath = isSidecar
+    ? filePath.slice(0, -ARTIFACT_META_SUFFIX.length)
+    : filePath;
+  const artifact = await isArtifactDestination(
+    originalContentPath,
+    guardOptions
+  );
 
-  if (
-    normalizedPath.endsWith(ARTIFACT_META_SUFFIX) &&
-    normalizedPath.startsWith("artifacts/")
-  ) {
+  if (isSidecar && artifact) {
     const remapped = artifactRemap.get(
-      artifactRemapKey(
-        context,
-        normalizedPath.slice(0, -ARTIFACT_META_SUFFIX.length)
-      )
+      artifactRemapKey(context, originalContentPath)
     );
     if (remapped) {
-      filePath = path.resolve(
-        workspaceRoot,
-        `${remapped}${ARTIFACT_META_SUFFIX}`
+      const remappedGuard = await guardFilePath(
+        `${remapped}${ARTIFACT_META_SUFFIX}`,
+        null,
+        contentBytes,
+        guardOptions
       );
-    }
-  } else if (isArtifactPath(parsed.path)) {
-    const uniquePath = await uniqueArtifactPath(filePath);
-    if (uniquePath !== filePath) {
-      artifactRemap.set(
-        artifactRemapKey(context, parsed.path),
-        normalizeArtifactPath(path.relative(workspaceRoot, uniquePath))
-      );
-      filePath = uniquePath;
+      filePath = remappedGuard.resolved;
     }
   }
 
   await mkdir(path.dirname(filePath), { recursive: true });
   let contentToWrite = parsed.content;
-  if (normalizedPath.endsWith(ARTIFACT_META_SUFFIX)) {
+  if (isSidecar) {
     const { readLineageMeta } = await import("../artifact-lineage");
     const contentFile = filePath.endsWith(ARTIFACT_META_SUFFIX)
       ? filePath.slice(0, -ARTIFACT_META_SUFFIX.length)
@@ -398,15 +439,21 @@ async function runWriteFileUnlocked(
       }
     }
   }
-  await writeFile(filePath, contentToWrite, "utf8");
+  if (artifact && !isSidecar) {
+    filePath = await writeNewArtifactVersion(
+      filePath,
+      contentToWrite,
+      context.signal
+    );
+    artifactRemap.set(artifactRemapKey(context, guarded.resolved), filePath);
+  } else {
+    await writeFile(filePath, contentToWrite, "utf8");
+  }
 
-  if (
-    isArtifactPath(parsed.path) ||
-    normalizedPath.endsWith(ARTIFACT_META_SUFFIX)
-  ) {
+  if (artifact) {
     const { stampArtifactLineage } = await import("../artifact-lineage");
     const parentFilePath =
-      filePath === guarded.resolved ? undefined : guarded.resolved;
+      isSidecar || filePath === guarded.resolved ? undefined : guarded.resolved;
     const contentPath = filePath.endsWith(ARTIFACT_META_SUFFIX)
       ? filePath.slice(0, -ARTIFACT_META_SUFFIX.length)
       : filePath;
@@ -425,6 +472,15 @@ async function runWriteFileUnlocked(
     });
   }
 
+  if (parsed.deliverable && !isSidecar) {
+    await stageToolArtifact(context.artifactPublisher, {
+      bytes: Buffer.from(contentToWrite, "utf8"),
+      sourcePath: path
+        .relative(publishRoot, filePath)
+        .split(path.sep)
+        .join("/"),
+    });
+  }
   return { bytesWritten: contentBytes, path: filePath };
 }
 
@@ -443,6 +499,17 @@ export async function runWriteDocx(
   context: ToolContext,
   options: FileToolRunOptions = {}
 ): Promise<WriteFileOutput> {
+  const { orgId, profileId } = requireProfileScope(context);
+  return withProfileSoulMutationLock(orgId, profileId, () =>
+    runWriteDocxUnlocked(input, context, options)
+  );
+}
+
+async function runWriteDocxUnlocked(
+  input: unknown,
+  context: ToolContext,
+  options: FileToolRunOptions
+): Promise<WriteFileOutput> {
   const parsed = parseToolInput(writeDocxInputSchema, input);
   const relativePath = coerceDeliverableArtifactPath(parsed.path);
 
@@ -450,7 +517,13 @@ export async function runWriteDocx(
     throw new Error("write_docx requires a path ending in .docx");
   }
 
-  const bytes = await markdownToDocx(parsed.markdown);
+  const bytes = await markdownToDocx(parsed.markdown, {
+    resolveImage: (reference) =>
+      loadFileAsset(reference, context, {
+        allowedExtensions: [".png", ".jpg", ".jpeg", ".gif"],
+        maxBytes: 8 * 1024 * 1024,
+      }),
+  });
   const guardOptions = buildFileGuardOptions(context, options);
   const guarded = await guardFilePath(
     relativePath,
@@ -460,15 +533,18 @@ export async function runWriteDocx(
   );
   refuseProfileSkillMarkdownWrite(context, guarded.resolved);
   refuseSkillLocalToolFileWrite(guarded.resolved);
+  const publishRoot = await publicationRoot(guardOptions);
   // Same rule as write_file: never silently overwrite an existing artifact.
-  const filePath = isArtifactPath(relativePath)
-    ? await uniqueArtifactPath(guarded.resolved)
+  await mkdir(path.dirname(guarded.resolved), { recursive: true });
+  const artifact = await isArtifactDestination(guarded.resolved, guardOptions);
+  const filePath = artifact
+    ? await writeNewArtifactVersion(guarded.resolved, bytes, context.signal)
     : guarded.resolved;
+  if (!artifact) {
+    await writeFile(filePath, bytes);
+  }
 
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, bytes);
-
-  if (isArtifactPath(relativePath)) {
+  if (artifact) {
     const { stampArtifactLineage } = await import("../artifact-lineage");
     await stampArtifactLineage({
       parentFilePath:
@@ -478,6 +554,10 @@ export async function runWriteDocx(
     });
   }
 
+  await stageToolArtifact(context.artifactPublisher, {
+    bytes,
+    sourcePath: path.relative(publishRoot, filePath).split(path.sep).join("/"),
+  });
   return { bytesWritten: bytes.length, path: filePath };
 }
 
@@ -485,6 +565,17 @@ export async function runWritePptx(
   input: unknown,
   context: ToolContext,
   options: FileToolRunOptions = {}
+): Promise<{ bytesWritten: number; path: string; slideCount: number }> {
+  const { orgId, profileId } = requireProfileScope(context);
+  return withProfileSoulMutationLock(orgId, profileId, () =>
+    runWritePptxUnlocked(input, context, options)
+  );
+}
+
+async function runWritePptxUnlocked(
+  input: unknown,
+  context: ToolContext,
+  options: FileToolRunOptions
 ): Promise<{ bytesWritten: number; path: string; slideCount: number }> {
   const parsed = parseToolInput(writePptxInputSchema, input);
 
@@ -512,14 +603,17 @@ export async function runWritePptx(
   refuseProfileSkillMarkdownWrite(context, guarded.resolved);
   refuseSkillLocalToolFileWrite(guarded.resolved);
 
-  const filePath = isArtifactPath(relativePath)
-    ? await uniqueArtifactPath(guarded.resolved)
+  const publishRoot = await publicationRoot(guardOptions);
+  await mkdir(path.dirname(guarded.resolved), { recursive: true });
+  const artifact = await isArtifactDestination(guarded.resolved, guardOptions);
+  const filePath = artifact
+    ? await writeNewArtifactVersion(guarded.resolved, bytes, context.signal)
     : guarded.resolved;
+  if (!artifact) {
+    await writeFile(filePath, bytes);
+  }
 
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, bytes);
-
-  if (isArtifactPath(relativePath)) {
+  if (artifact) {
     const { stampArtifactLineage } = await import("../artifact-lineage");
     await stampArtifactLineage({
       extraDetails: { slideCount: parsed.slides.length },
@@ -530,6 +624,10 @@ export async function runWritePptx(
     });
   }
 
+  await stageToolArtifact(context.artifactPublisher, {
+    bytes,
+    sourcePath: path.relative(publishRoot, filePath).split(path.sep).join("/"),
+  });
   return {
     bytesWritten: bytes.length,
     path: filePath,
@@ -647,6 +745,10 @@ async function runEditFileUnlocked(
     );
   }
 
+  const publishRoot = await publicationRoot(guardOptions);
+  if (parsed.deliverable) {
+    requireDeliverableDestination(filePath, publishRoot);
+  }
   const rawBuffer = await readFile(filePath);
   const hasBom =
     rawBuffer.length >= 3 &&
@@ -669,6 +771,15 @@ async function runEditFileUnlocked(
     guardOptions
   );
   await writeFile(filePath, outputContent, "utf8");
+  if (parsed.deliverable) {
+    await stageToolArtifact(context.artifactPublisher, {
+      bytes: Buffer.from(outputContent, "utf8"),
+      sourcePath: path
+        .relative(publishRoot, filePath)
+        .split(path.sep)
+        .join("/"),
+    });
+  }
 
   return {
     bytesWritten,
@@ -948,7 +1059,18 @@ async function readFileAsText(filePath: string): Promise<string> {
     return convertDocxToMarkdown(await readFile(filePath));
   }
 
-  return readFile(filePath, "utf8");
+  if (/\.(pdf|pptx|ppt|xlsx|xls|xlsm|xlsb|zip)$/i.test(filename)) {
+    throw new Error(
+      "Use pdf_document for PDF, office_document for DOCX/PPTX, spreadsheet for Excel, or extract_document_text. read_file cannot decode this binary format as UTF-8."
+    );
+  }
+  const bytes = await readFile(filePath);
+  if (bytes.includes(0)) {
+    throw new Error(
+      "This file contains binary data. Use a reader for its format."
+    );
+  }
+  return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
 }
 
 export const readFileTool: ToolDefinition<ReadFileInput, ReadFileOutput> = {
@@ -969,7 +1091,13 @@ export async function runReadFile(
 ): Promise<ReadFileOutput> {
   const parsed = parseToolInput(readFileInputSchema, input);
   const guardOptions = buildFileGuardOptions(context, options);
-  const maxBytes = guardOptions.maxFileBytes ?? 10 * 1024 * 1024;
+  const isMessagingChannel =
+    context.channel === "whatsapp" ||
+    context.channel === "telegram" ||
+    context.channel === "discord";
+  const maxBytes =
+    guardOptions.maxFileBytes ??
+    (isMessagingChannel ? MAX_DOCUMENT_INGEST_BYTES : 10 * 1024 * 1024);
 
   const guarded = await guardFilePath(
     parsed.path,
@@ -1035,6 +1163,10 @@ export async function runReadFile(
 }
 
 export const builtinTools: ToolDefinition[] = [
+  channelActionTool,
+  fileAssetTool,
+  officeDocumentTool,
+  pdfDocumentTool,
   calculatorTool,
   writeFileTool,
   writeDocxTool,

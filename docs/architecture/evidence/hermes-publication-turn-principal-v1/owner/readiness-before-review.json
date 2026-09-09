@@ -1,0 +1,55 @@
+{
+  "at": "2026-09-07T02:34:40.459179+00:00",
+  "status": "ready-for-independent-review",
+  "sourceHash": "11d216be15e24573602ddd0f198115e2da42b4bd00a59d4ffa355742a0490245",
+  "sourceFiles": 2101,
+  "baselineSourceFilesUnchanged": 2098,
+  "rootC5Unchanged": 2078,
+  "changedFiles": [
+    "apps/server/src/services/publication-turn-principal.test.ts",
+    "apps/server/src/services/publication-turn-principal.ts",
+    "packages/agent/src/chat-turn-admission.test.ts",
+    "packages/agent/src/chat.ts"
+  ],
+  "patches": {
+    "component.patch": "441d1dba8ccc0d6e3423070b2cde236b3cdfcbe250277956c1aef8ab71750443",
+    "production.patch": "c05be18e2d3517680a8e398eebc6e8a184cad697c961ec1d6855432611458b52"
+  },
+  "tests": 65,
+  "assertions": 322,
+  "testFiles": 5,
+  "newTests": 28,
+  "gates": {
+    "tests": 0,
+    "productionTypecheck": 0,
+    "scopedTypecheck": 0,
+    "lint": 0,
+    "readonlyPatchChecks": 0
+  },
+  "evidence": {
+    "union-v4.log": "2fba5ba4b39eddd28fe41b56f77e5476760e24c52148f1d9a0230e976cd2057f",
+    "production-typecheck-v4.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "scoped-typecheck-v4.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "lint-v4.log": "af1ef5a5de7bee651984d8e58a156aa5d2f9b9215a9f0b508447120d9f5a6520",
+    "chat-guard-before-fix.log": "d387e8288d84e55ec4a6b44a8aeca55210d21ce493380e083c7ed9a0a9c92e88",
+    "chat-before-fix-binding.json": "4b68ee2b5d8b70ce489670eddf71d491be0f73b7a17e1461c61cde934bc26fb6",
+    "principal-before-reentrancy-fix.log": "65b799f4ab6bfde487f227b92d07ba6dadff45781a086efd424b681de0239829",
+    "principal-before-reentrancy-corrected-fixture.log": "86d63e18f24b1e4f8de90b63ce9aa1bbf747b3dbba47c1fe8915e37622b8ef33",
+    "chat-before-guard-order-fix.log": "2e024ad8bf50ed7eaf126b3b7d09fb3780a442d839814bc6f2ff452138505f59",
+    "chat-before-guard-order-corrected-fixture.log": "43253193ca1aca93277a59fb4060298d2349efb1e5f7f36435f2cd6fc1c1bc2c",
+    "chat-guard-order-corrected-binding.json": "791b8057bfdad2dc0f1c425e117f1004eaa58fc272a5df0161efce79ecc3715c",
+    "production-typecheck-initial.log": "e1f15edbb69627735fd8af7f2f6e2e50b1e2093833f26f0074ea63b25b4f3c38",
+    "platform-dependency-links.json": "8dd140bb5adf470235ec729c6b7c8b15571ed53b21934a27120bf25679bb511a",
+    "implementation-notes.md": "682e0eebb0e7bb61dcd84d5d5f46c350262e3a89458dfda94f6a20abe16a3ee1",
+    "source-inventory.json": "95df831fa1be39c410064b4672efb6b47245328f3993cd0b0d33518351981ddc"
+  },
+  "noPaidCalls": true,
+  "productionActivated": false,
+  "limits": [
+    "Host-owned per-turn identity and awaited effect guard only; no native subscription or real provider evaluation.",
+    "No loader, spawn, legacy pre-scan or private-root admission guarantee.",
+    "Current ACL checks are not an atomic lease or effect transaction.",
+    "No AgentService/routes/store/UI activation or non-chat identity mapping.",
+    "Original benchmark validity and outcomes unchanged."
+  ]
+}

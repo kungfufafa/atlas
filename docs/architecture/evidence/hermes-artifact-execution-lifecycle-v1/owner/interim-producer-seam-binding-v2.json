@@ -1,0 +1,13 @@
+{
+  "qualification": "Stable seam API update, later final binding still required",
+  "files": [
+    {
+      "path": "packages/core/src/artifact-publication.ts",
+      "sha256": "ed8f32a9d21a003a03c7c985d2252e986a8576c13e0ec545aef2226357e3e450"
+    },
+    {
+      "path": "packages/core/src/contract.ts",
+      "sha256": "6cc78e3d649ed34bf41c560cf335d2ed96ef106d7e4e670343c2495225b44939"
+    }
+  ]
+}

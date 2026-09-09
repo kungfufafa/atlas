@@ -1,0 +1,518 @@
+{
+  "adoptionReceipt": {
+    "path": "outputs/hermes-evidence/2026-09-07/candidate10-adoption/application/adoption-receipt.json",
+    "sha256": "6672abb2805fe4b2012647feeb4f82ca54c45b3a500184853a4aab350b0497de"
+  },
+  "archive": "outputs/hermes-evidence/2026-09-07/candidate10-adoption",
+  "archiveFiles": 13107,
+  "archiveManifest": {
+    "path": "outputs/hermes-evidence/2026-09-07/candidate10-adoption/archive-manifest.json",
+    "sha256": "511c526871ed90aeecb2793d908e675aef999fe7f0f20a609c48ec38a17a9261"
+  },
+  "archiveSeal": {
+    "path": "outputs/hermes-evidence/2026-09-07/candidate10-adoption/seal.json",
+    "sha256": "85218f71df5a0b415f00d454197e340e2088301aac40ea5dfbd123505e23312d"
+  },
+  "at": "2026-09-07T12:15:12.732691+00:00",
+  "closedPackages": [
+    {
+      "archivePrefix": "integration",
+      "bytes": 23748632,
+      "closure": "seal.json",
+      "closureSha256": "358c9599e22373fbab3a00bb900ffd62876960fdf49387630b3cafa45edb3a10",
+      "excluded": [
+        {
+          "path": "source/apps/cli/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/mobile/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/automation/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/discord/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/telegram/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/whatsapp/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/server/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/web/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/agent/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/client/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/core/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/db/node_modules",
+          "reason": "dependency_or_cache"
+        }
+      ],
+      "manifestSha256": "07b2cca90f930cd57a5cbb439971fc795f8fe2f087a43bc8926f126714b7f024",
+      "regularFiles": 2151,
+      "source": "/private/tmp/atlas-candidate10-integration"
+    },
+    {
+      "archivePrefix": "independent-review",
+      "bytes": 45611,
+      "closure": "seal.json",
+      "closureSha256": "cda4e0a41518db9c1a76c91af5e0374294c5f2b4679733f503e04975664f1cb5",
+      "excluded": [],
+      "manifestSha256": "9f4cca13a42de4df3d1b2cd06800406b8f206aa2efb49267f86237f2105e5443",
+      "regularFiles": 9,
+      "source": "/private/tmp/atlas-candidate10-independent-review"
+    },
+    {
+      "archivePrefix": "application",
+      "bytes": 127145,
+      "closure": "seal.json",
+      "closureSha256": "54391178bc375995dce3bc3fbb482b0814db2a94391548b425515673be693150",
+      "excluded": [],
+      "manifestSha256": "53ac763f904ec7c094b43c49dac3759ef597f28c46aac3207c5940b33bd5e3dc",
+      "regularFiles": 13,
+      "source": "/private/tmp/atlas-candidate10-application"
+    },
+    {
+      "archivePrefix": "title/component",
+      "bytes": 24390484,
+      "closure": "seal.json",
+      "closureSha256": "000e93927a16c9805e20d557736a7d6d3f5272130e60a528f7d4ccf4a305446d",
+      "excluded": [
+        {
+          "path": "source/apps/cli/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/mobile/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/automation/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/discord/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/telegram/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/whatsapp/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/server/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/web/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/agent/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/client/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/core/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/db/node_modules",
+          "reason": "dependency_or_cache"
+        }
+      ],
+      "manifestSha256": "c3656d50de37be15d8770a79fb774aef7a6023bbbacded59c6adb574ccdaee0f",
+      "regularFiles": 2210,
+      "source": "/private/tmp/atlas-title-cancellation-c9"
+    },
+    {
+      "archivePrefix": "title/independent-review",
+      "bytes": 11496,
+      "closure": "seal.json",
+      "closureSha256": "9a389f91d7fc81561f093fd9278687b508654e94bd4b09ca88bc83b9f22dd73e",
+      "excluded": [],
+      "manifestSha256": "8cb18bb4353abe1aafe52878f5259c2fa9083cd2e45e0ebf1d2ff3a1057fb993",
+      "regularFiles": 5,
+      "source": "/private/tmp/atlas-title-cancellation-c9-independent-review"
+    },
+    {
+      "archivePrefix": "docx/v1/component",
+      "bytes": 23978141,
+      "closure": "closure.json",
+      "closureSha256": "3123df85bbf1bde796efaaa7c806accf6717f877dd52f6ee9966588a84b44615",
+      "excluded": [
+        {
+          "path": "source/apps/cli/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/mobile/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/automation/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/discord/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/telegram/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/whatsapp/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/server/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/web/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/agent/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/client/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/core/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/db/node_modules",
+          "reason": "dependency_or_cache"
+        }
+      ],
+      "manifestSha256": "e6b30e6ce039ef287d5e85d2e55f1e97ea9c3a2b232738d562cfb7b622e7d5a2",
+      "regularFiles": 2175,
+      "source": "/private/tmp/atlas-docx-readback-c9"
+    },
+    {
+      "archivePrefix": "docx/v1/independent-review",
+      "bytes": 5667,
+      "closure": "closure.json",
+      "closureSha256": "4c354ea0f3f11c9c5e87cc1dd4f3735948741980ca1d3558de0fd8cef2dae99b",
+      "excluded": [],
+      "manifestSha256": "c372cbd4eff7d01846afb9bd9db349a77d3e93aca63431bc6d728ba8ef80eee2",
+      "regularFiles": 4,
+      "source": "/private/tmp/atlas-docx-readback-c9-independent-review"
+    },
+    {
+      "archivePrefix": "docx/v2/component",
+      "bytes": 23867299,
+      "closure": "closure.json",
+      "closureSha256": "afc2069568b588f586d0b4a88b6c49c91c1dc7c14a92641424d6cf6ca762b674",
+      "excluded": [
+        {
+          "path": "source/apps/cli/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/mobile/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/automation/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/discord/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/telegram/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/whatsapp/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/server/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/web/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/agent/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/client/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/core/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/db/node_modules",
+          "reason": "dependency_or_cache"
+        }
+      ],
+      "manifestSha256": "819037777986e8b2ca2309a01329f5476b7877e5cbbffcaeda15747658581fa8",
+      "regularFiles": 2158,
+      "source": "/private/tmp/atlas-docx-readback-c9-v2"
+    },
+    {
+      "archivePrefix": "docx/v2/independent-review",
+      "bytes": 3490,
+      "closure": "closure.json",
+      "closureSha256": "4da9c6f0afcd4f69fe2abe60eb5a556c4647e223669d97ddd21eda18bdc16e2e",
+      "excluded": [],
+      "manifestSha256": "1ba31c05a1f37eefd1a8b6062e61929fba503c712ea006b3ee49e67454eb3ac9",
+      "regularFiles": 4,
+      "source": "/private/tmp/atlas-docx-readback-c9-v2-independent-review"
+    },
+    {
+      "archivePrefix": "guidance/v1/component",
+      "bytes": 23547297,
+      "closure": "seal.json",
+      "closureSha256": "488a0fe2a7b68fdbaab30ea5718c50db5858e2771e99742a29c8c62e33ea0033",
+      "excluded": [
+        {
+          "path": "source/apps/cli/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/mobile/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/automation/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/discord/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/telegram/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/whatsapp/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/server/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/web/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/agent/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/client/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/core/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/db/node_modules",
+          "reason": "dependency_or_cache"
+        }
+      ],
+      "manifestSha256": "a99f2da9b0544c89554bbeeec98414696db7cd79296b6288f6805e144b262a37",
+      "regularFiles": 2142,
+      "source": "/private/tmp/atlas-requirement-coverage-guidance-c9"
+    },
+    {
+      "archivePrefix": "guidance/v1/independent-review",
+      "bytes": 765542,
+      "closure": "seal.json",
+      "closureSha256": "da8581d17a99b46670c014d2821029ab6dd388a824cf13d68e7f1b1f10d144a8",
+      "excluded": [],
+      "manifestSha256": "4b9bb827badd69d5a9bcd2d5083ba70a673bd60e8a256bf9c78693555070e44f",
+      "regularFiles": 30,
+      "source": "/private/tmp/atlas-requirement-coverage-guidance-c9-independent-review"
+    },
+    {
+      "archivePrefix": "guidance/v2/component",
+      "bytes": 23550934,
+      "closure": "seal.json",
+      "closureSha256": "e0479607605db56fd04c52c86eee1ca724e3fde3f70490ec5af6f855b174ae1f",
+      "excluded": [
+        {
+          "path": "source/apps/cli/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/mobile/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/automation/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/discord/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/telegram/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/platform/whatsapp/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/server/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/apps/web/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/agent/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/client/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/core/node_modules",
+          "reason": "dependency_or_cache"
+        },
+        {
+          "path": "source/packages/db/node_modules",
+          "reason": "dependency_or_cache"
+        }
+      ],
+      "manifestSha256": "770733138c1372298fc01f13b73faa64d759c57b314c389b328342da7b448c14",
+      "regularFiles": 2143,
+      "source": "/private/tmp/atlas-requirement-coverage-guidance-v2-c9"
+    },
+    {
+      "archivePrefix": "guidance/v2/independent-review",
+      "bytes": 742942,
+      "closure": "seal.json",
+      "closureSha256": "e1a9cae565209d5c67c9140a5bb343ba147c65441c7644f874550089a42a8146",
+      "excluded": [],
+      "manifestSha256": "4ec06840a62b971e6def43878d2655f59817a49d5521926978528dd0a0d2afa4",
+      "regularFiles": 21,
+      "source": "/private/tmp/atlas-requirement-coverage-guidance-v2-c9-independent-review"
+    },
+    {
+      "archivePrefix": "assessments/title-ux",
+      "bytes": 40049,
+      "closure": "seal.json",
+      "closureSha256": "a02121cfc445196a96327a6f2ac65dd438e89be8740248339667ce958dcf20ac",
+      "excluded": [],
+      "manifestSha256": "2a135458b6be17507862b30fd86c43da42a222aa5aa4a4a23ca41ca6cbbce9f8",
+      "regularFiles": 9,
+      "source": "/private/tmp/atlas-c10-title-ux-assessment"
+    },
+    {
+      "archivePrefix": "assessments/completion-verification",
+      "bytes": 181790,
+      "closure": "closure.json",
+      "closureSha256": "61ed889ad1fc18c837e49c7b145dcad653eca6624212c4ed6e0bc7a3b2035a16",
+      "excluded": [],
+      "manifestSha256": "578f47cb856c82d3486a67b3e768f4621007496b3b283ffe3b581784a7cff45d",
+      "regularFiles": 12,
+      "source": "/private/tmp/atlas-c10-completion-verification-assessment"
+    }
+  ],
+  "deployed": false,
+  "integrationReview": {
+    "path": "outputs/hermes-evidence/2026-09-07/candidate10-adoption/independent-review/review.json",
+    "sha256": "0fd935318591f62e6dd7052634cf4564a835ab279ab3843c0c99bfb19713728f"
+  },
+  "newModelCalls": 0,
+  "newStudyAdmission": false,
+  "newTests": 0,
+  "oldArchiveReferences": [
+    {
+      "bytes": 2103429,
+      "path": "outputs/hermes-evidence/2026-09-07/candidate9-adoption/archive-manifest.json",
+      "scope": "Existing archive manifest bound only; raw archive members are not recopied or exhaustively reverified in this operation.",
+      "sha256": "b5c0ac644807da8e30025cadd8e570e9488cd093e6a7238dcf9737b900d02c36"
+    },
+    {
+      "bytes": 316224,
+      "path": "outputs/hermes-evidence/2026-09-07/file-v3-c9-confirmation-review/archive-manifest.json",
+      "scope": "Existing archive manifest bound only; raw archive members are not recopied or exhaustively reverified in this operation.",
+      "sha256": "9c762d4086971c771da9bb78645db79f1b5a6b76070ab3ce56b8155fe58ec1d5"
+    },
+    {
+      "bytes": 4417277,
+      "path": "outputs/hermes-evidence/2026-09-07/file-v3-c9-confirmation-raw/archive-manifest.json",
+      "scope": "Existing archive manifest bound only; raw archive members are not recopied or exhaustively reverified in this operation.",
+      "sha256": "3e40586bea2272b083857105a8a19d54a852117484c9277fc515490de3d51eed"
+    }
+  ],
+  "originalSourceFiles": 13088,
+  "rootAdopted": true,
+  "sourceHash": "0a466ba828436e47c544765cc09628aebafdc2b623fe77a6913cda3dd760247c"
+}

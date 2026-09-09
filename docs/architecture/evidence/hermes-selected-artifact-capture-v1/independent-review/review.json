@@ -1,0 +1,80 @@
+{
+  "at": "2026-09-07T00:37:25.982563+00:00",
+  "status": "independent-source-review-complete-no-blocker-within-unwired-scope",
+  "sourceHash": "8942bd95dc70c06f260842a730b64919139341f2727ab79a000146743109c3ad",
+  "sourceFiles": 2088,
+  "readinessSha256": "f44c791409527ece484b98502368a43d161ea247f695b23cf6b89451c7119544",
+  "bindingsSha256": "30fd18bce4591f5af4c1ebb57a386c6c05d5c56164866400b2b03f6ac7cbce87",
+  "blockingFindings": [],
+  "areas": [
+    {
+      "area": "Path traversal and descriptor/name stability",
+      "disposition": "no blocker found within declared host/filesystem contract",
+      "assessment": "The static worker traverses every canonical root component from / with held dirfd/O_DIRECTORY/O_NOFOLLOW descriptors, then selected parents relative to the anchored root. No realpath-then-open fallback exists. It rejects hidden/dot/empty/control/backslash/absolute selections and case-insensitive metadata sidecars. Final no-follow, nonblocking open requires a single-link regular file. Pre/post descriptor metadata, current file name and directory link/metadata checks precede byte release."
+    },
+    {
+      "area": "Rename restore, hardlinks and nonregular files",
+      "disposition": "source and owner evidence consistent",
+      "assessment": "Observed root and selected directory metadata catches the same-inode parent rename-away/restore case in the owner barrier test, not merely final identity substitution. Existing and added-after-open hardlinks reject. Directory and FIFO selections reject; O_NONBLOCK prevents the FIFO open from waiting for a peer. Neither link-count checks nor stable metadata establish historical authorship or globally atomic snapshots."
+    },
+    {
+      "area": "Read bounds and no partial usable bytes",
+      "disposition": "no blocker found",
+      "assessment": "Reader consumes at most 25 MiB plus an overflow byte, checks pre/post size and identity, then emits one complete JSON response. Server bounds request/stdout/stderr, validates strict response schema, expected root/path, canonical base64, decoded size and SHA-256. Nonzero/malformed/overflow/aborted outcomes reject. Actual raw worker race fixtures assert no bytesBase64 field; normal API returns no result on rejection."
+    },
+    {
+      "area": "Process time/cancellation",
+      "disposition": "no blocker within fixed-worker contract; integration limits retained",
+      "assessment": "Spawned worker duration has a 10-second kill timer and in-flight abort handling. The fixed static worker has no child spawning. Deadline/cancellation reject after close in the exercised paths, and owner process-ID probes show the test child gone. This is not universal executable-resolution, event-loop, kernel-close or arbitrary-runtime-wrapper termination proof."
+    },
+    {
+      "area": "Trusted runtime/root selection",
+      "disposition": "no new model authority",
+      "assessment": "Factory takes the already-authorized canonical absolute root from trusted host code and captures its device/inode. The model cannot choose root/actor/session/publication IDs through this unwired module. Runtime selection reuses host ATLAS_PYTHON_PATH/managed runtime/installed python3 resolution, with static -I -S script, cwd / and minimal environment. Runtime executable and host environment integrity remain trusted assumptions; the static reader is not arbitrary user Python confinement."
+    },
+    {
+      "area": "Capture provenance versus publication authority",
+      "disposition": "correctly separate and unwired",
+      "assessment": "Result evidence is selected_workspace_capture and contains no generated-by-tool/session claim. Search finds use only in the three added files. Publication DB schema and sourceEvidence union remain tool_output_bytes, so selected capture cannot truthfully enter publication authority until a separate evidence-class migration and integration are completed."
+    }
+  ],
+  "limitations": [
+    "Owner gates are 17 tests/82 assertions on darwin-arm64, plus scoped and production TypeScript/lint. This independent review inspected source, owner logs and exact hashes; no tests were rerun and no additional independent passing-test count is claimed.",
+    "Deterministic race tests run a fixture copy of the exact worker with inserted OS-pipe barriers. Production exposes no such barrier hook. Fault-runtime wrappers exercise output/termination transport boundaries rather than prove confinement of a hostile interpreter.",
+    "Observed stable metadata certifies only what these checks saw around one captured byte sequence. It is not a globally atomic filesystem snapshot, immutable current pathname, original authorship, semantic correctness, or protection against unrestricted host/admin manipulation, inode reuse and unusual mounts/timestamp semantics.",
+    "The factory signal applies to anchor acquisition; it is not retained for later capture calls. Every capture must receive the current invocation cancellation signal explicitly, and host integration must revalidate current authorization, profile lifecycle and explicit intent around asynchronous capture/publication. A root device/inode pair is not durable tenant lifecycle fencing.",
+    "The worker timer starts after runtime resolution and spawn. Async access/lookup before spawning, event-loop stalls and uninterruptible kernel I/O/close are not covered by a universal 10-second end-to-end deadline. Child error/spawn-failure cleanup follows a separate rejection branch; owner tests do not prove every child-error/kill-failure path.",
+    "Only the fixed worker is known not to spawn descendants. Killing its direct child is sufficient under that assumption; host-selected runtime wrappers, malicious interpreter changes or arbitrary descendants are outside the termination claim.",
+    "The active-worker cap is process/module-local and memory includes bounded copies, JSON/base64 and decoded buffers; this is not a zero-copy or per-host aggregate resource guarantee. Capacity exhaustion safely rejects rather than queues/retries.",
+    "Linux primitive checks exist but no Linux execution gate was run. Windows is unsupported. NFS/special mounts, filesystem-specific behavior, executable tampering and OS confinement require their own deployment evidence.",
+    "Selected path bounds here permit up to 4096 characters, while the existing publication path validator caps 1024. Some successfully captured selections will remain ineligible for later publication unless the integrated contract deliberately aligns or rejects those paths while preserving the actual file effect.",
+    "No snapshot storage, publication, producer replay, endpoint, ToolContext, channel/share/history/UI consumer, or native/Bash/Python end-to-end capture is wired by this patch. Future integration must preserve selected-capture provenance and stage exactly returned bytes without rereading the mutable source path; it must not silently label them tool_output_bytes.",
+    "No complete artifact race fix, cold recovery, Atlas/Hermes parity or quality improvement is established by this component."
+  ],
+  "ownerEvidence": {
+    "tests": 17,
+    "assertions": 82,
+    "host": "darwin-arm64",
+    "python": "3.14.3 at owner-recorded /opt/homebrew/bin/python3",
+    "linuxGateRun": false,
+    "ownerGatesInspected": 6,
+    "testsRerunByReviewer": false
+  },
+  "independentChecks": {
+    "sourceFilesVerified": 2088,
+    "rootC5FilesVerifiedUnchanged": 2078,
+    "foundationFilesVerifiedUnchanged": 2085,
+    "ownerEvidenceFilesVerified": 22,
+    "ownedAddedPaths": 3,
+    "patchApplicationChecks": "combined and production apply read-only atop frozen publication foundation",
+    "schemaChanged": false,
+    "sourceEvidenceUnionChanged": false
+  },
+  "inspectionErrorsRetained": [
+    "Two mixed reads used the evidence directory for a source path or source directory for an evidence log; returned path-not-found exits were corrected with absolute paths. All relevant source and initial log content was subsequently read. These were reviewer inspection errors, not new owner gate failures."
+  ],
+  "ownerInitialFailure": "initial-format.log retains Bun temporary-directory AccessDenied during missing dependency-link setup; first substantive 11-test run passed, followed by final extended 17-test run.",
+  "sourceEdits": 0,
+  "providerCalls": 0,
+  "productionActivation": false
+}

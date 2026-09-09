@@ -12,6 +12,8 @@ import {
   type WhatsAppAccount,
 } from "./group-message";
 
+const IMAGE_FILENAME_PATTERN = /\.(?:jpe?g|png|webp|gif)$/i;
+
 interface WhatsAppInboundKey {
   fromMe?: boolean | null;
   participant?: string | null;
@@ -59,6 +61,8 @@ export type InboundWhatsAppMediaKind =
   | "image"
   | "document"
   | "audio"
+  | "video"
+  | "sticker"
   | "unsupported";
 
 export interface InboundWhatsAppMediaMeta {
@@ -112,9 +116,14 @@ export function inspectInboundWhatsAppMedia(
       "document";
     const caption = content.documentMessage.caption?.trim() ?? "";
     const fileLength = asFiniteByteLength(content.documentMessage.fileLength);
-    const kind = mimetype.toLowerCase().startsWith("image/")
-      ? "image"
-      : "document";
+    const normalizedMimetype = mimetype.toLowerCase().split(";")[0]?.trim();
+    const kind =
+      normalizedMimetype?.startsWith("image/") ||
+      ((!normalizedMimetype ||
+        normalizedMimetype === "application/octet-stream") &&
+        IMAGE_FILENAME_PATTERN.test(filename))
+        ? "image"
+        : "document";
 
     return { caption, fileLength, filename, kind, mimetype };
   }
@@ -132,13 +141,23 @@ export function inspectInboundWhatsAppMedia(
     };
   }
 
-  if (content.videoMessage || content.stickerMessage) {
+  if (content.videoMessage) {
     return {
       caption: content.videoMessage?.caption?.trim() || "",
-      fileLength: null,
-      filename: "",
-      kind: "unsupported",
-      mimetype: "",
+      fileLength: asFiniteByteLength(content.videoMessage.fileLength),
+      filename: "video.mp4",
+      kind: "video",
+      mimetype: content.videoMessage.mimetype?.trim() || "video/mp4",
+    };
+  }
+
+  if (content.stickerMessage) {
+    return {
+      caption: "",
+      fileLength: asFiniteByteLength(content.stickerMessage.fileLength),
+      filename: "sticker.webp",
+      kind: "sticker",
+      mimetype: content.stickerMessage.mimetype?.trim() || "image/webp",
     };
   }
 
@@ -323,7 +342,8 @@ export function parseInboundWhatsAppMessage(
     key: WhatsAppInboundKey;
     message?: proto.IMessage | null;
   },
-  me: WhatsAppAccount | undefined
+  me: WhatsAppAccount | undefined,
+  options?: { allowUnaddressedGroup?: boolean }
 ): WhatsAppInboundChat | null {
   const remoteJid = msg.key.remoteJid?.trim();
   if (!remoteJid) {
@@ -365,7 +385,9 @@ export function parseInboundWhatsAppMessage(
       quotedParticipant,
       text,
     });
-    if (!decision.shouldHandle) {
+    // Media must reach authorization before the handler can explain a mention
+    // requirement. Dropping it here makes an uploaded file disappear silently.
+    if (!(decision.shouldHandle || options?.allowUnaddressedGroup || media)) {
       return null;
     }
   } else if (!isPrivateWhatsAppChat(normalizedRemoteJid)) {

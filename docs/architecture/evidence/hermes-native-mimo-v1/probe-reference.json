@@ -1,0 +1,28 @@
+{
+  "source": "/private/tmp/atlas-go-compatibility-probe-v1/execution/completed.json",
+  "bytes": 3092,
+  "sha256": "3fdac17312d98760aeff0b12e080487c7b920eda5cb12251b0ce368549415a87",
+  "scope": "compatibility-only",
+  "finishedAt": "2026-09-06T16:51:42.408Z",
+  "probeComplete": true,
+  "sourceUnchanged": true,
+  "selectedModel": "mimo-v2.5",
+  "selectionOrder": ["mimo-v2.5", "glm-5.3-flash"],
+  "planSha256": "5c5981703f649a6008b07f9d66a4bfe4d396db4e0796a7f05b92d14f9e992a37",
+  "runnerSha256": "54e23c0d247df09f1df32460533329878b533cf2424838497d03cae45ca13d2e",
+  "modelResults": [
+    {
+      "model": "mimo-v2.5",
+      "eligible": true,
+      "requestsAttempted": 5,
+      "allMandatoryUsageKnown": true
+    },
+    {
+      "model": "glm-5.3-flash",
+      "eligible": true,
+      "requestsAttempted": 5,
+      "allMandatoryUsageKnown": true
+    }
+  ],
+  "qualification": "Compatibility-only selection evidence. This is a model-and-User-Agent stratum; no model-only causal or agent-quality claim. Raw request/response content is not copied here."
+}

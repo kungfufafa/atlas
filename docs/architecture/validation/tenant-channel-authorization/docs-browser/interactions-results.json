@@ -1,0 +1,18 @@
+{
+  "navigation": [
+    "discord\u2192whatsapp",
+    "whatsapp\u2192telegram",
+    "telegram\u2192discord"
+  ],
+  "searchResponses": [
+    {
+      "url": "http://127.0.0.1:3000/atlas/api/search",
+      "status": 200
+    }
+  ],
+  "searchDismissAndReopen": true,
+  "errors": [],
+  "visibleSearchResultsVerified": true,
+  "searchResultSelectionClosedDialog": true,
+  "searchDestinationTransition": "Not separately verified; initial route already matched the checked Discord URL."
+}

@@ -61,6 +61,7 @@ describe("WhatsApp socket helpers", () => {
       "connection.update",
       "creds.update",
       "messages.upsert",
+      "messages.reaction",
     ]);
   });
 

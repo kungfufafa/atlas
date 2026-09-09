@@ -73,7 +73,10 @@ describe("spreadsheet tool V2", () => {
       expect(readRes.rows.length).toBe(3);
       expect(readRes.rows[0]?.[0]).toBe("Item");
       expect(readRes.rows[1]?.[0]).toBe("Apples");
-      expect(readRes.rows[1]?.[3]).toBe("=B2*C2");
+      expect(readRes.rows[1]?.[3]).toEqual({
+        calculationStatus: "pending",
+        formula: "=B2*C2",
+      });
     });
   });
 
@@ -99,27 +102,27 @@ describe("spreadsheet tool V2", () => {
           sheetName: "2026",
         },
         context
-      )) as { status: string };
+      )) as { path: string; status: string };
       expect(addSheetRes.status).toBe("sheet_added");
 
       const writeRes = (await spreadsheetTool.run(
         {
           action: "write_range",
-          path: "finance.xlsx",
+          path: addSheetRes.path,
           sheetName: "2026",
           startCol: 2,
           startRow: 2,
           values: [[85_000]],
         },
         context
-      )) as { cellsUpdated: number; status: string };
+      )) as { cellsUpdated: number; path: string; status: string };
       expect(writeRes.status).toBe("updated");
       expect(writeRes.cellsUpdated).toBe(1);
 
       const exportRes = (await spreadsheetTool.run(
         {
           action: "export_csv",
-          path: "finance.xlsx",
+          path: writeRes.path,
           sheetName: "2026",
           targetCsvPath: "report_2026.csv",
         },
@@ -146,6 +149,7 @@ describe("spreadsheet tool V2", () => {
         path.join(workspaceRoot, "artifacts", "sales.xlsx"),
         path.join(workspaceRoot, "sales.xlsx")
       );
+      await rm(path.join(workspaceRoot, "artifacts", "sales.xlsx"));
 
       await spreadsheetTool.run(
         {
@@ -169,19 +173,19 @@ describe("spreadsheet tool V2", () => {
         context
       )) as { path: string; status: string };
       expect(writeRes.status).toBe("updated");
-      expect(writeRes.path).toBe("artifacts/sales.xlsx");
+      expect(writeRes.path).toBe("artifacts/sales-v2.xlsx");
 
       const inspectRes = (await spreadsheetTool.run(
         {
           action: "inspect",
-          path: "sales.xlsx",
+          path: writeRes.path,
         },
         context
       )) as {
         path: string;
         sheets: Array<{ name: string }>;
       };
-      expect(inspectRes.path).toBe("artifacts/sales.xlsx");
+      expect(inspectRes.path).toBe(writeRes.path);
       expect(inspectRes.sheets[0]?.name).toBe("Canvas");
 
       const leftover = new ExcelJS.Workbook();

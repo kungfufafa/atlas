@@ -1,0 +1,735 @@
+apps/cli/src/clipboard-image.ts(6,42): error TS2307: Cannot find module '@crosscopy/clipboard' or its corresponding type declarations.
+apps/platform/discord/src/attachments.ts(27,42): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/bot.ts(7,8): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/bot.ts(46,42): error TS7006: Parameter 'readyClient' implicitly has an 'any' type.
+apps/platform/discord/src/bot.ts(63,46): error TS7006: Parameter 'interaction' implicitly has an 'any' type.
+apps/platform/discord/src/bot.ts(111,39): error TS7006: Parameter '_previous' implicitly has an 'any' type.
+apps/platform/discord/src/bot.ts(111,50): error TS7006: Parameter 'current' implicitly has an 'any' type.
+apps/platform/discord/src/channel-artifact-flow.ts(14,39): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/chat-handler.ts(41,8): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/chat-handler.ts(42,29): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/chat-handler.ts(157,35): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/guild-message.ts(1,30): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/messenger.ts(5,8): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/native-actions.ts(18,8): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/native-actions.ts(434,40): error TS7006: Parameter 'text' implicitly has an 'any' type.
+apps/platform/discord/src/native-approval-message.ts(2,62): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/native-audio.ts(1,49): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/native-interaction-handler.ts(1,30): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/native-origin.ts(1,39): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/native-questionnaire.ts(17,8): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/send-artifact-attachment.ts(7,58): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/slash-commands.ts(7,8): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/slash-commands.ts(50,30): error TS7006: Parameter 'option' implicitly has an 'any' type.
+apps/platform/discord/src/test-helpers.ts(18,30): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/test-helpers.ts(632,23): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/test-helpers.ts(709,26): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/voice-session.ts(12,8): error TS2307: Cannot find module '@discordjs/voice' or its corresponding type declarations.
+apps/platform/discord/src/voice-session.ts(13,43): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/voice-session.ts(14,37): error TS2307: Cannot find module 'discord.js' or its corresponding type declarations.
+apps/platform/discord/src/voice-session.ts(15,24): error TS2307: Cannot find module 'opusscript' or its corresponding type declarations.
+apps/platform/telegram/src/attachments.ts(19,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/audio.ts(4,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/bot.ts(2,35): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/bot.ts(62,22): error TS7006: Parameter 'ctx' implicitly has an 'any' type.
+apps/platform/telegram/src/bot.ts(65,34): error TS7006: Parameter 'ctx' implicitly has an 'any' type.
+apps/platform/telegram/src/channel-artifact-flow.ts(13,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/chat-handler.ts(40,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/group-message.ts(1,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/images.ts(6,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/index.ts(130,15): error TS7006: Parameter 'info' implicitly has an 'any' type.
+apps/platform/telegram/src/native-actions.ts(9,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/native-actions.ts(10,40): error TS2307: Cannot find module 'grammy/types' or its corresponding type declarations.
+apps/platform/telegram/src/native-actions.ts(157,35): error TS7006: Parameter 'text' implicitly has an 'any' type.
+apps/platform/telegram/src/native-controls.ts(7,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/rich-message.ts(1,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/send-artifact-document.ts(5,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/send-artifact-document.ts(6,27): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/test-helpers.ts(23,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/typing-indicator.ts(1,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/telegram/src/video.ts(7,30): error TS2307: Cannot find module 'grammy' or its corresponding type declarations.
+apps/platform/whatsapp/src/attachments.ts(39,8): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/attachments.ts(403,31): error TS7006: Parameter 'message' implicitly has an 'any' type.
+apps/platform/whatsapp/src/attachments.ts(410,9): error TS2345: Argument of type 'Transform | null' is not assignable to parameter of type 'Transform'.
+  Type 'null' is not assignable to type 'Transform'.
+apps/platform/whatsapp/src/audio.ts(6,32): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/auth-state.ts(7,8): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/channel-artifact-flow.ts(14,31): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/chat-handler.ts(38,8): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/chat-handler.ts(1971,20): error TS2339: Property 'key' does not exist on type '{}'.
+apps/platform/whatsapp/src/group-message.ts(1,45): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/inbound-message.ts(9,8): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/inbound-message.ts(271,14): error TS7006: Parameter 'jid' implicitly has an 'any' type.
+apps/platform/whatsapp/src/inbound-message.ts(272,11): error TS7006: Parameter 'jid' implicitly has an 'any' type.
+apps/platform/whatsapp/src/native-actions.ts(10,8): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/native-controls.ts(7,45): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/native-media.ts(104,29): error TS2504: Type 'ReadableStream<Uint8Array<ArrayBufferLike>>' must have a '[Symbol.asyncIterator]()' method that returns an async iterator.
+apps/platform/whatsapp/src/send-artifact-media.ts(6,31): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/socket.ts(13,8): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/socket.ts(194,46): error TS7006: Parameter 'update' implicitly has an 'any' type.
+apps/platform/whatsapp/src/socket.ts(286,46): error TS7006: Parameter 'events' implicitly has an 'any' type.
+apps/platform/whatsapp/src/socket.ts(291,56): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ key: WAMessageKey; reaction: { key?: any; text?: string | null | undefined; }; }'.
+apps/platform/whatsapp/src/socket.ts(309,45): error TS7006: Parameter 'share' implicitly has an 'any' type.
+apps/platform/whatsapp/src/socket.ts(315,44): error TS7006: Parameter 'm' implicitly has an 'any' type.
+apps/platform/whatsapp/src/socket.ts(343,33): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(344,33): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(345,47): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(346,61): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(347,61): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ key: WhatsAppInboundKey; message?: any; }'.
+apps/platform/whatsapp/src/socket.ts(354,59): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ key: WhatsAppInboundKey; message?: any; }'.
+apps/platform/whatsapp/src/socket.ts(365,67): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(370,17): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(371,19): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(372,19): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(398,30): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(447,25): error TS18046: 'msg' is of type 'unknown'.
+apps/platform/whatsapp/src/socket.ts(451,45): error TS2345: Argument of type 'unknown' is not assignable to parameter of type '{ key: WhatsAppInboundKey; message?: any; }'.
+apps/platform/whatsapp/src/todo-status-message.ts(2,31): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/platform/whatsapp/src/typing-indicator.ts(1,31): error TS2307: Cannot find module '@whiskeysockets/baileys' or its corresponding type declarations.
+apps/server/src/http/app.ts(2,29): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/app.ts(52,16): error TS7006: Parameter 'err' implicitly has an 'any' type.
+apps/server/src/http/app.ts(69,23): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/app.ts(69,26): error TS7006: Parameter 'next' implicitly has an 'any' type.
+apps/server/src/http/app.ts(153,29): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/app.ts(160,17): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/auth-middleware.ts(2,40): error TS2307: Cannot find module 'hono' or its corresponding type declarations.
+apps/server/src/http/auth-middleware.ts(75,17): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/auth-middleware.ts(75,20): error TS7006: Parameter 'next' implicitly has an 'any' type.
+apps/server/src/http/cors.ts(1,40): error TS2307: Cannot find module 'hono' or its corresponding type declarations.
+apps/server/src/http/cors.ts(2,22): error TS2307: Cannot find module 'hono/cors' or its corresponding type declarations.
+apps/server/src/http/openapi.ts(2,29): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/org-guards.ts(2,30): error TS2307: Cannot find module 'hono' or its corresponding type declarations.
+apps/server/src/http/org-middleware.ts(2,40): error TS2307: Cannot find module 'hono' or its corresponding type declarations.
+apps/server/src/http/org-middleware.ts(62,17): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/org-middleware.ts(62,20): error TS7006: Parameter 'next' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-preview.ts(8,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/artifact-preview.ts(221,55): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-preview.ts(273,56): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-preview.ts(325,47): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-preview.ts(335,47): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-preview.ts(357,55): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-preview.ts(388,57): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-preview.ts(416,65): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-preview.ts(445,56): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-preview.ts(533,63): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-preview.ts(578,63): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-preview.ts(604,64): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-preview.ts(649,64): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-preview.ts(680,59): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-preview.ts(718,67): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-shares.ts(34,63): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-shares.ts(76,69): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-shares.ts(100,74): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-shares.ts(111,63): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/artifact-shares.ts(139,55): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/auth.ts(17,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/auth.ts(418,37): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/auth.ts(505,37): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/auth.ts(546,31): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/auth.ts(574,35): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/auth.ts(587,35): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/auth.ts(617,47): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/auth.ts(644,37): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/auth.ts(654,45): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/auth.ts(686,50): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/auth.ts(724,35): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/auth.ts(734,36): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/auth.ts(747,42): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/automations.ts(15,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/automations.ts(329,44): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/automations.ts(342,37): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/automations.ts(349,38): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/automations.ts(366,51): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/automations.ts(378,51): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/automations.ts(418,54): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/automations.ts(431,56): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/automations.ts(474,56): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/automations.ts(495,66): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/automations.ts(519,67): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/channel-authorization.ts(15,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+apps/server/src/http/routes/channel-authorization.ts(73,55): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/channel-authorization.ts(120,57): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/channel-authorization.ts(174,59): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/channel-authorization.ts(184,59): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/channel-authorization.ts(198,57): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/channel-authorization.ts(242,62): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/channel-voice.ts(8,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+apps/server/src/http/routes/channel-voice.ts(87,55): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/coding-harnesses.ts(23,51): error TS7006: Parameter 'context' implicitly has an 'any' type.
+apps/server/src/http/routes/coding-harnesses.ts(37,51): error TS7006: Parameter 'context' implicitly has an 'any' type.
+apps/server/src/http/routes/composio.ts(32,49): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/composio.ts(104,43): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/composio.ts(111,64): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/composio.ts(132,65): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/composio.ts(154,65): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/composio.ts(187,68): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/composio.ts(210,62): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/composio.ts(233,63): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/composio.ts(248,63): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/data-portability.ts(8,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/data-portability.ts(160,46): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/data-portability.ts(175,55): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/data-portability.ts(192,55): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/internal-automations.ts(16,56): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/internal-automations.ts(68,65): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/internal-curator.ts(15,47): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/internal-curator.ts(28,63): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/mcp.ts(10,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/mcp.ts(281,37): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/mcp.ts(287,38): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/mcp.ts(297,43): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/mcp.ts(311,56): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/mcp.ts(322,53): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/mcp.ts(333,47): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/mcp.ts(344,49): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/mcp.ts(357,50): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/mcp.ts(377,58): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/mcp.ts(397,70): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(56,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/models.ts(1418,51): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1434,32): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1444,42): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1460,35): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1466,40): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1471,47): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1479,46): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1487,61): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1506,41): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1525,36): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1541,49): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1554,50): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1565,43): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1580,35): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1585,43): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1593,43): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1601,43): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1609,43): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1618,41): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1626,41): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1645,48): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1653,48): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1672,43): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1709,51): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1717,51): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1736,42): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1761,40): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1766,40): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1781,46): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1798,48): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1805,57): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1829,43): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1837,43): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1859,54): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1873,42): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1879,42): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1901,53): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1915,43): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1920,43): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1937,49): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1944,49): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1961,55): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1977,43): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(1985,58): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(2003,43): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(2026,57): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/models.ts(2040,54): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/notification-destinations.ts(28,51): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/notification-destinations.ts(35,52): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/notification-destinations.ts(56,66): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/notification-destinations.ts(83,12): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/notification-destinations.ts(105,69): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/notification-webhooks.ts(20,48): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-members.ts(12,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/org-members.ts(115,46): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-members.ts(182,46): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-members.ts(236,45): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-members.ts(294,55): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-members.ts(349,56): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-members.ts(419,39): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-memory.ts(13,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/org-memory.ts(112,44): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-memory.ts(160,44): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-memory.ts(214,51): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-memory.ts(269,52): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-memory.ts(318,49): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-memory.ts(372,51): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-memory.ts(428,53): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-memory.ts(489,52): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-memory.ts(537,64): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-memory.ts(580,58): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-memory.ts(628,73): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-memory.ts(692,54): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-memory.ts(756,12): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/org-memory.ts(817,74): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/platform-orgs.ts(10,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/platform-orgs.ts(107,39): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/platform-orgs.ts(118,40): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/platform-orgs.ts(184,48): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/platform-orgs.ts(237,49): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/platform-orgs.ts(306,55): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profile-portability.ts(6,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/profile-portability.ts(191,57): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profile-portability.ts(215,55): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profile-portability.ts(252,47): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(27,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/profiles.ts(749,34): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(762,35): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(772,50): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(782,56): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(791,56): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(801,65): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(815,55): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(885,63): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(930,58): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(945,64): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(964,64): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(987,60): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(996,61): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(1015,12): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(1031,12): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(1056,52): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(1065,52): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(1078,55): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(1086,45): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(1093,53): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(1117,45): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(1130,48): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/profiles.ts(1180,52): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/sessions.ts(23,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/sessions.ts(514,35): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/sessions.ts(598,45): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/sessions.ts(643,68): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/sessions.ts(685,34): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/sessions.ts(705,47): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/sessions.ts(737,48): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/sessions.ts(755,54): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/sessions.ts(775,54): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/sessions.ts(804,71): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/sessions.ts(841,52): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/sessions.ts(862,52): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/sessions.ts(885,53): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/sessions.ts(913,55): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/setup-import.ts(9,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/setup-import.ts(144,52): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/setup-import.ts(173,52): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/skill-curator.ts(6,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/skill-curator.ts(52,51): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/skill-curator.ts(85,64): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/skill-proposals.ts(6,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/skill-proposals.ts(95,53): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/skill-proposals.ts(178,74): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/skill-proposals.ts(232,73): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/skill-suggestions.ts(6,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/skill-suggestions.ts(92,55): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/skill-suggestions.ts(172,12): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/skills.ts(11,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/skills.ts(262,32): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/skills.ts(268,33): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/skills.ts(279,41): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/skills.ts(292,38): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/skills.ts(298,41): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/skills.ts(306,43): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/skills.ts(325,44): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/skills.ts(344,53): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/skills.ts(364,64): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/subagents.ts(19,36): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/subagents.ts(94,47): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/subagents.ts(115,53): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/subagents.ts(136,55): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/subscription.ts(10,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/subscription.ts(32,44): error TS7006: Parameter 'context' implicitly has an 'any' type.
+apps/server/src/http/routes/subscription.ts(47,51): error TS7006: Parameter 'context' implicitly has an 'any' type.
+apps/server/src/http/routes/subscription.ts(56,59): error TS7006: Parameter 'context' implicitly has an 'any' type.
+apps/server/src/http/routes/subscription.ts(66,65): error TS7006: Parameter 'context' implicitly has an 'any' type.
+apps/server/src/http/routes/subscription.ts(79,67): error TS7006: Parameter 'context' implicitly has an 'any' type.
+apps/server/src/http/routes/subscription.ts(88,52): error TS7006: Parameter 'context' implicitly has an 'any' type.
+apps/server/src/http/routes/subscription.ts(95,51): error TS7006: Parameter 'context' implicitly has an 'any' type.
+apps/server/src/http/routes/system.ts(13,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/system.ts(203,35): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/system.ts(221,28): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/system.ts(226,35): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/system.ts(260,34): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/system.ts(300,24): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/system.ts(309,34): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/system.ts(315,68): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/system.ts(347,41): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/system.ts(355,44): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/system.ts(362,47): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tasks.ts(14,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/tasks.ts(294,31): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tasks.ts(300,45): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tasks.ts(323,32): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tasks.ts(358,39): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tasks.ts(370,39): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tasks.ts(414,42): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tasks.ts(427,44): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tasks.ts(470,44): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tasks.ts(498,48): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/token-optimization.ts(35,44): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/token-optimization.ts(154,44): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tools.ts(13,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/tools.ts(308,31): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tools.ts(313,32): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tools.ts(320,46): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tools.ts(331,39): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tools.ts(339,42): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tools.ts(355,44): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tools.ts(375,55): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tools.ts(396,51): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tools.ts(407,52): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/tools.ts(427,62): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/usage.ts(147,25): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/usage.ts(169,42): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/usage.ts(212,38): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/usage.ts(222,38): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/usage.ts(238,38): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/user-context.ts(6,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/user-context.ts(101,38): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/user-context.ts(110,38): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/user-context.ts(118,44): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/workers.ts(2,32): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/http/routes/workers.ts(3,30): error TS2307: Cannot find module 'hono' or its corresponding type declarations.
+apps/server/src/http/routes/workers.ts(136,68): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/workers.ts(183,44): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/routes/workers.ts(208,51): error TS7006: Parameter 'c' implicitly has an 'any' type.
+apps/server/src/http/shared.ts(26,30): error TS2307: Cannot find module 'hono' or its corresponding type declarations.
+apps/server/src/http/types.ts(1,34): error TS2307: Cannot find module '@hono/zod-openapi' or its corresponding type declarations.
+apps/server/src/lib/ensure-process-path.ts(4,21): error TS2307: Cannot find module 'fix-path' or its corresponding type declarations.
+apps/server/src/providers/anthropic/index.ts(1,37): error TS2307: Cannot find module '@anthropic-ai/sdk' or its corresponding type declarations.
+apps/server/src/providers/anthropic/index.ts(47,35): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/anthropic/index.ts(47,53): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/anthropic/index.ts(119,20): error TS7006: Parameter 'block' implicitly has an 'any' type.
+apps/server/src/providers/anthropic/index.ts(120,17): error TS7006: Parameter 'block' implicitly has an 'any' type.
+apps/server/src/providers/anthropic/web-search.ts(1,28): error TS2307: Cannot find module '@anthropic-ai/sdk' or its corresponding type declarations.
+apps/server/src/providers/anthropic/web-search.ts(10,8): error TS2307: Cannot find module '@anthropic-ai/sdk/resources/messages/messages' or its corresponding type declarations.
+apps/server/src/providers/anthropic/web-search.ts(633,5): error TS2739: Type '{}' is missing the following properties from type 'Pick<MessageCreateParams, "thinking" | "output_config">': thinking, output_config
+apps/server/src/providers/anthropic/web-search.ts(640,3): error TS2322: Type '{ thinking: { type: string; }; output_config?: { effort: NonNullable<MessageCreateParams["output_config"]>["effort"]; } | undefined; }' is not assignable to type 'Pick<MessageCreateParams, "thinking" | "output_config">'.
+  Property 'output_config' is optional in type '{ thinking: { type: string; }; output_config?: { effort: any; } | undefined; }' but required in type 'Pick<MessageCreateParams, "thinking" | "output_config">'.
+apps/server/src/providers/capabilities/executors/audio-transcription.ts(9,29): error TS2307: Cannot find module '@google/genai' or its corresponding type declarations.
+apps/server/src/providers/capabilities/executors/image-generation.ts(9,29): error TS2307: Cannot find module '@google/genai' or its corresponding type declarations.
+apps/server/src/providers/cerebras/index.ts(15,20): error TS2307: Cannot find module 'openai' or its corresponding type declarations.
+apps/server/src/providers/cerebras/index.ts(137,14): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/cerebras/index.ts(138,11): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/cerebras/index.ts(139,11): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/cerebras/index.ts(140,28): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/cerebras/index.ts(141,13): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/cerebras/index.ts(143,43): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/compatible-models.ts(14,20): error TS2307: Cannot find module 'openai' or its corresponding type declarations.
+apps/server/src/providers/fireworks/index.ts(16,20): error TS2307: Cannot find module 'openai' or its corresponding type declarations.
+apps/server/src/providers/fireworks/index.ts(205,14): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/fireworks/index.ts(206,11): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/fireworks/index.ts(207,11): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/fireworks/index.ts(208,28): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/fireworks/index.ts(209,13): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/fireworks/index.ts(211,43): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/gemini/config.ts(11,8): error TS2307: Cannot find module '@google/genai' or its corresponding type declarations.
+apps/server/src/providers/gemini/index.ts(15,8): error TS2307: Cannot find module '@google/genai' or its corresponding type declarations.
+apps/server/src/providers/gemini/index.ts(53,44): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/gemini/index.ts(53,62): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/gemini/messages.ts(9,8): error TS2307: Cannot find module '@google/genai' or its corresponding type declarations.
+apps/server/src/providers/openai-compatible/index.ts(19,20): error TS2307: Cannot find module 'openai' or its corresponding type declarations.
+apps/server/src/providers/openai-compatible/index.ts(216,14): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/openai-compatible/index.ts(217,11): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/openai-compatible/index.ts(218,11): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/openai-compatible/index.ts(219,28): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/openai-compatible/index.ts(220,13): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/openai-compatible/index.ts(221,49): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/openrouter/index.ts(15,30): error TS2307: Cannot find module '@openrouter/sdk' or its corresponding type declarations.
+apps/server/src/providers/openrouter/index.ts(16,40): error TS2307: Cannot find module '@openrouter/sdk' or its corresponding type declarations.
+apps/server/src/providers/openrouter/index.ts(25,8): error TS2307: Cannot find module '@openrouter/sdk/models' or its corresponding type declarations.
+apps/server/src/providers/openrouter/index.ts(26,33): error TS2307: Cannot find module '@openrouter/sdk/models/errors' or its corresponding type declarations.
+apps/server/src/providers/openrouter/index.ts(79,44): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/openrouter/index.ts(79,66): error TS18046: 'error' is of type 'unknown'.
+apps/server/src/providers/subscription/claude/runtime.ts(5,8): error TS2307: Cannot find module '@anthropic-ai/claude-agent-sdk' or its corresponding type declarations.
+apps/server/src/providers/subscription/claude/runtime.ts(849,9): error TS2307: Cannot find module '@anthropic-ai/claude-agent-sdk' or its corresponding type declarations.
+apps/server/src/providers/subscription/claude/structured-tool-bridge.ts(2,53): error TS2307: Cannot find module '@anthropic-ai/claude-agent-sdk' or its corresponding type declarations.
+apps/server/src/providers/subscription/claude/structured-tool-bridge.ts(5,19): error TS2307: Cannot find module 'zod/v3' or its corresponding type declarations.
+apps/server/src/services/composio-api-client.ts(2,26): error TS2307: Cannot find module '@composio/core' or its corresponding type declarations.
+apps/server/src/services/data-portability.ts(34,36): error TS2307: Cannot find module 'fflate' or its corresponding type declarations.
+apps/server/src/services/data-portability.ts(422,18): error TS7006: Parameter 'file' implicitly has an 'any' type.
+apps/server/src/services/data-portability.ts(454,32): error TS18046: 'data' is of type 'unknown'.
+apps/server/src/services/data-portability.ts(455,13): error TS18046: 'data' is of type 'unknown'.
+apps/server/src/services/data-portability.ts(468,11): error TS18046: 'data' is of type 'unknown'.
+apps/server/src/services/data-portability.ts(469,11): error TS18046: 'data' is of type 'unknown'.
+apps/server/src/services/data-portability.ts(470,11): error TS18046: 'data' is of type 'unknown'.
+apps/server/src/services/image-decoder-validation.ts(11,19): error TS2307: Cannot find module 'sharp' or its corresponding type declarations.
+apps/server/src/services/mcp-client-manager.ts(9,24): error TS2307: Cannot find module '@modelcontextprotocol/sdk/client/index.js' or its corresponding type declarations.
+apps/server/src/services/mcp-client-manager.ts(10,38): error TS2307: Cannot find module '@modelcontextprotocol/sdk/client/stdio.js' or its corresponding type declarations.
+apps/server/src/services/mcp-client-manager.ts(11,47): error TS2307: Cannot find module '@modelcontextprotocol/sdk/client/streamableHttp.js' or its corresponding type declarations.
+apps/server/src/services/mcp-client-manager.ts(12,32): error TS2307: Cannot find module '@modelcontextprotocol/sdk/shared/transport.js' or its corresponding type declarations.
+apps/server/src/services/profile-portability.ts(50,25): error TS2307: Cannot find module 'fflate' or its corresponding type declarations.
+apps/server/src/services/timezone-catalog-service.ts(6,30): error TS2307: Cannot find module '@countrystatecity/timezones' or its corresponding type declarations.
+apps/server/src/services/worker-manager-service.ts(124,36): error TS2307: Cannot find module 'pm2' or its corresponding type declarations.
+apps/server/src/services/worker-manager-service.ts(129,25): error TS2307: Cannot find module 'pm2' or its corresponding type declarations.
+apps/server/src/services/worker-manager-service.ts(185,64): error TS2307: Cannot find module 'pm2' or its corresponding type declarations.
+apps/server/src/services/worker-manager-service.ts(191,32): error TS2307: Cannot find module 'pm2' or its corresponding type declarations.
+apps/server/src/services/worker-manager-service.ts(192,69): error TS2307: Cannot find module 'pm2' or its corresponding type declarations.
+apps/server/src/services/worker-manager-service.ts(203,45): error TS2307: Cannot find module 'pm2' or its corresponding type declarations.
+apps/server/src/services/worker-manager-service.ts(217,36): error TS2307: Cannot find module 'pm2' or its corresponding type declarations.
+apps/server/src/tools/conversation-tools.ts(6,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+apps/server/src/tools/memory-tools.ts(5,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+apps/server/src/tools/python-execute-tool.ts(19,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+apps/server/src/tools/python-execute-tool.ts(123,7): error TS18046: 'parsed' is of type 'unknown'.
+apps/server/src/tools/python-execute-tool.ts(123,23): error TS18046: 'parsed' is of type 'unknown'.
+apps/server/src/tools/python-execute-tool.ts(124,27): error TS18046: 'parsed' is of type 'unknown'.
+apps/server/src/tools/python-execute-tool.ts(136,30): error TS18046: 'parsed' is of type 'unknown'.
+apps/server/src/tools/python-execute-tool.ts(188,14): error TS18046: 'parsed' is of type 'unknown'.
+apps/server/src/tools/python-execute-tool.ts(233,48): error TS18046: 'parsed' is of type 'unknown'.
+apps/server/src/tools/tool-search-tool.ts(8,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+apps/server/src/tools/tool-search-tool.ts(120,50): error TS18046: 'parsed' is of type 'unknown'.
+apps/server/src/tools/tool-search-tool.ts(121,16): error TS18046: 'parsed' is of type 'unknown'.
+apps/server/src/tools/tool-search-tool.ts(125,11): error TS18046: 'parsed' is of type 'unknown'.
+apps/server/src/tools/tool-search-tool.ts(138,16): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/anydoc-text.ts(174,50): error TS2307: Cannot find module '@firecrawl/anydoc' or its corresponding type declarations.
+packages/core/src/artifact-lineage.ts(3,24): error TS2307: Cannot find module 'nanoid' or its corresponding type declarations.
+packages/core/src/artifact-preview/previewers/presentation-previewer.ts(1,27): error TS2307: Cannot find module 'fflate' or its corresponding type declarations.
+packages/core/src/artifact-preview/previewers/presentation-previewer.ts(191,18): error TS7006: Parameter 'file' implicitly has an 'any' type.
+packages/core/src/artifact-preview/previewers/presentation-previewer.ts(249,18): error TS7006: Parameter 'file' implicitly has an 'any' type.
+packages/core/src/artifact-preview/previewers/spreadsheet-previewer.ts(184,37): error TS2307: Cannot find module 'exceljs' or its corresponding type declarations.
+packages/core/src/artifact-preview/previewers/spreadsheet-previewer.ts(189,51): error TS7006: Parameter 'ws' implicitly has an 'any' type.
+packages/core/src/artifact-preview/previewers/spreadsheet-previewer.ts(311,37): error TS2307: Cannot find module 'exceljs' or its corresponding type declarations.
+packages/core/src/artifact-preview/previewers/spreadsheet-previewer.ts(316,51): error TS7006: Parameter 'ws' implicitly has an 'any' type.
+packages/core/src/artifact-preview/previewers/spreadsheet-previewer.ts(317,54): error TS7006: Parameter 'ws' implicitly has an 'any' type.
+packages/core/src/artifacts.ts(3,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/automation-scheduler.ts(1,22): error TS2307: Cannot find module 'croner' or its corresponding type declarations.
+packages/core/src/automation-validate.ts(1,22): error TS2307: Cannot find module 'croner' or its corresponding type declarations.
+packages/core/src/browser/browser-types.ts(1,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/channel-integration-policy.ts(3,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/channel-integration-policy.ts(20,6): error TS7006: Parameter 'value' implicitly has an 'any' type.
+packages/core/src/channel-integration-policy.ts(53,6): error TS7006: Parameter 'value' implicitly has an 'any' type.
+packages/core/src/channel-native-actions.ts(1,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/channel-native-actions.ts(42,8): error TS7006: Parameter 'action' implicitly has an 'any' type.
+packages/core/src/channel-native-actions.ts(82,6): error TS7006: Parameter 'receipt' implicitly has an 'any' type.
+packages/core/src/docx-write.ts(1,69): error TS2307: Cannot find module 'docx' or its corresponding type declarations.
+packages/core/src/docx-write.ts(2,36): error TS2307: Cannot find module 'marked' or its corresponding type declarations.
+packages/core/src/docx-write.ts(33,20): error TS2307: Cannot find module 'docx' or its corresponding type declarations.
+packages/core/src/docx-write.ts(34,35): error TS2307: Cannot find module 'marked' or its corresponding type declarations.
+packages/core/src/docx-write.ts(37,30): error TS7006: Parameter 'token' implicitly has an 'any' type.
+packages/core/src/docx-write.ts(207,31): error TS7006: Parameter 'item' implicitly has an 'any' type.
+packages/core/src/docx-write.ts(242,47): error TS7006: Parameter 'cell' implicitly has an 'any' type.
+packages/core/src/docx-write.ts(246,20): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/core/src/docx-write.ts(249,42): error TS7006: Parameter 'cell' implicitly has an 'any' type.
+packages/core/src/files/pdf-form.ts(10,8): error TS2307: Cannot find module 'pdf-lib' or its corresponding type declarations.
+packages/core/src/files/pdf-form.ts(23,68): error TS7006: Parameter 'field' implicitly has an 'any' type.
+packages/core/src/files/pdf-form.ts(71,23): error TS7006: Parameter 'field' implicitly has an 'any' type.
+packages/core/src/files/pdf.ts(2,21): error TS2307: Cannot find module '@pdf-lib/fontkit' or its corresponding type declarations.
+packages/core/src/files/pdf.ts(10,8): error TS2307: Cannot find module 'pdf-lib' or its corresponding type declarations.
+packages/core/src/ids.ts(1,24): error TS2307: Cannot find module 'nanoid' or its corresponding type declarations.
+packages/core/src/local-auth.ts(3,24): error TS2307: Cannot find module 'nanoid' or its corresponding type declarations.
+packages/core/src/mail/imap-reader.ts(1,26): error TS2307: Cannot find module 'imapflow' or its corresponding type declarations.
+packages/core/src/mail/imap-reader.ts(2,30): error TS2307: Cannot find module 'mailparser' or its corresponding type declarations.
+packages/core/src/mail/imap-reader.ts(250,56): error TS7006: Parameter 'attachment' implicitly has an 'any' type.
+packages/core/src/mail/imap-reader.ts(250,68): error TS7006: Parameter 'index' implicitly has an 'any' type.
+packages/core/src/mail/smtp-sender.ts(1,24): error TS2307: Cannot find module 'nodemailer' or its corresponding type declarations.
+packages/core/src/office-document/archive.ts(4,25): error TS2307: Cannot find module 'fflate' or its corresponding type declarations.
+packages/core/src/office-document/document.ts(1,30): error TS2307: Cannot find module '@xmldom/xmldom' or its corresponding type declarations.
+packages/core/src/office-document/revisions.ts(1,30): error TS2307: Cannot find module '@xmldom/xmldom' or its corresponding type declarations.
+packages/core/src/office-document/revisions.ts(65,11): error TS18046: 'child' is of type 'unknown'.
+packages/core/src/office-document/xml.ts(7,8): error TS2307: Cannot find module '@xmldom/xmldom' or its corresponding type declarations.
+packages/core/src/office-document/xml.ts(39,15): error TS7006: Parameter 'level' implicitly has an 'any' type.
+packages/core/src/office-document/xml.ts(39,22): error TS7006: Parameter 'message' implicitly has an 'any' type.
+packages/core/src/presentation-engine.ts(1,23): error TS2307: Cannot find module 'pptxgenjs' or its corresponding type declarations.
+packages/core/src/presentation-engine.ts(2,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/presentation-engine.ts(116,48): error TS7006: Parameter 'text' implicitly has an 'any' type.
+packages/core/src/presentation-engine.ts(157,37): error TS7006: Parameter 'h' implicitly has an 'any' type.
+packages/core/src/presentation-engine.ts(171,20): error TS7006: Parameter 'cell' implicitly has an 'any' type.
+packages/core/src/presentation-engine.ts(202,38): error TS2307: Cannot find module 'fflate' or its corresponding type declarations.
+packages/core/src/tools/builtin.ts(3,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/tools/builtin.ts(338,23): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(339,42): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(343,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(344,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(376,24): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(385,36): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(468,54): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(474,38): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(484,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(531,54): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(538,13): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(539,14): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(540,13): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(541,17): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(542,12): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(548,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(567,35): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(578,17): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(613,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(614,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(653,23): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(658,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(659,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(698,17): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(699,11): error TS7006: Parameter 'edit' implicitly has an 'any' type.
+packages/core/src/tools/builtin.ts(699,17): error TS7006: Parameter 'index' implicitly has an 'any' type.
+packages/core/src/tools/builtin.ts(700,12): error TS7006: Parameter 'a' implicitly has an 'any' type.
+packages/core/src/tools/builtin.ts(700,15): error TS7006: Parameter 'b' implicitly has an 'any' type.
+packages/core/src/tools/builtin.ts(708,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(709,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(717,33): error TS7006: Parameter 'plan' implicitly has an 'any' type.
+packages/core/src/tools/builtin.ts(1028,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(1029,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(1064,17): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(1069,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/builtin.ts(1071,31): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/calculator.ts(1,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/tools/calculator.ts(518,41): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/calculator.ts(522,17): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/channel-action.ts(1,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/tools/channel-action.ts(17,46): error TS7006: Parameter 'option' implicitly has an 'any' type.
+packages/core/src/tools/deep-research.ts(1,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/tools/email.ts(1,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/tools/email.ts(23,4): error TS7006: Parameter 'value' implicitly has an 'any' type.
+packages/core/src/tools/email.ts(28,35): error TS7006: Parameter 'value' implicitly has an 'any' type.
+packages/core/src/tools/extract-document-text.ts(3,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/tools/extract-document-text.ts(217,51): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/extract-document-text.ts(224,9): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/extract-document-text.ts(247,13): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/file-asset.ts(1,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/tools/file-asset.ts(26,39): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/file-asset.ts(35,9): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/file-asset.ts(44,19): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(10,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/tools/filesystem.ts(144,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(144,20): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(144,41): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(147,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(160,17): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(189,13): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(256,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(257,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(347,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(348,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(359,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(360,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(368,8): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(372,45): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(443,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(444,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(455,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(456,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(464,8): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(468,45): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(535,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/filesystem.ts(536,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/knowledge-base-search.ts(3,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/tools/knowledge-base-search.ts(87,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/knowledge-base-search.ts(94,14): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/knowledge-base-search.ts(102,17): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/knowledge-base-search.ts(103,12): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/knowledge-base-search.ts(104,12): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/knowledge-base-search.ts(109,17): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/knowledge-base-search.ts(117,12): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/office-document.ts(2,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/tools/office-document.ts(120,39): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/office-document.ts(129,9): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/office-document.ts(131,29): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/office-document.ts(131,42): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/office-document.ts(135,9): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/office-document.ts(136,33): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'OfficeReadOptions'.
+packages/core/src/tools/office-document.ts(139,7): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/office-document.ts(149,40): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/office-document.ts(149,53): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'OfficeRevisionOptions | undefined'.
+packages/core/src/tools/office-document.ts(161,18): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/pdf-document.ts(2,29): error TS2307: Cannot find module 'pdf-lib' or its corresponding type declarations.
+packages/core/src/tools/pdf-document.ts(3,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/tools/pdf-document.ts(188,36): error TS7006: Parameter 'group' implicitly has an 'any' type.
+packages/core/src/tools/pdf-document.ts(191,22): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+packages/core/src/tools/pdf-document.ts(191,27): error TS7006: Parameter 'group' implicitly has an 'any' type.
+packages/core/src/tools/pdf-document.ts(287,39): error TS7006: Parameter 'page' implicitly has an 'any' type.
+packages/core/src/tools/pdf-document.ts(290,43): error TS7006: Parameter 'page' implicitly has an 'any' type.
+packages/core/src/tools/pdf-document.ts(313,9): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/pdf-document.ts(315,10): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/pdf-document.ts(316,9): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/pdf-document.ts(316,33): error TS7006: Parameter 'sum' implicitly has an 'any' type.
+packages/core/src/tools/pdf-document.ts(316,38): error TS7006: Parameter 'page' implicitly has an 'any' type.
+packages/core/src/tools/pdf-document.ts(323,20): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/pdf-document.ts(323,42): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/pdf-document.ts(323,66): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/pdf-document.ts(335,9): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/pdf-document.ts(338,9): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/pdf-document.ts(341,9): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/pdf-document.ts(344,10): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/pdf-document.ts(345,26): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/pdf-document.ts(347,9): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/pdf-document.ts(348,41): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/pdf-document.ts(365,47): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/pdf-document.ts(368,41): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/pdf-document.ts(368,59): error TS18046: 'input' is of type 'unknown'.
+packages/core/src/tools/pdf-document.ts(372,15): error TS7006: Parameter 'page' implicitly has an 'any' type.
+packages/core/src/tools/pdf-document.ts(372,21): error TS7006: Parameter 'index' implicitly has an 'any' type.
+packages/core/src/tools/ripgrep.ts(195,34): error TS2307: Cannot find module '@vscode/ripgrep' or its corresponding type declarations.
+packages/core/src/tools/schema.ts(1,58): error TS2307: Cannot find module 'ajv' or its corresponding type declarations.
+packages/core/src/tools/schema.ts(2,21): error TS2307: Cannot find module 'ajv/dist/2019' or its corresponding type declarations.
+packages/core/src/tools/schema.ts(3,21): error TS2307: Cannot find module 'ajv/dist/2020' or its corresponding type declarations.
+packages/core/src/tools/schema.ts(4,24): error TS2307: Cannot find module 'ajv-formats' or its corresponding type declarations.
+packages/core/src/tools/schema.ts(5,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/tools/schema.ts(91,49): error TS7006: Parameter 'issue' implicitly has an 'any' type.
+packages/core/src/tools/schema.ts(98,11): error TS7006: Parameter 'issue' implicitly has an 'any' type.
+packages/core/src/tools/schema.ts(147,23): error TS18046: 'err' is of type 'unknown'.
+packages/core/src/tools/schema.ts(162,6): error TS7006: Parameter 'value' implicitly has an 'any' type.
+packages/core/src/tools/schema.ts(169,16): error TS7006: Parameter 'value' implicitly has an 'any' type.
+packages/core/src/tools/schema.ts(191,6): error TS7006: Parameter 'value' implicitly has an 'any' type.
+packages/core/src/tools/schema.ts(197,16): error TS7006: Parameter 'value' implicitly has an 'any' type.
+packages/core/src/tools/schema.ts(209,16): error TS7006: Parameter 'value' implicitly has an 'any' type.
+packages/core/src/tools/search-files.ts(3,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/tools/search-files.ts(75,5): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/search-files.ts(78,11): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/search-files.ts(79,17): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/search-files.ts(80,12): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/search-files.ts(81,12): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/search-files.ts(86,17): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/search-files.ts(94,12): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/send-whatsapp.ts(1,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/tools/send-whatsapp.ts(62,27): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/send-whatsapp.ts(72,11): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/send-whatsapp.ts(73,9): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/send-whatsapp.ts(83,26): error TS18046: 'parsed' is of type 'unknown'.
+packages/core/src/tools/spreadsheet-cells.ts(1,26): error TS2307: Cannot find module 'exceljs' or its corresponding type declarations.
+packages/core/src/tools/spreadsheet-cells.ts(115,20): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet-cells.ts(116,21): error TS7006: Parameter 'cell' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet-cells.ts(158,32): error TS7006: Parameter 'part' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet-cells.ts(193,20): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet-cells.ts(194,21): error TS7006: Parameter 'cell' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet-compat.ts(2,25): error TS2307: Cannot find module 'fflate' or its corresponding type declarations.
+packages/core/src/tools/spreadsheet-inspect.ts(7,33): error TS2307: Cannot find module 'exceljs' or its corresponding type declarations.
+packages/core/src/tools/spreadsheet-inspect.ts(10,47): error TS7006: Parameter 's' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet-layout.ts(1,26): error TS2307: Cannot find module 'exceljs' or its corresponding type declarations.
+packages/core/src/tools/spreadsheet-layout.ts(32,18): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet-layout.ts(33,19): error TS7006: Parameter 'cell' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet-layout.ts(33,25): error TS7006: Parameter 'column' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet-layout.ts(50,18): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet-layout.ts(52,19): error TS7006: Parameter 'cell' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet-layout.ts(52,25): error TS7006: Parameter 'column' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet-ooxml.ts(2,30): error TS2307: Cannot find module '@xmldom/xmldom' or its corresponding type declarations.
+packages/core/src/tools/spreadsheet-ooxml.ts(3,25): error TS2307: Cannot find module 'fflate' or its corresponding type declarations.
+packages/core/src/tools/spreadsheet-ooxml.ts(38,7): error TS18046: 'child' is of type 'unknown'.
+packages/core/src/tools/spreadsheet-ooxml.ts(297,13): error TS18046: 'node' is of type 'unknown'.
+packages/core/src/tools/spreadsheet-ooxml.ts(326,13): error TS18046: 'child' is of type 'unknown'.
+packages/core/src/tools/spreadsheet-recalculation.ts(13,21): error TS2307: Cannot find module 'exceljs' or its corresponding type declarations.
+packages/core/src/tools/spreadsheet-recalculation.ts(14,27): error TS2307: Cannot find module 'fflate' or its corresponding type declarations.
+packages/core/src/tools/spreadsheet-recalculation.ts(173,12): error TS7006: Parameter 'file' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet-recalculation.ts(196,20): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet-recalculation.ts(197,21): error TS7006: Parameter 'cell' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet-recalculation.ts(260,22): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet-recalculation.ts(261,23): error TS7006: Parameter 'cell' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet.ts(3,21): error TS2307: Cannot find module 'exceljs' or its corresponding type declarations.
+packages/core/src/tools/spreadsheet.ts(4,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/tools/spreadsheet.ts(68,6): error TS7006: Parameter 'rows' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet.ts(70,22): error TS7006: Parameter 'width' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet.ts(70,29): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet.ts(411,43): error TS7006: Parameter 'sheet' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet.ts(476,35): error TS7006: Parameter 'sheet' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet.ts(582,28): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet.ts(654,14): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet.ts(669,38): error TS7006: Parameter 'count' implicitly has an 'any' type.
+packages/core/src/tools/spreadsheet.ts(669,45): error TS7006: Parameter 'row' implicitly has an 'any' type.
+packages/core/src/tools/web-fetch.ts(3,25): error TS2307: Cannot find module 'rehype-parse' or its corresponding type declarations.
+packages/core/src/tools/web-fetch.ts(4,26): error TS2307: Cannot find module 'rehype-remark' or its corresponding type declarations.
+packages/core/src/tools/web-fetch.ts(5,23): error TS2307: Cannot find module 'remark-gfm' or its corresponding type declarations.
+packages/core/src/tools/web-fetch.ts(6,29): error TS2307: Cannot find module 'remark-stringify' or its corresponding type declarations.
+packages/core/src/tools/web-fetch.ts(7,25): error TS2307: Cannot find module 'unified' or its corresponding type declarations.
+packages/core/src/tools/web-fetch.ts(8,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/tools/web-fetch.ts(550,23): error TS18046: 'err' is of type 'unknown'.
+packages/core/src/tools/web-search.ts(1,24): error TS2307: Cannot find module 'nanoid' or its corresponding type declarations.
+packages/core/src/tools/web-search.ts(2,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.
+packages/core/src/tools/write-pptx.ts(1,19): error TS2307: Cannot find module 'zod' or its corresponding type declarations.

@@ -1,0 +1,7 @@
+{
+  "child": "b0346b78e9dd70a88466a14583f262c272db3fb38d8a2aee74120cd08be2107f",
+  "orchestrator": "d60110a269673738b0f6381fe39d6c4c74c55300341193e9796839ee78229705",
+  "startedAt": "2026-09-06T22:58:45.754685+00:00",
+  "budget": "3 serial boundaries; 10 seconds child-start marker; 10 seconds cold reopen; no model/network calls; only owned child SIGKILL",
+  "phases": ["approval_wait", "before_effect", "after_effect_before_receipt"]
+}

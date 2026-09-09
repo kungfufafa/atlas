@@ -1,0 +1,442 @@
+[
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-atlas",
+    "stem": "corrected_fact-2953-native-default-atlas-warm",
+    "group": "warm",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/corrected_fact-2953-native-default-atlas-warm-projection.json",
+        "sha256": "5a7da420a3750d19c28267a0f295b3b7628f0c8f778a50ced0935f52eac0d7b3"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/corrected_fact-2953-native-default-atlas-warm-chronology.json",
+        "sha256": "bf8bd6b91873d469d7147f05a1c2a9bb2e4b7a1228f9f8dc256ad1aff12af2c3"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/corrected_fact-2953-native-default-atlas-warm-manual.json",
+        "sha256": "6864c36085733d2b5fb40e199f1f5f500c746716bb5e44f4b09e57a8d6a2e286"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes",
+    "stem": "corrected_fact-2953-native-default-hermes-warm",
+    "group": "warm",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/corrected_fact-2953-native-default-hermes-warm-projection.json",
+        "sha256": "9000ec4f5e82886adc13c5522d607741b66422b15b6e8b682982c917cb26728c"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/corrected_fact-2953-native-default-hermes-warm-chronology.json",
+        "sha256": "f22d520e8a4aa19e26b87bfc2bf1f749f884f9ebe419bd214559421e806974ad"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/corrected_fact-2953-native-default-hermes-warm-manual.json",
+        "sha256": "11841e129b70b6665156299d1b2880c0e0a7655d0f01dc3db64d544f21ff8f8b"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-atlas",
+    "stem": "cross_language-1907-native-default-atlas-warm",
+    "group": "warm",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/cross_language-1907-native-default-atlas-warm-projection.json",
+        "sha256": "aea3eb8173eff408c58739fc252bf3879de780b352d55582bf5f8f79b6b39e0d"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/cross_language-1907-native-default-atlas-warm-chronology.json",
+        "sha256": "830ed58712c80adc6df7f6117b63f31a30411f2c132434f18090bea83549cad9"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/cross_language-1907-native-default-atlas-warm-manual.json",
+        "sha256": "0d22e1487b2c3c868f43e31c05c2b9217c77a8f3d61d15f76288709cc103c720"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes",
+    "stem": "cross_language-1907-native-default-hermes-warm",
+    "group": "warm",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/cross_language-1907-native-default-hermes-warm-projection.json",
+        "sha256": "c7590629896c12878e050fb4f20b9a7eb1bf8a2b3c7c36f4095fe4823b6100c4"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/cross_language-1907-native-default-hermes-warm-chronology.json",
+        "sha256": "48dec3b1ce61017adca93056a1d4d34704f5c38ecb0f5ecb4155cdbcdc34f32f"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/cross_language-1907-native-default-hermes-warm-manual.json",
+        "sha256": "0641567d22f26a7e9b897e9b38854276121f148abdc8bf0486404823691d2667"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-atlas",
+    "stem": "distractor_recall-2953-explicit-memory-atlas-warm",
+    "group": "warm",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/distractor_recall-2953-explicit-memory-atlas-warm-projection.json",
+        "sha256": "a0dfc57c900734d9e23a32fcacf5b1ea040702d5259dd5cb734a9088d9ddc39f"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/distractor_recall-2953-explicit-memory-atlas-warm-chronology.json",
+        "sha256": "c6d22b747236f8ea4232f7640526722b8b439fde226152378b31b60b5cd162fc"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/distractor_recall-2953-explicit-memory-atlas-warm-manual.json",
+        "sha256": "8afc7769b6180427c0941151ceb5a860cfa976b7f6e4e03fb958e8f6c99956bc"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes",
+    "stem": "distractor_recall-2953-explicit-memory-hermes-warm",
+    "group": "warm",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/distractor_recall-2953-explicit-memory-hermes-warm-projection.json",
+        "sha256": "de66d33600ee8984f8672262be78008b3155b061b27f68db9840d1698f732a97"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/distractor_recall-2953-explicit-memory-hermes-warm-chronology.json",
+        "sha256": "db89c50aad3e87877b61d283746256988f2df46ecec1b23b147bef06747dafab"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/distractor_recall-2953-explicit-memory-hermes-warm-manual.json",
+        "sha256": "a24513df82f47e3c6411e73c90ed057300bb445fd1733a8fa60b5f0586f299a8"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas",
+    "stem": "durable_fact-1907-explicit-memory-atlas-warm",
+    "group": "warm",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/durable_fact-1907-explicit-memory-atlas-warm-projection.json",
+        "sha256": "e2e444048ff8215569413629239f4c933cfb639ad8d4f5b3bf68c04fb8c01069"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/durable_fact-1907-explicit-memory-atlas-warm-chronology.json",
+        "sha256": "7a2e9ac85feba5795bade8178687c4a255d3b4fa7ecd76ed7f8fad5ea1bef4f4"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/durable_fact-1907-explicit-memory-atlas-warm-manual.json",
+        "sha256": "607c2388256d1eac2d2bdda1ca1133d7539cc661bf9be044d2f9661b952097af"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes",
+    "stem": "durable_fact-1907-explicit-memory-hermes-warm",
+    "group": "warm",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/durable_fact-1907-explicit-memory-hermes-warm-projection.json",
+        "sha256": "103fb6a420e3660c7b32e4c3d5f991d9b60855bccdd6612ef255cde99c3b1267"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/durable_fact-1907-explicit-memory-hermes-warm-chronology.json",
+        "sha256": "9bbe0595b5adffe2b6163e06e997c2c51a8719a24fe71190d624634633825265"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/durable_fact-1907-explicit-memory-hermes-warm-manual.json",
+        "sha256": "cada25bb0da6db0f6e4c8af8bcfac0bfb415c31e5469cd782b986dac563d460e"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas",
+    "stem": "episodic_decision-1907-explicit-memory-atlas-warm",
+    "group": "warm",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/episodic_decision-1907-explicit-memory-atlas-warm-projection.json",
+        "sha256": "c0bd6dbc23eabb992a03f227833499af877a17225d12d482016fcd0209791063"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/episodic_decision-1907-explicit-memory-atlas-warm-chronology.json",
+        "sha256": "c07e494bc3845fef4da97ea19604746b0d028f0bb5ffeeea75eea599ff5ca27d"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/episodic_decision-1907-explicit-memory-atlas-warm-manual.json",
+        "sha256": "50b8ddeb96d7a2e894ef38a850691bf3aecc0e7c90eca73d7b9025854d90baea"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes",
+    "stem": "episodic_decision-1907-explicit-memory-hermes-warm",
+    "group": "warm",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/episodic_decision-1907-explicit-memory-hermes-warm-projection.json",
+        "sha256": "752c509406cd95ab82e7f59f7441d9e3bfc1c2aac5180be1b6e6d59fe49b0173"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/episodic_decision-1907-explicit-memory-hermes-warm-chronology.json",
+        "sha256": "88384f19f6585b8942b496e6fc9710c45e9ae141d1b087668467642b158764b5"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/episodic_decision-1907-explicit-memory-hermes-warm-manual.json",
+        "sha256": "cc2c237b1d59c19044451af790eb003252a20375967f43cc6d59a7243baa56d9"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-atlas",
+    "stem": "forgotten_preference-1907-native-default-atlas-warm",
+    "group": "warm",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/forgotten_preference-1907-native-default-atlas-warm-projection.json",
+        "sha256": "4fb70a6545282ee614c993d14732d5afe2198594f5216f7e969fcafaeaf3a682"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/forgotten_preference-1907-native-default-atlas-warm-chronology.json",
+        "sha256": "df4013cb257cf5ca3e99f76c40fff77cdd3f454d17bd2b5a8b0ae96ea67e83eb"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/forgotten_preference-1907-native-default-atlas-warm-manual.json",
+        "sha256": "4d5313595b91e1edf631200980b67d1659977dbf299ad422c489acf58d5c0e7f"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes",
+    "stem": "forgotten_preference-1907-native-default-hermes-warm",
+    "group": "warm",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/forgotten_preference-1907-native-default-hermes-warm-projection.json",
+        "sha256": "16681beea50a8052448059faccd4045e24f9240ae5fd4ce4a8e7d1e424d4580b"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/forgotten_preference-1907-native-default-hermes-warm-chronology.json",
+        "sha256": "6810a9a59fb3aa948ce5abef6ec35c26cd4950ad2ac1f8cbca9b59743b061998"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/forgotten_preference-1907-native-default-hermes-warm-manual.json",
+        "sha256": "b2c7a51e2358fd215e36be5f660dc21172415160357102541df838015ba64ea4"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-atlas",
+    "stem": "implicit_preference-2953-native-default-atlas-warm",
+    "group": "warm",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/implicit_preference-2953-native-default-atlas-warm-projection.json",
+        "sha256": "51c232fc3263d519a0644305b3256f436dccd3ab12ed60364003b2657f06ceb5"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/implicit_preference-2953-native-default-atlas-warm-chronology.json",
+        "sha256": "bee4a22447db0027e3ecb6b8dc7b9416c0753213488a7ecc2cffbb3b01d2973c"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/implicit_preference-2953-native-default-atlas-warm-manual.json",
+        "sha256": "f304d7fddc8a77f700f8175c7e0d45e159d98272da62aa5aea508d6b699a2f09"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes",
+    "stem": "implicit_preference-2953-native-default-hermes-warm",
+    "group": "warm",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/implicit_preference-2953-native-default-hermes-warm-projection.json",
+        "sha256": "d3695c0c2e45d845dd8f2af138342c7dcd5c73cecd3a2c80d6cca36eb4020a6d"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/implicit_preference-2953-native-default-hermes-warm-chronology.json",
+        "sha256": "c40ad72635338f406bd4277bc3b8f2a7a9b15710bc1bf037e136fbc53a0f850b"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/implicit_preference-2953-native-default-hermes-warm-manual.json",
+        "sha256": "d674c07885220584a7629230dc4c00cd05a982cf791e6e0b648775a7bf0ab813"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-atlas",
+    "stem": "unsupported_fact-2953-explicit-memory-atlas-warm",
+    "group": "warm",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/unsupported_fact-2953-explicit-memory-atlas-warm-projection.json",
+        "sha256": "6c90a8da7af52be8a7a3280a9d5e4a32ef71ccb8a9c6019be86bcc2e7f6954d6"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/unsupported_fact-2953-explicit-memory-atlas-warm-chronology.json",
+        "sha256": "9fc3d458b4abca546757118ff0449e8bd8ba96aecf0c02e0d40995a378e9cff3"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/unsupported_fact-2953-explicit-memory-atlas-warm-manual.json",
+        "sha256": "fe0b3dea40549028abb09fc1c0b1bc6719b9fa846025d12288a68f5fcb9a1ec7"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes",
+    "stem": "unsupported_fact-2953-explicit-memory-hermes-warm",
+    "group": "warm",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/unsupported_fact-2953-explicit-memory-hermes-warm-projection.json",
+        "sha256": "a7997cd87bea8355988b14e6d795f97d792a938e77cefffb0b943dfd3c69541f"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/unsupported_fact-2953-explicit-memory-hermes-warm-chronology.json",
+        "sha256": "a43293f6964b1087646bf645c28ace7c5f84c85cf26e59421eec409265ddcbc8"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/unsupported_fact-2953-explicit-memory-hermes-warm-manual.json",
+        "sha256": "276bf2ebb0187b5af11f8af270e35327a7741b1c4501a821dbc1f1f023492a10"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas",
+    "stem": "durable_fact-2953-native-default-atlas-controls",
+    "group": "controls",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/durable_fact-2953-native-default-atlas-controls-projection.json",
+        "sha256": "9c2d0c2d2448679aee7d9e08e0b94d471df3637476bce2b0bb256421a67c9c19"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/durable_fact-2953-native-default-atlas-controls-chronology.json",
+        "sha256": "3030bea31b7a3ff23eab171f751bff0e8f9cae776059a3abbc3c8a386a4ec352"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/durable_fact-2953-native-default-atlas-controls-manual.json",
+        "sha256": "26bc2874a118898b75971828e237b628b25261f46a01cecca455007abbd74500"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes",
+    "stem": "durable_fact-2953-native-default-hermes-controls",
+    "group": "controls",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/durable_fact-2953-native-default-hermes-controls-projection.json",
+        "sha256": "ec4186bee86661b249271a6d5c533e35c8f5fd2e5e0c18b58b3892f512368e71"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/durable_fact-2953-native-default-hermes-controls-chronology.json",
+        "sha256": "3817e45aaffe4fd717717c24ccb07047c42ea75f58e4e4f2bcd11a4f538c384f"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-durable_fact-2953-native-default-identity-different-organization-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/durable_fact-2953-native-default-hermes-controls-manual.json",
+        "sha256": "0ff968440b73fea3e53459146820bcec63382cc3ace959cde32b25901ca2c7a9"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas",
+    "stem": "implicit_preference-2953-explicit-memory-atlas-controls",
+    "group": "controls",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/implicit_preference-2953-explicit-memory-atlas-controls-projection.json",
+        "sha256": "0b5c4f2b007cb04c5e27894cf83f6c39b7d7aa316bd47c6655c86ee2b65c3110"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/implicit_preference-2953-explicit-memory-atlas-controls-chronology.json",
+        "sha256": "efcf666352310eec2ba0fb6429bd33bdcca94d66ec24a26fde9a9f4a98a6e99f"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/implicit_preference-2953-explicit-memory-atlas-controls-manual.json",
+        "sha256": "bffcaaf8bebae4ab04af9ff9ad91734df75910a2b9e0edd2995d450889bd19bb"
+      }
+    }
+  },
+  {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes",
+    "stem": "implicit_preference-2953-explicit-memory-hermes-controls",
+    "group": "controls",
+    "files": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/control-review/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/implicit_preference-2953-explicit-memory-hermes-controls-projection.json",
+        "sha256": "6083266439e616a6ab1a45d735d0d6459880f160162bc3a3b97874f3f7ad4593"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/implicit_preference-2953-explicit-memory-hermes-controls-chronology.json",
+        "sha256": "5563d50d1ab72105c39436219522e8549087513535163ea79449020ee4201340"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/control-review/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-implicit_preference-2953-explicit-memory-cold-same-owner-r0-hermes.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/implicit_preference-2953-explicit-memory-hermes-controls-manual.json",
+        "sha256": "853f5521313069b09788d89bbc219cca1c7b98aadf882ab0cbc1ea53861f42d7"
+      }
+    }
+  }
+]

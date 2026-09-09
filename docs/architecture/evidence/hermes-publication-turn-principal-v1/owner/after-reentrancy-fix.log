@@ -1,0 +1,36 @@
+bun test v1.3.1 (89fa0f34)
+
+packages/agent/src/chat-turn-admission.test.ts:
+(pass) API send binds fresh per-turn guards and publication lifecycles [58.38ms]
+(pass) API stream binds fresh per-turn guards and publication lifecycles [2.43ms]
+(pass) native send binds fresh per-turn guards and publication lifecycles [1.51ms]
+(pass) native stream binds fresh per-turn guards and publication lifecycles [1.43ms]
+
+apps/server/src/services/publication-turn-principal.test.ts:
+(pass) human principal binds actual persisted scope and copies the authenticated actor [34.04ms]
+(pass) worker retains channel proof while effects and publications use persisted human identity [14.55ms]
+(pass) effect context rejects changed orgId [15.08ms]
+(pass) effect context rejects changed profileId [14.11ms]
+(pass) effect context rejects changed sessionId [13.59ms]
+(pass) effect context rejects changed userId [15.37ms]
+(pass) publication rejects changed orgId [14.97ms]
+(pass) publication rejects changed profileId [15.95ms]
+(pass) publication rejects changed sessionId [17.48ms]
+(pass) publication rejects changed actorId [13.44ms]
+(pass) other cannot publish as the session owner [14.20ms]
+(pass) admin cannot publish as the session owner [15.67ms]
+(pass) missing session and null owner fail initial admission [15.43ms]
+(pass) human rechecks viewer before the next actual effect [14.88ms]
+(pass) human rechecks removed before the next actual effect [17.59ms]
+(pass) human rechecks owner before the next actual effect [13.30ms]
+(pass) human rejects owner change during awaited ACL callback [14.90ms]
+(pass) worker rechecks viewer before the next actual effect [18.37ms]
+(pass) worker rechecks removed before the next actual effect [15.21ms]
+(pass) worker rechecks owner before the next actual effect [16.39ms]
+(pass) worker rejects owner change during awaited ACL callback [14.21ms]
+(pass) worker must match current external channel and a member owner [17.58ms]
+
+ 26 pass
+ 0 fail
+ 108 expect() calls
+Ran 26 tests across 2 files. [1.72s]

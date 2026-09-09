@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-09-06T18:21:48.442107+00:00",
+  "reviewer": "/root/atlas_runtime_audit",
+  "status": "scoped-approval-no-remaining-blocker",
+  "previousReview": {
+    "path": "/private/tmp/atlas-conversation-search-candidate4-independent-review/review.json",
+    "sha256": "b809cb667db332e823f66a8164d9aba7306b97d30185e153ab7040bacd276d6a",
+    "preservedUnchanged": true
+  },
+  "authorReadiness": {
+    "path": "/private/tmp/atlas-conversation-search-candidate4/readiness.json",
+    "sha256": "75c65a830b5740adcf2900454f2d348470576eec167fbdca1b6d335a45324d95"
+  },
+  "combinedPatch": {
+    "path": "/private/tmp/atlas-conversation-search-candidate4/combined.patch",
+    "sha256": "084bb4cf24345c16b5f8b763a3cec0c8ecde753c21d1ea1dcde889251c99af62"
+  },
+  "productionPatch": {
+    "path": "/private/tmp/atlas-conversation-search-candidate4/production.patch",
+    "sha256": "803dc4e59113548b832ac6063100c79c3f4a252d7de0fcc81e089140d0cb4244"
+  },
+  "verification": {
+    "allDeclaredChanges": 9,
+    "reviewedChangedSourceHashes": {
+      "apps/server/src/tools/conversation-tools.test.ts": "5ee3c7564f7653c707ee7b061f24e0f3fe1f6f01f2d1972725b47899404363ea",
+      "apps/server/src/tools/conversation-tools.ts": "017de23c293b55225d77925788e1fdecb90e3ed6114993c0bbb6a57e951d4ebc",
+      "packages/db/src/adapters/in-memory.ts": "b78cdbb81211b568105d68f6355d0611264e1a1d65a97d9107279f54d178b49b",
+      "packages/db/src/adapters/sqlite.ts": "53c0c20e17f08fee99855edb609de5cc0c410804bec1728452558e39106c455c",
+      "packages/db/src/conversation-keyword-search.test.ts": "34a6abe4926877db41830cc7180d096f661f93d9c95d0d80ac77d0fb89ab2adf",
+      "packages/db/src/conversation-keyword-search.ts": "369dabdaa0448932d1fe40657fd49982301425b2043c1d3c40e14ec926dec770",
+      "packages/db/src/memory-search.test.ts": "19157a249a306aa2238e67a9ecbd1800a722c7459663686f0830f8e782b93b13",
+      "packages/db/src/memory-search.ts": "8b4560ee6b4a30e6f25c13976382747125c2be89aebfa66abf6448faf0f7a7a2",
+      "packages/db/src/types.ts": "b3f773e802375f556661222907e3b326b507909ef8248fd9ed207755e6656a4d"
+    },
+    "sourcePatchEvidenceMismatches": [],
+    "baseMembersCompared": 2072,
+    "rootBaseMismatches": [],
+    "candidateExistingChanges": [
+      "apps/server/src/tools/conversation-tools.test.ts",
+      "apps/server/src/tools/conversation-tools.ts",
+      "packages/db/src/adapters/in-memory.ts",
+      "packages/db/src/adapters/sqlite.ts",
+      "packages/db/src/memory-search.ts",
+      "packages/db/src/types.ts"
+    ],
+    "candidateUnexpectedBaseChanges": [],
+    "newDeclaredFiles": [
+      "packages/db/src/conversation-keyword-search.test.ts",
+      "packages/db/src/conversation-keyword-search.ts",
+      "packages/db/src/memory-search.test.ts"
+    ],
+    "candidateBaseSourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+    "aliasResolutionEvidence": {
+      "path": "/private/tmp/atlas-conversation-search-candidate4-independent-review/aliases.json",
+      "sha256": "d6c340127e1d5a88e3ebec4cc1cfae34ea7dceee001d7dceb060dd2398a1a458"
+    }
+  },
+  "independentGates": [
+    {
+      "name": "same-focused-behavior-suite",
+      "command": "bun test packages/db/src/memory-search.test.ts packages/db/src/conversation-history.test.ts packages/db/src/memory-preservation.test.ts packages/db/src/conversation-keyword-search.test.ts packages/db/src/profile-atomic.test.ts apps/server/src/tools/memory-tools.test.ts apps/server/src/tools/memory-tools-dedup.test.ts apps/server/src/tools/conversation-tools.test.ts apps/server/src/tools/memory-tools-update.test.ts",
+      "cwd": "/private/tmp/atlas-conversation-search-candidate4/source",
+      "exitCode": 0,
+      "tests": 93,
+      "assertions": 428,
+      "files": 9,
+      "log": "/private/tmp/atlas-conversation-search-candidate4-independent-review/tests.log",
+      "sha256": "6f89b5c79ce08e47bc31b994f2bc4fc508ffb87eeb6e9fdd93e105f3b5dfb1f1"
+    },
+    {
+      "name": "scoped-typecheck-including-changed-tests",
+      "command": "bun x --no-install tsc -p tsconfig.conversation-scope.json --pretty false",
+      "cwd": "/private/tmp/atlas-conversation-search-candidate4/source",
+      "exitCode": 0,
+      "log": "/private/tmp/atlas-conversation-search-candidate4-independent-review/typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "configSha256": "220d2cb2f16ddefa6523f544f0eb047190ca3a93efb619a4a3466b5bb3f970dd"
+    }
+  ],
+  "authorOnlyGates": {
+    "lint": "exit0,9files,verified log hash",
+    "patchApplicationCheck": "author reports git apply --check success; reviewer did not apply any patch"
+  },
+  "conclusion": "The final archive/type dedup fix, shared transcript decoder, keyword-only duplicate tie ordering, scoped lexical collector and shared numeric-tokenizer repair are approved within their documented scope. Final TypeScript fixture cleanup is complete and independently verified.",
+  "retainedLimits": [
+    "No source or control edits by reviewer; only private review evidence created. Root remains candidate3.",
+    "Lexical weighted OR/substrings are not semantic or exact-phrase retrieval.",
+    "Collector K is bounded; complete-history scans, SQL window work, per-session copies and sorting are not bounded by K.",
+    "Default literal database search behavior is unchanged, including preexisting SQLite LIKE wildcard/metadata differences.",
+    "Importing-session-row search coverage is not claimed; existing atomic-import publication regressions are preserved.",
+    "Legacy scalar/source fidelity and numeric tokenization are bundled changes; these offline tests show no live recall or comparative learning gain."
+  ],
+  "remainingGates": [
+    "Parent-controlled composition/application and any live evaluation only after the locked candidate3 batch finishes; this review performs neither."
+  ],
+  "paidCalls": false,
+  "nativePilots": false,
+  "sourceEdits": false,
+  "frozenControlsEdits": false
+}

@@ -1,0 +1,25 @@
+{
+  "status": "passed",
+  "evidenceClass": "bundled inline PDF runtime executed actual local Python/OCR/font processes",
+  "merged": { "output": true, "pageCount": 3, "attachmentCount": 1 },
+  "ocr": {
+    "pages": [
+      {
+        "page": 1,
+        "text": "SCAN REVIEW 8642",
+        "truncated": false,
+        "needsOcr": false,
+        "method": "ocr",
+        "ocrLanguage": "eng",
+        "ocrConfidence": 96.312813,
+        "ocrReviewRequired": false
+      }
+    ]
+  },
+  "created": {
+    "output": true,
+    "pageCount": 1,
+    "preparedFontBytes": 29232,
+    "layout": "Unicode bidi + HarfBuzz"
+  }
+}

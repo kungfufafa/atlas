@@ -1,0 +1,38 @@
+{
+  "status": "complete-unscored-pilot-with-delivery-parser-defect",
+  "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v1/batches/pilot-1788714926426-08fedeba",
+  "candidateSourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+  "files": {
+    "summary.json": {
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v1/batches/pilot-1788714926426-08fedeba/root-analysis.json",
+      "sha256": "9e7a372b99606074ce88858d1d468509d368c47d215eff47ef3e77017c3223c5",
+      "bytes": 17218
+    },
+    "attempts.jsonl": {
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v1/batches/pilot-1788714926426-08fedeba/attempts.jsonl",
+      "sha256": "78d6361b68470143ad41ea5a0c0504106c4825f7e90b8561d89c48b005111a13",
+      "bytes": 14259
+    },
+    "completed.json": {
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v1/batches/pilot-1788714926426-08fedeba/completed.json",
+      "sha256": "313d08cb9f0744733e72d88a2ea43bfafeddf9f05c2e93f61db06cf8fbd635c5",
+      "bytes": 208
+    }
+  },
+  "observedOriginalOutcomes": {
+    "atlas": {
+      "pass": 1,
+      "attempts": 2
+    },
+    "hermes": {
+      "pass": 2,
+      "attempts": 2
+    }
+  },
+  "accounting": {
+    "providerRequests": 27,
+    "http200": 27,
+    "mandatoryUsageKnownAllArms": true
+  },
+  "limitation": "Atlas CSV final repeats one identical inline-code path around a fenced CSV block. The frozen single-backtick regex mispairs delimiters and creates a phantom candidate with a trailing backtick. The original artifact was not privately graded; no retrospective replacement score or product comparison is claimed. Separate file amendment is being reviewed before any scored file development. Original source/artifacts/scores are preserved."
+}

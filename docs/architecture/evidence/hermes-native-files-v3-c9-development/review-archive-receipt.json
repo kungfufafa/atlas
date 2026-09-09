@@ -1,0 +1,14 @@
+{
+  "archive": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-07/file-v3-c9-development-review",
+  "at": "2026-09-07T07:32:10.876924+00:00",
+  "bytes": 4795627,
+  "files": 206,
+  "manifestSha256": "648c73dd28a222ef9c5916cc30d6eca963ecf4ed5aed2ca3b5b1c98e2cfee513",
+  "postPromotionHashesModesCensusVerified": true,
+  "providerCalls": 0,
+  "rescores": 0,
+  "scannerBytes": 4889373,
+  "scannerStreams": 207,
+  "sourceRetained": true,
+  "tests": 0
+}

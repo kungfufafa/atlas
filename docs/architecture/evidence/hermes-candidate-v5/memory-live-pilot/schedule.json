@@ -1,0 +1,46 @@
+{
+  "batch": "pilot-2026-09-06T19-32-47-518Z-581f811c",
+  "bootstrap": {
+    "draws": 100000,
+    "seed": 20260906
+  },
+  "budget": {
+    "maxGeneratedTokens": 12000,
+    "maxOutputTokens": 4096,
+    "maxProviderRequests": 24,
+    "timeoutMs": 300000
+  },
+  "bunVersion": "1.3.1",
+  "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "manifestPath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/frozen/manifest.json",
+  "manifestSha256": "76ea6c44820011fc8d70205c139322a5c8faf8975565206893f0abd3fe1a298c",
+  "model": "mimo-v2.5",
+  "phase": "pilot",
+  "schedule": [
+    {
+      "condition": "native-default",
+      "family": "durable_fact",
+      "order": ["atlas", "hermes"],
+      "pairId": "memory-transport-pilot-native-default-warm-same-owner-r0",
+      "recallIdentity": "same-owner",
+      "repetition": 0,
+      "seed": 0,
+      "stratum": "warm",
+      "taskId": "memory-transport-pilot/native-default"
+    },
+    {
+      "condition": "explicit-memory",
+      "family": "durable_fact",
+      "order": ["hermes", "atlas"],
+      "pairId": "memory-transport-pilot-explicit-memory-warm-same-owner-r0",
+      "recallIdentity": "same-owner",
+      "repetition": 0,
+      "seed": 0,
+      "stratum": "warm",
+      "taskId": "memory-transport-pilot/explicit-memory"
+    }
+  ],
+  "scored": false,
+  "shuffleSeed": 20260906,
+  "transportMode": "live"
+}

@@ -1,0 +1,118 @@
+{
+  "actualProducerCall": "call_e2a95edab04641e0864586e8",
+  "actualReadbackCall": "call_60dea904e8ab47cf92a54de8",
+  "allFiveSuppliedValuesCorrectInSealedCensus": true,
+  "archive": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-07/20260907T023713Z-00008156aa71",
+  "archiveManifestSha256": "e1805a67d66ecf492de441582f6ecad7c18a0fdb4eb311f8749c5107bce3daa1",
+  "attemptId": "development-1788742015953-486a7350-native-files-development-pdf_create-v1-r0-atlas",
+  "censusReportJson": {
+    "path": "/private/tmp/atlas-native-file-mimo-v2-process-audit/report-final.json",
+    "sha256": "4b084fefd0ae2553671af8279c2baa174e660919b0e80144e480148c861a5afc"
+  },
+  "createdAt": "2026-09-07T02:49:56.324593+00:00",
+  "evidenceBindings": [
+    {
+      "durableArchivePath": "closed-components/atlas-native-file-mimo-v2-process-audit/manual/development-1788742015953-486a7350-native-files-development-pdf_create-v1-r0-atlas.json",
+      "sha256": "b84108adf6c34f505ea2c87e62c1e0889f0072483b95f3b1a2f85b33bce8ac63",
+      "source": "/private/tmp/atlas-native-file-mimo-v2-process-audit/manual/development-1788742015953-486a7350-native-files-development-pdf_create-v1-r0-atlas.json"
+    },
+    {
+      "durableArchivePath": "closed-components/atlas-native-file-mimo-v2-process-audit/arms/development-1788742015953-486a7350-native-files-development-pdf_create-v1-r0-atlas.json",
+      "sha256": "f6189de1fc503326712aa66dfe36baae7533219456d8f9f84deb370f86a4d59a",
+      "source": "/private/tmp/atlas-native-file-mimo-v2-process-audit/arms/development-1788742015953-486a7350-native-files-development-pdf_create-v1-r0-atlas.json"
+    },
+    {
+      "durableArchivePath": "runtime-state/441edd15e70442b14b02/atlas-native-file-TszlWw/orgs/file_study_org/profiles/file_study_profile/artifacts/handover.pdf",
+      "sha256": "1af026898e2d23f8a2539ad11b9fc5a7d267c38cb11d8d8de0f222c1d73f914e",
+      "source": "/private/tmp/agent-runtime-aFTDe1/state-9Y5HL7/atlas-native-file-TszlWw/orgs/file_study_org/profiles/file_study_profile/artifacts/handover.pdf"
+    },
+    {
+      "durableArchivePath": "repository-evidence/hermes-native-files-mimo-v2/development-candidate5/report.md",
+      "sha256": "ab53b94fbeadee1df277d14e1692aeb4b09f2cd297c053b3a92ae476887d980b",
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-files-mimo-v2/development-candidate5/report.md"
+    },
+    {
+      "durableArchivePath": "closed-components/atlas-native-file-mimo-v2-process-audit/manual/development-1788742015953-486a7350-native-files-development-pdf_create-v1-r0-atlas.json",
+      "sha256": "b84108adf6c34f505ea2c87e62c1e0889f0072483b95f3b1a2f85b33bce8ac63",
+      "source": "/private/tmp/atlas-native-file-mimo-v2-process-audit/manual/development-1788742015953-486a7350-native-files-development-pdf_create-v1-r0-atlas.json"
+    },
+    {
+      "durableArchivePath": "evaluation/native-files-mimo-study-v2/batches/development-1788742015953-486a7350/trials/development-1788742015953-486a7350-native-files-development-pdf_create-v1-r0-atlas/artifact-oracle.json",
+      "sha256": "8fd6a5116336409f55593644cc1e32b588937d19639dccbc1d3de54e645e06e8",
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v2/batches/development-1788742015953-486a7350/trials/development-1788742015953-486a7350-native-files-development-pdf_create-v1-r0-atlas/artifact-oracle.json"
+    },
+    {
+      "durableArchivePath": "evaluation/native-files-mimo-study-v2/batches/development-1788742015953-486a7350/pairs/native-files-development-pdf_create-v1-r0/pair-input.json",
+      "sha256": "e74db1276c2bdade6f8a205842ac999e3f4ce5c2bba2c9607081c123de456d80",
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v2/batches/development-1788742015953-486a7350/pairs/native-files-development-pdf_create-v1-r0/pair-input.json"
+    },
+    {
+      "durableArchivePath": "evaluation/native-files-mimo-study-v2/batches/development-1788742015953-486a7350/pairs/native-files-development-pdf_create-v1-r0/source-originals/input/handover.json",
+      "sha256": "a125f88f9cf7957820bfe913c92020aa2445d203d115e149981483612b8e299b",
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v2/batches/development-1788742015953-486a7350/pairs/native-files-development-pdf_create-v1-r0/source-originals/input/handover.json"
+    }
+  ],
+  "fabricatedSuppliedFieldProved": false,
+  "hiddenReasoningInspected": false,
+  "limits": [
+    "Five supplied-value checks do not prove exact title compliance or comprehensive visual/factual perfection.",
+    "The frozen exact title check still fails; no regrade, replacement attempt, denominator change or comparative claim.",
+    "The original report footer names report-final.md beside the report-final.json hash; the correct JSON binding is supplied here additively."
+  ],
+  "newProviderCalls": 0,
+  "originalOracleFailure": "fact:0",
+  "originalReport": {
+    "path": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-files-mimo-v2/development-candidate5/report.md",
+    "sha256": "ab53b94fbeadee1df277d14e1692aeb4b09f2cd297c053b3a92ae476887d980b"
+  },
+  "originalSuccess": false,
+  "producedTitle": "Shipment Handover",
+  "publicReadbackSource": "existing sealed public projection; no new PDF rendering/extraction or visual inspection",
+  "requiredTitle": "Shipment handover",
+  "scope": "Additive interpretation correction from sealed public census; original report/oracle/scores unchanged.",
+  "scoresRecomputed": false,
+  "selectedCopies": [
+    {
+      "bytes": 2254,
+      "destination": "docs/architecture/evidence/hermes-native-files-mimo-v2/development-candidate5/qualification-evidence/atlas-pdf-create-v1-manual.json",
+      "sha256": "b84108adf6c34f505ea2c87e62c1e0889f0072483b95f3b1a2f85b33bce8ac63",
+      "source": "/private/tmp/atlas-native-file-mimo-v2-process-audit/manual/development-1788742015953-486a7350-native-files-development-pdf_create-v1-r0-atlas.json"
+    },
+    {
+      "bytes": 1214,
+      "destination": "docs/architecture/evidence/hermes-native-files-mimo-v2/development-candidate5/qualification-evidence/atlas-pdf-create-v1-oracle.json",
+      "sha256": "8fd6a5116336409f55593644cc1e32b588937d19639dccbc1d3de54e645e06e8",
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v2/batches/development-1788742015953-486a7350/trials/development-1788742015953-486a7350-native-files-development-pdf_create-v1-r0-atlas/artifact-oracle.json"
+    },
+    {
+      "bytes": 1539,
+      "destination": "docs/architecture/evidence/hermes-native-files-mimo-v2/development-candidate5/qualification-evidence/atlas-pdf-create-v1-pair-input.json",
+      "sha256": "e74db1276c2bdade6f8a205842ac999e3f4ce5c2bba2c9607081c123de456d80",
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v2/batches/development-1788742015953-486a7350/pairs/native-files-development-pdf_create-v1-r0/pair-input.json"
+    },
+    {
+      "bytes": 139,
+      "destination": "docs/architecture/evidence/hermes-native-files-mimo-v2/development-candidate5/qualification-evidence/atlas-pdf-create-v1-source-input.json",
+      "sha256": "a125f88f9cf7957820bfe913c92020aa2445d203d115e149981483612b8e299b",
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v2/batches/development-1788742015953-486a7350/pairs/native-files-development-pdf_create-v1-r0/source-originals/input/handover.json"
+    }
+  ],
+  "selectedPdf": {
+    "absolutePath": "/private/tmp/agent-runtime-aFTDe1/state-9Y5HL7/atlas-native-file-TszlWw/orgs/file_study_org/profiles/file_study_profile/artifacts/handover.pdf",
+    "bytes": 2048,
+    "sha256": "1af026898e2d23f8a2539ad11b9fc5a7d267c38cb11d8d8de0f222c1d73f914e"
+  },
+  "sourceValues": {
+    "batch": "SHIP-1643",
+    "boxes": 39,
+    "contact": "Rani Kusuma",
+    "destination": "Surabaya",
+    "warning": "Keep dry. Do not stack."
+  },
+  "unchangedBatch": {
+    "rawAtlasPrimary": "13/18",
+    "rawHermesPrimary": "15/18",
+    "reason": "Hermes pptx_revision v0 fallback lacks output runId; absent evidence, not observed foreign identity",
+    "validity": false
+  }
+}

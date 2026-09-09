@@ -34,6 +34,7 @@ export function wrapPersistedSession(
   let lastPersistedRevision = session.getHistoryRevision();
   let historyNeedsReplace = false;
   let generation = 0;
+  let activeGeneration: number | undefined;
 
   function assertCurrentGeneration(expectedGeneration: number): void {
     if (generation !== expectedGeneration) {
@@ -81,13 +82,31 @@ export function wrapPersistedSession(
   }
 
   async function persistAfterSend(
-    send: () => Promise<string>,
+    send: (checkpoint: () => Promise<void>) => Promise<string>,
+    userMessage: string
+  ): Promise<string> {
+    const turnGeneration = generation;
+    if (activeGeneration === turnGeneration) {
+      throw new Error("The previous turn is still saving its results.");
+    }
+    activeGeneration = turnGeneration;
+    try {
+      return await persistTurn(send, userMessage);
+    } finally {
+      if (activeGeneration === turnGeneration) {
+        activeGeneration = undefined;
+      }
+    }
+  }
+
+  async function persistTurn(
+    send: (checkpoint: () => Promise<void>) => Promise<string>,
     userMessage: string
   ): Promise<string> {
     const turnGeneration = generation;
     const turnId = options.onBeginTurn?.(sessionId, userMessage);
-    const before = session.getHistory().length;
-    const revisionBefore = session.getHistoryRevision();
+    let before = session.getHistory().length;
+    let revisionBefore = session.getHistoryRevision();
     const historySnapshot = session.getHistory().slice();
     const archiveIdsBefore = new Set(
       session.getPendingHistoryArchives?.().map((archive) => archive.id)
@@ -101,11 +120,26 @@ export function wrapPersistedSession(
             !archiveIdsBefore.has(archive.id) &&
             hasNewCompletedToolEvidence(archive.messages, historySnapshot)
         );
+    const checkpoint = async () => {
+      assertCurrentGeneration(turnGeneration);
+      if (!retainsNewToolEvidence()) {
+        return;
+      }
+      options.onToolEvidenceRetained?.(sessionId, turnId);
+      try {
+        await persistCurrentHistory(before, revisionBefore, turnGeneration);
+        before = session.getHistory().length;
+        revisionBefore = session.getHistoryRevision();
+      } catch (error) {
+        historyNeedsReplace = true;
+        throw error;
+      }
+    };
     let reply: string;
     try {
       reply = options.runTurn
-        ? await options.runTurn(turnId, send)
-        : await send();
+        ? await options.runTurn(turnId, () => send(checkpoint))
+        : await send(checkpoint);
     } catch (error) {
       if (generation === turnGeneration && retainsNewToolEvidence()) {
         options.onToolEvidenceRetained?.(sessionId, turnId);
@@ -228,14 +262,30 @@ export function wrapPersistedSession(
     getPendingHistoryArchives: () =>
       session.getPendingHistoryArchives?.() ?? [],
     async send(message, sendOptions) {
+      const { onToolCheckpoint, ...turnOptions } = sendOptions ?? {};
       return persistAfterSend(
-        () => session.send(message, sendOptions),
+        (checkpoint) =>
+          session.send(message, {
+            ...turnOptions,
+            onToolCheckpoint: async () => {
+              await checkpoint();
+              await onToolCheckpoint?.call(sendOptions);
+            },
+          }),
         readUserMessage(message)
       );
     },
     async sendStream(message, handlers, streamOptions) {
+      const { onToolCheckpoint, ...turnOptions } = streamOptions ?? {};
       return persistAfterSend(
-        () => session.sendStream(message, handlers, streamOptions),
+        (checkpoint) =>
+          session.sendStream(message, handlers, {
+            ...turnOptions,
+            onToolCheckpoint: async () => {
+              await checkpoint();
+              await onToolCheckpoint?.call(streamOptions);
+            },
+          }),
         readUserMessage(message)
       );
     },

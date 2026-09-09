@@ -1,0 +1,45 @@
+{
+  "method": "All five sleep_entry category records paired with the first later wake_from_sleep record; no task/quality selection",
+  "intervals": [
+    {
+      "sleepEntryTimestamp": "2026-09-07 08:23:45.447239+0000",
+      "nextWakeFromSleepTimestamp": "2026-09-07 08:25:05.012540+0000",
+      "entryToWakeSeconds": 79.565301,
+      "releasedRowWithLargestWallIntervalOverlap": 52,
+      "observedCallerWallMinusMonotonicSeconds": 78.77896266700002,
+      "qualification": "Entry-to-wake categories include transition/preparation intervals; they are not exact asleep-duration counters or proof of a request-level failure cause."
+    },
+    {
+      "sleepEntryTimestamp": "2026-09-07 08:25:17.598279+0000",
+      "nextWakeFromSleepTimestamp": "2026-09-07 08:41:01.127897+0000",
+      "entryToWakeSeconds": 943.529618,
+      "releasedRowWithLargestWallIntervalOverlap": 54,
+      "observedCallerWallMinusMonotonicSeconds": 942.6092295840001,
+      "qualification": "Entry-to-wake categories include transition/preparation intervals; they are not exact asleep-duration counters or proof of a request-level failure cause."
+    },
+    {
+      "sleepEntryTimestamp": "2026-09-07 08:41:03.472697+0000",
+      "nextWakeFromSleepTimestamp": "2026-09-07 08:56:16.128435+0000",
+      "entryToWakeSeconds": 912.655738,
+      "releasedRowWithLargestWallIntervalOverlap": 55,
+      "observedCallerWallMinusMonotonicSeconds": 909.7008602080001,
+      "qualification": "Entry-to-wake categories include transition/preparation intervals; they are not exact asleep-duration counters or proof of a request-level failure cause."
+    },
+    {
+      "sleepEntryTimestamp": "2026-09-07 08:56:18.353855+0000",
+      "nextWakeFromSleepTimestamp": "2026-09-07 09:07:40.115135+0000",
+      "entryToWakeSeconds": 681.76128,
+      "releasedRowWithLargestWallIntervalOverlap": 58,
+      "observedCallerWallMinusMonotonicSeconds": 677.6960294590001,
+      "qualification": "Entry-to-wake categories include transition/preparation intervals; they are not exact asleep-duration counters or proof of a request-level failure cause."
+    },
+    {
+      "sleepEntryTimestamp": "2026-09-07 09:07:50.413056+0000",
+      "nextWakeFromSleepTimestamp": "2026-09-07 09:13:40.557912+0000",
+      "entryToWakeSeconds": 350.144856,
+      "releasedRowWithLargestWallIntervalOverlap": 59,
+      "observedCallerWallMinusMonotonicSeconds": 349.6145632079998,
+      "qualification": "Entry-to-wake categories include transition/preparation intervals; they are not exact asleep-duration counters or proof of a request-level failure cause."
+    }
+  ]
+}

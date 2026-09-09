@@ -1,0 +1,101 @@
+[
+  {
+    "content": "Use write_file to create artifacts/provider-proof.txt containing exactly atlas-live-23d03f98-5fd6-4c79-beb3-a368a66e063d (no newline). Then call read_file with the EXACT path returned by write_file. Return the content read from that file. You must execute both dependent tools; do not merely describe actions.",
+    "role": "user"
+  },
+  {
+    "content": "",
+    "role": "assistant",
+    "toolCalls": [
+      {
+        "arguments": {
+          "path": "artifacts/provider-proof.txt",
+          "content": "atlas-live-23d03f98-5fd6-4c79-beb3-a368a66e063d"
+        },
+        "id": "call_3730524",
+        "name": "write_file"
+      }
+    ],
+    "providerContent": [
+      {
+        "functionCall": {
+          "name": "write_file",
+          "args": {
+            "path": "artifacts/provider-proof.txt",
+            "content": "atlas-live-23d03f98-5fd6-4c79-beb3-a368a66e063d"
+          },
+          "id": "call_3730524"
+        },
+        "thoughtSignature": "EmUKYwERTTIPauR5TcshQkdOzFxwptL/U4WAinGjIjlkO0eTAF/KmrzXtAvBK8AqXVeEIf8qjGlQFqwox2+KwziqIhldzRsQ4YbDPZz8/TQvfK3P8+G9LYH+CSsWPDsCEMX/RUtudw=="
+      }
+    ],
+    "providerContentProvenance": {
+      "modelId": "gemini-3-flash-preview",
+      "providerReplayRevision": "legacy:7706de65-e956-46f6-8c6a-14f1881a10ef:2026-08-13T02:38:33.938Z",
+      "providerInstanceId": "7706de65-e956-46f6-8c6a-14f1881a10ef",
+      "protocol": "gemini-content",
+      "provider": "gemini"
+    }
+  },
+  {
+    "content": "{\"bytesWritten\":47,\"path\":\"/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-gemini-f650b27152d5-jIEZ7O/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt\",\"artifacts\":[{\"createdAt\":\"2026-09-06T08:21:23.000Z\",\"filename\":\"provider-proof.txt\",\"id\":\"aUW56CjEvFCV\",\"mimeType\":\"text/plain\",\"path\":\"artifacts/provider-proof.txt\",\"sizeBytes\":47}]}",
+    "name": "write_file",
+    "role": "tool",
+    "toolCallId": "call_3730524"
+  },
+  {
+    "content": "",
+    "role": "assistant",
+    "toolCalls": [
+      {
+        "arguments": {
+          "path": "artifacts/provider-proof.txt"
+        },
+        "id": "call_2653832",
+        "name": "read_file"
+      }
+    ],
+    "providerContent": [
+      {
+        "functionCall": {
+          "name": "read_file",
+          "args": {
+            "path": "artifacts/provider-proof.txt"
+          },
+          "id": "call_2653832"
+        },
+        "thoughtSignature": "EmUKYwERTTIPWzsXP8sEgpiIvs6lhzmmWNUXNQjWDEN3jSKzbOT2ndZu16AstlhU/Z532aK3dBOXJw+M5AmfZt1F8rTI4LvH2LcJUw+WUqErV32vxeFJT4yN4+zKZ5aiIHcHf1I5ZQ=="
+      }
+    ],
+    "providerContentProvenance": {
+      "modelId": "gemini-3-flash-preview",
+      "providerReplayRevision": "legacy:7706de65-e956-46f6-8c6a-14f1881a10ef:2026-08-13T02:38:33.938Z",
+      "providerInstanceId": "7706de65-e956-46f6-8c6a-14f1881a10ef",
+      "protocol": "gemini-content",
+      "provider": "gemini"
+    }
+  },
+  {
+    "content": "{\"bytesRead\":47,\"content\":\"atlas-live-23d03f98-5fd6-4c79-beb3-a368a66e063d\",\"endLine\":1,\"path\":\"/private/var/folders/4y/k802_y_j65b1zfkcj_s4ps3w0000gn/T/atlas-gemini-f650b27152d5-jIEZ7O/orgs/live_provider_org/profiles/live_provider_profile/artifacts/provider-proof.txt\",\"startLine\":1,\"totalLines\":1,\"truncated\":false}",
+    "name": "read_file",
+    "role": "tool",
+    "toolCallId": "call_2653832"
+  },
+  {
+    "content": "atlas-live-23d03f98-5fd6-4c79-beb3-a368a66e063d",
+    "role": "assistant",
+    "providerContent": [
+      {
+        "text": "atlas-live-23d03f98-5fd6-4c79-beb3-a368a66e063d",
+        "thoughtSignature": "EmUKYwERTTIPkVgZKqEHU3v6F0ypsU0soo+xczIunpttpSnqOD5R0e8WEvHXCjmxO0+MGUjgCaaAVpmbgHXo13ZXqd6c8dVS1mGX11DOHCOZPgkEyRkT3J6UwL7EtIzoAsXmR1+pxA=="
+      }
+    ],
+    "providerContentProvenance": {
+      "modelId": "gemini-3-flash-preview",
+      "providerReplayRevision": "legacy:7706de65-e956-46f6-8c6a-14f1881a10ef:2026-08-13T02:38:33.938Z",
+      "providerInstanceId": "7706de65-e956-46f6-8c6a-14f1881a10ef",
+      "protocol": "gemini-content",
+      "provider": "gemini"
+    }
+  }
+]

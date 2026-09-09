@@ -1,0 +1,14 @@
+{
+  "archive": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-07/file-v3-c9-confirmation-review",
+  "at": "2026-09-07T10:24:45.690101+00:00",
+  "bytes": 15964544,
+  "files": 661,
+  "manifestSha256": "9c762d4086971c771da9bb78645db79f1b5a6b76070ab3ce56b8155fe58ec1d5",
+  "postPromotionHashesModesCensusVerified": true,
+  "providerCalls": 0,
+  "rescores": 0,
+  "scannerBytes": 16280768,
+  "scannerStreams": 662,
+  "sourceRetained": true,
+  "tests": 0
+}

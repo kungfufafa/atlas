@@ -1,0 +1,36 @@
+{
+  "at": "2026-09-06T23:24:29.367053+00:00",
+  "candidateBaseline": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "reviewedSourceHash": "6cf23f28cc6a9e7c0056c29e605850437e2175e93d63b80111e6f090d7df66dd",
+  "reviewedSourceFiles": 2085,
+  "allSourceBytesMatch": true,
+  "root2078Candidate5FilesUnchanged": true,
+  "inventorySha256": "38b659f6c03bc0ab9bb5cf98df35f1068fffda741402323620e323d91577b7dd",
+  "combinedPatchSha256": "650ec0d646072bd3fc5f536023638688b3ecb89c95f23c36dcd72687243c94c6",
+  "readSourceFiles": {
+    "apps/server/src/services/artifact-publication-service.ts": "a6df6edfba3be6faae0a60f9ea84030c826fc84b2e39d9490f03842936224508",
+    "apps/server/src/services/artifact-publication-store.ts": "b0b3baaa8f3eecd0eb036704af69bdf5c4bdd04808db6d85a033b050c60e8c62",
+    "apps/server/src/services/artifact-publication-service.test.ts": "e61c101387b37074245779e7416e96da67addc0a8d3949c7b4eed1d98ae5a786",
+    "packages/core/src/artifact-publication.ts": "ebd05fbded7927d5f588a4b340c68bbd14b0b0bdd5cce6c78d57f9373bcc9281",
+    "packages/db/src/artifact-publication-identity.ts": "8dbe57a3bbac6c8760852578033a4f04631b3897ef8ebb2dde530f1736bb9db9",
+    "packages/db/src/artifact-publication-memory.ts": "ce5bacd0d2f733d2a77cfde45c9e3feaed1d69f413ae6941a13541e26b448292",
+    "packages/db/src/artifact-publication-sqlite.ts": "37c9c9eef24f3eea20e7e18ee60873613fc1a3b86c6555b071b69099a1cc6868",
+    "packages/db/src/adapters/in-memory.ts": "eb446adcaedc9f393f400dbfdefc9cac321750533ac39665ce60c6cba68bba1e",
+    "packages/db/src/adapters/sqlite.ts": "f00022de81cf3048f0b4601434791d6cef0d9776d82eee45a4e095b9b6178469",
+    "packages/db/src/types.ts": "48dd95d327e83cfff6f8cd7925132dec3dfbc7267dfed938f0bd948464721dcb",
+    "packages/db/sql/schema.sql": "04f76faa8951a770a02d3aa406995652ec7a9502be518ed7e2606db1af9f9cc7",
+    "packages/db/src/index.ts": "0c743a0bb54fc938e99526da161038c69a06ba2148ba2d9d1a0113b55132d35a",
+    "packages/core/package.json": "576dfd636564cdeed4fa5d734bec5c508dcd48c8930789c6385546b24167b0e9"
+  },
+  "documents": {
+    "/private/tmp/atlas-artifact-publication-foundation/implementation-notes.md": "9df87de19628835699c89c0fd7d9fb27355c1031195127d90b37f084493a96e7",
+    "/private/tmp/atlas-artifact-attribution-audit/publication-design.md": "1348b09332a5009d1895b634d86d10c1f7815126900a904e6bcacc7e37974292",
+    "/private/tmp/atlas-artifact-attribution-audit/confinement-review/review.md": "5387c0ac46623cbac792e69d7d1496c1d4126b3356646c2ed1e57d925102743b"
+  },
+  "ownerTestLogSha256": "de51555413f18ed6bb16f88f328478c73d2bf21e48a281b89ab34d9296eb2d27",
+  "ownerTypecheckLogs": {
+    "/private/tmp/atlas-artifact-publication-foundation/final-production-typecheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/private/tmp/atlas-artifact-publication-foundation/final-scoped-typecheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "ownerLintLogSha256": "9ad98b0a44e38ed9bccf3867dbb03ffd8b84228c18005d13adf65a24f81e1136"
+}

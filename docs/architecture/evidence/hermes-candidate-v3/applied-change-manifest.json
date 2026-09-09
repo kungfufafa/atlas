@@ -1,0 +1,141 @@
+{
+  "at": "2026-09-06T16:01:28.526Z",
+  "baseSourceHash": "8714873b3668455d66224aef8384af2eed926f36d84c59c5ee477b37a8210e7d",
+  "scratch": "/private/tmp/atlas-combined-candidate-o9AObL",
+  "changes": {
+    "apps/server/src/providers/failure-evidence.test.ts": {
+      "beforeSha256": null,
+      "afterSha256": "e04d3fb77c131fd0b06e7ded8681ca8148d331480044dc4847ddd1b3fee5482a"
+    },
+    "apps/server/src/providers/failure-evidence.ts": {
+      "beforeSha256": null,
+      "afterSha256": "0c1f43c1bb0f93477805a380b7c11fe82dfdb55c229ff01668f04542d375c3e7"
+    },
+    "apps/server/src/providers/output-limit-evidence.test.ts": {
+      "beforeSha256": "c9b2bb1e47ae1ca519ec388003e98e34f2b30ccc4aa3b784eb96a1840a3ebf76",
+      "afterSha256": "ec1152a913356f909c89afd493316d953e5ba241693dc826846a91c72aeeca82"
+    },
+    "apps/server/src/providers/subscription/chatgpt/app-server.test.ts": {
+      "beforeSha256": "922275538d2b05e34cb1ad1d2ba04e98e8ea565c1ce573033eb590e4f6f25572",
+      "afterSha256": "4085901b089b7ffd87201674223a5df6c913754ae7bbc177d47c3366560baf7c"
+    },
+    "apps/server/src/providers/subscription/chatgpt/app-server.ts": {
+      "beforeSha256": "8e5bc69358184d4e93a3903bfa7379419a17e6d83c128b78651500e12e5764e2",
+      "afterSha256": "d3e78c15150daf1f53230470a14241cdd03fea1d030c521e24797afa9861508f"
+    },
+    "apps/server/src/providers/subscription/chatgpt/runtime.ts": {
+      "beforeSha256": "3d0329b4d61f6d4344f0eafb63e05315721f957af3e10a3b46e2f9cff0ff30b7",
+      "afterSha256": "969d30b6caaa8e54976c11860ec354520b7a6046d783ee9e23d1dc35d7082369"
+    },
+    "apps/server/src/providers/subscription/chatgpt/success-usage.test.ts": {
+      "beforeSha256": null,
+      "afterSha256": "6a1dedbe5f4ea9f874175a0603579b5e9aa221a6c6df793d221478cac29c9503"
+    },
+    "apps/server/src/providers/subscription/claude/provider.ts": {
+      "beforeSha256": "989d416ee8743b780c6c62fd1ea583260ffa53093f6448a5c0b5665c7e4c79ed",
+      "afterSha256": "44ad51c5337682a246c0b935e7ccd9afc12ef17b3ee08950be08d72615471244"
+    },
+    "apps/server/src/providers/subscription/claude/runtime-metadata.test.ts": {
+      "beforeSha256": "941558fb19d214e20f0adb148af5bf4f30df82001722a8d556d189870212a887",
+      "afterSha256": "ff4d271034c262083cdfe478f65cae617a55f912c7340de3032f1bb383281a6b"
+    },
+    "apps/server/src/providers/subscription/claude/runtime.ts": {
+      "beforeSha256": "d62cb6f9042689cbb297d15f1165d4bf110bca51f8344e02b49eb6f6c86c214c",
+      "afterSha256": "8be571a08214fac854c36144fb9988067ba2456309aabb7fcedab63998cc5358"
+    },
+    "apps/server/src/providers/subscription/claude/structured-harness-persistence.test.ts": {
+      "beforeSha256": "e3561bc67a2ad1e01e3aa4f56ddb14c842a827648bbb568752437d2b72c3ee1e",
+      "afterSha256": "ca5c1bb1065bb0fdeaef7abab8e2bb287633aa9877bb138f70c8f846039a0bb5"
+    },
+    "apps/server/src/providers/subscription/errors.ts": {
+      "beforeSha256": "d2b32e0663358b1151cbf58d781a95520a3fd937533a116ac53de421e38d460b",
+      "afterSha256": "4ddc23848c9ded2ff5158041c008e54c4d27270ae9ea7ab317854f666e12dc07"
+    },
+    "apps/server/src/providers/subscription/fidelity-repro.test.ts": {
+      "beforeSha256": null,
+      "afterSha256": "868c234c9bd7cdfe783a5dd4cf6ec0bacd185938849ac5fc79e4ae4541e58535"
+    },
+    "apps/server/src/providers/subscription/native-failure-usage.repro.test.ts": {
+      "beforeSha256": null,
+      "afterSha256": "fd82161ba0b0380d3a5894d26bec341bc05407f55449285f69937994f5510eb3"
+    },
+    "apps/server/src/providers/subscription/primitive-failure-evidence.test.ts": {
+      "beforeSha256": null,
+      "afterSha256": "7e7cbd50a14224cfa79a9d5c45e7893b110d2c88217886df75afd05afb81b511"
+    },
+    "apps/server/src/providers/usage-provenance.test.ts": {
+      "beforeSha256": null,
+      "afterSha256": "c0672367157bd1981bad281c785ddaff185c06cf90c66a33e921b892ff319954"
+    },
+    "apps/server/src/providers/usage-tracking.ts": {
+      "beforeSha256": "047326e2d2d59460c3b01998031add41195f9468bf543f835e4bb785a0f59959",
+      "afterSha256": "44556d1cb39020195063b68429c12558e06c8710d2bc65b7a156bf1862caf368"
+    },
+    "apps/server/src/services/llm-usage-tracker.test.ts": {
+      "beforeSha256": "2c9f8942f2668d17f9b3ee56d4c1621077eb6b53fcba719184da01366f13ff0c",
+      "afterSha256": "6a83eabb6f792a7f9ec13c29e438ab7f7c6bb6ff53336b4d2389e6c1b3cffc8b"
+    },
+    "apps/server/src/services/llm-usage-tracker.ts": {
+      "beforeSha256": "b221ad768504caaa28f7fabb116d6303df3cb4c8655ac7f861597320b94cd183",
+      "afterSha256": "bef3b5bbf4195108ebc7fbb12f4bc562e529f7672efc7a29983b919684d63028"
+    },
+    "apps/server/src/services/memory-service.ts": {
+      "beforeSha256": "d5bb3c207e89bd6f7a499f8328851ac35442b7ad21e8a5db08f61cbba73f6c40",
+      "afterSha256": "d34180a039880ab0d8cab2120f5a7ca974ef0553011815421a70745ee7c27d46"
+    },
+    "apps/server/src/tools/memory-tools-dedup.test.ts": {
+      "beforeSha256": null,
+      "afterSha256": "3f275a52c5b0ca6b46a0a172ec53fc65cd40b695bf869ed31a373ff0d2cca955"
+    },
+    "apps/server/src/tools/memory-tools.ts": {
+      "beforeSha256": "0fc4d9e2f8abb3dcfbfee42f38e621bc8065e6928fc00750b1e68ba6cbcf3c0b",
+      "afterSha256": "4b491af87e6de3e295e1ea0af3870247b886c8af4c219ddfd6aa84413db79af1"
+    },
+    "apps/server/src/tools/memory-withdrawal.test.ts": {
+      "beforeSha256": null,
+      "afterSha256": "68519560d154d34493b2871cd6ad929cedf9288bc0e0d19c519bae2c433e93ad"
+    },
+    "packages/core/src/contract.ts": {
+      "beforeSha256": "1f31a566f2e6234db0885a5042f1d6975ca53e632c8dee7cc4a0919b34ee9406",
+      "afterSha256": "a443745cf6d784e864cd0c1159ca9e1b9938cc9a0a0b68d2647143283c431299"
+    },
+    "packages/core/src/skills/bundled/update-profile-memory/SKILL.md": {
+      "beforeSha256": "0b14d8dd8f03638d1dacd5b7f5b6e2fa18b250f9e22dbdf7d4d41b7ec8791c4d",
+      "afterSha256": "2dbfdc22e7f2f8eb538e74d905fc2807d791bcfe2710bba09ec0ae9ed481b5ff"
+    },
+    "packages/db/sql/schema.sql": {
+      "beforeSha256": "86b51577b49548bcf78ad702ce7d82cf32769cb0aec884503f68e6e5d0af2d41",
+      "afterSha256": "4ad94877e1483e9f156c896985cac6f12ef3b638ff7a77218ea3a6575273d598"
+    },
+    "packages/db/src/adapters/in-memory.ts": {
+      "beforeSha256": "ff46c829db6c56d0b2bb3fd77d215af4940a6f4e51a3e56e29fdadc3ae442f0f",
+      "afterSha256": "86c60dabf6d3d356a6cbb98ca441fe8bb5538ea2feeb5ab3f459354a3600ba38"
+    },
+    "packages/db/src/adapters/sqlite.ts": {
+      "beforeSha256": "182f59283b5f9a6350bdcd3834541217105822d954a872466fcfe2c4a578246c",
+      "afterSha256": "56da6d8329506ade13ee1bd769554afca69bac09667dbd483dfe71aa6f69290c"
+    },
+    "packages/db/src/llm-usage-stats.test.ts": {
+      "beforeSha256": "c370a239113fd5ca2779ec494ad1141e70032cbe19e6c92575eeb4a56ba69542",
+      "afterSha256": "13ea9a11d286fba6f4306e175c10243665b14bee4f461944cb2960c6f4e07dae"
+    },
+    "packages/db/src/memory-identity.ts": {
+      "beforeSha256": null,
+      "afterSha256": "8a4f8039756c9589b0142001410682e36cb513805d377fcf7cb6e916c323bbbb"
+    },
+    "packages/db/src/memory-preservation.test.ts": {
+      "beforeSha256": null,
+      "afterSha256": "2d4f51eddeb2784df51c4c55ddb017db7a925e04bfe1ee1e7b61d42a4a181080"
+    },
+    "packages/db/src/migrate.ts": {
+      "beforeSha256": "aa18ca469c545175b7851642aa6c624d38150ab4912dd64f1bfd953baeabad9e",
+      "afterSha256": "af8a21e979ce0f5eb0c0284891a25124320290a9850d6bb1ddeb1420606e9ebd"
+    },
+    "packages/db/src/types.ts": {
+      "beforeSha256": "ffeba5d043abb5b00e407351cbe46e63001b24a36f5c801eba0d41291ca0e628",
+      "afterSha256": "dafc54878ee8c148720eda04712fbd311e844c830966b394abcb2b7bc1b29202"
+    }
+  },
+  "patchSha256": "0e294227daa515ea9a2c91b3302ae3fcbf76ebda436fd0b54ecd31097890d46c",
+  "rootApplied": false
+}

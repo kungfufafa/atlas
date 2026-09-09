@@ -1,0 +1,362 @@
+{
+  "status": "passed",
+  "recordedAt": "2026-09-06T18:20:32+07:00",
+  "evidenceClass": "actual built Linux ARM64 image, real local processes and HTTP; controlled messenger transports",
+  "image": {
+    "Id": "sha256:8944c83b9e75d23c12006aebaf6458fa089eaf97acde9489a53214f4c6a96c8b",
+    "RepoTags": ["atlas-file-verification:20260906180544-72414"],
+    "RepoDigests": [
+      "atlas-file-verification@sha256:8944c83b9e75d23c12006aebaf6458fa089eaf97acde9489a53214f4c6a96c8b"
+    ],
+    "Created": "2026-09-06T18:11:30.614325091+07:00",
+    "Size": 1072174649,
+    "Architecture": "arm64",
+    "Os": "linux",
+    "configuredUser": "1000",
+    "entrypoint": ["/usr/local/bin/docker-entrypoint.sh"],
+    "cmd": ["bun", "run", "apps/server/src/index.ts"]
+  },
+  "runtime": {
+    "image": "sha256:8944c83b9e75d23c12006aebaf6458fa089eaf97acde9489a53214f4c6a96c8b",
+    "architecture": "arm64",
+    "platform": "linux",
+    "uid": 1000,
+    "kernel": "6.8.0-117-generic",
+    "osRelease": "Debian GNU/Linux 13 (trixie)",
+    "bun": "1.3.14",
+    "python": "Python 3.13.5",
+    "ffmpeg": "ffmpeg version 7.1.5-0+deb13u1 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffprobe": "ffprobe version 7.1.5-0+deb13u1 Copyright (c) 2007-2026 the FFmpeg developers",
+    "baileys": "6.7.24",
+    "discordVoice": "0.19.2",
+    "davey": "0.1.12",
+    "opus": "0.0.8"
+  },
+  "build": {
+    "exitCode": 0,
+    "platform": "linux/arm64",
+    "runtimeProductionPackagesInstalled": 1263,
+    "webBuild": "passed",
+    "dockerServer": "29.5.2",
+    "daemonOperatingSystem": "Ubuntu 24.04.4 LTS",
+    "dependencyStage": "passed",
+    "finalBuildAttempts": 1,
+    "networkRequired": "dependency installation during build; test containers network:none"
+  },
+  "tests": {
+    "passed": 515,
+    "failed": 0,
+    "assertions": 2952,
+    "files": 38,
+    "durationSeconds": 42.48,
+    "paths": [
+      "apps/server/src/tools/process-filesystem-isolation.test.ts",
+      "apps/server/src/tools/python-execute-tool.test.ts",
+      "apps/server/src/tools/python-execute-deep.test.ts",
+      "apps/server/src/tools/bash.test.ts",
+      "packages/core/src/tools/paths.test.ts",
+      "packages/core/src/tools/filesystem.test.ts",
+      "packages/core/src/tools/search-files.test.ts",
+      "packages/core/src/office-document/office-document.test.ts",
+      "packages/core/src/office-document/revisions.test.ts",
+      "packages/core/src/tools/spreadsheet-ooxml.test.ts",
+      "packages/core/src/tools/spreadsheet-features.test.ts",
+      "packages/core/src/channel-integration-policy.test.ts",
+      "apps/server/src/http/routes/channel-native-actions.test.ts",
+      "apps/server/src/http/routes/channel-native-policy-settings.test.ts",
+      "apps/server/src/http/routes/channel-questionnaire-binding.test.ts",
+      "apps/server/src/http/routes/channel-voice.test.ts",
+      "apps/server/src/services/channel-native-provider-bridge.test.ts",
+      "apps/server/src/services/audio-transcription.test.ts",
+      "apps/server/src/providers/capabilities/executors/audio-transcription.test.ts",
+      "apps/server/src/providers/channel-native-schema.test.ts",
+      "apps/platform/whatsapp/src/authorization-integration.test.ts",
+      "apps/platform/whatsapp/src/native-actions.test.ts",
+      "apps/platform/whatsapp/src/native-controls.test.ts",
+      "apps/platform/whatsapp/src/native-media.test.ts",
+      "apps/platform/telegram/src/native-actions.test.ts",
+      "apps/platform/telegram/src/channel-artifact-flow.test.ts",
+      "apps/platform/telegram/src/native-controls.test.ts",
+      "apps/platform/telegram/src/native-handler.test.ts",
+      "apps/platform/telegram/src/native-media-handler.test.ts",
+      "apps/platform/telegram/src/video.test.ts",
+      "apps/platform/discord/src/native-actions.test.ts",
+      "apps/platform/discord/src/channel-artifact-authorization.test.ts",
+      "apps/platform/discord/src/native-audio.test.ts",
+      "apps/platform/discord/src/native-callbacks.test.ts",
+      "apps/platform/discord/src/native-handler.test.ts",
+      "apps/platform/discord/src/native-interaction.test.ts",
+      "apps/platform/discord/src/native-questionnaire-multiple.test.ts",
+      "apps/platform/discord/src/voice-session.test.ts"
+    ],
+    "transportQualification": "Native messenger API calls use controlled transports. Tests also execute actual Hono HTTP, SQLite authority, FFmpeg codecs and local voice/cryptography dependencies. This is not real messenger delivery proof."
+  },
+  "productionFileRuntime": {
+    "status": "passed",
+    "filesystem": {
+      "bash": {
+        "deniedErrnos": {
+          "read": 13,
+          "write": 13
+        }
+      },
+      "python": "sibling read denied"
+    },
+    "python": {
+      "status": "passed",
+      "formats": ["docx", "pptx", "xlsx", "csv", "pdf"],
+      "versions": {
+        "pandas": "3.0.5",
+        "openpyxl": "3.1.5",
+        "python-docx": "1.2.0",
+        "python-pptx": "1.0.2",
+        "pypdf": "6.17.0",
+        "reportlab": "5.0.1",
+        "fonttools": "4.64.0",
+        "uharfbuzz": "0.56.1",
+        "python-bidi": "0.6.11"
+      }
+    },
+    "runtime": {
+      "architecture": "arm64",
+      "bun": "1.3.14",
+      "kernel": "6.8.0-117-generic",
+      "platform": "linux",
+      "uid": 1000
+    }
+  },
+  "pdfAndLargeFont": {
+    "status": "passed",
+    "fontBytes": 23278008,
+    "fontSha256": "876af2cd4854644e7f3e7feb2f688997fdb3343c6df6693611209c9dfb47ccec",
+    "ocr": [
+      {
+        "page": 1,
+        "text": "SCAN REVIEW 8642",
+        "truncated": false,
+        "needsOcr": false,
+        "method": "ocr",
+        "ocrLanguage": "eng",
+        "ocrConfidence": 96.46494566666667,
+        "ocrReviewRequired": false
+      }
+    ],
+    "preservation": {
+      "navigationTargets": [1, 3],
+      "outlines": 4,
+      "attachments": 2,
+      "text": "Révision approuvée — تمت المراجعة — 東京"
+    },
+    "sourceUnchanged": true,
+    "storage": "Font streamed via stdin into disposable container tmpfs; no host mount, image or repository font copy.",
+    "coverage": "Multilingual PDF generation and independent extraction verified Latin, Arabic and Japanese text with the 23 MB font. OCR was a separate English scanned sample (eng, SCAN REVIEW 8642); Arabic and Japanese OCR were not tested."
+  },
+  "bundledSkills": {
+    "status": "passed",
+    "loadedAndParsed": 18,
+    "freshInstalledByteExact": 18,
+    "insideImageHashChecked": 18,
+    "skills": [
+      {
+        "name": "create-automation",
+        "bytes": 1384,
+        "sha256": "0578dc80c42ba88a119bd94e439ee0bb71d1a15fafc174437256c9df0d134a0b"
+      },
+      {
+        "name": "manage-skills",
+        "bytes": 2534,
+        "sha256": "ce656a65bc3c3895046b3553d4a010249259aed7ac94761f293c46a5e38bf355"
+      },
+      {
+        "name": "update-profile-memory",
+        "bytes": 2313,
+        "sha256": "0b14d8dd8f03638d1dacd5b7f5b6e2fa18b250f9e22dbdf7d4d41b7ec8791c4d"
+      },
+      {
+        "name": "archive-profile-memory",
+        "bytes": 2635,
+        "sha256": "4c986495c71ca4aca6cd6f8acaa849bd3b43528cc5f675263fa013795f81c006"
+      },
+      {
+        "name": "save-artifact",
+        "bytes": 2987,
+        "sha256": "de91b2d33520db503ed3b4de3884cadf0cc01481dc504eeb2eeceb4ee9a88774"
+      },
+      {
+        "name": "word-documents",
+        "bytes": 1897,
+        "sha256": "bc951cd6f677ba95dc0c248773ccd1ca6f26239ca4f267a584a712b76d45d178"
+      },
+      {
+        "name": "pdf-documents",
+        "bytes": 2248,
+        "sha256": "5c26a34698b4894145a66138bb946212fc4d6d6b47c770967cda7f1a19170083"
+      },
+      {
+        "name": "presentations",
+        "bytes": 1255,
+        "sha256": "29e1e30dcc0638fd1949bb3e6018cf80a7b14f32fc76e13f3eed805f2e6ab233"
+      },
+      {
+        "name": "spreadsheets",
+        "bytes": 2318,
+        "sha256": "b9b7cf490db75d34d2884996f89659fcb2e32506ce3b050f5c16a333700743cb"
+      },
+      {
+        "name": "create-profile",
+        "bytes": 4065,
+        "sha256": "d982da0f3ec3d1bee5dddaccc125311abbbf262f00da46adc0c976131281c378"
+      },
+      {
+        "name": "coding-agent",
+        "bytes": 4739,
+        "sha256": "f2c05518baf529a868e1345c61ed85fcba0f1642395687139d00cd006d9a10db"
+      },
+      {
+        "name": "coding-backend-codex",
+        "bytes": 4768,
+        "sha256": "29fd62bf26a56a5c0b4798152ad1c68c053dbf3ced1d0dfac1b60d488c72c133"
+      },
+      {
+        "name": "coding-backend-claude-code",
+        "bytes": 19147,
+        "sha256": "b21e516d385127721d8ddc6e960316eb2c461e4239f7cc393451983040f25f9e"
+      },
+      {
+        "name": "coding-backend-opencode",
+        "bytes": 5931,
+        "sha256": "5b884988a650f9ef8de3701719bd57272624244036a8328a8ad1efb20ceacbe7"
+      },
+      {
+        "name": "coding-backend-pi",
+        "bytes": 1026,
+        "sha256": "dfea2366211155d0b58512b64fa4a271942cae2546b1343b9fcf1c4f1c77a09e"
+      },
+      {
+        "name": "coding-backend-cursor",
+        "bytes": 4512,
+        "sha256": "c27f17a6ebf64c299d3eccbaaff2f5108120f7d55de2fd3a5df520e2df6b04ef"
+      },
+      {
+        "name": "agent-browser",
+        "bytes": 4325,
+        "sha256": "5e51e26660c2453fc80c5cb15ae2eee1a7e1d7bd3f8a1269e886f87a2d2b5d74"
+      },
+      {
+        "name": "composio-integrations",
+        "bytes": 1117,
+        "sha256": "9bca464ce84d3a4302eeafa2d9a02c6a4c05d2a3757228b850d19dfb5b9e8958"
+      }
+    ]
+  },
+  "nativeDave": {
+    "status": "passed",
+    "architecture": "arm64",
+    "daveProtocol": 1,
+    "keyPackageBytes": 392,
+    "nativeAesGcm": true,
+    "liveDiscordVoice": "NOT_RUN"
+  },
+  "startup": {
+    "status": "passed",
+    "health": {
+      "status": 200,
+      "apiVersion": 1,
+      "bytes": 129,
+      "sha256": "4ce44f28350a168d9b029d70222bf6d5a2b9e98ac53cc8fda2165f0e7d924498"
+    },
+    "index": {
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 1448,
+      "sha256": "c9fd1dbf5eccd5c05f5a793c83cb0abb75d72c75086af9711f30475d43f44aae"
+    },
+    "defaultEntrypoint": true,
+    "freshData": true,
+    "network": "none",
+    "readOnlyRoot": true,
+    "hostMounts": false,
+    "boundedHealthAndDashboardRequests": true,
+    "cleanup": "exact disposable container removed"
+  },
+  "channelEntrypoints": [
+    {
+      "channel": "whatsapp",
+      "exitCode": 1,
+      "expectedConfigurationFailure": true,
+      "network": "none",
+      "hostMounts": false
+    },
+    {
+      "channel": "telegram",
+      "exitCode": 1,
+      "expectedConfigurationFailure": true,
+      "network": "none",
+      "hostMounts": false
+    },
+    {
+      "channel": "discord",
+      "exitCode": 1,
+      "expectedConfigurationFailure": true,
+      "network": "none",
+      "hostMounts": false
+    }
+  ],
+  "sourceBinding": {
+    "actualInsideImageHashCheckedCount": 1237,
+    "runtimeFilesInsideImage": 1219,
+    "runtimeHashCheckExitCode": 0,
+    "runtimeManifest": {
+      "path": "runtime.sha256",
+      "files": 1219,
+      "manifestSha256": "ded20db576ed75e06305d6e1e346c5b19c05bb270fd8d2a0a94647167839e0ee"
+    },
+    "markdownAssetsInsideImage": 18,
+    "markdownHashCheckExitCode": 0,
+    "markdownAssetManifest": {
+      "path": "runtime-markdown-assets.sha256",
+      "files": 18,
+      "manifestSha256": "5e386de01add587b30fd62a5690c51e871178507d813692a3b651761bdb0255e"
+    },
+    "hostRuntimeUnchanged": true,
+    "hostBuildInputsUnchanged": true,
+    "buildInputManifest": {
+      "path": "build-inputs.sha256",
+      "files": 2045,
+      "manifestSha256": "5165c8e81c949e008e97023e6f2e5e0888efb91d4173fd0ac2ceebe7bceb96a1"
+    },
+    "mismatches": 0,
+    "scope": "Runtime manifest includes all application/server/channel/core/agent/db/client source and fixtures copied into the image, plus runtime dependency manifests. Additional 18 bundled markdown assets were independently hashed inside the image and loaded. Build inputs include web/app sources and Docker/verification files; generated proof documentation/JSON outputs, ignored directories and environment files are excluded. No runtime source changed after the final build snapshot."
+  },
+  "cleanup": {
+    "dedicatedProfile": "atlas-verification",
+    "stopped": true,
+    "containersRemaining": 0,
+    "volumesRemaining": 0,
+    "hostMounts": false,
+    "defaultContextBefore": "default",
+    "defaultContextAfter": "default",
+    "finalImageRetained": true,
+    "previousImageRetained": "sha256:63a8977614e07b14a1cb2af2828d35dee5e798b29032953a27c40d9a1f8e0a67",
+    "operationalContainersOrVolumesTouched": false,
+    "dockerDataGiB": {
+      "used": 9.6,
+      "available": 5.4
+    },
+    "hostAvailableGiB": 19,
+    "vmConfiguration": {
+      "cpus": 2,
+      "memoryGiB": 3,
+      "swapGiB": 3,
+      "dockerDiskGiB": 16
+    }
+  },
+  "limitations": [
+    "linux/amd64 build and execution were not run; this proof is native linux/arm64.",
+    "No real WhatsApp, Telegram, or Discord message was sent; no Discord voice gateway was connected.",
+    "No live provider request was made by Docker checks. Provider proofs are recorded separately.",
+    "Native DAVE key generation and codec checks establish local runtime availability, not live Discord voice interoperability."
+  ],
+  "priorEvidence": "Previous Docker failures, fixes and the earlier 77-test image proof remain separate under docker-linux-proof-20260906 and original /private/tmp/atlas-docker-proof logs. Their success is not substituted for the current image.",
+  "rawLogPolicy": "Original logs remain only under /private/tmp. This directory contains reviewed scalar results, source manifests and hash/size references; no raw log archive."
+}

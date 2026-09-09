@@ -1,0 +1,19 @@
+{
+  "reviewPath": "/private/tmp/atlas-sequential-claim-design/independent-review.md",
+  "reviewSha256": "30403759a4431851b91d0d7bf9ef48ceae1f53b342a5e9356e79bb0d5e088ee5",
+  "inputHashes": {
+    "prospective-note.md": "6c27a9cf7eff0ee2d387689184f560c1d2183d836508894f2b5a63666680f24c",
+    "calculate.py": "ee1e9f941667cd8f1364ab006d0abf5beb29965393210a6d1734ff5643b1abcc",
+    "illustrative-calculations.json": "c83e9b8ff1fd4895b7584c8b5690c4e9f51cbc0306ca06a754297bf8175db7fb",
+    "reproduction.log": "1b59da008a8ca4a078321811f8295bab6299770a39bea6fc0e12b999ac5be9ab"
+  },
+  "sourcesJsonSha256": "8e345f5670b655382a9104a573690b365084c3be95e481204c55a91ef635c94e",
+  "inputsUnchanged": true,
+  "calculatorExecuted": false,
+  "testsOrSimulationsRun": false,
+  "liveLedgerUsed": false,
+  "holdoutRead": false,
+  "paidCalls": 0,
+  "primarySourceOpened": "https://academic.oup.com/jrsssb/article/86/1/1/7043257",
+  "decision": "Formula approved conditionally as mathematics; experiment not adopted. Filtration, inclusion, multiplicity, endpoint/quality semantics and task frame must be specified prospectively."
+}

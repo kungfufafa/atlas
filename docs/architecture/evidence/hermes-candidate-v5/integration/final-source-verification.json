@@ -1,0 +1,16 @@
+{
+  "at": "2026-09-06T19:24:47.140891+00:00",
+  "sourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "sourceFiles": 2078,
+  "sourceBeforeAfterEqual": true,
+  "rootCandidate3FilesUnchanged": 2072,
+  "candidate4FilesUnchanged": 2076,
+  "originalStopSourceFilesUnchanged": 2078,
+  "copiedInputsAndPatchesUnchanged": true,
+  "sourceActualTreeUnexpectedFiles": [],
+  "independentReviewSha256": "de1e06406db6dd0f2bc6901e89fc0542ae34775eff5784eb5df58f3862448d3e",
+  "rootCombinedApplyCheck": true,
+  "rootProductionApplyCheck": true,
+  "rootApplied": false,
+  "allProcessesClosed": true
+}

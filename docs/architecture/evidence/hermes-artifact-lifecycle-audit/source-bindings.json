@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "evidence": {
+    "output": "/private/tmp/atlas-artifact-attribution-audit/run-CidGS4/evidence.json",
+    "evidenceSha256": "27f1e4aaf8b2a1b9c8f4a6c7997e44709b133d1e03a847ff64d41b1d3f136489",
+    "result": "counterexample_confirmed",
+    "elapsedMs": 35.21695799999999,
+    "executionRoot": "/private/tmp/atlas-artifact-attribution-audit/run-CidGS4"
+  },
+  "selectedAtlasSourceFiles": [
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/context.ts",
+      "sha256": "80a1bf8241cfe6d9205c88d7566f50af862f339f27eb77feae6bbbf4abfbc833"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/execution.ts",
+      "sha256": "67985f914b0c4c5a2acedc39546a3e66106f44e7eb490a579d7a9d58cbc58805"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/tools/execution-contract.ts",
+      "sha256": "20109915845ff2e835b7e6298ec7889e66b61bc843ac29f66780ebe3e270c8d6"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/core/src/channel-artifacts.ts",
+      "sha256": "f95e58c4e62693b8fcdfcd54c69049450064682aab3a9afbcbde4d1cb82f018d"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/agent/src/tool-loop.ts",
+      "sha256": "f57337ddf14b4dbcc7a720d27b4e1570f16178773c61e68ac23eb68ce5e4c7c3"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/packages/agent/src/chat.ts",
+      "sha256": "2e490dec43005a4d21756860c477f1097623ffb16b448183273775a420128eb5"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/http/workspace-worker-artifacts.ts",
+      "sha256": "b3597051fa56272e326fd1321ed1b985ce158a83ec89f8b0f59b294a044758a9"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/tools/python-execute-tool.ts",
+      "sha256": "c25b647c4bdad24bdee478f46956cdb7a725bca803429d5dd5ce11a0192a72f0"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/agent-service.ts",
+      "sha256": "adf7d492e5ae1111d4346a2c613f8e53f9af80ef61e1fc764744f4703b6e08cb"
+    },
+    {
+      "path": "/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/services/task-runner.ts",
+      "sha256": "baedca4e3116bc5909875d8839a85da38c7504fdb23c154d669092f225aff397"
+    }
+  ],
+  "fileHashes": [
+    {
+      "path": "/private/tmp/atlas-artifact-attribution-audit/design-note.md",
+      "sha256": "3c5dcf0eaa40fce831052da9638f7356b6e8f0121cd092ef262df98869f0ed88",
+      "bytes": 7947
+    },
+    {
+      "path": "/private/tmp/atlas-artifact-attribution-audit/report.md",
+      "sha256": "f2644f681651e801500b092131e32e90ede9747392685bb8b4ecf2ea10f30ec3",
+      "bytes": 3628
+    },
+    {
+      "path": "/private/tmp/atlas-artifact-attribution-audit/reproduce.ts",
+      "sha256": "e572207a78dccb18ad1c512c40f4f8902afb9dad1a4608856cf97fe00644828e",
+      "bytes": 10249
+    },
+    {
+      "path": "/private/tmp/atlas-artifact-attribution-audit/reproduction.log",
+      "sha256": "3f015aa6fbb7a703dddac50a82a01ca6109ad45eace65d351d6bcf66b430c9f0",
+      "bytes": 219
+    },
+    {
+      "path": "/private/tmp/atlas-artifact-attribution-audit/latest.json",
+      "sha256": "0990f07f1de840c78e4b6c496c8ba293b7bee4551db09f322153ee19a59a77a4",
+      "bytes": 330
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/source/agent/verification_stop.py",
+      "sha256": "8c55b71ba31d2da75111d6e03b3c1b9278ee72c6e4556fd07ba8d28f129630cc",
+      "bytes": 9332
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/source/agent/verification_evidence.py",
+      "sha256": "44fa5a658c1e58b4b0c6d00c4f1705e8992a80c01df16a1fc5d747ffca12ff4a",
+      "bytes": 22199
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/source/agent/turn_stop_gates.py",
+      "sha256": "5142b5cee457a1688ddc08b28c70f3a8900ee694e90505ae048adb080520044c",
+      "bytes": 7788
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/source/agent/turn_finalizer.py",
+      "sha256": "602d3067c414e113331845c56152ae6234ca1882356c0817050ba2c75d1d2c44",
+      "bytes": 32916
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/source/cli-config.yaml.example",
+      "sha256": "7feb377cc99a5446075aa6f8380e4345b92f0de93006a54da65b6ef128989822",
+      "bytes": 113734
+    }
+  ],
+  "rootProductionEdited": false,
+  "frozenControlsEdited": false,
+  "providerCalls": 0,
+  "nativeModelCalls": 0,
+  "furtherRunsRequired": false,
+  "scope": "Selected-file provenance and deterministic executor/extractor counterexample; no full repository rehash, authenticated session persistence, delivery route, or comparative model evaluation."
+}

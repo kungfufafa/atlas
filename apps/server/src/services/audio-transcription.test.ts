@@ -249,3 +249,147 @@ describe("transcribeAudio", () => {
     ).resolves.toBe("Gemini transcript");
   });
 });
+
+test("Cloudflare transcription with an explicit empty environment rejects missing tenant endpoint before HTTP", async () => {
+  const previous = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const originalFetch = globalThis.fetch;
+  process.env.CLOUDFLARE_ACCOUNT_ID = "synthetic-host-account";
+  let requests = 0;
+  globalThis.fetch = (async () => {
+    requests += 1;
+    return Response.json({ result: { text: "Unexpected" }, success: true });
+  }) as typeof fetch;
+  const instance = provider("cloudflare", "synthetic-tenant-key");
+  instance.customModels = [
+    {
+      capabilities: {
+        [capabilityId]: {
+          source: "admin-override",
+          status: "supported",
+          verified: false,
+        },
+      },
+      id: "@cf/openai/whisper",
+    },
+  ];
+  const config: UserConfig = {
+    defaultProviderId: null,
+    providers: [instance],
+    transcriptionModel: `${instance.id}::@cf/openai/whisper`,
+  };
+  try {
+    expect(() => resolveTranscriptionProviderSelection(config, {})).toThrow();
+    await expect(
+      transcribeAudio(
+        instance,
+        "@cf/openai/whisper",
+        {
+          bytes: new Uint8Array([1, 2]),
+          filename: "synthetic.wav",
+          mediaType: "audio/wav",
+        },
+        {}
+      )
+    ).rejects.toMatchObject({ status: 400 });
+    expect(requests).toBe(0);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (previous === undefined) {
+      delete process.env.CLOUDFLARE_ACCOUNT_ID;
+    } else {
+      process.env.CLOUDFLARE_ACCOUNT_ID = previous;
+    }
+  }
+});
+
+test.each([
+  "stored-endpoint",
+  "explicit-environment",
+  "legacy-omitted-environment",
+] as const)(
+  "Cloudflare transcription %s resolves exact intended account without changing request credentials",
+  async (mode) => {
+    const previous = process.env.CLOUDFLARE_ACCOUNT_ID;
+    const originalFetch = globalThis.fetch;
+    process.env.CLOUDFLARE_ACCOUNT_ID = "synthetic-host-account";
+    const requests: { url: string; authorization: string | null }[] = [];
+    globalThis.fetch = (async (
+      input: RequestInfo | URL,
+      init?: RequestInit
+    ) => {
+      requests.push({
+        authorization: new Headers(init?.headers).get("authorization"),
+        url: String(input),
+      });
+      return Response.json({
+        result: { text: "Tenant transcript" },
+        success: true,
+      });
+    }) as typeof fetch;
+    const instance = provider("cloudflare", "synthetic-tenant-key");
+    instance.customModels = [
+      {
+        capabilities: {
+          [capabilityId]: {
+            source: "admin-override",
+            status: "supported",
+            verified: false,
+          },
+        },
+        id: "@cf/openai/whisper",
+      },
+    ];
+    if (mode === "stored-endpoint") {
+      instance.baseUrl =
+        "https://api.cloudflare.com/client/v4/accounts/synthetic-tenant-account/ai/v1";
+    }
+    const env =
+      mode === "legacy-omitted-environment"
+        ? undefined
+        : mode === "explicit-environment"
+          ? { CLOUDFLARE_ACCOUNT_ID: "synthetic-explicit-account" }
+          : {};
+    const account =
+      mode === "legacy-omitted-environment"
+        ? "synthetic-host-account"
+        : mode === "explicit-environment"
+          ? "synthetic-explicit-account"
+          : "synthetic-tenant-account";
+    try {
+      const selected = resolveTranscriptionProviderSelection(
+        {
+          defaultProviderId: null,
+          providers: [instance],
+          transcriptionModel: `${instance.id}::@cf/openai/whisper`,
+        },
+        env
+      );
+      expect(selected?.instance.id).toBe(instance.id);
+      expect(
+        await transcribeAudio(
+          instance,
+          "@cf/openai/whisper",
+          {
+            bytes: new Uint8Array([1, 2]),
+            filename: "synthetic.wav",
+            mediaType: "audio/wav",
+          },
+          env
+        )
+      ).toBe("Tenant transcript");
+      expect(requests).toEqual([
+        {
+          authorization: "Bearer synthetic-tenant-key",
+          url: `https://api.cloudflare.com/client/v4/accounts/${account}/ai/run/@cf/openai/whisper`,
+        },
+      ]);
+    } finally {
+      globalThis.fetch = originalFetch;
+      if (previous === undefined) {
+        delete process.env.CLOUDFLARE_ACCOUNT_ID;
+      } else {
+        process.env.CLOUDFLARE_ACCOUNT_ID = previous;
+      }
+    }
+  }
+);

@@ -397,3 +397,84 @@ describe("streamMessage timeout", () => {
     }
   });
 });
+
+test.each(["approved", "denied"] as const)(
+  "approval waiting preserves both stream deadlines (%s)",
+  async (decision) => {
+    const sessionId = `session_approval_deadline_${crypto.randomUUID()}`;
+    const session: AgentChatSession = {
+      getContextUsage: () => null,
+      async sendStream(_input, handlers, options) {
+        handlers.onPolicyResolved?.("standard");
+        handlers.onApprovalRequested?.({
+          createdAt: new Date().toISOString(),
+          details: {},
+          id: "approval",
+          status: "pending",
+          title: "Delete",
+          tool: "delete_file",
+          toolCallId: "call",
+        });
+        await Bun.sleep(100);
+        expect(options?.signal?.aborted).toBe(false);
+        if (decision === "approved") {
+          handlers.onToolStart?.({
+            input: {},
+            tool: "delete_file",
+            toolCallId: "call",
+          });
+        }
+        handlers.onToolEnd?.({
+          result: {},
+          tool: "delete_file",
+          toolCallId: "call",
+        });
+        return "Decision handled.";
+      },
+    } as AgentChatSession;
+    expect(sessionTurnRegistry.beginTurn(sessionId).started).toBe(true);
+    const response = streamMessage(
+      sessionId,
+      session,
+      { message: "Delete" },
+      undefined,
+      undefined,
+      60,
+      20
+    );
+    const body = await new Response(response.body).text();
+    expect(body).toContain('"type":"approval_requested"');
+    expect(body).toContain('"type":"done"');
+    expect(body).not.toContain('"type":"error"');
+  }
+);
+
+test("a cancelled stream cannot publish into or end its replacement turn", async () => {
+  const sessionId = `stream-owner-${crypto.randomUUID()}`;
+  const finish = Promise.withResolvers<void>();
+  const session = {
+    getContextUsage: () => null,
+    async sendStream(
+      _input: unknown,
+      handlers: { onChunk: (text: string) => void }
+    ) {
+      await finish.promise;
+      handlers.onChunk("old output");
+      throw new DOMException("Cancelled", "AbortError");
+    },
+  } as AgentChatSession;
+  expect(sessionTurnRegistry.beginTurn(sessionId).started).toBe(true);
+  const response = streamMessage(sessionId, session, { message: "old" });
+  sessionTurnRegistry.cancelTurn(sessionId);
+  expect(sessionTurnRegistry.beginTurn(sessionId).started).toBe(true);
+  const events: unknown[] = [];
+  const subscription = sessionTurnRegistry.subscribe(sessionId, (event) =>
+    events.push(event)
+  );
+  finish.resolve();
+  await new Response(response.body).text();
+  expect(events).toEqual([]);
+  expect(sessionTurnRegistry.isActive(sessionId)).toBe(true);
+  subscription?.unsubscribe();
+  sessionTurnRegistry.cancelTurn(sessionId);
+});

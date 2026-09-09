@@ -423,6 +423,10 @@ int atlas_landlock_and_exec(void) {
 
   char *arguments[] = {
     bun_path,
+    // The module cwd can contain authored bunfig preloads and .env files.
+    // /dev/null is already an explicit runtime grant in this Linux policy.
+    "--config=/dev/null",
+    "--env-file=/dev/null",
     "--no-install",
     "--no-addons",
     runner_path,

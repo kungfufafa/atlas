@@ -1,0 +1,60 @@
+bun test v1.3.1 (89fa0f34)
+
+apps/server/src/services/publication-turn-principal.test.ts:
+(pass) human principal binds actual persisted scope and copies the authenticated actor [33.81ms]
+(pass) worker retains channel proof while effects and publications use persisted human identity [14.78ms]
+(pass) effect context rejects changed orgId [20.09ms]
+(pass) effect context rejects changed profileId [19.29ms]
+(pass) effect context rejects changed sessionId [13.12ms]
+(pass) effect context rejects changed userId [18.92ms]
+(pass) publication rejects changed orgId [17.81ms]
+(pass) publication rejects changed profileId [22.18ms]
+(pass) publication rejects changed sessionId [16.12ms]
+(pass) publication rejects changed actorId [13.59ms]
+(pass) other cannot publish as the session owner [24.98ms]
+(pass) admin cannot publish as the session owner [27.83ms]
+(pass) missing session and null owner fail initial admission [23.03ms]
+(pass) human rechecks viewer before the next actual effect [14.87ms]
+(pass) human rechecks removed before the next actual effect [15.91ms]
+(pass) human rechecks owner before the next actual effect [18.59ms]
+133 |       await session("other", channel);
+134 |       return allowed;
+135 |     };
+136 |     let effects = 0;
+137 |     const execute = async () => { await p.validateContext(context); effects += 1; };
+138 |     await expect(execute()).rejects.toThrow();
+      ^
+error: 
+
+Expected promise that rejects
+Received promise that resolved: Promise { <resolved> }
+
+      at toThrow (unknown:1:1)
+      at /private/tmp/atlas-publication-turn-principal-c5/source/apps/server/src/services/publication-turn-principal.test.ts:138:37
+      at fixture (/private/tmp/atlas-publication-turn-principal-c5/source/apps/server/src/services/publication-turn-principal.test.ts:54:9)
+      at processTicksAndRejections (unknown:7:39)
+(fail) human rejects owner change during awaited ACL callback [25.45ms]
+(pass) worker rechecks viewer before the next actual effect [26.45ms]
+(pass) worker rechecks removed before the next actual effect [14.06ms]
+(pass) worker rechecks owner before the next actual effect [15.50ms]
+133 |       await session("other", channel);
+134 |       return allowed;
+135 |     };
+136 |     let effects = 0;
+137 |     const execute = async () => { await p.validateContext(context); effects += 1; };
+138 |     await expect(execute()).rejects.toThrow();
+                                          ^
+error: 
+
+Expected promise that rejects
+Received promise that resolved: Promise { <resolved> }
+
+      at <anonymous> (/private/tmp/atlas-publication-turn-principal-c5/source/apps/server/src/services/publication-turn-principal.test.ts:138:37)
+      at async fixture (/private/tmp/atlas-publication-turn-principal-c5/source/apps/server/src/services/publication-turn-principal.test.ts:43:11)
+(fail) worker rejects owner change during awaited ACL callback [14.90ms]
+(pass) worker must match current external channel and a member owner [17.87ms]
+
+ 20 pass
+ 2 fail
+ 50 expect() calls
+Ran 22 tests across 1 file. [1.92s]

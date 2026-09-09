@@ -1,0 +1,17 @@
+{
+  "archive": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/memory-protocol-source.tar.gz",
+  "archiveSha256": "9220457eab14be1f9b431103650d5213b352e0b30dbbb499bd6751b2174d08a1",
+  "files": [
+    {
+      "path": "scripts/harness-native-mimo-v1/product-proxy-broker.ts",
+      "sha256": "ee2efdb702a17adfd65387c5738f1218f530ee1dd88fa44e1cf7597efc85374d",
+      "frozenArchiveAndCurrentEqual": true
+    },
+    {
+      "path": "scripts/harness-native-mimo-v1/product-proxy.ts",
+      "sha256": "92e8f4d3f8860d0f64403f292fa82694a33d1723cfe01df46d07ecf726523d30",
+      "frozenArchiveAndCurrentEqual": true
+    }
+  ],
+  "bodyEvidence": "product-proxy-broker.ts writes a metadata envelope with requested/effective fields, then calls upstream with body: JSON.stringify(effective) only (lines 136\u2013152)."
+}

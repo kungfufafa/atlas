@@ -1,0 +1,23 @@
+{
+  "at": "2026-09-07T10:11:12.045361+00:00",
+  "scope": "Additive qualification of archive terminology; original archive/script/analysis unchanged.",
+  "archiveManifestSha256": "3e40586bea2272b083857105a8a19d54a852117484c9277fc515490de3d51eed",
+  "archivedRoots": 108,
+  "nativeRootsMeaning": "108 existing nativeStateRoot directories selected through the original parent-created runtime-identity.json index and observed direct-child closure. Directory existence and byte stability do not establish native identity/completion.",
+  "recordedNativeObservationUnavailable": [
+    "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r0-hermes",
+    "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_revision-v2-r1-hermes",
+    "confirmatory-1788766021520-052b6932-native-files-confirmatory-code_fix-v1-r1-hermes",
+    "confirmatory-1788766021520-052b6932-native-files-confirmatory-pptx_revision-v2-r1-hermes"
+  ],
+  "recordedNativeObservationReferencesPresent": 104,
+  "presentReferenceIsNotIndependentIdentityCertification": true,
+  "qualification": "The archive phrase identity-bound runtime roots refers only to exact indexed metadata binding. In four arms native observation/identity evidence is unavailable and remains unavailable; the parent-assigned path never fills it. missingNativeRoots:0 counts filesystem directories only. Independent semantic identity and validity review remains separate.",
+  "bindings": {
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/attempts.jsonl": "85de4a4e4b4e5f5c95eed37cf241f65c26b206f975a6d5607044c9591e42fabf",
+    "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/confirmatory-1788766021520-052b6932/runtime-identities.json": "d45e34bf0c9a37c8960ef1b2a8bbf1b3e36d06a6e22a5cac1883498d6bb12b10",
+    "/private/tmp/atlas-file-v3-c9-confirmation-raw-archive/archive-receipt.json": "bc9f1acb9d414325373977235c560d01ca89aa21cb589ecefc6a34f740ca66ba"
+  },
+  "rescore": false,
+  "originalEvidenceChanged": false
+}

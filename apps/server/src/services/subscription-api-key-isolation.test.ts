@@ -69,6 +69,8 @@ const openaiInstance = makeInstance({
 
 const anthropicInstance = makeInstance({
   apiKey: ANTHROPIC_KEY,
+  // Explicit fixture configuration; transport support alone is not model evidence.
+  customModels: [{ id: CLAUDE_CHAT_MODEL, supportsVision: true }],
   id: "prov-anthropic",
   label: "Anthropic",
   type: "anthropic",
@@ -235,6 +237,21 @@ describe("capability routing with mixed credentials", () => {
     );
     expect(selection.instance.id).toBe(anthropicInstance.id);
     expect(selection.apiKey).toBe(ANTHROPIC_KEY);
+  });
+
+  test("Anthropic vision does not inherit support from a model name or installed transport", () => {
+    const config = makeConfig({
+      bindings: {
+        [PROVIDER_CAPABILITY_IDS.imageUnderstanding]: binding({
+          modelId: CLAUDE_CHAT_MODEL,
+          providerId: anthropicInstance.id,
+        }),
+      },
+      providers: [{ ...anthropicInstance, customModels: undefined }],
+    });
+    expect(() =>
+      resolveCapability(PROVIDER_CAPABILITY_IDS.imageUnderstanding, config)
+    ).toThrow(ProviderCapabilityError);
   });
 
   test("subscription image generation resolves without any API key", () => {

@@ -1,0 +1,146 @@
+{
+  "historicalC3SourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+  "currentC5SourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "atlasFiles": [
+    {
+      "path": "apps/server/src/services/agent-service.ts",
+      "historicalC3Sha256": "adf7d492e5ae1111d4346a2c613f8e53f9af80ef61e1fc764744f4703b6e08cb",
+      "currentC5Sha256": "0e328e4a2b6787ead5f1136a9b0b1902b4eb30f3b3dcbf599498ebbeab88f4b0",
+      "entireFileUnchanged": false,
+      "relevantBlocks": [
+        {
+          "label": "resolveProfileSystemPrompt",
+          "historicalSha256": "adca38eeadc86c77bd79a7df57bc0be562fb824936525ba9d976398adfd42872",
+          "currentSha256": "adca38eeadc86c77bd79a7df57bc0be562fb824936525ba9d976398adfd42872",
+          "unchanged": true
+        },
+        {
+          "label": "matchedSkillAppend",
+          "historicalSha256": "9d56327858f92177818f2757b46b24a3c211964ebfce8e6b131a34df6b6f1df2",
+          "currentSha256": "9d56327858f92177818f2757b46b24a3c211964ebfce8e6b131a34df6b6f1df2",
+          "unchanged": true
+        }
+      ]
+    },
+    {
+      "path": "apps/server/src/services/skills-service.ts",
+      "historicalC3Sha256": "843f4f6fe774eb52d3a4ffdfe0a489da4801956c47b045db243237ba86a13bb3",
+      "currentC5Sha256": "843f4f6fe774eb52d3a4ffdfe0a489da4801956c47b045db243237ba86a13bb3",
+      "entireFileUnchanged": true
+    },
+    {
+      "path": "packages/agent/src/chat.ts",
+      "historicalC3Sha256": "2e490dec43005a4d21756860c477f1097623ffb16b448183273775a420128eb5",
+      "currentC5Sha256": "3ea5cbbdf7f21aade5d117966695250611a2e5e740feaa8bc78c96afbe7bbd85",
+      "entireFileUnchanged": false
+    },
+    {
+      "path": "packages/agent/src/chat-prompt.ts",
+      "historicalC3Sha256": "cc7355e1a035ae348f58df07e778ec37bfeda899dbb16f7f42692e6a94691449",
+      "currentC5Sha256": "cc7355e1a035ae348f58df07e778ec37bfeda899dbb16f7f42692e6a94691449",
+      "entireFileUnchanged": true
+    },
+    {
+      "path": "packages/agent/src/session-title.ts",
+      "historicalC3Sha256": "d8a4c104e1aad5a9fcfe71d7930b8f2219aee4ad6d77c80ce6c480b9eda48853",
+      "currentC5Sha256": "d8a4c104e1aad5a9fcfe71d7930b8f2219aee4ad6d77c80ce6c480b9eda48853",
+      "entireFileUnchanged": true
+    },
+    {
+      "path": "packages/core/src/skills/compose.ts",
+      "historicalC3Sha256": "1640ff5d4a04963c69991d9a4f61b0b8de8aa4501d2ca2e86cf899bc7e6ffdfe",
+      "currentC5Sha256": "1640ff5d4a04963c69991d9a4f61b0b8de8aa4501d2ca2e86cf899bc7e6ffdfe",
+      "entireFileUnchanged": true
+    },
+    {
+      "path": "packages/core/src/skills/bundled/update-profile-memory/SKILL.md",
+      "historicalC3Sha256": "2dbfdc22e7f2f8eb538e74d905fc2807d791bcfe2710bba09ec0ae9ed481b5ff",
+      "currentC5Sha256": "2dbfdc22e7f2f8eb538e74d905fc2807d791bcfe2710bba09ec0ae9ed481b5ff",
+      "entireFileUnchanged": true
+    },
+    {
+      "path": "packages/core/src/skills/bundled/archive-profile-memory/SKILL.md",
+      "historicalC3Sha256": "4c986495c71ca4aca6cd6f8acaa849bd3b43528cc5f675263fa013795f81c006",
+      "currentC5Sha256": "4c986495c71ca4aca6cd6f8acaa849bd3b43528cc5f675263fa013795f81c006",
+      "entireFileUnchanged": true
+    },
+    {
+      "path": "packages/core/src/soul/compose.ts",
+      "historicalC3Sha256": "9ad71693f63c8548a15f3cb03723bc1855d15bb84c4d07fd8cd05b63dbc07b81",
+      "currentC5Sha256": "9ad71693f63c8548a15f3cb03723bc1855d15bb84c4d07fd8cd05b63dbc07b81",
+      "entireFileUnchanged": true
+    },
+    {
+      "path": "packages/db/src/constants.ts",
+      "historicalC3Sha256": "f63929d652abbfe153ee553192afc189767401145ea36cbb7845db46a2f3cc5d",
+      "currentC5Sha256": "f63929d652abbfe153ee553192afc189767401145ea36cbb7845db46a2f3cc5d",
+      "entireFileUnchanged": true
+    },
+    {
+      "path": "apps/server/src/tools/conversation-tools.ts",
+      "historicalC3Sha256": "477afdccd3d50a449f2894ea2a29e347b3954b0e0d5d53e50f9518111c26b4bf",
+      "currentC5Sha256": "017de23c293b55225d77925788e1fdecb90e3ed6114993c0bbb6a57e951d4ebc",
+      "entireFileUnchanged": false
+    },
+    {
+      "path": "apps/server/src/tools/memory-tools.ts",
+      "historicalC3Sha256": "4b491af87e6de3e295e1ea0af3870247b886c8af4c219ddfd6aa84413db79af1",
+      "currentC5Sha256": "2b9eec9d95634ed64c05e54d1ab73ed759098f2f3f5ed5c4e51b219e9e672e0b",
+      "entireFileUnchanged": false
+    }
+  ],
+  "hermesFiles": [
+    {
+      "path": "agent/title_generator.py",
+      "archivedSha256": "1eb801e5f020bb9f32373ed52afb68ab64e384618649260fdf82b12370c13d4b",
+      "currentCheckoutSha256": "1eb801e5f020bb9f32373ed52afb68ab64e384618649260fdf82b12370c13d4b",
+      "unchanged": true
+    },
+    {
+      "path": "agent/system_prompt.py",
+      "archivedSha256": "b1dfee1ecfdb3d6a04e5aa0bdedda4e88ab499722e71fb0ec14b45138cf23e91",
+      "currentCheckoutSha256": "b1dfee1ecfdb3d6a04e5aa0bdedda4e88ab499722e71fb0ec14b45138cf23e91",
+      "unchanged": true
+    },
+    {
+      "path": "tools/tool_search.py",
+      "archivedSha256": "88d6895899af0fe7d7d60ca828d6da0c90be0601e205dc84ed5bf112d4c5e431",
+      "currentCheckoutSha256": "88d6895899af0fe7d7d60ca828d6da0c90be0601e205dc84ed5bf112d4c5e431",
+      "unchanged": true
+    }
+  ],
+  "inputReferences": [
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/candidate-source.json",
+      "sha256": "ea35a4fca53edd02584e83463da336d65a21903884a7fa5fa6fe6bfb3139ea9b"
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/completed.json",
+      "sha256": "d186a25e15cffad08c6f2578bf213748cb646fc0bf76ebdf537fa12204c91ad8"
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/schedule.json",
+      "sha256": "bfc3ca47b26c94b39ddffb19024c965bd7dd958d8afcd42fea30c94595bab0bd"
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/source-archives.json",
+      "sha256": "571cfbeff1622598002746b312cb4769f63d7847f499001a61f38fff20400811"
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/atlas-source.tar.gz",
+      "sha256": "cf790ef6c185c965b1be2a663b4c7da2be2907bf5da1ac0ca797273b4b145e3e"
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/hermes-source.tar.gz",
+      "sha256": "47aee545e5e24e065c956aa37bce322a1a57ce13c72f07c7b40c89890fef9841"
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/candidate-v5/root-after.json",
+      "sha256": "2e88c012fb83968bd575dc17b8092517df97e01950ba30b5cda8a928686d631f"
+    },
+    {
+      "path": "/private/tmp/atlas-hermes-evaluation/candidate-v5/application.json",
+      "sha256": "ef97e5a2dba4ddafc269372d7c52a31e81b7eb0ce78b1b917559b4e2cd8a33b3"
+    }
+  ]
+}

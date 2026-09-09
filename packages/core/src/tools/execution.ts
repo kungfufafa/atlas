@@ -14,6 +14,7 @@ import type {
 } from "./execution-contract";
 import { DEFAULT_TOOL_CAPABILITIES } from "./permissions";
 import { serializeToolOutput } from "./result-serialization";
+import { isFailedToolResult } from "./result-status";
 import { validateToolArguments } from "./schema";
 
 export const DEFAULT_MAX_OUTPUT_CHARS = 32_000;
@@ -455,12 +456,32 @@ export async function executeProtectedTool<Input = unknown, Output = unknown>(
   try {
     context.signal?.throwIfAborted();
 
-    if (isChannelGuestUserId(context.userId)) {
+    const scopedChannelFile =
+      tool.channelGuestFileSafe === true &&
+      (context.channel === "whatsapp" ||
+        context.channel === "telegram" ||
+        context.channel === "discord") &&
+      Boolean(
+        context.orgId &&
+          context.profileId &&
+          context.workspaceRoot &&
+          context.beforeToolCall
+      );
+    if (isChannelGuestUserId(context.userId) && !scopedChannelFile) {
       const error = new Error(
         `Channel guest principals cannot execute tool "${tool.name}".`
       );
       (error as { code?: string }).code = "PERMISSION_DENIED";
       throw error;
+    }
+    if (context.orgRole === "viewer" && context.isPlatformAdmin !== true) {
+      throw Object.assign(
+        new Error("Workspace viewers cannot execute tools."),
+        {
+          code: "PERMISSION_DENIED",
+          retryable: false,
+        }
+      );
     }
 
     validateToolArguments(tool.parameters, input);
@@ -557,7 +578,10 @@ export async function executeProtectedTool<Input = unknown, Output = unknown>(
       : new Map<string, ArtifactFileSnapshot>();
 
     const { result, retries } = await executeWithRetry(
-      async () => await tool.run(input, context),
+      async () => {
+        await context.beforeToolCall?.(tool.name);
+        return await tool.run(input, context);
+      },
       effectiveRetryPolicy,
       context.signal
     );
@@ -569,10 +593,15 @@ export async function executeProtectedTool<Input = unknown, Output = unknown>(
     const serialized = serializeToolOutput(result);
     warnings.push(...serialized.warnings);
     let finalData = serialized.data as Output;
+    const operationFailed = isFailedToolResult(finalData);
     const declaredArtifacts: ToolArtifact[] = [];
 
     // Extract artifacts if tool returned standard artifact references
-    if (typeof finalData === "object" && finalData !== null) {
+    if (
+      !operationFailed &&
+      typeof finalData === "object" &&
+      finalData !== null
+    ) {
       const record = finalData as Record<string, unknown>;
       if (Array.isArray(record.artifacts)) {
         for (const item of record.artifacts) {
@@ -587,9 +616,10 @@ export async function executeProtectedTool<Input = unknown, Output = unknown>(
       }
     }
 
-    const artifactsAfter = shouldDetectArtifacts
-      ? await scanArtifactFiles(context.workspaceRoot)
-      : artifactsBefore;
+    const artifactsAfter =
+      shouldDetectArtifacts && !operationFailed
+        ? await scanArtifactFiles(context.workspaceRoot)
+        : artifactsBefore;
     const detectedArtifacts = changedArtifactFiles(
       artifactsBefore,
       artifactsAfter,

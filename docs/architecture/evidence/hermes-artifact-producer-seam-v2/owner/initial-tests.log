@@ -1,0 +1,27 @@
+bun test v1.3.1 (89fa0f34)
+
+apps/server/src/services/artifact-producer-seam.test.ts:
+(pass) saveFileArtifact freezes caller bytes before awaits; disk, revision and private publication agree [14.84ms]
+(pass) oversized byte outputs reject before workspace mutation and preserve an existing spreadsheet [3.53ms]
+(pass) nested cwd docx retains its real file receipt when the canonical publication destination is unsupported [58.19ms]
+(pass) nested cwd pptx retains its real file receipt when the canonical publication destination is unsupported [13.95ms]
+(pass) generic writes and edits publish only explicit deliverables and reject invalid destinations before mutation [9.04ms]
+(pass) nested document helpers assign distinct ordinals without publishing materialized sources or reads [105.01ms]
+(pass) spreadsheet creates and exports stage exact complete bytes; reads do not stage [51.72ms]
+(pass) low-level versioned writers freeze mutable bytes before IO and revision calculation [1.97ms]
+(pass) storage preserves original workspace receipts and blocks the complete publication set without producer replay [3.07ms]
+(pass) invalid-stage preserves original workspace receipts and blocks the complete publication set without producer replay [2.76ms]
+(pass) throwing bytes getter reaches trusted failure boundary and poisons earlier staged output [4.08ms]
+(pass) throwing sourcePath getter reaches trusted failure boundary and poisons earlier staged output [1.74ms]
+(pass) one invocation owns ordinals across overlapping nested saves; a second publisher starts independently [3.25ms]
+(pass) symlinked profile root produces canonical relative publication paths [7.32ms]
+(pass) generated image stages the same bytes as its file and preserves success when staging rejects [3.73ms]
+(pass) ArtifactService captures buffer before awaits, and browser screenshot/download forward one capability per output [8.23ms]
+(pass) all direct core producers retain successful effect receipts when publication storage fails [15.88ms]
+(pass) generic explicit edit rejects outside artifacts before changing the file [1.52ms]
+(pass) tool input cannot choose output ordinal or publication ownership [1.06ms]
+
+ 19 pass
+ 0 fail
+ 83 expect() calls
+Ran 19 tests across 1 file. [1.86s]

@@ -51,6 +51,7 @@ export function isPureWhatsAppAttachIntent(text: string): boolean {
 }
 
 export async function maybeSendRequestedWhatsAppArtifactAttachment(input: {
+  beforeDelivery: () => Promise<void>;
   client: AtlasClient;
   conversationKey: string;
   getSocket: () => WASocket | null;
@@ -92,6 +93,8 @@ export async function maybeSendRequestedWhatsAppArtifactAttachment(input: {
 }
 
 export async function deliverWhatsAppTurnArtifactShares(input: {
+  alreadyDeliveredPaths?: readonly string[];
+  beforeDelivery: () => Promise<void>;
   client: AtlasClient;
   conversationKey: string;
   getSocket: () => WASocket | null;
@@ -121,6 +124,8 @@ export async function deliverWhatsAppTurnArtifactShares(input: {
 }
 
 async function deliverResolvedWhatsAppArtifacts(input: {
+  alreadyDeliveredPaths?: readonly string[];
+  beforeDelivery: () => Promise<void>;
   artifacts: ChannelArtifactRef[];
   client: AtlasClient;
   conversationKey: string;
@@ -137,12 +142,22 @@ async function deliverResolvedWhatsAppArtifacts(input: {
   );
   const shareCandidates: ChannelArtifactRef[] = [];
   let webPublicUrlConfigured = true;
+  const alreadyDelivered = new Set(
+    input.alreadyDeliveredPaths?.map((path) => path.replace(/^artifacts\//, ""))
+  );
   for (const artifact of input.artifacts) {
+    await verifyDeliveryAllowed(input.beforeDelivery);
+    if (alreadyDelivered.has(artifact.path.replace(/^artifacts\//, ""))) {
+      if (input.explicitShare) {
+        shareCandidates.push(artifact);
+      }
+      continue;
+    }
     let needsShare = input.explicitShare;
     if (artifact.sizeBytes > WHATSAPP_ARTIFACT_MEDIA_MAX_BYTES) {
       await input.sendText(
         input.jid,
-        formatWhatsAppArtifactTooLargeMessage(artifact.sizeBytes)
+        `${formatWhatsAppArtifactTooLargeMessage(artifact.sizeBytes)} Saved file: ${artifact.path.startsWith("artifacts/") ? artifact.path : `artifacts/${artifact.path}`}`
       );
       shareCandidates.push(artifact);
       continue;
@@ -155,6 +170,7 @@ async function deliverResolvedWhatsAppArtifacts(input: {
         { sessionId: input.sessionId }
       );
       const result = await sendWhatsAppArtifact(input.getSocket(), input.jid, {
+        beforeSend: () => verifyDeliveryAllowed(input.beforeDelivery),
         bytes: new Uint8Array(data),
         filename: artifact.filename,
         mimeType: artifact.mimeType,
@@ -168,10 +184,15 @@ async function deliverResolvedWhatsAppArtifacts(input: {
       }
 
       needsShare = true;
+      await verifyDeliveryAllowed(input.beforeDelivery);
       if (result.error) {
-        await input.sendText(input.jid, result.error);
+        await input.sendText(
+          input.jid,
+          `${result.error} Saved file: ${artifact.path.startsWith("artifacts/") ? artifact.path : `artifacts/${artifact.path}`}`
+        );
       }
     } catch (error) {
+      await verifyDeliveryAllowed(input.beforeDelivery);
       await input.sendText(
         input.jid,
         error instanceof Error
@@ -186,9 +207,11 @@ async function deliverResolvedWhatsAppArtifacts(input: {
     }
   }
 
+  await verifyDeliveryAllowed(input.beforeDelivery);
   const shared = await mintDeliverableArtifacts({
     artifacts: shareCandidates,
     publish: async (path) => {
+      await verifyDeliveryAllowed(input.beforeDelivery);
       const response = await input.client.publishProfileArtifactShare(
         input.profileId,
         path,
@@ -229,6 +252,31 @@ async function deliverResolvedWhatsAppArtifacts(input: {
   });
 
   if (footer.trim()) {
+    await verifyDeliveryAllowed(input.beforeDelivery);
     await input.sendText(input.jid, footer);
+  }
+}
+
+async function verifyDeliveryAllowed(
+  authorize: () => Promise<void>
+): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      authorize(),
+      new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(
+          () =>
+            reject(
+              new Error("WhatsApp file delivery authorization timed out.")
+            ),
+          10_000
+        );
+      }),
+    ]);
+  } finally {
+    if (timer) {
+      clearTimeout(timer);
+    }
   }
 }

@@ -1,0 +1,29 @@
+{
+  "activeCombinedCandidateExcluded": "/private/tmp/atlas-candidate6-integration",
+  "candidateSourceHash": "11d216be15e24573602ddd0f198115e2da42b4bd00a59d4ffa355742a0490245",
+  "createdAt": "2026-09-07T02:49:56.324593+00:00",
+  "fullOriginalRoots": [
+    "/private/tmp/atlas-publication-turn-principal-c5",
+    "/private/tmp/atlas-publication-turn-principal-c5-independent-review"
+  ],
+  "fullReplayArchive": false,
+  "fullSourceRoots": [
+    "/private/tmp/atlas-publication-turn-principal-c5/source"
+  ],
+  "independentReviewSha256": "14a37913dbf82435c3268f8fcb935e5856468bf3613585bf2e698350b6943dca",
+  "kind": "offline-unwired-component-with-source-only-review",
+  "knownCredentialScan": "All copied/generated pack bytes checked with the existing private key and finite known-value scanner; no key value/hash copied or printed.",
+  "limits": [
+    "Two historical initial test versions survive as hash/log bindings only; their exact original test snapshots are missing. The current source and corrected guard-order fixture/old source are preserved separately.",
+    "The guard receives a frozen base session context before the current runId, composed signal and clientOrigin are added; it is not final dispatch context or an actual filesystem grant receipt.",
+    "Existing guard runs first, fresh current guard last. validateContext already calls beforeToolCall; future wiring must not add it a second time.",
+    "The guard is before tool.run but after legacy pre-scan/approval and does not authorize earlier metadata import, MCP startup or arbitrary-code spawn. Lifecycle begin failure is not a denial gate.",
+    "No atomic ACL/effect transaction, durable lease, runtime confinement, persisted-wrapper integration, AgentService/HTTP/UI activation or Hermes parity is established."
+  ],
+  "originalsRetained": true,
+  "ownerReadinessHistoricalBytesUnchanged": true,
+  "productionActivationApproved": false,
+  "rootC5SourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "scoresRecomputed": false,
+  "selectedFilesOnly": true
+}

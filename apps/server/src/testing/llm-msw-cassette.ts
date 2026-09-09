@@ -151,14 +151,6 @@ export async function withMswCassette<T>(
       const response = await fetch(bypass(request));
       const recorded = await captureCassetteResponse(response);
 
-      if (!response.ok) {
-        const detail =
-          typeof recorded.body === "string"
-            ? recorded.body
-            : JSON.stringify(recorded.body);
-        throw new Error(`LLM request failed (${response.status}): ${detail}`);
-      }
-
       recordedExchanges.push({
         request: {
           body: requestBody,
@@ -278,5 +270,8 @@ function cassetteHttpResponse(
       status: recorded.status,
     });
   }
-  return HttpResponse.json(recorded.body, { status: recorded.status });
+  return new Response(JSON.stringify(recorded.body), {
+    headers: { "Content-Type": "application/json" },
+    status: recorded.status,
+  });
 }

@@ -1,0 +1,313 @@
+{
+  "sourceInventory": {
+    "path": "/private/tmp/atlas-native-file-v3-c9-integration/source-inventory.json",
+    "bytes": 279067,
+    "sha256": "4fd58df1a21194e3aec396d6f1946ab1a60da90081fedc03a96c346d895b55a5"
+  },
+  "softwareSourceHash": "e2daf1b902a087eb279724f17d61e50b9a27f7c1d64828f6958b61b22225eb98",
+  "controlSourceHash": "b3673405fab43fdd268aa286d4f6f0164ea00c2332ba43d00e28abd3d538fde5",
+  "selectedSources": [
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/apps/server/src/services/session-title-service.ts",
+      "bytes": 4584,
+      "sha256": "7500191db2e56591694ff0d44e0bbfeed053d8f049982ee6dfb4440e6764310c",
+      "relativePath": "apps/server/src/services/session-title-service.ts",
+      "sourceKind": "product",
+      "inspectedRanges": [
+        {
+          "start": 12,
+          "end": 108,
+          "textSha256": "6cbf7889e56ecc30a5c88b1124014da5dd9e95c01eb19070f5d9db50c5d82f05"
+        },
+        {
+          "start": 112,
+          "end": 180,
+          "textSha256": "9406f3ffe386e18773adc33c887b542a7584b64ba365cfb17ed4cd3987045a36"
+        }
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/packages/agent/src/session-title.ts",
+      "bytes": 3044,
+      "sha256": "d8a4c104e1aad5a9fcfe71d7930b8f2219aee4ad6d77c80ce6c480b9eda48853",
+      "relativePath": "packages/agent/src/session-title.ts",
+      "sourceKind": "product",
+      "inspectedRanges": [
+        {
+          "start": 4,
+          "end": 41,
+          "textSha256": "54415c8c35318fa653a2d5723d48d3ddecbfd7e2d9bcff5529b26b6506f5a354"
+        },
+        {
+          "start": 88,
+          "end": 127,
+          "textSha256": "77dd1220a9984c41ee970d6b3b969a689af05e1577b6483eeec66bf0f809d025"
+        }
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/apps/server/src/http/routes/sessions.ts",
+      "bytes": 32265,
+      "sha256": "80922edb348e8809f3060ea8ec4ade397216139c1675166e82a6a42ff2c81807",
+      "relativePath": "apps/server/src/http/routes/sessions.ts",
+      "sourceKind": "product",
+      "inspectedRanges": [
+        {
+          "start": 988,
+          "end": 1039,
+          "textSha256": "cb91957ebdaaf16d936944ad7d3608df5a1d7dca14e00c5479ecba5bce64f595"
+        }
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/apps/server/src/http/shared.ts",
+      "bytes": 31682,
+      "sha256": "c1981cb7b093ec7b38996333b27bdd7cc6f9562ceeadfecc9d3b1ae8674afd23",
+      "relativePath": "apps/server/src/http/shared.ts",
+      "sourceKind": "product",
+      "inspectedRanges": [
+        {
+          "start": 988,
+          "end": 1016,
+          "textSha256": "f5e379349ee5dfa2a62c4275e4a110e92c287c4a5a64f77c40d730800b5aa000"
+        }
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/apps/server/src/services/agent-service.ts",
+      "bytes": 204095,
+      "sha256": "19fd6318364e4329cc70077c4d5ece9277ea9cc4e222d75ede36e32fc6b9b832",
+      "relativePath": "apps/server/src/services/agent-service.ts",
+      "sourceKind": "product",
+      "inspectedRanges": [
+        {
+          "start": 493,
+          "end": 498,
+          "textSha256": "743c5e1ad6e83ba7909512962efa8ff85829edc825f200bd4dc3d77e1c4fed18"
+        },
+        {
+          "start": 5404,
+          "end": 5430,
+          "textSha256": "dba526894dcdf88ef36ef145a756400e5611b787ec190554110177963374c845"
+        },
+        {
+          "start": 6549,
+          "end": 6562,
+          "textSha256": "e67f7edc1dd2abe3daf1947d55934f9d0de7837ea68c7c3cefbfe97753676664"
+        }
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/apps/server/src/services/provider-instance-helpers.ts",
+      "bytes": 19998,
+      "sha256": "cfca88c7d6a7d6419fec1419c6174ce23c12f28955337c94c093f68a3c15bd58",
+      "relativePath": "apps/server/src/services/provider-instance-helpers.ts",
+      "sourceKind": "product",
+      "inspectedRanges": [
+        {
+          "start": 634,
+          "end": 721,
+          "textSha256": "e17fbb38a20a9b45418165d25cddaf85438c695d3490ce0b536268d0442f1416"
+        }
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/packages/db/src/adapters/sqlite.ts",
+      "bytes": 185578,
+      "sha256": "f00022de81cf3048f0b4601434791d6cef0d9776d82eee45a4e095b9b6178469",
+      "relativePath": "packages/db/src/adapters/sqlite.ts",
+      "sourceKind": "product",
+      "inspectedRanges": [
+        {
+          "start": 886,
+          "end": 888,
+          "textSha256": "2c210b12432fbb0b3e757ab43f25d2ae2a31545dbf4b857541a931bc57b820e8"
+        },
+        {
+          "start": 4701,
+          "end": 4704,
+          "textSha256": "64aa9a613c17d1ba862583c48377a9f70243ecfc4369856ea940f7ff52ea245e"
+        }
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/packages/db/src/adapters/in-memory.ts",
+      "bytes": 90114,
+      "sha256": "5074715f4685b3ecdd14e854895d5434f42427529782425a7baa952ac9a22f26",
+      "relativePath": "packages/db/src/adapters/in-memory.ts",
+      "sourceKind": "product",
+      "inspectedRanges": [
+        {
+          "start": 2624,
+          "end": 2633,
+          "textSha256": "7596cd59d47e391d1be2c25a774b4a49d303f0ca3f6c0158d625509d300ec3c4"
+        }
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/apps/server/src/providers/subscription/chatgpt/provider.ts",
+      "bytes": 1596,
+      "sha256": "86312ed40ef851b6399402375b0262bd4fa190b7a0390ad0ebf6bea17083e91b",
+      "relativePath": "apps/server/src/providers/subscription/chatgpt/provider.ts",
+      "sourceKind": "product",
+      "inspectedRanges": [
+        {
+          "start": 29,
+          "end": 45,
+          "textSha256": "2d6488264f44853dad1f36f98abd4caf2e2f7bbb251dfc7fb23a421bd19d843a"
+        }
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/apps/server/src/providers/subscription/claude/provider.ts",
+      "bytes": 1692,
+      "sha256": "44ad51c5337682a246c0b935e7ccd9afc12ef17b3ee08950be08d72615471244",
+      "relativePath": "apps/server/src/providers/subscription/claude/provider.ts",
+      "sourceKind": "product",
+      "inspectedRanges": [
+        {
+          "start": 25,
+          "end": 45,
+          "textSha256": "ac92ab3c10658c5da160f4da20c731f9194608fa5b73b1b884ae87cc9369e713"
+        }
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/apps/server/src/providers/subscription/session-store.ts",
+      "bytes": 27645,
+      "sha256": "2203f730722befad580310ed8e87979d9d00d0b9722dbfbc686e24e505f28799",
+      "relativePath": "apps/server/src/providers/subscription/session-store.ts",
+      "sourceKind": "product",
+      "inspectedRanges": [
+        {
+          "start": 72,
+          "end": 104,
+          "textSha256": "4ab7625d8e061a419e3a55e8f1724ad9a82a10b7bb6e7655fdfff5e16198c6b7"
+        },
+        {
+          "start": 925,
+          "end": 953,
+          "textSha256": "251a10d2ae97e8d986f7dbec57f1b008037a64099be2e9d813687d4d2d2388e3"
+        }
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/packages/core/src/contract.ts",
+      "bytes": 73726,
+      "sha256": "6cc78e3d649ed34bf41c560cf335d2ed96ef106d7e4e670343c2495225b44939",
+      "relativePath": "packages/core/src/contract.ts",
+      "sourceKind": "product",
+      "inspectedRanges": [
+        {
+          "start": 2625,
+          "end": 2634,
+          "textSha256": "1506fe906f5844fce41b09fcc7402fd64330ce19c7be9237f04ca8b78685f594"
+        }
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/packages/core/src/fetch-idle.ts",
+      "bytes": 2159,
+      "sha256": "236de1ec5a7e878fce4f5c8fc7382341851d7c5a2e205b4a972cb0eaafaa39e2",
+      "relativePath": "packages/core/src/fetch-idle.ts",
+      "sourceKind": "product",
+      "inspectedRanges": [
+        {
+          "start": 48,
+          "end": 70,
+          "textSha256": "7308e6b51636808a799804a9ae0f167d9ed0ff71c7ad8e724584c8079f3edf6c"
+        }
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/apps/server/src/providers/openai/index.ts",
+      "bytes": 19798,
+      "sha256": "a9738aba58b6a0fc41fe07a7aafaa03be1952699c1f6e414df92976ea0011e85",
+      "relativePath": "apps/server/src/providers/openai/index.ts",
+      "sourceKind": "product",
+      "inspectedRanges": [
+        {
+          "start": 137,
+          "end": 151,
+          "textSha256": "9997666e3a82c6ddb62df330a4f21d695c2fabd564157281a97a7829275ffdd7"
+        },
+        {
+          "start": 578,
+          "end": 632,
+          "textSha256": "2aea17e27d79f258266345abf9120308e58f75f5c7a52fbfa466896d73ed6be2"
+        }
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/apps/server/src/services/chat-capability-policy.ts",
+      "bytes": 4574,
+      "sha256": "dea9bf7f23a921a1b90e8dd290ae3d5f6f8d9107a73168763be58911d4f082cf",
+      "relativePath": "apps/server/src/services/chat-capability-policy.ts",
+      "sourceKind": "product",
+      "inspectedRanges": [
+        {
+          "start": 40,
+          "end": 76,
+          "textSha256": "9e77b4307030090405f708719fcec3a0b78543ce041728db319aa7181414f983"
+        }
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/apps/web/src/pages/history-page.shared.ts",
+      "bytes": 1683,
+      "sha256": "e9ae6ddc6e187bab2f02bd0d3b83e6d006e0f0fe5729c3f99d993f2f4c0f754d",
+      "relativePath": "apps/web/src/pages/history-page.shared.ts",
+      "sourceKind": "product",
+      "inspectedRanges": [
+        {
+          "start": 1,
+          "end": 5,
+          "textSha256": "83ba9e0f853b2135a6c0afa0a22b5d0e93ed8519f9fc83c3d840f9f08a109081"
+        }
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/apps/server/src/services/session-title-service.test.ts",
+      "bytes": 8425,
+      "sha256": "1b8bf7720a810a6218f98d98db9b3c36ca6a2bc7e575fda5ea165871eae06fa2",
+      "relativePath": "apps/server/src/services/session-title-service.test.ts",
+      "sourceKind": "product",
+      "inspectedRanges": [
+        {
+          "start": 144,
+          "end": 291,
+          "textSha256": "4ab04ee3a190e8a69ee90794c54208d7485f8d492a09f87be0a8afb446d66942"
+        }
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/packages/agent/src/session-title.test.ts",
+      "bytes": 2795,
+      "sha256": "47f806029c3c0ea2302ed06c9145638225f38aeaca87acf739b8686a96e62980",
+      "relativePath": "packages/agent/src/session-title.test.ts",
+      "sourceKind": "product",
+      "inspectedRanges": [
+        {
+          "start": 9,
+          "end": 91,
+          "textSha256": "2d4da6133d89889abdc8acbade05d104e45642afcbbf527526e95ca1e9afb28c"
+        }
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-native-file-v3-c9-integration/source/scripts/harness-native-files-mimo-v3/file-atlas-runner.ts",
+      "bytes": 23577,
+      "sha256": "1ee5cadfad88b2fdcb60bf18dadc8551f05a6404893da67f4fcdcc8318c710c3",
+      "relativePath": "scripts/harness-native-files-mimo-v3/file-atlas-runner.ts",
+      "sourceKind": "control",
+      "inspectedRanges": [
+        {
+          "start": 656,
+          "end": 681,
+          "textSha256": "44dea474d0dacc973c844e756244188c4b4619a1eaf6e37afc7522aac9fd380e"
+        }
+      ]
+    }
+  ],
+  "scope": "Read/hash only; selected ranges and full-file hashes bound to frozen C9 inventory. No tests, runtime or source changes."
+}

@@ -1,0 +1,58 @@
+[
+  {
+    "path": "apps/platform/discord/node_modules/discord.js",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/node_modules/.bun/discord.js@14.26.5/node_modules/discord.js"
+  },
+  {
+    "path": "apps/platform/discord/node_modules/prism-media",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/node_modules/.bun/prism-media@1.3.5/node_modules/prism-media"
+  },
+  {
+    "path": "apps/platform/discord/node_modules/opusscript",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/node_modules/.bun/opusscript@0.0.8/node_modules/opusscript"
+  },
+  {
+    "path": "apps/platform/discord/node_modules/@atlas/core",
+    "target": "/private/tmp/atlas-publication-turn-principal-c5/source/packages/core"
+  },
+  {
+    "path": "apps/platform/discord/node_modules/@atlas/client",
+    "target": "/private/tmp/atlas-publication-turn-principal-c5/source/packages/client"
+  },
+  {
+    "path": "apps/platform/discord/node_modules/@discordjs/voice",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/node_modules/.bun/@discordjs+voice@0.19.2/node_modules/@discordjs/voice"
+  },
+  {
+    "path": "apps/platform/telegram/node_modules/grammy",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/node_modules/.bun/grammy@1.43.0/node_modules/grammy"
+  },
+  {
+    "path": "apps/platform/telegram/node_modules/@atlas/core",
+    "target": "/private/tmp/atlas-publication-turn-principal-c5/source/packages/core"
+  },
+  {
+    "path": "apps/platform/telegram/node_modules/@atlas/client",
+    "target": "/private/tmp/atlas-publication-turn-principal-c5/source/packages/client"
+  },
+  {
+    "path": "apps/platform/whatsapp/node_modules/@atlas/core",
+    "target": "/private/tmp/atlas-publication-turn-principal-c5/source/packages/core"
+  },
+  {
+    "path": "apps/platform/whatsapp/node_modules/@atlas/client",
+    "target": "/private/tmp/atlas-publication-turn-principal-c5/source/packages/client"
+  },
+  {
+    "path": "apps/platform/whatsapp/node_modules/@whiskeysockets/baileys",
+    "target": "/Users/apriansyahrs/Documents/Code/atlas/node_modules/.bun/@whiskeysockets+baileys@6.7.24+5f22b98f3a95796b/node_modules/@whiskeysockets/baileys"
+  },
+  {
+    "path": "apps/platform/automation/node_modules/@atlas/core",
+    "target": "/private/tmp/atlas-publication-turn-principal-c5/source/packages/core"
+  },
+  {
+    "path": "apps/platform/automation/node_modules/@atlas/client",
+    "target": "/private/tmp/atlas-publication-turn-principal-c5/source/packages/client"
+  }
+]

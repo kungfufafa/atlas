@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-09-06T18:18:38.475993+00:00",
+  "reviewer": "/root/atlas_runtime_audit",
+  "status": "scoped-source-approved-author-final-gates-pending",
+  "sourceRoot": "/private/tmp/atlas-conversation-search-candidate4/source",
+  "sourceHashes": {
+    "apps/server/src/tools/conversation-tools.ts": "017de23c293b55225d77925788e1fdecb90e3ed6114993c0bbb6a57e951d4ebc",
+    "apps/server/src/tools/conversation-tools.test.ts": "5ee3c7564f7653c707ee7b061f24e0f3fe1f6f01f2d1972725b47899404363ea",
+    "packages/db/src/adapters/in-memory.ts": "b78cdbb81211b568105d68f6355d0611264e1a1d65a97d9107279f54d178b49b",
+    "packages/db/src/adapters/sqlite.ts": "53c0c20e17f08fee99855edb609de5cc0c410804bec1728452558e39106c455c",
+    "packages/db/src/types.ts": "b3f773e802375f556661222907e3b326b507909ef8248fd9ed207755e6656a4d",
+    "packages/db/src/conversation-keyword-search.ts": "369dabdaa0448932d1fe40657fd49982301425b2043c1d3c40e14ec926dec770",
+    "packages/db/src/conversation-keyword-search.test.ts": "34a6abe4926877db41830cc7180d096f661f93d9c95d0d80ac77d0fb89ab2adf",
+    "packages/db/src/memory-search.ts": "8b4560ee6b4a30e6f25c13976382747125c2be89aebfa66abf6448faf0f7a7a2",
+    "packages/db/src/memory-search.test.ts": "19157a249a306aa2238e67a9ecbd1800a722c7459663686f0830f8e782b93b13"
+  },
+  "independence": {
+    "sourceReviewOnly": true,
+    "productionEditsByReviewer": false,
+    "scratchImplementationEditsByReviewer": false,
+    "testsLaunchedByReviewer": false,
+    "paidCalls": false,
+    "nativePilots": false,
+    "outcomesInspected": false,
+    "authorSourceChangedDuringReview": true
+  },
+  "conclusion": "No remaining production correctness blocker found in the reviewed final implementation. Final author typecheck/export checkpoint remains required; no root application or live quality gain is certified.",
+  "resolvedFindings": [
+    {
+      "id": "archive-json-type",
+      "severity": "blocker-resolved-in-source",
+      "finding": "json_each decodes string elements; reparsing a JSON-looking archived string changed role/text and could collide with a distinct active object during ROW_NUMBER deduplication.",
+      "resolution": "The keyword archive SQL projection re-encodes scalar JSON before deduplication and the single parse; objects/arrays and true/false retain their original JSON type. Legacy literal search retains its original projection.",
+      "references": [
+        "packages/db/src/adapters/sqlite.ts:76",
+        "packages/db/src/adapters/sqlite.ts:4403",
+        "packages/db/src/adapters/sqlite.ts:4427"
+      ]
+    },
+    {
+      "id": "search-read-fidelity",
+      "severity": "related-source-fidelity-repair",
+      "finding": "The prior SQLite getConversationHistory path could reinterpret archived JSON-looking text or discard active scalar string text after search located it.",
+      "resolution": "The transcript path uses the same scalar-preserving archive projection and the existing in-memory payload decoder, moved verbatim to a shared helper. Session/archive ACL and 4000-character text bounds stay in place.",
+      "references": [
+        "packages/db/src/adapters/sqlite.ts:3054",
+        "packages/db/src/adapters/sqlite.ts:3112",
+        "packages/db/src/adapters/sqlite.ts:3127",
+        "packages/db/src/conversation-keyword-search.ts:12"
+      ]
+    },
+    {
+      "id": "duplicate-id-order",
+      "severity": "minor-parity-resolved-in-source",
+      "finding": "Equal-date duplicate preference differed between SQLite binary ID ordering and in-memory localeCompare for mixed-case/Unicode IDs.",
+      "resolution": "Keyword-only in-memory duplicate tie now uses Buffer.compare on UTF-8 bytes, matching SQLite BINARY ordering. Active-before-archive and newest-before-date-filter behavior is retained.",
+      "references": ["packages/db/src/adapters/in-memory.ts:2347"]
+    },
+    {
+      "id": "numeric-tokenizer",
+      "severity": "author-discovered-shared-defect-resolved-in-source",
+      "finding": "Author regression showed the installed Bun runtime reports a pure numeric Segmenter token as not word-like, so the previous isWordLike gate discarded numeric identifiers.",
+      "resolution": "Admissibility now uses the existing Unicode letter/number predicate without isWordLike. Normalization, stop words, all term/query limits and punctuation-only literal fallback remain. This explicitly affects both memory and conversation keyword retrieval.",
+      "references": [
+        "packages/db/src/memory-search.ts:36",
+        "packages/db/src/memory-search.test.ts:4"
+      ]
+    }
+  ],
+  "assessment": {
+    "acl": "Native search always passes the asserted canonical principal org/user and Super Agent restriction. Both adapters apply tenant, user, profile, importing-profile, Super Agent and date filters before lexical scoring/top-K, so inaccessible rows cannot consume result slots. Database userId remains optional for trusted callers as before; the native boundary does not omit it.",
+    "sqlDedupBeforeAcl": "The SQL window over org rows precedes some owner/profile filters, but partitions only within each session and does not assign lexical relevance or a result cap. This is a resource-cost concern, not an identified output ACL bypass.",
+    "ranking": "Bounded weighted OR of unique normalized term substrings is a reasonable topic-search contract. More matching terms rank above fewer; fixed capped length weights and deterministic tie ordering apply. It is not phrase matching, stemming, semantic retrieval or a guarantee of useful natural-language recall.",
+    "topK": "The collector retains at most K matches (DB maximum200; native tool maximum50) and searches all eligible history before limiting. This avoids truncating older strong matches behind newer weak matches.",
+    "totalWork": "Total work is not bounded by K. SQLite may sort/materialize all org rows for its window. In-memory scans all archives for every eligible session, materializes per-session candidates/serialized seen keys, and sorts candidates. Do not advertise bounded total memory, constant latency, or total adapter linear time.",
+    "duplicateContract": "Identity is exact serialized payload within a session, with active then newest then binary-ID preference. Deduplication occurs before date filtering, so an older archived copy is intentionally not revived when a newer preferred copy falls outside the date window. This is not semantic duplicate detection.",
+    "archiveParity": "Scalar-preserving keyword projection avoids conflating literal JSON strings with objects/numbers/booleans/null. A shared decoder retains original text and excludes message-envelope metadata from lexical search. Legacy-null fallback semantics are retained rather than inventing new text.",
+    "literalCompatibility": "Omitting matchMode or explicitly selecting literal retains the prior direct database search path. SQL still uses its historical LIKE pattern behavior and serialized payload matching; in-memory still searches decoded content. This patch does not newly promise cross-adapter literal wildcard/metadata parity. The native search_chats tool intentionally switches to keywords.",
+    "testsContract": "Replacing old lexical-query exact-cardinality expectations with positive exact-source target checks and explicit forbidden-session exclusion is appropriate. Existing authorization tests still verify no private-only/super/cross-org access. An importing-session keyword fixture is not claimed because the public SQLite adapter refuses to create such a session; existing profile atomic-import regressions cover reservation publication rules."
+  },
+  "recommendations": [
+    "Complete and preserve final focused TypeScript/lint/behavior gates before exporting or integrating.",
+    "Keep current archive/string/object/scalar and reopen regressions, including a JSON-looking archived literal whose metadata-shaped text differs from an actual active object.",
+    "Retain direct literal mode tests alongside native keyword behavior; describe native results as lexical topic matches.",
+    "If production history size later requires it, design tenant/user/profile-scoped indexed candidate retrieval or query cancellation with explicit recall tradeoffs. The current collector bound alone is not a scalability proof.",
+    "Do not claim live recall, learning or comparative harness improvement from these offline source/behavior checks."
+  ],
+  "authorEvidence": [
+    {
+      "path": "/private/tmp/atlas-conversation-search-candidate4/baseline-proof.log",
+      "sha256": "f2314aee7b0b6784295671defe30528a307ede32ae547b05658fc4029a383c47",
+      "tail": [
+        " 0 pass",
+        " 8 filtered out",
+        " 2 fail",
+        " 2 expect() calls",
+        "Ran 2 tests across 1 file. [1156.00ms]"
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-conversation-search-candidate4/legacy-before-reader-fix.log",
+      "sha256": "71757928e9f181957b2dccd91359a41b70ad6d37edaaedb1dc0cad96d459c547",
+      "tail": [
+        " 1 pass",
+        " 10 filtered out",
+        " 3 fail",
+        " 10 expect() calls",
+        "Ran 4 tests across 1 file. [1056.00ms]"
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-conversation-search-candidate4/tests-final.log",
+      "sha256": "8d5ecfe097cc1ecba4472c1b46808284d030eb4fecd753a537446debb2ed5667",
+      "tail": [
+        "",
+        " 93 pass",
+        " 0 fail",
+        " 428 expect() calls",
+        "Ran 93 tests across 9 files. [1.50s]"
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-conversation-search-candidate4/typecheck.log",
+      "sha256": "ae809ea805b8e5d930f2dbc592ccadc91c841f4d043783dce8a24509a591c5dc",
+      "tail": [
+        "packages/db/src/conversation-keyword-search.test.ts(37,7): error TS2353: Object literal may only specify known properties, and 'role' does not exist in type 'StoredUserRecord'.",
+        "packages/db/src/conversation-keyword-search.test.ts(54,28): error TS2345: Argument of type '{ createdAt: string; model: null; name: string; systemPrompt: string; updatedAt: string; id: string; orgId: string; isSuper?: undefined; } | { createdAt: string; model: null; name: string; systemPrompt: string; updatedAt: string; id: string; isSuper: boolean; orgId: string; }' is not assignable to parameter of type 'StoredProfileRecord'.",
+        "  Type '{ createdAt: string; model: null; name: string; systemPrompt: string; updatedAt: string; id: string; orgId: string; isSuper?: undefined; }' is not assignable to type 'StoredProfileRecord'.",
+        "    Types of property 'isSuper' are incompatible.",
+        "      Type 'undefined' is not assignable to type 'boolean'."
+      ]
+    },
+    {
+      "path": "/private/tmp/atlas-conversation-search-candidate4/format-final.log",
+      "sha256": "f405b3c9a028aad29e7564896412368507e35fb7f18876361eadc6990de66cd5",
+      "tail": ["Checked 1 file in 590ms. No fixes applied."]
+    }
+  ],
+  "remainingGates": [
+    "Final author TypeScript checkpoint (last inspected typecheck.log still contained fixture-only type errors)",
+    "Stable exported patch/hash inventory for composition; no root application by this review"
+  ],
+  "authorGateObservation": "Last reviewed focused regression log:93 pass,0 fail,428 assertions across9 files. These are author-executed results; reviewer did not rerun them."
+}

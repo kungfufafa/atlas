@@ -1,14 +1,23 @@
 import { spawn } from "node:child_process";
 import { constants as fsConstants } from "node:fs";
-import { access, mkdtemp, realpath, rm } from "node:fs/promises";
+import { access, mkdtemp, realpath, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import type { ToolContext } from "@atlas/core";
+import {
+  authorizeRestrictedProcessLaunch,
+  createRestrictedProcessLaunchEvidence,
+  type RestrictedProcessAdmissionPolicy,
+  type RestrictedProcessAdmissionReceipt,
+  type RestrictedProcessEvidenceInput,
+} from "./restricted-process-admission";
 
-// A custom tool can be authored by a tenant administrator. Run it with an
+// Custom JavaScript and executable skills can be authored by tenant administrators.
+// The shared unsafe opt-out removes filesystem confinement for both; it never imports
+// them into the server, and strict callers must set requireSandbox. Run them with an
 // explicit environment instead of inheriting provider keys and server secrets.
 const DEFAULT_TIMEOUT_MS = 30_000;
-const MAX_OUTPUT_CHARS = 1_000_000;
+const MAX_OUTPUT_BYTES = 1_000_000;
 const SIGKILL_GRACE_MS = 5000;
 const MACOS_SANDBOX_EXECUTABLE = "/usr/bin/sandbox-exec";
 const UNSAFE_SANDBOX_OPT_IN = "ATLAS_ALLOW_UNSANDBOXED_CUSTOM_TOOLS";
@@ -16,11 +25,13 @@ const UNSAFE_SANDBOX_OPT_IN = "ATLAS_ALLOW_UNSANDBOXED_CUSTOM_TOOLS";
 type JavascriptToolMode = "--inspect" | "--run";
 
 interface PreparedSubprocess {
-  args: string[];
+  admission: Readonly<CustomToolAdmission>;
+  args: readonly string[];
   bin: string;
   cleanup(): Promise<void>;
   cwd: string;
   env: NodeJS.ProcessEnv;
+  evidenceInput?: RestrictedProcessEvidenceInput;
 }
 
 function resolveCustomToolTimeoutMs(): number {
@@ -30,8 +41,28 @@ function resolveCustomToolTimeoutMs(): number {
     : DEFAULT_TIMEOUT_MS;
 }
 
+export interface CustomToolAdmission {
+  filesystemPolicy:
+    | "macos-custom-tool-v1"
+    | "linux-landlock-custom-tool-v1"
+    | "unrestricted-host";
+  /** Fixed system grants are defined by filesystemPolicy, not just these paths. */
+  inheritedHostEnvironment: false;
+  mode: "sandboxed" | "unsafe-host";
+  modulePath: string;
+  moduleReadRoot?: string;
+  platform: NodeJS.Platform;
+  runnerPath: string;
+  runtimeExecutable: string;
+  /** Prepared by the host; this is not a module-reported execution receipt. */
+  stage: "prepared";
+  tempRoot: string;
+  workspaceRoot?: string;
+}
+
 export interface SpawnJsonToolOptions {
   bin: string;
+  canonicalRootsRequired?: boolean;
   context: ToolContext;
   input: unknown;
   label: string;
@@ -39,125 +70,247 @@ export interface SpawnJsonToolOptions {
   modulePath: string;
   /** Optional tool-private dependency tree exposed read-only to the child. */
   moduleReadRoot?: string;
+  onAdmission?: (evidence: Readonly<CustomToolAdmission>) => void;
   /** Test/build probes can require the production boundary despite test opt-in. */
   requireSandbox?: boolean;
   runnerPath: string;
   workspaceRoot?: string;
 }
 
-/** Runs a JSON-in/JSON-out child with bounded output and lifetime. */
-export async function spawnJsonTool(
-  options: SpawnJsonToolOptions
-): Promise<unknown> {
-  const { context, input, label } = options;
-  const payload = JSON.stringify(input ?? {}) ?? "{}";
-  const timeoutMs = resolveCustomToolTimeoutMs();
-  const prepared = await prepareSubprocess(options);
+export interface CustomToolRuntimeAdmissionPolicy {
+  /** Trusted host callback; never read from module/input/context JSON. */
+  authorize?: RestrictedProcessAdmissionPolicy["authorize"];
+  /** Historical prepared authorization only; never sent to the child/result. */
+  onAuthorized?: (receipt: RestrictedProcessAdmissionReceipt) => void;
+  requireAdmission?: boolean;
+}
 
-  try {
-    const result = await new Promise<{ stderr: string; stdout: string }>(
-      (resolve, reject) => {
-        const child = spawn(prepared.bin, prepared.args, {
-          cwd: prepared.cwd,
-          env: prepared.env,
-          signal: context.signal,
-          stdio: ["pipe", "pipe", "pipe"],
-        });
-
-        let stderr = "";
-        let stdout = "";
-        let timedOut = false;
-        let sigkillTimer: ReturnType<typeof setTimeout> | undefined;
-
-        const timeoutTimer = setTimeout(() => {
-          timedOut = true;
-          try {
-            child.kill("SIGTERM");
-          } catch {
-            // The child may have exited between the timer and this callback.
-          }
-          sigkillTimer = setTimeout(() => {
-            try {
-              child.kill("SIGKILL");
-            } catch {
-              // The child already exited.
-            }
-          }, SIGKILL_GRACE_MS);
-          sigkillTimer.unref();
-        }, timeoutMs);
-
-        child.stdout?.on("data", (chunk: Buffer | string) => {
-          stdout = appendCapped(stdout, String(chunk));
-        });
-        child.stderr?.on("data", (chunk: Buffer | string) => {
-          stderr = appendCapped(stderr, String(chunk));
-        });
-
-        // A child that exits before reading stdin may surface EPIPE. Its close
-        // event carries the actionable exit status and stderr.
-        child.stdin?.on("error", () => {});
-
-        child.once("error", (error) => {
-          clearTimeout(timeoutTimer);
-          if (sigkillTimer) {
-            clearTimeout(sigkillTimer);
-          }
-          reject(error);
-        });
-
-        child.once("close", (exitCode, signal) => {
-          clearTimeout(timeoutTimer);
-          if (sigkillTimer) {
-            clearTimeout(sigkillTimer);
-          }
-          const stderrTail = stderr.trim() || "(no stderr)";
-          const exitStatus = signal
-            ? `signal ${signal}`
-            : `exit code ${exitCode ?? "null"}`;
-
-          if (timedOut) {
-            reject(
-              new Error(
-                `${label} timed out after ${timeoutMs}ms (${exitStatus}): ${stderrTail}`
-              )
-            );
-            return;
-          }
-
-          if (exitCode === 0) {
-            resolve({ stderr, stdout });
-            return;
-          }
-
-          reject(new Error(`${label} ${exitStatus}: ${stderrTail}`));
-        });
-
-        child.stdin?.end(payload);
-      }
-    );
-
-    const output = result.stdout.trim();
-    if (!output) {
+/** Captures trusted policy once. The legacy onAdmission option remains an observer. */
+export function createJsonToolSpawner(
+  policy: CustomToolRuntimeAdmissionPolicy = {}
+) {
+  const authorize = policy.authorize;
+  const requireAdmission = policy.requireAdmission === true;
+  const onAuthorized = policy.onAuthorized;
+  const needsAdmission = requireAdmission || authorize !== undefined;
+  return async (options: SpawnJsonToolOptions): Promise<unknown> => {
+    const sourceContext = options.context;
+    const signal = sourceContext.signal;
+    const onAdmission = options.onAdmission;
+    const captured: SpawnJsonToolOptions = {
+      bin: options.bin,
+      canonicalRootsRequired: options.canonicalRootsRequired,
+      context: { ...sourceContext, signal },
+      input: options.input,
+      label: options.label,
+      mode: options.mode,
+      modulePath: options.modulePath,
+      moduleReadRoot: options.moduleReadRoot,
+      requireSandbox: options.requireSandbox,
+      runnerPath: options.runnerPath,
+      workspaceRoot: options.workspaceRoot,
+    };
+    const { label } = captured;
+    signal?.throwIfAborted();
+    if (requireAdmission && !authorize) {
+      throw new Error("Required custom runtime authorization is unavailable.");
+    }
+    // Capture model input and all host selectors before the first await.
+    const payload = JSON.stringify(captured.input ?? {}) ?? "{}";
+    const timeoutMs = resolveCustomToolTimeoutMs();
+    const unsafeRequested =
+      !captured.requireSandbox && process.env[UNSAFE_SANDBOX_OPT_IN] === "1";
+    if (needsAdmission && unsafeRequested) {
       throw new Error(
-        `${label} produced no output; it must return one JSON value. stderr: ${result.stderr.trim() || "(empty)"}`
+        "Custom runtime admission requires an enforced sandbox; set requireSandbox or remove the unsafe opt-out."
       );
     }
-
+    if (needsAdmission && process.platform !== "darwin") {
+      throw new Error(
+        "Custom runtime admission evidence currently requires macOS; execution was blocked before startup."
+      );
+    }
+    const prepared = await prepareSubprocess(captured, unsafeRequested);
     try {
-      return JSON.parse(output);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new Error(
-        `${label} returned non-JSON output: ${message}; stderr: ${result.stderr.trim() || "(empty)"}`
+      // This observer receives immutable diagnostics, not mutable launch parameters.
+      onAdmission?.call(options, prepared.admission);
+      signal?.throwIfAborted();
+      if (needsAdmission) {
+        const evidenceInput = prepared.evidenceInput;
+        if (!evidenceInput) {
+          throw new Error("Custom sandbox admission evidence is unavailable.");
+        }
+        const evidence =
+          await createRestrictedProcessLaunchEvidence(evidenceInput);
+        signal?.throwIfAborted();
+        const receipt = await awaitAdmission(
+          authorizeRestrictedProcessLaunch(evidence, authorize),
+          signal
+        );
+        signal?.throwIfAborted();
+        if (receipt) {
+          onAuthorized?.(receipt);
+        }
+      }
+      signal?.throwIfAborted();
+      const result = await collectChildOutput(
+        prepared,
+        payload,
+        label,
+        timeoutMs,
+        signal
       );
+      const output = result.stdout.trim();
+      if (!output) {
+        throw new Error(
+          `${label} produced no output; it must return one JSON value. stderr: ${result.stderr.trim() || "(empty)"}`
+        );
+      }
+      try {
+        return JSON.parse(output);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `${label} returned non-JSON output: ${message}; stderr: ${result.stderr.trim() || "(empty)"}`
+        );
+      }
+    } finally {
+      await prepared.cleanup();
     }
-  } finally {
-    await prepared.cleanup();
+  };
+}
+
+function awaitAdmission<T>(
+  pending: Promise<T>,
+  signal?: AbortSignal
+): Promise<T> {
+  if (!signal) {
+    return pending;
+  }
+  return new Promise((resolve, reject) => {
+    const abort = () => {
+      signal.removeEventListener("abort", abort);
+      reject(
+        signal.reason ??
+          new DOMException("Custom runtime admission cancelled.", "AbortError")
+      );
+    };
+    signal.addEventListener("abort", abort, { once: true });
+    if (signal.aborted) {
+      abort();
+    }
+    pending
+      .then(resolve, reject)
+      .finally(() => signal.removeEventListener("abort", abort));
+  });
+}
+
+/** Default compatibility entrypoint. No trusted policy is inferred from tool options. */
+export const spawnJsonTool = createJsonToolSpawner();
+
+function killChildGroup(
+  child: ReturnType<typeof spawn>,
+  signal: NodeJS.Signals
+): void {
+  try {
+    if (process.platform !== "win32" && child.pid) {
+      process.kill(-child.pid, signal);
+    } else {
+      child.kill(signal);
+    }
+  } catch {
+    // The child/group may have already exited.
   }
 }
 
+function collectChildOutput(
+  prepared: PreparedSubprocess,
+  payload: string,
+  label: string,
+  timeoutMs: number,
+  signal?: AbortSignal
+): Promise<{ stderr: string; stdout: string }> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(prepared.bin, prepared.args, {
+      cwd: prepared.cwd,
+      detached: process.platform !== "win32",
+      env: prepared.env,
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    let stdout = "";
+    let stderr = "";
+    let outputBytes = 0;
+    let failure: Error | undefined;
+    let killTimer: ReturnType<typeof setTimeout> | undefined;
+    const stop = (error: Error) => {
+      if (failure) {
+        return;
+      }
+      failure = error;
+      killChildGroup(child, "SIGTERM");
+      killTimer = setTimeout(
+        () => killChildGroup(child, "SIGKILL"),
+        SIGKILL_GRACE_MS
+      );
+      killTimer.unref();
+    };
+    const onAbort = () =>
+      stop(new DOMException(`${label} cancelled.`, "AbortError"));
+    signal?.addEventListener("abort", onAbort, { once: true });
+    if (signal?.aborted) {
+      onAbort();
+    }
+    const timeout = setTimeout(
+      () => stop(new Error(`${label} timed out after ${timeoutMs}ms.`)),
+      timeoutMs
+    );
+    const receive = (chunk: Buffer | string, isError: boolean) => {
+      outputBytes += Buffer.byteLength(chunk);
+      if (outputBytes > MAX_OUTPUT_BYTES) {
+        stop(new Error(`${label} exceeded its output limit.`));
+        return;
+      }
+      if (isError) {
+        stderr += String(chunk);
+      } else {
+        stdout += String(chunk);
+      }
+    };
+    child.stdout?.on("data", (chunk: Buffer | string) => receive(chunk, false));
+    child.stderr?.on("data", (chunk: Buffer | string) => receive(chunk, true));
+    child.stdin?.on("error", () => {});
+    child.once("error", (error) => {
+      failure ??= error;
+    });
+    // Kill ordinary descendants even if their leader exits while they keep stdio open.
+    child.once("exit", () => killChildGroup(child, "SIGKILL"));
+    child.once("close", (exitCode, exitSignal) => {
+      clearTimeout(timeout);
+      if (killTimer) {
+        clearTimeout(killTimer);
+      }
+      signal?.removeEventListener("abort", onAbort);
+      if (failure) {
+        reject(failure);
+        return;
+      }
+      if (exitCode !== 0) {
+        reject(
+          new Error(
+            `${label} ${exitSignal ? `signal ${exitSignal}` : `exit code ${exitCode ?? "null"}`}: ${stderr.trim() || "(no stderr)"}`
+          )
+        );
+        return;
+      }
+      resolve({ stderr, stdout });
+    });
+    child.stdin?.end(payload);
+  });
+}
+
 async function prepareSubprocess(
-  options: SpawnJsonToolOptions
+  options: SpawnJsonToolOptions,
+  unsafeRequested: boolean
 ): Promise<PreparedSubprocess> {
   const createdSandboxTemp = await mkdtemp(
     path.join(os.tmpdir(), "atlas-custom-tool-")
@@ -192,6 +345,38 @@ async function prepareSubprocess(
           "JavaScript tool workspace"
         )
       : undefined;
+    if (options.canonicalRootsRequired) {
+      for (const [requested, actual] of [
+        [options.modulePath, modulePath],
+        [options.moduleReadRoot, moduleReadRoot],
+        [options.workspaceRoot, workspaceRoot],
+      ]) {
+        if (requested && path.resolve(requested) !== actual) {
+          throw new Error(
+            "Custom-code root changed or became a symlink before sandbox admission; reload the tool."
+          );
+        }
+      }
+    }
+    const admission = (mode: CustomToolAdmission["mode"]) =>
+      Object.freeze({
+        filesystemPolicy:
+          mode === "unsafe-host"
+            ? ("unrestricted-host" as const)
+            : process.platform === "darwin"
+              ? ("macos-custom-tool-v1" as const)
+              : ("linux-landlock-custom-tool-v1" as const),
+        inheritedHostEnvironment: false as const,
+        mode,
+        modulePath,
+        moduleReadRoot,
+        platform: process.platform,
+        runnerPath,
+        runtimeExecutable: bunPath,
+        stage: "prepared" as const,
+        tempRoot: sandboxTemp,
+        workspaceRoot,
+      });
     const exposedWorkspaceRoot = options.workspaceRoot
       ? path.resolve(options.workspaceRoot)
       : undefined;
@@ -199,7 +384,20 @@ async function prepareSubprocess(
       exposedWorkspaceRoot,
       sandboxTemp
     );
+    // Explicit empty files suppress Bun's cwd bunfig preload and automatic .env.
+    // Both files are created by the host, before any untrusted module can run.
+    const startupConfig = path.join(sandboxTemp, "empty-bunfig.toml");
+    const startupEnvironment = path.join(sandboxTemp, "empty.env");
+    await Promise.all([
+      writeFile(startupConfig, "", { flag: "wx", mode: 0o600 }),
+      writeFile(startupEnvironment, "", { flag: "wx", mode: 0o600 }),
+    ]);
+    const startupArgs = [
+      `--config=${startupConfig}`,
+      `--env-file=${startupEnvironment}`,
+    ];
     const runnerArgs = [
+      ...startupArgs,
       "--no-install",
       "--no-addons",
       runnerPath,
@@ -210,8 +408,9 @@ async function prepareSubprocess(
       await rm(sandboxTemp, { force: true, recursive: true });
     };
 
-    if (!options.requireSandbox && process.env[UNSAFE_SANDBOX_OPT_IN] === "1") {
+    if (unsafeRequested) {
       return {
+        admission: admission("unsafe-host"),
         args: runnerArgs,
         bin: bunPath,
         cleanup,
@@ -222,23 +421,45 @@ async function prepareSubprocess(
 
     if (process.platform === "darwin") {
       await access(MACOS_SANDBOX_EXECUTABLE, fsConstants.X_OK);
-      return {
-        args: buildMacosSandboxArgs({
-          bunPath,
-          moduleDirectory,
-          modulePath,
-          moduleReadRoot,
-          runnerArgs,
-          runnerDirectory: path.dirname(runnerPath),
-          runnerPath,
-          sandboxTemp,
-          workspaceRoot,
-        }),
+      const sandbox = buildMacosSandboxPlan({
+        bunPath,
+        moduleDirectory,
+        modulePath,
+        moduleReadRoot,
+        runnerArgs,
+        runnerDirectory: path.dirname(runnerPath),
+        runnerPath,
+        sandboxTemp,
+        workspaceRoot,
+      });
+      const args = Object.freeze(sandbox.args);
+      const frozenEnv = Object.freeze(env);
+      return Object.freeze({
+        admission: admission("sandboxed"),
+        args,
         bin: MACOS_SANDBOX_EXECUTABLE,
         cleanup,
         cwd: moduleDirectory,
-        env,
-      };
+        env: frozenEnv,
+        evidenceInput: Object.freeze({
+          args,
+          bin: MACOS_SANDBOX_EXECUTABLE,
+          cwd: moduleDirectory,
+          env: frozenEnv,
+          executable: bunPath,
+          executableSpelling: bunPath,
+          grants: Object.freeze(
+            sandbox.grants.map((grant) => Object.freeze(grant))
+          ),
+          launchPolicy: "custom_json" as const,
+          network: "allow" as const,
+          platform: "darwin" as const,
+          policySource: sandbox.policySource,
+          temporaryRoot: sandboxTemp,
+          // Metadata has no writable profile workspace. Explicit grants govern access.
+          workspaceRoot: workspaceRoot ?? moduleDirectory,
+        }),
+      });
     }
 
     if (process.platform === "linux") {
@@ -258,7 +479,8 @@ async function prepareSubprocess(
         ATLAS_CUSTOM_TOOL_SANDBOX_WORKSPACE: workspaceRoot ?? "",
       });
       return {
-        args: ["--no-install", "--no-addons", launcherPath],
+        admission: admission("sandboxed"),
+        args: [...startupArgs, "--no-install", "--no-addons", launcherPath],
         bin: bunPath,
         cleanup,
         cwd: sandboxTemp,
@@ -306,7 +528,7 @@ interface MacosSandboxOptions {
   workspaceRoot?: string;
 }
 
-function buildMacosSandboxArgs(options: MacosSandboxOptions): string[] {
+function buildMacosSandboxPlan(options: MacosSandboxOptions) {
   const readableDirectories = collectPathAncestors([
     options.moduleDirectory,
     options.runnerDirectory,
@@ -371,7 +593,36 @@ ${readableDirectoryRules}
     args.push("-D", `READ_DIR_${index}=${directory}`);
   }
   args.push("-p", profile, options.bunPath, ...options.runnerArgs);
-  return args;
+  const grants: {
+    kind: RestrictedProcessEvidenceInput["grants"][number]["kind"];
+    root: string;
+  }[] = [
+    ...["/System", "/usr/lib", "/private/etc/ssl"].map((root) => ({
+      kind: "read_subtree" as const,
+      root,
+    })),
+    ...[
+      "/private/etc/resolv.conf",
+      "/private/etc/hosts",
+      "/private/etc/localtime",
+      options.bunPath,
+      options.runnerPath,
+      options.modulePath,
+    ].map((root) => ({ kind: "read_literal" as const, root })),
+    ...[
+      options.runnerDirectory,
+      options.moduleDirectory,
+      ...readableDirectories,
+    ].map((root) => ({ kind: "directory_entries_literal" as const, root })),
+    { kind: "read_write_subtree", root: options.sandboxTemp },
+    ...(options.moduleReadRoot
+      ? [{ kind: "read_subtree" as const, root: options.moduleReadRoot }]
+      : []),
+    ...(options.workspaceRoot
+      ? [{ kind: "read_write_subtree" as const, root: options.workspaceRoot }]
+      : []),
+  ];
+  return { args, grants, policySource: profile };
 }
 
 function collectPathAncestors(paths: string[]): string[] {
@@ -441,11 +692,4 @@ function isPathInsideDirectory(
   return (
     relative === "" || !(relative.startsWith("..") || path.isAbsolute(relative))
   );
-}
-
-function appendCapped(current: string, next: string): string {
-  const combined = current + next;
-  return combined.length <= MAX_OUTPUT_CHARS
-    ? combined
-    : combined.slice(-MAX_OUTPUT_CHARS);
 }

@@ -1,0 +1,24 @@
+{
+  "createdAt": "2026-09-07T02:49:56.324593+00:00",
+  "independent": {
+    "assertions": 54,
+    "scope": "actual capture worker and both DB adapters; adapted owner fixtures, not runtime admission or membership proof",
+    "source": "independent-review/probe.log",
+    "tests": 9
+  },
+  "limits": [
+    "Configured profile root only; selected capture does not prove session authorship or an atomic filesystem snapshot.",
+    "Owner and independent counts remain separate; inherited/repeated suites are not added as new quality samples.",
+    "Current runtime grants, shared-host confinement, turn identity/ownership, non-atomic revocation windows and visible consumer cutover remain separate integration work.",
+    "No AgentService, HTTP, UI or worker activation in this source; macOS owner evidence is not a Linux/Windows or Hermes claim."
+  ],
+  "newProviderCalls": 0,
+  "owner": {
+    "assertions": 594,
+    "files": 4,
+    "newIntegrationTests": 27,
+    "source": "owner/final-regressions.log",
+    "tests": 92
+  },
+  "packagingReranTests": false
+}

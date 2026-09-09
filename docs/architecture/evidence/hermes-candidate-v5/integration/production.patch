@@ -1,0 +1,787 @@
+diff --git a/apps/server/src/services/agent-service.ts b/apps/server/src/services/agent-service.ts
+index caaf9ac8..34f44e90 100644
+--- a/apps/server/src/services/agent-service.ts
++++ b/apps/server/src/services/agent-service.ts
+@@ -9,6 +9,7 @@ import {
+   executeToolCall,
+   expandLearnInLastUserMessage,
+   suggestToolParamsFromPrompt,
++  type ToolLoopStopReason,
+   tryParseLearnCommand,
+ } from "@atlas/agent";
+ import type {
+@@ -2545,7 +2546,10 @@ export class AgentService {
+     taskId: string,
+     profileId: string,
+     prompt: string,
+-    principal: CanonicalPrincipal
++    principal: CanonicalPrincipal,
++    options?: {
++      onToolLoopStop?: (reason: ToolLoopStopReason) => void | Promise<void>;
++    }
+   ): Promise<string> {
+     const task = await this.db.getTask(taskId);
+ 
+@@ -2571,7 +2575,7 @@ export class AgentService {
+       throw new Error("Session not found.");
+     }
+ 
+-    return session.send(prompt);
++    return session.send(prompt, options);
+   }
+ 
+   async ensureTaskSession(
+diff --git a/apps/server/src/services/task-runner.ts b/apps/server/src/services/task-runner.ts
+index ecc6e2cf..29b64ea4 100644
+--- a/apps/server/src/services/task-runner.ts
++++ b/apps/server/src/services/task-runner.ts
+@@ -1,3 +1,4 @@
++import type { ToolLoopStopReason } from "@atlas/agent";
+ import {
+   AtlasApiError,
+   type CanonicalPrincipal,
+@@ -34,20 +35,35 @@ export class TaskRunner {
+ 
+     try {
+       const run = await this.taskService.createRun(taskId);
++      let stopReason: ToolLoopStopReason | undefined;
+ 
+       try {
+         const output = await this.agentService.runTaskPrompt(
+           taskId,
+           task.profileId,
+           task.prompt,
+-          principal
++          principal,
++          {
++            onToolLoopStop: (reason) => {
++              stopReason = reason;
++            },
++          }
+         );
+ 
++        if (stopReason) {
++          const error = stoppedTaskError(stopReason);
++          await this.taskService.completeRun(run.id, taskId, { error, output });
++          await this.taskService.setTaskStatus(taskId, "failed");
++          return { error, output };
++        }
+         await this.taskService.completeRun(run.id, taskId, { output });
+         await this.taskService.setTaskStatus(taskId, "done");
+         return { output };
+       } catch (error) {
+-        const message = error instanceof Error ? error.message : String(error);
++        const original = error instanceof Error ? error.message : String(error);
++        const message = stopReason
++          ? stoppedTaskError(stopReason, original)
++          : original;
+         await this.taskService.completeRun(run.id, taskId, { error: message });
+         await this.taskService.setTaskStatus(taskId, "failed");
+         return { error: message };
+@@ -117,3 +133,15 @@ export class TaskRunner {
+     return [...this.running];
+   }
+ }
++
++function stoppedTaskError(
++  reason: ToolLoopStopReason,
++  originalError?: string
++): string {
++  const detail =
++    reason === "no_progress"
++      ? "Tool execution stopped after repeated outcomes without progress."
++      : "Tool execution stopped at the iteration limit.";
++  const summary = `[${reason}] ${detail}`;
++  return originalError === undefined ? summary : `${originalError}\n${summary}`;
++}
+diff --git a/apps/server/src/tools/conversation-tools.ts b/apps/server/src/tools/conversation-tools.ts
+index 19902e91..9c8c94b8 100644
+--- a/apps/server/src/tools/conversation-tools.ts
++++ b/apps/server/src/tools/conversation-tools.ts
+@@ -19,7 +19,9 @@ export const searchChatsInputSchema = z.object({
+   query: z
+     .string()
+     .min(1)
+-    .describe("Search query to find in past conversations and sessions"),
++    .describe(
++      "Keywords or a natural-language query for past conversations. Distinctive names and terms improve lexical matching."
++    ),
+ });
+ 
+ export const getConversationInputSchema = z.object({
+@@ -69,6 +71,7 @@ export function createConversationTools(db: DatabaseAdapter): ToolDefinition[] {
+         before: parsed.before,
+         excludeSuperAgent,
+         limit: parsed.limit,
++        matchMode: "keywords",
+         profileId: parsed.profileId,
+         userId: principal.userId,
+       });
+diff --git a/apps/server/src/tools/memory-tools.ts b/apps/server/src/tools/memory-tools.ts
+index 678fc723..37b1df78 100644
+--- a/apps/server/src/tools/memory-tools.ts
++++ b/apps/server/src/tools/memory-tools.ts
+@@ -5,10 +5,16 @@ import type { MemoryScope } from "@atlas/db";
+ import { z } from "zod";
+ import type { MemoryService } from "../services/memory-service";
+ 
+-const memoryScopeSchema = z
++const memoryWriteScopeSchema = z
++  .enum(["user", "organization", "agent"])
++  .describe(
++    "Audience across sessions within this organization: 'user' for the current user's memory; 'agent' for memory shared with users of the current profile; 'organization' for workspace-shared memory whose changes require an administrator. Choose the intended audience, not the topic."
++  );
++
++const memoryReadScopeSchema = z
+   .enum(["user", "project", "organization", "agent"])
+   .describe(
+-    "Memory scope: 'user' for user preferences, 'project' for workspace/project facts, 'organization' for company facts, 'agent' for profile persona."
++    "Filter by current user, current profile ('agent'), or organization. 'project' is a legacy filter for records owned by the current session only; it does not provide shared project memory. Omitting scope searches the user, agent and organization audiences."
+   );
+ 
+ export const memorySearchInputSchema = z.object({
+@@ -16,7 +22,7 @@ export const memorySearchInputSchema = z.object({
+   query: z
+     .string()
+     .describe("Search keywords or natural language query for memories"),
+-  scope: memoryScopeSchema.optional().describe("Optional scope filter"),
++  scope: memoryReadScopeSchema.optional(),
+ });
+ 
+ export const memoryWriteInputSchema = z.object({
+@@ -33,11 +39,7 @@ export const memoryWriteInputSchema = z.object({
+     .optional()
+     .default(1)
+     .describe("Importance from 1 (low) to 5 (critical)"),
+-  projectId: z
+-    .string()
+-    .optional()
+-    .describe("Project ID when scope is 'project'"),
+-  scope: memoryScopeSchema.optional().default("user"),
++  scope: memoryWriteScopeSchema.optional().default("user"),
+   subject: z
+     .string()
+     .optional()
+@@ -60,9 +62,20 @@ export const memoryDeleteInputSchema = z.object({
+ 
+ export const memoryListInputSchema = z.object({
+   limit: z.number().int().min(1).max(100).optional().default(20),
+-  scope: memoryScopeSchema.optional(),
++  scope: memoryReadScopeSchema.optional(),
+ });
+ 
++function rejectUnboundProjectWrite(input: unknown): void {
++  if (typeof input !== "object" || input === null) {
++    return;
++  }
++  if (("scope" in input && input.scope === "project") || "projectId" in input) {
++    throw new Error(
++      "Project memory cannot be written without a trusted shared project context. No memory was saved. Choose 'user' for the current user's memory, 'agent' for memory shared with the current profile, or 'organization' for workspace-shared memory with administrator authority. Do not change the intended audience without authorization."
++    );
++  }
++}
++
+ function canWriteOrganizationMemory(context: ToolContext): boolean {
+   return context.orgRole === "admin" || context.isPlatformAdmin === true;
+ }
+@@ -75,11 +88,7 @@ function requireOrgId(context: ToolContext): string {
+   return orgId;
+ }
+ 
+-function resolveOwnerId(
+-  scope: MemoryScope,
+-  context: ToolContext,
+-  projectId?: string
+-): string {
++function resolveOwnerId(scope: MemoryScope, context: ToolContext): string {
+   const principal = principalFromToolContext(context);
+   if (scope === "user") {
+     return principal.userId;
+@@ -92,9 +101,11 @@ function resolveOwnerId(
+     return profileId;
+   }
+   if (scope === "project") {
+-    const owner = projectId?.trim() || context.sessionId?.trim();
++    const owner = context.sessionId?.trim();
+     if (!owner) {
+-      throw new Error("projectId or sessionId is required for project memory.");
++      throw new Error(
++        "sessionId is required to access legacy session-owned project memory."
++      );
+     }
+     return owner;
+   }
+@@ -132,7 +143,7 @@ export function createMemoryTools(
+ ): ToolDefinition[] {
+   const memorySearchTool: ToolDefinition = {
+     description:
+-      "Search durable memories across user preferences, project knowledge, organization rules, or agent profile facts.",
++      "Search durable memories for the current user, profile, or organization. An explicit 'project' filter accesses only legacy records owned by the current session, not shared project knowledge.",
+     name: "memory_search",
+     parallelSafe: true,
+     parameters: jsonSchemaFromZod(memorySearchInputSchema),
+@@ -169,11 +180,14 @@ export function createMemoryTools(
+ 
+   const memoryWriteTool: ToolDefinition = {
+     description:
+-      "Save an independent durable fact, preference, or operating guideline for the user, project, organization, or agent. Existing facts are preserved, even with the same subject; an exact repeated fact reuses its record. For a correction or withdrawal of an existing fact, use memory_update on its ID rather than adding another current version.",
++      "Save an independent durable fact, preference, or operating guideline for the current user, profile, or organization across sessions. Scope selects who can access it; shared project context is not supported. Existing facts are preserved, even with the same subject; an exact repeated fact reuses its record. For a correction or withdrawal of an existing fact, use memory_update on its ID rather than adding another current version.",
+     name: "memory_write",
+     parallelSafe: false,
+     parameters: jsonSchemaFromZod(memoryWriteInputSchema),
+     async run(input, context) {
++      // Reject legacy arguments before Zod can strip an unknown projectId and
++      // accidentally save the fact for a different audience.
++      rejectUnboundProjectWrite(input);
+       const parsed = memoryWriteInputSchema.parse(input);
+       const orgId = requireOrgId(context);
+       parsed.content = applyRedactionBoundary(parsed.content, "memory");
+@@ -185,7 +199,7 @@ export function createMemoryTools(
+           "Workspace Admin access required to write organization memories."
+         );
+       }
+-      const ownerId = resolveOwnerId(parsed.scope, context, parsed.projectId);
++      const ownerId = resolveOwnerId(parsed.scope, context);
+ 
+       const saved = await memoryService.writeMemory(
+         orgId,
+@@ -264,7 +278,7 @@ export function createMemoryTools(
+ 
+   const memoryListTool: ToolDefinition = {
+     description:
+-      "List durable memories for the current user, agent, or organization.",
++      "List durable memories for the current user, profile, or organization. An explicit 'project' filter lists only legacy records owned by the current session, not shared project knowledge.",
+     name: "memory_list",
+     parallelSafe: true,
+     parameters: jsonSchemaFromZod(memoryListInputSchema),
+diff --git a/packages/agent/src/chat.ts b/packages/agent/src/chat.ts
+index 840726b5..31d52a09 100644
+--- a/packages/agent/src/chat.ts
++++ b/packages/agent/src/chat.ts
+@@ -207,11 +207,15 @@ export interface AgentChatSession {
+   ): Promise<string>;
+ }
+ 
++export type ToolLoopStopReason = "no_progress" | "iteration_limit";
++
+ export interface SendStreamOptions {
+   /** Diagnostic only; partial output must never be replayed as valid history. */
+   onIncompleteCompletion?: (error: IncompleteCompletionError) => void;
+   /** Await durable tool evidence before acknowledging it to a provider runtime. */
+   onToolCheckpoint?: () => Promise<void>;
++  /** Observes a mechanical stop for this invocation; observer failures are isolated. */
++  onToolLoopStop?: (reason: ToolLoopStopReason) => void | Promise<void>;
+   /** Cancels the turn: stops the tool loop and asks running tools to abort. */
+   signal?: AbortSignal;
+ }
+@@ -525,6 +529,7 @@ export function createAgentChatSession(
+             onFailedSend: failedSendHandler(),
+             onIncompleteCompletion: sendOptions?.onIncompleteCompletion,
+             onToolCheckpoint: sendOptions?.onToolCheckpoint,
++            onToolLoopStop: sendOptions?.onToolLoopStop,
+             preprocessUserContent: options.preprocessUserContent,
+             rehydrateMessagesForProvider: options.rehydrateMessagesForProvider,
+             resolvePromptContext: options.resolvePromptContext,
+@@ -557,6 +562,7 @@ export function createAgentChatSession(
+             onFailedSend: failedSendHandler(),
+             onIncompleteCompletion: streamOptions?.onIncompleteCompletion,
+             onToolCheckpoint: streamOptions?.onToolCheckpoint,
++            onToolLoopStop: streamOptions?.onToolLoopStop,
+             preprocessUserContent: options.preprocessUserContent,
+             rehydrateMessagesForProvider: options.rehydrateMessagesForProvider,
+             resolvePromptContext: options.resolvePromptContext,
+@@ -596,6 +602,7 @@ async function sendMessage(
+     onFailedSend?: (hasCompletedTools: boolean) => void;
+     onToolCheckpoint?: () => Promise<void>;
+     onIncompleteCompletion?: (error: IncompleteCompletionError) => void;
++    onToolLoopStop?: SendStreamOptions["onToolLoopStop"];
+     resolvePromptContext?: (
+       context?: ResolvePromptContextInput
+     ) => string | Promise<string>;
+@@ -766,6 +773,7 @@ async function sendMessage(
+       {
+         isCurrentTurn: options.isCurrentTurn,
+         onIncompleteCompletion: options.onIncompleteCompletion,
++        onToolLoopStop: options.onToolLoopStop,
+         onToolsComplete: async () => {
+           completedToolHistory = [...history];
+           await options.onToolCheckpoint?.();
+@@ -839,7 +847,14 @@ function restoreFailedSend(
+   history.splice(0, history.length, ...historyBeforeTurn);
+ }
+ 
+-class ToolExecutionLimitError extends Error {}
++class ToolExecutionLimitError extends Error {
++  constructor(
++    readonly reason: ToolLoopStopReason,
++    message: string
++  ) {
++    super(message);
++  }
++}
+ 
+ async function runConversation(
+   provider: ProviderClient,
+@@ -866,6 +881,7 @@ async function runConversation(
+   hooks?: {
+     isCurrentTurn?: () => boolean;
+     onIncompleteCompletion?: (error: IncompleteCompletionError) => void;
++    onToolLoopStop?: SendStreamOptions["onToolLoopStop"];
+     onToolsComplete: () => Promise<void>;
+     runCompaction?: (force: boolean) => Promise<CompactionResponse>;
+   }
+@@ -875,6 +891,7 @@ async function runConversation(
+   let totalTurns = 0;
+   let totalToolCalls = 0;
+   let stopReason = "The tool iteration limit was reached.";
++  let typedStopReason: ToolLoopStopReason = "iteration_limit";
+   let runtimeToolsStopped = false;
+   let outcome: "completed" | "failed" | "cancelled" | "suspended" = "failed";
+ 
+@@ -958,7 +975,10 @@ async function runConversation(
+             );
+           }
+           if (runtimeToolsStopped || totalToolCalls >= MAX_TOOL_ITERATIONS) {
+-            throw new ToolExecutionLimitError(stopReason);
++            throw new ToolExecutionLimitError(
++              runtimeToolsStopped ? "no_progress" : "iteration_limit",
++              stopReason
++            );
+           }
+           runtimeToolCalls += 1;
+           totalToolCalls += 1;
+@@ -1076,6 +1096,7 @@ async function runConversation(
+           }
+         }
+         if (failure instanceof ToolExecutionLimitError) {
++          typedStopReason = failure.reason;
+           break;
+         }
+         if (
+@@ -1163,6 +1184,7 @@ async function runConversation(
+         canRunToolCallsInParallel(tools, result.toolCalls)
+       );
+       if (stalled) {
++        typedStopReason = "no_progress";
+         metrics.duplicateToolCallPreventionsTotal.inc();
+         stopReason =
+           "Repeated tool calls returned identical outcomes without observable progress.";
+@@ -1179,6 +1201,18 @@ async function runConversation(
+       }
+     }
+ 
++    // The stop belongs to this invocation, regardless of whether finalization
++    // later succeeds. Observers must not undo effects or replace a provider error.
++    if (hooks?.onToolLoopStop) {
++      try {
++        void Promise.resolve(hooks.onToolLoopStop(typedStopReason)).catch(
++          () => undefined
++        );
++      } catch {
++        // Synchronous observer failures are isolated too.
++      }
++    }
++
+     // Give the model the completed results and one tool-free final response.
+     // Never substitute an earlier preamble for an unfinished task's outcome.
+     signal?.throwIfAborted();
+diff --git a/packages/agent/src/index.ts b/packages/agent/src/index.ts
+index 540993cf..31bd8075 100644
+--- a/packages/agent/src/index.ts
++++ b/packages/agent/src/index.ts
+@@ -74,6 +74,7 @@ export type {
+   ChatCapabilityPolicy,
+   ChatCapabilityPolicyEntry,
+   ResolvePromptContextInput,
++  ToolLoopStopReason,
+ } from "./chat";
+ export { ChatCapabilityError } from "./chat";
+ export type { CompactionConfig } from "./history-compaction";
+diff --git a/packages/db/src/adapters/in-memory.ts b/packages/db/src/adapters/in-memory.ts
+index 140b03d6..26d618f3 100644
+--- a/packages/db/src/adapters/in-memory.ts
++++ b/packages/db/src/adapters/in-memory.ts
+@@ -5,6 +5,10 @@ import {
+ } from "@atlas/core";
+ import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
+ import { LLM_USAGE_STATS_ID } from "../constants";
++import {
++  ConversationKeywordSearch,
++  readConversationMessagePayload,
++} from "../conversation-keyword-search";
+ import { isExactMemoryFact } from "../memory-identity";
+ import {
+   boundedMemoryTerms,
+@@ -145,27 +149,6 @@ function importToolExpectationMatches(
+   );
+ }
+ 
+-function readConversationMessagePayload(payload: unknown): {
+-  role: string;
+-  text: string;
+-} {
+-  if (typeof payload === "string") {
+-    return { role: "user", text: payload };
+-  }
+-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+-    return { role: "user", text: JSON.stringify(payload ?? "") };
+-  }
+-
+-  const record = payload as Record<string, unknown>;
+-  return {
+-    role: typeof record.role === "string" ? record.role : "user",
+-    text:
+-      typeof record.content === "string"
+-        ? record.content
+-        : JSON.stringify(record.content ?? ""),
+-  };
+-}
+-
+ const IN_MEMORY_ACTIVE_EXECUTION_STATUSES = new Set([
+   "queued",
+   "running",
+@@ -2319,6 +2302,14 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
+         return [];
+       }
+ 
++      const keywords =
++        options.matchMode === "keywords"
++          ? new ConversationKeywordSearch(clean, options.limit)
++          : undefined;
++      if (keywords?.empty) {
++        return [];
++      }
++
+       const needle = clean.toLowerCase();
+       const results = [];
+       for (const session of sessions.values()) {
+@@ -2353,6 +2344,15 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
+           );
+         }
+         const seen = new Set<string>();
++        if (keywords) {
++          candidates.sort(
++            (left, right) =>
++              Number(Boolean(left.archiveId)) -
++                Number(Boolean(right.archiveId)) ||
++              right.createdAt.localeCompare(left.createdAt) ||
++              Buffer.compare(Buffer.from(right.id), Buffer.from(left.id))
++          );
++        }
+         for (const message of candidates) {
+           const serialized = JSON.stringify(message.payload);
+           if (seen.has(serialized)) {
+@@ -2366,6 +2366,26 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
+             continue;
+           }
+           const parsed = readConversationMessagePayload(message.payload);
++          if (keywords) {
++            keywords.add(
++              {
++                ...(message.archiveId
++                  ? {
++                      archivedAt: message.createdAt,
++                      archiveId: message.archiveId,
++                    }
++                  : {}),
++                createdAt: message.createdAt,
++                messageId: message.id,
++                profileId: session.profileId,
++                role: parsed.role,
++                sessionId: session.id,
++                sessionTitle: session.title ?? null,
++              },
++              parsed.text
++            );
++            continue;
++          }
+           const matchIndex = parsed.text.toLowerCase().indexOf(needle);
+           if (matchIndex < 0) {
+             continue;
+@@ -2390,6 +2410,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
+         }
+       }
+ 
++      if (keywords) {
++        return keywords.results();
++      }
+       results.sort((left, right) =>
+         right.createdAt.localeCompare(left.createdAt)
+       );
+diff --git a/packages/db/src/adapters/sqlite.ts b/packages/db/src/adapters/sqlite.ts
+index 02402b10..708713d1 100644
+--- a/packages/db/src/adapters/sqlite.ts
++++ b/packages/db/src/adapters/sqlite.ts
+@@ -8,6 +8,10 @@ import {
+ } from "@atlas/core";
+ import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
+ import { LLM_USAGE_STATS_ID, WORKSPACE_SETTINGS_ID } from "../constants";
++import {
++  ConversationKeywordSearch,
++  readConversationMessagePayload,
++} from "../conversation-keyword-search";
+ import { ensureDatabaseDirectory, resolveDatabasePath } from "../database-url";
+ import { isExactMemoryFact } from "../memory-identity";
+ import {
+@@ -69,6 +73,11 @@ import type {
+   StoredWorkspaceSettingsRecord,
+ } from "../types";
+ 
++// json_each decodes scalar elements. Re-encode them so a single JSON parse
++// preserves string/object identity in both deduplication and transcript reads.
++const ARCHIVED_CONVERSATION_PAYLOAD_SQL =
++  "CASE WHEN j.type IN ('object', 'array') THEN j.value WHEN j.type IN ('true', 'false') THEN j.type ELSE json_quote(j.value) END";
++
+ export interface SqliteDatabase {
+   adapter: DatabaseAdapter;
+   close(): void;
+@@ -3100,7 +3109,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
+         archive
+           ? db
+               .prepare(
+-                "SELECT a.id || ':' || j.key AS id, CAST(j.key AS INTEGER) AS seq, j.value AS payload, a.created_at FROM session_history_archives a, json_each(a.messages) j WHERE a.id = ? AND a.session_id = ? ORDER BY seq ASC LIMIT ? OFFSET ?"
++                `SELECT a.id || ':' || j.key AS id, CAST(j.key AS INTEGER) AS seq, ${ARCHIVED_CONVERSATION_PAYLOAD_SQL} AS payload, a.created_at FROM session_history_archives a, json_each(a.messages) j WHERE a.id = ? AND a.session_id = ? ORDER BY seq ASC LIMIT ? OFFSET ?`
+               )
+               .all(options.archiveId!, sessionId, limit, offset)
+           : db
+@@ -3116,18 +3125,13 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
+       }>;
+ 
+       const messages: StoredConversationMessageItem[] = messageRows.map((m) => {
+-        let text = "";
+-        let role = "user";
++        let payload: unknown;
+         try {
+-          const parsed = JSON.parse(m.payload);
+-          role = parsed.role || "user";
+-          text =
+-            typeof parsed.content === "string"
+-              ? parsed.content
+-              : JSON.stringify(parsed.content || "");
++          payload = JSON.parse(m.payload);
+         } catch {
+-          text = m.payload;
++          payload = m.payload;
+         }
++        const { text, role } = readConversationMessagePayload(payload);
+         return {
+           createdAt: m.created_at,
+           id: m.id,
+@@ -4396,6 +4400,17 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
+         return [];
+       }
+ 
++      const keywords =
++        options.matchMode === "keywords"
++          ? new ConversationKeywordSearch(clean, options.limit)
++          : undefined;
++      if (keywords?.empty) {
++        return [];
++      }
++
++      const archivedPayload = keywords
++        ? ARCHIVED_CONVERSATION_PAYLOAD_SQL
++        : "j.value";
+       let sql = `
+         WITH all_messages AS (
+           SELECT m.id AS message_id, m.session_id, m.payload, m.created_at, NULL AS archive_id
+@@ -4403,7 +4418,7 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
+           INNER JOIN sessions owner ON owner.id = m.session_id
+           WHERE owner.org_id = ?
+           UNION ALL
+-          SELECT a.id || ':' || j.key AS message_id, a.session_id, j.value AS payload,
++          SELECT a.id || ':' || j.key AS message_id, a.session_id, ${archivedPayload} AS payload,
+             a.created_at, a.id AS archive_id
+           FROM session_history_archives a
+           INNER JOIN sessions owner ON owner.id = a.session_id
+@@ -4452,6 +4467,45 @@ function createSqliteDatabaseAdapter(db: Database): DatabaseAdapter {
+         params.push(options.before);
+       }
+ 
++      if (keywords) {
++        // Keep all existing tenant/owner/profile/date/archive guards. Stream
++        // eligible rows into a bounded collector; recent weak matches must not
++        // hide older relevant messages through a premature SQL result limit.
++        const rows = db.prepare(sql).iterate(...params) as Iterable<{
++          archive_id: string | null;
++          created_at: string;
++          message_id: string;
++          payload: string;
++          profile_id: string;
++          session_id: string;
++          session_title: string | null;
++        }>;
++        for (const row of rows) {
++          let payload: unknown;
++          try {
++            payload = JSON.parse(row.payload);
++          } catch {
++            payload = row.payload;
++          }
++          const parsed = readConversationMessagePayload(payload);
++          keywords.add(
++            {
++              ...(row.archive_id
++                ? { archivedAt: row.created_at, archiveId: row.archive_id }
++                : {}),
++              createdAt: row.created_at,
++              messageId: row.message_id,
++              profileId: row.profile_id,
++              role: parsed.role,
++              sessionId: row.session_id,
++              sessionTitle: row.session_title,
++            },
++            parsed.text
++          );
++        }
++        return keywords.results();
++      }
++
+       sql += " AND m.payload LIKE ?";
+       params.push(`%${clean}%`);
+ 
+diff --git a/packages/db/src/conversation-keyword-search.ts b/packages/db/src/conversation-keyword-search.ts
+new file mode 100644
+index 00000000..b71629a4
+--- /dev/null
++++ b/packages/db/src/conversation-keyword-search.ts
+@@ -0,0 +1,114 @@
++import {
++  memoryResultLimit,
++  memoryTermWeight,
++  normalizeMemoryText,
++  tokenizeMemoryQuery,
++} from "./memory-search";
++import type { StoredConversationSearchResult } from "./types";
++
++type SearchIdentity = Omit<StoredConversationSearchResult, "matchedSnippet">;
++type RankedMatch = { result: StoredConversationSearchResult; score: number };
++
++export function readConversationMessagePayload(payload: unknown): {
++  role: string;
++  text: string;
++} {
++  if (typeof payload === "string") {
++    return { role: "user", text: payload };
++  }
++  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
++    return { role: "user", text: JSON.stringify(payload ?? "") };
++  }
++  const record = payload as Record<string, unknown>;
++  return {
++    role: typeof record.role === "string" ? record.role : "user",
++    text:
++      typeof record.content === "string"
++        ? record.content
++        : JSON.stringify(record.content ?? ""),
++  };
++}
++
++function compareMatches(left: RankedMatch, right: RankedMatch): number {
++  return (
++    right.score - left.score ||
++    right.result.createdAt.localeCompare(left.result.createdAt) ||
++    left.result.sessionId.localeCompare(right.result.sessionId) ||
++    left.result.messageId.localeCompare(right.result.messageId)
++  );
++}
++
++function snippet(text: string, terms: readonly string[]): string {
++  const lower = text.toLowerCase();
++  let index = -1;
++  for (const term of terms) {
++    const found = lower.indexOf(term);
++    if (found >= 0 && (index < 0 || found < index)) {
++      index = found;
++    }
++  }
++  // NFKC can change character offsets. Preserve the original text rather than
++  // invent a source offset when only its normalized spelling matched.
++  const start = index < 0 ? 0 : Math.max(0, index - 80);
++  const end = Math.min(text.length, start + 240);
++  return `${start ? "..." : ""}${text.slice(start, end)}${end < text.length ? "..." : ""}`;
++}
++
++/** Bounded query/results; callers supply only authorized, deduplicated rows.
++ * Ranking scans the eligible history before the result limit. It is lexical
++ * retrieval, not semantic search; full history scanning remains linear.
++ */
++export class ConversationKeywordSearch {
++  private readonly terms: string[];
++  private readonly limit: number;
++  private readonly matches: RankedMatch[] = [];
++
++  constructor(query: string, limit?: number) {
++    this.terms = tokenizeMemoryQuery(query);
++    this.limit = memoryResultLimit(limit, 20);
++  }
++
++  get empty(): boolean {
++    return this.terms.length === 0 || this.limit === 0;
++  }
++
++  add(identity: SearchIdentity, text: string): void {
++    if (this.empty) {
++      return;
++    }
++    const normalized = normalizeMemoryText(text);
++    let score = 0;
++    for (const term of this.terms) {
++      if (normalized.includes(term)) {
++        score += memoryTermWeight(term);
++      }
++    }
++    if (score === 0) {
++      return;
++    }
++    const match: RankedMatch = {
++      result: { ...identity, matchedSnippet: snippet(text, this.terms) },
++      score,
++    };
++    let low = 0;
++    let high = this.matches.length;
++    while (low < high) {
++      const middle = Math.floor((low + high) / 2);
++      if (compareMatches(match, this.matches[middle]!) < 0) {
++        high = middle;
++      } else {
++        low = middle + 1;
++      }
++    }
++    if (low < this.limit) {
++      this.matches.splice(low, 0, match);
++      if (this.matches.length > this.limit) {
++        this.matches.pop();
++      }
++    }
++  }
++
++  results(): StoredConversationSearchResult[] {
++    return this.matches.map(({ result }) => result);
++  }
++}
+diff --git a/packages/db/src/memory-search.ts b/packages/db/src/memory-search.ts
+index 414a14f3..3ee1a30a 100644
+--- a/packages/db/src/memory-search.ts
++++ b/packages/db/src/memory-search.ts
+@@ -39,7 +39,6 @@ export function tokenizeMemoryQuery(query: string): string[] {
+   for (const part of WORDS.segment(normalized)) {
+     const term = part.segment;
+     if (
+-      part.isWordLike &&
+       HAS_WORD.test(term) &&
+       term.length <= MAX_TERM_CHARS &&
+       !STOP_WORDS.has(term)
+diff --git a/packages/db/src/types.ts b/packages/db/src/types.ts
+index ab5e851f..723bac67 100644
+--- a/packages/db/src/types.ts
++++ b/packages/db/src/types.ts
+@@ -1374,6 +1374,8 @@ export interface DatabaseAdapter {
+       before?: string;
+       excludeSuperAgent?: boolean;
+       limit?: number;
++      /** Native topic lookup opts into bounded lexical ranking; default stays literal. */
++      matchMode?: "literal" | "keywords";
+       profileId?: string;
+       userId?: string;
+     }

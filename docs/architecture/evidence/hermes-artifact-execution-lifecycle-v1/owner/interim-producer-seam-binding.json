@@ -1,0 +1,15 @@
+{
+  "qualification": "Stable API interim snapshot; final owner source binding required before integration readiness",
+  "files": [
+    {
+      "path": "packages/core/src/artifact-publication.ts",
+      "source": "/private/tmp/atlas-artifact-producer-seam/source/packages/core/src/artifact-publication.ts",
+      "sha256": "1c7eabb59e4bd71592ea6f1332367375a1951eaba0ed43196340d4dea5c4e91b"
+    },
+    {
+      "path": "packages/core/src/contract.ts",
+      "source": "/private/tmp/atlas-artifact-producer-seam/source/packages/core/src/contract.ts",
+      "sha256": "117413933f3aa742526cef75f362404b9219a65511b85159b95a7eb5bbc6955f"
+    }
+  ]
+}

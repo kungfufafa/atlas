@@ -1,0 +1,67 @@
+{
+  "at": "2026-09-07T00:26:28.303293+00:00",
+  "status": "ready-for-independent-review-unwired-capture-foundation",
+  "baselineSourceHash": "6cf23f28cc6a9e7c0056c29e605850437e2175e93d63b80111e6f090d7df66dd",
+  "sourceHash": "8942bd95dc70c06f260842a730b64919139341f2727ab79a000146743109c3ad",
+  "sourceFiles": 2088,
+  "rootSourceFilesUnchanged": true,
+  "publicationFoundationUnchanged": true,
+  "ownedChatFoundationUnchanged": true,
+  "providerCalls": 0,
+  "automaticPublicationEnabled": false,
+  "schemaChanged": false,
+  "hostActuallyTested": "darwin-arm64",
+  "linuxGateRun": false,
+  "windowsSupported": false,
+  "observedStableMetadataIsAtomicSnapshotProof": false,
+  "tests": 17,
+  "assertions": 82,
+  "gates": [
+    {
+      "command": "bun test apps/server/src/services/selected-artifact-capture.test.ts",
+      "exitCode": 0,
+      "log": "extended-tests.log",
+      "sha256": "ca6debdc319929026c1206fd12c72369610177d7f61d289c40d93663c0d9c634"
+    },
+    {
+      "command": "bun x tsc --noEmit -p tsconfig.capture.json",
+      "exitCode": 0,
+      "log": "scoped-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "bun x tsc --noEmit -p tsconfig.typecheck.json",
+      "exitCode": 0,
+      "log": "final-production-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "bun x ultracite check apps/server/src/services/selected-artifact-capture.ts apps/server/src/services/selected-artifact-capture-worker.ts apps/server/src/services/selected-artifact-capture.test.ts",
+      "exitCode": 0,
+      "log": "final-lint.log",
+      "sha256": "f0fb4a3217b25586a39fd8850d4932d761f7ca4dc911362381c75d150481fb96"
+    },
+    {
+      "command": "git apply --check /private/tmp/atlas-selected-artifact-capture-foundation/combined.patch",
+      "exitCode": 0,
+      "log": "apply-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "git apply --check /private/tmp/atlas-selected-artifact-capture-foundation/production.patch",
+      "exitCode": 0,
+      "log": "production-apply-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "files": {
+    "combined.patch": "f014825cf699b6bee35a6b7f7981b0992029bfdc457fdd8dfa7d5037e84c674b",
+    "production.patch": "80b6ec8ca33edcf25a3d3f419b2e6f23da9e7b15a335278c222634acd1937fcd",
+    "source-inventory.json": "bc897f7a5af2a1eb89b328841d70069824ca72b64e002a68c4829e79fc8b7a04",
+    "implementation-notes.md": "a5012ab196ef60df264fe2a72a08e35c2269ba9bbe37e80ff04464f6067465fe",
+    "runtime-evidence.json": "6b573625f2a45e5cba99d7cb6c5053b73943e375c306d1bb5c9c3887bf3c5d10",
+    "runtime-source-binding.json": "2851c3e9af09b6a6ad553e424aadc46ccec4993ece846246d69813b89bd37645",
+    "source/tsconfig.capture.json": "985ca27b37c80a771e2b09a38d3c88fb2f15fa663ded969783ece072550c6570"
+  },
+  "initialFailureRetained": "initial-format.log; missing dependency links caused temporary setup rejection; no package install was performed"
+}

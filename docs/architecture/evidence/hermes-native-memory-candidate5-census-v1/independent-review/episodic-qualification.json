@@ -1,0 +1,47 @@
+{
+  "at": "2026-09-07T00:12:11.133163+00:00",
+  "status": "additive-cross-condition-qualification",
+  "preservedReviewSha256": "2258db74b0e45464990c249d266ff679519e643b1022d1fc71de287226efd649",
+  "registeredSampleUnchanged": true,
+  "scoreChanges": false,
+  "newTranscriptArmsOpened": 0,
+  "selectedExplicit": {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas",
+    "evidence": {
+      "projection": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/episodic_decision-1907-explicit-memory-atlas-warm-projection.json",
+        "sha256": "c0bd6dbc23eabb992a03f227833499af877a17225d12d482016fcd0209791063"
+      },
+      "chronology": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/episodic_decision-1907-explicit-memory-atlas-warm-chronology.json",
+        "sha256": "c07e494bc3845fef4da97ea19604746b0d028f0bb5ffeeea75eea599ff5ca27d"
+      },
+      "manual": {
+        "sourcePath": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit/manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-atlas.json",
+        "copyPath": "/private/tmp/atlas-c5-independent-census-check/selected/episodic_decision-1907-explicit-memory-atlas-warm-manual.json",
+        "sha256": "50b8ddeb96d7a2e894ef38a850691bf3aecc0e7c90eca73d7b9025854d90baea"
+      }
+    },
+    "input": "The deadline allows either. I choose rail because it costs less.",
+    "persisted": "Project Linden-838: Chose rail shipping at 167 credits over air at 203 credits. Deadline allows either option; rail selected on cost.",
+    "public": "Deadline permits either. Rail chosen \u2014 saves 36 credits, no schedule penalty.",
+    "assessment": "No comparative transit-duration fact is in the selected persisted content. The original no-schedule-penalty interpretation is limited to meeting the stated deadline. It does not establish equal transit time, absence of any schedule difference, or a slower rail duration. The broad public wording is less precise than the input and should not be cited as proof of equal timing."
+  },
+  "unselectedNativeOwnerCitation": {
+    "id": "development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-atlas",
+    "reviewedIndependentlyHere": false,
+    "provenance": "Existing census owner clarification delivered by agent message; unregistered transcript not opened by this reviewer.",
+    "quote": "the project deadline permits the longer transit time",
+    "finding": "unsupported-persisted-ancillary-assumption",
+    "ownerReportedPersistence": "native memory_write, active DB snapshot and recall memory_search; exact repeat reuses row",
+    "sourceRoot": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit",
+    "references": {
+      "manual/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-atlas.json": "837eff990e62c0db97bbeb4f67b8d0e3a89f44531caabfd4b261c08ac1ec1850",
+      "arms/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-atlas.json": "2b9402bfc328104296575a9345ac083721108b5bf6a047e1c51fdcf1a4989973",
+      "public-chronology/development-2026-09-06T22-55-00-233Z-d062ca06-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-atlas.json": "84837bc878de7fd7de5d95e2f697f771ba4b71360cec390c36dd80b405592325"
+    }
+  },
+  "qualification": "Both modes meeting a deadline does not support an added comparative assertion that rail takes longer. The native-default owner finding remains; the selected explicit-memory assessment neither retracts nor independently verifies that separate arm. Agreement in the registered 20-arm sample is not blanket agreement across all 96 arms."
+}

@@ -1,0 +1,7 @@
+{
+  "baselineChat": "daa48027534b58b02bad7372659bc59d722bd3cc075ddd528c985339793fbffc",
+  "restoredChat": "cf31354002f8c24eaa224c3864f8c7b7033e87e13f48f9936ba750793c82b27c",
+  "expectedRestoredChat": "cf31354002f8c24eaa224c3864f8c7b7033e87e13f48f9936ba750793c82b27c",
+  "test": "1a3cf6faa52ec202a9d640da6d4fb5d5f0afb9f536a56fcf7c21f1fd8739d605",
+  "exitCode": 1
+}

@@ -61,7 +61,7 @@ export async function runCancellationCleanupSuite(): Promise<ReleaseGateCheck> {
       durationMs: Date.now() - start,
       id: "cancellation_cleanup",
       message:
-        "Cancellation aborts execution cleanly with zero zombie artifacts",
+        "Queued policy override marks the prior attempt cancelled and links its replacement; running process cancellation and artifact cleanup are not exercised",
       required: true,
       status: "pass",
     };

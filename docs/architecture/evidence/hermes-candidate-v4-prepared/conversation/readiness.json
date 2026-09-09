@@ -1,0 +1,89 @@
+{
+  "candidateBaseSourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+  "baseArchiveSha256": "e738224f0c13eeae6a2a3739900f983d879f6cab88171e5bd570adc7634e09c5",
+  "baseMembers": 2072,
+  "rootBaseUnchanged": true,
+  "changes": [
+    {
+      "path": "apps/server/src/tools/conversation-tools.test.ts",
+      "beforeSha256": "18d32af86bef6d7a296aa3a937d704958d715d79546b6bca9d9429c921fc8584",
+      "afterSha256": "5ee3c7564f7653c707ee7b061f24e0f3fe1f6f01f2d1972725b47899404363ea",
+      "production": false
+    },
+    {
+      "path": "apps/server/src/tools/conversation-tools.ts",
+      "beforeSha256": "477afdccd3d50a449f2894ea2a29e347b3954b0e0d5d53e50f9518111c26b4bf",
+      "afterSha256": "017de23c293b55225d77925788e1fdecb90e3ed6114993c0bbb6a57e951d4ebc",
+      "production": true
+    },
+    {
+      "path": "packages/db/src/adapters/in-memory.ts",
+      "beforeSha256": "86c60dabf6d3d356a6cbb98ca441fe8bb5538ea2feeb5ab3f459354a3600ba38",
+      "afterSha256": "b78cdbb81211b568105d68f6355d0611264e1a1d65a97d9107279f54d178b49b",
+      "production": true
+    },
+    {
+      "path": "packages/db/src/adapters/sqlite.ts",
+      "beforeSha256": "56da6d8329506ade13ee1bd769554afca69bac09667dbd483dfe71aa6f69290c",
+      "afterSha256": "53c0c20e17f08fee99855edb609de5cc0c410804bec1728452558e39106c455c",
+      "production": true
+    },
+    {
+      "path": "packages/db/src/conversation-keyword-search.test.ts",
+      "beforeSha256": null,
+      "afterSha256": "34a6abe4926877db41830cc7180d096f661f93d9c95d0d80ac77d0fb89ab2adf",
+      "production": false
+    },
+    {
+      "path": "packages/db/src/conversation-keyword-search.ts",
+      "beforeSha256": null,
+      "afterSha256": "369dabdaa0448932d1fe40657fd49982301425b2043c1d3c40e14ec926dec770",
+      "production": true
+    },
+    {
+      "path": "packages/db/src/memory-search.test.ts",
+      "beforeSha256": null,
+      "afterSha256": "19157a249a306aa2238e67a9ecbd1800a722c7459663686f0830f8e782b93b13",
+      "production": false
+    },
+    {
+      "path": "packages/db/src/memory-search.ts",
+      "beforeSha256": "b88227efc19168c9c5678bb32f4d2cdeb23dd1ae8ccaa64de9fea88b9ee4ff72",
+      "afterSha256": "8b4560ee6b4a30e6f25c13976382747125c2be89aebfa66abf6448faf0f7a7a2",
+      "production": true
+    },
+    {
+      "path": "packages/db/src/types.ts",
+      "beforeSha256": "dafc54878ee8c148720eda04712fbd311e844c830966b394abcb2b7bc1b29202",
+      "afterSha256": "b3f773e802375f556661222907e3b326b507909ef8248fd9ed207755e6656a4d",
+      "production": true
+    }
+  ],
+  "combinedPatchSha256": "084bb4cf24345c16b5f8b763a3cec0c8ecde753c21d1ea1dcde889251c99af62",
+  "productionPatchSha256": "803dc4e59113548b832ac6063100c79c3f4a252d7de0fcc81e089140d0cb4244",
+  "gates": {
+    "tests": 93,
+    "assertions": 428,
+    "testFiles": 9,
+    "typescript": "passed scoped including changed tests",
+    "lint": "passed 9 files"
+  },
+  "evidence": {
+    "baseline-proof.log": "f2314aee7b0b6784295671defe30528a307ede32ae547b05658fc4029a383c47",
+    "baseline-proof-input.json": "c0274b716ed4073a8e987dd0b44b5eb366e790520db822c9e506bf3058e62bdd",
+    "tests-verified.log": "b25cea75f92f27671688139f7e977b3faf42366ecc4c2e07b9cd683aceefa304",
+    "typecheck-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "lint-final.log": "ba973dac6cdc70d32019ad6677df24a11b0df82ac73ab4ad20f285965308cca9",
+    "format-final.log": "f405b3c9a028aad29e7564896412368507e35fb7f18876361eadc6990de66cd5"
+  },
+  "notApplied": true,
+  "paidEvaluation": "unrun for this delta",
+  "independentReview": "pending final hashes",
+  "limitations": [
+    "lexical OR/substrings, not semantic or exact-phrase guarantees",
+    "topK and query bounded; total SQL/in-memory scan and sorting not bounded",
+    "default literal DB search behavior unchanged",
+    "no importing-session-row fixture; existing profile import publication tests retained",
+    "bundled conversation retrieval and shared numeric tokenization changes; no individual causal live gain"
+  ]
+}

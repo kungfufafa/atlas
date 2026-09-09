@@ -1,0 +1,1944 @@
+{
+  "attempt": "protected-forms-locale-20260906",
+  "boundary": "executeProtectedTool",
+  "converter": "/Users/apriansyahrs/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override/soffice",
+  "records": [
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/D01",
+      "durationMs": 270,
+      "id": "D01",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.docx",
+            "edits": [
+              {
+                "expectedMatches": 1,
+                "find": "Résumé en attente",
+                "kind": "replace_text",
+                "paragraph": 1,
+                "replace": "Résumé validé"
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T03:43:21.020Z",
+                "filename": "input-edited.docx",
+                "id": "4a3d35ab-aaeb-4d1d-bcc8-f7df332dc8a2",
+                "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "path": "artifacts/input-edited.docx",
+                "sizeBytes": 38798
+              }
+            ],
+            "bytesWritten": 38798,
+            "path": "artifacts/input-edited.docx",
+            "revision": "3b5868b3a5168d2c8455910005d45b7f1f789fd2b5fc88c8e7fcbf89d57c957e",
+            "changedParts": ["word/document.xml"],
+            "editCount": 1,
+            "format": "docx",
+            "sourcePreserved": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/input-edited.docx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "docx",
+            "section": "content",
+            "unit": 1,
+            "unitKind": "document",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Structural layout changes, tracked revisions, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 4,
+              "start": 1,
+              "total": 4
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 24,
+                "text": "Résumé validé — 東京 مرحبا",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "characters": 25,
+                "text": "Reference: Reference page",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "characters": 10,
+                "text": "First item",
+                "truncated": false
+              },
+              {
+                "index": 4,
+                "characters": 0,
+                "text": "",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 0,
+              "start": 1,
+              "total": 0
+            },
+            "tables": [],
+            "untrustedContent": true
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/D02",
+      "durationMs": 184,
+      "id": "D02",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.docx",
+            "edits": [
+              {
+                "column": 2,
+                "expectedText": "Inner draft",
+                "kind": "set_table_cell",
+                "row": 2,
+                "table": 2,
+                "text": "Inner approved"
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T03:43:21.213Z",
+                "filename": "input-edited.docx",
+                "id": "84f549e0-24e8-4225-99f9-696291aebec3",
+                "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "path": "artifacts/input-edited.docx",
+                "sizeBytes": 38201
+              }
+            ],
+            "bytesWritten": 38201,
+            "path": "artifacts/input-edited.docx",
+            "revision": "1a7c4de834a5b3291a63fac0b2a370b2f4221f2a6b82c3b5c923edcf69c5a340",
+            "changedParts": ["word/document.xml"],
+            "editCount": 1,
+            "format": "docx",
+            "sourcePreserved": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/input-edited.docx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "docx",
+            "section": "content",
+            "unit": 1,
+            "unitKind": "document",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Structural layout changes, tracked revisions, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 10,
+              "start": 1,
+              "total": 10
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 24,
+                "text": "Nested approval register",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "characters": 12,
+                "text": "Outer header",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "characters": 9,
+                "text": "Unchanged",
+                "truncated": false
+              },
+              {
+                "index": 4,
+                "characters": 12,
+                "text": "Outer keeper",
+                "truncated": false
+              },
+              {
+                "index": 5,
+                "characters": 0,
+                "text": "",
+                "truncated": false
+              },
+              {
+                "index": 6,
+                "characters": 4,
+                "text": "Item",
+                "truncated": false
+              },
+              {
+                "index": 7,
+                "characters": 5,
+                "text": "State",
+                "truncated": false
+              },
+              {
+                "index": 8,
+                "characters": 6,
+                "text": "Nested",
+                "truncated": false
+              },
+              {
+                "index": 9,
+                "characters": 14,
+                "text": "Inner approved",
+                "truncated": false
+              },
+              {
+                "index": 10,
+                "characters": 0,
+                "text": "",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 2,
+              "start": 1,
+              "total": 2
+            },
+            "tables": [
+              {
+                "index": 1,
+                "rows": 2
+              },
+              {
+                "index": 2,
+                "rows": 2
+              }
+            ],
+            "untrustedContent": true
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/D03",
+      "durationMs": 54,
+      "error": "Editing text fields or tracked revisions is unsupported; choose a plain paragraph.",
+      "id": "D03",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.docx",
+            "edits": [
+              {
+                "expectedMatches": 1,
+                "find": "Inserted draft",
+                "kind": "replace_text",
+                "replace": "Inserted approved"
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "error": "Editing text fields or tracked revisions is unsupported; choose a plain paragraph."
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/D04",
+      "durationMs": 373,
+      "id": "D04",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.docx",
+            "limit": 100,
+            "operation": "inspect",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 4,
+              "start": 1,
+              "total": 4
+            },
+            "format": "docx",
+            "imageParts": 0,
+            "packageParts": 20,
+            "units": [
+              {
+                "index": 1,
+                "kind": "document",
+                "notesAvailable": false,
+                "paragraphs": 3,
+                "tables": 0
+              },
+              {
+                "index": 2,
+                "kind": "header",
+                "notesAvailable": false,
+                "paragraphs": 1,
+                "tables": 0
+              },
+              {
+                "index": 3,
+                "kind": "footer",
+                "notesAvailable": false,
+                "paragraphs": 1,
+                "tables": 0
+              },
+              {
+                "index": 4,
+                "kind": "header",
+                "notesAvailable": false,
+                "paragraphs": 1,
+                "tables": 0
+              }
+            ],
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Structural layout changes, tracked revisions, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "untrustedContent": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "input.docx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1,
+            "unit": 2
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "docx",
+            "section": "content",
+            "unit": 2,
+            "unitKind": "header",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Structural layout changes, tracked revisions, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 1,
+              "start": 1,
+              "total": 1
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 18,
+                "text": "First section keep",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 0,
+              "start": 1,
+              "total": 0
+            },
+            "tables": [],
+            "untrustedContent": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "input.docx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1,
+            "unit": 4
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "docx",
+            "section": "content",
+            "unit": 4,
+            "unitKind": "header",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Structural layout changes, tracked revisions, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 1,
+              "start": 1,
+              "total": 1
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 20,
+                "text": "Second section draft",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 0,
+              "start": 1,
+              "total": 0
+            },
+            "tables": [],
+            "untrustedContent": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "input.docx",
+            "edits": [
+              {
+                "expectedMatches": 1,
+                "find": "Second section draft",
+                "kind": "replace_text",
+                "replace": "Second section approved",
+                "unit": 4
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T03:43:21.635Z",
+                "filename": "input-edited.docx",
+                "id": "5319ac97-e55d-4647-a039-03528a70c4ce",
+                "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "path": "artifacts/input-edited.docx",
+                "sizeBytes": 38512
+              }
+            ],
+            "bytesWritten": 38512,
+            "path": "artifacts/input-edited.docx",
+            "revision": "4b6da294a0dec740088a81a584d75228935b30f7a4328200cda7f8acd25e2314",
+            "changedParts": ["word/header2.xml"],
+            "editCount": 1,
+            "format": "docx",
+            "sourcePreserved": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/input-edited.docx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "docx",
+            "section": "content",
+            "unit": 1,
+            "unitKind": "document",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Structural layout changes, tracked revisions, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 3,
+              "start": 1,
+              "total": 3
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 18,
+                "text": "First section body",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "characters": 0,
+                "text": "",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "characters": 19,
+                "text": "Second section body",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 0,
+              "start": 1,
+              "total": 0
+            },
+            "tables": [],
+            "untrustedContent": true
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/P01",
+      "durationMs": 38,
+      "id": "P01",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.pptx",
+            "edits": [
+              {
+                "expectedMatches": 1,
+                "find": "Quarter draft",
+                "kind": "replace_text",
+                "replace": "Quarter approved"
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T03:43:21.727Z",
+                "filename": "input-edited.pptx",
+                "id": "253f5696-0dcc-45b1-ac03-70c0e2ef9dd9",
+                "mimeType": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "path": "artifacts/input-edited.pptx",
+                "sizeBytes": 39822
+              }
+            ],
+            "bytesWritten": 39822,
+            "path": "artifacts/input-edited.pptx",
+            "revision": "6c086f2d7595c9f3d936765bcab3dcf1b895706b2e7bca868bdf62d2badb9e9e",
+            "changedParts": ["ppt/slides/slide1.xml"],
+            "editCount": 1,
+            "format": "pptx",
+            "sourcePreserved": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/input-edited.pptx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "pptx",
+            "section": "content",
+            "unit": 1,
+            "unitKind": "slide",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Structural layout changes, tracked revisions, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 1,
+              "start": 1,
+              "total": 1
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 16,
+                "text": "Quarter approved",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 0,
+              "start": 1,
+              "total": 0
+            },
+            "tables": [],
+            "untrustedContent": true
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/P02",
+      "durationMs": 41,
+      "id": "P02",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.pptx",
+            "edits": [
+              {
+                "expectedMatches": 1,
+                "find": "Grouped draft",
+                "kind": "replace_text",
+                "replace": "Grouped approved"
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T03:43:21.769Z",
+                "filename": "input-edited.pptx",
+                "id": "c9e753b6-105a-4885-93d3-22f8d2aff653",
+                "mimeType": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "path": "artifacts/input-edited.pptx",
+                "sizeBytes": 34160
+              }
+            ],
+            "bytesWritten": 34160,
+            "path": "artifacts/input-edited.pptx",
+            "revision": "cd39fce774ce988b21ad3a33dd0c59c72cf999f7b6d606a5c6930c79e0ffce38",
+            "changedParts": ["ppt/slides/slide1.xml"],
+            "editCount": 1,
+            "format": "pptx",
+            "sourcePreserved": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/input-edited.pptx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "pptx",
+            "section": "content",
+            "unit": 1,
+            "unitKind": "slide",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Structural layout changes, tracked revisions, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 3,
+              "start": 1,
+              "total": 3
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 14,
+                "text": "Grouped report",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "characters": 16,
+                "text": "Grouped approved",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "characters": 14,
+                "text": "Grouped keeper",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 0,
+              "start": 1,
+              "total": 0
+            },
+            "tables": [],
+            "untrustedContent": true
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/P03",
+      "durationMs": 38,
+      "id": "P03",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.pptx",
+            "edits": [
+              {
+                "column": 1,
+                "expectedText": "Merged draft",
+                "kind": "set_table_cell",
+                "row": 1,
+                "table": 1,
+                "text": "Merged approved"
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T03:43:21.809Z",
+                "filename": "input-edited.pptx",
+                "id": "1e034d8a-3ce1-422d-bc91-5a12c6762c32",
+                "mimeType": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "path": "artifacts/input-edited.pptx",
+                "sizeBytes": 33833
+              }
+            ],
+            "bytesWritten": 33833,
+            "path": "artifacts/input-edited.pptx",
+            "revision": "f3f85bbac22e15ee9534663ecf53894d6b04926ac3527cbd6480552b9db8f3fd",
+            "changedParts": ["ppt/slides/slide1.xml"],
+            "editCount": 1,
+            "format": "pptx",
+            "sourcePreserved": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/input-edited.pptx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "pptx",
+            "section": "content",
+            "unit": 1,
+            "unitKind": "slide",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Structural layout changes, tracked revisions, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 7,
+              "start": 1,
+              "total": 7
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 20,
+                "text": "Merged-cell register",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "characters": 15,
+                "text": "Merged approved",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "characters": 0,
+                "text": "",
+                "truncated": false
+              },
+              {
+                "index": 4,
+                "characters": 6,
+                "text": "Keeper",
+                "truncated": false
+              },
+              {
+                "index": 5,
+                "characters": 0,
+                "text": "",
+                "truncated": false
+              },
+              {
+                "index": 6,
+                "characters": 0,
+                "text": "",
+                "truncated": false
+              },
+              {
+                "index": 7,
+                "characters": 0,
+                "text": "",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 1,
+              "start": 1,
+              "total": 1
+            },
+            "tables": [
+              {
+                "index": 1,
+                "rows": 2
+              }
+            ],
+            "untrustedContent": true
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/P04",
+      "durationMs": 37,
+      "id": "P04",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.pptx",
+            "edits": [
+              {
+                "expectedMatches": 1,
+                "find": "قيد المراجعة",
+                "kind": "replace_text",
+                "replace": "تمت المراجعة"
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T03:43:21.846Z",
+                "filename": "input-edited.pptx",
+                "id": "50b63d5a-6cfc-4494-b006-c8258c9165e5",
+                "mimeType": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "path": "artifacts/input-edited.pptx",
+                "sizeBytes": 34320
+              }
+            ],
+            "bytesWritten": 34320,
+            "path": "artifacts/input-edited.pptx",
+            "revision": "02d6662903f5ee54d47343dfdef01fe7d06e7802bc6ad47b71c0d8f62b6373f5",
+            "changedParts": ["ppt/slides/slide1.xml"],
+            "editCount": 1,
+            "format": "pptx",
+            "sourcePreserved": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/input-edited.pptx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "pptx",
+            "section": "content",
+            "unit": 1,
+            "unitKind": "slide",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Structural layout changes, tracked revisions, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 1,
+              "start": 1,
+              "total": 1
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 22,
+                "text": "تمت المراجعة — 東京 café",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 0,
+              "start": 1,
+              "total": 0
+            },
+            "tables": [],
+            "untrustedContent": true
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/X01",
+      "durationMs": 80,
+      "id": "X01",
+      "steps": [
+        {
+          "input": {
+            "action": "read_range",
+            "path": "input.xlsx",
+            "range": "A1:D2",
+            "sheetName": "Records"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "path": "input.xlsx",
+            "revision": "731657b4f3ffb8671f1d0f1ea34358bcc99e3423f9288f8ae0103dfd609b6674",
+            "endCol": 4,
+            "endRow": 2,
+            "startCol": 1,
+            "startRow": 1,
+            "hasMoreColumns": false,
+            "hasMoreRows": false,
+            "rows": [
+              ["ID", "Date", "Units", "State"],
+              ["000042", "2026-09-06T00:00:00.000Z", 7, "Draft"]
+            ],
+            "sheetName": "Records"
+          }
+        },
+        {
+          "input": {
+            "action": "write_range",
+            "path": "input.xlsx",
+            "range": "C2",
+            "sheetName": "Records",
+            "values": [[11]]
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "cellsUpdated": 1,
+            "sheetName": "Records",
+            "status": "updated",
+            "bytesWritten": 9127,
+            "path": "input-v2.xlsx",
+            "revision": "a8c07936c94cb07f0ef6ce71204dd8f35e76aba94d2c5841e1c076f7477417cd",
+            "sourcePath": "input.xlsx"
+          }
+        },
+        {
+          "input": {
+            "action": "read_range",
+            "path": "input-v2.xlsx",
+            "range": "A1:D2",
+            "sheetName": "Records"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "path": "input-v2.xlsx",
+            "revision": "a8c07936c94cb07f0ef6ce71204dd8f35e76aba94d2c5841e1c076f7477417cd",
+            "endCol": 4,
+            "endRow": 2,
+            "startCol": 1,
+            "startRow": 1,
+            "hasMoreColumns": false,
+            "hasMoreRows": false,
+            "rows": [
+              ["ID", "Date", "Units", "State"],
+              ["000042", "2026-09-06T00:00:00.000Z", 11, "Draft"]
+            ],
+            "sheetName": "Records"
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/X02",
+      "durationMs": 1274,
+      "id": "X02",
+      "steps": [
+        {
+          "input": {
+            "action": "write_range",
+            "path": "input.xlsx",
+            "range": "C2",
+            "sheetName": "Data",
+            "values": [[11]]
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "cellsUpdated": 1,
+            "sheetName": "Data",
+            "status": "updated",
+            "bytesWritten": 7445,
+            "path": "input-v2.xlsx",
+            "revision": "ea5f3753e228ee0c7e6a17252948dfe3058bb53bbbdb489c1ab98b64004a138e",
+            "sourcePath": "input.xlsx"
+          }
+        },
+        {
+          "input": {
+            "action": "recalculate",
+            "path": "input-v2.xlsx"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "status": "recalculated",
+            "calculationStatus": "recalculated",
+            "engine": "LibreOffice Calc",
+            "formulaErrorCount": 0,
+            "formulaErrors": [],
+            "bytesWritten": 7395,
+            "path": "input-v2-v2.xlsx",
+            "revision": "f48819f9f70c32c6054209b82b30ee0c714cd2fd28babe0a63942a08025d8af1",
+            "sourcePath": "input-v2.xlsx"
+          }
+        },
+        {
+          "input": {
+            "action": "read_range",
+            "path": "input-v2-v2.xlsx",
+            "range": "B2:B4",
+            "sheetName": "Summary"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "path": "input-v2-v2.xlsx",
+            "revision": "f48819f9f70c32c6054209b82b30ee0c714cd2fd28babe0a63942a08025d8af1",
+            "endCol": 2,
+            "endRow": 4,
+            "startCol": 2,
+            "startRow": 2,
+            "hasMoreColumns": false,
+            "hasMoreRows": false,
+            "rows": [
+              [
+                {
+                  "calculationStatus": "recalculated",
+                  "formula": "=SUMIFS(Data!C2:C4,Data!A2:A4,\"North\")",
+                  "cachedResult": 19
+                }
+              ],
+              [
+                {
+                  "calculationStatus": "recalculated",
+                  "formula": "=IF(B2>=20,\"Ready\",\"Review\")",
+                  "cachedResult": "Review"
+                }
+              ],
+              [
+                {
+                  "calculationStatus": "recalculated",
+                  "formula": "=DATE(2026,9,6)",
+                  "cachedResult": "2026-09-06T00:00:00.000Z"
+                }
+              ]
+            ],
+            "sheetName": "Summary"
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/X03",
+      "durationMs": 5,
+      "error": "This workbook contains unsupported features (charts, drawing shapes or charts); use inspect for metadata and an assigned coding tool or desktop spreadsheet editor for its cells. No output was saved.",
+      "id": "X03",
+      "steps": [
+        {
+          "input": {
+            "action": "inspect",
+            "path": "input.xlsx"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "coverage": "Workbook metadata only; cells were not read.",
+            "editable": false,
+            "sheetCount": 1,
+            "sheets": [
+              {
+                "name": "Chart data",
+                "state": "visible"
+              }
+            ],
+            "unsupportedFeatures": ["charts", "drawing shapes or charts"],
+            "warnings": [
+              "This workbook contains features the spreadsheet tool cannot preserve. Use an assigned coding tool with an appropriate Office library or a desktop spreadsheet editor. The source is unchanged."
+            ],
+            "path": "input.xlsx",
+            "revision": "9d0bbd5e2f634da968f3192a2ac3c5b72d943a6e6afbea85f09196cb1bf780e1"
+          }
+        },
+        {
+          "input": {
+            "action": "write_range",
+            "path": "input.xlsx",
+            "range": "B2",
+            "sheetName": "Chart data",
+            "values": [[12]]
+          },
+          "tool": "spreadsheet",
+          "error": "This workbook contains unsupported features (charts, drawing shapes or charts); use inspect for metadata and an assigned coding tool or desktop spreadsheet editor for its cells. No output was saved."
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/X04",
+      "durationMs": 714,
+      "id": "X04",
+      "steps": [
+        {
+          "input": {
+            "action": "write_range",
+            "path": "input.xlsx",
+            "range": "B2",
+            "sheetName": "Table data",
+            "values": [[12]]
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "cellsUpdated": 1,
+            "sheetName": "Table data",
+            "status": "updated",
+            "bytesWritten": 7783,
+            "path": "input-v2.xlsx",
+            "revision": "dc9c0db1307a4ffee2b1ac6d61e7ed210f2f7c4f6d5319299679b4aa36965547",
+            "sourcePath": "input.xlsx"
+          }
+        },
+        {
+          "input": {
+            "action": "recalculate",
+            "path": "input-v2.xlsx"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "status": "recalculated",
+            "calculationStatus": "recalculated",
+            "engine": "LibreOffice Calc",
+            "formulaErrorCount": 0,
+            "formulaErrors": [],
+            "bytesWritten": 7583,
+            "path": "input-v2-v2.xlsx",
+            "revision": "fa0206f330c3f98033ff1cd665904421354766f308b4e7954f6cde30744f8960",
+            "sourcePath": "input-v2.xlsx"
+          }
+        },
+        {
+          "input": {
+            "action": "read_range",
+            "path": "input-v2-v2.xlsx",
+            "range": "A1:B4",
+            "sheetName": "Table data"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "path": "input-v2-v2.xlsx",
+            "revision": "fa0206f330c3f98033ff1cd665904421354766f308b4e7954f6cde30744f8960",
+            "endCol": 2,
+            "endRow": 4,
+            "startCol": 1,
+            "startRow": 1,
+            "hasMoreColumns": false,
+            "hasMoreRows": false,
+            "rows": [
+              ["ID", "Qty"],
+              ["0001", 12],
+              ["0002", 5],
+              [
+                "Total",
+                {
+                  "calculationStatus": "recalculated",
+                  "formula": "=SUBTOTAL(109,TasksTable[Qty])",
+                  "cachedResult": 17
+                }
+              ]
+            ],
+            "sheetName": "Table data"
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/C01",
+      "durationMs": 25,
+      "id": "C01",
+      "steps": [
+        {
+          "input": {
+            "action": "import_csv",
+            "csvPath": "input.csv",
+            "delimiter": ";",
+            "path": "imported.xlsx"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "importedRows": 3,
+            "sheetName": "input",
+            "status": "csv_imported",
+            "bytesWritten": 6610,
+            "path": "artifacts/imported.xlsx",
+            "revision": "bf4a0b3f974bda53a342e0c72f5cef6fa39e6f86d944a317ef1451c0003a9933"
+          }
+        },
+        {
+          "input": {
+            "action": "read_range",
+            "path": "artifacts/imported.xlsx",
+            "range": "A1:D3"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "path": "artifacts/imported.xlsx",
+            "revision": "bf4a0b3f974bda53a342e0c72f5cef6fa39e6f86d944a317ef1451c0003a9933",
+            "endCol": 4,
+            "endRow": 3,
+            "startCol": 1,
+            "startRow": 1,
+            "hasMoreColumns": false,
+            "hasMoreRows": false,
+            "rows": [
+              ["ID", "Long ID", "Description", "Code"],
+              [
+                "00012",
+                "12345678901234567890",
+                "café; 東京\nsecond line",
+                "=SUM(A1:A2)"
+              ],
+              ["00013", "00000000000000000009", "He said \"ready\"", "-0042"]
+            ],
+            "sheetName": "input"
+          }
+        },
+        {
+          "input": {
+            "action": "export_csv",
+            "delimiter": ";",
+            "escapeCsvFormulas": false,
+            "path": "artifacts/imported.xlsx",
+            "targetCsvPath": "exported.csv"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "status": "csv_exported",
+            "csvEscapedCellCount": 0,
+            "bytesWritten": 147,
+            "path": "artifacts/exported.csv",
+            "revision": "4e4533721fda8aa24efc08578326d4a0298ad0223ec0e7b09dbffcefcd3ec79a",
+            "sourcePath": "artifacts/imported.xlsx",
+            "exportedRows": 3,
+            "targetCsvPath": "artifacts/exported.csv"
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/C02",
+      "durationMs": 5,
+      "id": "C02",
+      "steps": [
+        {
+          "input": {
+            "action": "import_csv",
+            "columnTypes": ["text", "number"],
+            "csvHeader": true,
+            "csvPath": "input.csv",
+            "decimalSeparator": ",",
+            "delimiter": ";",
+            "path": "imported.xlsx"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "importedRows": 3,
+            "sheetName": "input",
+            "status": "csv_imported",
+            "bytesWritten": 6461,
+            "path": "artifacts/imported.xlsx",
+            "revision": "f503aca3435cfd82dcd9c8dc4d82f1558cefbc54dfd6b9358ee8dd661cee4c9a"
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/C03",
+      "durationMs": 22,
+      "id": "C03",
+      "steps": [
+        {
+          "input": {
+            "action": "import_csv",
+            "csvPath": "input.csv",
+            "delimiter": "\t",
+            "path": "imported.xlsx"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "importedRows": 3,
+            "sheetName": "input",
+            "status": "csv_imported",
+            "bytesWritten": 6562,
+            "path": "artifacts/imported.xlsx",
+            "revision": "0daea87b5a002fca545e6bcd76dd98fce9cae5cbb69b9fce130bc62cc3caacbb"
+          }
+        },
+        {
+          "input": {
+            "action": "read_range",
+            "path": "artifacts/imported.xlsx",
+            "range": "A1:D3"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "path": "artifacts/imported.xlsx",
+            "revision": "0daea87b5a002fca545e6bcd76dd98fce9cae5cbb69b9fce130bc62cc3caacbb",
+            "endCol": 4,
+            "endRow": 3,
+            "startCol": 1,
+            "startRow": 1,
+            "hasMoreColumns": false,
+            "hasMoreRows": false,
+            "rows": [
+              ["ID", "Description", "Expression", "Trailing"],
+              ["001", "a\tb\nnext", "@SUM(A1)", ""],
+              ["002", "\"quoted\"", "+0012", ""]
+            ],
+            "sheetName": "input"
+          }
+        },
+        {
+          "input": {
+            "action": "export_csv",
+            "delimiter": "\t",
+            "escapeCsvFormulas": false,
+            "path": "artifacts/imported.xlsx",
+            "targetCsvPath": "exported.csv"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "status": "csv_exported",
+            "csvEscapedCellCount": 0,
+            "bytesWritten": 83,
+            "path": "artifacts/exported.csv",
+            "revision": "9aa710b3e826ba8d5ce239752141e4fb60600c9cbb9f0a9b70b4229975574e24",
+            "sourcePath": "artifacts/imported.xlsx",
+            "exportedRows": 3,
+            "targetCsvPath": "artifacts/exported.csv"
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/F01",
+      "durationMs": 322,
+      "id": "F01",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.pdf",
+            "operation": "extract",
+            "pages": [3, 2]
+          },
+          "tool": "pdf_document",
+          "output": {
+            "complete": false,
+            "coveredPages": [3, 2],
+            "form": {
+              "complete": true,
+              "fields": [],
+              "nextStart": null,
+              "start": 1,
+              "totalFields": 0,
+              "xfaExcluded": false
+            },
+            "formFieldsExcluded": false,
+            "nextPage": 1,
+            "pages": [
+              {
+                "page": 3,
+                "text": "Page three café naïve",
+                "truncated": false,
+                "needsOcr": false
+              },
+              {
+                "page": 2,
+                "text": "Rotated beta table",
+                "truncated": false,
+                "needsOcr": false
+              }
+            ],
+            "totalPages": 3,
+            "untrustedContent": true,
+            "warnings": [
+              "Text extraction does not describe images, establish table structure, or perform OCR. Empty pages may be scans; inspect them visually before treating them as blank."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/F02",
+      "durationMs": 290,
+      "id": "F02",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.pdf",
+            "operation": "inspect"
+          },
+          "tool": "pdf_document",
+          "output": {
+            "filename": "input.pdf",
+            "form": {
+              "complete": true,
+              "fields": [
+                {
+                  "name": "reviewer",
+                  "readable": true,
+                  "truncated": false,
+                  "type": "text",
+                  "value": "Maya Synthetic"
+                },
+                {
+                  "name": "status",
+                  "readable": true,
+                  "truncated": false,
+                  "type": "text",
+                  "value": "Approved"
+                }
+              ],
+              "nextStart": null,
+              "start": 1,
+              "totalFields": 2,
+              "xfaExcluded": false
+            },
+            "pageCount": 1,
+            "pages": [
+              {
+                "page": 1,
+                "width": 595.2756,
+                "height": 841.8898
+              }
+            ],
+            "revision": "e1536003290c3591887c128e52b77d02f575014f76dbe73800368a68d28fd3d9"
+          }
+        },
+        {
+          "input": {
+            "documentRef": "input.pdf",
+            "operation": "extract"
+          },
+          "tool": "pdf_document",
+          "output": {
+            "complete": true,
+            "coveredPages": [1],
+            "form": {
+              "complete": true,
+              "fields": [
+                {
+                  "name": "reviewer",
+                  "readable": true,
+                  "truncated": false,
+                  "type": "text",
+                  "value": "Maya Synthetic"
+                },
+                {
+                  "name": "status",
+                  "readable": true,
+                  "truncated": false,
+                  "type": "text",
+                  "value": "Approved"
+                }
+              ],
+              "nextStart": null,
+              "start": 1,
+              "totalFields": 2,
+              "xfaExcluded": false
+            },
+            "formFieldsExcluded": false,
+            "nextPage": null,
+            "pages": [
+              {
+                "page": 1,
+                "text": "Review approval form",
+                "truncated": false,
+                "needsOcr": false
+              }
+            ],
+            "totalPages": 1,
+            "untrustedContent": true,
+            "warnings": [
+              "Text extraction does not describe images, establish table structure, or perform OCR. Empty pages may be scans; inspect them visually before treating them as blank."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/F03",
+      "durationMs": 289,
+      "id": "F03",
+      "steps": [
+        {
+          "input": {
+            "documentRef": "input.pdf",
+            "operation": "extract"
+          },
+          "tool": "pdf_document",
+          "output": {
+            "complete": false,
+            "coveredPages": [1],
+            "form": {
+              "complete": true,
+              "fields": [],
+              "nextStart": null,
+              "start": 1,
+              "totalFields": 0,
+              "xfaExcluded": false
+            },
+            "formFieldsExcluded": false,
+            "nextPage": null,
+            "pages": [
+              {
+                "page": 1,
+                "text": "",
+                "truncated": false,
+                "needsOcr": true
+              }
+            ],
+            "totalPages": 1,
+            "untrustedContent": true,
+            "warnings": [
+              "Text extraction does not describe images, establish table structure, or perform OCR. Empty pages may be scans; inspect them visually before treating them as blank."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/F04",
+      "durationMs": 2,
+      "error": "PDF page copying cannot preserve bookmarks, named destinations, or embedded attachments. This operation is unsupported for this source; no output was saved.",
+      "id": "F04",
+      "steps": [
+        {
+          "input": {
+            "operation": "merge",
+            "outputFilename": "combined.pdf",
+            "sources": ["input.pdf", "appendix.pdf"]
+          },
+          "tool": "pdf_document",
+          "error": "PDF page copying cannot preserve bookmarks, named destinations, or embedded attachments. This operation is unsupported for this source; no output was saved."
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/F05",
+      "durationMs": 1,
+      "error": "File exceeds the 10485760 byte limit.",
+      "id": "F05",
+      "steps": [
+        {
+          "input": {
+            "fontRef": "covering.ttf",
+            "operation": "create",
+            "outputFilename": "multilingual.pdf",
+            "textPages": ["Révision approuvée — تمت المراجعة — 東京"]
+          },
+          "tool": "pdf_document",
+          "error": "File exceeds the 10485760 byte limit."
+        }
+      ]
+    },
+    {
+      "directory": "/private/tmp/atlas-daily-files-corpus/attempts/protected-forms-locale-20260906/W01",
+      "durationMs": 2088,
+      "id": "W01",
+      "steps": [
+        {
+          "input": {
+            "action": "import_csv",
+            "columnTypes": ["text", "number"],
+            "csvHeader": true,
+            "csvPath": "records.csv",
+            "path": "summary.xlsx"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "importedRows": 4,
+            "sheetName": "records",
+            "status": "csv_imported",
+            "bytesWritten": 6472,
+            "path": "artifacts/summary.xlsx",
+            "revision": "37ed6ffcd384289c08cf7adf36b4e8bef49fc77a66c425263287ef6909275d9c"
+          }
+        },
+        {
+          "input": {
+            "action": "write_range",
+            "path": "artifacts/summary.xlsx",
+            "range": "B5",
+            "sheetName": "records",
+            "values": [["=SUM(B2:B4)"]]
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "cellsUpdated": 1,
+            "sheetName": "records",
+            "status": "updated",
+            "bytesWritten": 6615,
+            "path": "artifacts/summary-v2.xlsx",
+            "revision": "46492dc4431338e4c4cde480844eb3e78f63bdee1fb51012f044d8cddb8948eb",
+            "sourcePath": "artifacts/summary.xlsx"
+          }
+        },
+        {
+          "input": {
+            "action": "recalculate",
+            "path": "artifacts/summary-v2.xlsx"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "status": "recalculated",
+            "calculationStatus": "recalculated",
+            "engine": "LibreOffice Calc",
+            "formulaErrorCount": 0,
+            "formulaErrors": [],
+            "bytesWritten": 6150,
+            "path": "artifacts/summary-v2-v2.xlsx",
+            "revision": "4393bfd73ecae3f127912fe9193d9f73846561f4eb7cd289c31f700ff8a1d85e",
+            "sourcePath": "artifacts/summary-v2.xlsx"
+          }
+        },
+        {
+          "input": {
+            "action": "read_range",
+            "path": "artifacts/summary-v2-v2.xlsx",
+            "range": "B5",
+            "sheetName": "records"
+          },
+          "tool": "spreadsheet",
+          "output": {
+            "path": "artifacts/summary-v2-v2.xlsx",
+            "revision": "4393bfd73ecae3f127912fe9193d9f73846561f4eb7cd289c31f700ff8a1d85e",
+            "endCol": 2,
+            "endRow": 5,
+            "startCol": 2,
+            "startRow": 5,
+            "hasMoreColumns": false,
+            "hasMoreRows": false,
+            "rows": [
+              [
+                {
+                  "calculationStatus": "recalculated",
+                  "formula": "=SUM(B2:B4)",
+                  "cachedResult": 18
+                }
+              ]
+            ],
+            "sheetName": "records"
+          }
+        },
+        {
+          "input": {
+            "documentRef": "report.docx",
+            "edits": [
+              {
+                "expectedMatches": 1,
+                "find": "PLACEHOLDER",
+                "kind": "replace_text",
+                "replace": "18"
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T03:43:25.718Z",
+                "filename": "report-edited.docx",
+                "id": "c4099f75-ce99-4d51-86f9-8f5c3bc7b852",
+                "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "path": "artifacts/report-edited.docx",
+                "sizeBytes": 38651
+              }
+            ],
+            "bytesWritten": 38651,
+            "path": "artifacts/report-edited.docx",
+            "revision": "34ca8165d9efb050eca42996caa0e8ce5234adec4d36b1ecec51ebe30778b97b",
+            "changedParts": ["word/document.xml"],
+            "editCount": 1,
+            "format": "docx",
+            "sourcePreserved": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/report-edited.docx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "docx",
+            "section": "content",
+            "unit": 1,
+            "unitKind": "document",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Structural layout changes, tracked revisions, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 3,
+              "start": 1,
+              "total": 3
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 25,
+                "text": "Synthetic delivery report",
+                "truncated": false
+              },
+              {
+                "index": 2,
+                "characters": 15,
+                "text": "Total units: 18",
+                "truncated": false
+              },
+              {
+                "index": 3,
+                "characters": 0,
+                "text": "",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 0,
+              "start": 1,
+              "total": 0
+            },
+            "tables": [],
+            "untrustedContent": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "summary.pptx",
+            "edits": [
+              {
+                "expectedMatches": 1,
+                "find": "PLACEHOLDER",
+                "kind": "replace_text",
+                "replace": "18"
+              }
+            ],
+            "operation": "edit"
+          },
+          "tool": "office_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T03:43:25.806Z",
+                "filename": "summary-edited.pptx",
+                "id": "29d42539-57b9-4610-989e-2c3146238153",
+                "mimeType": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "path": "artifacts/summary-edited.pptx",
+                "sizeBytes": 34055
+              }
+            ],
+            "bytesWritten": 34055,
+            "path": "artifacts/summary-edited.pptx",
+            "revision": "ee217c880306b9df684d6caf5dc5f2eae585bbdc1133912c5b9eae54cce7012d",
+            "changedParts": ["ppt/slides/slide1.xml"],
+            "editCount": 1,
+            "format": "pptx",
+            "sourcePreserved": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/summary-edited.pptx",
+            "limit": 100,
+            "operation": "read",
+            "start": 1
+          },
+          "tool": "office_document",
+          "output": {
+            "format": "pptx",
+            "section": "content",
+            "unit": 1,
+            "unitKind": "slide",
+            "warnings": [
+              "Text coverage includes OOXML paragraphs and table cells. It does not include OCR, chart data, SmartArt, equations, or layout rendering.",
+              "Replacements preserve existing package parts and use the first matched text run's formatting. Structural layout changes, tracked revisions, fields, and multiline cell rewrites are unsupported.",
+              "Table columns index the physical OOXML cells. PowerPoint merged-cell anchors support text-only updates; continuation cells and Word merged cells require targeted paragraph replacements."
+            ],
+            "coverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 1,
+              "start": 1,
+              "total": 1
+            },
+            "paragraphs": [
+              {
+                "index": 1,
+                "characters": 15,
+                "text": "Total units: 18",
+                "truncated": false
+              }
+            ],
+            "tableCoverage": {
+              "complete": true,
+              "nextStart": null,
+              "returned": 0,
+              "start": 1,
+              "total": 0
+            },
+            "tables": [],
+            "untrustedContent": true
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/report-edited.docx",
+            "operation": "convert",
+            "outputFilename": "report.pdf"
+          },
+          "tool": "pdf_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T03:43:26.684Z",
+                "filename": "report.pdf",
+                "id": "718f30a4-bfd4-4a4f-a2f7-21d9a8db943d",
+                "mimeType": "application/pdf",
+                "path": "artifacts/report.pdf",
+                "sizeBytes": 18249
+              }
+            ],
+            "bytesWritten": 18249,
+            "path": "artifacts/report.pdf",
+            "revision": "85388f1ba250b2e7e5acea3dcfb149c3434363ef96d9fe518b4abb6a51d3cf63",
+            "pageCount": 1
+          }
+        },
+        {
+          "input": {
+            "operation": "merge",
+            "outputFilename": "packet.pdf",
+            "sources": ["artifacts/report.pdf", "appendix.pdf"]
+          },
+          "tool": "pdf_document",
+          "output": {
+            "artifacts": [
+              {
+                "createdAt": "2026-09-06T03:43:26.693Z",
+                "filename": "packet.pdf",
+                "id": "790f8b55-3424-4235-9683-57f7e57de56d",
+                "mimeType": "application/pdf",
+                "path": "artifacts/packet.pdf",
+                "sizeBytes": 10937
+              }
+            ],
+            "bytesWritten": 10937,
+            "path": "artifacts/packet.pdf",
+            "revision": "6d6fb7bb58a77fd3898f8a8f0563ec3f1d911cce7f0ebb92be77abc52110f1c3",
+            "pageCount": 2,
+            "coverage": "Page content copied in source order. Document-level bookmarks, metadata and attachments are not copied."
+          }
+        },
+        {
+          "input": {
+            "documentRef": "artifacts/packet.pdf",
+            "operation": "extract"
+          },
+          "tool": "pdf_document",
+          "output": {
+            "complete": true,
+            "coveredPages": [1, 2],
+            "form": {
+              "complete": true,
+              "fields": [],
+              "nextStart": null,
+              "start": 1,
+              "totalFields": 0,
+              "xfaExcluded": false
+            },
+            "formFieldsExcluded": false,
+            "nextPage": null,
+            "pages": [
+              {
+                "page": 1,
+                "text": "Synthetic review · 2026 \nOriginal footer \nSynthetic delivery report \nTotal units: 18",
+                "truncated": false,
+                "needsOcr": false
+              },
+              {
+                "page": 2,
+                "text": "Independent appendix retained",
+                "truncated": false,
+                "needsOcr": false
+              }
+            ],
+            "totalPages": 2,
+            "untrustedContent": true,
+            "warnings": [
+              "Text extraction does not describe images, establish table structure, or perform OCR. Empty pages may be scans; inspect them visually before treating them as blank."
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

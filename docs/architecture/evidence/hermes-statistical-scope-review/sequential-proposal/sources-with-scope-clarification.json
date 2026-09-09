@@ -1,0 +1,36 @@
+{
+  "verifiedAt": "2026-09-06T18:36:05.809131+00:00",
+  "sources": [
+    {
+      "title": "Equivalence test and confidence interval for the difference in proportions for the paired-sample design",
+      "authors": "Toshiro Tango",
+      "year": 1998,
+      "url": "https://onlinelibrary.wiley.com/doi/abs/10.1002/%28SICI%291097-0258%2819980430%2917%3A8%3C891%3A%3AAID-SIM780%3E3.0.CO%3B2-B",
+      "verifiedScope": "Publisher abstract: efficient score method and simulation findings; not exact finite-sample coverage proof."
+    },
+    {
+      "title": "Unconditional Exact Tests for Equivalence or Noninferiority for Paired Binary Endpoints",
+      "authors": "Huey-Miin Hsueh; Jen-Pei Liu; James J. Chen",
+      "year": 2001,
+      "url": "https://onlinelibrary.wiley.com/doi/abs/10.1111/j.0006-341X.2001.00478.x",
+      "verifiedScope": "Publisher authors/abstract/June2001issue: unconditional exact test for paired binary endpoints; no implementation adopted."
+    },
+    {
+      "title": "Estimating means of bounded random variables by betting",
+      "authors": "Ian Waudby-Smith; Aaditya Ramdas",
+      "year": 2024,
+      "onlinePublished": 2023,
+      "url": "https://academic.oup.com/jrsssb/article/86/1/1/7043257",
+      "verifiedScope": "Primary full article Sections2and4: nonnegative test supermartingales, mixtures, predictable bets, Ville inequality and conditional-mean assumptions."
+    }
+  ],
+  "files": {
+    "prospective-note.md": "a9b707f70e6c3549efd5d356ce8468634a5639d008dc7e74bcef2b6440fb8d17",
+    "calculate.py": "ee1e9f941667cd8f1364ab006d0abf5beb29965393210a6d1734ff5643b1abcc",
+    "illustrative-calculations.json": "c83e9b8ff1fd4895b7584c8b5690c4e9f51cbc0306ca06a754297bf8175db7fb",
+    "reproduction.log": "1b59da008a8ca4a078321811f8295bab6299770a39bea6fc0e12b999ac5be9ab"
+  },
+  "status": "not adopted; independent review pending",
+  "anyLiveLedgerUsed": false,
+  "controlsChanged": false
+}

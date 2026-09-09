@@ -1,0 +1,72 @@
+[
+  {
+    "batch": 0,
+    "parent": {
+      "formatDetails": {},
+      "id": "tvZquNUDEJ9S",
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "revision": 1,
+      "rootArtifactId": "tvZquNUDEJ9S",
+      "savedAt": "2026-09-06T04:08:13.939Z",
+      "sizeBytes": 8610
+    },
+    "children": 7,
+    "broken": []
+  },
+  {
+    "batch": 1,
+    "parent": {
+      "formatDetails": {},
+      "id": "gn-digD6JZEY",
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "revision": 1,
+      "rootArtifactId": "gn-digD6JZEY",
+      "savedAt": "2026-09-06T04:08:13.993Z",
+      "sizeBytes": 8610
+    },
+    "children": 7,
+    "broken": []
+  },
+  {
+    "batch": 2,
+    "parent": {
+      "formatDetails": {},
+      "id": "WrwGDr9Inq2F",
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "revision": 1,
+      "rootArtifactId": "WrwGDr9Inq2F",
+      "savedAt": "2026-09-06T04:08:14.047Z",
+      "sizeBytes": 8610
+    },
+    "children": 7,
+    "broken": []
+  },
+  {
+    "batch": 3,
+    "parent": {
+      "formatDetails": {},
+      "id": "3ejQQwiyRmfl",
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "revision": 1,
+      "rootArtifactId": "3ejQQwiyRmfl",
+      "savedAt": "2026-09-06T04:08:14.095Z",
+      "sizeBytes": 8609
+    },
+    "children": 7,
+    "broken": []
+  },
+  {
+    "batch": 4,
+    "parent": {
+      "formatDetails": {},
+      "id": "lmw0KxvlHiyT",
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "revision": 1,
+      "rootArtifactId": "lmw0KxvlHiyT",
+      "savedAt": "2026-09-06T04:08:14.141Z",
+      "sizeBytes": 8609
+    },
+    "children": 7,
+    "broken": []
+  }
+]

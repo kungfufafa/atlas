@@ -1,0 +1,13 @@
+[
+  {
+    "operation": "owner manifest initial render",
+    "observation": "Full2147-file manifest exceeded output budget",
+    "resolution": "All entries subsequently verified programmatically, bounded metadata and tests reread."
+  },
+  {
+    "operation": "first independent verification",
+    "exitCode": 1,
+    "observation": "Assertion assumed initial chat test binding had an archived *.txt match; none existed.",
+    "resolution": "Recorded two missing original test byte snapshots, confirmed with owner. Verification now distinguishes hash/log evidence from archived originals; no source/test rerun."
+  }
+]

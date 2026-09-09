@@ -1,0 +1,24 @@
+bun test v1.3.1 (89fa0f34)
+
+scripts/harness-native-mimo-v1/memory-atlas-runner.test.ts:
+(pass) actual native writes persist across reopened SQLite and fresh empty-history sessions [174.60ms]
+(pass) cold recall has neither acquired native memory nor training history after the same A workload [87.45ms]
+(pass) different user cannot retrieve native user DB memory but shares profile memory by design [64.90ms]
+(pass) different tenant sees neither previous profile file nor user DB facts [70.49ms]
+(pass) request validation rejects answer injection, wrong-model evidence and external endpoints [3.25ms]
+Failed to generate session title from provider: 327 |       thinking,
+328 |       toolCalls,
+329 |       usage: extractOpenAITokenUsage(completion.usage),
+330 |     });
+331 |   } catch (error) {
+332 |     throw formatSdkError(label, error);
+                ^
+error: Memory comparison proxy request failed (0): Connection error.
+      at requestChatCompletion (/Users/apriansyahrs/Documents/Code/atlas/apps/server/src/providers/openai-compatible/index.ts:332:11)
+
+(pass) shared deadline during a native auxiliary retains completed writes and the partial session [2037.61ms]
+
+ 6 pass
+ 0 fail
+ 41 expect() calls
+Ran 6 tests across 1 file. [3.91s]

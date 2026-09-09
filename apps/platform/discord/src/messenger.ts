@@ -1,10 +1,47 @@
-import type { Message, TextBasedChannel } from "discord.js";
+import type {
+  Message,
+  MessageCreateOptions,
+  TextBasedChannel,
+} from "discord.js";
 import { splitDiscordMessage } from "./format";
 
 export interface DiscordMessenger {
   edit(messageId: string, text: string): Promise<void>;
+  editComponents?(
+    messageId: string,
+    payload: DiscordComponentMessage
+  ): Promise<void>;
   send(text: string): Promise<{ id: string } | null>;
+  sendComponents?(payload: DiscordComponentMessage): Promise<{ id: string }>;
   sendTyping(): Promise<void>;
+}
+
+export interface DiscordComponentMessage {
+  components: MessageCreateOptions["components"];
+  content: string;
+}
+
+export function trackDiscordMessages(
+  messenger: DiscordMessenger,
+  onSent: (messageId: string) => void
+): DiscordMessenger {
+  return {
+    ...messenger,
+    async send(text) {
+      const message = await messenger.send(text);
+      if (message) {
+        onSent(message.id);
+      }
+      return message;
+    },
+    sendComponents: messenger.sendComponents
+      ? async (payload) => {
+          const message = await messenger.sendComponents!(payload);
+          onSent(message.id);
+          return message;
+        }
+      : undefined,
+  };
 }
 
 export function createDiscordMessenger(
@@ -14,6 +51,10 @@ export function createDiscordMessenger(
     async edit(messageId: string, text: string) {
       const message = await channel.messages.fetch(messageId);
       await message.edit(text.slice(0, 2000));
+    },
+    async editComponents(messageId, payload) {
+      const message = await channel.messages.fetch(messageId);
+      await message.edit({ ...payload, allowedMentions: { parse: [] } });
     },
     async send(text: string) {
       const chunks = splitDiscordMessage(text);
@@ -29,6 +70,16 @@ export function createDiscordMessenger(
       }
 
       return last;
+    },
+    async sendComponents(payload) {
+      return await (
+        channel as {
+          send: (options: MessageCreateOptions) => Promise<{ id: string }>;
+        }
+      ).send({
+        ...payload,
+        allowedMentions: { parse: [] },
+      });
     },
     async sendTyping() {
       if ("sendTyping" in channel && typeof channel.sendTyping === "function") {

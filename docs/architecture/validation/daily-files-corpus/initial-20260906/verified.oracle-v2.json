@@ -1,0 +1,611 @@
+[
+  {
+    "id": "D01",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.docx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "same package parts",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "only declared XML parts changed",
+        "ok": true,
+        "detail": ["word/document.xml"]
+      },
+      {
+        "check": "multilingual replacement",
+        "ok": true,
+        "detail": "Résumé validé — 東京 مرحبا"
+      },
+      {
+        "check": "run styles retained",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "image retained",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 235
+  },
+  {
+    "id": "D02",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.docx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "same package parts",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "only declared XML parts changed",
+        "ok": true,
+        "detail": ["word/document.xml"]
+      },
+      {
+        "check": "inner cell changed",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "outer cells retained",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 187
+  },
+  {
+    "id": "D03",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "unsupported",
+    "reason": "Editing text fields or tracked revisions is unsupported; choose a plain paragraph.",
+    "checks": [
+      {
+        "check": "source preserved: input.docx",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 60
+  },
+  {
+    "id": "D04",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.docx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "same package parts",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "only declared XML parts changed",
+        "ok": true,
+        "detail": ["word/header2.xml"]
+      },
+      {
+        "check": "second header changed",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "first header retained",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 350
+  },
+  {
+    "id": "P01",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.pptx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "same package parts",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "only declared XML parts changed",
+        "ok": true,
+        "detail": ["ppt/slides/slide1.xml"]
+      },
+      {
+        "check": "caption changed",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "chart series retained",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 42
+  },
+  {
+    "id": "P02",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.pptx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "same package parts",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "only declared XML parts changed",
+        "ok": true,
+        "detail": ["ppt/slides/slide1.xml"]
+      },
+      {
+        "check": "group member changed",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "other member retained",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "group and shape bounds retained",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 39
+  },
+  {
+    "id": "P03",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "unsupported",
+    "reason": "Cell updates support one plain paragraph in an unmerged cell; use targeted paragraph replacements for complex cells.",
+    "checks": [
+      {
+        "check": "source preserved: input.pptx",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 10
+  },
+  {
+    "id": "P04",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.pptx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "same package parts",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "only declared XML parts changed",
+        "ok": true,
+        "detail": ["ppt/slides/slide1.xml"]
+      },
+      {
+        "check": "multilingual text changed",
+        "ok": true,
+        "detail": ["تمت المراجعة — 東京 café"]
+      },
+      {
+        "check": "RTL metadata retained",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 36
+  },
+  {
+    "id": "X01",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "failure",
+    "reason": "undefined is not an object (evaluating 'options.comments[rel.Target].comments')",
+    "checks": [
+      {
+        "check": "source preserved: input.xlsx",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 22
+  },
+  {
+    "id": "X02",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.xlsx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "cross-sheet calculated values",
+        "ok": true,
+        "detail": "[19, 'Review', datetime.datetime(2026, 9, 6, 0, 0)]"
+      },
+      {
+        "check": "formulas retained",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 1251
+  },
+  {
+    "id": "X03",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "unsupported",
+    "reason": "This workbook contains unsupported features (charts, drawing shapes or charts); use inspect for metadata and an assigned coding tool or desktop spreadsheet editor for its cells. No output was saved.",
+    "checks": [
+      {
+        "check": "source preserved: input.xlsx",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 5
+  },
+  {
+    "id": "X04",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "failure",
+    "reason": "undefined is not an object (evaluating 'table.name')",
+    "checks": [
+      {
+        "check": "source preserved: input.xlsx",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 5
+  },
+  {
+    "id": "C01",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.csv",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "parsed records preserved",
+        "ok": true,
+        "detail": [
+          ["ID", "Long ID", "Description", "Code"],
+          [
+            "00012",
+            "12345678901234567890",
+            "café; 東京\nsecond line",
+            "=SUM(A1:A2)"
+          ],
+          ["00013", "00000000000000000009", "He said \"ready\"", "-0042"]
+        ]
+      },
+      {
+        "check": "IDs and expressions remain strings",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 20
+  },
+  {
+    "id": "C02",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "unsupported",
+    "reason": "CSV cell R2C2 cannot be converted losslessly to number. Import that column as text.",
+    "checks": [
+      {
+        "check": "source preserved: input.csv",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 1
+  },
+  {
+    "id": "C03",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.csv",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "parsed records preserved",
+        "ok": true,
+        "detail": [
+          ["ID", "Description", "Expression", "Trailing"],
+          ["001", "a\tb\nnext", "@SUM(A1)", ""],
+          ["002", "\"quoted\"", "+0012", ""]
+        ]
+      },
+      {
+        "check": "IDs and expressions remain strings",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 18
+  },
+  {
+    "id": "F01",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "supported",
+    "reason": null,
+    "checks": [
+      {
+        "check": "source preserved: input.pdf",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "selected page order",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "selected Unicode text",
+        "ok": true,
+        "detail": ["## Page three café naïve", "## Rotated beta table"]
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 36
+  },
+  {
+    "id": "F02",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "unsupported",
+    "reason": "Filled form field values are outside the returned coverage.",
+    "checks": [
+      {
+        "check": "source preserved: input.pdf",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {
+      "missingValues": ["Maya Synthetic", "Approved"]
+    },
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 8
+  },
+  {
+    "id": "F03",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "unsupported",
+    "reason": "page 1 of 1 needs OCR",
+    "checks": [
+      {
+        "check": "source preserved: input.pdf",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "source preserved: scan.png",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 3
+  },
+  {
+    "id": "F04",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "failure",
+    "reason": "Required independent preservation/content assertions failed.",
+    "checks": [
+      {
+        "check": "source preserved: appendix.pdf",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "source preserved: input.pdf",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "merged page count",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "outline retained",
+        "ok": false,
+        "detail": 0
+      },
+      {
+        "check": "attachment retained",
+        "ok": false,
+        "detail": []
+      },
+      {
+        "check": "internal destination remains in merged page tree",
+        "ok": false,
+        "detail": [null]
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 5
+  },
+  {
+    "id": "F05",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "unsupported",
+    "reason": "File exceeds the 10485760 byte limit.",
+    "checks": [
+      {
+        "check": "source preserved: covering.ttf",
+        "ok": true,
+        "detail": null
+      }
+    ],
+    "detail": {},
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 1
+  },
+  {
+    "id": "W01",
+    "attempt": "initial-20260906",
+    "oracleRevision": "v2",
+    "status": "failure",
+    "reason": "unsupported input: PDF has no extractable text (ImageBased, 1 pages)",
+    "checks": [
+      {
+        "check": "source preserved: appendix.pdf",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "source preserved: records.csv",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "source preserved: report.docx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "source preserved: summary.pptx",
+        "ok": true,
+        "detail": null
+      },
+      {
+        "check": "independent total",
+        "ok": false,
+        "detail": 0
+      },
+      {
+        "check": "DOCX total",
+        "ok": false,
+        "detail": null
+      },
+      {
+        "check": "PPTX total",
+        "ok": false,
+        "detail": null
+      },
+      {
+        "check": "PDF packet total and appendix",
+        "ok": false,
+        "detail": "Synthetic review · 2026\nOriginal footer\nSynthetic delivery report\nTotal units: 0\n\nIndependent appendix retained\n"
+      }
+    ],
+    "detail": {
+      "driverDefect": "CSV import omitted explicit numeric column type; corrected in subsequent attempt, initial result retained."
+    },
+    "execution": "/private/tmp/atlas-daily-files-corpus/attempts/initial-20260906/execution.json",
+    "durationMs": 1885
+  }
+]

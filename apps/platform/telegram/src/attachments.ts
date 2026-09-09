@@ -1,3 +1,9 @@
+import {
+  CHANNEL_DOCUMENT_OVERSIZED_REPLY,
+  CHANNEL_DOCUMENT_UNSUPPORTED_REPLY,
+  prepareChannelDocument,
+  type SaveInboundDocument,
+} from "@atlas/core/attachments/inbound-document";
 import type { SendMessageInput } from "@atlas/core/contract";
 import {
   createDownloadDeadline,
@@ -6,20 +12,28 @@ import {
 } from "@atlas/core/download-deadline";
 import {
   isSupportedDocumentMediaType,
-  MAX_DOCUMENT_BYTES,
+  MAX_DOCUMENT_INGEST_BYTES,
   normalizeDocumentMediaType,
+  normalizeImageMediaType,
   SUPPORTED_DOCUMENT_TYPE_LABEL,
-  validateDocumentAttachments,
 } from "@atlas/core/message-content";
 import type { Context } from "grammy";
 
-export const UNSUPPORTED_DOCUMENT_TYPES_REPLY = `Unsupported file type. Send ${SUPPORTED_DOCUMENT_TYPE_LABEL} (max 5 MB).`;
+export const UNSUPPORTED_DOCUMENT_TYPES_REPLY =
+  CHANNEL_DOCUMENT_UNSUPPORTED_REPLY;
 
-export const OVERSIZED_FILE_REPLY = "File is too large. Maximum size is 5 MB.";
+export const OVERSIZED_FILE_REPLY = CHANNEL_DOCUMENT_OVERSIZED_REPLY;
 
-export const UNSUPPORTED_MEDIA_REPLY = `Send text, a photo, voice message, or a supported document (${SUPPORTED_DOCUMENT_TYPE_LABEL} — max 5 MB).`;
+// This bridge uses the hosted api.telegram.org file endpoint, whose getFile limit
+// is lower than the shared Atlas document policy. https://core.telegram.org/bots/api#getfile
+export const TELEGRAM_HOSTED_DOCUMENT_MAX_BYTES = 20 * 1024 * 1024;
+export const TELEGRAM_HOSTED_FILE_LIMIT_REPLY =
+  "Telegram's hosted bot download limit is 20 MB. Send a smaller file or upload it in Atlas chat (up to 25 MB).";
 
-export const DOWNLOAD_FAILED_REPLY = "Could not download that file. Try again.";
+export const UNSUPPORTED_MEDIA_REPLY = `Send text, a photo, voice message, or a supported document (${SUPPORTED_DOCUMENT_TYPE_LABEL} — Atlas document limit: 25 MB).`;
+
+export const DOWNLOAD_FAILED_REPLY =
+  "That file did not arrive. Please attach it again.";
 
 export class OversizedTelegramFileError extends Error {
   constructor() {
@@ -175,7 +189,9 @@ export type TelegramDocumentBuildResult =
 
 export async function buildTelegramDocumentInput(
   ctx: Context,
-  options: TelegramDownloadOptions = {}
+  options: TelegramDownloadOptions & {
+    saveInboundDocument?: SaveInboundDocument;
+  } = {}
 ): Promise<TelegramDocumentBuildResult> {
   const document = ctx.message?.document;
 
@@ -183,7 +199,7 @@ export async function buildTelegramDocumentInput(
     return null;
   }
 
-  if (document.mime_type?.startsWith("image/")) {
+  if (isTelegramImageDocument(ctx)) {
     return null;
   }
 
@@ -199,44 +215,59 @@ export async function buildTelegramDocumentInput(
 
   if (
     document.file_size !== undefined &&
-    document.file_size > MAX_DOCUMENT_BYTES
+    document.file_size > MAX_DOCUMENT_INGEST_BYTES
   ) {
     return { kind: "reject", message: OVERSIZED_FILE_REPLY };
+  }
+
+  if (
+    document.file_size !== undefined &&
+    document.file_size > TELEGRAM_HOSTED_DOCUMENT_MAX_BYTES
+  ) {
+    return { kind: "reject", message: TELEGRAM_HOSTED_FILE_LIMIT_REPLY };
   }
 
   try {
     const downloaded = await downloadTelegramFile(
       ctx,
       document.file_id,
-      MAX_DOCUMENT_BYTES,
+      TELEGRAM_HOSTED_DOCUMENT_MAX_BYTES,
       options
     );
 
-    const data = Buffer.from(downloaded.bytes).toString("base64");
-
-    try {
-      validateDocumentAttachments([{ data, filename, mediaType }]);
-    } catch {
-      return { kind: "reject", message: UNSUPPORTED_DOCUMENT_TYPES_REPLY };
-    }
-
-    // Base64 here is transport-only; the server persists bytes and stores document_ref in session history.
-    return {
-      input: {
-        documents: [{ data, filename, mediaType }],
-        message: ctx.message?.caption?.trim() ?? "",
-      },
-      kind: "input",
-    };
+    return await prepareChannelDocument({
+      bytes: Buffer.from(downloaded.bytes),
+      caption: ctx.message?.caption?.trim() ?? "",
+      channel: "Telegram",
+      filename,
+      mediaType,
+      saveInboundDocument: options.saveInboundDocument,
+      signal: options.signal,
+    });
   } catch (error) {
     if (error instanceof OversizedTelegramFileError) {
-      return { kind: "reject", message: OVERSIZED_FILE_REPLY };
+      return { kind: "reject", message: TELEGRAM_HOSTED_FILE_LIMIT_REPLY };
     }
 
+    if (
+      error instanceof Error &&
+      /file is too big|file too big/i.test(error.message)
+    ) {
+      return { kind: "reject", message: TELEGRAM_HOSTED_FILE_LIMIT_REPLY };
+    }
     throw error;
   }
 }
 
 export function hasTelegramDocument(ctx: Context): boolean {
   return Boolean(ctx.message?.document);
+}
+
+export function isTelegramImageDocument(ctx: Context): boolean {
+  const document = ctx.message?.document;
+  return Boolean(
+    document &&
+      (normalizeImageMediaType(document.mime_type ?? "").startsWith("image/") ||
+        /\.(?:jpe?g|png|webp|gif)$/i.test(document.file_name ?? ""))
+  );
 }

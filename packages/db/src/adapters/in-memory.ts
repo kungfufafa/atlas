@@ -4,7 +4,18 @@ import {
   type MessageContentPart,
 } from "@atlas/core";
 import { LOCAL_CLIENT_USER_ID } from "@atlas/core/local-auth";
+import { memoryArtifactPublications } from "../artifact-publication-memory";
 import { LLM_USAGE_STATS_ID } from "../constants";
+import {
+  ConversationKeywordSearch,
+  readConversationMessagePayload,
+} from "../conversation-keyword-search";
+import { isExactMemoryFact } from "../memory-identity";
+import {
+  boundedMemoryTerms,
+  memoryResultLimit,
+  rankMemoryMatches,
+} from "../memory-search";
 import type {
   DatabaseAdapter,
   LlmUsageAggregateRow,
@@ -139,27 +150,6 @@ function importToolExpectationMatches(
   );
 }
 
-function readConversationMessagePayload(payload: unknown): {
-  role: string;
-  text: string;
-} {
-  if (typeof payload === "string") {
-    return { role: "user", text: payload };
-  }
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-    return { role: "user", text: JSON.stringify(payload ?? "") };
-  }
-
-  const record = payload as Record<string, unknown>;
-  return {
-    role: typeof record.role === "string" ? record.role : "user",
-    text:
-      typeof record.content === "string"
-        ? record.content
-        : JSON.stringify(record.content ?? ""),
-  };
-}
-
 const IN_MEMORY_ACTIVE_EXECUTION_STATUSES = new Set([
   "queued",
   "running",
@@ -289,6 +279,22 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     `${orgId}:${channel}:${channelUserId}`;
   const llmUsageDaily = new Map<string, StoredLlmUsageDailyRecord>();
   const orgUsageBudgets = new Map<string, StoredOrgUsageBudgetRecord>();
+
+  const publicationStore = memoryArtifactPublications((scope) => {
+    const org = organizations.get(scope.orgId);
+    const profile = profiles.get(scope.profileId);
+    const session = sessions.get(scope.sessionId);
+    return Boolean(
+      org &&
+        !org.archivedAt &&
+        profile &&
+        !profile.isImporting &&
+        profile.orgId === scope.orgId &&
+        session &&
+        session.orgId === scope.orgId &&
+        session.profileId === scope.profileId
+    );
+  });
 
   return {
     aggregateLlmUsage(options) {
@@ -544,6 +550,8 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       return true;
     },
 
+    commitArtifactPublications: publicationStore.commitArtifactPublications,
+
     async compareAndSwapComposioUserConnection(record, expectedOAuthStateHash) {
       const current = composioUserConnections.get(record.id);
       if (
@@ -636,7 +644,6 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     async countUsers() {
       return usersById.size;
     },
-
     async createArtifactShare(record) {
       artifactShares.set(record.id, record);
       if (!record.revokedAt) {
@@ -665,6 +672,29 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
 
     async createMemory(record) {
       memories.set(memoryKey(record.orgId, record.id), { ...record });
+    },
+
+    async createOrGetMemory(record) {
+      // No await inside lookup/insert: competing calls cannot interleave this
+      // section. Search the entire bucket, including facts beyond list limits.
+      for (const existing of memories.values()) {
+        if (isExactMemoryFact(existing, record)) {
+          return { ...existing };
+        }
+      }
+      if (
+        [...memories.values()].some((existing) => existing.id === record.id)
+      ) {
+        throw new Error("A memory with this ID already exists.");
+      }
+      const created = {
+        ...record,
+        content: record.content.trim(),
+        source: record.source ?? null,
+        subject: record.subject?.trim() ?? null,
+      };
+      memories.set(memoryKey(created.orgId, created.id), created);
+      return { ...created };
     },
 
     async createOrgInvite(record) {
@@ -802,6 +832,7 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         return false;
       }
 
+      publicationStore.removeScope((scope) => scope.profileId === id);
       profileTools.delete(id);
       profileMcpServers.delete(id);
       profileSkills.delete(id);
@@ -819,6 +850,7 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         return false;
       }
       profiles.delete(id);
+      publicationStore.removeScope((scope) => scope.profileId === id);
       profileTools.delete(id);
       profileMcpServers.delete(id);
       profileSkills.delete(id);
@@ -837,6 +869,7 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         return false;
       }
       profiles.delete(id);
+      publicationStore.removeScope((scope) => scope.profileId === id);
       profileTools.delete(id);
       profileMcpServers.delete(id);
       profileSkills.delete(id);
@@ -845,6 +878,7 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     },
 
     async deleteSession(id) {
+      publicationStore.removeScope((scope) => scope.sessionId === id);
       sessionMessages.delete(id);
       for (const [archiveId, archive] of sessionHistoryArchives) {
         if (archive.sessionId === id) {
@@ -931,6 +965,7 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
           )[0] ?? null
       );
     },
+    getArtifactPublication: publicationStore.getArtifactPublication,
 
     async getArtifactShareById(orgId, profileId, shareId) {
       const share = artifactShares.get(shareId);
@@ -1384,11 +1419,14 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       if (!llmUsageStats) {
         llmUsageStats = {
           estimatedCostUsd: delta.estimatedCostUsd,
+          estimatedInvocations: delta.estimatedInvocations ?? 0,
           id: LLM_USAGE_STATS_ID,
           inputTokens: delta.inputTokens,
           outputTokens: delta.outputTokens,
+          reportedInvocations: delta.reportedInvocations ?? 0,
           requestCount: delta.requestCount,
           trackedSince,
+          unknownInvocations: delta.unknownInvocations ?? 0,
           updatedAt,
         };
         return;
@@ -1398,9 +1436,18 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         ...llmUsageStats,
         estimatedCostUsd:
           llmUsageStats.estimatedCostUsd + delta.estimatedCostUsd,
+        estimatedInvocations:
+          (llmUsageStats.estimatedInvocations ?? 0) +
+          (delta.estimatedInvocations ?? 0),
         inputTokens: llmUsageStats.inputTokens + delta.inputTokens,
         outputTokens: llmUsageStats.outputTokens + delta.outputTokens,
+        reportedInvocations:
+          (llmUsageStats.reportedInvocations ?? 0) +
+          (delta.reportedInvocations ?? 0),
         requestCount: llmUsageStats.requestCount + delta.requestCount,
+        unknownInvocations:
+          (llmUsageStats.unknownInvocations ?? 0) +
+          (delta.unknownInvocations ?? 0),
         updatedAt,
       };
     },
@@ -1416,11 +1463,14 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       if (!existing) {
         llmUsageByModel.set(modelId, {
           estimatedCostUsd: delta.estimatedCostUsd,
+          estimatedInvocations: delta.estimatedInvocations ?? 0,
           inputTokens: delta.inputTokens,
           modelId,
           outputTokens: delta.outputTokens,
+          reportedInvocations: delta.reportedInvocations ?? 0,
           requestCount: delta.requestCount,
           trackedSince,
+          unknownInvocations: delta.unknownInvocations ?? 0,
           updatedAt,
         });
         return;
@@ -1429,9 +1479,17 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       llmUsageByModel.set(modelId, {
         ...existing,
         estimatedCostUsd: existing.estimatedCostUsd + delta.estimatedCostUsd,
+        estimatedInvocations:
+          (existing.estimatedInvocations ?? 0) +
+          (delta.estimatedInvocations ?? 0),
         inputTokens: existing.inputTokens + delta.inputTokens,
         outputTokens: existing.outputTokens + delta.outputTokens,
+        reportedInvocations:
+          (existing.reportedInvocations ?? 0) +
+          (delta.reportedInvocations ?? 0),
         requestCount: existing.requestCount + delta.requestCount,
+        unknownInvocations:
+          (existing.unknownInvocations ?? 0) + (delta.unknownInvocations ?? 0),
         updatedAt,
       });
     },
@@ -1512,11 +1570,14 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       const existing = taskRuns.get(record.taskId) ?? [];
       taskRuns.set(record.taskId, [...existing, record]);
     },
+    isArtifactPublicationSnapshotReferenced:
+      publicationStore.isArtifactPublicationSnapshotReferenced,
     async listActionApprovalsForSession(sessionId) {
       return [...actionApprovals.values()].filter(
         (item) => item.sessionId === sessionId
       );
     },
+    listArtifactPublications: publicationStore.listArtifactPublications,
 
     async listAutomationRuns(automationId, limit = 20) {
       return [...(automationRuns.get(automationId) ?? [])]
@@ -1665,7 +1726,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       if (ownerId) {
         results = results.filter((memory) => memory.ownerId === ownerId);
       }
-      return typeof limit === "number" ? results.slice(0, limit) : results;
+      return results
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+        .slice(0, memoryResultLimit(limit, 50));
     },
 
     async listMessagesForSession(sessionId) {
@@ -2216,6 +2279,7 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       profiles.set(record.id, { ...record, isImporting: true });
       return "reserved";
     },
+    revokeArtifactPublication: publicationStore.revokeArtifactPublication,
 
     async revokeArtifactShare(id, revokedAt) {
       const share = artifactShares.get(id);
@@ -2265,6 +2329,14 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         return [];
       }
 
+      const keywords =
+        options.matchMode === "keywords"
+          ? new ConversationKeywordSearch(clean, options.limit)
+          : undefined;
+      if (keywords?.empty) {
+        return [];
+      }
+
       const needle = clean.toLowerCase();
       const results = [];
       for (const session of sessions.values()) {
@@ -2299,6 +2371,15 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
           );
         }
         const seen = new Set<string>();
+        if (keywords) {
+          candidates.sort(
+            (left, right) =>
+              Number(Boolean(left.archiveId)) -
+                Number(Boolean(right.archiveId)) ||
+              right.createdAt.localeCompare(left.createdAt) ||
+              Buffer.compare(Buffer.from(right.id), Buffer.from(left.id))
+          );
+        }
         for (const message of candidates) {
           const serialized = JSON.stringify(message.payload);
           if (seen.has(serialized)) {
@@ -2312,6 +2393,26 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
             continue;
           }
           const parsed = readConversationMessagePayload(message.payload);
+          if (keywords) {
+            keywords.add(
+              {
+                ...(message.archiveId
+                  ? {
+                      archivedAt: message.createdAt,
+                      archiveId: message.archiveId,
+                    }
+                  : {}),
+                createdAt: message.createdAt,
+                messageId: message.id,
+                profileId: session.profileId,
+                role: parsed.role,
+                sessionId: session.id,
+                sessionTitle: session.title ?? null,
+              },
+              parsed.text
+            );
+            continue;
+          }
           const matchIndex = parsed.text.toLowerCase().indexOf(needle);
           if (matchIndex < 0) {
             continue;
@@ -2336,6 +2437,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
         }
       }
 
+      if (keywords) {
+        return keywords.results();
+      }
       results.sort((left, right) =>
         right.createdAt.localeCompare(left.createdAt)
       );
@@ -2343,11 +2447,9 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
     },
 
     async searchMemories(orgId, query, scope, ownerId, limit) {
-      const needle = query.trim().toLowerCase();
+      const terms = boundedMemoryTerms(query);
       let results = [...memories.values()].filter(
-        (memory) =>
-          memory.orgId === orgId &&
-          memory.content.toLowerCase().includes(needle)
+        (memory) => memory.orgId === orgId
       );
       if (scope) {
         results = results.filter((memory) => memory.scope === scope);
@@ -2355,7 +2457,10 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       if (ownerId) {
         results = results.filter((memory) => memory.ownerId === ownerId);
       }
-      return typeof limit === "number" ? results.slice(0, limit) : results;
+      return rankMemoryMatches(results, terms).slice(
+        0,
+        memoryResultLimit(limit, 20)
+      );
     },
 
     async setUserContext(orgId, userId, content, updatedAt) {
@@ -2469,7 +2574,11 @@ export function createInMemoryDatabaseAdapter(): DatabaseAdapter {
       const key = memoryKey(orgId, id);
       const existing = memories.get(key);
       if (existing) {
-        memories.set(key, { ...existing, ...patch, id, orgId });
+        // Match persisted updates: undefined leaves the stored value intact.
+        const definedPatch: Partial<StoredMemoryRecord> = Object.fromEntries(
+          Object.entries(patch).filter(([, value]) => value !== undefined)
+        );
+        memories.set(key, { ...existing, ...definedPatch, id, orgId });
       }
     },
 

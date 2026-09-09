@@ -1,0 +1,188 @@
+import { expect, test } from "bun:test";
+import type {
+  GenerateChatInput,
+  ProviderClient,
+  ToolExecutionResult,
+} from "@atlas/core";
+import type { SendStreamOptions } from "./chat";
+import { createAgentHarness } from "./index";
+import type { ToolExecutionLifecycle } from "./tool-execution-lifecycle";
+
+for (const native of [false, true]) {
+  test(`${native ? "native" : "API"} admission observes revocation during an existing awaited guard`, async () => {
+    let allowed = true;
+    let effects = 0;
+    let calls = 0;
+    const call = { id: "guard-order", name: "effect", arguments: {} };
+    const provider: ProviderClient = {
+      name: "openai_compatible",
+      async generateText() { return { content: "unused" }; },
+      async generateChat(input) {
+        calls += 1;
+        if (native) await input.executeToolCall!(call);
+        const toolCalls = native || calls > 1 ? [] : [call];
+        return { content: "", toolCalls, assistantMessage: { role: "assistant", content: "", toolCalls } };
+      },
+    };
+    const session = createAgentHarness({ provider, tools: [{
+      name: "effect", description: "Record a fixture effect", parameters: { type: "object", properties: {} },
+      run() { effects += 1; return { effect: true }; },
+    }] }).createChatSession({ toolContext: {
+      async beforeToolCall() { await Promise.resolve(); allowed = false; },
+    } });
+    await session.send("Run the fixture", {
+      async toolExecutionGuard() {
+        await Promise.resolve();
+        if (!allowed) throw new Error("Fixture authorization revoked");
+      },
+    });
+    expect(allowed).toBe(false);
+    expect(effects).toBe(0);
+  });
+}
+
+for (const native of [false, true]) {
+  for (const streaming of [false, true]) {
+    test(`${native ? "native" : "API"} ${streaming ? "stream" : "send"} binds fresh per-turn guards and publication lifecycles`, async () => {
+      let providerRequests = 0;
+      let effects = 0;
+      let existingGuards = 0;
+      const guards: string[] = [];
+      const stages: string[] = [];
+      const completions: Array<{
+        label: string;
+        result: ToolExecutionResult<unknown>;
+      }> = [];
+      const publisherPresence: boolean[] = [];
+      const lifecycle = (label: string): ToolExecutionLifecycle => ({
+        begin() {
+          return {
+            async complete(result) {
+              completions.push({ label, result });
+            },
+            publisher: {
+              async stageBytes() {
+                stages.push(label);
+              },
+            },
+          };
+        },
+      });
+      const call = {
+        arguments: {},
+        id: "reused-native-call-id",
+        name: "effect",
+      };
+      const end = () => ({
+        assistantMessage: {
+          content: "Turn ended.",
+          role: "assistant" as const,
+        },
+        content: "Turn ended.",
+        toolCalls: [],
+      });
+      const generate = async (input: GenerateChatInput) => {
+        providerRequests += 1;
+        if (native) {
+          await input.executeToolCall!(call);
+          return end();
+        }
+        return providerRequests % 2 === 0
+          ? end()
+          : {
+              assistantMessage: {
+                content: "",
+                role: "assistant" as const,
+                toolCalls: [call],
+              },
+              content: "",
+              toolCalls: [call],
+            };
+      };
+      const provider: ProviderClient = {
+        generateChat: generate,
+        async generateText() {
+          return { content: "unused" };
+        },
+        name: "openai_compatible",
+        async streamChat(input, handlers) {
+          const result = await generate(input);
+          handlers.onChunk(result.content);
+          return result;
+        },
+      };
+      const session = createAgentHarness({
+        provider,
+        tools: [
+          {
+            description: "Record an actual fixture effect",
+            name: "effect",
+            parameters: { properties: {}, type: "object" },
+            async run(_input, context) {
+              effects += 1;
+              publisherPresence.push(Boolean(context.artifactPublisher));
+              await context.artifactPublisher?.stageBytes({
+                bytes: new Uint8Array([1]),
+                sourcePath: "artifacts/result.bin",
+              });
+              return { actualEffect: effects };
+            },
+          },
+        ],
+      }).createChatSession({
+        toolContext: {
+          async beforeToolCall() {
+            existingGuards += 1;
+          },
+          orgId: "org",
+          profileId: "profile",
+          sessionId: "session",
+          userId: "human",
+        },
+        toolExecutionLifecycle: lifecycle("session-default"),
+      });
+      const send = (options?: SendStreamOptions) =>
+        streaming
+          ? session.sendStream("Run the fixture", { onChunk() {} }, options)
+          : session.send("Run the fixture", options);
+
+      await send({
+        async toolExecutionGuard(context, name) {
+          await Promise.resolve();
+          expect(context.userId).toBe("human");
+          expect(context.sessionId).toBe("session");
+          expect(name).toBe("effect");
+          guards.push("first");
+        },
+        toolExecutionLifecycle: lifecycle("first"),
+      });
+      expect(effects).toBe(1);
+      expect(stages).toEqual(["first"]);
+
+      await send({
+        async toolExecutionGuard() {
+          await Promise.resolve();
+          guards.push("denied");
+          throw new Error("Synthetic current authorization revoked");
+        },
+        toolExecutionLifecycle: lifecycle("denied"),
+      });
+      expect(effects).toBe(1);
+      expect(completions.at(-1)?.label).toBe("denied");
+      expect(completions.at(-1)?.result.success).toBe(false);
+
+      await send({ toolExecutionLifecycle: null });
+      await send();
+      expect(effects).toBe(3);
+      expect(existingGuards).toBe(3);
+      expect(guards).toEqual(["first", "denied"]);
+      expect(stages).toEqual(["first", "session-default"]);
+      expect(publisherPresence).toEqual([true, false, true]);
+      expect(completions.map((entry) => entry.label)).toEqual([
+        "first",
+        "denied",
+        "session-default",
+      ]);
+    });
+  }
+}

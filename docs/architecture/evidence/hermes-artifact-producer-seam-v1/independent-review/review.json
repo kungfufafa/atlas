@@ -1,0 +1,12 @@
+{
+  "at": "2026-09-06T23:59:42.600303+00:00",
+  "verdict": "no-blocker-found-within-unwired-producer-component",
+  "sourceHash": "17a262bf4fd5ab96f72fe4e7ca741cc0066542c321b037c70f713e35a621faeb",
+  "sourceFilesVerified": 2086,
+  "rootC5FilesVerifiedUnchanged": 2078,
+  "independentTestRuns": 0,
+  "ownerTests": 70,
+  "ownerAssertions": 325,
+  "applied": false,
+  "claim": "Source review of isolated producer hooks only; strict cutover and complete race fix remain unimplemented."
+}

@@ -36,6 +36,9 @@ export function createClaudeProvider(options: {
         );
         return {
           content: result.content,
+          ...(result.modelIdentity
+            ? { modelIdentity: result.modelIdentity }
+            : {}),
           ...(result.usage ? { usage: result.usage } : {}),
         };
       });

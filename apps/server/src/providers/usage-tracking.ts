@@ -9,7 +9,11 @@ import type {
   StreamChatHandlers,
 } from "@atlas/core";
 import { estimateUserContentTokens } from "@atlas/core";
-import type { LlmUsageTracker } from "../services/llm-usage-tracker";
+import type {
+  LlmInvocationUsage,
+  LlmUsageTracker,
+} from "../services/llm-usage-tracker";
+import { reportedProviderFailureUsage } from "./failure-evidence";
 import type { PricingContext } from "./pricing";
 
 function estimateTokens(text: string): number {
@@ -209,24 +213,67 @@ export function wrapProviderWithUsageTracking(
   modelId: string,
   pricingContext: PricingContext = {}
 ): ProviderClient {
+  async function preserveFailedUsage<T>(request: () => Promise<T>): Promise<T> {
+    try {
+      return await request();
+    } catch (error) {
+      const usage = reportedProviderFailureUsage(error);
+      tracker.recordInvocation(
+        modelId,
+        usage ? { ...usage, source: "reported" } : { source: "unknown" },
+        pricingContext
+      );
+      throw error;
+    }
+  }
+
+  function resolveUsage(
+    usage: ChatCompletionResult["usage"],
+    estimateInput: () => number,
+    estimateOutput: () => number
+  ): LlmInvocationUsage {
+    const valid = (value: number | undefined): value is number =>
+      typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+    const inputTokens = usage?.inputTokens;
+    const outputTokens = usage?.outputTokens;
+    if (valid(inputTokens) && valid(outputTokens)) {
+      return {
+        inputTokens,
+        outputTokens,
+        source: usage?.estimated ? "estimated" : "reported",
+      };
+    }
+    // Visible outer messages cannot describe native runtime-owned context and tools.
+    if (provider.managesContext) {
+      return { source: "unknown" };
+    }
+    return {
+      inputTokens: valid(inputTokens) ? inputTokens : estimateInput(),
+      outputTokens: valid(outputTokens) ? outputTokens : estimateOutput(),
+      source: "estimated",
+    };
+  }
+
   function withRecordedUsage(
     input: GenerateChatInput,
     result: ChatCompletionResult
   ): ChatCompletionResult {
-    const estimated = result.usage?.inputTokens == null;
-    const inputTokens =
-      result.usage?.inputTokens ?? estimateChatInputTokens(input);
-    const outputTokens =
-      result.usage?.outputTokens ?? estimateChatOutputTokens(result);
-    tracker.record(modelId, inputTokens, outputTokens, pricingContext);
-
+    const usage = resolveUsage(
+      result.usage,
+      () => estimateChatInputTokens(input),
+      () => estimateChatOutputTokens(result)
+    );
+    tracker.recordInvocation(modelId, usage, pricingContext);
+    if (usage.source === "unknown") {
+      return result;
+    }
     return {
       ...result,
       usage: {
-        inputTokens,
-        outputTokens,
-        totalTokens: inputTokens + outputTokens,
-        ...(estimated ? { estimated: true } : {}),
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        totalTokens: usage.inputTokens + usage.outputTokens,
+        ...(usage.source === "estimated" ? { estimated: true } : {}),
       },
     };
   }
@@ -236,23 +283,33 @@ export function wrapProviderWithUsageTracking(
     async generateChat(
       input: GenerateChatInput
     ): Promise<ChatCompletionResult> {
-      const result = await provider.generateChat(input);
+      const result = await preserveFailedUsage(() =>
+        provider.generateChat(input)
+      );
       return withRecordedUsage(input, result);
     },
     async generateText(input: GenerateTextInput): Promise<GenerateTextResult> {
-      const result = await provider.generateText(input);
-      const inputTokens =
-        result.usage?.inputTokens ?? estimateTextInputTokens(input);
-      const outputTokens =
-        result.usage?.outputTokens ?? estimateTokens(result.content);
-      tracker.record(modelId, inputTokens, outputTokens, pricingContext);
+      const result = await preserveFailedUsage(() =>
+        provider.generateText(input)
+      );
+      tracker.recordInvocation(
+        modelId,
+        resolveUsage(
+          result.usage,
+          () => estimateTextInputTokens(input),
+          () => estimateTokens(result.content)
+        ),
+        pricingContext
+      );
       return result;
     },
     async streamChat(
       input: GenerateChatInput,
       handlers: StreamChatHandlers
     ): Promise<ChatCompletionResult> {
-      const result = await provider.streamChat(input, handlers);
+      const result = await preserveFailedUsage(() =>
+        provider.streamChat(input, handlers)
+      );
       return withRecordedUsage(input, result);
     },
   };

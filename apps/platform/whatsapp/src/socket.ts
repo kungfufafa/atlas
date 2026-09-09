@@ -29,8 +29,13 @@ import {
   BoundedWorkQueue,
   InboundQueueSaturatedError,
 } from "./inbound-work-queue";
+import {
+  parseWhatsAppNativeReaction,
+  type WhatsAppNativeReaction,
+} from "./native-controls";
 
 export interface WhatsAppSocketDeps {
+  allowUnaddressedGroup?: (inbound: WhatsAppInboundChat) => Promise<boolean>;
   onConnected?: (me: { id: string; lid?: string | null }) => void;
   onDevicePairingCode?: (code: string) => void;
   onDisconnected?: () => void;
@@ -41,6 +46,7 @@ export interface WhatsAppSocketDeps {
   ) => Promise<void>;
   onPhoneNumberShare?: (lid: string, phoneJid: string) => void;
   onQr?: (qr: string) => void;
+  onReaction?: (reaction: WhatsAppNativeReaction) => Promise<void>;
   phoneNumber?: string;
 }
 
@@ -277,6 +283,29 @@ export async function createWhatsAppSocket(
 
       next.ev.on("creds.update", saveCreds);
 
+      next.ev.on("messages.reaction", async (events) => {
+        if (myGen !== generation || socket !== current || !deps.onReaction) {
+          return;
+        }
+        await dispatchWhatsAppMessagesConcurrently(events, async (event) => {
+          const reaction = parseWhatsAppNativeReaction(event, state.creds.me);
+          if (!reaction) {
+            return;
+          }
+          try {
+            await inboundWorkQueue.run(async () => {
+              if (myGen === generation && socket === current) {
+                await deps.onReaction?.(reaction);
+              }
+            });
+          } catch (error) {
+            console.error("WhatsApp reaction handling failed.", {
+              errorType: getSafeWhatsAppErrorType(error),
+            });
+          }
+        });
+      });
+
       next.ev.on("chats.phoneNumberShare", (share) => {
         if (share.lid && share.jid) {
           deps.onPhoneNumberShare?.(share.lid, share.jid);
@@ -315,7 +344,16 @@ export async function createWhatsAppSocket(
               const messageId = msg.key.id?.trim();
               const text = extractInboundText(msg.message);
               const mediaKind = inspectInboundWhatsAppMedia(msg.message)?.kind;
-              const inbound = parseInboundWhatsAppMessage(msg, me);
+              const candidate = parseInboundWhatsAppMessage(msg, me, {
+                allowUnaddressedGroup: true,
+              });
+              const allowUnaddressedGroup = Boolean(
+                candidate?.isGroup &&
+                  (await deps.allowUnaddressedGroup?.(candidate))
+              );
+              const inbound = parseInboundWhatsAppMessage(msg, me, {
+                allowUnaddressedGroup,
+              });
 
               if (isVerbose) {
                 const chatKind = remoteJid
@@ -718,6 +756,7 @@ const WHATSAPP_SOCKET_EVENTS = [
   "connection.update",
   "creds.update",
   "messages.upsert",
+  "messages.reaction",
 ] as const;
 
 export function detachWhatsAppSocketListeners(target: {

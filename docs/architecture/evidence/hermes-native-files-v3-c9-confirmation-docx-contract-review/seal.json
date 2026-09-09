@@ -1,0 +1,10 @@
+{
+  "at": "2026-09-07T10:14:47.229181+00:00",
+  "manifestSha256": "cef8f3c7f390eb7bf15cfff13fde7aa695ea31f844d1c604e58e5f39c131205b",
+  "fileCount": 7,
+  "originalAnalysisSha256": "180ceb12182c8febc7c13f3290f2140ea787784b2ddab94f8fbbbb4639920064",
+  "allSevenOriginalOutcomesRetained": true,
+  "sourceBindingsReverified": 30,
+  "originalEvidenceModified": false,
+  "rescores": 0
+}

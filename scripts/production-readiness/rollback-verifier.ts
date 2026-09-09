@@ -8,7 +8,7 @@ export interface RollbackSimulationResult {
   postRollbackHealthOk: boolean;
   rollbackExecuted: boolean;
   schemaRollbackCompatible: boolean;
-  status: "pass" | "fail";
+  status: "pass" | "fail" | "not_run";
 }
 
 export interface LocalProdLikeRollbackResult {
@@ -41,6 +41,7 @@ export interface RealStagingDeploymentResult {
   candidateVersion: string | null;
   details: string;
   durationMs: number | null;
+  healthCheckPassed?: boolean;
   level: "LEVEL_3";
   migrationSafety:
     | "BACKWARD_COMPATIBLE"
@@ -61,13 +62,13 @@ export class RollbackVerifier {
     // Level 1: State Machine Transition (SERVING -> DRAINING -> STOPPING -> STOPPED)
     return {
       details:
-        "Level 1: Rollback state machine transition and admission rejection under draining state verified via in-memory state engine.",
+        "NOT_RUN: no Atlas lifecycle transition or migration rollback is executed by this placeholder.",
       level: "LEVEL_1",
-      passed: true,
-      postRollbackHealthOk: true,
-      rollbackExecuted: true,
-      schemaRollbackCompatible: true,
-      status: "pass",
+      passed: false,
+      postRollbackHealthOk: false,
+      rollbackExecuted: false,
+      schemaRollbackCompatible: false,
+      status: "not_run",
     };
   }
 
@@ -318,16 +319,17 @@ export class RollbackVerifier {
       return {
         beforeVersion,
         candidateVersion,
-        details: `Level 3: Real staging validation executed against ${stagingUrl}`,
+        details: `Health check only against ${stagingUrl}; no deployment, migration or rollback was executed.`,
         durationMs: Date.now() - startTime,
+        healthCheckPassed: ready,
         level: "LEVEL_3",
-        migrationSafety: "BACKWARD_COMPATIBLE",
-        postRollbackSmoke: ready ? "pass" : "fail",
-        realDeploymentExecuted: true,
-        realRollbackExecuted: true,
-        rollbackVersion: beforeVersion,
-        status: ready ? "pass" : "partial",
-        trafficRestoredVersion: beforeVersion,
+        migrationSafety: "NOT RUN",
+        postRollbackSmoke: "not_run",
+        realDeploymentExecuted: false,
+        realRollbackExecuted: false,
+        rollbackVersion: null,
+        status: "partial",
+        trafficRestoredVersion: null,
       };
     } catch (err: any) {
       return {

@@ -1,0 +1,26 @@
+{
+  "readiness.json": {
+    "source": "/private/tmp/atlas-native-controls-v2/readiness.json",
+    "sha256": "8223b611c5fb7f6c1073f2c64ad126aa383d979467e83606f79dfcd6c4984375"
+  },
+  "independent-native-v2-review.json": {
+    "source": "/private/tmp/atlas-native-controls-v2/independent-native-v2-review.json",
+    "sha256": "f6957dfe1193b99151e2b55ac9c101fac85f83a2c397ceead5896acb3676a886"
+  },
+  "reviewedQueueDelta": {
+    "path": "/private/tmp/atlas-product-transport-v2-proposal/product-proxy-queue-lifetime.patch",
+    "sha256": "f58280c050a1ac9cf821dd48c29beae86eeab85decd4166fc374d551cb1304a5"
+  },
+  "nativeV1AuxiliaryAuditReferences": {
+    "native-auxiliary-error-audit.json": {
+      "path": "docs/architecture/evidence/hermes-native-memory-v1/native-auxiliary-error-audit.json",
+      "source": "/private/tmp/atlas-native-memory-v1-error-audit/report.json",
+      "sha256": "e19052d33d7e6ebba2e2544e8ad45bdd7a2015bcef57e715ec8ffad07871190c"
+    },
+    "native-auxiliary-error-audit.md": {
+      "path": "docs/architecture/evidence/hermes-native-memory-v1/native-auxiliary-error-audit.md",
+      "source": "/private/tmp/atlas-native-memory-v1-error-audit/report.md",
+      "sha256": "38e0c924e5abb79f1b972a77b018b5470d48b95adcd950929971810ca3b1e0c1"
+    }
+  }
+}

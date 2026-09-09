@@ -1,0 +1,14 @@
+{
+  "biomeConfiguration": {
+    "origin": "/Users/apriansyahrs/Documents/Code/atlas/biome.jsonc",
+    "copy": "source/biome.jsonc",
+    "sha256": "e35c585fdfc0d0baabfb3cffe773c5fa15a07cdc635e1774c37311a970f062f5"
+  },
+  "scopeConfig": "source/tsconfig.selected-publication.json",
+  "note": "Validation-only configuration files are separately bound, outside the inherited apps/packages plus four root files source inventory convention.",
+  "gitIgnoreConfiguration": {
+    "origin": "/Users/apriansyahrs/Documents/Code/atlas/.gitignore",
+    "copy": "source/.gitignore",
+    "sha256": "efacfbfe9dc84e2c67d1db75d0f0c43b6cdd46e42d5466ae7da6678354cff808"
+  }
+}

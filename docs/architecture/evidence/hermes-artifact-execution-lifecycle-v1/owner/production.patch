@@ -1,0 +1,447 @@
+--- /dev/null
++++ b/apps/server/src/services/artifact-publication-lifecycle.ts
+@@ -0,0 +1,196 @@
++import { randomUUID } from "node:crypto";
++import type { ToolExecutionLifecycle } from "@atlas/agent";
++import type { ToolContext } from "@atlas/core";
++import type {
++  ArtifactPublicationIdentity,
++  ArtifactPublicationProducer,
++} from "@atlas/core/artifact-publication";
++import { createToolArtifactPublisher } from "@atlas/core/artifact-publication";
++import { waitForAbortable } from "@atlas/core/download-deadline";
++import {
++  MAX_PUBLICATION_BYTES,
++  MAX_PUBLICATION_OUTPUTS,
++  validatePublicationPath,
++} from "@atlas/db";
++import type {
++  ArtifactPublicationExecution,
++  ArtifactPublicationService,
++  PublicationFinalization,
++} from "./artifact-publication-service";
++
++function required(value: string | undefined, field: string): string {
++  const result = value?.trim();
++  if (!result) {
++    throw new Error(`Artifact publication requires ${field}.`);
++  }
++  return result;
++}
++
++/** Diagnostic observer only. A slow or failed observer cannot erase a tool receipt. */
++function observe(observer: (() => void | Promise<void>) | undefined): void {
++  try {
++    Promise.resolve(observer?.()).catch(() => {
++      // The completed tool and committed publication retain their own outcomes.
++    });
++  } catch {
++    // Synchronous observers have the same isolation as asynchronous observers.
++  }
++}
++
++/**
++ * Host adapter for the common API/native tool loop. Production admission and
++ * publication-backed consumers must be wired together before a strict cutover.
++ */
++export function createArtifactPublicationLifecycle(options: {
++  /** Must include the actual admitted workspace, runtime and temporary roots. */
++  admittedToolRoots(context: Readonly<ToolContext>): Promise<readonly string[]>;
++  onFinalized?(
++    identity: ArtifactPublicationIdentity,
++    result: PublicationFinalization
++  ): void | Promise<void>;
++  onError?: ToolExecutionLifecycle["onError"];
++  service: ArtifactPublicationService;
++}): ToolExecutionLifecycle {
++  return {
++    begin(call, context) {
++      // Freeze trusted identity before tool code can mutate its own context/call.
++      const identity: ArtifactPublicationIdentity = {
++        actorId: required(context.userId, "actor"),
++        executionId: randomUUID(),
++        orgId: required(context.orgId, "organization"),
++        profileId: required(context.profileId, "profile"),
++        runId: required(context.runId, "run"),
++        sessionId: required(context.sessionId, "session"),
++        toolCallId: required(call.id, "tool call"),
++      };
++      const capturedContext = Object.freeze({ ...context });
++      const publicationAbort = new AbortController();
++      const signal = context.signal
++        ? AbortSignal.any([context.signal, publicationAbort.signal])
++        : publicationAbort.signal;
++      let execution: Promise<ArtifactPublicationExecution> | undefined;
++      let closed = false;
++      let stageError: unknown;
++      let stagingFailed = false;
++      let completion: Promise<void> | undefined;
++      const pending = new Set<Promise<void>>();
++      const producer: ArtifactPublicationProducer = {
++        stageBytes(input) {
++          if (closed) {
++            return Promise.reject(new Error("Tool publication is closed."));
++          }
++          if (stagingFailed) {
++            return Promise.reject(stageError);
++          }
++          // Copy before asynchronous authorization or root inventory resolution.
++          let bytes: Buffer;
++          let sourcePath: string;
++          let outputOrdinal: number;
++          try {
++            signal.throwIfAborted();
++            const supplied = input.bytes;
++            if (
++              !(supplied instanceof Uint8Array) ||
++              supplied.byteLength > MAX_PUBLICATION_BYTES ||
++              pending.size >= MAX_PUBLICATION_OUTPUTS
++            ) {
++              throw new Error(
++                "Invalid or oversized artifact publication input."
++              );
++            }
++            sourcePath = input.sourcePath;
++            validatePublicationPath(sourcePath);
++            outputOrdinal = input.outputOrdinal;
++            if (
++              !Number.isSafeInteger(outputOrdinal) ||
++              outputOrdinal < 0 ||
++              outputOrdinal >= MAX_PUBLICATION_OUTPUTS
++            ) {
++              throw new Error("Invalid publication output ordinal.");
++            }
++            bytes = Buffer.from(supplied);
++          } catch (error) {
++            stagingFailed = true;
++            stageError = error;
++            publicationAbort.abort(error);
++            return Promise.reject(error);
++          }
++          if (!execution) {
++            const initializing = (async () => {
++              const roots = await options.admittedToolRoots(capturedContext);
++              signal.throwIfAborted();
++              return await options.service.beginExecution(
++                identity,
++                roots,
++                signal
++              );
++            })();
++            // A resolver can abort synchronously before waitForAbortable attaches.
++            // Observe detached rejection without changing the promise's outcome.
++            initializing.catch(() => {});
++            execution = waitForAbortable(initializing, signal);
++          }
++          const activeExecution = execution;
++          const staged = (async () => {
++            try {
++              const active = await activeExecution;
++              await active.producer.stageBytes({
++                bytes,
++                outputOrdinal,
++                sourcePath,
++              });
++            } catch (error) {
++              stagingFailed = true;
++              stageError = error;
++              publicationAbort.abort(error);
++              throw error;
++            }
++          })();
++          pending.add(staged);
++          return staged;
++        },
++      };
++      return {
++        complete(result) {
++          if (completion) {
++            return completion;
++          }
++          closed = true;
++          completion = (async () => {
++            if (!execution) {
++              if (stagingFailed) {
++                observe(() =>
++                  options.onFinalized?.(identity, {
++                    error: stageError,
++                    publications: [],
++                    status: "failed",
++                  })
++                );
++              }
++              return;
++            }
++            await Promise.allSettled(pending);
++            let finalized: PublicationFinalization;
++            try {
++              const active = await execution;
++              finalized = await active.finalize(result);
++              if (stagingFailed) {
++                finalized = {
++                  error: stageError,
++                  publications: [],
++                  status: "failed",
++                };
++              }
++            } catch (error) {
++              finalized = { error, publications: [], status: "failed" };
++            }
++            observe(() => options.onFinalized?.(identity, finalized));
++          })();
++          return completion;
++        },
++        publisher: createToolArtifactPublisher(producer),
++      };
++    },
++    onError: options.onError,
++  };
++}
+--- a/packages/agent/src/chat.ts
++++ b/packages/agent/src/chat.ts
+@@ -110,6 +110,7 @@
+   usableContextTokens,
+ } from "./history-compaction";
+ import { createRuntimeToolDispatcher } from "./runtime-tool-dispatcher";
++import type { ToolExecutionLifecycle } from "./tool-execution-lifecycle";
+ import {
+   canRunToolCallsInParallel,
+   executeToolCall,
+@@ -244,6 +245,8 @@
+   soul?: boolean;
+   systemPrompt?: string;
+   toolContext?: ToolContext;
++  /** Host-only execution boundary; never copied into a tool context. */
++  toolExecutionLifecycle?: ToolExecutionLifecycle;
+   tools?: ToolDefinition[];
+   userContext?: string;
+   userTimezone?: string;
+@@ -536,6 +539,7 @@
+             runCompaction: (force) => runCompaction(force, signal),
+             signal,
+             toolContext,
++            toolExecutionLifecycle: options.toolExecutionLifecycle,
+             userTimezone: options.userTimezone,
+           }
+         );
+@@ -569,6 +573,7 @@
+             runCompaction: (force) => runCompaction(force, signal),
+             signal,
+             toolContext,
++            toolExecutionLifecycle: options.toolExecutionLifecycle,
+             userTimezone: options.userTimezone,
+           }
+         );
+@@ -593,6 +598,7 @@
+     handlers?: StreamHandlers;
+     isCurrentTurn?: () => boolean;
+     toolContext?: ToolContext;
++    toolExecutionLifecycle?: ToolExecutionLifecycle;
+     runCompaction?: (force: boolean) => Promise<CompactionResponse>;
+     onContextUsage?: (
+       usedTokens: number,
+@@ -779,6 +785,7 @@
+           await options.onToolCheckpoint?.();
+         },
+         runCompaction: options.runCompaction,
++        toolExecutionLifecycle: options.toolExecutionLifecycle,
+       }
+     );
+ 
+@@ -879,6 +886,7 @@
+   signal?: AbortSignal,
+   userTimezone?: string,
+   hooks?: {
++    toolExecutionLifecycle?: ToolExecutionLifecycle;
+     isCurrentTurn?: () => boolean;
+     onIncompleteCompletion?: (error: IncompleteCompletionError) => void;
+     onToolLoopStop?: SendStreamOptions["onToolLoopStop"];
+@@ -992,7 +1000,8 @@
+               [call],
+               callHistory,
+               isolateToolObservers(handlers),
+-              { ...toolContext, signal: runtimeSignal ?? signal }
++              { ...toolContext, signal: runtimeSignal ?? signal },
++              hooks?.toolExecutionLifecycle
+             );
+           } catch (error) {
+             if (
+@@ -1157,7 +1166,8 @@
+           result.toolCalls,
+           batchHistory,
+           isolateToolObservers(handlers),
+-          toolContext
++          toolContext,
++          hooks?.toolExecutionLifecycle
+         );
+       } catch (error) {
+         batchFailure = error;
+@@ -1469,7 +1479,8 @@
+   call: ToolCall,
+   history: ChatMessage[],
+   context: ToolContext,
+-  handlers?: StreamHandlers
++  handlers?: StreamHandlers,
++  lifecycle?: ToolExecutionLifecycle
+ ): Promise<unknown> {
+   const risk = evaluateActionRisk(call.name, call.arguments);
+   let approvedContext = context;
+@@ -1481,14 +1492,14 @@
+       !context.orgId?.trim() ||
+       !context.userId?.trim()
+     ) {
+-      return executeToolCall(tools, call, context);
++      return executeToolCall(tools, call, context, lifecycle);
+     }
+     try {
+       validateToolArguments(assignedTool.parameters, call.arguments);
+     } catch {
+       // Return the central executor's standardized rejection without asking the
+       // user to approve an invalid or unavailable action.
+-      return executeToolCall(tools, call, context);
++      return executeToolCall(tools, call, context, lifecycle);
+     }
+     const approval: ApprovalRequest = {
+       consequenceSummary: summarizeActionConsequence(risk.consequence),
+@@ -1545,7 +1556,7 @@
+         request(action, handlers?.onChannelActionRequested, signal),
+     };
+   }
+-  const result = await executeToolCall(tools, call, approvedContext);
++  const result = await executeToolCall(tools, call, approvedContext, lifecycle);
+   if (isApprovalRequiredResult(result)) {
+     const assistant = history.findLast(
+       (message) => message.role === "assistant"
+@@ -1571,7 +1582,8 @@
+   toolCalls: ToolCall[],
+   history: ChatMessage[],
+   handlers?: StreamHandlers,
+-  toolContext: ToolContext = {}
++  toolContext: ToolContext = {},
++  lifecycle?: ToolExecutionLifecycle
+ ): Promise<void> {
+   const emittedArtifactPaths = new Set<string>();
+   const contextForCall = (call: ToolCall): ToolContext => {
+@@ -1616,7 +1628,8 @@
+             call,
+             history,
+             contextForCall(call),
+-            handlers
++            handlers,
++            lifecycle
+           );
+           results[idx] = { call, result };
+ 
+@@ -1676,7 +1689,8 @@
+       call,
+       history,
+       contextForCall(call),
+-      handlers
++      handlers,
++      lifecycle
+     );
+ 
+     history.push({
+--- a/packages/agent/src/index.ts
++++ b/packages/agent/src/index.ts
+@@ -112,6 +112,10 @@
+ } from "./skill-post-turn-review";
+ export type { DraftTaskPromptInput } from "./task-prompt";
+ export { draftTaskPromptFromFields } from "./task-prompt";
++export type {
++  ToolExecutionLifecycle,
++  ToolInvocationLifecycle,
++} from "./tool-execution-lifecycle";
+ export { canRunToolCallsInParallel, executeToolCall } from "./tool-loop";
+ export {
+   buildSuggestParamsUserPrompt,
+--- /dev/null
++++ b/packages/agent/src/tool-execution-lifecycle.ts
+@@ -0,0 +1,30 @@
++import type { ToolCall, ToolContext, ToolExecutionResult } from "@atlas/core";
++
++/** Held by the trusted host, separately from the context passed to a tool. */
++export interface ToolInvocationLifecycle {
++  complete(result: ToolExecutionResult<unknown>): Promise<void>;
++  publisher?: ToolContext["artifactPublisher"];
++}
++
++export interface ToolExecutionLifecycle {
++  begin(
++    call: Readonly<ToolCall>,
++    context: Readonly<ToolContext>
++  ): ToolInvocationLifecycle | Promise<ToolInvocationLifecycle>;
++  /** Diagnostics must not replace an execution result or cause producer replay. */
++  onError?(error: unknown, phase: "begin" | "complete"): void | Promise<void>;
++}
++
++export function reportToolLifecycleError(
++  lifecycle: ToolExecutionLifecycle,
++  error: unknown,
++  phase: "begin" | "complete"
++): void {
++  try {
++    Promise.resolve(lifecycle.onError?.(error, phase)).catch(() => {
++      // Asynchronous diagnostic failures are isolated too.
++    });
++  } catch {
++    // A diagnostic failure cannot erase an actual tool effect or its receipt.
++  }
++}
+--- a/packages/agent/src/tool-loop.ts
++++ b/packages/agent/src/tool-loop.ts
+@@ -10,6 +10,11 @@
+   type ToolDefinition,
+   withSpan,
+ } from "@atlas/core";
++import {
++  reportToolLifecycleError,
++  type ToolExecutionLifecycle,
++  type ToolInvocationLifecycle,
++} from "./tool-execution-lifecycle";
+ import { toolResultError } from "./tool-progress";
+ 
+ export function findTool(
+@@ -37,7 +42,8 @@
+ export async function executeToolCall(
+   tools: ToolDefinition[],
+   call: ToolCall,
+-  context: ToolContext = {}
++  context: ToolContext = {},
++  lifecycle?: ToolExecutionLifecycle
+ ): Promise<unknown> {
+   const tool = findTool(tools, call.name);
+ 
+@@ -52,11 +58,27 @@
+   const startMs = Date.now();
+   try {
+     return await withSpan(`tool.${call.name}`, async () => {
+-      const execution = await executeProtectedTool(
+-        tool,
+-        call.arguments,
+-        context
+-      );
++      let invocation: ToolInvocationLifecycle | undefined;
++      if (lifecycle) {
++        try {
++          invocation = await lifecycle.begin(call, context);
++        } catch (error) {
++          reportToolLifecycleError(lifecycle, error, "begin");
++        }
++      }
++      const execution = await executeProtectedTool(tool, call.arguments, {
++        ...context,
++        artifactPublisher: invocation?.publisher,
++      });
++
++      if (invocation && lifecycle) {
++        try {
++          // Observe the actual protected result before any history distillation.
++          await invocation.complete(execution);
++        } catch (error) {
++          reportToolLifecycleError(lifecycle, error, "complete");
++        }
++      }
+ 
+       const durationMs = Date.now() - startMs;
+       metrics.toolLatencyMs.observe(durationMs, { tool: call.name });

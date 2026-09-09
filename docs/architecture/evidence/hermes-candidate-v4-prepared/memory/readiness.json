@@ -1,0 +1,119 @@
+{
+  "status": "isolated-patch-ready-for-review-not-applied",
+  "at": "2026-09-06T17:55:40.493892+00:00",
+  "sourceRoot": "/private/tmp/atlas-memory-scope-candidate4/source",
+  "candidateBase": {
+    "sourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+    "archivePath": "/private/tmp/atlas-hermes-evaluation/candidate-v3/atlas-source.tar.gz",
+    "archiveSha256": "e738224f0c13eeae6a2a3739900f983d879f6cab88171e5bd570adc7634e09c5",
+    "allSourceMembersVerifiedBeforeEdits": true,
+    "sourceFiles": 2072
+  },
+  "changedProductionFiles": ["apps/server/src/tools/memory-tools.ts"],
+  "changedTestFiles": [
+    "apps/server/src/tools/memory-tools-dedup.test.ts",
+    "apps/server/src/tools/memory-scope-contract.test.ts"
+  ],
+  "fileHashes": {
+    "apps/server/src/tools/memory-tools.ts": "2b9eec9d95634ed64c05e54d1ab73ed759098f2f3f5ed5c4e51b219e9e672e0b",
+    "apps/server/src/tools/memory-tools-dedup.test.ts": "b50d9bfeac4c67659aec88123e4350337f3076850c3d36e3404998dde84baa4c",
+    "apps/server/src/tools/memory-scope-contract.test.ts": "4c16434eedef9f26b68fb06ab3355a692cc12bf9cb11437b7e659e624020b7c9"
+  },
+  "patches": {
+    "production": {
+      "path": "/private/tmp/atlas-memory-scope-candidate4/production.patch",
+      "sha256": "43de40fdbdef32e153040138979a5776c23da9727f8d0d353e0585c9ee8ef03d"
+    },
+    "tests": {
+      "path": "/private/tmp/atlas-memory-scope-candidate4/tests.patch",
+      "sha256": "c20244c9661e47e357828b4e6d096d83151f4c53acd90b5525739328f7623359"
+    },
+    "combined": {
+      "path": "/private/tmp/atlas-memory-scope-candidate4/combined.patch",
+      "sha256": "263b1308c28cd061716a2ed1531ec298fd23d4540d4770b2cb2a4b8030ec26f5"
+    }
+  },
+  "patchApplyRoundTripVerified": true,
+  "rootRelevantFilesStillCandidate3": {
+    "apps/server/src/tools/memory-tools.ts": true,
+    "apps/server/src/tools/memory-tools-dedup.test.ts": true
+  },
+  "aliases": {
+    "@atlas/core": "/private/tmp/atlas-memory-scope-candidate4/source/packages/core/src/index.ts",
+    "@atlas/db": "/private/tmp/atlas-memory-scope-candidate4/source/packages/db/src/index.ts",
+    "@atlas/core/tools/schema": "/private/tmp/atlas-memory-scope-candidate4/source/packages/core/src/tools/schema.ts",
+    "zod": "/Users/apriansyahrs/Documents/Code/atlas/node_modules/.bun/zod@4.4.3/node_modules/zod/index.js"
+  },
+  "tests": {
+    "baseline": {
+      "log": "/private/tmp/atlas-memory-scope-candidate4/before-with-dependencies.log",
+      "pass": 6,
+      "fail": 2,
+      "reason": "Both adapters accepted unbound project writes; compatibility and supported scope cases passed."
+    },
+    "final": {
+      "log": "/private/tmp/atlas-memory-scope-candidate4/after-final.log",
+      "pass": 42,
+      "fail": 0,
+      "assertions": 221
+    },
+    "scopedTypecheck": "passed",
+    "scopedLint": "passed"
+  },
+  "gates": [
+    {
+      "name": "after-final",
+      "command": [
+        "bun",
+        "test",
+        "./apps/server/src/tools/memory-scope-contract.test.ts",
+        "./apps/server/src/tools/memory-tools-dedup.test.ts",
+        "./apps/server/src/tools/memory-tools.test.ts",
+        "./apps/server/src/tools/memory-tools-update.test.ts"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 1.3924867080058903,
+      "log": "/private/tmp/atlas-memory-scope-candidate4/after-final.log"
+    },
+    {
+      "name": "typecheck-final",
+      "command": [
+        "bun",
+        "x",
+        "--no-install",
+        "tsc",
+        "-p",
+        "./tsconfig.scope.json",
+        "--pretty",
+        "false"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 3.7061264170042705,
+      "log": "/private/tmp/atlas-memory-scope-candidate4/typecheck-final.log"
+    },
+    {
+      "name": "lint-final",
+      "command": [
+        "bun",
+        "x",
+        "--no-install",
+        "ultracite",
+        "check",
+        "./apps/server/src/tools/memory-tools.ts",
+        "./apps/server/src/tools/memory-scope-contract.test.ts",
+        "./apps/server/src/tools/memory-tools-dedup.test.ts"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 1.2365847080072854,
+      "log": "/private/tmp/atlas-memory-scope-candidate4/lint-final.log"
+    }
+  ],
+  "limits": [
+    "No model calls or measured recall improvement.",
+    "Legacy arbitrary-project-owner rows remain stored and unmodified; no new repair/access widening.",
+    "Direct service/database project support remains unchanged.",
+    "No full production suite or native fake pilot while the paid study is active.",
+    "Original candidate3 study and frozen controls unchanged."
+  ],
+  "processesClosed": true
+}

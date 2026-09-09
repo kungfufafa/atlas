@@ -5,6 +5,7 @@ import {
   isAttachOnlyCommand,
   saveInboundWorkspaceDocument,
 } from "@atlas/core";
+import type { SaveInboundDocument } from "@atlas/core/attachments/inbound-document";
 import {
   type ChannelOrgStore,
   findOrgBySelectionInput,
@@ -14,7 +15,10 @@ import {
 } from "@atlas/core/channel-org";
 import { ChannelRateLimiter } from "@atlas/core/channel-rate-limiter";
 import type { SendMessageInput } from "@atlas/core/contract";
-import { waitForAbortable } from "@atlas/core/download-deadline";
+import {
+  throwIfSignalAborted,
+  waitForAbortable,
+} from "@atlas/core/download-deadline";
 import {
   filterProfilesForChatAccess,
   formatProfileSelectionPrompt,
@@ -74,11 +78,21 @@ import {
   resolveWhatsAppChannelOrgKey,
   stripWhatsAppBotMention,
 } from "./group-message";
+import { allowUnaddressedWhatsAppGroup } from "./group-policy";
 import {
   inspectInboundWhatsAppMedia,
   isPrivateWhatsAppChat,
   type WhatsAppInboundChat,
 } from "./inbound-message";
+import {
+  executeWhatsAppNativeAction,
+  WhatsAppMessageRegistry,
+} from "./native-actions";
+import {
+  type WhatsAppNativeBinding,
+  WhatsAppNativeControls,
+  type WhatsAppNativeReaction,
+} from "./native-controls";
 import type { SessionStore } from "./session-store";
 import { WhatsAppTodoStatusMessage } from "./todo-status-message";
 import { createTypingLoop } from "./typing-indicator";
@@ -195,6 +209,9 @@ type NormalizedWhatsAppHandlerInput = WhatsAppInboundChat & {
 };
 
 interface WhatsAppSessionPrincipal {
+  channelAddressed?: boolean;
+  channelChatId: string;
+  channelIsGroup?: boolean;
   channelUserAliases: string[];
   channelUserId: string;
 }
@@ -204,6 +221,8 @@ interface InboundReplayBoundary {
 }
 
 export function createChatHandler(deps: ChatHandlerDeps) {
+  const nativeControls = new WhatsAppNativeControls();
+  const messageRegistry = new WhatsAppMessageRegistry();
   const {
     client,
     config,
@@ -269,9 +288,17 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         })
       : null;
 
-    if (groupDecision && !groupDecision.shouldHandle) {
+    const requiresGroupAddress = Boolean(
+      groupDecision &&
+        !groupDecision.shouldHandle &&
+        !(await allowUnaddressedWhatsAppGroup(
+          fixedWorkspaceId ?? orgStore.get(channelOrgKey)?.orgId,
+          inboundChat
+        ))
+    );
+    if (requiresGroupAddress && !media) {
       console.log(
-        `Ignored WhatsApp group message reason=${groupDecision.reason}`
+        `Ignored WhatsApp group message reason=${groupDecision?.reason}`
       );
       return;
     }
@@ -290,6 +317,14 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
 
     if (!isGroup && trimmed && isStopCommand(trimmed)) {
+      if (!authStore.isAuthorized(jid, { senderPn })) {
+        return;
+      }
+      if (
+        !(await canStopSession(conversationKey, channelOrgKey, inboundChat))
+      ) {
+        return;
+      }
       replayBoundary.replayUnsafe = true;
       if (!stopActiveStream(conversationKey)) {
         await sendText(jid, "Nothing to stop.");
@@ -324,6 +359,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         conversationKey,
         inboundChat.senderJid
       );
+      if (
+        !(await canStopSession(senderSessionKey, channelOrgKey, inboundChat))
+      ) {
+        return;
+      }
       if (!stopActiveStream(senderSessionKey)) {
         await sendText(jid, "Nothing to stop.");
       }
@@ -388,6 +428,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         ? inboundChat.senderJid
         : conversationKey;
       const sessionPrincipal: WhatsAppSessionPrincipal = {
+        channelAddressed: groupDecision?.shouldHandle ?? true,
+        channelChatId: jid,
+        channelIsGroup: isWhatsAppGroupChat(jid),
         channelUserAliases: senderJids.filter(
           (senderJid) => senderJid !== principalChannelUserId
         ),
@@ -444,6 +487,14 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
         replayBoundary.replayUnsafe = true;
         await handlePairing(jid, trimmed);
+        return;
+      }
+
+      if (requiresGroupAddress) {
+        await sendText(
+          jid,
+          "This file was ignored because this group requires a mention. Resend it with an @mention of Atlas, or reply to an Atlas message."
+        );
         return;
       }
 
@@ -516,12 +567,13 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
       const signal = registerActiveStream(sessionKey);
       try {
-        const mayPersistInboundDocument =
-          fromMe ||
-          senderJids.some((senderJid) =>
-            authStore.isPairedIdentity(senderJid, { senderPn })
-          );
-        if (mayPersistInboundDocument && media) {
+        const preparedSession = media
+          ? await waitForAbortable(
+              resolveSession(sessionKey, sessionPrincipal),
+              signal
+            )
+          : undefined;
+        if (media) {
           replayBoundary.replayUnsafe = true;
         }
 
@@ -530,7 +582,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           jid,
           channelOrgKey,
           inbound,
-          mayPersistInboundDocument,
+          sessionPrincipal,
           signal
         );
         if (mediaInput === "reject") {
@@ -561,33 +613,28 @@ export function createChatHandler(deps: ChatHandlerDeps) {
             inbound,
             sessionPrincipal,
             messageText,
-            signal
+            signal,
+            preparedSession
           );
           return;
         }
 
         if (media?.kind === "audio") {
-          let preparedSession: RemoteChatSession;
-          try {
-            preparedSession = await waitForAbortable(
-              resolveSession(sessionKey, sessionPrincipal),
-              signal
-            );
-          } catch (error) {
-            if (isAbortError(error)) {
-              throw error;
-            }
-            await sendText(jid, formatSessionOpenError(jid, error));
-            return;
+          if (!preparedSession) {
+            throw new Error("WhatsApp audio requires an authorized session.");
           }
 
           replayBoundary.replayUnsafe = true;
-          const audioInput = await tryBuildAudioInput(
-            jid,
+          const audioInput = await tryBuildAudioInput({
+            caption: messageText,
+            channelOrgKey,
             inbound,
-            preparedSession.id,
-            signal
-          );
+            jid,
+            principal: sessionPrincipal,
+            sessionId: preparedSession.id,
+            sessionKey,
+            signal,
+          });
           if (audioInput === "reject") {
             return;
           }
@@ -596,15 +643,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
             await handleChatMessage(
               sessionKey,
               jid,
-              withInboundGroupContext(
-                {
-                  ...audioInput,
-                  message: messageText
-                    ? `${audioInput.message}\n\n${messageText}`
-                    : audioInput.message,
-                },
-                inboundChat
-              ),
+              withInboundGroupContext(audioInput, inboundChat),
               inbound,
               sessionPrincipal,
               messageText,
@@ -669,6 +708,40 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     );
   }
 
+  async function canStopSession(
+    sessionKey: string,
+    channelOrgKey: string,
+    inboundChat: NormalizedWhatsAppHandlerInput
+  ): Promise<boolean> {
+    const existing = sessionStore.get(sessionKey);
+    if (!existing) {
+      return true;
+    }
+    const orgId = fixedWorkspaceId ?? orgStore.get(channelOrgKey)?.orgId;
+    if (!orgId) {
+      return false;
+    }
+    client.setOrgId(orgId);
+    try {
+      await client.authorizeChannelPrincipal({
+        channel: "whatsapp",
+        channelAddressed: true,
+        channelChatId: inboundChat.jid,
+        channelIsGroup: inboundChat.isGroup,
+        channelUserAliases: inboundChat.senderJids.filter(
+          (jid) => jid !== inboundChat.senderJid
+        ),
+        channelUserId: inboundChat.senderJid,
+        intent: "invoke",
+        profileId: existing.profileId,
+        sessionId: existing.sessionId,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async function handlePairing(jid: string, text: string): Promise<void> {
     const command = parseCommand(text);
     const fileConfig = authStore.getConfig();
@@ -731,6 +804,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         "WhatsApp pairing requires an authoritative workspace context."
       );
     }
+    client.setOrgId(orgId);
     const principal = await client.bindChannelPrincipal({
       channel: "whatsapp",
       channelUserId,
@@ -818,8 +892,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     principal: WhatsAppSessionPrincipal
   ): Promise<void> {
     let profileId: string;
+    let deliverySessionId: string;
     try {
-      await resolveSession(sessionKey, principal);
+      const session = await resolveSession(sessionKey, principal, "read");
+      deliverySessionId = session.id;
       const storedProfileId = sessionStore.get(sessionKey)?.profileId;
       if (!storedProfileId) {
         throw new Error("WhatsApp session has no profile mapping.");
@@ -837,6 +913,18 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     await maybeSendRequestedWhatsAppArtifactAttachment({
       attachUserText,
+      beforeDelivery: async () => {
+        if (sessionStore.get(sessionKey)?.sessionId !== deliverySessionId) {
+          throw new Error("WhatsApp session has changed.");
+        }
+        await client.authorizeChannelPrincipal({
+          ...principal,
+          channel: "whatsapp",
+          intent: "read",
+          profileId,
+          sessionId: deliverySessionId,
+        });
+      },
       client,
       conversationKey: sessionKey,
       getSocket,
@@ -1000,7 +1088,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     jid: string,
     channelOrgKey: string,
     inbound: WAMessage | null | undefined,
-    mayPersistInboundDocument: boolean,
+    principal: WhatsAppSessionPrincipal,
     signal: AbortSignal
   ): Promise<SendMessageInput | "reject" | null> {
     if (!inbound?.message) {
@@ -1018,26 +1106,20 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         downloadMedia
           ? downloadMedia(message, options)
           : downloadWhatsAppMedia(message, getSocket(), options),
-      mayPersistInboundDocument
-        ? {
-            saveInboundDocument: async (file) => {
-              const orgId =
-                fixedWorkspaceId ?? orgStore.get(channelOrgKey)?.orgId;
-              if (!orgId) {
-                throw new Error("WhatsApp workspace is not selected.");
-              }
-
-              const profileId = await resolveProfileId(sessionKey);
-              return saveInboundWorkspaceDocument({
-                bytes: file.bytes,
-                filename: file.filename,
-                orgId,
-                profileId,
-              });
-            },
-            signal,
-          }
-        : { signal }
+      {
+        saveInboundDocument: createInboundDocumentSaver(
+          sessionKey,
+          channelOrgKey,
+          principal,
+          signal
+        ),
+        signal,
+        transcribeVideoAudio: (input) =>
+          client.transcribeAudio({
+            ...input,
+            sessionId: sessionStore.get(sessionKey)!.sessionId,
+          }),
+      }
     );
 
     if (!result) {
@@ -1052,16 +1134,79 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     return result.input;
   }
 
-  async function tryBuildAudioInput(
-    jid: string,
-    inbound: WAMessage | null | undefined,
-    sessionId: string,
+  async function authorizeInboundFile(
+    sessionKey: string,
+    channelOrgKey: string,
+    principal: WhatsAppSessionPrincipal,
     signal: AbortSignal
-  ): Promise<SendMessageInput | "reject" | null> {
+  ): Promise<{ orgId: string; profileId: string }> {
+    throwIfSignalAborted(signal);
+    const orgId = fixedWorkspaceId ?? orgStore.get(channelOrgKey)?.orgId;
+    if (!orgId) {
+      throw new Error("WhatsApp workspace is not selected.");
+    }
+
+    const profileId = await resolveProfileId(sessionKey);
+    await client.authorizeChannelPrincipal({
+      channel: "whatsapp",
+      channelAddressed: principal.channelAddressed,
+      channelChatId: principal.channelChatId,
+      channelIsGroup: isWhatsAppGroupChat(principal.channelChatId),
+      channelUserAliases: principal.channelUserAliases,
+      channelUserId: principal.channelUserId,
+      intent: "files",
+      profileId,
+      sessionId: sessionStore.get(sessionKey)?.sessionId,
+    });
+    throwIfSignalAborted(signal);
+    return { orgId, profileId };
+  }
+
+  function createInboundDocumentSaver(
+    sessionKey: string,
+    channelOrgKey: string,
+    principal: WhatsAppSessionPrincipal,
+    signal: AbortSignal
+  ): SaveInboundDocument {
+    return async (file) => {
+      const scope = await authorizeInboundFile(
+        sessionKey,
+        channelOrgKey,
+        principal,
+        signal
+      );
+      return saveInboundWorkspaceDocument({
+        bytes: file.bytes,
+        filename: file.filename,
+        ...scope,
+      });
+    };
+  }
+
+  async function tryBuildAudioInput({
+    caption,
+    channelOrgKey,
+    inbound,
+    jid,
+    principal,
+    sessionId,
+    sessionKey,
+    signal,
+  }: {
+    caption: string;
+    channelOrgKey: string;
+    inbound: WAMessage | null | undefined;
+    jid: string;
+    principal: WhatsAppSessionPrincipal;
+    sessionId: string;
+    sessionKey: string;
+    signal: AbortSignal;
+  }): Promise<SendMessageInput | "reject" | null> {
     if (!inbound?.message) {
       return null;
     }
 
+    await authorizeInboundFile(sessionKey, channelOrgKey, principal, signal);
     const result = await buildWhatsAppAudioInput(
       inbound,
       (message, options) =>
@@ -1069,7 +1214,16 @@ export function createChatHandler(deps: ChatHandlerDeps) {
           ? downloadMedia(message, options)
           : downloadWhatsAppMedia(message, getSocket(), options),
       (input) => client.transcribeAudio({ ...input, sessionId }),
-      { signal }
+      {
+        caption,
+        saveInboundDocument: createInboundDocumentSaver(
+          sessionKey,
+          channelOrgKey,
+          principal,
+          signal
+        ),
+        signal,
+      }
     );
 
     if (result.kind === "reject") {
@@ -1092,32 +1246,228 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   ): Promise<void> {
     const typingLoop = createTypingLoop(getSocket(), jid);
     const todoStatus = new WhatsAppTodoStatusMessage(getSocket(), jid);
-    const liveReply = createWhatsAppLiveReply(getSocket, jid);
+    let outgoingBinding: WhatsAppNativeBinding | undefined;
+    const liveReply = createWhatsAppLiveReply(getSocket, jid, (key) => {
+      if (outgoingBinding) {
+        messageRegistry.remember(outgoingBinding, key);
+      }
+    });
     let reply = "";
     let earlyAck = false;
     const streamedArtifacts = new Map<string, ChannelArtifactRef>();
+    const nativeMediaPaths = new Set<string>();
     let profileId: string | undefined;
     let session: RemoteChatSession | undefined;
+    let controlsPending = Promise.resolve();
+    const enqueueControl = (operation: () => Promise<void>) => {
+      controlsPending = controlsPending.then(operation).catch((error) => {
+        console.error("WhatsApp native control failed.", {
+          errorType: getSafeWhatsAppErrorType(error),
+        });
+      });
+    };
 
     try {
       session =
         preparedSession ??
         (await waitForAbortable(resolveSession(sessionKey, principal), signal));
       profileId = sessionStore.get(sessionKey)?.profileId;
+      const canonical = await client.authorizeChannelPrincipal({
+        channel: "whatsapp",
+        channelAddressed: principal.channelAddressed,
+        channelChatId: jid,
+        channelIsGroup: isWhatsAppGroupChat(jid),
+        channelUserAliases: principal.channelUserAliases,
+        channelUserId: principal.channelUserId,
+        intent: "invoke",
+        profileId,
+        sessionId: session.id,
+      });
+      if (!profileId) {
+        throw new Error("WhatsApp session profile is missing.");
+      }
+      const nativeBinding: WhatsAppNativeBinding = {
+        ...principal,
+        destination: jid,
+        orgId: canonical.orgId,
+        profileId,
+        sessionId: session.id,
+        userId: canonical.userId,
+      };
+      outgoingBinding = nativeBinding;
+      await client.bindChannelActionContext({
+        channel: "whatsapp",
+        channelAddressed: principal.channelAddressed,
+        channelChatId: jid,
+        channelIsGroup: isWhatsAppGroupChat(jid),
+        channelUserAliases: principal.channelUserAliases,
+        channelUserId: principal.channelUserId,
+        sessionId: session.id,
+      });
+      if (inbound?.key) {
+        messageRegistry.remember(nativeBinding, inbound.key);
+      }
       typingLoop.start();
 
       reply = await session.sendStream(
         input,
         {
+          onApprovalRequested: (approval) => {
+            enqueueControl(async () => {
+              const socket = getSocket();
+              if (!socket) {
+                throw new Error("WhatsApp is disconnected.");
+              }
+              await nativeControls.approval({
+                approval,
+                binding: nativeBinding,
+                decide: async (decision, reaction) => {
+                  await client.decideChannelApproval({
+                    approvalId: approval.id,
+                    channel: "whatsapp",
+                    channelAddressed: true,
+                    channelChatId: jid,
+                    channelIsGroup: isWhatsAppGroupChat(jid),
+                    channelUserAliases: reaction.actorAliases,
+                    channelUserId: reaction.actorId,
+                    decision,
+                    profileId: nativeBinding.profileId,
+                    sessionId: nativeBinding.sessionId,
+                  });
+                },
+                socket,
+              });
+            });
+          },
           onArtifactCreated: (artifact) => {
             const ref = channelArtifactRefFromArtifact(artifact);
             if (ref) {
               streamedArtifacts.set(ref.path, ref);
             }
           },
+          onChannelActionRequested: (request) => {
+            enqueueControl(async () => {
+              const actor = {
+                channel: "whatsapp" as const,
+                channelAddressed: principal.channelAddressed,
+                channelChatId: jid,
+                channelIsGroup: isWhatsAppGroupChat(jid),
+                channelUserAliases: principal.channelUserAliases,
+                channelUserId: principal.channelUserId,
+                requestId: request.id,
+                sessionId: nativeBinding.sessionId,
+              };
+              const claimed = await client.claimChannelAction(actor);
+              const receipt = await executeWhatsAppNativeAction({
+                beforeSend: async () => {
+                  await client.authorizeChannelPrincipal({
+                    ...principal,
+                    channel: "whatsapp",
+                    intent: "files",
+                    nativeAction: claimed.action.kind,
+                    profileId: nativeBinding.profileId,
+                    sessionId: nativeBinding.sessionId,
+                  });
+                },
+                binding: nativeBinding,
+                currentMessageId: inbound?.key.id ?? undefined,
+                readMedia: async (path) => {
+                  await client.authorizeChannelPrincipal({
+                    ...principal,
+                    channel: "whatsapp",
+                    intent: "files",
+                    profileId: nativeBinding.profileId,
+                    sessionId: nativeBinding.sessionId,
+                  });
+                  const file = await client.readProfileArtifactContent(
+                    nativeBinding.profileId,
+                    path,
+                    { sessionId: nativeBinding.sessionId }
+                  );
+                  return {
+                    bytes: new Uint8Array(file.data),
+                    filename: path.split("/").at(-1) ?? "artifact",
+                    mimeType: file.contentType.split(";")[0]!.trim(),
+                  };
+                },
+                registry: messageRegistry,
+                request: claimed,
+                signal,
+                socket: getSocket(),
+              });
+              if (
+                claimed.action.kind === "send_media" &&
+                receipt.status !== "failed"
+              ) {
+                nativeMediaPaths.add(claimed.action.path);
+              }
+              await client.completeChannelAction({ ...actor, receipt });
+            });
+          },
           onChunk: (delta) => {
             reply += delta;
             liveReply.updateFromReply(reply);
+          },
+          onQuestionnaireUpdated: (questionnaire) => {
+            if (!questionnaire?.questions.length) {
+              enqueueControl(async () =>
+                nativeControls.clearQuestionnaire(nativeBinding)
+              );
+              return;
+            }
+            const questionnaireSnapshot = structuredClone(questionnaire);
+            enqueueControl(async () => {
+              const socket = getSocket();
+              if (!socket) {
+                throw new Error("WhatsApp is disconnected.");
+              }
+              await nativeControls.questionnaire({
+                answer: async (answer, reaction) => {
+                  await withChatLock(chatKey(jid), async () => {
+                    client.setOrgId(nativeBinding.orgId);
+                    const currentPrincipal = {
+                      channelAddressed: true,
+                      channelChatId: jid,
+                      channelIsGroup: isWhatsAppGroupChat(jid),
+                      channelUserAliases: reaction.actorAliases,
+                      channelUserId: reaction.actorId,
+                    };
+                    const active = await resolveSession(
+                      sessionKey,
+                      currentPrincipal
+                    );
+                    if (active.id !== nativeBinding.sessionId) {
+                      throw new Error(
+                        "WhatsApp questionnaire session has changed."
+                      );
+                    }
+                    const answerSignal = registerActiveStream(sessionKey);
+                    try {
+                      await handleChatMessage(
+                        sessionKey,
+                        jid,
+                        {
+                          expectedQuestionnaire: questionnaireSnapshot,
+                          message: isWhatsAppGroupChat(jid)
+                            ? `${GROUP_MESSAGE_PREFIX}${answer}`
+                            : answer,
+                        },
+                        undefined,
+                        currentPrincipal,
+                        "",
+                        answerSignal,
+                        active
+                      );
+                    } finally {
+                      clearActiveStream(sessionKey, answerSignal);
+                    }
+                  });
+                },
+                binding: nativeBinding,
+                questionnaire: questionnaireSnapshot,
+                socket,
+              });
+            });
           },
           onThinking: () => {
             typingLoop.ping();
@@ -1149,12 +1499,17 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         { signal }
       );
 
+      await controlsPending;
+
       await todoStatus.complete();
 
       if (signal.aborted) {
         if (reply.trim()) {
           if (!(await liveReply.replaceWithFinal(reply.trim()))) {
-            await sendText(jid, reply.trim(), { quoted: inbound });
+            await sendText(jid, reply.trim(), {
+              binding: outgoingBinding,
+              quoted: inbound,
+            });
           }
           await sendText(jid, "Stopped.");
         } else if (!(await liveReply.replaceWithFinal("Stopped."))) {
@@ -1167,7 +1522,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         await todoStatus.stop();
         if (reply.trim()) {
           if (!(await liveReply.replaceWithFinal(reply.trim()))) {
-            await sendText(jid, reply.trim(), { quoted: inbound });
+            await sendText(jid, reply.trim(), {
+              binding: outgoingBinding,
+              quoted: inbound,
+            });
           }
           await sendText(jid, "Stopped.");
         } else if (!(await liveReply.replaceWithFinal("Stopped."))) {
@@ -1190,7 +1548,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     if (reply.trim()) {
       if (!(await liveReply.replaceWithFinal(reply.trim()))) {
-        await sendText(jid, reply.trim(), { quoted: inbound });
+        await sendText(jid, reply.trim(), {
+          binding: outgoingBinding,
+          quoted: inbound,
+        });
       }
     } else if (liveReply.hasStatusMessage() || earlyAck) {
       if (!(await liveReply.replaceWithFinal("(empty reply)"))) {
@@ -1201,7 +1562,32 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
 
     if (profileId && session) {
+      const deliverySessionId = session.id;
+      await client.authorizeChannelPrincipal({
+        channel: "whatsapp",
+        channelAddressed: principal.channelAddressed,
+        channelChatId: principal.channelChatId,
+        channelIsGroup: isWhatsAppGroupChat(principal.channelChatId),
+        channelUserAliases: principal.channelUserAliases,
+        channelUserId: principal.channelUserId,
+        intent: "read",
+        profileId,
+        sessionId: session.id,
+      });
       await deliverWhatsAppTurnArtifactShares({
+        alreadyDeliveredPaths: [...nativeMediaPaths],
+        beforeDelivery: async () => {
+          if (sessionStore.get(sessionKey)?.sessionId !== deliverySessionId) {
+            throw new Error("WhatsApp session has changed.");
+          }
+          await client.authorizeChannelPrincipal({
+            ...principal,
+            channel: "whatsapp",
+            intent: "read",
+            profileId,
+            sessionId: deliverySessionId,
+          });
+        },
         client,
         conversationKey: sessionKey,
         getSocket,
@@ -1218,7 +1604,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
   function createWhatsAppLiveReply(
     getSocket: () => WASocket | null,
-    jid: string
+    jid: string,
+    onSent: (key: WAMessageKey) => void
   ) {
     let statusMessageKey: WAMessageKey | null = null;
     let statusRequested = false;
@@ -1260,6 +1647,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         if (statusMessageKey === null) {
           const sent = await socket.sendMessage(jid, { text: status });
           statusMessageKey = sent?.key?.id ? sent.key : null;
+          if (statusMessageKey) {
+            onSent(statusMessageKey);
+          }
           return;
         }
 
@@ -1289,7 +1679,10 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       try {
         await socket.sendMessage(jid, { edit: statusMessageKey, text: first });
         for (const chunk of chunks.slice(1)) {
-          await socket.sendMessage(jid, { text: chunk });
+          const sent = await socket.sendMessage(jid, { text: chunk });
+          if (sent?.key) {
+            onSent(sent.key);
+          }
         }
         return true;
       } catch {
@@ -1391,7 +1784,8 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
   async function resolveSession(
     sessionKey: string,
-    principal: WhatsAppSessionPrincipal
+    principal: WhatsAppSessionPrincipal,
+    intent: "invoke" | "read" = "invoke"
   ): Promise<RemoteChatSession> {
     const selection = await resolveProfileSelection(sessionKey);
     const { profileId } = selection;
@@ -1409,6 +1803,17 @@ export function createChatHandler(deps: ChatHandlerDeps) {
       existing.profileId === profileId &&
       belongsToCurrentSender
     ) {
+      await client.authorizeChannelPrincipal({
+        channel: "whatsapp",
+        channelAddressed: principal.channelAddressed,
+        channelChatId: principal.channelChatId,
+        channelIsGroup: isWhatsAppGroupChat(principal.channelChatId),
+        channelUserAliases: principal.channelUserAliases,
+        channelUserId: principal.channelUserId,
+        intent,
+        profileId,
+        sessionId: existing.sessionId,
+      });
       const hot = sessionStore.getHotSession<RemoteChatSession>(sessionKey);
       if (hot) {
         return hot;
@@ -1448,6 +1853,9 @@ export function createChatHandler(deps: ChatHandlerDeps) {
     }
     const session = await client.createSession("whatsapp", {
       externalPrincipal: {
+        channelAddressed: principal.channelAddressed,
+        channelChatId: principal.channelChatId,
+        channelIsGroup: isWhatsAppGroupChat(principal.channelChatId),
         channelUserAliases: principal.channelUserAliases,
         channelUserId: principalUserId,
       },
@@ -1470,7 +1878,11 @@ export function createChatHandler(deps: ChatHandlerDeps) {
   async function sendText(
     jid: string,
     text: string,
-    options?: { quoted?: WAMessage | null; raw?: boolean }
+    options?: {
+      quoted?: WAMessage | null;
+      raw?: boolean;
+      binding?: WhatsAppNativeBinding;
+    }
   ): Promise<void> {
     const prepared = options?.raw ? text.trim() : prepareWhatsAppReply(text);
     if (!prepared) {
@@ -1479,7 +1891,7 @@ export function createChatHandler(deps: ChatHandlerDeps) {
 
     const chunks = splitWhatsAppMessage(prepared);
     for (const [index, chunk] of chunks.entries()) {
-      await sendChunkWithRetry({
+      const sentKey = await sendChunkWithRetry({
         chunk,
         getSocket,
         jid,
@@ -1488,10 +1900,13 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         retryBaseDelayMs: sendRetryBaseDelayMs,
         timeoutMs: sendTimeoutMs,
       });
+      if (sentKey && options?.binding) {
+        messageRegistry.remember(options.binding, sentKey);
+      }
     }
   }
 
-  return (data: WhatsAppHandlerInput) =>
+  const handler = (data: WhatsAppHandlerInput) =>
     client.isolateOrgId(async () => {
       const replayBoundary: InboundReplayBoundary = { replayUnsafe: false };
       try {
@@ -1511,6 +1926,56 @@ export function createChatHandler(deps: ChatHandlerDeps) {
         );
       }
     });
+  return Object.assign(handler, {
+    onReaction: (reaction: WhatsAppNativeReaction) =>
+      client.isolateOrgId(async () => {
+        await nativeControls.react(reaction, async (binding, event) => {
+          const record = sessionStore.get(
+            resolveWhatsAppSessionKey(
+              chatKey(binding.destination),
+              binding.channelUserId
+            )
+          );
+          const selectedOrg =
+            fixedWorkspaceId ??
+            orgStore.get(
+              resolveWhatsAppChannelOrgKey(
+                chatKey(binding.destination),
+                isWhatsAppGroupChat(binding.destination)
+              )
+            )?.orgId;
+          if (
+            record?.sessionId !== binding.sessionId ||
+            record.profileId !== binding.profileId ||
+            selectedOrg !== binding.orgId
+          ) {
+            throw new Error(
+              "WhatsApp control belongs to a previous conversation selection."
+            );
+          }
+          client.setOrgId(binding.orgId);
+          await authStore.reload();
+          if (
+            ![event.actorId, ...event.actorAliases].some((jid) =>
+              authStore.isAuthorized(jid)
+            )
+          ) {
+            throw new Error("WhatsApp reaction sender is not admitted.");
+          }
+          return client.authorizeChannelPrincipal({
+            channel: "whatsapp",
+            channelAddressed: true,
+            channelChatId: binding.destination,
+            channelIsGroup: isWhatsAppGroupChat(binding.destination),
+            channelUserAliases: event.actorAliases,
+            channelUserId: event.actorId,
+            intent: "invoke",
+            profileId: binding.profileId,
+            sessionId: binding.sessionId,
+          });
+        });
+      }),
+  });
 }
 
 interface SendChunkWithRetryInput {
@@ -1525,7 +1990,7 @@ interface SendChunkWithRetryInput {
 
 async function sendChunkWithRetry(
   input: SendChunkWithRetryInput
-): Promise<void> {
+): Promise<WAMessageKey | undefined> {
   let lastError: unknown = new WhatsAppSocketUnavailableError();
 
   for (let attempt = 1; attempt <= input.retryAttempts; attempt += 1) {
@@ -1536,7 +2001,7 @@ async function sendChunkWithRetry(
         throw new WhatsAppSocketUnavailableError();
       }
 
-      await withSendTimeout(
+      const sent = await withSendTimeout(
         socket.sendMessage(
           input.jid,
           { text: input.chunk },
@@ -1544,7 +2009,7 @@ async function sendChunkWithRetry(
         ),
         input.timeoutMs
       );
-      return;
+      return sent?.key;
     } catch (error) {
       lastError = error;
       const canRetry =

@@ -1,0 +1,1663 @@
+## C5 apps/server/src/services/agent-service.ts:380-406
+380: export type { SubAgentRunInput, SubAgentRunResult };
+381: 
+382: export interface SessionAccessOptions {
+383:   excludeSuperAgent?: boolean;
+384:   externalPrincipal?: ExternalPrincipalInput;
+385:   isPlatformAdmin?: boolean;
+386:   model?: string | null;
+387:   orgRole?: OrgRole | null;
+388: }
+389: 
+390: export interface SessionActor {
+391:   isPlatformAdmin?: boolean;
+392:   orgRole?: OrgRole | null;
+393:   userId: string;
+394:   workspaceWorkerChannel?: "discord" | "telegram" | "whatsapp";
+395: }
+396: 
+397: export type SessionAccessIntent = "invoke" | "manage" | "read";
+398: 
+399: function providerBaseUrlChanged(
+400:   instance: ProviderInstance,
+401:   nextBaseUrl: string | undefined
+402: ): boolean {
+403:   if (nextBaseUrl === undefined) {
+404:     return false;
+405:   }
+406: 
+
+## C5 apps/server/src/services/agent-service.ts:719-805
+719:     actor: SessionActor
+720:   ): Promise<boolean> {
+721:     return this.canActorAccessSessionRecord(orgId, record, actor, "manage");
+722:   }
+723: 
+724:   private async canActorAccessSessionRecord(
+725:     orgId: string,
+726:     record: StoredSessionRecord,
+727:     actor: SessionActor,
+728:     intent: SessionAccessIntent
+729:   ): Promise<boolean> {
+730:     const channel = parseAgentChannel(record.channel);
+731:     if (!channel) {
+732:       return false;
+733:     }
+734: 
+735:     if (actor.workspaceWorkerChannel) {
+736:       const isMatchingExternalChannel =
+737:         (channel === "discord" ||
+738:           channel === "telegram" ||
+739:           channel === "whatsapp") &&
+740:         channel === actor.workspaceWorkerChannel;
+741:       const persistedUserId = record.userId?.trim();
+742:       if (
+743:         !(isMatchingExternalChannel && persistedUserId) ||
+744:         isServiceAccountUserId(persistedUserId)
+745:       ) {
+746:         return false;
+747:       }
+748: 
+749:       const [member, profile] = await Promise.all([
+750:         this.db.getOrgMember(orgId, persistedUserId),
+751:         this.db.getProfileForOrg(record.profileId, orgId),
+752:       ]);
+753:       if (!(member && profile) || profile.isSuper) {
+754:         return false;
+755:       }
+756:       return intent === "read" || member.role !== "viewer";
+757:     }
+758: 
+759:     const actorUserId = actor.userId.trim();
+760:     if (!actorUserId) {
+761:       return false;
+762:     }
+763: 
+764:     const [orgRole, isPlatformAdmin] = await Promise.all([
+765:       this.resolveOrgRole(orgId, actorUserId),
+766:       this.resolveIsPlatformAdmin(actorUserId),
+767:     ]);
+768:     const ownsSession = Boolean(record.userId) && record.userId === actorUserId;
+769: 
+770:     // Sending/streaming a turn must never impersonate another user's persisted
+771:     // principal (and its per-user OAuth connections), including for admins.
+772:     if (intent === "invoke") {
+773:       return (
+774:         ownsSession &&
+775:         (isPlatformAdmin || orgRole === "admin" || orgRole === "member")
+776:       );
+777:     }
+778: 
+779:     if (isPlatformAdmin || orgRole === "admin") {
+780:       return true;
+781:     }
+782:     if (!ownsSession) {
+783:       return false;
+784:     }
+785:     return intent === "read" || orgRole === "member";
+786:   }
+787: 
+788:   async canAccessSession(
+789:     orgId: string,
+790:     sessionId: string,
+791:     actor: SessionActor,
+792:     intent: SessionAccessIntent = "read"
+793:   ): Promise<boolean> {
+794:     const record = await this.getSessionRecordForOrg(orgId, sessionId);
+795:     return record
+796:       ? this.canActorAccessSessionRecord(orgId, record, actor, intent)
+797:       : false;
+798:   }
+799: 
+800:   async decideChatToolApproval(input: ChatToolApprovalDecisionInput) {
+801:     return this.chatToolApprovals.decide(input);
+802:   }
+803: 
+804:   setAutomationTools(tools: ToolDefinition[]): void {
+805:     this.automationTools = tools;
+
+## C5 apps/server/src/services/agent-service.ts:3257-3372
+3257:   async resolveSession(
+3258:     orgId: string,
+3259:     sessionId: string,
+3260:     actor?: SessionActor
+3261:   ): Promise<AgentChatSession | null> {
+3262:     await this.getOrgUserConfig(orgId);
+3263:     const invalidationVersion =
+3264:       this.sessionInvalidationVersions.get(orgId) ?? 0;
+3265:     const record = await this.getSessionRecordForOrg(orgId, sessionId);
+3266: 
+3267:     if (!record) {
+3268:       return null;
+3269:     }
+3270:     if (
+3271:       actor &&
+3272:       !(await this.canActorAccessSessionRecord(orgId, record, actor, "invoke"))
+3273:     ) {
+3274:       return null;
+3275:     }
+3276:     const modelOverride = await this.resolveApprovedStoredSessionModelOverride(
+3277:       orgId,
+3278:       record
+3279:     );
+3280: 
+3281:     const channel = parseAgentChannel(record.channel);
+3282: 
+3283:     if (!channel) {
+3284:       return null;
+3285:     }
+3286: 
+3287:     const isExternalChannel =
+3288:       channel === "telegram" || channel === "whatsapp" || channel === "discord";
+3289:     const recordedUserId = record.userId?.trim() || null;
+3290:     if (
+3291:       isExternalChannel &&
+3292:       (!recordedUserId || isServiceAccountUserId(recordedUserId))
+3293:     ) {
+3294:       throw new PrincipalRequiredError(
+3295:         "Channel session is missing a canonical user principal. Re-pair the channel."
+3296:       );
+3297:     }
+3298: 
+3299:     // A local-token worker authenticates transport to Atlas; it is never the
+3300:     // actor for a channel turn. External channel sessions are created only
+3301:     // after resolving the sender to a canonical Atlas user, so every later
+3302:     // turn must retain that persisted principal and its current workspace role.
+3303:     const actorUserId = isExternalChannel
+3304:       ? recordedUserId
+3305:       : actor?.userId?.trim() || recordedUserId;
+3306:     const orgRole = await this.resolveOrgRole(orgId, actorUserId);
+3307:     const isPlatformAdmin = await this.resolveIsPlatformAdmin(actorUserId);
+3308:     const profile = await this.db.getProfileForOrg(record.profileId, orgId);
+3309:     if (
+3310:       profile?.isSuper &&
+3311:       !canAccessSuperAgentProfile({
+3312:         isPlatformAdmin,
+3313:         orgRole,
+3314:       })
+3315:     ) {
+3316:       throw new AtlasApiError(
+3317:         "Super Agent is only available to Workspace Admins and Superadmins.",
+3318:         403
+3319:       );
+3320:     }
+3321: 
+3322:     const stored = this.sessions.get(sessionId);
+3323: 
+3324:     if (
+3325:       stored &&
+3326:       stored.profileId === record.profileId &&
+3327:       stored.modelOverride === modelOverride &&
+3328:       stored.userId === actorUserId &&
+3329:       stored.orgRole === orgRole &&
+3330:       stored.isPlatformAdmin === isPlatformAdmin
+3331:     ) {
+3332:       return stored.session;
+3333:     }
+3334: 
+3335:     const session = await this.buildChatSession(
+3336:       channel,
+3337:       orgId,
+3338:       record.profileId,
+3339:       sessionId,
+3340:       modelOverride,
+3341:       actorUserId,
+3342:       orgRole,
+3343:       isPlatformAdmin
+3344:     );
+3345: 
+3346:     await this.requireActiveOrganizationForTurn(orgId);
+3347:     if (
+3348:       (this.sessionInvalidationVersions.get(orgId) ?? 0) !== invalidationVersion
+3349:     ) {
+3350:       throw new AtlasApiError(
+3351:         "Session configuration changed. Retry the request.",
+3352:         409
+3353:       );
+3354:     }
+3355: 
+3356:     this.sessions.set(sessionId, {
+3357:       channel,
+3358:       isPlatformAdmin,
+3359:       modelOverride,
+3360:       orgId,
+3361:       orgRole,
+3362:       profileId: record.profileId,
+3363:       session,
+3364:       userId: actorUserId,
+3365:     });
+3366: 
+3367:     return session;
+3368:   }
+3369: 
+3370:   async updateSessionModel(
+3371:     orgId: string,
+3372:     sessionId: string,
+
+## C5 apps/server/src/services/agent-service.ts:3418-3441
+3418:   }
+3419: 
+3420:   async beginSessionTurn(
+3421:     orgId: string,
+3422:     sessionId: string,
+3423:     actor?: SessionActor
+3424:   ): Promise<boolean | null> {
+3425:     const record = await this.getSessionRecordForOrg(orgId, sessionId);
+3426:     if (!record) {
+3427:       return null;
+3428:     }
+3429:     if (
+3430:       actor &&
+3431:       !(await this.canActorAccessSessionRecord(orgId, record, actor, "invoke"))
+3432:     ) {
+3433:       return null;
+3434:     }
+3435: 
+3436:     await this.requireActiveOrganizationForTurn(orgId);
+3437:     return sessionTurnRegistry.beginTurn(sessionId, orgId).started;
+3438:   }
+3439: 
+3440:   async clearSession(
+3441:     orgId: string,
+
+## C5 apps/server/src/services/agent-service.ts:5486-5596
+5486:   private createToolExecutionGuard(
+5487:     orgId: string,
+5488:     profileId: string,
+5489:     expectedVersion: number,
+5490:     principal: {
+5491:       isPlatformAdmin?: boolean;
+5492:       orgRole?: OrgRole | null;
+5493:       userId?: string | null;
+5494:     }
+5495:   ): () => Promise<void> {
+5496:     const profileVersion =
+5497:       this.profileToolInvalidationVersions.get(profileId) ?? 0;
+5498:     return async () => {
+5499:       await this.requireCurrentToolConfiguration(orgId, expectedVersion);
+5500:       if (
+5501:         (this.profileToolInvalidationVersions.get(profileId) ?? 0) !==
+5502:         profileVersion
+5503:       ) {
+5504:         throw Object.assign(
+5505:           new Error("Profile tools changed. Retry the request."),
+5506:           {
+5507:             code: "CANCELLED" as const,
+5508:             retryable: false,
+5509:           }
+5510:         );
+5511:       }
+5512:       const userId = principal.userId?.trim();
+5513:       if (!userId || isChannelGuestUserId(userId)) {
+5514:         throw Object.assign(
+5515:           new AtlasApiError(
+5516:             "A workspace principal is required to use tools.",
+5517:             403
+5518:           ),
+5519:           { code: "PERMISSION_DENIED" as const, retryable: false }
+5520:         );
+5521:       }
+5522:       const [user, member, profile] = await Promise.all([
+5523:         this.db.getUserById(userId),
+5524:         this.db.getOrgMember(orgId, userId),
+5525:         this.db.getProfileForOrg(profileId, orgId),
+5526:       ]);
+5527:       const isPlatformAdmin = user?.isPlatformAdmin === true;
+5528:       if (
+5529:         !(user && profile) ||
+5530:         (!isPlatformAdmin && (!member || member.role === "viewer")) ||
+5531:         isPlatformAdmin !== (principal.isPlatformAdmin === true) ||
+5532:         (!isPlatformAdmin &&
+5533:           (member?.role ?? null) !== (principal.orgRole ?? null)) ||
+5534:         (profile.isSuper &&
+5535:           !canAccessSuperAgentProfile({
+5536:             isPlatformAdmin,
+5537:             orgRole: member?.role,
+5538:           }))
+5539:       ) {
+5540:         throw Object.assign(
+5541:           new AtlasApiError("Tool access changed. Retry the request.", 403),
+5542:           { code: "PERMISSION_DENIED" as const, retryable: false }
+5543:         );
+5544:       }
+5545:     };
+5546:   }
+5547: 
+5548:   private async requireProfile(
+5549:     orgId: string,
+5550:     profileId: string
+5551:   ): Promise<StoredProfileRecord> {
+5552:     if (profileId === "default" || !profileId.trim()) {
+5553:       const defaultProfile = await this.db.getDefaultProfileForOrg(orgId);
+5554:       if (defaultProfile) {
+5555:         return defaultProfile;
+5556:       }
+5557:     }
+5558: 
+5559:     const profile = await this.db.getProfileForOrg(profileId, orgId);
+5560: 
+5561:     if (!profile) {
+5562:       const defaultProfile = await this.db.getDefaultProfileForOrg(orgId);
+5563:       if (defaultProfile) {
+5564:         return defaultProfile;
+5565:       }
+5566:       throw new Error("Profile not found.");
+5567:     }
+5568: 
+5569:     return profile;
+5570:   }
+5571: 
+5572:   private async resolveSessionProfile(
+5573:     orgId: string,
+5574:     profileId?: string
+5575:   ): Promise<string> {
+5576:     if (profileId?.trim()) {
+5577:       const requestedProfile = await this.db.getProfileForOrg(
+5578:         profileId.trim(),
+5579:         orgId
+5580:       );
+5581: 
+5582:       if (requestedProfile) {
+5583:         return profileId.trim();
+5584:       }
+5585:     }
+5586: 
+5587:     const defaultProfile = await this.db.getDefaultProfileForOrg(orgId);
+5588: 
+5589:     if (defaultProfile) {
+5590:       return defaultProfile.id;
+5591:     }
+5592: 
+5593:     throw new Error(
+5594:       "No profiles exist for this organization. Create a profile in the web dashboard first."
+5595:     );
+5596:   }
+
+## C5 apps/server/src/services/agent-service.ts:5598-5745
+5598:   private async resolveProfileTools(
+5599:     profile: StoredProfileRecord,
+5600:     options: {
+5601:       includeAutomationTools?: boolean;
+5602:       includeQuestionTools?: boolean;
+5603:       includeSkillManageTools?: boolean;
+5604:       includeSubAgentTool?: boolean;
+5605:       includeTodoTools?: boolean;
+5606:       sessionId?: string;
+5607:       userId?: string | null;
+5608:     } = {},
+5609:     userConfig: UserConfig | null = this.userConfig
+5610:   ): Promise<ToolDefinition[]> {
+5611:     const storedTools = (await this.db.listToolsForProfile(profile.id)).filter(
+5612:       (tool) => tool.orgId == null || tool.orgId === profile.orgId
+5613:     );
+5614:     const deepResearchOverride = createDeepResearchServerTool({
+5615:       resolveProvider: () =>
+5616:         this.resolveProviderClientForProfile(profile, userConfig),
+5617:     });
+5618:     const tools = await resolveProfileStoredTools(
+5619:       storedTools,
+5620:       this.db,
+5621:       [deepResearchOverride],
+5622:       {
+5623:         userConfig,
+5624:       }
+5625:     );
+5626:     const includeAutomationTools = options.includeAutomationTools ?? true;
+5627:     const includeTodoTools = options.includeTodoTools ?? true;
+5628:     const includeQuestionTools = options.includeQuestionTools ?? true;
+5629:     const includeSubAgentTool = options.includeSubAgentTool ?? true;
+5630:     // Default follows interactive automation-tool gate; messaging channels pass false.
+5631:     const includeSkillManageTools =
+5632:       options.includeSkillManageTools ?? includeAutomationTools;
+5633: 
+5634:     let resolved = [...tools];
+5635: 
+5636:     // Search activation is a session discovery hint, never an authorization
+5637:     // source. Only the profile's current assignments may populate its tools.
+5638: 
+5639:     if (this.mcpClientManager) {
+5640:       const orgId = profile.orgId;
+5641: 
+5642:       if (!orgId) {
+5643:         throw new Error("Profile organization is missing.");
+5644:       }
+5645: 
+5646:       const mcpServers = (
+5647:         await this.db.listMcpServersForProfile(profile.id)
+5648:       ).filter((server) => server.orgId === orgId);
+5649: 
+5650:       resolved = [
+5651:         ...resolved,
+5652:         ...buildMcpToolDefinitions(
+5653:           mcpServers,
+5654:           this.mcpClientManager,
+5655:           orgId,
+5656:           profile.id,
+5657:           () => this.db.listMcpServersForProfile(profile.id)
+5658:         ),
+5659:       ];
+5660:     }
+5661: 
+5662:     if (
+5663:       this.composioService &&
+5664:       this.mcpClientManager &&
+5665:       options.userId &&
+5666:       !isServiceAccountUserId(options.userId)
+5667:     ) {
+5668:       const orgId = profile.orgId;
+5669: 
+5670:       if (!orgId) {
+5671:         throw new Error("Profile organization is missing.");
+5672:       }
+5673: 
+5674:       resolved = [
+5675:         ...resolved,
+5676:         ...(await buildComposioConnectTools(
+5677:           orgId,
+5678:           options.userId,
+5679:           profile.id,
+5680:           this.composioService
+5681:         )),
+5682:         ...(await buildComposioToolDefinitions(
+5683:           orgId,
+5684:           options.userId,
+5685:           profile.id,
+5686:           this.composioService,
+5687:           this.mcpClientManager
+5688:         )),
+5689:       ];
+5690:     }
+5691: 
+5692:     if (includeAutomationTools && this.automationTools.length > 0) {
+5693:       resolved = [...resolved, ...this.automationTools];
+5694:     }
+5695: 
+5696:     if (includeTodoTools && this.todoTools.length > 0) {
+5697:       resolved = [...resolved, ...this.todoTools];
+5698:     }
+5699: 
+5700:     if (includeQuestionTools && this.questionTools.length > 0) {
+5701:       resolved = [...resolved, ...this.questionTools];
+5702:     }
+5703: 
+5704:     if (this.skillsService) {
+5705:       const orgId = profile.orgId;
+5706: 
+5707:       if (!orgId) {
+5708:         throw new Error("Profile organization is missing.");
+5709:       }
+5710: 
+5711:       const skillTools = await this.skillsService.loadToolsForProfile(
+5712:         orgId,
+5713:         profile.id
+5714:       );
+5715:       resolved = [...resolved, ...skillTools];
+5716: 
+5717:       // Interactive web/cli only: messaging, automation, task, and subagent omit this.
+5718:       if (includeSkillManageTools) {
+5719:         const assignedSkills = await this.skillsService.listSkillsForProfile(
+5720:           profile.id
+5721:         );
+5722:         if (assignedSkills.some((skill) => skill.name === "manage-skills")) {
+5723:           resolved = [
+5724:             ...resolved,
+5725:             ...createSkillManageTools({
+5726:               skillProposalService: this.skillProposalService,
+5727:               skillsService: this.skillsService,
+5728:             }),
+5729:           ];
+5730:         }
+5731:       }
+5732:     }
+5733: 
+5734:     if (profile.isSuper) {
+5735:       resolved = [...resolved, ...this.superAgentTools];
+5736:     }
+5737: 
+5738:     resolved = [...resolved, ...this.orgMemoryTools];
+5739: 
+5740:     if (!includeSubAgentTool) {
+5741:       resolved = resolved.filter((tool) => tool.name !== SUB_AGENT_TOOL_NAME);
+5742:     }
+5743: 
+5744:     return withToolSearchCatalog(resolved);
+5745:   }
+
+## C5 apps/server/src/services/agent-service.ts:5820-5905
+5820:   private async buildChatSession(
+5821:     channel: AgentChannel,
+5822:     orgId: string,
+5823:     profileId: string,
+5824:     sessionId: string,
+5825:     modelOverride: string | null,
+5826:     userId?: string | null,
+5827:     orgRole?: OrgRole | null,
+5828:     isPlatformAdmin?: boolean
+5829:   ): Promise<AgentChatSession> {
+5830:     let userConfig = await this.getOrgUserConfig(orgId);
+5831:     const profile = await this.requireProfile(orgId, profileId);
+5832:     const isGuestPrincipal = isChannelGuestUserId(userId);
+5833:     const selectedModel = modelOverride ?? profile.model;
+5834:     const decodedSelection = decodeStoredModelSelection(selectedModel);
+5835:     const selectedProviderId =
+5836:       decodedSelection && decodedSelection.providerId !== "__unknown__"
+5837:         ? decodedSelection.providerId
+5838:         : selectedModel?.trim()
+5839:           ? undefined
+5840:           : userConfig?.defaultProviderId;
+5841:     userConfig = await this.refreshSubscriptionModelSnapshots(
+5842:       orgId,
+5843:       userConfig,
+5844:       new Set(selectedProviderId ? [selectedProviderId] : [])
+5845:     );
+5846:     const toolConfigurationVersion =
+5847:       this.sessionInvalidationVersions.get(orgId) ?? 0;
+5848:     const beforeToolCall = this.createToolExecutionGuard(
+5849:       orgId,
+5850:       profileId,
+5851:       toolConfigurationVersion,
+5852:       { isPlatformAdmin, orgRole, userId }
+5853:     );
+5854:     const includeSkillManageTools = channel === "web" || channel === "cli";
+5855:     let tools = await resolveExecutableToolsForPrincipal(userId, () =>
+5856:       this.resolveProfileTools(
+5857:         profile,
+5858:         {
+5859:           includeSkillManageTools,
+5860:           sessionId,
+5861:           userId,
+5862:         },
+5863:         userConfig
+5864:       )
+5865:     );
+5866:     if (channel === "discord" && !isGuestPrincipal) {
+5867:       tools = [...tools, ...createSendDiscordArtifactTools()];
+5868:     }
+5869:     const knowledgeBaseSearchAvailable = tools.some(
+5870:       (tool) => tool.name === "knowledge_base_search"
+5871:     );
+5872:     const skillUsageContext =
+5873:       channel === "web" || channel === "cli"
+5874:         ? { seenCatalogSkillIds: new Set<string>(), sessionId }
+5875:         : undefined;
+5876:     const { systemPrompt, soulActive } = await this.resolveProfileSystemPrompt(
+5877:       orgId,
+5878:       profileId,
+5879:       profile.systemPrompt,
+5880:       orgRole,
+5881:       skillUsageContext,
+5882:       userId
+5883:     );
+5884:     // Per-org override for the tool-output optimiser. Undefined leaves the
+5885:     // decision to the server's env var, so an operator who never opened the UI
+5886:     // keeps whatever they configured.
+5887:     const tokenOptimizerEnabled = (await this.db.getWorkspaceSettings(orgId))
+5888:       ?.tokenOptimizerEnabled;
+5889:     const resolvedSystemPrompt = isGuestPrincipal
+5890:       ? systemPrompt
+5891:       : appendRuntimeProfileRules(profile.isSuper, systemPrompt);
+5892:     const initialHistory = await loadSessionHistory(this.db, sessionId);
+5893:     const userTimezone = userConfig?.timezone ?? DEFAULT_TIMEZONE;
+5894:     const userContext = isGuestPrincipal
+5895:       ? undefined
+5896:       : await this.loadUserContextForUser(orgId, userId);
+5897:     const compaction = this.resolveCompactionConfig(
+5898:       profile,
+5899:       userConfig,
+5900:       selectedModel
+5901:     );
+5902:     const harness = this.createHarnessForProfile(
+5903:       profile,
+5904:       userConfig,
+5905:       selectedModel
+
+## C5 apps/server/src/services/agent-service.ts:6070-6290
+6070:           await this.agentTodoState.formatForPrompt(sessionId);
+6071: 
+6072:         if (todoContext.trim()) {
+6073:           parts.push(todoContext.trim());
+6074:         }
+6075: 
+6076:         if (!isGuestPrincipal && this.composioService && userId) {
+6077:           const composioContext =
+6078:             await this.composioService.formatProfileConnectionsContext(
+6079:               orgId,
+6080:               userId,
+6081:               profileId
+6082:             );
+6083: 
+6084:           if (composioContext.trim()) {
+6085:             parts.push(composioContext.trim());
+6086:           }
+6087:         }
+6088: 
+6089:         if (
+6090:           !isGuestPrincipal &&
+6091:           this.skillsService &&
+6092:           context?.userMessage?.trim()
+6093:         ) {
+6094:           const skillContext =
+6095:             await this.skillsService.formatMatchedSkillsForPrompt(
+6096:               orgId,
+6097:               profileId,
+6098:               context.userMessage,
+6099:               {
+6100:                 appendContext: async (matched) => {
+6101:                   const parts: string[] = [];
+6102: 
+6103:                   if (
+6104:                     profile.isSuper &&
+6105:                     matched.some((skill) => skill.name === "create-profile")
+6106:                   ) {
+6107:                     parts.push(
+6108:                       await this.formatProfileAuthoringToolContext(orgId)
+6109:                     );
+6110:                   }
+6111: 
+6112:                   if (matched.some((skill) => skill.name === "coding-agent")) {
+6113:                     parts.push(
+6114:                       await this.formatCodingDelegationContext(orgId, profileId)
+6115:                     );
+6116:                   }
+6117: 
+6118:                   return parts.filter(Boolean).join("\n\n");
+6119:                 },
+6120:                 usageContext: skillUsageContext,
+6121:               }
+6122:             );
+6123: 
+6124:           if (skillContext.trim()) {
+6125:             parts.push(skillContext.trim());
+6126:           }
+6127:         }
+6128: 
+6129:         return parts.join("\n\n");
+6130:       },
+6131:       soul: soulActive,
+6132:       systemPrompt: resolvedSystemPrompt,
+6133:       toolContext: buildToolExecutionContext({
+6134:         beforeToolCall: async (toolName) => {
+6135:           await beforeToolCall();
+6136:           if (
+6137:             channel === "telegram" ||
+6138:             channel === "whatsapp" ||
+6139:             channel === "discord"
+6140:           ) {
+6141:             await this.channelNativeActions.authorizeTool(
+6142:               orgId,
+6143:               sessionId,
+6144:               channel,
+6145:               toolName
+6146:             );
+6147:           }
+6148:         },
+6149:         channel,
+6150:         forbidProfileSkillMarkdownWrites,
+6151:         forceSkillWriteProposal: () => forceSkillWriteProposal,
+6152:         isPlatformAdmin: isPlatformAdmin === true,
+6153:         loadAttachment,
+6154:         onToolTurnEnd: (runId, status, results) =>
+6155:           this.chatToolApprovals.complete(runId, status, results),
+6156:         orgId,
+6157:         orgRole: orgRole ?? undefined,
+6158:         profileId,
+6159:         recordToolOutputSavings: this.savingsRecorderFor(orgId),
+6160:         recordTurnUsage: this.turnUsageRecorderFor(
+6161:           orgId,
+6162:           this.buildUsageAttribution({
+6163:             channel,
+6164:             modelSelection: selectedModel,
+6165:             orgId,
+6166:             profileId,
+6167:             userConfig,
+6168:             userId,
+6169:           })
+6170:         ),
+6171:         requestChannelAction: (action, onPending, signal) =>
+6172:           this.channelNativeActions.request(
+6173:             {
+6174:               beforeToolCall,
+6175:               channel,
+6176:               orgId,
+6177:               profileId,
+6178:               sessionId,
+6179:               signal,
+6180:               userId: userId ?? undefined,
+6181:             },
+6182:             action,
+6183:             onPending
+6184:           ),
+6185:         requestToolApproval: async (request, onPending) => {
+6186:           if (!userId) {
+6187:             throw new AtlasApiError(
+6188:               "A session principal is required for approval.",
+6189:               403
+6190:             );
+6191:           }
+6192:           return this.chatToolApprovals.request(
+6193:             {
+6194:               ...request,
+6195:               beforeDecision: async () => {
+6196:                 await beforeToolCall();
+6197:                 if (
+6198:                   !(await this.canAccessSession(
+6199:                     orgId,
+6200:                     sessionId,
+6201:                     { userId },
+6202:                     "invoke"
+6203:                   ))
+6204:                 ) {
+6205:                   throw new AtlasApiError(
+6206:                     "Session access has been revoked.",
+6207:                     403
+6208:                   );
+6209:                 }
+6210:               },
+6211:               principal: {
+6212:                 isPlatformAdmin: isPlatformAdmin === true,
+6213:                 orgId,
+6214:                 orgRole: orgRole ?? "member",
+6215:                 userId,
+6216:               },
+6217:               sessionId,
+6218:             },
+6219:             onPending
+6220:           );
+6221:         },
+6222:         sessionId,
+6223:         tokenOptimizerEnabled: tokenOptimizerEnabled ?? undefined,
+6224:         userId: userId ?? undefined,
+6225:       }),
+6226:       tools,
+6227:       userContext,
+6228:       userTimezone,
+6229:     });
+6230: 
+6231:     return wrapPersistedSession(sessionId, session, this.db, {
+6232:       beforePersist: () => this.requireActiveOrganizationForTurn(orgId),
+6233:       onBeginTurn: (id, userMessage) => {
+6234:         const attachmentTurnId = turnAttachments.beginTurn();
+6235:         this.superAgentSessionState.beginTurn(id, userMessage);
+6236:         void this.agentQuestionnaireState.clear(id);
+6237:         return attachmentTurnId;
+6238:       },
+6239:       onSendRejected: (_id, _error, turnId) =>
+6240:         turnId ? turnAttachments.rollbackTurn(turnId) : Promise.resolve(),
+6241:       onSendResolved: (_id, turnId) => {
+6242:         if (turnId) {
+6243:           turnAttachments.commitTurn(turnId);
+6244:         }
+6245:       },
+6246:       onToolEvidenceRetained: (_id, turnId) => {
+6247:         if (turnId) {
+6248:           turnAttachments.commitTurn(turnId);
+6249:         }
+6250:       },
+6251:       runTurn: (turnId, operation) => {
+6252:         if (!turnId) {
+6253:           throw new Error("Attachment turn was not initialized.");
+6254:         }
+6255:         return turnAttachments.runTurn(turnId, operation);
+6256:       },
+6257:     });
+6258:   }
+6259: 
+6260:   private async formatProfileAuthoringToolContext(
+6261:     orgId: string
+6262:   ): Promise<string> {
+6263:     const { tools } = await this.profileService.listTools(orgId);
+6264:     const lines = tools
+6265:       .slice()
+6266:       .sort((left, right) => left.name.localeCompare(right.name))
+6267:       .map((tool) => {
+6268:         const source = tool.handlerType === "builtin" ? "builtin" : "custom";
+6269:         return `- ${tool.name} (${source}, id: ${tool.id}) - ${tool.description}`;
+6270:       });
+6271: 
+6272:     if (lines.length === 0) {
+6273:       return "";
+6274:     }
+6275: 
+6276:     return [
+6277:       "# Available Tools for Profile Creation",
+6278:       "Use this current tool inventory to choose a small, relevant starter tool set. Do not assign every tool by default.",
+6279:       ...lines,
+6280:     ].join("\n");
+6281:   }
+6282: 
+6283:   private async formatCodingDelegationContext(
+6284:     orgId: string,
+6285:     profileId: string
+6286:   ): Promise<string> {
+6287:     const profile = await this.db.getProfile(profileId);
+6288:     const providerPassthroughEnabled =
+6289:       await loadCodingAgentProviderPassthroughForOrg(this.db, orgId);
+6290:     const probeContext = {
+
+## C5 apps/server/src/http/routes/sessions.ts:80-92
+80: const EXTERNAL_SESSION_CHANNELS = new Set(["telegram", "whatsapp", "discord"]);
+81: 
+82: function sessionActorFromAuth(auth: RequestAuthContext): SessionActor {
+83:   return {
+84:     isPlatformAdmin: auth.isPlatformAdmin,
+85:     orgRole: auth.orgRole,
+86:     userId: auth.user.id,
+87:     ...(auth.workspaceWorker
+88:       ? { workspaceWorkerChannel: auth.workspaceWorker.channel }
+89:       : {}),
+90:   };
+91: }
+92: 
+
+## C5 apps/server/src/http/routes/sessions.ts:909-1035
+909:       return errorResponse(message, 400);
+910:     }
+911:   });
+912: 
+913:   app.post("/v1/sessions/:sessionId/messages", async (c) => {
+914:     requireNotViewerFromContext(c);
+915:     const orgId = requireActiveOrgIdFromContext(c);
+916:     const auth = getRequestAuth(c);
+917:     const sessionId = decodeURIComponent(c.req.param("sessionId"));
+918:     let body: SendMessageRequest;
+919:     try {
+920:       const rawBody = await readJsonWithLimit<unknown>(
+921:         c.req.raw,
+922:         MAX_SESSION_MESSAGE_BODY_BYTES,
+923:         { maxTotalMs: 10 * 60 * 1000 }
+924:       );
+925:       const parsedBody = sendMessageRequestSchema.safeParse(rawBody);
+926: 
+927:       if (!parsedBody.success) {
+928:         return errorResponse("Invalid message request.", 400);
+929:       }
+930: 
+931:       body = parsedBody.data;
+932:       validateCombinedAttachmentCount(
+933:         body.images?.length ?? 0,
+934:         body.documents?.length ?? 0
+935:       );
+936:       if (body.documents?.length) {
+937:         validateDocumentAttachments(body.documents);
+938:       }
+939:       if (body.images?.length) {
+940:         await validateDecodedImageAttachments(body.images);
+941:       }
+942:     } catch (error) {
+943:       if (error instanceof AtlasApiError) {
+944:         return errorResponse(error.message, error.status);
+945:       }
+946:       throw error;
+947:     }
+948:     const actor = sessionActorFromAuth(auth);
+949:     const turnStarted = await agent.beginSessionTurn(orgId, sessionId, actor);
+950:     if (turnStarted === null) {
+951:       return errorResponse("Session not found", 404);
+952:     }
+953:     if (!turnStarted) {
+954:       return errorResponse(
+955:         "A response is already in progress for this session.",
+956:         409
+957:       );
+958:     }
+959: 
+960:     let session: Awaited<ReturnType<typeof agent.resolveSession>>;
+961:     try {
+962:       if (body.expectedQuestionnaire) {
+963:         await agent.consumeSessionQuestionnaire(
+964:           orgId,
+965:           sessionId,
+966:           body.expectedQuestionnaire
+967:         );
+968:       }
+969:       session = await agent.resolveSession(orgId, sessionId, actor);
+970:       if (!session) {
+971:         sessionTurnRegistry.cancelTurn(sessionId);
+972:         return errorResponse("Session not found", 404);
+973:       }
+974:     } catch (error) {
+975:       sessionTurnRegistry.cancelTurn(sessionId);
+976:       if (error instanceof AtlasApiError) {
+977:         return errorResponse(error.message, error.status);
+978:       }
+979:       throw error;
+980:     }
+981:     const clientOrigin = resolveRequestClientOrigin(
+982:       c.req.raw,
+983:       body.clientOrigin
+984:     );
+985:     const input = {
+986:       documents: body.documents,
+987:       images: body.images,
+988:       message: body.message ?? "",
+989:       policy: body.policy,
+990:       relatedQuestions: body.relatedQuestions === true,
+991:       ...(clientOrigin ? { clientOrigin } : {}),
+992:     };
+993:     const wantsStream =
+994:       body.stream === true ||
+995:       c.req.query("stream") === "true" ||
+996:       c.req.header("Accept")?.includes("text/event-stream");
+997: 
+998:     if (wantsStream) {
+999:       return streamMessage(
+1000:         sessionId,
+1001:         session,
+1002:         input,
+1003:         (terminal) => {
+1004:           agent.scheduleSessionTitleGeneration(sessionId);
+1005:           if (terminal.type === "done") {
+1006:             agent.schedulePostTurnSkillReview(sessionId);
+1007:           }
+1008:         },
+1009:         c.req.raw.signal
+1010:       );
+1011:     }
+1012: 
+1013:     const turnAbort = new AbortController();
+1014:     sessionTurnRegistry.attachAbort(sessionId, turnAbort);
+1015:     const turnSignal = AbortSignal.any([turnAbort.signal, c.req.raw.signal]);
+1016: 
+1017:     try {
+1018:       const reply = await session.send(input, { signal: turnSignal });
+1019:       const contextUsage = session.getContextUsage() ?? undefined;
+1020:       sessionTurnRegistry.endTurn(sessionId, {
+1021:         reply,
+1022:         type: "done",
+1023:         ...(contextUsage ? { contextUsage } : {}),
+1024:       });
+1025:       agent.scheduleSessionTitleGeneration(sessionId);
+1026:       agent.schedulePostTurnSkillReview(sessionId);
+1027:       return json<SendMessageResponse>({
+1028:         reply,
+1029:         ...(contextUsage ? { contextUsage } : {}),
+1030:       });
+1031:     } catch (error) {
+1032:       const message = error instanceof Error ? error.message : String(error);
+1033:       sessionTurnRegistry.endTurn(sessionId, { error: message, type: "error" });
+1034:       if (error instanceof AtlasApiError) {
+1035:         return errorResponse(error.message, error.status);
+
+## C5 apps/server/src/http/shared.ts:800-856
+800: 
+801: export function streamMessage(
+802:   sessionId: string,
+803:   session: AgentChatSession,
+804:   input: SendMessageInput,
+805:   onComplete?: (terminal: StreamEvent) => void,
+806:   requestSignal?: AbortSignal,
+807:   // Only tests pass these. The resolved values clamp to 60s and 5s minimums,
+808:   // which are far too long to wait for in a suite.
+809:   timeoutMs: number = STREAM_TIMEOUT_MS,
+810:   firstTokenTimeoutMs: number = FIRST_TOKEN_TIMEOUT_MS
+811: ): Response {
+812:   const encoder = new TextEncoder();
+813:   const keepaliveIntervalMs = 4000;
+814:   // The turn is cancelled either by the client going away (requestSignal, which is
+815:   // what Discord /stop and a closed browser tab both look like here) or by the
+816:   // response stream being cancelled. Both must reach the agent, otherwise the turn
+817:   // runs to completion and endTurn is late, which is what returned 409 to the next
+818:   // message in the session.
+819:   const turnAbort = new AbortController();
+820:   sessionTurnRegistry.attachAbort(sessionId, turnAbort);
+821:   const turnSignal = requestSignal
+822:     ? AbortSignal.any([turnAbort.signal, requestSignal])
+823:     : turnAbort.signal;
+824: 
+825:   const stream = new ReadableStream<Uint8Array>({
+826:     cancel() {
+827:       turnAbort.abort();
+828:     },
+829:     async start(controller) {
+830:       const { send: publish, getTerminal } = createStreamSenders(
+831:         sessionId,
+832:         (chunk) => {
+833:           controller.enqueue(chunk);
+834:         },
+835:         turnAbort
+836:       );
+837: 
+838:       let sawProviderOutput = false;
+839:       let setApprovalWaiting = (_waiting: boolean): void => undefined;
+840:       let armFirstTokenDeadline = () => undefined;
+841:       const send = (event: StreamEvent) => {
+842:         if (event.type === "policy_resolved") {
+843:           armFirstTokenDeadline();
+844:         }
+845: 
+846:         if (
+847:           event.type === "chunk" ||
+848:           event.type === "thinking" ||
+849:           event.type === "tool_input_delta" ||
+850:           event.type === "tool_start" ||
+851:           event.type === "approval_requested"
+852:         ) {
+853:           sawProviderOutput = true;
+854:         }
+855:         if (event.type === "approval_requested") {
+856:           setApprovalWaiting(true);
+
+## C5 apps/server/src/http/shared.ts:908-1002
+908:           } else {
+909:             arm();
+910:           }
+911:         };
+912:         arm();
+913:       });
+914: 
+915:       const firstTokenDeadline =
+916:         firstTokenTimeoutMs > 0
+917:           ? (() => {
+918:               let armed = false;
+919:               let rejectDeadline: (error: Error) => void = () => undefined;
+920:               const promise = new Promise<never>((_resolve, reject) => {
+921:                 rejectDeadline = reject;
+922:               });
+923:               armFirstTokenDeadline = () => {
+924:                 if (armed || sawProviderOutput) {
+925:                   return;
+926:                 }
+927: 
+928:                 armed = true;
+929:                 deadlines.push(
+930:                   setTimeout(() => {
+931:                     if (sawProviderOutput) {
+932:                       return;
+933:                     }
+934: 
+935:                     timedOut = true;
+936:                     rejectDeadline(
+937:                       new Error(
+938:                         `The provider accepted the request but sent nothing for ${Math.round(firstTokenTimeoutMs / 1000)}s. Try another model or check provider settings.`
+939:                       )
+940:                     );
+941:                     turnAbort.abort();
+942:                   }, firstTokenTimeoutMs)
+943:                 );
+944:               };
+945:               return promise;
+946:             })()
+947:           : null;
+948: 
+949:       try {
+950:         const raced: Promise<string>[] = [
+951:           session.sendStream(input, buildAgentStreamHandlers(send), {
+952:             signal: turnSignal,
+953:           }),
+954:           overallDeadline,
+955:         ];
+956: 
+957:         if (firstTokenDeadline) {
+958:           raced.push(firstTokenDeadline);
+959:         }
+960: 
+961:         const reply = await Promise.race(raced);
+962: 
+963:         const contextUsage = session.getContextUsage() ?? undefined;
+964:         send({
+965:           reply,
+966:           type: "done",
+967:           ...(contextUsage ? { contextUsage } : {}),
+968:         });
+969:       } catch (error) {
+970:         send({
+971:           error:
+972:             turnSignal.aborted && !timedOut
+973:               ? "Turn cancelled."
+974:               : formatServerError(error),
+975:           type: "error",
+976:         });
+977:       } finally {
+978:         // Every turn scheduled these. Left pending, a long-running server
+979:         // accumulates live timers per turn for the whole timeout window.
+980:         for (const handle of deadlines) {
+981:           clearTimeout(handle);
+982:         }
+983:         clearInterval(keepalive);
+984: 
+985:         const observedTerminal = getTerminal();
+986:         if (!observedTerminal) {
+987:           console.warn(
+988:             `Session ${sessionId}: Stream closed before the agent finished.`
+989:           );
+990:         }
+991: 
+992:         const terminal =
+993:           observedTerminal ??
+994:           ({
+995:             error: "Stream closed before the agent finished.",
+996:             type: "error",
+997:           } satisfies StreamEvent);
+998: 
+999:         sessionTurnRegistry.endTurn(sessionId, terminal, turnAbort);
+1000:         try {
+1001:           controller.close();
+1002:         } catch {
+
+## C5 packages/agent/src/chat.ts:165-215
+165:     citedCount: number;
+166:     reviewedCount: number;
+167:   }) => void;
+168:   onSubAgentActivity?: (event: {
+169:     parentToolCallId: string;
+170:     label: string;
+171:   }) => void;
+172:   onThinking?: (delta: string) => void;
+173:   onToolEnd?: (event: {
+174:     toolCallId: string;
+175:     tool: string;
+176:     result: unknown;
+177:   }) => void;
+178:   onToolInputDelta?: (event: {
+179:     toolCallId: string;
+180:     tool: string;
+181:     delta: string;
+182:     accumulatedArguments?: string;
+183:   }) => void;
+184:   onToolStart?: (event: {
+185:     toolCallId: string;
+186:     tool: string;
+187:     input: Record<string, unknown>;
+188:   }) => void;
+189: }
+190: 
+191: export type SendMessageArg = string | SendMessageInput;
+192: 
+193: export interface AgentChatSession {
+194:   acknowledgeHistoryArchives?(ids: readonly string[]): void;
+195:   clear(): void;
+196:   compact(options?: { force?: boolean }): Promise<CompactionResponse>;
+197:   createAutomation(prompt: string): Promise<AutomationDefinition>;
+198:   getContextUsage(): ChatContextUsage | null;
+199:   getHistory(): readonly ChatMessage[];
+200:   getHistoryRevision(): number;
+201:   getPendingHistoryArchives?(): readonly CompactedHistoryArchive[];
+202:   send(input: SendMessageArg, options?: SendStreamOptions): Promise<string>;
+203:   sendStream(
+204:     input: SendMessageArg,
+205:     handlers: StreamHandlers,
+206:     options?: SendStreamOptions
+207:   ): Promise<string>;
+208: }
+209: 
+210: export type ToolLoopStopReason = "no_progress" | "iteration_limit";
+211: 
+212: export interface SendStreamOptions {
+213:   /** Diagnostic only; partial output must never be replayed as valid history. */
+214:   onIncompleteCompletion?: (error: IncompleteCompletionError) => void;
+215:   /** Await durable tool evidence before acknowledging it to a provider runtime. */
+
+## C5 packages/agent/src/chat.ts:275-330
+275:   });
+276:   // Bytes this session's optimiser kept out of the context. Session scope on
+277:   // purpose: the chip beside it reports this conversation, not the org, and
+278:   // showing an org total there would be read as this chat's saving.
+279:   let bytesKeptOut = 0;
+280:   // The denominator is every byte the handled tools produced this session,
+281:   // including calls where nothing was removed. Dividing only by the optimised
+282:   // calls would report a percentage of a set chosen after the fact.
+283:   let bytesProduced = 0;
+284:   const callerRecord = options.toolContext?.recordToolOutputSavings;
+285:   const callerTurnUsage = options.toolContext?.recordTurnUsage;
+286:   const toolContext: ToolContext = {
+287:     ...options.toolContext,
+288:     recordToolOutputSavings: (saving) => {
+289:       bytesKeptOut += Math.max(0, saving.bytesIn - saving.bytesOut);
+290:       bytesProduced += saving.bytesIn;
+291:       callerRecord?.(saving);
+292:     },
+293:     // The arm is session state, and the conversation loop is a module-level
+294:     // function that cannot see it, so it is filled in here and the loop's own
+295:     // value is ignored.
+296:     recordTurnUsage: (turn) =>
+297:       callerTurnUsage?.({ ...turn, optimized: bytesKeptOut > 0 }),
+298:   };
+299:   const history: ChatMessage[] = options.initialHistory
+300:     ? [...options.initialHistory]
+301:     : [];
+302:   let historyRevision = 0;
+303:   const pendingHistoryArchives: CompactedHistoryArchive[] = [];
+304:   let lastContextUsage: ChatContextUsage | null = null;
+305:   let lifecycle = new AbortController();
+306:   let activeLifecycle: AbortController | undefined;
+307: 
+308:   async function withTurn<T>(
+309:     run: (turnLifecycle: AbortController) => Promise<T>
+310:   ): Promise<T> {
+311:     const turnLifecycle = lifecycle;
+312:     if (activeLifecycle === turnLifecycle) {
+313:       throw new Error("The previous turn is still finishing its tools.");
+314:     }
+315:     activeLifecycle = turnLifecycle;
+316:     try {
+317:       return await run(turnLifecycle);
+318:     } finally {
+319:       if (activeLifecycle === turnLifecycle) {
+320:         activeLifecycle = undefined;
+321:       }
+322:     }
+323:   }
+324: 
+325:   function bumpHistoryRevision(): void {
+326:     historyRevision += 1;
+327:   }
+328: 
+329:   async function preprocessHistoryForTurn(signal: AbortSignal): Promise<void> {
+330:     if (!options.preprocessHistoryForTurn) {
+
+## C5 packages/agent/src/chat.ts:495-569
+495:       return runCompaction(options?.force ?? false, lifecycle.signal);
+496:     },
+497:     createAutomation(prompt) {
+498:       return harness.createAutomationFromPrompt({ channel, prompt }, { tools });
+499:     },
+500:     getContextUsage() {
+501:       return lastContextUsage ?? estimateCurrentContextUsage();
+502:     },
+503:     getHistory() {
+504:       return history;
+505:     },
+506:     getHistoryRevision() {
+507:       return historyRevision;
+508:     },
+509:     getPendingHistoryArchives() {
+510:       return pendingHistoryArchives;
+511:     },
+512:     async send(input, sendOptions) {
+513:       return withTurn(async (turnLifecycle) => {
+514:         const signal = sendOptions?.signal
+515:           ? AbortSignal.any([sendOptions.signal, turnLifecycle.signal])
+516:           : turnLifecycle.signal;
+517:         await preprocessHistoryForTurn(signal);
+518:         return sendMessage(
+519:           dependencies,
+520:           tools,
+521:           systemPrompt,
+522:           history,
+523:           resolveSendInput(input),
+524:           "send",
+525:           {
+526:             enableToolLoop,
+527:             isCurrentTurn: () => turnLifecycle === lifecycle,
+528:             onContextUsage: rememberContextUsage,
+529:             onFailedSend: failedSendHandler(),
+530:             onIncompleteCompletion: sendOptions?.onIncompleteCompletion,
+531:             onToolCheckpoint: sendOptions?.onToolCheckpoint,
+532:             onToolLoopStop: sendOptions?.onToolLoopStop,
+533:             preprocessUserContent: options.preprocessUserContent,
+534:             rehydrateMessagesForProvider: options.rehydrateMessagesForProvider,
+535:             resolvePromptContext: options.resolvePromptContext,
+536:             runCompaction: (force) => runCompaction(force, signal),
+537:             signal,
+538:             toolContext,
+539:             userTimezone: options.userTimezone,
+540:           }
+541:         );
+542:       });
+543:     },
+544:     async sendStream(input, handlers, streamOptions) {
+545:       return withTurn(async (turnLifecycle) => {
+546:         const signal = streamOptions?.signal
+547:           ? AbortSignal.any([streamOptions.signal, turnLifecycle.signal])
+548:           : turnLifecycle.signal;
+549:         await preprocessHistoryForTurn(signal);
+550:         return sendMessage(
+551:           dependencies,
+552:           tools,
+553:           systemPrompt,
+554:           history,
+555:           resolveSendInput(input),
+556:           "stream",
+557:           {
+558:             enableToolLoop,
+559:             handlers,
+560:             isCurrentTurn: () => turnLifecycle === lifecycle,
+561:             onContextUsage: rememberContextUsage,
+562:             onFailedSend: failedSendHandler(),
+563:             onIncompleteCompletion: streamOptions?.onIncompleteCompletion,
+564:             onToolCheckpoint: streamOptions?.onToolCheckpoint,
+565:             onToolLoopStop: streamOptions?.onToolLoopStop,
+566:             preprocessUserContent: options.preprocessUserContent,
+567:             rehydrateMessagesForProvider: options.rehydrateMessagesForProvider,
+568:             resolvePromptContext: options.resolvePromptContext,
+569:             runCompaction: (force) => runCompaction(force, signal),
+
+## C5 packages/agent/src/chat.ts:584-628
+584: async function sendMessage(
+585:   dependencies: AgentDependencies,
+586:   tools: ToolDefinition[],
+587:   systemPrompt: string,
+588:   history: ChatMessage[],
+589:   input: SendMessageInput,
+590:   mode: "send" | "stream",
+591:   options: {
+592:     enableToolLoop: boolean;
+593:     handlers?: StreamHandlers;
+594:     isCurrentTurn?: () => boolean;
+595:     toolContext?: ToolContext;
+596:     runCompaction?: (force: boolean) => Promise<CompactionResponse>;
+597:     onContextUsage?: (
+598:       usedTokens: number,
+599:       source: ChatContextUsage["source"],
+600:       providerContextUsage?: ChatCompletionResult["contextUsage"]
+601:     ) => void;
+602:     onFailedSend?: (hasCompletedTools: boolean) => void;
+603:     onToolCheckpoint?: () => Promise<void>;
+604:     onIncompleteCompletion?: (error: IncompleteCompletionError) => void;
+605:     onToolLoopStop?: SendStreamOptions["onToolLoopStop"];
+606:     resolvePromptContext?: (
+607:       context?: ResolvePromptContextInput
+608:     ) => string | Promise<string>;
+609:     preprocessUserContent?: (
+610:       content: string | MessageContentPart[]
+611:     ) => Promise<string | MessageContentPart[]>;
+612:     rehydrateMessagesForProvider?: (
+613:       messages: readonly ChatMessage[]
+614:     ) => Promise<ChatMessage[]>;
+615:     signal?: AbortSignal;
+616:     userTimezone?: string;
+617:   }
+618: ): Promise<string> {
+619:   options.signal?.throwIfAborted();
+620:   let userContent = normalizeUserContent(
+621:     input.message,
+622:     input.images,
+623:     input.documents
+624:   );
+625: 
+626:   if (options.preprocessUserContent) {
+627:     userContent = await options.preprocessUserContent(userContent);
+628:   }
+
+## C5 packages/agent/src/chat.ts:697-775
+697:       PROVIDER_CAPABILITY_IDS.chatReasoning,
+698:       { "request.multimodal": usesImageInput }
+699:     );
+700:   const providerOptions = buildProviderOptions(dependencies, {
+701:     thinking: canUseReasoning,
+702:     webSearch: nativeWebSearch,
+703:   });
+704:   const chatCapabilityRequest = resolveChatCapabilityRequest(
+705:     dependencies.chatCapabilityPolicy,
+706:     {
+707:       requestsReasoning: providerOptions?.thinking?.enabled === true,
+708:       sendsTools: Boolean(llmTools?.length),
+709:       usesImageInput,
+710:       usesNativeWebSearch: providerOptions?.webSearch === true,
+711:     }
+712:   );
+713:   const historyBeforeTurn = [...history];
+714:   let completedToolHistory: ChatMessage[] | undefined;
+715:   history.push({ content: userContent, role: "user" });
+716:   let executionStarted = false;
+717:   let executionStartMs = 0;
+718: 
+719:   try {
+720:     if (options.runCompaction) {
+721:       await options.runCompaction(false);
+722:     }
+723: 
+724:     const promptContext = options.resolvePromptContext
+725:       ? await options.resolvePromptContext({ userMessage })
+726:       : "";
+727:     let effectiveSystemPrompt = promptContext.trim()
+728:       ? `${systemPrompt}\n\n${promptContext.trim()}`
+729:       : systemPrompt;
+730:     const hasDocumentAttachments =
+731:       messageContentHasDocuments(userContent) ||
+732:       messagesIncludeUserDocuments(history);
+733:     if (
+734:       hasDocumentAttachments &&
+735:       !effectiveSystemPrompt.includes("untrusted document data")
+736:     ) {
+737:       effectiveSystemPrompt = `${effectiveSystemPrompt}\n\n${UNTRUSTED_DOCUMENT_GUIDANCE}`;
+738:     }
+739:     const baseToolContext =
+740:       input.clientOrigin?.trim() && options.toolContext
+741:         ? { ...options.toolContext, clientOrigin: input.clientOrigin.trim() }
+742:         : input.clientOrigin?.trim()
+743:           ? { clientOrigin: input.clientOrigin.trim() }
+744:           : options.toolContext;
+745:     const effectiveToolContext = {
+746:       ...(options.signal
+747:         ? { ...baseToolContext, signal: options.signal }
+748:         : baseToolContext),
+749:       runId: baseToolContext?.runId ?? nanoid(),
+750:     };
+751: 
+752:     executionStartMs = Date.now();
+753:     metrics.executionActive.inc();
+754:     executionStarted = true;
+755:     metrics.executionTotal.inc({ policy: resolvedPolicy });
+756: 
+757:     const reply = await runConversation(
+758:       dependencies.provider,
+759:       localTools,
+760:       effectiveSystemPrompt,
+761:       history,
+762:       mode,
+763:       enableTools,
+764:       llmTools,
+765:       providerOptions,
+766:       chatCapabilityRequest.streamingAvailable,
+767:       options.handlers,
+768:       effectiveToolContext,
+769:       options.rehydrateMessagesForProvider,
+770:       options.onContextUsage,
+771:       options.signal,
+772:       options.userTimezone,
+773:       {
+774:         isCurrentTurn: options.isCurrentTurn,
+775:         onIncompleteCompletion: options.onIncompleteCompletion,
+
+## C5 packages/agent/src/chat.ts:936-1055
+936:     observeIncomplete(error);
+937:     if (
+938:       recoveredOutputLimit ||
+939:       !error.recoveryAllowed ||
+940:       provider.managesContext ||
+941:       runtimeCalls > 0 ||
+942:       signal?.aborted ||
+943:       hooks?.isCurrentTurn?.() === false ||
+944:       displayedText
+945:     ) {
+946:       return false;
+947:     }
+948:     recoveredOutputLimit = true;
+949:     recoveryPending = true;
+950:     return true;
+951:   }
+952: 
+953:   function requestPrompt(prompt: string): string {
+954:     if (!recoveryPending) {
+955:       return prompt;
+956:     }
+957:     recoveryPending = false;
+958:     return `${prompt}\n\n${recoveryGuidance}`;
+959:   }
+960: 
+961:   try {
+962:     for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration += 1) {
+963:       signal?.throwIfAborted();
+964:       totalTurns += 1;
+965: 
+966:       let runtimeToolCalls = 0;
+967:       const dispatcher = createRuntimeToolDispatcher({
+968:         async execute(call, runtimeSignal) {
+969:           if (hooks?.isCurrentTurn?.() === false) {
+970:             throw new DOMException("Conversation was cleared.", "AbortError");
+971:           }
+972:           if (!enableToolLoop) {
+973:             throw new Error(
+974:               "Provider requested tools when tool execution was disabled."
+975:             );
+976:           }
+977:           if (runtimeToolsStopped || totalToolCalls >= MAX_TOOL_ITERATIONS) {
+978:             throw new ToolExecutionLimitError(
+979:               runtimeToolsStopped ? "no_progress" : "iteration_limit",
+980:               stopReason
+981:             );
+982:           }
+983:           runtimeToolCalls += 1;
+984:           totalToolCalls += 1;
+985:           // Keep an in-flight effect separate from a newly cleared conversation.
+986:           const callHistory: ChatMessage[] = [
+987:             { content: "", role: "assistant", toolCalls: [call] },
+988:           ];
+989:           try {
+990:             await executeToolCalls(
+991:               tools,
+992:               [call],
+993:               callHistory,
+994:               isolateToolObservers(handlers),
+995:               { ...toolContext, signal: runtimeSignal ?? signal }
+996:             );
+997:           } catch (error) {
+998:             if (
+999:               error instanceof AwaitingApprovalError &&
+1000:               hooks?.isCurrentTurn?.() !== false
+1001:             ) {
+1002:               history.push(...callHistory);
+1003:             }
+1004:             throw error;
+1005:           }
+1006:           const completed = callHistory[1];
+1007:           if (completed?.role === "tool") {
+1008:             receipts.push({ call, content: completed.content });
+1009:           }
+1010:           if (hooks?.isCurrentTurn?.() === false) {
+1011:             throw new DOMException("Conversation was cleared.", "AbortError");
+1012:           }
+1013:           // Ordinary cancellation cannot undo an effect. Save its evidence before
+1014:           // acknowledging RPC, even if the native runtime has disconnected.
+1015:           history.push(...callHistory);
+1016:           await hooks?.onToolsComplete();
+1017:           const toolResult = callHistory[1];
+1018:           if (toolResult?.role !== "tool") {
+1019:             throw new Error(
+1020:               "Tool execution completed without a recorded result."
+1021:             );
+1022:           }
+1023:           if (progress.record([call], [toolResult])) {
+1024:             runtimeToolsStopped = true;
+1025:             metrics.duplicateToolCallPreventionsTotal.inc();
+1026:             stopReason =
+1027:               "Repeated tool calls returned identical outcomes without observable progress.";
+1028:           }
+1029:           let success = true;
+1030:           try {
+1031:             success = !toolResultError(JSON.parse(toolResult.content));
+1032:           } catch {
+1033:             // Plain-text results are successful tool output too.
+1034:           }
+1035:           return { content: toolResult.content, success };
+1036:         },
+1037:         signal,
+1038:       });
+1039:       let displayedText = false;
+1040:       const attemptHandlers = handlers
+1041:         ? {
+1042:             ...handlers,
+1043:             ...(handlers.onToolInputDelta
+1044:               ? {
+1045:                   onToolInputDelta(
+1046:                     event: Parameters<
+1047:                       NonNullable<StreamHandlers["onToolInputDelta"]>
+1048:                     >[0]
+1049:                   ) {
+1050:                     displayedText = true;
+1051:                     handlers.onToolInputDelta?.(event);
+1052:                   },
+1053:                 }
+1054:               : {}),
+1055:             onChunk(delta: string) {
+
+## C5 packages/agent/src/chat.ts:1348-1435
+1348:   }
+1349: 
+1350:   const sources = sourceItemsFromSearchToolResult(result);
+1351:   if (sources.length === 0) {
+1352:     return;
+1353:   }
+1354: 
+1355:   handlers?.onSourcesUpdated?.({
+1356:     citedCount: sources.length,
+1357:     reviewedCount: sources.length,
+1358:     sources,
+1359:   });
+1360: }
+1361: 
+1362: function emitArtifactsFromToolResult(
+1363:   toolCallId: string,
+1364:   result: unknown,
+1365:   emittedPaths: Set<string>,
+1366:   handlers?: StreamHandlers
+1367: ): void {
+1368:   if (
+1369:     !handlers?.onArtifactCreated ||
+1370:     result == null ||
+1371:     typeof result !== "object" ||
+1372:     toolResultError(result)
+1373:   ) {
+1374:     return;
+1375:   }
+1376: 
+1377:   const candidates = (result as Record<string, unknown>).artifacts;
+1378:   if (!Array.isArray(candidates)) {
+1379:     return;
+1380:   }
+1381: 
+1382:   for (const [index, candidate] of candidates.entries()) {
+1383:     if (typeof candidate !== "object" || candidate === null) {
+1384:       continue;
+1385:     }
+1386: 
+1387:     const record = candidate as Record<string, unknown>;
+1388:     const path = typeof record.path === "string" ? record.path.trim() : "";
+1389:     const filename =
+1390:       typeof record.filename === "string" ? record.filename.trim() : "";
+1391:     const mimeType =
+1392:       typeof record.mimeType === "string" ? record.mimeType.trim() : "";
+1393:     const size = record.sizeBytes;
+1394: 
+1395:     if (
+1396:       !(path && filename && mimeType) ||
+1397:       typeof size !== "number" ||
+1398:       !Number.isInteger(size) ||
+1399:       size < 0 ||
+1400:       emittedPaths.has(path)
+1401:     ) {
+1402:       continue;
+1403:     }
+1404: 
+1405:     emittedPaths.add(path);
+1406:     const createdAt =
+1407:       typeof record.createdAt === "string" && record.createdAt.trim()
+1408:         ? record.createdAt
+1409:         : new Date().toISOString();
+1410: 
+1411:     handlers.onArtifactCreated({
+1412:       createdAt,
+1413:       filename,
+1414:       id:
+1415:         typeof record.id === "string" && record.id.trim()
+1416:           ? record.id
+1417:           : `${toolCallId}:${index}`,
+1418:       mimeType,
+1419:       path,
+1420:       sessionId:
+1421:         typeof record.sessionId === "string" ? record.sessionId : undefined,
+1422:       size,
+1423:       type: inferArtifactType(filename, mimeType),
+1424:     });
+1425:   }
+1426: }
+1427: 
+1428: function nonThrowingObserver<Args extends unknown[]>(
+1429:   observer: ((...args: Args) => void) | undefined
+1430: ): ((...args: Args) => void) | undefined {
+1431:   if (!observer) {
+1432:     return;
+1433:   }
+1434:   return (...args) => {
+1435:     try {

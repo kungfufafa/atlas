@@ -1,0 +1,239 @@
+diff --git a/apps/server/src/services/agent-service.ts b/apps/server/src/services/agent-service.ts
+index caaf9ac..34f44e9 100644
+--- a/apps/server/src/services/agent-service.ts
++++ b/apps/server/src/services/agent-service.ts
+@@ -9,6 +9,7 @@ import {
+   executeToolCall,
+   expandLearnInLastUserMessage,
+   suggestToolParamsFromPrompt,
++  type ToolLoopStopReason,
+   tryParseLearnCommand,
+ } from "@atlas/agent";
+ import type {
+@@ -2545,7 +2546,10 @@ export class AgentService {
+     taskId: string,
+     profileId: string,
+     prompt: string,
+-    principal: CanonicalPrincipal
++    principal: CanonicalPrincipal,
++    options?: {
++      onToolLoopStop?: (reason: ToolLoopStopReason) => void | Promise<void>;
++    }
+   ): Promise<string> {
+     const task = await this.db.getTask(taskId);
+ 
+@@ -2571,7 +2575,7 @@ export class AgentService {
+       throw new Error("Session not found.");
+     }
+ 
+-    return session.send(prompt);
++    return session.send(prompt, options);
+   }
+ 
+   async ensureTaskSession(
+diff --git a/apps/server/src/services/task-runner.ts b/apps/server/src/services/task-runner.ts
+index ecc6e2c..f5e2745 100644
+--- a/apps/server/src/services/task-runner.ts
++++ b/apps/server/src/services/task-runner.ts
+@@ -1,3 +1,4 @@
++import type { ToolLoopStopReason } from "@atlas/agent";
+ import {
+   AtlasApiError,
+   type CanonicalPrincipal,
+@@ -34,20 +35,35 @@ export class TaskRunner {
+ 
+     try {
+       const run = await this.taskService.createRun(taskId);
++      let stopReason: ToolLoopStopReason | undefined;
+ 
+       try {
+         const output = await this.agentService.runTaskPrompt(
+           taskId,
+           task.profileId,
+           task.prompt,
+-          principal
++          principal,
++          {
++            onToolLoopStop: (reason) => {
++              stopReason = reason;
++            },
++          }
+         );
+ 
++        if (stopReason) {
++          const error = stoppedTaskError(stopReason);
++          await this.taskService.completeRun(run.id, taskId, { error, output });
++          await this.taskService.setTaskStatus(taskId, "failed");
++          return { error, output };
++        }
+         await this.taskService.completeRun(run.id, taskId, { output });
+         await this.taskService.setTaskStatus(taskId, "done");
+         return { output };
+       } catch (error) {
+-        const message = error instanceof Error ? error.message : String(error);
++        const original = error instanceof Error ? error.message : String(error);
++        const message = stopReason
++          ? stoppedTaskError(stopReason, original)
++          : original;
+         await this.taskService.completeRun(run.id, taskId, { error: message });
+         await this.taskService.setTaskStatus(taskId, "failed");
+         return { error: message };
+@@ -117,3 +133,15 @@ export class TaskRunner {
+     return [...this.running];
+   }
+ }
++
++function stoppedTaskError(
++  reason: ToolLoopStopReason,
++  originalError?: string
++): string {
++  const detail =
++    reason === "no_progress"
++      ? "Tool execution stopped after repeated outcomes without progress."
++      : "Tool execution stopped at the iteration limit.";
++  const summary = "[" + reason + "] " + detail;
++  return originalError === undefined ? summary : originalError + "\n" + summary;
++}
+diff --git a/packages/agent/src/chat.ts b/packages/agent/src/chat.ts
+index 840726b..31d52a0 100644
+--- a/packages/agent/src/chat.ts
++++ b/packages/agent/src/chat.ts
+@@ -207,11 +207,15 @@ export interface AgentChatSession {
+   ): Promise<string>;
+ }
+ 
++export type ToolLoopStopReason = "no_progress" | "iteration_limit";
++
+ export interface SendStreamOptions {
+   /** Diagnostic only; partial output must never be replayed as valid history. */
+   onIncompleteCompletion?: (error: IncompleteCompletionError) => void;
+   /** Await durable tool evidence before acknowledging it to a provider runtime. */
+   onToolCheckpoint?: () => Promise<void>;
++  /** Observes a mechanical stop for this invocation; observer failures are isolated. */
++  onToolLoopStop?: (reason: ToolLoopStopReason) => void | Promise<void>;
+   /** Cancels the turn: stops the tool loop and asks running tools to abort. */
+   signal?: AbortSignal;
+ }
+@@ -525,6 +529,7 @@ export function createAgentChatSession(
+             onFailedSend: failedSendHandler(),
+             onIncompleteCompletion: sendOptions?.onIncompleteCompletion,
+             onToolCheckpoint: sendOptions?.onToolCheckpoint,
++            onToolLoopStop: sendOptions?.onToolLoopStop,
+             preprocessUserContent: options.preprocessUserContent,
+             rehydrateMessagesForProvider: options.rehydrateMessagesForProvider,
+             resolvePromptContext: options.resolvePromptContext,
+@@ -557,6 +562,7 @@ export function createAgentChatSession(
+             onFailedSend: failedSendHandler(),
+             onIncompleteCompletion: streamOptions?.onIncompleteCompletion,
+             onToolCheckpoint: streamOptions?.onToolCheckpoint,
++            onToolLoopStop: streamOptions?.onToolLoopStop,
+             preprocessUserContent: options.preprocessUserContent,
+             rehydrateMessagesForProvider: options.rehydrateMessagesForProvider,
+             resolvePromptContext: options.resolvePromptContext,
+@@ -596,6 +602,7 @@ async function sendMessage(
+     onFailedSend?: (hasCompletedTools: boolean) => void;
+     onToolCheckpoint?: () => Promise<void>;
+     onIncompleteCompletion?: (error: IncompleteCompletionError) => void;
++    onToolLoopStop?: SendStreamOptions["onToolLoopStop"];
+     resolvePromptContext?: (
+       context?: ResolvePromptContextInput
+     ) => string | Promise<string>;
+@@ -766,6 +773,7 @@ async function sendMessage(
+       {
+         isCurrentTurn: options.isCurrentTurn,
+         onIncompleteCompletion: options.onIncompleteCompletion,
++        onToolLoopStop: options.onToolLoopStop,
+         onToolsComplete: async () => {
+           completedToolHistory = [...history];
+           await options.onToolCheckpoint?.();
+@@ -839,7 +847,14 @@ function restoreFailedSend(
+   history.splice(0, history.length, ...historyBeforeTurn);
+ }
+ 
+-class ToolExecutionLimitError extends Error {}
++class ToolExecutionLimitError extends Error {
++  constructor(
++    readonly reason: ToolLoopStopReason,
++    message: string
++  ) {
++    super(message);
++  }
++}
+ 
+ async function runConversation(
+   provider: ProviderClient,
+@@ -866,6 +881,7 @@ async function runConversation(
+   hooks?: {
+     isCurrentTurn?: () => boolean;
+     onIncompleteCompletion?: (error: IncompleteCompletionError) => void;
++    onToolLoopStop?: SendStreamOptions["onToolLoopStop"];
+     onToolsComplete: () => Promise<void>;
+     runCompaction?: (force: boolean) => Promise<CompactionResponse>;
+   }
+@@ -875,6 +891,7 @@ async function runConversation(
+   let totalTurns = 0;
+   let totalToolCalls = 0;
+   let stopReason = "The tool iteration limit was reached.";
++  let typedStopReason: ToolLoopStopReason = "iteration_limit";
+   let runtimeToolsStopped = false;
+   let outcome: "completed" | "failed" | "cancelled" | "suspended" = "failed";
+ 
+@@ -958,7 +975,10 @@ async function runConversation(
+             );
+           }
+           if (runtimeToolsStopped || totalToolCalls >= MAX_TOOL_ITERATIONS) {
+-            throw new ToolExecutionLimitError(stopReason);
++            throw new ToolExecutionLimitError(
++              runtimeToolsStopped ? "no_progress" : "iteration_limit",
++              stopReason
++            );
+           }
+           runtimeToolCalls += 1;
+           totalToolCalls += 1;
+@@ -1076,6 +1096,7 @@ async function runConversation(
+           }
+         }
+         if (failure instanceof ToolExecutionLimitError) {
++          typedStopReason = failure.reason;
+           break;
+         }
+         if (
+@@ -1163,6 +1184,7 @@ async function runConversation(
+         canRunToolCallsInParallel(tools, result.toolCalls)
+       );
+       if (stalled) {
++        typedStopReason = "no_progress";
+         metrics.duplicateToolCallPreventionsTotal.inc();
+         stopReason =
+           "Repeated tool calls returned identical outcomes without observable progress.";
+@@ -1179,6 +1201,18 @@ async function runConversation(
+       }
+     }
+ 
++    // The stop belongs to this invocation, regardless of whether finalization
++    // later succeeds. Observers must not undo effects or replace a provider error.
++    if (hooks?.onToolLoopStop) {
++      try {
++        void Promise.resolve(hooks.onToolLoopStop(typedStopReason)).catch(
++          () => undefined
++        );
++      } catch {
++        // Synchronous observer failures are isolated too.
++      }
++    }
++
+     // Give the model the completed results and one tool-free final response.
+     // Never substitute an earlier preamble for an unfinished task's outcome.
+     signal?.throwIfAborted();
+diff --git a/packages/agent/src/index.ts b/packages/agent/src/index.ts
+index 540993c..31bd807 100644
+--- a/packages/agent/src/index.ts
++++ b/packages/agent/src/index.ts
+@@ -74,6 +74,7 @@ export type {
+   ChatCapabilityPolicy,
+   ChatCapabilityPolicyEntry,
+   ResolvePromptContextInput,
++  ToolLoopStopReason,
+ } from "./chat";
+ export { ChatCapabilityError } from "./chat";
+ export type { CompactionConfig } from "./history-compaction";

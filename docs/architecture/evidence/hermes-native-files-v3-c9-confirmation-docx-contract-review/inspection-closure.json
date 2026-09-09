@@ -1,0 +1,26 @@
+{
+  "at": "2026-09-07T10:13:13.395601+00:00",
+  "allSevenArtifactsMatchOriginalRecordedBinding": true,
+  "sourceBindingsUnchangedAfterInspection": true,
+  "originalAnalyzerRerun": false,
+  "oracleExecuted": false,
+  "alternativeScoresProduced": false,
+  "manifest": {
+    "inspect.py": {
+      "sha256": "17b159233ab204d4685d7dd161a13b02645ca9a4d46915e4644a646fd63d461d",
+      "bytes": 5150
+    },
+    "public-package-projections.json": {
+      "sha256": "789f1bddcce7357cc8bf2355e878142eee82d6281b780d9dc4e1c0c9e608db29",
+      "bytes": 28407
+    },
+    "registration.json": {
+      "sha256": "0fbfe783336b297d57358a6372a40617e9c531e3658a9019f7cebb58002c14ea",
+      "bytes": 771
+    },
+    "source-bindings.json": {
+      "sha256": "17c88c0834c22accb20bae59f3e7c00aa0b5856cf24b9861416154313d3ff5bf",
+      "bytes": 8817
+    }
+  }
+}

@@ -58,6 +58,47 @@ export function encodeCanonicalArtifactId(input: {
   return `art_${Buffer.from(jsonStr, "utf8").toString("base64url")}`;
 }
 
+const SINGLE_BYTE_RANGE = /^bytes=[ \t]*(\d*)-(\d*)[ \t]*$/i;
+const MAX_RANGE_HEADER_LENGTH = 8192;
+
+function singleByteRange(
+  header: string | null | undefined,
+  length: number
+): { start: number; end: number } | "unsatisfiable" | null {
+  if (!header || header.length > MAX_RANGE_HEADER_LENGTH || length === 0) {
+    return null;
+  }
+  const match = SINGLE_BYTE_RANGE.exec(header);
+  // Ignore malformed, unsupported and multiple ranges; serve the whole content.
+  if (!(match && (match[1] || match[2]))) {
+    return null;
+  }
+  const size = BigInt(length);
+  if (!match[1]) {
+    const suffix = BigInt(match[2]);
+    if (suffix === 0n) {
+      return "unsatisfiable";
+    }
+    return {
+      end: length - 1,
+      start: suffix >= size ? 0 : Number(size - suffix),
+    };
+  }
+  // Convert only bounded offsets back to Number; decimal range values can be huge.
+  const first = BigInt(match[1]);
+  const last = match[2] ? BigInt(match[2]) : size - 1n;
+  if (match[2] && last < first) {
+    return null;
+  }
+  if (first >= size) {
+    return "unsatisfiable";
+  }
+  return {
+    end: last >= size ? length - 1 : Number(last),
+    start: Number(first),
+  };
+}
+
 export function handleByteRangeRequest(
   bytes: Buffer,
   contentType: string,
@@ -67,8 +108,9 @@ export function handleByteRangeRequest(
 ): Response {
   const total = bytes.length;
   const disposition = inline ? "inline" : "attachment";
+  const range = singleByteRange(rangeHeader, total);
 
-  if (!(rangeHeader && rangeHeader.startsWith("bytes="))) {
+  if (range === null) {
     // Bun's runtime Response accepts Node Buffers; the DOM `BodyInit` type used
     // for type-checking does not, so cast (safe at runtime under Bun).
     return new Response(bytes as unknown as BodyInit, {
@@ -82,11 +124,7 @@ export function handleByteRangeRequest(
     });
   }
 
-  const parts = rangeHeader.replace(/bytes=/, "").split("-");
-  const start = Number.parseInt(parts[0], 10);
-  const end = parts[1] ? Number.parseInt(parts[1], 10) : total - 1;
-
-  if (Number.isNaN(start) || start < 0 || start >= total || end < start) {
+  if (range === "unsatisfiable") {
     return new Response("Requested Range Not Satisfiable", {
       headers: {
         "Content-Range": `bytes */${total}`,
@@ -95,7 +133,7 @@ export function handleByteRangeRequest(
     });
   }
 
-  const chunkEnd = Math.min(end, total - 1);
+  const { start, end: chunkEnd } = range;
   const chunkSize = chunkEnd - start + 1;
   const sliced = bytes.subarray(start, chunkEnd + 1);
 

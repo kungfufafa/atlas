@@ -1,0 +1,224 @@
+{
+  "archive": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-07/20260907T023713Z-00008156aa71",
+  "boundRuntimeIdentities": 276,
+  "copiedRegularFileBytes": 2435652092,
+  "copiedRegularFiles": 59164,
+  "knownCredentialScan": {
+    "aggregateScannedBytes": 9128850410,
+    "clean": true,
+    "complete": true,
+    "credentialInputCount": 1,
+    "finiteEncodings": [
+      "exact trimmed UTF8",
+      "JSON escaped",
+      "URL percent encoded",
+      "base64",
+      "URL-safe base64"
+    ],
+    "maxAggregateBytes": 107374182400,
+    "maxContainerDepth": 5,
+    "maxDecodedMemberBytes": 536870912,
+    "notAProofForUnknownSecretsOrArbitraryEncodings": true,
+    "sourceScannedBeforeEachFileCopy": true,
+    "streams": 387383
+  },
+  "limits": [
+    "The nine compact unavailable-adjacent inventory checks retain their unverified status; they are different from the nine historical Sep6 checks discussed in the older cross-archive audit.",
+    "Fifteen compact archive indexes omit adjacent blobs, each with a same-name byte-identical selected copy elsewhere. This does not silently upgrade those nine local member-inventory statuses.",
+    "59,164 source-copy files and six generated artifacts passed post-promotion bytes/modes/exact-file-set checks. That is local integrity, not fsync/power-loss or hostile-filesystem certification.",
+    "Assembly independent review, principal and activation-design work closed after frozen archive selection; current selected packs do not retroactively add those files to that archive.",
+    "Known-value credential scanning covers finite encodings/recognized containers, not unknown secrets or arbitrary encodings. No upload or commit."
+  ],
+  "manifestSha256": "e1805a67d66ecf492de441582f6ecad7c18a0fdb4eb311f8749c5107bce3daa1",
+  "missingAdjacentArchiveReferences": [
+    {
+      "reason": "declared_adjacent_archive_missing",
+      "referenceOrigin": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v5/memory-live-pilot/source-archives.json",
+      "sameNamedByteExactSelectedCopies": [
+        "evaluation/memory-mimo-study-v1/batches/pilot-2026-09-06T19-32-47-518Z-581f811c/atlas-source.tar.gz"
+      ],
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v5/memory-live-pilot/atlas-source.tar.gz"
+    },
+    {
+      "reason": "declared_adjacent_archive_missing",
+      "referenceOrigin": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v5/memory-live-pilot/source-archives.json",
+      "sameNamedByteExactSelectedCopies": [
+        "evaluation/memory-mimo-study-v1/batches/pilot-2026-09-06T19-32-47-518Z-581f811c/hermes-source.tar.gz"
+      ],
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v5/memory-live-pilot/hermes-source.tar.gz"
+    },
+    {
+      "reason": "declared_adjacent_archive_missing",
+      "referenceOrigin": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v5/memory-live-pilot/source-archives.json",
+      "sameNamedByteExactSelectedCopies": [
+        "evaluation/memory-mimo-study-v1/batches/pilot-2026-09-06T19-32-47-518Z-581f811c/memory-protocol-source.tar.gz"
+      ],
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v5/memory-live-pilot/memory-protocol-source.tar.gz"
+    },
+    {
+      "reason": "declared_adjacent_archive_missing",
+      "referenceOrigin": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v5/native-memory-readiness/scripted-pilot/source-archives.json",
+      "sameNamedByteExactSelectedCopies": [
+        "closed-components/atlas-memory-orchestrator-test/pilot-vLkjzB/study/batches/pilot-2026-09-06T19-29-13-818Z-f92f9d16/atlas-source.tar.gz"
+      ],
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v5/native-memory-readiness/scripted-pilot/atlas-source.tar.gz"
+    },
+    {
+      "reason": "declared_adjacent_archive_missing",
+      "referenceOrigin": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v5/native-memory-readiness/scripted-pilot/source-archives.json",
+      "sameNamedByteExactSelectedCopies": [
+        "closed-components/atlas-memory-orchestrator-test/pilot-vLkjzB/study/batches/pilot-2026-09-06T19-29-13-818Z-f92f9d16/hermes-source.tar.gz"
+      ],
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v5/native-memory-readiness/scripted-pilot/hermes-source.tar.gz"
+    },
+    {
+      "reason": "declared_adjacent_archive_missing",
+      "referenceOrigin": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v5/native-memory-readiness/scripted-pilot/source-archives.json",
+      "sameNamedByteExactSelectedCopies": [
+        "closed-components/atlas-memory-orchestrator-test/pilot-vLkjzB/study/batches/pilot-2026-09-06T19-29-13-818Z-f92f9d16/memory-protocol-source.tar.gz"
+      ],
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v5/native-memory-readiness/scripted-pilot/memory-protocol-source.tar.gz"
+    },
+    {
+      "reason": "declared_adjacent_archive_missing",
+      "referenceOrigin": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-files-mimo-v2/development-candidate5/source-archives.json",
+      "sameNamedByteExactSelectedCopies": [
+        "evaluation/native-files-mimo-study-v2/batches/development-1788742015953-486a7350/atlas-source.tar.gz"
+      ],
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-files-mimo-v2/development-candidate5/atlas-source.tar.gz"
+    },
+    {
+      "reason": "declared_adjacent_archive_missing",
+      "referenceOrigin": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-files-mimo-v2/development-candidate5/source-archives.json",
+      "sameNamedByteExactSelectedCopies": [
+        "evaluation/native-files-mimo-study-v2/batches/development-1788742015953-486a7350/file-protocol-source.tar.gz"
+      ],
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-files-mimo-v2/development-candidate5/file-protocol-source.tar.gz"
+    },
+    {
+      "reason": "declared_adjacent_archive_missing",
+      "referenceOrigin": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-files-mimo-v2/development-candidate5/source-archives.json",
+      "sameNamedByteExactSelectedCopies": [
+        "evaluation/native-files-mimo-study-v2/batches/development-1788742015953-486a7350/hermes-source.tar.gz"
+      ],
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-files-mimo-v2/development-candidate5/hermes-source.tar.gz"
+    },
+    {
+      "reason": "declared_adjacent_archive_missing",
+      "referenceOrigin": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-mimo-v1/memory-development-candidate3/source-archives.json",
+      "sameNamedByteExactSelectedCopies": [
+        "evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/atlas-source.tar.gz"
+      ],
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-mimo-v1/memory-development-candidate3/atlas-source.tar.gz"
+    },
+    {
+      "reason": "declared_adjacent_archive_missing",
+      "referenceOrigin": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-mimo-v1/memory-development-candidate3/source-archives.json",
+      "sameNamedByteExactSelectedCopies": [
+        "evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/hermes-source.tar.gz"
+      ],
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-mimo-v1/memory-development-candidate3/hermes-source.tar.gz"
+    },
+    {
+      "reason": "declared_adjacent_archive_missing",
+      "referenceOrigin": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-mimo-v1/memory-development-candidate3/source-archives.json",
+      "sameNamedByteExactSelectedCopies": [
+        "evaluation/memory-mimo-study-v1/batches/development-2026-09-06T17-27-51-437Z-645527a9/memory-protocol-source.tar.gz"
+      ],
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-mimo-v1/memory-development-candidate3/memory-protocol-source.tar.gz"
+    },
+    {
+      "reason": "declared_adjacent_archive_missing",
+      "referenceOrigin": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-mimo-v1/memory-development-candidate5/source-archives.json",
+      "sameNamedByteExactSelectedCopies": [
+        "evaluation/memory-mimo-study-v1/batches/development-2026-09-06T22-55-00-233Z-d062ca06/atlas-source.tar.gz"
+      ],
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-mimo-v1/memory-development-candidate5/atlas-source.tar.gz"
+    },
+    {
+      "reason": "declared_adjacent_archive_missing",
+      "referenceOrigin": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-mimo-v1/memory-development-candidate5/source-archives.json",
+      "sameNamedByteExactSelectedCopies": [
+        "evaluation/memory-mimo-study-v1/batches/development-2026-09-06T22-55-00-233Z-d062ca06/hermes-source.tar.gz"
+      ],
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-mimo-v1/memory-development-candidate5/hermes-source.tar.gz"
+    },
+    {
+      "reason": "declared_adjacent_archive_missing",
+      "referenceOrigin": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-mimo-v1/memory-development-candidate5/source-archives.json",
+      "sameNamedByteExactSelectedCopies": [
+        "evaluation/memory-mimo-study-v1/batches/development-2026-09-06T22-55-00-233Z-d062ca06/memory-protocol-source.tar.gz"
+      ],
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-native-mimo-v1/memory-development-candidate5/memory-protocol-source.tar.gz"
+    }
+  ],
+  "originalsRetained": true,
+  "previousArchive": {
+    "directory": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-06/20260906T170357Z-057d18e4465d",
+    "manifestSha256": "bfa842d7c59be59e9238f3e9a0193fa71153ea03fe9d0943249d2dc260d70609"
+  },
+  "recordedDirectories": 9919,
+  "requiredClosedProviderBatches": 7,
+  "requiredOriginalArms": 244,
+  "scoresRecomputed": false,
+  "sourceMemberChecksNotVerified": [
+    {
+      "declaredRegularMembers": 2078,
+      "index": "repository-evidence/hermes-candidate-v5/memory-live-pilot/candidate-source.json",
+      "inventoryField": "atlasHashes",
+      "status": "not_verified_adjacent_archive_unavailable"
+    },
+    {
+      "declaredRegularMembers": 28,
+      "index": "repository-evidence/hermes-candidate-v5/memory-live-pilot/candidate-source.json",
+      "inventoryField": "controlHashes",
+      "status": "not_verified_adjacent_archive_unavailable"
+    },
+    {
+      "declaredRegularMembers": 7481,
+      "index": "repository-evidence/hermes-candidate-v5/memory-live-pilot/candidate-source.json",
+      "inventoryField": "hermesHashes",
+      "status": "not_verified_adjacent_archive_unavailable"
+    },
+    {
+      "declaredRegularMembers": 2078,
+      "index": "repository-evidence/hermes-candidate-v5/native-memory-readiness/scripted-pilot/candidate-source.json",
+      "inventoryField": "atlasHashes",
+      "status": "not_verified_adjacent_archive_unavailable"
+    },
+    {
+      "declaredRegularMembers": 28,
+      "index": "repository-evidence/hermes-candidate-v5/native-memory-readiness/scripted-pilot/candidate-source.json",
+      "inventoryField": "controlHashes",
+      "status": "not_verified_adjacent_archive_unavailable"
+    },
+    {
+      "declaredRegularMembers": 7481,
+      "index": "repository-evidence/hermes-candidate-v5/native-memory-readiness/scripted-pilot/candidate-source.json",
+      "inventoryField": "hermesHashes",
+      "status": "not_verified_adjacent_archive_unavailable"
+    },
+    {
+      "declaredRegularMembers": 2072,
+      "index": "repository-evidence/hermes-native-mimo-v1/memory-development-candidate3/candidate-source.json",
+      "inventoryField": "atlasHashes",
+      "status": "not_verified_adjacent_archive_unavailable"
+    },
+    {
+      "declaredRegularMembers": 28,
+      "index": "repository-evidence/hermes-native-mimo-v1/memory-development-candidate3/candidate-source.json",
+      "inventoryField": "controlHashes",
+      "status": "not_verified_adjacent_archive_unavailable"
+    },
+    {
+      "declaredRegularMembers": 7481,
+      "index": "repository-evidence/hermes-native-mimo-v1/memory-development-candidate3/candidate-source.json",
+      "inventoryField": "hermesHashes",
+      "status": "not_verified_adjacent_archive_unavailable"
+    }
+  ],
+  "verificationReceipt": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-07/20260907T023713Z-00008156aa71-verification.json",
+  "verificationSha256": "039a7cb0a1947a8595687b0aae13bad733971583cc4f5811abeebb6710be1d97",
+  "verifiedSourceMemberInventories": 48,
+  "verifiedSourceMembers": 153193
+}

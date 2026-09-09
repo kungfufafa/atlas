@@ -3,6 +3,7 @@ import type {
   CompactedHistoryArchive,
   CompactionResponse,
   LlmToolDefinition,
+  MessageContentPart,
   ProviderClient,
 } from "@atlas/core";
 import {
@@ -458,8 +459,28 @@ export async function compactHistory(
   ) {
     throw new Error("Compaction did not return a complete text summary.");
   }
+  const fileReferences = new Map<
+    string,
+    Extract<MessageContentPart, { type: "document_ref" }>
+  >();
+  for (const message of head) {
+    const references =
+      message.role === "user" && Array.isArray(message.content)
+        ? message.content.filter((part) => part.type === "document_ref")
+        : message.role === "assistant"
+          ? (message.fileReferences ?? [])
+          : [];
+    for (const reference of references) {
+      fileReferences.set(reference.attachmentId, reference);
+    }
+  }
+  const preservedFiles = [...fileReferences.values()];
+  const fileManifest = preservedFiles.length
+    ? `\n\nOriginal file references (source data):\n${JSON.stringify(preservedFiles.map(({ attachmentId, filename, size }) => ({ bytes: size, documentRef: attachmentId, filename })))}`
+    : "";
   const summaryMessage: Extract<ChatMessage, { role: "assistant" }> = {
-    content,
+    content: content + fileManifest,
+    ...(preservedFiles.length ? { fileReferences: preservedFiles } : {}),
     role: "assistant",
     summary: true,
   };

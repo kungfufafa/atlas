@@ -21,6 +21,57 @@ const compaction: CompactionConfig = {
   maxOutputTokens: 8192,
 };
 
+test("original file references survive repeated compaction even when the model omits them", async () => {
+  const reference = {
+    attachmentId: "att_original",
+    filename: "quarterly report.docx",
+    mediaType:
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    size: 24_000,
+    type: "document_ref" as const,
+  };
+  const history: ChatMessage[] = [
+    {
+      content: [
+        reference,
+        { text: "Review this file. ".repeat(400), type: "text" },
+      ],
+      role: "user",
+    },
+    { content: "Earlier detailed review. ".repeat(400), role: "assistant" },
+    { content: "Continue the review.", role: "user" },
+    { content: "More detailed findings. ".repeat(400), role: "assistant" },
+    { content: "Prepare the final edit.", role: "user" },
+  ];
+  const provider = summaryProvider(async () =>
+    summaryResult("Continue editing the reviewed document.")
+  );
+  for (let iteration = 0; iteration < 2; iteration++) {
+    await compactHistory({
+      compaction,
+      force: true,
+      history,
+      provider,
+      systemPrompt: "system",
+    });
+    expect(history[0]).toMatchObject({
+      fileReferences: [reference],
+      summary: true,
+    });
+    expect(history[0]!.content).toContain("att_original");
+    // Exercise the persisted JSON roundtrip before another compaction.
+    history.splice(
+      0,
+      history.length,
+      ...(JSON.parse(JSON.stringify(history)) as ChatMessage[])
+    );
+    history.push(
+      { content: "Additional context. ".repeat(400), role: "assistant" },
+      { content: "Continue using the original file.", role: "user" }
+    );
+  }
+});
+
 const largeWindow: CompactionConfig = {
   contextWindow: 1_000_000,
   maxOutputTokens: 8192,

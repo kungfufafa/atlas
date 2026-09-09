@@ -1,0 +1,84 @@
+{
+  "status": "pending-parent-confirmation-paid-batch-closed",
+  "cwd": "/private/tmp/atlas-candidate5-integration/source",
+  "testPolicy": "One deduplicated union of candidate4 and task-stop relevant suites; no full repo/native/paid tests. Individual prior counts are not claimed as integration results.",
+  "gates": [
+    {
+      "name": "combined-regression-union",
+      "command": [
+        "bun",
+        "test",
+        "apps/server/src/services/session-persistence.test.ts",
+        "apps/server/src/services/task-service.test.ts",
+        "apps/server/src/services/task-stop-semantics.test.ts",
+        "apps/server/src/tools/conversation-tools.test.ts",
+        "apps/server/src/tools/memory-scope-contract.test.ts",
+        "apps/server/src/tools/memory-tools-dedup.test.ts",
+        "apps/server/src/tools/memory-tools-update.test.ts",
+        "apps/server/src/tools/memory-tools.test.ts",
+        "packages/agent/src/chat-abort.test.ts",
+        "packages/agent/src/chat-failure-rollback.test.ts",
+        "packages/agent/src/chat-harness-reliability.test.ts",
+        "packages/agent/src/chat-output-limit.test.ts",
+        "packages/agent/src/chat-runtime-tools.test.ts",
+        "packages/agent/src/chat-stop-semantics.test.ts",
+        "packages/db/src/conversation-history.test.ts",
+        "packages/db/src/conversation-keyword-search.test.ts",
+        "packages/db/src/memory-preservation.test.ts",
+        "packages/db/src/memory-search.test.ts",
+        "packages/db/src/profile-atomic.test.ts"
+      ]
+    },
+    {
+      "name": "full-production-typecheck",
+      "command": [
+        "bun",
+        "run",
+        "tsc",
+        "--noEmit",
+        "-p",
+        "tsconfig.typecheck.json"
+      ]
+    },
+    {
+      "name": "changed-source-and-tests-typecheck",
+      "command": [
+        "bun",
+        "run",
+        "tsc",
+        "--noEmit",
+        "-p",
+        "tsconfig.integration-scope.json"
+      ]
+    },
+    {
+      "name": "scoped-lint",
+      "command": [
+        "bun",
+        "run",
+        "ultracite",
+        "check",
+        "apps/server/src/services/agent-service.ts",
+        "apps/server/src/services/task-runner.ts",
+        "apps/server/src/services/task-stop-semantics.test.ts",
+        "apps/server/src/tools/conversation-tools.test.ts",
+        "apps/server/src/tools/conversation-tools.ts",
+        "apps/server/src/tools/memory-scope-contract.test.ts",
+        "apps/server/src/tools/memory-tools-dedup.test.ts",
+        "apps/server/src/tools/memory-tools.ts",
+        "packages/agent/src/chat-stop-semantics.test.ts",
+        "packages/agent/src/chat.ts",
+        "packages/agent/src/index.ts",
+        "packages/db/src/adapters/in-memory.ts",
+        "packages/db/src/adapters/sqlite.ts",
+        "packages/db/src/conversation-keyword-search.test.ts",
+        "packages/db/src/conversation-keyword-search.ts",
+        "packages/db/src/memory-search.test.ts",
+        "packages/db/src/memory-search.ts",
+        "packages/db/src/types.ts"
+      ]
+    }
+  ],
+  "testFiles": 19,
+  "changedFiles": 18
+}

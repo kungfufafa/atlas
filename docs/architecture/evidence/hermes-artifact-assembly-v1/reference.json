@@ -1,0 +1,32 @@
+{
+  "activeCombinedCandidateExcluded": "/private/tmp/atlas-candidate6-integration",
+  "candidateSourceHash": "092cddfec661d7e35a8061f16e52d4389c158a3b64a7c102523b8a4b31b9233c",
+  "createdAt": "2026-09-07T02:49:56.324593+00:00",
+  "durableOwnerArchive": {
+    "directory": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-07/20260907T023713Z-00008156aa71",
+    "independentReviewClosedAfterArchiveSelection": true,
+    "manifestSha256": "e1805a67d66ecf492de441582f6ecad7c18a0fdb4eb311f8749c5107bce3daa1",
+    "path": "closed-components/atlas-artifact-assembly-c5"
+  },
+  "fullOriginalRoots": [
+    "/private/tmp/atlas-artifact-assembly-c5",
+    "/private/tmp/atlas-artifact-assembly-c5-independent-review"
+  ],
+  "fullReplayArchive": false,
+  "fullSourceRoots": ["/private/tmp/atlas-artifact-assembly-c5/source"],
+  "independentReviewSha256": "39f5afa6444886197fc14f65a977ca8c02fee837f85c4894a509810453da12b5",
+  "kind": "offline-unwired-component-with-independent-tests",
+  "knownCredentialScan": "All copied/generated pack bytes checked with the existing private key and finite known-value scanner; no key value/hash copied or printed.",
+  "limits": [
+    "Configured profile root only; selected capture does not prove session authorship or an atomic filesystem snapshot.",
+    "Owner and independent counts remain separate; inherited/repeated suites are not added as new quality samples.",
+    "Current runtime grants, shared-host confinement, turn identity/ownership, non-atomic revocation windows and visible consumer cutover remain separate integration work.",
+    "No AgentService, HTTP, UI or worker activation in this source; macOS owner evidence is not a Linux/Windows or Hermes claim."
+  ],
+  "originalsRetained": true,
+  "ownerReadinessHistoricalBytesUnchanged": true,
+  "productionActivationApproved": false,
+  "rootC5SourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "scoresRecomputed": false,
+  "selectedFilesOnly": true
+}

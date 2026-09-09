@@ -1,0 +1,10 @@
+bun test v1.3.1 (89fa0f34)
+
+apps/server/src/services/selected-artifact-publication.test.ts:
+(pass) memory: selected evidence commits distinctly and conflicts with generated relabeling [83.72ms]
+(pass) sqlite: selected evidence commits distinctly and conflicts with generated relabeling [81.06ms]
+
+ 2 pass
+ 0 fail
+ 8 expect() calls
+Ran 2 tests across 1 file. [945.00ms]

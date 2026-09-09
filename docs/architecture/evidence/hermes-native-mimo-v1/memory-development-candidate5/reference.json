@@ -1,0 +1,43 @@
+{
+  "at": "2026-09-07T00:37:15.728149+00:00",
+  "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "analysisSha256": "6a52a75afa8f2e7188feaaaa0dedd3bf47c6d967d391dd988ea693e25a59d6ae",
+  "copies": {
+    "completed.json": {
+      "source": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T22-55-00-233Z-d062ca06/completed.json",
+      "sha256": "51a914b0ea465bad329e6cfc88bd57dc78c59c631b8ae2cdfaf9effd187e3db5",
+      "bytes": 303
+    },
+    "attempts.jsonl": {
+      "source": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T22-55-00-233Z-d062ca06/attempts.jsonl",
+      "sha256": "ebf7a495c3365dc9847bd99761ecb32b60b0f7cc0ebd7c4b0a23edeb3fa47878",
+      "bytes": 329576
+    },
+    "analysis-final.json": {
+      "source": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T22-55-00-233Z-d062ca06/analysis-final.json",
+      "sha256": "6a52a75afa8f2e7188feaaaa0dedd3bf47c6d967d391dd988ea693e25a59d6ae",
+      "bytes": 97258
+    },
+    "runtime-identities.json": {
+      "source": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T22-55-00-233Z-d062ca06/runtime-identities.json",
+      "sha256": "224102a35e6e605676b95dd118bf79f1f5a547ea1a9a0092b9825694ab949afc",
+      "bytes": 24843
+    },
+    "source-archives.json": {
+      "source": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T22-55-00-233Z-d062ca06/source-archives.json",
+      "sha256": "ef71baadd758dda771a04b7582dce3b1a0e604c92a76371a4c2c5a861db77167",
+      "bytes": 292
+    }
+  },
+  "reportSha256": "b1c671f9a1158e62782f32807ceb97db1c0b08ea1dee2fedcc1b8a7d9be71de6",
+  "publicCensus": {
+    "path": "/private/tmp/atlas-native-memory-mimo-candidate5-process-audit",
+    "manifestSha256": "407572fb66e6b9b40aaeee8ee11f8688402ea4d2d93f4f81545c956045b2c83a",
+    "closureSha256": "5c05a030adc9ddb56940a24a7220aa33d5094b8f91f06e21ab5cde381c598105"
+  },
+  "credentialScan": "Selected copies checked for the provided credential literal; not an exhaustive unknown-secret certification.",
+  "inspectionCorrections": [
+    "An initial read-only summary selected nonexistent top-level success rather than evaluation.success and therefore printed all arms under FAILED; corrected before this report, original terminal records unchanged.",
+    "An initial closure path guessed final/closure.md; actual closure.md was read."
+  ]
+}

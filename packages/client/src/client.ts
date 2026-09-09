@@ -1,3 +1,7 @@
+import type {
+  CanonicalPrincipal,
+  ChannelPrincipalAuthorizationInput,
+} from "@atlas/core";
 import { AtlasApiError, readApiErrorMessage } from "@atlas/core/api-error";
 import type {
   AcceptOrgInviteRequest,
@@ -2069,6 +2073,28 @@ export class AtlasClient {
     });
   }
 
+  async authorizeChannelPrincipal(
+    input: ChannelPrincipalAuthorizationInput
+  ): Promise<CanonicalPrincipal> {
+    return this.request("/v1/channel-principals/authorize", {
+      body: JSON.stringify(input),
+      method: "POST",
+    });
+  }
+
+  async addDiscordAllowedUser(input: {
+    requesterChannelUserId: string;
+    targetChannelUserId: string;
+  }): Promise<
+    | { ok: true; alreadyAllowed: boolean; userId: string }
+    | { ok: false; message: string }
+  > {
+    return this.request("/v1/channels/discord/allowed-users", {
+      body: JSON.stringify(input),
+      method: "POST",
+    });
+  }
+
   async decideApproval(
     sessionId: string,
     approvalId: string,
@@ -2081,6 +2107,97 @@ export class AtlasClient {
         method: "POST",
       }
     );
+  }
+
+  async decideChannelApproval(
+    input: import("@atlas/core/channel-native-actions").DecideChannelApprovalInput
+  ): Promise<{ resumed: true; status: "approved" | "denied" }> {
+    return this.request("/v1/channel-principals/approvals/decide", {
+      body: JSON.stringify(input),
+      method: "POST",
+    });
+  }
+
+  async bindChannelActionContext(
+    input: import("@atlas/core/channel-native-actions").ChannelActionActor
+  ): Promise<{ bound: true }> {
+    return this.request("/v1/channel-actions/context", {
+      body: JSON.stringify(input),
+      method: "POST",
+    });
+  }
+  async getChannelVoiceCapabilities(
+    input: import("@atlas/core/channel-native-actions").ChannelActionActor
+  ): Promise<{
+    transcription: boolean;
+    speech: boolean;
+    maxSessionSeconds: number;
+    maxUtteranceSeconds: number;
+  }> {
+    return this.request("/v1/channel-voice/capabilities", {
+      body: JSON.stringify(input),
+      method: "POST",
+    });
+  }
+  async synthesizeChannelSpeech(
+    input: import("@atlas/core/channel-native-actions").ChannelActionActor & {
+      text: string;
+    }
+  ): Promise<{ data: string; mediaType: "audio/wav"; filename: string }> {
+    return this.request("/v1/channel-voice/speech", {
+      body: JSON.stringify(input),
+      method: "POST",
+    });
+  }
+  async transcribeChannelVoice(
+    input: import("@atlas/core/channel-native-actions").ChannelActionActor & {
+      data: string;
+      mediaType: "audio/wav";
+      filename?: string;
+    }
+  ): Promise<{ text: string }> {
+    return this.request("/v1/channel-voice/transcribe", {
+      body: JSON.stringify(input),
+      method: "POST",
+    });
+  }
+  async getChannelIntegrationPolicy(
+    channel: import("@atlas/core/channel-native-actions").NativeChannel
+  ): Promise<
+    import("@atlas/core/channel-integration-policy").ChannelIntegrationPolicy
+  > {
+    return this.request(`/v1/settings/channels/${channel}/policy`);
+  }
+  async setChannelIntegrationPolicy(
+    channel: import("@atlas/core/channel-native-actions").NativeChannel,
+    policy: import("@atlas/core/channel-integration-policy").ChannelIntegrationPolicy
+  ): Promise<
+    import("@atlas/core/channel-integration-policy").ChannelIntegrationPolicy
+  > {
+    return this.request(`/v1/settings/channels/${channel}/policy`, {
+      body: JSON.stringify(policy),
+      method: "PUT",
+    });
+  }
+
+  async claimChannelAction(
+    input: import("@atlas/core/channel-native-actions").ClaimChannelActionInput
+  ): Promise<
+    import("@atlas/core/channel-native-actions").ChannelNativeActionRequest
+  > {
+    return this.request("/v1/channel-actions/claim", {
+      body: JSON.stringify(input),
+      method: "POST",
+    });
+  }
+
+  async completeChannelAction(
+    input: import("@atlas/core/channel-native-actions").CompleteChannelActionInput
+  ): Promise<{ recorded: true }> {
+    return this.request("/v1/channel-actions/complete", {
+      body: JSON.stringify(input),
+      method: "POST",
+    });
   }
 
   async regenerateTelegramHandshake(): Promise<TelegramSettingsResponse> {

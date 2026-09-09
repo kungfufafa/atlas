@@ -1,3 +1,7 @@
+import {
+  prepareChannelAudio,
+  type SaveInboundDocument,
+} from "@atlas/core/attachments/inbound-document";
 import type { SendMessageInput } from "@atlas/core/contract";
 import {
   throwIfSignalAborted,
@@ -29,7 +33,9 @@ export type WhatsAppAudioTranscribe = (input: {
 }) => Promise<{ text: string }>;
 
 export interface WhatsAppAudioInputOptions {
+  caption?: string;
   downloadOverallTimeoutMs?: number;
+  saveInboundDocument?: SaveInboundDocument;
   signal?: AbortSignal;
 }
 
@@ -76,11 +82,25 @@ export async function buildWhatsAppAudioInput(
     return { kind: "reject", message: OVERSIZED_AUDIO_REPLY };
   }
 
+  const mediaType = inferAudioMediaType(media.mimetype, media.filename);
+  const prepared = await prepareChannelAudio({
+    bytes,
+    caption: options.caption ?? media.caption,
+    channel: "WhatsApp",
+    filename: media.filename,
+    mediaType,
+    saveInboundDocument: options.saveInboundDocument,
+    signal: options.signal,
+  });
+  if (prepared.kind === "reject") {
+    return prepared;
+  }
+
   try {
     const transcription = transcribe({
       data: bytes.toString("base64"),
       filename: media.filename,
-      mediaType: inferAudioMediaType(media.mimetype, media.filename),
+      mediaType,
     });
     const { text } = options.signal
       ? await waitForAbortable(transcription, options.signal)
@@ -90,7 +110,10 @@ export async function buildWhatsAppAudioInput(
       return { kind: "reject", message: AUDIO_TRANSCRIBE_FAILED_REPLY };
     }
 
-    return { input: { message: transcript }, kind: "input" };
+    return {
+      input: { message: `${transcript}\n\n${prepared.input.message}` },
+      kind: "input",
+    };
   } catch (error) {
     if (options.signal?.aborted) {
       throwIfSignalAborted(options.signal);

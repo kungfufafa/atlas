@@ -1,0 +1,9 @@
+{
+  "readOnlySearchMisses": [
+    "An rg path guessed packages/db/src/adapters/memory.ts; actual adapter is in-memory.ts.",
+    "Several shell globs for llm/sidebar files had no matches; subsequent direct paths/rg discovery were used.",
+    "Guessed openai/client.ts and core/constants.ts were absent; actual timeout helper is packages/core/src/fetch-idle.ts."
+  ],
+  "preservation": "These were read-only path/search errors in tool history, not behavioral tests or product counterexamples. No separate exact failed command script was captured, and none is claimed. No source/edit/test attempt failed because no implementation or test execution was performed.",
+  "evidenceScope": "Only fixed title-system marker, original scalar evaluation/usage/error elapsed fields and hashes of the two already-closed requests were selected. No request task text, hidden response reasoning or raw error text was emitted."
+}

@@ -1,0 +1,282 @@
+{
+  "date": "2026-09-06",
+  "classification": "audit evidence, not production readiness",
+  "runs": [
+    {
+      "command": "bun run test (sandbox)",
+      "log": "/private/tmp/atlas-deep-20260906/full-suite.initial.log",
+      "sha256": "83bcd9dbb799d56772a1008f0d3d3190fb72b0c96e15b75a981f27659a8d73eb",
+      "pass": 5022,
+      "fail": 19,
+      "assertions": 14974,
+      "files": 625,
+      "failureNames": [
+        "isServerHealthy > rejects when the tools catalog stays unauthorized [3.74ms]",
+        "isServerHealthy > accepts a server that lists required builtins for the local client [0.88ms]",
+        "isServerHealthy > retries tools with a workspace header when local-token needs org context [0.79ms]",
+        "WhatsApp outbound server destination send > sends from the paired workspace number to the requested phone [4.19ms]",
+        "WhatsApp outbound server destination send > rejects destinations outside an allowlist [2.31ms]",
+        "WhatsApp outbound server destination send > binds distinct ephemeral ports so two workspaces can listen at once [1.98ms]",
+        "WhatsApp outbound server destination send > fails closed when either outbound authorization layer is missing or wrong [1.43ms]",
+        "WhatsApp outbound server destination send > rejects oversized bodies, text, and chunk counts before sending [1.38ms]",
+        "WhatsApp outbound server destination send > times out a stalled send without retrying or repeating completed chunks [1.49ms]",
+        "WhatsApp outbound server destination send > recovers capacity after four permanent sends invalidate their socket generation [1.38ms]",
+        "WhatsApp outbound server destination send > fails fast when all send slots are saturated and queuing is disabled [1.35ms]",
+        "WhatsApp outbound server destination send > times out a bounded queued send before invoking the socket [1.30ms]",
+        "capability routing with mixed credentials > Anthropic API vision coexists with ChatGPT subscription chat [0.47ms]",
+        "parses a real inline image through registry/runtime under cassette replay [4.15ms]",
+        "resolvePrimaryModelVisionSupport > uses provider-agnostic legacy evidence from the static model catalog [0.51ms]",
+        "BrowserSessionService Chromium smokes > (unnamed) [0.49ms]",
+        "ArtifactService > saves, lists, inspects, reads, and deletes artifacts [1.54ms]",
+        "email tool > builtin tool schemas all declare type object for LLM providers [0.48ms]",
+        "formats timestamps predictably and handles invalid input [2.89ms]"
+      ]
+    },
+    {
+      "command": "bun run test (localhost allowed, isolated config)",
+      "log": "/private/tmp/atlas-deep-20260906/full-suite.localhost.log",
+      "sha256": "a280a50a905561c1138391465490b4e8f01fccbacb01c9285345e2911bfe6700",
+      "pass": 5037,
+      "fail": 5,
+      "assertions": 15039,
+      "files": 625,
+      "failureNames": [
+        "capability routing with mixed credentials > Anthropic API vision coexists with ChatGPT subscription chat [1.08ms]",
+        "parses a real inline image through registry/runtime under cassette replay [2.23ms]",
+        "resolvePrimaryModelVisionSupport > uses provider-agnostic legacy evidence from the static model catalog [0.74ms]",
+        "email tool > builtin tool schemas all declare type object for LLM providers [1.99ms]",
+        "formats timestamps predictably and handles invalid input [2.53ms]"
+      ]
+    },
+    {
+      "command": "LLM_VCR_MODE=replay bun run test (intermediate, before final lineage fix)",
+      "log": "/private/tmp/atlas-deep-20260906/full-suite.final.log",
+      "sha256": "640cc166d9ffca5f6a009be447012a183689c69379c534ad97ef3d409acc4c84",
+      "pass": 5107,
+      "fail": 0,
+      "assertions": 15567,
+      "files": 635,
+      "failureNames": []
+    },
+    {
+      "command": "bun test scripts (first complete scripts run)",
+      "log": "/private/tmp/atlas-deep-20260906/scripts-suite.latest.log",
+      "sha256": "e5040ca4b5b5f10ed0c8a005967486161b8788593246ee92eb97e47f40c749b8",
+      "pass": 29,
+      "fail": 1,
+      "assertions": 91,
+      "files": 9,
+      "failureNames": [
+        "channel loop harness > file in is processed and a real file comes back on WhatsApp, Telegram, and Discord [3352.14ms]"
+      ]
+    },
+    {
+      "command": "bun test scripts (after channel oracle correction)",
+      "log": "/private/tmp/atlas-deep-20260906/scripts-suite.final.log",
+      "sha256": "fbf18af0f703591f39033ffcd54e3a4f381bf47bcf3749ac8bf8d3cf9b58afc4",
+      "pass": 30,
+      "fail": 0,
+      "assertions": 93,
+      "files": 9,
+      "failureNames": []
+    },
+    {
+      "command": "bun test scripts (after lineage correction)",
+      "log": "/private/tmp/atlas-deep-20260906/scripts-suite.complete.log",
+      "sha256": "897d7ba9e8fb6d4a60dcde6bb567551065019e34b4a9648fc5488d87259556a9",
+      "pass": 30,
+      "fail": 0,
+      "assertions": 93,
+      "files": 9,
+      "failureNames": []
+    },
+    {
+      "command": "predeclared actual Python probes before corrections",
+      "log": "/private/tmp/atlas-deep-20260906/python.before.log",
+      "sha256": "460a8c1f162915977fa07c5a738877e324567e89aa97ddc4f33e72c93923902e",
+      "pass": 0,
+      "fail": 6,
+      "assertions": 13,
+      "failureNames": [
+        "PY01 bounds both multibyte output streams in bytes and marks truncation [62.49ms]",
+        "PY02 separates workspace changes from declared deliverables [31.41ms]",
+        "PY03 failed execution retains partial files for diagnosis without publishing artifacts [46.38ms]",
+        "PY04 a signal-terminated process is never successful [23.04ms]",
+        "PY05 cancel stops descendants before a delayed workspace write [3331.72ms]",
+        "PY05 timeout stops descendants before a delayed workspace write [3296.97ms]"
+      ]
+    },
+    {
+      "command": "simultaneous publication before correction",
+      "log": "/private/tmp/atlas-deep-20260906/builtin-publication.before.log",
+      "sha256": "e6c87d1d75f048038fe2a912ce56ea91c22f6f5bc50abcc1f2e95af6b1d25d1d",
+      "pass": 0,
+      "fail": 2,
+      "assertions": 2,
+      "failureNames": [
+        "B01 simultaneous docx creation keeps every complete result [87.28ms]",
+        "B01 simultaneous pptx creation keeps every complete result [19.71ms]"
+      ]
+    },
+    {
+      "command": "expanded absolute/cwd/lineage tests before cwd alias correction",
+      "log": "/private/tmp/atlas-deep-20260906/builtin-publication.reviewed.log",
+      "sha256": "a11819114fd9e8b6da1abdfb3539d892847c0589296f1ff858dabd0267deb94f",
+      "pass": 64,
+      "fail": 1,
+      "assertions": 196,
+      "files": 3,
+      "failureNames": [
+        "B04 same relative artifact names in different working directories keep independent metadata [5.59ms]"
+      ]
+    },
+    {
+      "command": "lineage lock test first attempt; fixture omitted required PPTX title",
+      "log": "/private/tmp/atlas-deep-20260906/builtin-publication.lineage-fixed.log",
+      "sha256": "9e085265ea4768a40844fe2f7885ca26129f35ca296a7267857a4ebb29ae4264",
+      "pass": 63,
+      "fail": 1,
+      "assertions": 194,
+      "files": 3,
+      "failureNames": [
+        "B05 pptx creation and metadata wait for the profile mutation lock [1.64ms]"
+      ]
+    },
+    {
+      "command": "lineage lock tests after fixture correction",
+      "log": "/private/tmp/atlas-deep-20260906/builtin-publication.lineage-final.log",
+      "sha256": "62cf079d02cb22bb18d881ad9e7247378ffca4a62f0253d6902a83119336b23e",
+      "pass": 64,
+      "fail": 0,
+      "assertions": 195,
+      "files": 3,
+      "failureNames": []
+    },
+    {
+      "command": "complete suite after lineage fix; invalid-scope test fixture failed",
+      "log": "/private/tmp/atlas-deep-20260906/full-suite.complete.log",
+      "sha256": "4ac6343278c6ecd577dca594b451393eb1d8d432970a02c4be07a9c6c18eeed9",
+      "failureNames": [
+        "write_pptx tool validation > rejects path not ending in .pptx [4.89ms]"
+      ],
+      "pass": 5108,
+      "fail": 1,
+      "assertions": 15597,
+      "files": 635
+    },
+    {
+      "command": "full target before subsequent buffer and approval-history discoveries",
+      "log": "/private/tmp/atlas-deep-20260906/full-suite.verified.log",
+      "sha256": "9fa7bcfde5476183ead451a5a6a31ce1815d06450d9f945578635f1daba2d818",
+      "failureNames": [],
+      "pass": 5109,
+      "fail": 0,
+      "assertions": 15597,
+      "files": 635
+    },
+    {
+      "command": "complete scripts target after standalone browser evidence corrections",
+      "log": "/private/tmp/atlas-deep-20260906/scripts-suite.verified.log",
+      "sha256": "d429217c549a0c2fdced35f7d6024d5147c6f53e614128ec06a734c7165aaf9c",
+      "failureNames": [],
+      "pass": 42,
+      "fail": 0,
+      "assertions": 117,
+      "files": 10
+    },
+    {
+      "command": "actual protected callback and approval receipt before shared failure classification",
+      "log": "/private/tmp/atlas-deep-20260906/approval-failure-status.before.log",
+      "sha256": "e61e6d8a373c8a8b6207f44f8d4af1f6d9a156128aa02a324da2395e3786814c",
+      "failureNames": [
+        "approval history records an explicit failed operation: {\"success\":false} [2.24ms]",
+        "approval history records an explicit failed operation: {\"ok\":false} [0.60ms]",
+        "approval history records an explicit failed operation: {\"isError\":true} [0.22ms]"
+      ],
+      "pass": 14,
+      "fail": 3,
+      "assertions": 58,
+      "files": 1
+    },
+    {
+      "command": "same approval cases after shared failure classification",
+      "log": "/private/tmp/atlas-deep-20260906/approval-failure-status.after.log",
+      "sha256": "23ee015ff95fd5e5449c93cafa061e0271c7ae97ac130de53176f70e3ead9ef9",
+      "failureNames": [],
+      "pass": 17,
+      "fail": 0,
+      "assertions": 61,
+      "files": 1
+    },
+    {
+      "command": "final complete target after buffer, late-subscriber and approval-history fixes; isolated config and LLM_VCR_MODE=replay",
+      "log": "/private/tmp/atlas-deep-20260906/full-suite.closing.log",
+      "sha256": "da302cffdba8f9d7fbc65d12b37f1bb4d3270d23de36d7a7c3d1c1ee3c0ecf67",
+      "failureNames": [],
+      "pass": 5119,
+      "fail": 0,
+      "assertions": 15640,
+      "files": 636
+    },
+    {
+      "command": "final complete scripts target on the same frozen product code",
+      "log": "/private/tmp/atlas-deep-20260906/scripts-suite.closing.log",
+      "sha256": "1bc3b9485a05f9708c4033da023435fcab6872fefb8f52f82ed614630f579789",
+      "failureNames": [],
+      "pass": 42,
+      "fail": 0,
+      "assertions": 117,
+      "files": 10
+    },
+    {
+      "command": "final bounded stream registry plus HTTP stream regression target",
+      "log": "/private/tmp/atlas-turn-buffer-final-tests.log",
+      "sha256": "9dc1b8a21ba709ec0e64bf73809283f6932058325ce053ad70812d6d348cfdf9",
+      "failureNames": [],
+      "pass": 28,
+      "fail": 0,
+      "assertions": 108,
+      "files": 3
+    }
+  ],
+  "finalLogPaths": [
+    "/private/tmp/atlas-deep-20260906/full-suite.closing.log",
+    "/private/tmp/atlas-deep-20260906/scripts-suite.closing.log",
+    "/private/tmp/atlas-deep-20260906/full-lint.closing.log",
+    "/private/tmp/atlas-deep-20260906/typecheck.final.log",
+    "/private/tmp/atlas-deep-20260906/full-build.closing.log",
+    "/private/tmp/atlas-deep-20260906/typecheck-web.latest.log",
+    "/private/tmp/atlas-deep-20260906/typecheck-mobile.initial.log",
+    "/private/tmp/atlas-deep-20260906/docs-build.network.log"
+  ],
+  "finalChecks": {
+    "rootTypecheck": "pass",
+    "webTypecheck": "pass",
+    "mobileTypecheck": "pass using installed TypeScript6.0.3",
+    "workspaceBuild": "pass; web chunk size warnings remain",
+    "docsBuild": "initial sandbox stall terminated; repeated outside sandbox passed",
+    "globalLint": "pass; all evidence JSON formatted",
+    "dockerBuild": "blocked: daemon unavailable",
+    "liveClaude": "blocked: isolated runtime not authenticated",
+    "liveMessengers": "not run: no external sends authorized",
+    "pythonTenantIsolation": "failed requirement: synthetic outside-profile read succeeded",
+    "standaloneBrowser": "not run: missing explicit disposable fixture; actual prerequisite path exited 1 before browser/login"
+  },
+  "testFileInventory": {
+    "inventory": 641,
+    "executedFiles": 640,
+    "missing": ["scripts/e2e-browser-test.ts"],
+    "logs": [
+      "/private/tmp/atlas-deep-20260906/full-suite.closing.log",
+      "/private/tmp/atlas-deep-20260906/scripts-suite.closing.log"
+    ],
+    "missingReason": "Standalone scripts/e2e-browser-test.ts is outside Bun test discovery. Explicit missing-fixture execution returned NOT_RUN and exit 1 before browser launch/login. Twelve new config/evidence tests pass; live standalone workflow not performed."
+  },
+  "rootStreamingProbes": {
+    "originalOverflow": "isolated child hung after 3 MiB then 2 MiB; watchdog terminated exit 137",
+    "initialFixLateSubscriber": "first subscriber received done; late subscriber received no terminal",
+    "finalLateSubscriber": "both subscribers received exactly one done; turn closed",
+    "evidenceDirectory": "docs/architecture/validation/root-adversarial/",
+    "scope": "bounded UTF-8 replay and live completion; oversized payloads are not cached, full arbitrary conversation replay is not guaranteed"
+  }
+}

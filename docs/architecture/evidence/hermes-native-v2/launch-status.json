@@ -1,0 +1,43 @@
+{
+  "status": "hold-native-freeze-and-live-inference",
+  "recordedAt": "2026-09-06T16:24:29.447180+00:00",
+  "authority": "Explicit root coordinator direction after the native V2 controls review; this pack grants no execution authorization.",
+  "controlsValidated": true,
+  "liveAuxiliaryCompatibilityValidated": false,
+  "reason": "The completed original 96-arm native-memory development audit shows inconsistent endpoint handling of Hermes session-title JSON schema: 86 upstream HTTP400 requests without usage on 46 of 48 Hermes arms, while the same schema received 11 HTTP200 responses on 9 arms. The queue-lifetime amendment does not change those requests or fix upstream schema handling.",
+  "scope": "Final V2 scripted pilots and source checks remain valid instrumentation evidence. They do not show that the live provider supports all native auxiliary request shapes.",
+  "requiredBeforeFreeze": "Root resolves the exact endpoint/native auxiliary compatibility and declared comparison condition, then explicitly clears the hold. Do not turn auxiliaries off, alter their request schema, route them elsewhere or omit earlier errors without a new declared protocol decision and freeze.",
+  "updatedAt": "2026-09-06T16:31:06.420148+00:00",
+  "evidence": {
+    "native-auxiliary-error-audit.json": {
+      "path": "docs/architecture/evidence/hermes-native-memory-v1/native-auxiliary-error-audit.json",
+      "source": "/private/tmp/atlas-native-memory-v1-error-audit/report.json",
+      "sha256": "e19052d33d7e6ebba2e2544e8ad45bdd7a2015bcef57e715ec8ffad07871190c"
+    },
+    "native-auxiliary-error-audit.md": {
+      "path": "docs/architecture/evidence/hermes-native-memory-v1/native-auxiliary-error-audit.md",
+      "source": "/private/tmp/atlas-native-memory-v1-error-audit/report.md",
+      "sha256": "38e0c924e5abb79f1b972a77b018b5470d48b95adcd950929971810ca3b1e0c1"
+    }
+  },
+  "auditCounts": {
+    "scannedCompletedArms": 96,
+    "hermesArms": 48,
+    "upstreamTitleSchemaHTTP400Requests": 86,
+    "hermesArmsWithTitleSchema400": 46,
+    "sameSchemaHTTP200Requests": 11,
+    "hermesArmsWithSameSchema200": 9,
+    "localProxyFinalization502Requests": 2,
+    "observedProviderHTTP502Requests": 0,
+    "localForegroundConcurrencyAffectedArms": 4,
+    "distinctLocalFailedForegroundTurns": 6,
+    "inferredRejectedForwards": 12
+  },
+  "qualifications": [
+    "The 12 local rejected forwards are timing-based inferences; the frozen local guard did not retain raw numbered rejection receipts. Distinct failed foreground turns are counted once.",
+    "The 2 HTTP502 transport failures came from local finalization cancellation of pending title fallback work; no provider-origin 502 was observed.",
+    "Read-only review found no pinned native option that omits only the title schema on this same endpoint while preserving the declared auxiliary/profile configuration. Caller-provided schema overwrites configured extra_body.",
+    "The same schema also succeeded; this evidence establishes inconsistent handling, not universal lack of provider support.",
+    "No controls, task oracles, fixed scores or provider calls were changed by this audit or packaging."
+  ]
+}

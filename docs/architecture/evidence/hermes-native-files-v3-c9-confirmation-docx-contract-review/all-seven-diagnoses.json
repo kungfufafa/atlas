@@ -1,0 +1,65 @@
+[
+  {
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r0-hermes",
+    "artifactSha256": "4ed3c189ab9db0b67ac0b8ce8f912f5a4f42fd4ed177c1c6d804dfef46cb5c75",
+    "originalPrimarySuccess": false,
+    "originalFailedChecks": ["fact:action", "fact:due"],
+    "diagnosis": "All six supplied facts are present across document paragraphs plus the correct Action/Due table. Action and due occur only in the table, contrary to the explicit instruction to include all supplied facts in readable paragraphs as well. This is a paragraph-location contract failure, not evidence of missing facts throughout the document.",
+    "additionalUnscoredLimitation": null,
+    "newScoreComputed": false
+  },
+  {
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r0-atlas",
+    "artifactSha256": "16832f587c3a8c4cdea5a4114b6a3ccababf7a61bb755afc44eb14ec893e186c",
+    "originalPrimarySuccess": false,
+    "originalFailedChecks": ["fact:action", "fact:due"],
+    "diagnosis": "All six supplied facts are present across document paragraphs plus the correct Action/Due table. Action and due occur only in the table, contrary to the explicit instruction to include all supplied facts in readable paragraphs as well. This is a paragraph-location contract failure, not evidence of missing facts throughout the document.",
+    "additionalUnscoredLimitation": null,
+    "newScoreComputed": false
+  },
+  {
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v2-r1-atlas",
+    "artifactSha256": "18cbf0b0fd64d2b5d8812adeb77214e48ff9c68c3fd959e9636e9b99c5e6fb88",
+    "originalPrimarySuccess": false,
+    "originalFailedChecks": ["fact:action", "fact:due"],
+    "diagnosis": "All six supplied facts are present across document paragraphs plus the correct Action/Due table. Action and due occur only in the table, contrary to the explicit instruction to include all supplied facts in readable paragraphs as well. This is a paragraph-location contract failure, not evidence of missing facts throughout the document.",
+    "additionalUnscoredLimitation": "The statement that resolved status, impact duration or financial loss has not been determined at this time is not established by the supplied input. The original limited forbidden-positive-phrase check passes; this inspection adds no score.",
+    "newScoreComputed": false
+  },
+  {
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v0-r1-atlas",
+    "artifactSha256": "11dfbe885a3e93f7f6b12e74df976c329f52ef2dcd68d42c1f6306f0e6af8dcf",
+    "originalPrimarySuccess": false,
+    "originalFailedChecks": ["fact:action", "fact:due"],
+    "diagnosis": "All six supplied facts are present across document paragraphs plus the correct Action/Due table. Action and due occur only in the table, contrary to the explicit instruction to include all supplied facts in readable paragraphs as well. This is a paragraph-location contract failure, not evidence of missing facts throughout the document.",
+    "additionalUnscoredLimitation": null,
+    "newScoreComputed": false
+  },
+  {
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v0-r1-hermes",
+    "artifactSha256": "0f31004fcb6eac1edfa137b9ba408e5f22cea4569a57576690629ef6169e39a9",
+    "originalPrimarySuccess": false,
+    "originalFailedChecks": ["fact:action", "fact:due"],
+    "diagnosis": "All six supplied facts are present across document paragraphs plus the correct Action/Due table. Action and due occur only in the table, contrary to the explicit instruction to include all supplied facts in readable paragraphs as well. This is a paragraph-location contract failure, not evidence of missing facts throughout the document.",
+    "additionalUnscoredLimitation": null,
+    "newScoreComputed": false
+  },
+  {
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r1-hermes",
+    "artifactSha256": "482efeaca8acc2d1a3d2452d7bdedce10feb669c9225b012f5e2036d7935bb80",
+    "originalPrimarySuccess": false,
+    "originalFailedChecks": ["fact:cause", "fact:action"],
+    "diagnosis": "Case-sensitive oracle mismatch: all six supplied facts occur in readable paragraphs; cause and action begin in lowercase in prose. Their meaning is preserved. Exact action and due are also in the required table. No missing-fact or paragraph-omission conclusion is supported by these two failed checks.",
+    "additionalUnscoredLimitation": null,
+    "newScoreComputed": false
+  },
+  {
+    "id": "confirmatory-1788766021520-052b6932-native-files-confirmatory-docx_report-v1-r1-atlas",
+    "artifactSha256": "a18a26f6640e517e4c9f68d4384869e5e97bc5f61adc0384a2aa7f0759037790",
+    "originalPrimarySuccess": false,
+    "originalFailedChecks": ["fact:action", "fact:due"],
+    "diagnosis": "All six supplied facts are present across document paragraphs plus the correct Action/Due table. Action and due occur only in the table, contrary to the explicit instruction to include all supplied facts in readable paragraphs as well. This is a paragraph-location contract failure, not evidence of missing facts throughout the document.",
+    "additionalUnscoredLimitation": null,
+    "newScoreComputed": false
+  }
+]

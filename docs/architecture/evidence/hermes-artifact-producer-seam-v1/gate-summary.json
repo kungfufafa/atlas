@@ -1,0 +1,19 @@
+{
+  "candidateSourceHash": "17a262bf4fd5ab96f72fe4e7ca741cc0066542c321b037c70f713e35a621faeb",
+  "ownerTests": {
+    "tests": 70,
+    "assertions": 325,
+    "files": 6,
+    "newTests": 16
+  },
+  "independentSourceReview": {
+    "path": "independent-review/review.json",
+    "sha256": "fc12e4ab0656d736d09210934fbefd6e19b97cb4cf44236587d9d4d691bcb8f4",
+    "testsRerun": false
+  },
+  "packagingTestsRun": false,
+  "newProviderCalls": 0,
+  "productionActivated": false,
+  "claim": "Bounded offline component evidence; unwired, no full artifact race fix or Atlas/Hermes quality claim.",
+  "overlapWarning": "Owner regression unions include previous tests and overlap other component gates. Do not sum them as independent experiments or performance samples."
+}

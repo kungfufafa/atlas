@@ -1,4 +1,6 @@
+import { isDeepStrictEqual } from "node:util";
 import type { AgentQuestionnaire } from "@atlas/core";
+import { AtlasApiError } from "@atlas/core";
 import type { DatabaseAdapter } from "@atlas/db";
 
 const MAX_QUESTIONS = 5;
@@ -27,6 +29,9 @@ export class AgentQuestionnaireState {
       id: questionnaire.id.trim(),
       questions: questionnaire.questions.map((question) => ({
         allowCustomAnswer: question.allowCustomAnswer,
+        ...(question.selectionMode
+          ? { selectionMode: question.selectionMode }
+          : {}),
         choices: question.choices.map((choice) => ({
           id: choice.id.trim(),
           label: choice.label.trim(),
@@ -56,7 +61,19 @@ export class AgentQuestionnaireState {
       );
     }
 
+    const questionIds = new Set<string>();
     for (const question of normalized.questions) {
+      if (questionIds.has(question.id)) {
+        throw new Error("Question identifiers must be unique.");
+      }
+      questionIds.add(question.id);
+      if (
+        question.selectionMode !== undefined &&
+        question.selectionMode !== "single" &&
+        question.selectionMode !== "multiple"
+      ) {
+        throw new Error("Unsupported question selection mode.");
+      }
       if (!question.id) {
         throw new Error("Each question must have a non-empty id.");
       }
@@ -71,7 +88,14 @@ export class AgentQuestionnaireState {
         );
       }
 
+      const choiceIds = new Set<string>();
       for (const choice of question.choices) {
+        if (choiceIds.has(choice.id)) {
+          throw new Error(
+            "Choice identifiers must be unique within a question."
+          );
+        }
+        choiceIds.add(choice.id);
         if (!(choice.id && choice.label)) {
           throw new Error(`Question "${question.id}" has an invalid choice.`);
         }
@@ -92,6 +116,29 @@ export class AgentQuestionnaireState {
   async clear(sessionId: string): Promise<void> {
     this.cache.set(sessionId, null);
     await this.db.updateSessionQuestionnaire(sessionId, null);
+  }
+
+  /** Caller holds the session turn lock until answer processing finishes. */
+  async consume(
+    sessionId: string,
+    expected: AgentQuestionnaire
+  ): Promise<void> {
+    const current = await this.db.getSessionQuestionnaire(sessionId);
+    if (
+      !(
+        current &&
+        isDeepStrictEqual(
+          JSON.parse(JSON.stringify(current)),
+          JSON.parse(JSON.stringify(expected))
+        )
+      )
+    ) {
+      throw new AtlasApiError(
+        "Questionnaire has changed or was already answered",
+        409
+      );
+    }
+    await this.clear(sessionId);
   }
 
   clearSession(sessionId: string): void {

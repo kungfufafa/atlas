@@ -1,0 +1,8 @@
+{
+  "at": "2026-09-07T05:57:58.772273+00:00",
+  "originalManifestSha256": "b3a7ff1048a90e31cd0c03ef5a7c71031da790f5e9c7e0974a1432d6d56981c1",
+  "originalReviewJsonSha256": "eb83a466c5a33dbf743c1f380a9e2e80e7f037ab924c838504f7eca0d260c5aa",
+  "originalReviewMdSha256": "86a5326f8b83a182d7cdc7f4aa5ac9b2278eb50c7e6546c46d76056b23c14460",
+  "correctedReadableMdSha256": "f8fe07863f776d73dab7d284de07a1ad5338828e397d357ced00308a6d9b6100",
+  "correction": "Add spaces around adjacent counts and clarify that2170 denotes C8 source files, not total bytes. Authoritative review.json already says oldC8SourceFilesRehashedUnchanged2170; no disposition/evidence/count change. Original manifest/seal/JSON/Markdown preserved unchanged."
+}

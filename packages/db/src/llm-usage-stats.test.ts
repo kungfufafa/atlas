@@ -23,11 +23,14 @@ describe("llm usage stats persistence", () => {
       const byModel = await db.listLlmUsageStatsByModel();
       expect(stats).toEqual({
         estimatedCostUsd: 0.05,
+        estimatedInvocations: 0,
         id: LLM_USAGE_STATS_ID,
         inputTokens: 400,
         outputTokens: 100,
+        reportedInvocations: 0,
         requestCount: 2,
         trackedSince,
+        unknownInvocations: 0,
         updatedAt: expect.any(String),
       });
       expect(byModel).toEqual([]);
@@ -76,20 +79,26 @@ describe("llm usage stats persistence", () => {
       expect(await db.listLlmUsageStatsByModel()).toEqual([
         {
           estimatedCostUsd: 0.018_000_000_000_000_002,
+          estimatedInvocations: 0,
           inputTokens: 180,
           modelId: "gpt-4o",
           outputTokens: 70,
+          reportedInvocations: 0,
           requestCount: 2,
           trackedSince,
+          unknownInvocations: 0,
           updatedAt: expect.any(String),
         },
         {
           estimatedCostUsd: 0.005,
+          estimatedInvocations: 0,
           inputTokens: 120,
           modelId: "gpt-4o-mini",
           outputTokens: 30,
+          reportedInvocations: 0,
           requestCount: 2,
           trackedSince,
+          unknownInvocations: 0,
           updatedAt: expect.any(String),
         },
       ]);

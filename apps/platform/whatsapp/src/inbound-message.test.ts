@@ -300,7 +300,7 @@ describe("inbound message routing", () => {
     expect(explicitlyAddressed?.quotedText).toBeNull();
   });
 
-  test("handles captionless group media only when explicitly replying to the bot", () => {
+  test("handles captionless group media when explicitly replying to the bot", () => {
     const parsed = parseInboundWhatsAppMessage(
       {
         key: {
@@ -320,5 +320,44 @@ describe("inbound message routing", () => {
 
     expect(parsed?.isGroup).toBe(true);
     expect(parsed?.text).toBe("");
+  });
+
+  test("routes unmentioned group files to the authorized handler for a visible outcome", () => {
+    const parsed = parseInboundWhatsAppMessage(
+      {
+        key: {
+          participant: "628122222222@s.whatsapp.net",
+          remoteJid: GROUP_JID,
+        },
+        message: {
+          documentMessage: {
+            fileName: "report.pdf",
+            mimetype: "application/pdf",
+          },
+        },
+      },
+      ME
+    );
+    expect(parsed?.isGroup).toBe(true);
+    expect(parsed?.mentionedJids).toEqual([]);
+    expect(parsed?.text).toBe("");
+    expect(parsed?.senderJid).toBe("628122222222@s.whatsapp.net");
+  });
+
+  test.each([
+    "photo.jpg",
+    "photo.jpeg",
+    "photo.png",
+    "photo.webp",
+    "photo.gif",
+  ])("recognizes %s sent as a generic document as image media", (filename) => {
+    expect(
+      inspectInboundWhatsAppMedia({
+        documentMessage: {
+          fileName: filename,
+          mimetype: "application/octet-stream",
+        },
+      })
+    ).toMatchObject({ filename, kind: "image" });
   });
 });

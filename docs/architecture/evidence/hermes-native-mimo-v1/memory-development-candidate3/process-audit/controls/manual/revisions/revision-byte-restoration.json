@@ -1,0 +1,33 @@
+{
+  "method": "Reconstructed earlier JSON serialization from unchanged input and recorded edits; retained only when exact original checkpoint SHA256 matches. These are superseded judgments, never new findings.",
+  "checks": [
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-user-r0-hermes",
+      "label": "initial-judgment-superseded",
+      "expectedSha256": "e8b359f27e9315871c26c2e0222704ffea6dfe0d3d653cee557d2b808b78b6ab",
+      "reconstructedSha256": "e8b359f27e9315871c26c2e0222704ffea6dfe0d3d653cee557d2b808b78b6ab",
+      "match": true
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-identity-different-organization-r0-hermes",
+      "label": "initial-judgment-superseded",
+      "expectedSha256": "0f42fb4b77781c4fe10855f3e4812298742fe348d2054c68126c87705de90f06",
+      "reconstructedSha256": "0f42fb4b77781c4fe10855f3e4812298742fe348d2054c68126c87705de90f06",
+      "match": true
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-implicit_preference-2953-native-default-cold-same-owner-r0-hermes",
+      "label": "initial-order-wording-superseded",
+      "expectedSha256": "cecffc0719ffb50b9afb5eefcf06f14e97db3f9e0fada5729387e280a8f56194",
+      "reconstructedSha256": "cecffc0719ffb50b9afb5eefcf06f14e97db3f9e0fada5729387e280a8f56194",
+      "match": true
+    },
+    {
+      "id": "development-2026-09-06T17-27-51-437Z-645527a9-memory-v1-development-durable_fact-2953-explicit-memory-cold-same-owner-r0-hermes",
+      "label": "after-public-supplement-before-chronology",
+      "expectedSha256": "454940cd9be749841f0cad3bcbbdd0609e021b9e1c48cd4a3aeb7c9409f23070",
+      "reconstructedSha256": "454940cd9be749841f0cad3bcbbdd0609e021b9e1c48cd4a3aeb7c9409f23070",
+      "match": true
+    }
+  ]
+}

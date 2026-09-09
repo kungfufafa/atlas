@@ -17,6 +17,12 @@ import {
 } from "@atlas/core";
 import { mergeCodingAgentSpawnEnv } from "../services/coding-agent-spawn-env";
 import {
+  createProcessToolPreparer,
+  type ProcessToolAdmissionPolicy,
+  type ProcessToolPreparer,
+} from "../services/process-tool-admission";
+import { prepareRestrictedProcess } from "../services/restricted-process";
+import {
   commandLooksLikeCursorAgent,
   formatCodingAgentBashStdout,
 } from "./cursor-agent-output";
@@ -60,13 +66,14 @@ interface BashRunOptions {
 interface ShellRunOptions {
   codingAgentMode: boolean;
   codingAgentNativeLogin: boolean;
+  prepareProcess: ProcessToolPreparer;
   signal?: AbortSignal;
   workspaceRoot: string;
 }
 
 export const bashTool: ToolDefinition<BashInput, BashOutput> = {
   description:
-    "Run a one-off shell command in the active profile workspace and return stdout, stderr, and exit code. Do not use this to create persistent tools, tool files, shell wrappers, or .sh scripts. If the user wants a reusable tool, translate shell examples into JavaScript instead.",
+    "Run a one-off shell command with required OS filesystem isolation in the active profile workspace and return stdout, stderr, and exit code. The host home and other profiles are inaccessible. Do not use this to create persistent tools, tool files, shell wrappers, or .sh scripts. If the user wants a reusable tool, translate shell examples into JavaScript instead.",
   name: "bash",
   parameters: {
     additionalProperties: false,
@@ -107,6 +114,24 @@ export async function runBash(
   context: ToolContext,
   options: BashRunOptions = {}
 ): Promise<BashOutput> {
+  return runBashWithPreparer(input, context, options, prepareRestrictedProcess);
+}
+
+/** Capture trusted host admission once; model input cannot replace it. */
+export function createBashRunner(
+  policy: ProcessToolAdmissionPolicy
+): typeof runBash {
+  const prepareProcess = createProcessToolPreparer(policy);
+  return (input, context, options = {}) =>
+    runBashWithPreparer(input, context, options, prepareProcess);
+}
+
+async function runBashWithPreparer(
+  input: unknown,
+  context: ToolContext,
+  options: BashRunOptions,
+  prepareProcess: ProcessToolPreparer
+): Promise<BashOutput> {
   const profileId = context.profileId?.trim();
   const orgId = context.orgId?.trim();
   if (!profileId) {
@@ -122,7 +147,9 @@ export async function runBash(
   }
 
   const workspaceRoot = await resolveWorkspaceRoot(
-    options.workspaceRoot ?? getProfileSoulDir(orgId, profileId)
+    options.workspaceRoot ??
+      context.workspaceRoot ??
+      getProfileSoulDir(orgId, profileId)
   );
   const rawCwd = readString(input, "cwd");
   const cwd = rawCwd
@@ -145,87 +172,126 @@ export async function runBash(
     runShellCommand(command, cwd, timeoutMs, env, {
       codingAgentMode,
       codingAgentNativeLogin,
+      prepareProcess,
       signal: context.signal,
       workspaceRoot,
     })
   );
 }
 
-function runShellCommand(
+async function runShellCommand(
   command: string,
   cwd: string,
   timeoutMs: number,
   envOverrides: Record<string, string> = {},
   options: ShellRunOptions
 ): Promise<BashOutput> {
-  return new Promise((resolve, reject) => {
-    const safeEnvOverrides = filterShellHijackingEnv(envOverrides);
-    const child = spawn("/bin/bash", ["-lc", command], {
-      cwd,
-      env: mergeCodingAgentSpawnEnv(process.env, safeEnvOverrides, {
-        scrubCredentialKeys: options.codingAgentNativeLogin,
-      }),
-      // SIGTERMs the shell when the turn is cancelled, so a stopped chat does not
-      // leave an ffmpeg or coding-agent run holding the session turn open.
-      signal: options.signal,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-
-    let stdout = "";
-    let stderr = "";
-    let timedOut = false;
-    let stdoutOverflow = false;
-    let stderrOverflow = false;
-
-    const timeoutId = setTimeout(() => {
-      timedOut = true;
-      child.kill("SIGTERM");
-    }, timeoutMs);
-
-    child.stdout?.on("data", (chunk: Buffer | string) => {
-      if (options.codingAgentMode) {
-        const next = appendCodingAgentCapture(stdout, String(chunk));
-        stdout = next.value;
-        stdoutOverflow = stdoutOverflow || next.overflowed;
-        return;
-      }
-
-      stdout = appendOutput(stdout, String(chunk));
-    });
-
-    child.stderr?.on("data", (chunk: Buffer | string) => {
-      if (options.codingAgentMode) {
-        const next = appendCodingAgentCapture(stderr, String(chunk));
-        stderr = next.value;
-        stderrOverflow = stderrOverflow || next.overflowed;
-        return;
-      }
-
-      stderr = appendOutput(stderr, String(chunk));
-    });
-
-    child.on("error", (error) => {
-      clearTimeout(timeoutId);
-      reject(error);
-    });
-
-    child.on("close", (exitCode) => {
-      clearTimeout(timeoutId);
-
-      void finalizeCodingAgentOutput({
-        codingAgentMode: options.codingAgentMode,
-        exitCode,
-        stderr,
-        stderrOverflow,
-        stdout,
-        stdoutOverflow,
-        timedOut,
-        workspaceRoot: options.workspaceRoot,
-      })
-        .then(resolve)
-        .catch(reject);
-    });
+  const safeEnvOverrides = filterShellHijackingEnv(envOverrides);
+  const prepared = await options.prepareProcess({
+    args: ["--noprofile", "--norc", "-c", command],
+    bin: "/bin/bash",
+    cwd,
+    env: mergeCodingAgentSpawnEnv({}, safeEnvOverrides, {
+      scrubCredentialKeys: options.codingAgentNativeLogin,
+    }),
+    workspaceRoot: options.workspaceRoot,
   });
+  try {
+    return await new Promise<BashOutput>((resolve, reject) => {
+      if (options.signal?.aborted) {
+        reject(new Error("Bash execution was cancelled before starting."));
+        return;
+      }
+      const child = spawn(prepared.bin, prepared.args, {
+        cwd: prepared.cwd,
+        detached: true,
+        env: prepared.env,
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+
+      let stdout = "";
+      let stderr = "";
+      let timedOut = false;
+      let stdoutOverflow = false;
+      let stderrOverflow = false;
+      let cancelled = false;
+      const stopTree = () => {
+        if (child.pid) {
+          try {
+            process.kill(-child.pid, "SIGKILL");
+            return;
+          } catch {
+            // The group may already have exited.
+          }
+        }
+        child.kill("SIGKILL");
+      };
+      const onAbort = () => {
+        cancelled = true;
+        stopTree();
+      };
+      options.signal?.addEventListener("abort", onAbort, { once: true });
+
+      const timeoutId = setTimeout(() => {
+        timedOut = true;
+        stopTree();
+      }, timeoutMs);
+
+      child.stdout?.on("data", (chunk: Buffer | string) => {
+        if (options.codingAgentMode) {
+          const next = appendCodingAgentCapture(stdout, String(chunk));
+          stdout = next.value;
+          stdoutOverflow = stdoutOverflow || next.overflowed;
+          return;
+        }
+
+        stdout = appendOutput(stdout, String(chunk));
+      });
+
+      child.stderr?.on("data", (chunk: Buffer | string) => {
+        if (options.codingAgentMode) {
+          const next = appendCodingAgentCapture(stderr, String(chunk));
+          stderr = next.value;
+          stderrOverflow = stderrOverflow || next.overflowed;
+          return;
+        }
+
+        stderr = appendOutput(stderr, String(chunk));
+      });
+
+      child.on("error", (error) => {
+        clearTimeout(timeoutId);
+        options.signal?.removeEventListener("abort", onAbort);
+        stopTree();
+        reject(error);
+      });
+
+      child.on("close", (exitCode) => {
+        clearTimeout(timeoutId);
+        options.signal?.removeEventListener("abort", onAbort);
+        stopTree();
+        if (cancelled) {
+          reject(new Error("Bash execution was cancelled by the user."));
+          return;
+        }
+
+        void finalizeCodingAgentOutput({
+          codingAgentMode: options.codingAgentMode,
+          exitCode,
+          stderr,
+          stderrOverflow,
+          stdout,
+          stdoutOverflow,
+          timedOut,
+          workspaceRoot: options.workspaceRoot,
+        })
+          .then(resolve)
+          .catch(reject);
+      });
+    });
+  } finally {
+    await prepared.cleanup();
+  }
 }
 
 function filterShellHijackingEnv(

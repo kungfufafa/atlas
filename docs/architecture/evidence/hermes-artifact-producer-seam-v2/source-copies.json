@@ -1,0 +1,132 @@
+{
+  "createdAt": "2026-09-07T00:43:10.101745+00:00",
+  "policy": "Byte-preserved selected completed evidence. Absolute references inside copied documents intentionally continue to identify immutable original tmp evidence. Originals are retained, not moved or rewritten.",
+  "files": [
+    {
+      "sourcePath": "/private/tmp/atlas-artifact-producer-seam-v2/readiness-final.json",
+      "packPath": "owner/readiness-final.json",
+      "sha256": "14a10358ee1ee9b3157908c5e1808895bdd8f6527788c8dd0fe0ee8af4f4851b",
+      "bytes": 2313,
+      "byteIdentical": true
+    },
+    {
+      "sourcePath": "/private/tmp/atlas-artifact-producer-seam-v2/readiness-before-review.json",
+      "packPath": "owner/readiness-before-review.json",
+      "sha256": "98abc99f1f7d312ced806597053ab8f3718a21604f55e0b6cee63d6efb1f2c59",
+      "bytes": 2120,
+      "byteIdentical": true
+    },
+    {
+      "sourcePath": "/private/tmp/atlas-artifact-producer-seam-v2/source-inventory.json",
+      "packPath": "owner/source-inventory.json",
+      "sha256": "1711d5c7aa6507ad778f9521f40445ebe6278c453c7aedfe4ed897f194c8be72",
+      "bytes": 256757,
+      "byteIdentical": true
+    },
+    {
+      "sourcePath": "/private/tmp/atlas-artifact-producer-seam-v2/component.patch",
+      "packPath": "owner/component.patch",
+      "sha256": "eb2a885a4e0d51ec9c285fee71f965895ba76769d1fb3271f63c124994536fa4",
+      "bytes": 5365,
+      "byteIdentical": true
+    },
+    {
+      "sourcePath": "/private/tmp/atlas-artifact-producer-seam-v2/production.patch",
+      "packPath": "owner/production.patch",
+      "sha256": "a04d5e77800210a29660ecc59d4e0c23de772b7a1795ed79b1fce1951bb581cd",
+      "bytes": 1644,
+      "byteIdentical": true
+    },
+    {
+      "sourcePath": "/private/tmp/atlas-artifact-producer-seam-v2/implementation-notes.md",
+      "packPath": "owner/implementation-notes.md",
+      "sha256": "383a9ef175401c2c59ce0c74fff9b8175f79aac3ecfe636fa7183df431f90986",
+      "bytes": 2045,
+      "byteIdentical": true
+    },
+    {
+      "sourcePath": "/private/tmp/atlas-artifact-producer-seam-v2/gates.json",
+      "packPath": "owner/gates.json",
+      "sha256": "4b8d4e8feee0836c1e097875450e7275a57dbf5db807471adf98aed3a7d5a23a",
+      "bytes": 2386,
+      "byteIdentical": true
+    },
+    {
+      "sourcePath": "/private/tmp/atlas-artifact-producer-seam-v2/evidence-reference.json",
+      "packPath": "owner/evidence-reference.json",
+      "sha256": "487b5dea9b6943ca085bcccb220caf98c42b0efeebb52a2380c272406b58fbb2",
+      "bytes": 1747,
+      "byteIdentical": true
+    },
+    {
+      "sourcePath": "/private/tmp/atlas-artifact-producer-seam-v2/final-regressions.log",
+      "packPath": "owner/final-regressions.log",
+      "sha256": "03167e9cfd0e7f056b9a17c832a3c8559d7d375affec24fa41d5ee708423c8c4",
+      "bytes": 8947,
+      "byteIdentical": true
+    },
+    {
+      "sourcePath": "/private/tmp/atlas-artifact-producer-seam-v2/final-typecheck.log",
+      "packPath": "owner/final-typecheck.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "byteIdentical": true
+    },
+    {
+      "sourcePath": "/private/tmp/atlas-artifact-producer-seam-v2/final-lint.log",
+      "packPath": "owner/final-lint.log",
+      "sha256": "b6cc38659ce53231df54d50e31b927c4ecb6dbded04a27c3344d2ee79c67e119",
+      "bytes": 44,
+      "byteIdentical": true
+    },
+    {
+      "sourcePath": "/private/tmp/atlas-artifact-producer-seam-v2/patch-check.log",
+      "packPath": "owner/patch-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "byteIdentical": true
+    },
+    {
+      "sourcePath": "/private/tmp/atlas-artifact-producer-seam-v2/initial-tests.log",
+      "packPath": "owner/initial-tests.log",
+      "sha256": "c7219066053b684789a47323fc7df9a8500c91f37d981615a2cb781a801ea78e",
+      "bytes": 2252,
+      "byteIdentical": true
+    },
+    {
+      "sourcePath": "/private/tmp/atlas-artifact-producer-seam-v2/final-regressions.json",
+      "packPath": "owner/final-regressions.json",
+      "sha256": "5d248dbfd553ef151a664bd722575994f87c3852daf753e423b306f2bed152e5",
+      "bytes": 530,
+      "byteIdentical": true
+    },
+    {
+      "sourcePath": "/private/tmp/atlas-artifact-producer-seam-v2/final-typecheck.json",
+      "packPath": "owner/final-typecheck.json",
+      "sha256": "8c1869f9141001209a0c48b40c69b699c9ea22598ea42a2896395c0e1e477e7d",
+      "bytes": 251,
+      "byteIdentical": true
+    },
+    {
+      "sourcePath": "/private/tmp/atlas-artifact-producer-seam-v2/final-lint.json",
+      "packPath": "owner/final-lint.json",
+      "sha256": "05cc6fa8f6e38a19981a9579404981b7ceead7042786886275a20c56a6752d8a",
+      "bytes": 357,
+      "byteIdentical": true
+    },
+    {
+      "sourcePath": "/private/tmp/atlas-artifact-producer-seam-v2-independent-review/review.json",
+      "packPath": "independent-review/review.json",
+      "sha256": "e2a1b9a59b31290bcae8ec41a7e0bb1c72a80ecbd9efcb1c35b39582a4252f07",
+      "bytes": 2694,
+      "byteIdentical": true
+    },
+    {
+      "sourcePath": "/private/tmp/atlas-artifact-producer-seam-v2-independent-review/patch-check.log",
+      "packPath": "independent-review/patch-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "byteIdentical": true
+    }
+  ]
+}

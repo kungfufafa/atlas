@@ -10,14 +10,23 @@ import {
 } from "@atlas/core/email-config";
 import { emailTool } from "@atlas/core/tools/email";
 import type { DatabaseAdapter, StoredToolRecord } from "@atlas/db";
-import { bashTool, runBash } from "../tools/bash";
+import { bashTool, createBashRunner, runBash } from "../tools/bash";
 import { createConversationTools } from "../tools/conversation-tools";
 import { createMemoryTools } from "../tools/memory-tools";
-import { pythonExecuteTool } from "../tools/python-execute-tool";
+import {
+  createPythonExecutor,
+  pythonExecuteTool,
+} from "../tools/python-execute-tool";
 import { createToolSearchTool } from "../tools/tool-search-tool";
 import { enrichCodingAgentBashInput } from "./coding-agent-bash-env";
 import { loadJavascriptTool } from "./javascript-tool-loader";
 import { MemoryService } from "./memory-service";
+import type { ProcessToolAdmissionPolicy } from "./process-tool-admission";
+
+export interface ToolResolutionOptions {
+  processAdmission?: ProcessToolAdmissionPolicy;
+  userConfig?: UserConfig | null;
+}
 
 let registeredSubAgentTool: ToolDefinition | null = null;
 let registeredGenerateImageTool: ToolDefinition | null = null;
@@ -45,7 +54,7 @@ export async function resolveProfileStoredTools(
   records: StoredToolRecord[],
   db?: DatabaseAdapter,
   builtinOverrides: ToolDefinition[] = [],
-  options: { userConfig?: UserConfig | null } = {}
+  options: ToolResolutionOptions = {}
 ): Promise<ToolDefinition[]> {
   const tools = await resolveToolsFromStorage(
     records,
@@ -53,9 +62,11 @@ export async function resolveProfileStoredTools(
     builtinOverrides,
     options
   );
-  return omitUnavailableBuiltinTools(
-    tools,
-    isEmailConfigComplete(await loadEmailConfig())
+  return withToolSearchCatalog(
+    omitUnavailableBuiltinTools(
+      tools,
+      isEmailConfigComplete(await loadEmailConfig())
+    )
   );
 }
 
@@ -63,12 +74,12 @@ export async function resolveToolsFromStorage(
   records: StoredToolRecord[],
   db?: DatabaseAdapter,
   builtinOverrides: ToolDefinition[] = [],
-  options: { userConfig?: UserConfig | null } = {}
+  options: ToolResolutionOptions = {}
 ): Promise<ToolDefinition[]> {
   const builtinMap = new Map(
     [...builtinTools, ...builtinOverrides].map((tool) => [tool.name, tool])
   );
-  const serverTools = buildServerTools(db, options.userConfig);
+  const serverTools = buildServerTools(db, options);
   const resolved: ToolDefinition[] = [];
 
   for (const record of records) {
@@ -79,7 +90,7 @@ export async function resolveToolsFromStorage(
     }
   }
 
-  return resolved;
+  return withToolSearchCatalog(resolved);
 }
 
 async function resolveStoredTool(
@@ -121,11 +132,23 @@ async function resolveStoredTool(
 
 function buildServerTools(
   db?: DatabaseAdapter,
-  userConfig?: UserConfig | null
+  options: ToolResolutionOptions = {}
 ): Map<string, ToolDefinition> {
-  const bash = db ? createCodingAgentAwareBashTool(db, userConfig) : bashTool;
+  const { processAdmission, userConfig } = options;
+  const bashRunner = processAdmission
+    ? createBashRunner(processAdmission)
+    : runBash;
+  const baseBash = processAdmission
+    ? { ...bashTool, run: bashRunner }
+    : bashTool;
+  const bash = db
+    ? createCodingAgentAwareBashTool(db, userConfig, bashRunner)
+    : baseBash;
+  const python = processAdmission
+    ? { ...pythonExecuteTool, run: createPythonExecutor(processAdmission) }
+    : pythonExecuteTool;
   const map = new Map<string, ToolDefinition>([[bash.name, bash]]);
-  map.set(pythonExecuteTool.name, pythonExecuteTool);
+  map.set(python.name, python);
 
   if (db) {
     const memoryService = new MemoryService(db);
@@ -139,24 +162,8 @@ function buildServerTools(
     }
   }
 
-  const catalogTools = (): ToolDefinition[] => {
-    const catalog = [
-      ...builtinTools,
-      pythonExecuteTool,
-      bash,
-      ...memoryToolsForCatalog(map),
-      ...conversationToolsForCatalog(map),
-    ];
-    if (registeredSubAgentTool) {
-      catalog.push(registeredSubAgentTool);
-    }
-    if (registeredGenerateImageTool) {
-      catalog.push(registeredGenerateImageTool);
-    }
-    return catalog.filter((tool) => tool.name !== "tool_search");
-  };
-
-  const toolSearch = createToolSearchTool(async () => catalogTools());
+  // The final resolved assignment set supplies this tool's catalog.
+  const toolSearch = createToolSearchTool(async () => []);
   map.set(toolSearch.name, toolSearch);
 
   if (registeredSubAgentTool) {
@@ -170,20 +177,6 @@ function buildServerTools(
   return map;
 }
 
-function memoryToolsForCatalog(
-  map: Map<string, ToolDefinition>
-): ToolDefinition[] {
-  return [...map.values()].filter((tool) => tool.name.startsWith("memory_"));
-}
-
-function conversationToolsForCatalog(
-  map: Map<string, ToolDefinition>
-): ToolDefinition[] {
-  return [...map.values()].filter(
-    (tool) => tool.name === "search_chats" || tool.name === "get_conversation"
-  );
-}
-
 export function withToolSearchCatalog(
   tools: ToolDefinition[]
 ): ToolDefinition[] {
@@ -194,7 +187,8 @@ export function withToolSearchCatalog(
 
 function createCodingAgentAwareBashTool(
   db: DatabaseAdapter,
-  userConfig?: UserConfig | null
+  userConfig: UserConfig | null | undefined,
+  run: typeof runBash
 ): ToolDefinition {
   return {
     ...bashTool,
@@ -205,7 +199,7 @@ function createCodingAgentAwareBashTool(
         context,
         userConfig
       );
-      return runBash(enriched, context);
+      return run(enriched, context);
     },
   };
 }

@@ -44,8 +44,10 @@ Example for `artifacts/report.md`:
 ## Workflow
 
 1. Choose a short, descriptive filename under `artifacts/` (use subdirectories when grouping related files, e.g. `artifacts/weekly/report.md`).
-2. `write_file` the artifact content to `artifacts/{filename}`. If that name already exists, a date suffix is added automatically (e.g. `report-2026-07-14.md`). For Word / slides / Excel, use `write_docx` / `write_pptx` / `spreadsheet` instead of `write_file`.
-3. For `write_file` outputs, also `write_file` the metadata sidecar to `artifacts/{filename}.atlas-meta.json` using the same base filename from step 2.
+2. `write_file` the artifact content with `deliverable: true` to `artifacts/{filename}`. If that name already exists, a date suffix is added automatically (e.g. `report-2026-07-14.md`). For Word / slides / Excel, use `write_docx` / `write_pptx` / `spreadsheet` instead of `write_file`.
+3. For `write_file` outputs, also `write_file` the metadata sidecar with `deliverable: false` to `artifacts/{filename}.atlas-meta.json` using the same base filename from step 2.
+Intermediate and support files use `deliverable: false` (or omit it). Editing a completed text deliverable with `edit_file` also requires `deliverable: true`.
+
 4. Confirm the path in a short reply. On web chat, saved artifacts appear as chips with a live preview in addition to the profile **Artifacts** tab.
 
 ## MIME type guidance

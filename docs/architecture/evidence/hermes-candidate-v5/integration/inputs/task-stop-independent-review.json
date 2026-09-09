@@ -1,0 +1,55 @@
+{
+  "at": "2026-09-06T19:22:18.391108+00:00",
+  "verdict": "scoped_approval_no_blocker",
+  "baseSourceHash": "d09f087f01f3a8590ce8e2faef7b9454ce4546c8912dfce38e824d95fecb2ce3",
+  "declaredSourceHash": "a5b56faffdd6acbfb76237d1a0ae889d60ef136a740c325f86485a013a8678e7",
+  "changedFileBindings": [
+    {
+      "path": "apps/server/src/services/agent-service.ts",
+      "sourceSha256": "0e328e4a2b6787ead5f1136a9b0b1902b4eb30f3b3dcbf599498ebbeab88f4b0",
+      "baseSha256": "adf7d492e5ae1111d4346a2c613f8e53f9af80ef61e1fc764744f4703b6e08cb"
+    },
+    {
+      "path": "apps/server/src/services/task-runner.ts",
+      "sourceSha256": "e20ee0ccfb5d915f082cbe69418939bde667f402ec5565ba26b440729a6ea6b5",
+      "baseSha256": "baedca4e3116bc5909875d8839a85da38c7504fdb23c154d669092f225aff397"
+    },
+    {
+      "path": "packages/agent/src/chat.ts",
+      "sourceSha256": "3ea5cbbdf7f21aade5d117966695250611a2e5e740feaa8bc78c96afbe7bbd85",
+      "baseSha256": "2e490dec43005a4d21756860c477f1097623ffb16b448183273775a420128eb5"
+    },
+    {
+      "path": "packages/agent/src/index.ts",
+      "sourceSha256": "2086644d0083a210042225cea4337096f293ac3eeb6e2bfc317f1d331ef395e0",
+      "baseSha256": "150b3ef98da8d15e28d7a1feaefbf714bf23e59040bc601825ad8109fe2937c8"
+    },
+    {
+      "path": "apps/server/src/services/task-stop-semantics.test.ts",
+      "sourceSha256": "858bfa8cd4cf98133328f14204a6075836a09323cd0108df7c469d986b48c1a2",
+      "baseSha256": null
+    },
+    {
+      "path": "packages/agent/src/chat-stop-semantics.test.ts",
+      "sourceSha256": "117e612107a131f5a19971e781191b69baac0fc60ecd02989fa063e21a7b04cb",
+      "baseSha256": null
+    }
+  ],
+  "patchHashes": {
+    "production.patch": "92c3eaa0dc52d3a02fc2406c3e4c9e0b37ee26dab91e6ed8c02b002db83657b8",
+    "tests.patch": "149de239e0df048abcb5945ab2389a0c26d599795ee1a26da451abd337a31784",
+    "combined.patch": "ae4c9aaf242b0f1a11155403c47ee27df876a0cbedb58c51f5339b880e89a62b"
+  },
+  "readinessSha256": "1efbcb25471adc936ff25066e2f6aa15108deebcc9113296016b3a2a7204e7ab",
+  "reviewSha256": "18c28f075ca142262be687b8e359a192f29f834ceebb239512e13ea4aa454ad8",
+  "testLogSha256": "27f84045021d6eae4965d74e6dafda1c8c0ff355fa8966b0f1bec64dd42c965c",
+  "independentTestCommand": "bun test ./packages/agent/src/chat-stop-semantics.test.ts ./apps/server/src/services/task-stop-semantics.test.ts",
+  "independentTests": {
+    "pass": 18,
+    "fail": 0,
+    "assertions": 124
+  },
+  "noRootEdits": true,
+  "noPaidCalls": true,
+  "allInventoryFilesIndependentlyRehashed": false
+}

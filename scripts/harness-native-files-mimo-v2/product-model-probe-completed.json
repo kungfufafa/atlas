@@ -1,0 +1,122 @@
+{
+  "finishedAt": "2026-09-06T16:51:42.408Z",
+  "elapsedMs": 29006,
+  "protocolIssues": [],
+  "sourceChanges": [],
+  "sourceUnchanged": true,
+  "observedGeneratedTotal": 318,
+  "reportedTotalBudgetExceeded": false,
+  "probeComplete": true,
+  "scope": "compatibility-only",
+  "modelResults": [
+    {
+      "model": "mimo-v2.5",
+      "eligible": true,
+      "scheduledSlots": 5,
+      "requestsAttempted": 5,
+      "observedInputTokens": 1856,
+      "observedGeneratedTokens": 107,
+      "countsAreReportedSubtotals": true,
+      "allMandatoryUsageKnown": true,
+      "outcomes": [
+        {
+          "slot": 1,
+          "kind": "title1",
+          "pass": true,
+          "status": "responded",
+          "httpStatus": 200,
+          "problems": []
+        },
+        {
+          "slot": 3,
+          "kind": "tool_init",
+          "pass": true,
+          "status": "responded",
+          "httpStatus": 200,
+          "problems": []
+        },
+        {
+          "slot": 5,
+          "kind": "title2",
+          "pass": true,
+          "status": "responded",
+          "httpStatus": 200,
+          "problems": []
+        },
+        {
+          "slot": 7,
+          "kind": "tool_followup",
+          "pass": true,
+          "status": "responded",
+          "httpStatus": 200,
+          "problems": []
+        },
+        {
+          "slot": 9,
+          "kind": "title3",
+          "pass": true,
+          "status": "responded",
+          "httpStatus": 200,
+          "problems": []
+        }
+      ]
+    },
+    {
+      "model": "glm-5.3-flash",
+      "eligible": true,
+      "scheduledSlots": 5,
+      "requestsAttempted": 5,
+      "observedInputTokens": 1180,
+      "observedGeneratedTokens": 211,
+      "countsAreReportedSubtotals": true,
+      "allMandatoryUsageKnown": true,
+      "outcomes": [
+        {
+          "slot": 2,
+          "kind": "title1",
+          "pass": true,
+          "status": "responded",
+          "httpStatus": 200,
+          "problems": []
+        },
+        {
+          "slot": 4,
+          "kind": "tool_init",
+          "pass": true,
+          "status": "responded",
+          "httpStatus": 200,
+          "problems": []
+        },
+        {
+          "slot": 6,
+          "kind": "title2",
+          "pass": true,
+          "status": "responded",
+          "httpStatus": 200,
+          "problems": []
+        },
+        {
+          "slot": 8,
+          "kind": "tool_followup",
+          "pass": true,
+          "status": "responded",
+          "httpStatus": 200,
+          "problems": []
+        },
+        {
+          "slot": 10,
+          "kind": "title3",
+          "pass": true,
+          "status": "responded",
+          "httpStatus": 200,
+          "problems": []
+        }
+      ]
+    }
+  ],
+  "selectedModel": "mimo-v2.5",
+  "selectionOrder": ["mimo-v2.5", "glm-5.3-flash"],
+  "planSha256": "5c5981703f649a6008b07f9d66a4bfe4d396db4e0796a7f05b92d14f9e992a37",
+  "runnerSha256": "54e23c0d247df09f1df32460533329878b533cf2424838497d03cae45ca13d2e",
+  "readinessSha256": "f98e1e0328a397dfb7e777ddc8eb5bace45d09d9a0d6df9794608a7f980868d2"
+}

@@ -1,0 +1,41 @@
+bun test v1.3.1 (89fa0f34)
+
+apps/platform/telegram/src/channel-authorization-integration.test.ts:
+663 |         await writeTelegramConfigIni(harness.homeDir, { botToken: "telegram-token", orgId: ORG_ID, profileId: PROFILE_ID, accessMode: "denylist", blockedUserIds: [42], handshakeCode: code, handshakeAssertion: assertion, handshakeUserId: "issuer" });
+664 |       } else {
+665 |         await writeDiscordConfigIni(harness.homeDir, { botToken: "discord-token", orgId: ORG_ID, profileId: PROFILE_ID, accessMode: "denylist", blockedUserIds: [DISCORD_SENDER], handshakeCode: code, handshakeAssertion: assertion, handshakeUserId: "issuer" });
+666 |       }
+667 |       await harness.pair(code);
+668 |       expect(harness.requests.some((request) => request.path === "/v1/channel-principals")).toBe(false);
+                                                                                                  ^
+error: expect(received).toBe(expected)
+
+Expected: false
+Received: true
+
+      at <anonymous> (/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/channel-authorization-integration.test.ts:668:93)
+(fail) telegram blocked sender cannot consume a valid pairing code or bind its issuer [141.56ms]
+[discord] handle dm {
+  botOwnsThread: false,
+  isThread: false,
+}
+663 |         await writeTelegramConfigIni(harness.homeDir, { botToken: "telegram-token", orgId: ORG_ID, profileId: PROFILE_ID, accessMode: "denylist", blockedUserIds: [42], handshakeCode: code, handshakeAssertion: assertion, handshakeUserId: "issuer" });
+664 |       } else {
+665 |         await writeDiscordConfigIni(harness.homeDir, { botToken: "discord-token", orgId: ORG_ID, profileId: PROFILE_ID, accessMode: "denylist", blockedUserIds: [DISCORD_SENDER], handshakeCode: code, handshakeAssertion: assertion, handshakeUserId: "issuer" });
+666 |       }
+667 |       await harness.pair(code);
+668 |       expect(harness.requests.some((request) => request.path === "/v1/channel-principals")).toBe(false);
+                                                                                                  ^
+error: expect(received).toBe(expected)
+
+Expected: false
+Received: true
+
+      at <anonymous> (/Users/apriansyahrs/Documents/Code/atlas/apps/platform/telegram/src/channel-authorization-integration.test.ts:668:93)
+(fail) discord blocked sender cannot consume a valid pairing code or bind its issuer [97.54ms]
+
+ 0 pass
+ 136 filtered out
+ 2 fail
+ 2 expect() calls
+Ran 2 tests across 1 file. [1.60s]

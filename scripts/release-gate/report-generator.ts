@@ -30,6 +30,8 @@ export class ReportGenerator {
       completedAt: metadata.completedAt,
       coreDecision: result.coreDecision,
       environment: metadata.environment,
+      evidenceScope:
+        "Core suites use a real isolated Atlas server with a deterministic mock model. The optional provider smoke is reported separately; no full file/provider/channel acceptance matrix is implied.",
       providerCompatibility: providerCompatibilityBlock,
       providerDetails: result.providerDetails,
       runId: metadata.runId,
@@ -54,6 +56,8 @@ export class ReportGenerator {
       "---",
       "",
       `## Core Decision: **${result.coreDecision}**`,
+      "",
+      "Scope: isolated Atlas server and deterministic mock model. Live provider smoke is reported separately. This decision does not establish the complete file/provider/channel acceptance matrix or production capacity.",
       "",
       "| Status | Count |",
       "| :--- | :--- |",

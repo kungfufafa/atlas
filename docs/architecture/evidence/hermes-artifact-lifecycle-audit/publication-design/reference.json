@@ -1,0 +1,19 @@
+{
+  "createdAt": "2026-09-06T19:16:54.705086+00:00",
+  "status": "design-only, not adopted or implemented",
+  "knownCredentialLiteralScan": "passed selected files only; not exhaustive secret detection",
+  "files": [
+    {
+      "file": "publication-design.md",
+      "original": "/private/tmp/atlas-artifact-attribution-audit/publication-design.md",
+      "sha256": "1348b09332a5009d1895b634d86d10c1f7815126900a904e6bcacc7e37974292",
+      "bytes": 19623
+    },
+    {
+      "file": "publication-design-bindings.json",
+      "original": "/private/tmp/atlas-artifact-attribution-audit/publication-design-bindings.json",
+      "sha256": "8692eca90e783de52fbc2f745e4f9fc15821910b75dfa3d927a60d88264a8d5c",
+      "bytes": 7632
+    }
+  ]
+}

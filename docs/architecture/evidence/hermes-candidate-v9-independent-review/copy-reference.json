@@ -1,0 +1,19 @@
+{
+  "at": "2026-09-07T05:18:06.364731+00:00",
+  "source": "/private/tmp/atlas-candidate9-integration-independent-review",
+  "originalManifestSha256": "90a72a8e86cb86b39962caf88e30489673355fc6f846d2afbaa9c7c67369996d",
+  "files": {
+    "binding-check.json": "e2faba354358e4b16a7879dc9634e7dd6b6bbe5e30eff83b42cf843428c69bb4",
+    "combined-c8.patch.check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "production-c8.patch.check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "registration.json": "b14eff404459f3ead847c5cd0b6f4a278c7ccae86e966ee8bbb83396089ae706",
+    "review.json": "6bc69cdf1b48ec02aa845d9e90f5dcba79237231a8d248e37f8255a0287108c7",
+    "review.md": "d2ae90648241d35cff7b47888ffae36333caa3724aaf76f7207b9f74fd27baf3",
+    "verify.py": "9c51cc115a43ef6d23c85e2597a33e762780186cae8bb54beba6b47cb2ea1eae",
+    "manifest.json": "90a72a8e86cb86b39962caf88e30489673355fc6f846d2afbaa9c7c67369996d"
+  },
+  "reviewSha256": "6bc69cdf1b48ec02aa845d9e90f5dcba79237231a8d248e37f8255a0287108c7",
+  "sourceOnlyReview": true,
+  "independentTests": 0,
+  "firstCopyAttempt": "Wrong manifest key assumption stopped before any member copy; corrected against observed entries list."
+}

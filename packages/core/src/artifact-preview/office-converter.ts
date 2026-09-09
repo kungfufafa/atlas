@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { existsSync, promises as fs, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
-import { unzipSync } from "fflate";
+import { readOfficeZipParts } from "../office-document/archive";
 import { extractPdfPageCount } from "./previewers/pdf-previewer";
 
 export const OFFICE_CONVERSION_TIMEOUT_MS = 20_000; // 20s
@@ -18,39 +18,45 @@ export interface OfficeConversionResult {
 }
 
 export function inspectZipBombSafety(buffer: Buffer): void {
-  try {
-    const unzipped = unzipSync(new Uint8Array(buffer), {
-      filter: (file) => !file.name.includes(".."),
-    });
-
-    const entries = Object.keys(unzipped);
-    if (entries.length > 5000) {
+  if (buffer.subarray(0, 2).toString("ascii") !== "PK") {
+    // Legacy binary formats do not use ZIP; LibreOffice owns their parser.
+    return;
+  }
+  const parts = readOfficeZipParts(buffer);
+  for (const [name, bytes] of Object.entries(parts)) {
+    if (
+      name.startsWith("xl/externalLinks/") ||
+      name.endsWith("vbaProject.bin")
+    ) {
       throw new Error(
-        `Zip entry count exceeds safety threshold: ${entries.length} entries.`
+        "Office conversion requires a source without macros or external workbook links."
       );
     }
-
-    let totalUncompressedSize = 0;
-    for (const key of entries) {
-      totalUncompressedSize += unzipped[key]?.length || 0;
-      if (totalUncompressedSize > 200 * 1024 * 1024) {
-        throw new Error(
-          "Uncompressed Office archive exceeds safety threshold (200MB)."
-        );
-      }
-    }
-
-    const compressionRatio = totalUncompressedSize / Math.max(1, buffer.length);
-    if (compressionRatio > 100) {
+    if (
+      name.startsWith("xl/worksheets/") &&
+      /(?:WEBSERVICE|DDE|RTD|HYPERLINK)\s*\(/i.test(
+        Buffer.from(bytes).toString("utf8")
+      )
+    ) {
       throw new Error(
-        `Suspicious compression ratio (${compressionRatio.toFixed(1)}x) detected.`
+        "Office conversion requires a workbook without external-data formulas."
       );
     }
-  } catch (err) {
-    if (err instanceof Error && err.message.includes("threshold")) {
-      throw err;
-    }
-    // If not a valid zip archive (e.g. legacy binary .doc or raw stream), continue
+  }
+}
+
+function assertOfficeOutputSize(
+  size: number,
+  maxBytes: number,
+  format: "pdf" | "xlsx"
+): void {
+  if (size === 0) {
+    throw new Error(`Office conversion produced an empty ${format} file.`);
+  }
+  if (size > maxBytes) {
+    throw new Error(
+      `Generated ${format} size (${Math.round(size / 1024 / 1024)}MB) exceeds maximum limit (${maxBytes / 1024 / 1024}MB).`
+    );
   }
 }
 
@@ -152,7 +158,53 @@ export class OfficeConverter {
     filename: string;
     maxOutputBytes?: number;
     timeoutMs?: number;
+    signal?: AbortSignal;
   }): Promise<OfficeConversionResult> {
+    const converted = await this.convertOfficeFile({ ...input, format: "pdf" });
+    const header = converted.bytes.subarray(0, 10).toString("ascii");
+    if (!header.startsWith("%PDF-")) {
+      throw new Error(
+        "Generated PDF output does not have a valid %PDF- header signature."
+      );
+    }
+    return {
+      converterVersion: OFFICE_CONVERTER_VERSION,
+      durationMs: converted.durationMs,
+      pageCount: extractPdfPageCount(converted.bytes),
+      pdfBytes: converted.bytes,
+    };
+  }
+
+  async convertOfficeToXlsx(input: {
+    buffer: Buffer;
+    filename: string;
+    maxOutputBytes?: number;
+    timeoutMs?: number;
+    signal?: AbortSignal;
+  }): Promise<{ bytes: Buffer; converterVersion: string }> {
+    const converted = await this.convertOfficeFile({
+      ...input,
+      format: "xlsx",
+    });
+    const parts = readOfficeZipParts(converted.bytes);
+    if (!parts["xl/workbook.xml"]) {
+      throw new Error("Office conversion did not produce an XLSX workbook.");
+    }
+    return {
+      bytes: converted.bytes,
+      converterVersion: OFFICE_CONVERTER_VERSION,
+    };
+  }
+
+  private async convertOfficeFile(input: {
+    buffer: Buffer;
+    filename: string;
+    format: "pdf" | "xlsx";
+    maxOutputBytes?: number;
+    timeoutMs?: number;
+    signal?: AbortSignal;
+  }): Promise<{ bytes: Buffer; durationMs: number }> {
+    input.signal?.throwIfAborted();
     const startTime = Date.now();
     const maxOutputBytes = input.maxOutputBytes ?? MAX_DERIVED_PDF_SIZE_BYTES;
     const timeoutMs = input.timeoutMs ?? OFFICE_CONVERSION_TIMEOUT_MS;
@@ -175,46 +227,55 @@ export class OfficeConverter {
 
     // Create unique temporary workspace directory
     const tempDir = await fs.mkdtemp(join(tmpdir(), "atlas-office-worker-"));
-    const userProfileDir = join(tempDir, "user-profile");
-    await fs.mkdir(userProfileDir, { recursive: true });
-
-    const safeBaseName = basename(input.filename).replace(/[^\w.-]/g, "_");
-    const inputFilePath = join(tempDir, safeBaseName);
-    await fs.writeFile(inputFilePath, input.buffer);
-
-    // Prepare strictly sanitized environment: NO database credentials, API keys, or provider secrets
-    const sanitizedEnv: NodeJS.ProcessEnv = {
-      HOME: tempDir,
-      LANG: "en_US.UTF-8",
-      LC_ALL: "en_US.UTF-8",
-      PATH:
-        process.env.PATH || "/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin",
-      TMPDIR: tempDir,
-    };
-
-    const args = [
-      `-env:UserInstallation=file://${userProfileDir}`,
-      "--headless",
-      "--invisible",
-      "--nodefault",
-      "--nofirststartwizard",
-      "--nolockcheck",
-      "--nologo",
-      "--norestore",
-      "--convert-to",
-      "pdf",
-      "--outdir",
-      tempDir,
-      inputFilePath,
-    ];
-
     try {
+      const userProfileDir = join(tempDir, "user-profile");
+      await fs.mkdir(userProfileDir, { recursive: true });
+      await fs.mkdir(join(userProfileDir, "user"), { recursive: true });
+      await fs.writeFile(
+        join(userProfileDir, "user", "registrymodifications.xcu"),
+        '<?xml version="1.0" encoding="UTF-8"?><oor:items xmlns:oor="http://openoffice.org/2001/registry"><item oor:path="/org.openoffice.Office.Common/Security/Scripting"><prop oor:name="MacroSecurityLevel" oor:op="fuse"><value>3</value></prop></item><item oor:path="/org.openoffice.Office.Calc/Content/Update"><prop oor:name="Link" oor:op="fuse"><value>0</value></prop></item></oor:items>'
+      );
+
+      const safeBaseName = basename(input.filename).replace(/[^\w.-]/g, "_");
+      const inputFilePath = join(tempDir, safeBaseName);
+      await fs.writeFile(inputFilePath, input.buffer);
+      const outputDirectory =
+        input.format === "xlsx" ? join(tempDir, "output") : tempDir;
+      await fs.mkdir(outputDirectory, { recursive: true });
+
+      // Prepare strictly sanitized environment: NO database credentials, API keys, or provider secrets
+      const sanitizedEnv: NodeJS.ProcessEnv = {
+        HOME: tempDir,
+        LANG: "en_US.UTF-8",
+        LC_ALL: "en_US.UTF-8",
+        PATH:
+          process.env.PATH || "/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin",
+        TMPDIR: tempDir,
+      };
+
+      const args = [
+        `-env:UserInstallation=file://${userProfileDir}`,
+        "--headless",
+        "--invisible",
+        "--nodefault",
+        "--nofirststartwizard",
+        "--nolockcheck",
+        "--nologo",
+        "--norestore",
+        "--convert-to",
+        input.format === "xlsx" ? "xlsx:Calc MS Excel 2007 XML" : "pdf",
+        "--outdir",
+        outputDirectory,
+        inputFilePath,
+      ];
+
       const { exitCode, stderr } = await new Promise<{
         exitCode: number;
         stderr: string;
       }>((resolve, reject) => {
         let timer: NodeJS.Timeout | null = null;
-        let killed = false;
+        let failure: Error | undefined;
+        let forceKill: ReturnType<typeof setTimeout> | undefined;
 
         const child = spawn(converterBinary, args, {
           cwd: tempDir,
@@ -224,24 +285,33 @@ export class OfficeConverter {
 
         let errOutput = "";
         child.stderr?.on("data", (chunk) => {
-          errOutput += chunk.toString("utf8");
+          if (errOutput.length < 64 * 1024) {
+            errOutput += chunk
+              .toString("utf8")
+              .slice(0, 64 * 1024 - errOutput.length);
+          }
         });
+        child.stdout?.resume();
+
+        const stop = (error: Error) => {
+          failure ??= error;
+          child.kill("SIGTERM");
+          forceKill ??= setTimeout(() => child.kill("SIGKILL"), 1000);
+        };
+        const onAbort = () => stop(new Error("Office conversion cancelled."));
+        input.signal?.addEventListener("abort", onAbort, { once: true });
+        const cleanup = () => {
+          if (timer) {
+            clearTimeout(timer);
+          }
+          if (forceKill) {
+            clearTimeout(forceKill);
+          }
+          input.signal?.removeEventListener("abort", onAbort);
+        };
 
         timer = setTimeout(() => {
-          killed = true;
-          try {
-            child.kill("SIGTERM");
-            setTimeout(() => {
-              try {
-                child.kill("SIGKILL");
-              } catch {
-                // ignore
-              }
-            }, 1000);
-          } catch {
-            // ignore
-          }
-          reject(
+          stop(
             new Error(
               `Office conversion worker timed out after ${timeoutMs}ms.`
             )
@@ -249,17 +319,14 @@ export class OfficeConverter {
         }, timeoutMs);
 
         child.on("error", (err) => {
-          if (timer) {
-            clearTimeout(timer);
-          }
+          cleanup();
           reject(err);
         });
 
         child.on("close", (code) => {
-          if (timer) {
-            clearTimeout(timer);
-          }
-          if (killed) {
+          cleanup();
+          if (failure) {
+            reject(failure);
             return;
           }
           resolve({
@@ -267,6 +334,9 @@ export class OfficeConverter {
             stderr: errOutput,
           });
         });
+        if (input.signal?.aborted) {
+          onAbort();
+        }
       });
 
       if (exitCode !== 0) {
@@ -275,44 +345,31 @@ export class OfficeConverter {
         );
       }
 
-      // Expected output PDF path: <tempDir>/<baseNameWithoutExt>.pdf
-      const outputPdfName = safeBaseName.replace(/\.[^.]+$/, "") + ".pdf";
-      const outputPdfPath = join(tempDir, outputPdfName);
+      const outputName = `${safeBaseName.replace(/\.[^.]+$/, "")}.${input.format}`;
+      const outputPath = join(outputDirectory, outputName);
 
-      if (!existsSync(outputPdfPath)) {
+      if (!existsSync(outputPath)) {
         throw new Error(
-          `Office conversion produced no output PDF file (expected: ${outputPdfName}).`
+          `Office conversion produced no output file (expected: ${outputName}).`
         );
       }
 
-      const pdfBytes = await fs.readFile(outputPdfPath);
-
-      if (pdfBytes.length === 0) {
-        throw new Error("Office conversion produced an empty PDF file.");
+      input.signal?.throwIfAborted();
+      // The worker has exited and owns a private directory. Check its output
+      // before readFile allocates a buffer, then verify the bytes actually read.
+      const outputStat = await fs.stat(outputPath);
+      if (!outputStat.isFile()) {
+        throw new Error("Office conversion output is not a regular file.");
       }
-
-      if (pdfBytes.length > maxOutputBytes) {
-        throw new Error(
-          `Generated PDF size (${Math.round(pdfBytes.length / 1024 / 1024)}MB) exceeds maximum limit (${maxOutputBytes / 1024 / 1024}MB).`
-        );
-      }
-
-      // Validate PDF signature
-      const header = pdfBytes.subarray(0, 10).toString("ascii");
-      if (!header.startsWith("%PDF-")) {
-        throw new Error(
-          "Generated PDF output does not have a valid %PDF- header signature."
-        );
-      }
-
-      const pageCount = extractPdfPageCount(pdfBytes);
-      const durationMs = Date.now() - startTime;
+      assertOfficeOutputSize(outputStat.size, maxOutputBytes, input.format);
+      const bytes = await fs.readFile(outputPath, {
+        signal: input.signal,
+      });
+      assertOfficeOutputSize(bytes.length, maxOutputBytes, input.format);
 
       return {
-        converterVersion: OFFICE_CONVERTER_VERSION,
-        durationMs,
-        pageCount,
-        pdfBytes,
+        bytes,
+        durationMs: Date.now() - startTime,
       };
     } finally {
       // Guaranteed workspace cleanup: delete temporary directory and all generated files
@@ -338,29 +395,29 @@ export class OfficeConverter {
     }
 
     const tempDir = await fs.mkdtemp(join(tmpdir(), "atlas-office-thumb-"));
-    const userProfileDir = join(tempDir, "user-profile");
-    await fs.mkdir(userProfileDir, { recursive: true });
-    const safeBaseName = basename(input.filename).replace(/[^\w.-]/g, "_");
-    const inputFilePath = join(tempDir, safeBaseName);
-    await fs.writeFile(inputFilePath, input.buffer);
-
-    const args = [
-      `-env:UserInstallation=file://${userProfileDir}`,
-      "--headless",
-      "--invisible",
-      "--nodefault",
-      "--nofirststartwizard",
-      "--nolockcheck",
-      "--nologo",
-      "--norestore",
-      "--convert-to",
-      "png",
-      "--outdir",
-      tempDir,
-      inputFilePath,
-    ];
-
     try {
+      const userProfileDir = join(tempDir, "user-profile");
+      await fs.mkdir(userProfileDir, { recursive: true });
+      const safeBaseName = basename(input.filename).replace(/[^\w.-]/g, "_");
+      const inputFilePath = join(tempDir, safeBaseName);
+      await fs.writeFile(inputFilePath, input.buffer);
+
+      const args = [
+        `-env:UserInstallation=file://${userProfileDir}`,
+        "--headless",
+        "--invisible",
+        "--nodefault",
+        "--nofirststartwizard",
+        "--nolockcheck",
+        "--nologo",
+        "--norestore",
+        "--convert-to",
+        "png",
+        "--outdir",
+        tempDir,
+        inputFilePath,
+      ];
+
       await new Promise<void>((resolve, reject) => {
         const child = spawn(converterBinary, args, {
           cwd: tempDir,

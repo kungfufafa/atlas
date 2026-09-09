@@ -138,6 +138,7 @@ const bootstrapCapabilityProvider =
     : null;
 registerBrowserHandler((input, context) =>
   browserSessionService.executeBrowserAction(input, {
+    artifactPublisher: context.artifactPublisher,
     orgId: context.orgId,
     profileId: context.profileId,
     runId: context.runId,

@@ -5,6 +5,7 @@ import { createHonoApp } from "./app";
 import type { ServerOptions } from "./context";
 
 const defaultAgent = {
+  invalidateSessionsForUser: async () => {},
   listProfiles: async () => ({ profiles: [{ id: "default" }] }),
 };
 

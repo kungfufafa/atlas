@@ -1,0 +1,30 @@
+{
+  "at": "2026-09-07T06:58:18.191807+00:00",
+  "status": "Exact closed Indonesian product-status memo copied for contributors; unchanged content",
+  "files": {
+    "memo-id.md": {
+      "source": "/private/tmp/atlas-product-status-memo-c9/memo-id.md",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v9-product-status/memo-id.md",
+      "sha256": "541fdfc9e7d0d866493a6c4fe3311a0e933a5daffc6e1659c7ada861b69ee2d2",
+      "bytes": 4055,
+      "mode": "0o644"
+    },
+    "source-references.json": {
+      "source": "/private/tmp/atlas-product-status-memo-c9/source-references.json",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v9-product-status/source-references.json",
+      "sha256": "51febffdbaf04869c166eb4d02fcdac45e1ba25c5081054fa2ba818a318e3e40",
+      "bytes": 13904,
+      "mode": "0o644"
+    },
+    "closure.json": {
+      "source": "/private/tmp/atlas-product-status-memo-c9/closure.json",
+      "destination": "/Users/apriansyahrs/Documents/Code/atlas/docs/architecture/evidence/hermes-candidate-v9-product-status/closure.json",
+      "sha256": "08c7d08f122ff0d491c1e3c86ef33aaadf8cb141b5efeb3af72b929bdad6406f",
+      "bytes": 1215,
+      "mode": "0o644"
+    }
+  },
+  "sourcePreserved": true,
+  "bytesHashesModesVerified": true,
+  "scope": "Only these three closed files plus this reference; no memo revision, progress append, product/control mutation, tests, API calls or active evidence inspection. The copied closure records original memo preparation; it is preserved without changing its historical assertions."
+}

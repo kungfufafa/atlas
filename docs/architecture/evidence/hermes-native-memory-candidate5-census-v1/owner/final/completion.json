@@ -1,0 +1,21 @@
+{
+  "at": "2026-09-07T00:29:51.482214+00:00",
+  "status": "complete-public-process-census",
+  "warmDispositions": 64,
+  "controlDispositions": 32,
+  "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "batchCompleted": {
+    "at": "2026-09-07T00:26:10.597Z",
+    "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+    "pairedTasks": 48,
+    "runtimeIdentitiesSha256": "224102a35e6e605676b95dd118bf79f1f5a547ea1a9a0092b9825694ab949afc",
+    "scheduledAttempts": 96,
+    "sourceUnchanged": true
+  },
+  "finalLedgerPath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T22-55-00-233Z-d062ca06/attempts.jsonl",
+  "finalLedgerSha256": "ebf7a495c3365dc9847bd99761ecb32b60b0f7cc0ebd7c4b0a23edeb3fa47878",
+  "completionPath": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1/batches/development-2026-09-06T22-55-00-233Z-d062ca06/completed.json",
+  "completionSha256": "51a914b0ea465bad329e6cfc88bd57dc78c59c631b8ae2cdfaf9effd187e3db5",
+  "rawEvidenceFilesVerified": 3333,
+  "scope": "Descriptive process census under copied criteria; every frozen record and judgment revision retained. No score replacement, superiority/equivalence, general UX, earliest-emission or security claim."
+}

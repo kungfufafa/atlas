@@ -1,4 +1,8 @@
 import type { AtlasClient } from "@atlas/client";
+import {
+  prepareChannelAudio,
+  type SaveInboundDocument,
+} from "@atlas/core/attachments/inbound-document";
 import type { SendMessageInput } from "@atlas/core/contract";
 import { waitForAbortable } from "@atlas/core/download-deadline";
 import type { Context } from "grammy";
@@ -21,7 +25,9 @@ export async function buildTelegramAudioInput(
   ctx: Context,
   client: AtlasClient,
   sessionId: string,
-  options: TelegramDownloadOptions = {}
+  options: TelegramDownloadOptions & {
+    saveInboundDocument?: SaveInboundDocument;
+  } = {}
 ): Promise<SendMessageInput | null> {
   const voice = ctx.message?.voice;
   const audio = ctx.message?.audio;
@@ -48,6 +54,19 @@ export async function buildTelegramAudioInput(
     Boolean(voice)
   );
 
+  const prepared = await prepareChannelAudio({
+    bytes: Buffer.from(downloaded.bytes),
+    caption: "",
+    channel: "Telegram",
+    filename,
+    mediaType,
+    saveInboundDocument: options.saveInboundDocument,
+    signal: options.signal,
+  });
+  if (prepared.kind === "reject") {
+    throw new Error(prepared.message);
+  }
+
   const transcription = client.transcribeAudio({
     data: Buffer.from(downloaded.bytes).toString("base64"),
     filename,
@@ -61,7 +80,9 @@ export async function buildTelegramAudioInput(
   const caption = ctx.message?.caption?.trim() ?? "";
   const message = caption ? `${text}\n\n${caption}` : text;
 
-  return { message };
+  return {
+    message: [message, prepared.input.message].filter(Boolean).join("\n\n"),
+  };
 }
 
 export function formatTelegramAudioError(error: unknown): string {

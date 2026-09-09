@@ -1,0 +1,84 @@
+{
+  "at": "2026-09-06T23:48:11.957060+00:00",
+  "scope": "Selected source-bound reports, scripts and gate logs. Full original evidence remains at source paths; not an exhaustive archive. Existing manifest qualifications and failed attempts remain authoritative.",
+  "files": [
+    {
+      "path": "report.json",
+      "source": "/private/tmp/atlas-restart-reproduction/report.json",
+      "sha256": "6c7b7c1648aed14ae37b3e928968ad0a748204766f6df8810d074c660acdb8fb",
+      "bytes": 1240
+    },
+    {
+      "path": "report.md",
+      "source": "/private/tmp/atlas-restart-reproduction/report.md",
+      "sha256": "b15565723876467989c1ff1bd8fe894d11c2c3e8a731e0c845251609d047849c",
+      "bytes": 6807
+    },
+    {
+      "path": "source-binding.json",
+      "source": "/private/tmp/atlas-restart-reproduction/source-binding.json",
+      "sha256": "fe942a12fd00b8348689874aa9e58eb1516ed52a323c0fed98ece0c4880010b4",
+      "bytes": 1342
+    },
+    {
+      "path": "sidecar-lineage.json",
+      "source": "/private/tmp/atlas-restart-reproduction/sidecar-lineage.json",
+      "sha256": "d69d388a577abdf3e42a910afe69dc467bbe8cd615e5d257189f3a77b055a77e",
+      "bytes": 2215
+    },
+    {
+      "path": "manifest.json",
+      "source": "/private/tmp/atlas-restart-reproduction/manifest.json",
+      "sha256": "9aaa6b0961994a61824211245484790e3e16387c445086e31f20a3ade5f8d500",
+      "bytes": 5883
+    },
+    {
+      "path": "child.ts",
+      "source": "/private/tmp/atlas-restart-reproduction/child.ts",
+      "sha256": "b0346b78e9dd70a88466a14583f262c272db3fb38d8a2aee74120cd08be2107f",
+      "bytes": 7645
+    },
+    {
+      "path": "run.py",
+      "source": "/private/tmp/atlas-restart-reproduction/run.py",
+      "sha256": "d60110a269673738b0f6381fe39d6c4c74c55300341193e9796839ee78229705",
+      "bytes": 7192
+    },
+    {
+      "path": "inspect-expired.ts",
+      "source": "/private/tmp/atlas-restart-reproduction/inspect-expired.ts",
+      "sha256": "b5e0facf6e06d3daa6011c8a37271dd2cdc5532f43e72e79c651e1fcfc23d0fa",
+      "bytes": 2390
+    },
+    {
+      "path": "post-lease-expiry/results.json",
+      "source": "/private/tmp/atlas-restart-reproduction/post-lease-expiry/results.json",
+      "sha256": "10e6ea2a83852e28f3c06a616693e207fc507ad573e2a536956388fef2baa592",
+      "bytes": 8867
+    },
+    {
+      "path": "post-lease-expiry/reference.json",
+      "source": "/private/tmp/atlas-restart-reproduction/post-lease-expiry/reference.json",
+      "sha256": "816c76495737e02f43bd0b3ca614a2a30f293d8662a70910f048e46b282cbd80",
+      "bytes": 1019
+    },
+    {
+      "path": "run-jtpo6wnm/completion.json",
+      "source": "/private/tmp/atlas-restart-reproduction/run-jtpo6wnm/completion.json",
+      "sha256": "00f2ff3a7fa708e531495a4ca23495c1c8dd47f3120c4477bade9e10983d5366",
+      "bytes": 169
+    },
+    {
+      "path": "run-jtpo6wnm/comparison.json",
+      "source": "/private/tmp/atlas-restart-reproduction/run-jtpo6wnm/comparison.json",
+      "sha256": "28364787da75a7775d238bf5fff6c2b13470bba9ae6318c5477381068d21154e",
+      "bytes": 1560
+    },
+    {
+      "path": "run-jtpo6wnm/fixture-source.json",
+      "source": "/private/tmp/atlas-restart-reproduction/run-jtpo6wnm/fixture-source.json",
+      "sha256": "8ca77745eb19ad7adb28a67b34476d0ab5caab080a4604ee0563aa7c80e2e361",
+      "bytes": 454
+    }
+  ]
+}

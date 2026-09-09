@@ -1,0 +1,22 @@
+{
+  "copies": [
+    {
+      "source": "/private/tmp/atlas-native-mimo-gates/readiness.json",
+      "copy": "readiness.json",
+      "bytes": 23680,
+      "sha256": "3e15545d22300c654b196f278fa9fd02d3435b16fd4181fbbe16e6f3c7abbb08"
+    },
+    {
+      "source": "/private/tmp/atlas-native-mimo-independent-review/review.json",
+      "copy": "independent-review.json",
+      "bytes": 10410,
+      "sha256": "2deec6b854b756801d8b124ded5bfc91b87ccbe6977692ed2f819fb42ad52792"
+    },
+    {
+      "source": "/Users/apriansyahrs/Documents/Code/atlas/scripts/harness-native-mimo-v1/product-model-profile.json",
+      "copy": "model-profile.json",
+      "bytes": 1166,
+      "sha256": "cdf6673db186ca05db06f2acb51fb48e82d02602bacbae30c93da14c47a3d053"
+    }
+  ]
+}

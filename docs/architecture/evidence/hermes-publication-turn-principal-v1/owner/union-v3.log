@@ -1,0 +1,81 @@
+bun test v1.3.1 (89fa0f34)
+
+packages/agent/src/chat-turn-admission.test.ts:
+(pass) API admission observes revocation during an existing awaited guard [84.45ms]
+(pass) native admission observes revocation during an existing awaited guard [2.11ms]
+(pass) API send binds fresh per-turn guards and publication lifecycles [4.17ms]
+(pass) API stream binds fresh per-turn guards and publication lifecycles [3.35ms]
+(pass) native send binds fresh per-turn guards and publication lifecycles [2.08ms]
+(pass) native stream binds fresh per-turn guards and publication lifecycles [1.75ms]
+
+packages/agent/src/tool-execution-lifecycle.test.ts:
+(pass) API send completes actual invocations before checkpoints [4.30ms]
+(pass) API stream completes actual invocations before checkpoints [9.16ms]
+(pass) native send completes actual invocations before checkpoints [0.76ms]
+(pass) native stream completes actual invocations before checkpoints [0.64ms]
+(pass) parallel invocations receive separate publishers and no inherited capability [1.30ms]
+(pass) API chat parallel batches propagate the host lifecycle to each invocation [2.02ms]
+(pass) publication completion sees protected rejection and failed data without bypassing guards [0.54ms]
+(pass) begin and diagnostic failures preserve the actual effect exactly once [0.52ms]
+(pass) complete and diagnostic failures preserve the actual effect exactly once [0.21ms]
+
+apps/server/src/services/artifact-publication-lifecycle.test.ts:
+(pass) overlapping sessions bind original bytes and distinct executions despite a repeated provider call ID [49.42ms]
+(pass) lazy initialization captures bytes and identity before caller mutation [20.89ms]
+(pass) forged artifact metadata and a no-write tool cannot create publication authority [18.17ms]
+(pass) returned-failure retains the actual file and receipt without partial publication or producer replay [19.12ms]
+(pass) initialization retains the actual file and receipt without partial publication or producer replay [18.81ms]
+(pass) later-stage retains the actual file and receipt without partial publication or producer replay [31.04ms]
+(pass) throwing-input retains the actual file and receipt without partial publication or producer replay [28.00ms]
+(pass) staging that starts after protected completion cannot reopen the publication set [20.02ms]
+(pass) in-flight staging finishes before commit even when a producer omits its await [18.69ms]
+(pass) an invalid first stage reports publication failure without initialization or losing the receipt [20.51ms]
+(pass) cancellation releases lazy initialization and a late resolver cannot publish [17.28ms]
+
+apps/server/src/services/publication-turn-principal.test.ts:
+(pass) human principal binds actual persisted scope and copies the authenticated actor [31.29ms]
+(pass) worker retains channel proof while effects and publications use persisted human identity [17.01ms]
+(pass) effect context rejects changed orgId [20.90ms]
+(pass) effect context rejects changed profileId [20.39ms]
+(pass) effect context rejects changed sessionId [16.75ms]
+(pass) effect context rejects changed userId [16.70ms]
+(pass) publication rejects changed orgId [20.20ms]
+(pass) publication rejects changed profileId [20.62ms]
+(pass) publication rejects changed sessionId [23.99ms]
+(pass) publication rejects changed actorId [21.71ms]
+(pass) other cannot publish as the session owner [19.18ms]
+(pass) admin cannot publish as the session owner [23.22ms]
+(pass) missing session and null owner fail initial admission [20.99ms]
+(pass) human rechecks viewer before the next actual effect [25.44ms]
+(pass) human rechecks removed before the next actual effect [27.29ms]
+(pass) human rechecks owner before the next actual effect [27.80ms]
+(pass) human rejects owner change during awaited ACL callback [22.70ms]
+(pass) worker rechecks viewer before the next actual effect [13.87ms]
+(pass) worker rechecks removed before the next actual effect [16.78ms]
+(pass) worker rechecks owner before the next actual effect [19.39ms]
+(pass) worker rejects owner change during awaited ACL callback [29.92ms]
+(pass) worker must match current external channel and a member owner [29.24ms]
+
+apps/server/src/services/artifact-publication-access.test.ts:
+(pass) real session ACL permits own member publish/read/list/revoke with private snapshot bytes [57.18ms]
+(pass) revoke admission rejects an own-session viewer before store acquisition while read remains allowed [23.01ms]
+(pass) revoke admission uses the worker owner's current role before store acquisition [23.75ms]
+(pass) own viewer reads remain available while publish and revoke are refused [34.61ms]
+(pass) other users cannot touch storage; admin can manage another session but cannot impersonate its publisher [30.78ms]
+(pass) removed membership denies stale supplied roles before private store acquisition [38.46ms]
+(pass) live platform-admin demotion invalidates a previously authorized service and fresh access [21.19ms]
+(pass) super-agent profile access requires live administrator authority and always excludes worker transport [23.32ms]
+(pass) trusted worker channel survives the real ACL and mismatched or absent channels cannot read [28.34ms]
+(pass) worker permissions follow canonical owner viewer demotion rather than supplied worker admin flags [27.62ms]
+(pass) worker canonical owner membership and user existence are checked afresh [21.81ms]
+(pass) worker sessions without a human canonical owner or on web cannot obtain private storage [17.68ms]
+(pass) wrong actor or tenant scope is refused by the authorizer with real session ACL [24.37ms]
+(pass) archived organization denies access before private store acquisition [18.87ms]
+(pass) importing/missing profile and deleted session deny access before storage [44.80ms]
+(pass) membership revocation during the actual private read prevents returning captured bytes [24.84ms]
+(pass) membership revocation after DB listing prevents returning publication metadata [27.68ms]
+
+ 65 pass
+ 0 fail
+ 322 expect() calls
+Ran 65 tests across 5 files. [4.43s]

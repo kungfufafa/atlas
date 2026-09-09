@@ -1,0 +1,17 @@
+{
+  "manifestPath": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/frozen/manifest.json",
+  "manifestSha256": "9b1b2103f768e2afa2dd97942086c69e0874ed2630107266d251adf5bcce241a",
+  "candidateSourceHash": "8714873b3668455d66224aef8384af2eed926f36d84c59c5ee477b37a8210e7d",
+  "frozenAt": "2026-09-06T14:16:33.555Z",
+  "model": "deepseek-v4-flash",
+  "endpoint": "https://opencode.ai/zen/go/v1",
+  "scheduleHashes": {
+    "confirmatory": "62bc623d648c1ba4e6945188a75119d9bbab1f4fad5a15e6531231da77440b3d",
+    "development": "e122a5a668e69e258eb844a5d3b41117fdfa9434ab04a1e695c863b2c2e2616f"
+  },
+  "archives": {
+    "atlas-source.tar.gz": "b3710b8c1a6590ed628c6d74dab501d3a995aec9ac88ce2bdf2a115816e6bac7",
+    "hermes-source.tar.gz": "d2b69749cb407ef566f6e5bf5b6c90fcd9dd46017791d48aefca43e2231270db",
+    "memory-protocol-source.tar.gz": "57964f6cb53ab5519d4fea272c06812abbc1fb9213c6dc305e8e85e2fb03fcff"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "closedAt": "2026-09-07T07:37:52.725607+00:00",
+  "status": "closed",
+  "scope": "Bounded source/read-only cross-provider claim memo",
+  "memo": {
+    "path": "/private/tmp/atlas-c9-provider-experience-claim-scope/memo.md",
+    "bytes": 8435,
+    "sha256": "0170bdbe3a5e4f84c657090c446faca57971eba95dd3b0ff16508a8c8af5120a"
+  },
+  "sourceBindings": {
+    "path": "/private/tmp/atlas-c9-provider-experience-claim-scope/source-bindings.json",
+    "bytes": 15540,
+    "sha256": "32eececb308ac28823d6cc6cc1c6f2a0c602633af8935e8376e721e8582b6cb6"
+  },
+  "closedEvidenceBindings": {
+    "path": "/private/tmp/atlas-c9-provider-experience-claim-scope/closed-evidence-bindings.json",
+    "bytes": 2981,
+    "sha256": "74156b1075e864e8387c894f882a94ba88f66d8609ec25cf37134724a380947f"
+  },
+  "sourceFilesIndependentlyBound": 25,
+  "newCallsOrTests": 0,
+  "confirmationAccess": false,
+  "sourceChanges": false,
+  "claim": "Scoped controls and explicit uncertainty; no universal quality/parity, billing, confinement or activation claim.",
+  "independenceQualification": "Author wrote underlying authenticated ordinary HTTP guard components; prior closed evidence authorship is disclosed."
+}

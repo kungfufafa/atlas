@@ -1,5 +1,9 @@
-import type { IParagraphOptions, IRunOptions } from "docx";
+import type { IParagraphOptions, IRunOptions, ParagraphChild } from "docx";
 import type { Token, Tokens } from "marked";
+import {
+  type MarkdownDocxOptions,
+  resolveDocxImages,
+} from "./docx-write-images";
 
 /**
  * Build a real `.docx` (a ZIP of OOXML parts) from Markdown.
@@ -9,19 +13,33 @@ import type { Token, Tokens } from "marked";
  * under a `.docx` name, which Word then displays as raw stylesheet source. This is
  * the tool that closes that gap.
  */
-export async function markdownToDocx(markdown: string): Promise<Buffer> {
+export async function markdownToDocx(
+  markdown: string,
+  options: MarkdownDocxOptions = {}
+): Promise<Buffer> {
   const {
     Document,
     Packer,
     Paragraph,
     HeadingLevel,
     TextRun,
+    ExternalHyperlink,
+    ImageRun,
     Table,
     TableRow,
     TableCell,
     WidthType,
+    BorderStyle,
   } = await import("docx");
   const { marked } = await import("marked");
+  const tokens = marked.lexer(markdown);
+  const references = new Set<string>();
+  marked.walkTokens(tokens, (token) => {
+    if (token.type === "image") {
+      references.add((token as Tokens.Image).href);
+    }
+  });
+  const images = await resolveDocxImages(references, options);
 
   const HEADING_BY_DEPTH = [
     HeadingLevel.HEADING_1,
@@ -32,12 +50,12 @@ export async function markdownToDocx(markdown: string): Promise<Buffer> {
     HeadingLevel.HEADING_6,
   ];
 
-  /** Flatten inline Markdown (bold, italic, code, links) into styled runs. */
+  /** Convert inline Markdown into styled runs, real links, and embedded images. */
   function toRuns(
     tokens: Token[] | undefined,
     inherited: Partial<IRunOptions> = {}
-  ): InstanceType<typeof TextRun>[] {
-    const runs: InstanceType<typeof TextRun>[] = [];
+  ): ParagraphChild[] {
+    const runs: ParagraphChild[] = [];
 
     for (const token of tokens ?? []) {
       switch (token.type) {
@@ -65,14 +83,42 @@ export async function markdownToDocx(markdown: string): Promise<Buffer> {
             })
           );
           break;
-        case "link":
+        case "link": {
+          const link = token as Tokens.Link;
+          if (!/^(https?:|mailto:)/i.test(link.href)) {
+            throw new Error(
+              "Word hyperlinks support http, https, and mailto destinations."
+            );
+          }
           runs.push(
-            ...toRuns((token as Tokens.Link).tokens, {
-              ...inherited,
-              style: "Hyperlink",
+            new ExternalHyperlink({
+              children: toRuns(link.tokens, {
+                ...inherited,
+                style: "Hyperlink",
+              }),
+              link: link.href,
             })
           );
           break;
+        }
+        case "image": {
+          const image = token as Tokens.Image;
+          const resolved = images.get(image.href);
+          if (!resolved) {
+            throw new Error("Markdown image was not resolved.");
+          }
+          runs.push(
+            new ImageRun({
+              ...resolved,
+              altText: {
+                description: image.text,
+                name: image.text,
+                title: image.title ?? image.text,
+              },
+            })
+          );
+          break;
+        }
         case "codespan":
           runs.push(
             new TextRun({
@@ -86,6 +132,10 @@ export async function markdownToDocx(markdown: string): Promise<Buffer> {
           runs.push(new TextRun({ ...inherited, break: 1, text: "" }));
           break;
         default: {
+          if ("tokens" in token && Array.isArray(token.tokens)) {
+            runs.push(...toRuns(token.tokens, inherited));
+            break;
+          }
           const text =
             "text" in token
               ? String((token as { text: unknown }).text ?? "")
@@ -111,13 +161,16 @@ export async function markdownToDocx(markdown: string): Promise<Buffer> {
     });
   }
 
-  function tableCell(text: string, header: boolean) {
+  function tableCell(cell: Tokens.TableCell, header: boolean) {
     return new TableCell({
       children: [
         new Paragraph({
-          children: [new TextRun({ bold: header, text })],
+          children: toRuns(cell.tokens, { bold: header }),
+          keepNext: header,
+          spacing: { after: 0, before: 0 },
         }),
       ],
+      margins: { bottom: 120, left: 140, right: 140, top: 120 },
     });
   }
 
@@ -165,18 +218,35 @@ export async function markdownToDocx(markdown: string): Promise<Buffer> {
         }
         case "table": {
           const table = token as Tokens.Table;
+          const border = {
+            color: "D1D5DB",
+            size: 4,
+            style: BorderStyle.SINGLE,
+          };
           blocks.push(
             new Table({
+              borders: {
+                bottom: border,
+                insideHorizontal: border,
+                insideVertical: border,
+                left: border,
+                right: border,
+                top: border,
+              },
+              columnWidths: table.header.map(() =>
+                Math.floor(9000 / Math.max(1, table.header.length))
+              ),
               rows: [
                 new TableRow({
-                  children: table.header.map((cell) =>
-                    tableCell(cell.text, true)
-                  ),
+                  cantSplit: true,
+                  children: table.header.map((cell) => tableCell(cell, true)),
+                  tableHeader: true,
                 }),
                 ...table.rows.map(
                   (row) =>
                     new TableRow({
-                      children: row.map((cell) => tableCell(cell.text, false)),
+                      cantSplit: true,
+                      children: row.map((cell) => tableCell(cell, false)),
                     })
                 ),
               ],
@@ -210,7 +280,7 @@ export async function markdownToDocx(markdown: string): Promise<Buffer> {
     return blocks;
   }
 
-  const blocks = blocksFrom(marked.lexer(markdown));
+  const blocks = blocksFrom(tokens);
 
   const document = new Document({
     numbering: {
@@ -228,6 +298,38 @@ export async function markdownToDocx(markdown: string): Promise<Buffer> {
         children: blocks.length > 0 ? blocks : [new Paragraph({ text: "" })],
       },
     ],
+    styles: {
+      default: {
+        document: {
+          paragraph: { spacing: { after: 120 } },
+          run: { color: "000000", font: "Arial", size: 22 },
+        },
+        heading1: {
+          paragraph: { keepNext: true, spacing: { after: 120, before: 240 } },
+          run: { bold: true, color: "000000", size: 32 },
+        },
+        heading2: {
+          paragraph: { keepNext: true },
+          run: { bold: true, color: "000000", size: 28 },
+        },
+        heading3: {
+          paragraph: { keepNext: true },
+          run: { bold: true, color: "000000", size: 24 },
+        },
+        heading4: {
+          paragraph: { keepNext: true },
+          run: { bold: true, color: "000000", size: 22 },
+        },
+        heading5: {
+          paragraph: { keepNext: true },
+          run: { bold: true, color: "000000", size: 22 },
+        },
+        heading6: {
+          paragraph: { keepNext: true },
+          run: { bold: true, color: "000000", size: 22 },
+        },
+      },
+    },
   });
 
   return Packer.toBuffer(document);

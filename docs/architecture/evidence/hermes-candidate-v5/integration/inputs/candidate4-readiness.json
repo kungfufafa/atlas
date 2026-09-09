@@ -1,0 +1,330 @@
+{
+  "schemaVersion": 1,
+  "status": "isolated-combined-candidate4-ready-not-applied",
+  "at": "2026-09-06T18:31:10.500454+00:00",
+  "sourceRoot": "/private/tmp/atlas-candidate4-integration/source",
+  "candidateBase": {
+    "sourceHash": "538c98b4f872e57e6c47d08fde1cd45cb3e591aa8462abde93fb3ec57e38bc74",
+    "archive": "/private/tmp/atlas-hermes-evaluation/candidate-v3/atlas-source.tar.gz",
+    "archiveSha256": "e738224f0c13eeae6a2a3739900f983d879f6cab88171e5bd570adc7634e09c5",
+    "all2072ExtractedMembersVerifiedBeforeEdits": true
+  },
+  "candidateSourceHash": "d09f087f01f3a8590ce8e2faef7b9454ce4546c8912dfce38e824d95fecb2ce3",
+  "sourceFiles": 2076,
+  "inputApplicationOrder": ["memory-scope", "conversation"],
+  "inputHashes": {
+    "conversation-combined.patch": "084bb4cf24345c16b5f8b763a3cec0c8ecde753c21d1ea1dcde889251c99af62",
+    "conversation-production.patch": "803dc4e59113548b832ac6063100c79c3f4a252d7de0fcc81e089140d0cb4244",
+    "conversation-readiness.json": "75c65a830b5740adcf2900454f2d348470576eec167fbdca1b6d335a45324d95",
+    "memory-scope-combined.patch": "263b1308c28cd061716a2ed1531ec298fd23d4540d4770b2cb2a4b8030ec26f5",
+    "memory-scope-production.patch": "43de40fdbdef32e153040138979a5776c23da9727f8d0d353e0585c9ee8ef03d",
+    "memory-scope-readiness.json": "42290b0faeafa7fd3741ebcf5385dcfaf3c8dc4a71ad5307df468c60b47d8b35"
+  },
+  "expectedSourceDelta": {
+    "total": 12,
+    "changedExisting": 8,
+    "new": 4,
+    "newFiles": [
+      "apps/server/src/tools/memory-scope-contract.test.ts",
+      "packages/db/src/conversation-keyword-search.test.ts",
+      "packages/db/src/conversation-keyword-search.ts",
+      "packages/db/src/memory-search.test.ts"
+    ],
+    "productionFiles": [
+      "apps/server/src/tools/conversation-tools.ts",
+      "apps/server/src/tools/memory-tools.ts",
+      "packages/db/src/adapters/in-memory.ts",
+      "packages/db/src/adapters/sqlite.ts",
+      "packages/db/src/conversation-keyword-search.ts",
+      "packages/db/src/memory-search.ts",
+      "packages/db/src/types.ts"
+    ],
+    "testFiles": [
+      "apps/server/src/tools/conversation-tools.test.ts",
+      "apps/server/src/tools/memory-scope-contract.test.ts",
+      "apps/server/src/tools/memory-tools-dedup.test.ts",
+      "packages/db/src/conversation-keyword-search.test.ts",
+      "packages/db/src/memory-search.test.ts"
+    ],
+    "actualPatchPathOverlap": []
+  },
+  "composition": "Exact byte concatenation of the two approved disjoint combined patches and, separately, their production patches. No source conflict resolution or additional implementation changes.",
+  "patches": {
+    "combined": {
+      "path": "/private/tmp/atlas-candidate4-integration/combined.patch",
+      "sha256": "be636e2a9ffc9d6566d83adb663afdec0d26dc13f5a14f238d98fc48dd25eb95"
+    },
+    "production": {
+      "path": "/private/tmp/atlas-candidate4-integration/production.patch",
+      "sha256": "7c204d3a17e88981dd9c406d4f4f1d414a2397df81cb3e0975357222ce038a17"
+    }
+  },
+  "sourceInventory": {
+    "path": "/private/tmp/atlas-candidate4-integration/source-inventory.json",
+    "sha256": "ffd0f2bd9eed3a52ae48ee955903bc789c807c63dbad6338a5e8dcab042480b4",
+    "hashAlgorithm": "SHA256 of compact UTF-8 JSON object mapping lexically sorted source paths to content SHA256; same serialization independently reproduces the declared candidate3 source hash."
+  },
+  "sourceVerification": {
+    "path": "/private/tmp/atlas-candidate4-integration/source-verification.json",
+    "sha256": "fa78d41351dd8204d81e51498dc7ce566a37ab1d718c2bd8a8e469d29a2cdf67",
+    "baseMembers": 2072,
+    "integratedMembers": 2076,
+    "sourceBeforeAfterEqual": true,
+    "rootBaseUnchanged": true,
+    "reviewedScratchSourcesAndInputsUnchanged": true,
+    "actualTreeUnexpectedFiles": []
+  },
+  "tooling": {
+    "nodeModules": "Read-only symlinks to existing root/workspace dependency directories; no install",
+    "dependencyLinks": {
+      "path": "/private/tmp/atlas-candidate4-integration/dependency-links.json",
+      "sha256": "b1f9140809b92e3ed03487d1392e1cafef4a401a836d936f2299c845ecae4aa0"
+    },
+    "rootExactCopies": {
+      ".gitignore": {
+        "source": "/Users/apriansyahrs/Documents/Code/atlas/.gitignore",
+        "sha256": "efacfbfe9dc84e2c67d1db75d0f0c43b6cdd46e42d5466ae7da6678354cff808",
+        "role": "tooling-only; copied exact root bytes"
+      },
+      "biome.jsonc": {
+        "source": "/Users/apriansyahrs/Documents/Code/atlas/biome.jsonc",
+        "sha256": "e35c585fdfc0d0baabfb3cffe773c5fa15a07cdc635e1774c37311a970f062f5",
+        "role": "tooling-only; copied exact root bytes"
+      }
+    },
+    "scopedConfig": {
+      "path": "/private/tmp/atlas-candidate4-integration/source/tsconfig.integration-scope.json",
+      "sha256": "2d571d70c40bca1736458a7271ca78b15eeb32f59d6c4db8873f10072e7dbaf7"
+    },
+    "aliases": {
+      "path": "/private/tmp/atlas-candidate4-integration/aliases.json",
+      "sha256": "8046e4674b33f9b20511f9f4d3cba845048d69801566643a717a4deb43e3f49f",
+      "allAtlasAliasesResolveToIntegratedSource": true
+    }
+  },
+  "finalGates": {
+    "focusedRegressionUnion": {
+      "tests": 101,
+      "assertions": 562,
+      "testFiles": 10,
+      "log": "/private/tmp/atlas-candidate4-integration/regression-union-linked.log",
+      "combinationPolicy": "Deduplicated union of both approved suites; overlapping test files executed once."
+    },
+    "fullProductionTypeScript": "passed; tsconfig.typecheck.json",
+    "changedSourceAndTestsTypeScript": "passed; tsconfig.integration-scope.json",
+    "scopedLint": "passed; 12 files"
+  },
+  "gates": [
+    {
+      "name": "regression-union",
+      "command": [
+        "bun",
+        "test",
+        "apps/server/src/tools/conversation-tools.test.ts",
+        "apps/server/src/tools/memory-scope-contract.test.ts",
+        "apps/server/src/tools/memory-tools-dedup.test.ts",
+        "apps/server/src/tools/memory-tools-update.test.ts",
+        "apps/server/src/tools/memory-tools.test.ts",
+        "packages/db/src/conversation-history.test.ts",
+        "packages/db/src/conversation-keyword-search.test.ts",
+        "packages/db/src/memory-preservation.test.ts",
+        "packages/db/src/memory-search.test.ts",
+        "packages/db/src/profile-atomic.test.ts"
+      ],
+      "cwd": "/private/tmp/atlas-candidate4-integration/source",
+      "startedAt": "2026-09-06T18:25:01.852182+00:00",
+      "log": "/private/tmp/atlas-candidate4-integration/regression-union.log",
+      "exitCode": 1,
+      "elapsedSeconds": 0.12282954099646304,
+      "finishedAt": "2026-09-06T18:25:01.975297+00:00",
+      "logSha256": "266fb4a5599ed0d691fc4bff9e2ad37cf68bac9e8569920368e07f499fd62c2c"
+    },
+    {
+      "name": "production-typecheck",
+      "command": [
+        "bun",
+        "x",
+        "--no-install",
+        "tsc",
+        "-p",
+        "tsconfig.typecheck.json",
+        "--pretty",
+        "false"
+      ],
+      "cwd": "/private/tmp/atlas-candidate4-integration/source",
+      "startedAt": "2026-09-06T18:25:01.852184+00:00",
+      "log": "/private/tmp/atlas-candidate4-integration/production-typecheck.log",
+      "exitCode": 2,
+      "elapsedSeconds": 5.377857291998225,
+      "finishedAt": "2026-09-06T18:25:07.230320+00:00",
+      "logSha256": "35c53bb67f16f34180e2c6f0d81a2ea1d6015fab0b59dd45c5df633d0504515c"
+    },
+    {
+      "name": "changed-source-and-tests-typecheck",
+      "command": [
+        "bun",
+        "x",
+        "--no-install",
+        "tsc",
+        "-p",
+        "tsconfig.integration-scope.json",
+        "--pretty",
+        "false"
+      ],
+      "cwd": "/private/tmp/atlas-candidate4-integration/source",
+      "startedAt": "2026-09-06T18:25:01.868447+00:00",
+      "log": "/private/tmp/atlas-candidate4-integration/changed-source-and-tests-typecheck.log",
+      "exitCode": 2,
+      "elapsedSeconds": 3.370864791999338,
+      "finishedAt": "2026-09-06T18:25:05.239600+00:00",
+      "logSha256": "2a245de4845fae66593b0ff11bf2a54612c3d399674ed0e8089159e7e56cb903"
+    },
+    {
+      "name": "scoped-lint",
+      "command": [
+        "bun",
+        "x",
+        "--no-install",
+        "ultracite",
+        "check",
+        "apps/server/src/tools/conversation-tools.test.ts",
+        "apps/server/src/tools/conversation-tools.ts",
+        "apps/server/src/tools/memory-scope-contract.test.ts",
+        "apps/server/src/tools/memory-tools-dedup.test.ts",
+        "apps/server/src/tools/memory-tools.ts",
+        "packages/db/src/adapters/in-memory.ts",
+        "packages/db/src/adapters/sqlite.ts",
+        "packages/db/src/conversation-keyword-search.test.ts",
+        "packages/db/src/conversation-keyword-search.ts",
+        "packages/db/src/memory-search.test.ts",
+        "packages/db/src/memory-search.ts",
+        "packages/db/src/types.ts"
+      ],
+      "cwd": "/private/tmp/atlas-candidate4-integration/source",
+      "startedAt": "2026-09-06T18:25:01.857336+00:00",
+      "log": "/private/tmp/atlas-candidate4-integration/scoped-lint.log",
+      "exitCode": 0,
+      "elapsedSeconds": 1.9036333749972982,
+      "finishedAt": "2026-09-06T18:25:03.761242+00:00",
+      "logSha256": "3011eb7cdc90829ac52743a4ddd781082dcd2a0d927827668479b9f1f0d79fa4"
+    },
+    {
+      "name": "regression-union-linked",
+      "command": [
+        "bun",
+        "test",
+        "apps/server/src/tools/conversation-tools.test.ts",
+        "apps/server/src/tools/memory-scope-contract.test.ts",
+        "apps/server/src/tools/memory-tools-dedup.test.ts",
+        "apps/server/src/tools/memory-tools-update.test.ts",
+        "apps/server/src/tools/memory-tools.test.ts",
+        "packages/db/src/conversation-history.test.ts",
+        "packages/db/src/conversation-keyword-search.test.ts",
+        "packages/db/src/memory-preservation.test.ts",
+        "packages/db/src/memory-search.test.ts",
+        "packages/db/src/profile-atomic.test.ts"
+      ],
+      "cwd": "/private/tmp/atlas-candidate4-integration/source",
+      "startedAt": "2026-09-06T18:26:18.382467+00:00",
+      "log": "/private/tmp/atlas-candidate4-integration/regression-union-linked.log",
+      "exitCode": 0,
+      "elapsedSeconds": 2.6997872499923687,
+      "finishedAt": "2026-09-06T18:26:21.082570+00:00",
+      "logSha256": "96bb07c5a14e8fe73d515d938f88ea1af16153c78f5fee5626fec53d081bf712"
+    },
+    {
+      "name": "production-typecheck-linked",
+      "command": [
+        "bun",
+        "x",
+        "--no-install",
+        "tsc",
+        "-p",
+        "tsconfig.typecheck.json",
+        "--pretty",
+        "false"
+      ],
+      "cwd": "/private/tmp/atlas-candidate4-integration/source",
+      "startedAt": "2026-09-06T18:26:18.392859+00:00",
+      "log": "/private/tmp/atlas-candidate4-integration/production-typecheck-linked.log",
+      "exitCode": 0,
+      "elapsedSeconds": 11.43352833300014,
+      "finishedAt": "2026-09-06T18:26:29.826623+00:00",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "changed-source-and-tests-typecheck-linked",
+      "command": [
+        "bun",
+        "x",
+        "--no-install",
+        "tsc",
+        "-p",
+        "tsconfig.integration-scope.json",
+        "--pretty",
+        "false"
+      ],
+      "cwd": "/private/tmp/atlas-candidate4-integration/source",
+      "startedAt": "2026-09-06T18:26:18.386232+00:00",
+      "log": "/private/tmp/atlas-candidate4-integration/changed-source-and-tests-typecheck-linked.log",
+      "exitCode": 0,
+      "elapsedSeconds": 4.973816165991593,
+      "finishedAt": "2026-09-06T18:26:23.360336+00:00",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "rootChecks": [
+    {
+      "patch": "combined",
+      "command": [
+        "git",
+        "apply",
+        "--check",
+        "/private/tmp/atlas-candidate4-integration/combined.patch"
+      ],
+      "cwd": "/Users/apriansyahrs/Documents/Code/atlas",
+      "exitCode": 0,
+      "log": "/private/tmp/atlas-candidate4-integration/root-combined-apply-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "patch": "production",
+      "command": [
+        "git",
+        "apply",
+        "--check",
+        "/private/tmp/atlas-candidate4-integration/production.patch"
+      ],
+      "cwd": "/Users/apriansyahrs/Documents/Code/atlas",
+      "exitCode": 0,
+      "log": "/private/tmp/atlas-candidate4-integration/root-production-apply-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "preservedInitialFailures": {
+    "reason": "Initial root node_modules link omitted existing Bun per-workspace node_modules, causing missing-package imports and consequent test/typecheck failure. Linking 12 existing workspace dependency directories resolved this without source changes.",
+    "logs": [
+      "/private/tmp/atlas-candidate4-integration/regression-union.log",
+      "/private/tmp/atlas-candidate4-integration/production-typecheck.log",
+      "/private/tmp/atlas-candidate4-integration/changed-source-and-tests-typecheck.log"
+    ],
+    "aliasError": "/private/tmp/atlas-candidate4-integration/aliases-initial-error.txt",
+    "allFinalRetryNamesDistinct": true,
+    "reportGenerationOrchestrationError": "/private/tmp/atlas-candidate4-integration/report-generation-initial-error.txt"
+  },
+  "processesClosed": true,
+  "notAppliedToRoot": true,
+  "productionChangesByIntegrationBeyondApprovedPatches": false,
+  "oldScratchEdited": false,
+  "frozenControlsEdited": false,
+  "paidCalls": false,
+  "nativePilots": false,
+  "limits": [
+    "Offline integration validates the bundled generic native memory-scope and conversation/source-fidelity/numeric-tokenizer repairs; it measures no live recall, learning or cross-harness quality improvement.",
+    "New native project/projectId writes are rejected; legacy storage and current-session access remain, with no broad audience remapping.",
+    "Keyword retrieval is weighted lexical OR/substrings, with bounded queries/results but unbounded total history scan/sort and per-session materialization.",
+    "Default literal database search behavior and existing wildcard/metadata differences remain unchanged.",
+    "No full repository test suite, native fake pilot, live provider/subscription account or paid evaluation was run.",
+    "Root must keep candidate3/frozen controls unchanged during its active batch; any later root application/evaluation is a separate parent-owned action."
+  ]
+}

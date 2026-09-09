@@ -1,27 +1,35 @@
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import type { JsonSchema, ToolContext, ToolDefinition } from "../contract";
 import { permissiveObjectSchema } from "../tools/schema";
 import type { DiscoveredSkill } from "./types";
 
-const moduleCache = new Map<string, SkillToolModule>();
-
-interface SkillToolModule {
+export interface SkillToolModule {
   description?: string;
   name?: string;
   parameters?: JsonSchema;
   run: (input: unknown, context: ToolContext) => Promise<unknown>;
 }
 
+export interface SkillToolRuntime {
+  /** Metadata loading must be confined too: module imports execute code. */
+  load(skill: DiscoveredSkill): Promise<SkillToolModule>;
+}
+
 export async function loadSkillTool(
-  skill: DiscoveredSkill
+  skill: DiscoveredSkill,
+  runtime?: SkillToolRuntime
 ): Promise<ToolDefinition | null> {
   if (!skill.toolPath) {
     return null;
   }
 
   try {
-    const module = await importSkillToolModule(skill.toolPath);
+    if (!runtime) {
+      throw new Error(
+        "Executable skills require a configured confined skill runtime. Run this skill through the Atlas server."
+      );
+    }
+    const module = await runtime.load(skill);
 
     return {
       description: module.description?.trim() || skill.description,
@@ -46,7 +54,8 @@ export async function loadSkillTool(
 }
 
 export async function loadSkillTools(
-  skills: DiscoveredSkill[]
+  skills: DiscoveredSkill[],
+  runtime?: SkillToolRuntime
 ): Promise<ToolDefinition[]> {
   const tools: ToolDefinition[] = [];
 
@@ -55,7 +64,7 @@ export async function loadSkillTools(
       continue;
     }
 
-    const tool = await loadSkillTool(skill);
+    const tool = await loadSkillTool(skill, runtime);
 
     if (tool) {
       tools.push(tool);
@@ -80,47 +89,6 @@ function resolveSkillToolPath(
   return resolved;
 }
 
-async function importSkillToolModule(
-  modulePath: string
-): Promise<SkillToolModule> {
-  const cached = moduleCache.get(modulePath);
-
-  if (cached) {
-    return cached;
-  }
-
-  const imported = await import(pathToFileURL(modulePath).href);
-  const module = normalizeSkillToolModule(imported);
-  moduleCache.set(modulePath, module);
-  return module;
-}
-
-function normalizeSkillToolModule(imported: unknown): SkillToolModule {
-  if (typeof imported !== "object" || imported === null) {
-    throw new Error("Skill tool module must export a run function.");
-  }
-
-  const record = imported as Record<string, unknown>;
-  const defaultExport =
-    typeof record.default === "object" && record.default !== null
-      ? (record.default as Record<string, unknown>)
-      : null;
-  const source = defaultExport ?? record;
-  const run = source.run;
-
-  if (typeof run !== "function") {
-    throw new Error("Skill tool module must export a run function.");
-  }
-
-  return {
-    description:
-      typeof source.description === "string" ? source.description : undefined,
-    name: typeof source.name === "string" ? source.name : undefined,
-    parameters: isJsonSchema(source.parameters) ? source.parameters : undefined,
-    run: (input, context) => Promise.resolve(run(input, context)),
-  };
-}
-
 function isPathInsideDirectory(
   targetPath: string,
   directoryPath: string
@@ -131,12 +99,9 @@ function isPathInsideDirectory(
   );
 }
 
-function isJsonSchema(value: unknown): value is JsonSchema {
-  return typeof value === "object" && value !== null;
-}
-
+/** @deprecated Confined skill modules are loaded afresh in each child. */
 export function clearSkillToolModuleCache(): void {
-  moduleCache.clear();
+  // Retained for callers of the previous core API; there is no host module cache.
 }
 
 export { resolveSkillToolPath };

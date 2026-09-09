@@ -1,0 +1,35 @@
+{
+  "createdAt": "2026-09-06T17:17:25.871670+00:00",
+  "scope": "Frozen configuration and offline readiness references only; no live-study results.",
+  "files": {
+    "README.md": {
+      "bytes": 1471,
+      "sha256": "af608845e1f7035096cfe3e320a22904eaacb23ebb087c1ac909c1d21d5de21a"
+    },
+    "freeze-references.json": {
+      "bytes": 10781,
+      "sha256": "8f910714c555d5c377ecbe31079b71473000f34d2dd8fe8f3e8634c13d70935c"
+    },
+    "independent-review.json": {
+      "bytes": 10410,
+      "sha256": "2deec6b854b756801d8b124ded5bfc91b87ccbe6977692ed2f819fb42ad52792"
+    },
+    "model-profile.json": {
+      "bytes": 1166,
+      "sha256": "cdf6673db186ca05db06f2acb51fb48e82d02602bacbae30c93da14c47a3d053"
+    },
+    "probe-reference.json": {
+      "bytes": 1067,
+      "sha256": "597136f3f6ffb9dfd53b4d0b9673e0bdeb79a89086e90ee904eca3fe83737728"
+    },
+    "readiness.json": {
+      "bytes": 23680,
+      "sha256": "3e15545d22300c654b196f278fa9fd02d3435b16fd4181fbbe16e6f3c7abbb08"
+    },
+    "source-copies.json": {
+      "bytes": 753,
+      "sha256": "8906cc4d790c4b165765ae6046d391b50a8111dc81b9973b6a8aabcd449d1ad6"
+    }
+  },
+  "originalsRetained": true
+}

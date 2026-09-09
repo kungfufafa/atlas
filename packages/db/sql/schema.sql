@@ -253,6 +253,9 @@ CREATE TABLE IF NOT EXISTS profile_skills (
 CREATE TABLE IF NOT EXISTS llm_usage_stats (
   id TEXT PRIMARY KEY NOT NULL,
   request_count INTEGER NOT NULL DEFAULT 0,
+  reported_invocations INTEGER NOT NULL DEFAULT 0,
+  estimated_invocations INTEGER NOT NULL DEFAULT 0,
+  unknown_invocations INTEGER NOT NULL DEFAULT 0,
   input_tokens INTEGER NOT NULL DEFAULT 0,
   output_tokens INTEGER NOT NULL DEFAULT 0,
   estimated_cost_usd REAL NOT NULL DEFAULT 0,
@@ -263,6 +266,9 @@ CREATE TABLE IF NOT EXISTS llm_usage_stats (
 CREATE TABLE IF NOT EXISTS llm_usage_model_stats (
   model_id TEXT PRIMARY KEY NOT NULL,
   request_count INTEGER NOT NULL DEFAULT 0,
+  reported_invocations INTEGER NOT NULL DEFAULT 0,
+  estimated_invocations INTEGER NOT NULL DEFAULT 0,
+  unknown_invocations INTEGER NOT NULL DEFAULT 0,
   input_tokens INTEGER NOT NULL DEFAULT 0,
   output_tokens INTEGER NOT NULL DEFAULT 0,
   estimated_cost_usd REAL NOT NULL DEFAULT 0,
@@ -538,6 +544,8 @@ CREATE TABLE IF NOT EXISTS memories (
   owner_id TEXT NOT NULL,
   subject TEXT,
   content TEXT NOT NULL,
+  search_content TEXT NOT NULL DEFAULT '',
+  search_subject TEXT NOT NULL DEFAULT '',
   confidence REAL DEFAULT 1.0 NOT NULL,
   importance INTEGER DEFAULT 1 NOT NULL,
   source TEXT,
@@ -754,3 +762,34 @@ CREATE TABLE IF NOT EXISTS profile_change_events (
 
 CREATE INDEX IF NOT EXISTS profile_change_events_profile_created
   ON profile_change_events (profile_id, created_at DESC);
+
+-- Explicit session publication authority, independent of mutable workspace paths.
+CREATE TABLE IF NOT EXISTS artifact_publication_executions (
+  org_id TEXT NOT NULL,
+  execution_id TEXT NOT NULL,
+  profile_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  fingerprint TEXT NOT NULL,
+  PRIMARY KEY (org_id, execution_id),
+  FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE,
+  FOREIGN KEY (profile_id) REFERENCES profiles (id) ON DELETE CASCADE,
+  FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS artifact_publications (
+  id TEXT PRIMARY KEY NOT NULL,
+  org_id TEXT NOT NULL,
+  profile_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  execution_id TEXT NOT NULL,
+  output_ordinal INTEGER NOT NULL,
+  snapshot_id TEXT UNIQUE NOT NULL,
+  payload TEXT NOT NULL,
+  revoked_at TEXT,
+  UNIQUE (org_id, execution_id, output_ordinal),
+  FOREIGN KEY (org_id, execution_id) REFERENCES artifact_publication_executions (org_id, execution_id) ON DELETE CASCADE,
+  FOREIGN KEY (org_id) REFERENCES organizations (id) ON DELETE CASCADE,
+  FOREIGN KEY (profile_id) REFERENCES profiles (id) ON DELETE CASCADE,
+  FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS artifact_publications_session ON artifact_publications (org_id, profile_id, session_id);
+CREATE INDEX IF NOT EXISTS artifact_publications_session_created ON artifact_publications (org_id, profile_id, session_id, json_extract(payload, '$.createdAt'), id) WHERE revoked_at IS NULL;

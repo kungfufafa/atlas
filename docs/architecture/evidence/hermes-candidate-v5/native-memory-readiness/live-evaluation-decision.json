@@ -1,0 +1,15 @@
+{
+  "at": "2026-09-06T19:32:41.172501+00:00",
+  "candidateSourceHash": "1b44dd862ed3dac305c1ebe86dabda28c0de085c6a1d9fc1f6f1eb5eaa7dca2d",
+  "memoryStudy": "/private/tmp/atlas-hermes-evaluation/memory-mimo-study-v1",
+  "manifestSha256": "76ea6c44820011fc8d70205c139322a5c8faf8975565206893f0abd3fe1a298c",
+  "decision": "Admit the single live unscored memory pilot for candidate5. If lifecycle/identity/accounting readiness passes, admit all48developmentpairs/96arms under the unchanged frozen MiMo protocol. Preserve allattempts; no selected-case rerun or silentrescore.",
+  "candidate4Disposition": "Intermediate preparedcandidate was not live-evaluated; candidate5 includes all reviewed memory/search changes plus typedtask-stoprepair. No qualityoutcome selected between these candidates.",
+  "model": "mimo-v2.5",
+  "endpoint": "https://opencode.ai/zen/go/v1",
+  "headerProfile": "Atlas-Hermes-Compatibility-Probe/1.0 (nonstreaming)",
+  "priorFailureDisclosure": "Candidate3development14/16primaryeachharnessandcondition, factsAtlas14/16Hermes15/16;4unknownmandatoryusagearms; floorfailed and no parityclaim.",
+  "confirmatoryAdmission": "None; allholdoutsremainunrun. Further decision requires fixedcandidate and documented analysis scope.",
+  "fileV2Admission": "None yet; full offlinegatesclosed awaiting finalreadiness and separatefreeze.",
+  "limits": "Samebudgetsettings/corpus/seededschedule. Nativeauxiliarytimeouts can recur; countthem ratherthanretry. Separate studies/modelstrata are not pooled."
+}

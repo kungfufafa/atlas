@@ -1,0 +1,109 @@
+{
+  "at": "2026-09-07T00:32:47.952064+00:00",
+  "status": "bounded owner gates and independent source review complete; unwired",
+  "sourceHash": "e4e71ba4a50de2d8fc6e0280af734a714b36559cc842e3486e72b14d17ce261d",
+  "sourceFiles": 2089,
+  "baselineFoundationHash": "6cf23f28cc6a9e7c0056c29e605850437e2175e93d63b80111e6f090d7df66dd",
+  "ownedPaths": [
+    "apps/server/src/services/artifact-publication-lifecycle.ts",
+    "apps/server/src/services/artifact-publication-lifecycle.test.ts",
+    "packages/agent/src/chat.ts",
+    "packages/agent/src/index.ts",
+    "packages/agent/src/tool-loop.ts",
+    "packages/agent/src/tool-execution-lifecycle.ts",
+    "packages/agent/src/tool-execution-lifecycle.test.ts"
+  ],
+  "dependencySourceHash": "17a262bf4fd5ab96f72fe4e7ca741cc0066542c321b037c70f713e35a621faeb",
+  "producerSeamDependencies": [
+    {
+      "path": "packages/core/src/artifact-publication.ts",
+      "sha256": "ed8f32a9d21a003a03c7c985d2252e986a8576c13e0ec545aef2226357e3e450",
+      "source": "/private/tmp/atlas-artifact-producer-seam/source/packages/core/src/artifact-publication.ts"
+    },
+    {
+      "path": "packages/core/src/contract.ts",
+      "sha256": "6cc78e3d649ed34bf41c560cf335d2ed96ef106d7e4e670343c2495225b44939",
+      "source": "/private/tmp/atlas-artifact-producer-seam/source/packages/core/src/contract.ts"
+    }
+  ],
+  "componentPatchSha256": "89790484b6f1ae5ab690fcf2267d3a60d06d41eab9a3f3711878323c9f4d58aa",
+  "productionPatchSha256": "14801b48eba8bd00253bb704a1219819a948276640a66565074f100cbf532ae0",
+  "gates": {
+    "regression": {
+      "exitCode": 0,
+      "tests": 70,
+      "assertions": 331,
+      "files": 6,
+      "newTests": 20,
+      "log": "v2-scoped-regressions.log"
+    },
+    "scopedTypecheck": {
+      "exitCode": 0,
+      "log": "v2-scoped-typecheck.log"
+    },
+    "lint": {
+      "exitCode": 0,
+      "files": 7,
+      "log": "v2-lint.log"
+    }
+  },
+  "logs": {
+    "final-lint.log": {
+      "sha256": "b3be4d9a9c14c0c7de2fbfbb94011c10ece1020378284f03b84a1d4a11379a74",
+      "bytes": 45
+    },
+    "final-scoped-regressions.log": {
+      "sha256": "e7758c3e02b22256d8fb2b2faae73bf76b02470fe5edd628abedec4bfd0b07de",
+      "bytes": 7152
+    },
+    "final-scoped-typecheck.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "initial-agent-tests.log": {
+      "sha256": "af48395c0ca15c875cec80c95e7e6544c7381bcb90f5165bfe4e52107fbf1cb6",
+      "bytes": 2183
+    },
+    "initial-format.log": {
+      "sha256": "0957a80f51346249b5c2fad14447edbe830c0c029843c21a41792c296f9b683d",
+      "bytes": 41
+    },
+    "initial-integration-tests.log": {
+      "sha256": "2ad96ed376ffc7544f3e5bfb687127cca23e73ddb0ab3548c75221356fd0c74c",
+      "bytes": 1646
+    },
+    "initial-scoped-typecheck.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "integration-scoped-typecheck.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "v2-format.log": {
+      "sha256": "87a34a58cd0c6148b202f610d681062bfe195d7c30a09bc5812e106a596ba491",
+      "bytes": 41
+    },
+    "v2-lint.log": {
+      "sha256": "cff86b9c46f3eaf0ca1c114d33c8c7417b1815f6e2a84e260954a2257792e420",
+      "bytes": 44
+    },
+    "v2-scoped-regressions.log": {
+      "sha256": "e401d9302fe3b6cda377f947b2705198465f965fa4e14627bb61bac9aca533f4",
+      "bytes": 6678
+    },
+    "v2-scoped-typecheck.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  },
+  "rootApplied": false,
+  "productionActivated": false,
+  "liveCalls": 0,
+  "independentReview": {
+    "path": "/private/tmp/atlas-artifact-execution-integration-independent-review/review.json",
+    "sha256": "670d38af89f78d195e0df4f3ddcecc7116af5f7489b16e990d3ec10fbd60dbdd"
+  },
+  "fullProductionTypecheckRun": false,
+  "claim": "Host execution boundary plus private publication integration in isolated fixtures only."
+}

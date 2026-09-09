@@ -1,0 +1,244 @@
+{
+  "at": "2026-09-07T07:34:51.125729+00:00",
+  "status": "Closed complete development report; original scores and failures unchanged",
+  "originalAnalysisSha256": "392b5b60309f8a0fc12992e50bee71eb56129587183025b74baad87de17273df",
+  "originalCompletedSha256": "c248ea70ebc5b132eebf0214121cf496d5337282f4d6e882269c01421aa14e08",
+  "candidateSourceHash": "e2daf1b902a087eb279724f17d61e50b9a27f7c1d64828f6958b61b22225eb98",
+  "controlSourceHash": "b3673405fab43fdd268aa286d4f6f0164ea00c2332ba43d00e28abd3d538fde5",
+  "selectedExactCopies": {
+    "analysis-final.json": {
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/development-1788761674761-248ff763/analysis-final.json",
+      "sha256": "392b5b60309f8a0fc12992e50bee71eb56129587183025b74baad87de17273df",
+      "bytes": 21213,
+      "mode": "0o644"
+    },
+    "completed.json": {
+      "source": "/private/tmp/atlas-hermes-evaluation/native-files-mimo-study-v3-c9/batches/development-1788761674761-248ff763/completed.json",
+      "sha256": "c248ea70ebc5b132eebf0214121cf496d5337282f4d6e882269c01421aa14e08",
+      "bytes": 303,
+      "mode": "0o644"
+    },
+    "independent-review.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-development-independent-review/review.json",
+      "sha256": "7037e44de48d2e18774615b930db835c1ba0e0f45c4ad87c8ee83cea4067ec76",
+      "bytes": 30538,
+      "mode": "0o644"
+    },
+    "independent-review.md": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-development-independent-review/review.md",
+      "sha256": "3c9bd6fdba13ede9aa0c6be920d110b4b60c787d9bdfe79af773671a06c9c525",
+      "bytes": 3372,
+      "mode": "0o644"
+    },
+    "census-report.md": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-development-census/report.md",
+      "sha256": "4e48358ec7ec65912a7aa085f19fefe8bb5618a37aa1786d8f6ceb014a276f65",
+      "bytes": 15661,
+      "mode": "0o644"
+    },
+    "census.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-development-census/census.json",
+      "sha256": "cf50de7c906d69cdc4792744e2f4ce35821b74f3e6e5cfb80d7c2be6b54365d9",
+      "bytes": 259966,
+      "mode": "0o644"
+    },
+    "all-eight-failure-diagnoses.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-development-census/all-eight-failure-diagnoses.json",
+      "sha256": "cfdc6e00dedfdeeb6f659b4e6f85cd542a374187765ab2067e242f10430b3663",
+      "bytes": 13150,
+      "mode": "0o644"
+    },
+    "docx-contract-report.md": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-development-docx-contract-review/report.md",
+      "sha256": "aafa03dcc180a4a86304ad3f99ec7e4ff070ca0fe13735d1842f066055c09318",
+      "bytes": 3138,
+      "mode": "0o644"
+    },
+    "docx-source-bindings.json": {
+      "source": "/private/tmp/atlas-native-file-v3-c9-development-docx-contract-review/source-bindings.json",
+      "sha256": "de1d97baa657bc7ad63e28ffcccae0cbc19ab906e8094b864f8f4c05c7cb6fa5",
+      "bytes": 5171,
+      "mode": "0o644"
+    },
+    "review-archive-receipt.json": {
+      "source": "/private/tmp/atlas-file-v3-c9-development-review-archive/archive-receipt.json",
+      "sha256": "a07a469ba6587a673296f04d5c1858c627765bd188d468e2113153213666bc29",
+      "bytes": 474,
+      "mode": "0o644"
+    },
+    "raw-archive-receipt.json": {
+      "source": "/private/tmp/atlas-file-v3-c9-development-raw-archive/archive-receipt.json",
+      "sha256": "45a8a0ff2a24f5e0f518015a8d87ae4bed5c3a3161f1258f2d10c38e9a4aaf27",
+      "bytes": 611,
+      "mode": "0o644"
+    },
+    "confirmatory-admission.json": {
+      "source": "/private/tmp/atlas-native-file-v3-final-admission/confirmatory-admission.json",
+      "sha256": "8d397316af6c86b13e61d6701768fad39511b9586faaa03440de5ae9a0606acb",
+      "bytes": 4784,
+      "mode": "0o644"
+    }
+  },
+  "reportSha256": "0fa7c9619a78d557f913de0f5f2bc82059a09221e2df33b67d0f316e31cf25ab",
+  "completeArchives": {
+    "raw": {
+      "archive": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-07/file-v3-c9-development-raw",
+      "archiverProviderCalls": 0,
+      "archiverRescores": 0,
+      "archiverTests": 0,
+      "at": "2026-09-07T07:12:34.020205+00:00",
+      "bytes": 122647462,
+      "copiedRuntimeRegularFiles": 485,
+      "files": 2237,
+      "manifestSha256": "1b6ea2632ad489265eccc009faecd9a47577f27221293c74f0e43fdbaba13dc0",
+      "missingNativeRoots": 0,
+      "nativeRoots": 36,
+      "postPromotionHashesModesCensusVerified": true,
+      "recordedSymlinks": 0,
+      "scannerBytes": 389716824,
+      "scannerStreams": 12852,
+      "sourceRetained": true
+    },
+    "review": {
+      "archive": "/Users/apriansyahrs/Documents/Code/atlas/outputs/hermes-evidence/2026-09-07/file-v3-c9-development-review",
+      "at": "2026-09-07T07:32:10.876924+00:00",
+      "bytes": 4795627,
+      "files": 206,
+      "manifestSha256": "648c73dd28a222ef9c5916cc30d6eca963ecf4ed5aed2ca3b5b1c98e2cfee513",
+      "postPromotionHashesModesCensusVerified": true,
+      "providerCalls": 0,
+      "rescores": 0,
+      "scannerBytes": 4889373,
+      "scannerStreams": 207,
+      "sourceRetained": true,
+      "tests": 0
+    }
+  },
+  "closedReviewManifestBindings": [
+    {
+      "root": "/private/tmp/atlas-native-file-v3-c9-development-independent-review",
+      "prefix": "independent-review",
+      "manifestSha256": "fa554b67f26bb2c5141cf90f5b3f2a335d208d5adf6692f440a0f7b91e220ccb",
+      "closureName": "seal.json",
+      "closureSha256": "bc9c4b26f61abf123c89a7a07739ec01a198fc41a680c0745de630eb641f9418",
+      "members": 165
+    },
+    {
+      "root": "/private/tmp/atlas-native-file-v3-c9-development-census",
+      "prefix": "census",
+      "manifestSha256": "7f3e689f6ec632720d11f54d0db009d5e05f29a16608e6606e6e19519faf495d",
+      "closureName": "closure.json",
+      "closureSha256": "dc4d3aa3d6f05e7eaa651cb99812bb4a6d8ac55cb0f77f2015572f363e49bb1e",
+      "members": 24
+    },
+    {
+      "root": "/private/tmp/atlas-native-file-v3-c9-development-docx-contract-review",
+      "prefix": "docx-contract",
+      "manifestSha256": "86e82c7b73b0ec07d5d9137587b099ecef4955ed066ad1bf685ffdf5f14c2e40",
+      "closureName": "seal.json",
+      "closureSha256": "442c28f5b1171a67bb542cb415720dfba3d124617992d2db8da6cb86cb7383df",
+      "members": 6
+    }
+  ],
+  "familyCountsFromOriginalAnalysis": [
+    {
+      "family": "code_fix",
+      "pairs": 2,
+      "atlas": 2,
+      "hermes": 1
+    },
+    {
+      "family": "csv_join",
+      "pairs": 2,
+      "atlas": 2,
+      "hermes": 2
+    },
+    {
+      "family": "docx_report",
+      "pairs": 2,
+      "atlas": 0,
+      "hermes": 0
+    },
+    {
+      "family": "docx_revision",
+      "pairs": 2,
+      "atlas": 2,
+      "hermes": 2
+    },
+    {
+      "family": "pdf_create",
+      "pairs": 2,
+      "atlas": 2,
+      "hermes": 2
+    },
+    {
+      "family": "pdf_extract",
+      "pairs": 2,
+      "atlas": 2,
+      "hermes": 2
+    },
+    {
+      "family": "pptx_revision",
+      "pairs": 2,
+      "atlas": 2,
+      "hermes": 1
+    },
+    {
+      "family": "xlsx_reconciliation",
+      "pairs": 2,
+      "atlas": 1,
+      "hermes": 2
+    },
+    {
+      "family": "xlsx_surgical_edit",
+      "pairs": 2,
+      "atlas": 1,
+      "hermes": 2
+    }
+  ],
+  "resourcesFromIndependentClosedReview": {
+    "atlas": {
+      "arms": 18,
+      "knownUsageArms": 18,
+      "unknownUsageArms": 0,
+      "providerRequests": 120,
+      "knownPromptSubtotals": 749653,
+      "knownGeneratedSubtotals": 57924,
+      "observedPromptSubtotals": 749653,
+      "observedGeneratedSubtotals": 57924
+    },
+    "hermes": {
+      "arms": 18,
+      "knownUsageArms": 17,
+      "unknownUsageArms": 1,
+      "providerRequests": 149,
+      "knownPromptSubtotals": 949185,
+      "knownGeneratedSubtotals": 34503,
+      "observedPromptSubtotals": 976791,
+      "observedGeneratedSubtotals": 35533
+    }
+  },
+  "reportedUsageQualification": "Hermes complete totals unknown; 17-known-arm subtotals and 18-arm observed counters reported separately, with all failed arms retained. Prices not guessed.",
+  "scope": {
+    "phase": "development",
+    "pairs": 18,
+    "arms": 36,
+    "allFailedArms": 8,
+    "validOriginalInstrumentation": true,
+    "taskOracleReruns": 0,
+    "analyzerReruns": 0,
+    "newTests": 0,
+    "newProviderCalls": 0,
+    "alternativeScores": 0,
+    "confirmationInputsOutputsSchedulesLogsRead": false
+  },
+  "closedConfirmationAdmissionSha256": "8d397316af6c86b13e61d6701768fad39511b9586faaa03440de5ae9a0606acb",
+  "reviewerIndependence": "Full instrumentation review, all36 census/all8 diagnosis and root4DOCX inspection are separate authored reports. This contributor report summarizes those closed records; it is not another independent behavior verification.",
+  "preservedFailures": "Original native failures, nullable identities/usage, all oracle/selector failures, reviewer projection correction, initial path probes and the archive schema-inspection assumption error remain unchanged in retained evidence.",
+  "limits": [
+    "No general Hermes parity, provider/subscription portability, efficiency or causal C9 gain is established.",
+    "DOCX supplied facts remain present in tables; paragraph-location requirements failed. XLSX scalar checks do not certify workbook preservation. Hermes code admission failure is not evidence of 19 wrong arithmetic outputs.",
+    "Parent direct-child closure and stable copy fingerprints do not prove all descendants exited or an atomic filesystem/SQLite snapshot.",
+    "Finite credential scan does not certify unknown secrets or arbitrary encodings."
+  ]
+}

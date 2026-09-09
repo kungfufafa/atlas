@@ -1,3 +1,4 @@
+import type { ToolArtifactPublisher } from "./artifact-publication";
 import type { LoadAttachmentBytes } from "./attachments/content";
 import type {
   CapabilityBindingV1,
@@ -239,10 +240,23 @@ export interface OrgUsageBudgetResponse {
   overBudget: boolean;
 }
 
+/** Outer provider invocations; native runtimes may make additional internal requests. */
+export interface LlmUsageProvenance {
+  /** Every observed invocation supplied counters; not a claim of account billing. */
+  allInvocationsReported: boolean;
+  estimatedInvocations: number;
+  reportedInvocations: number;
+  /** Legacy rows or direct callers without an explicit usage classification. */
+  unclassifiedInvocations: number;
+  unknownInvocations: number;
+}
+
 export interface LlmUsageStats {
   estimatedCostUsd: number;
   inputTokens: number;
   outputTokens: number;
+  /** Numeric token/cost totals are recorded subtotals when usage is incomplete. */
+  provenance?: LlmUsageProvenance;
   requestCount: number;
   totalTokens: number;
   trackedSince: string;
@@ -898,6 +912,10 @@ export interface ListChannelOrgMappingsResponse {
 }
 
 export interface ExternalPrincipalInput {
+  channelAddressed?: boolean;
+  channelChatId?: string;
+  channelIsGroup?: boolean;
+  channelThreadId?: string;
   /** Trusted channel-native aliases observed for the same sender. */
   channelUserAliases?: string[];
   channelUserId: string;
@@ -949,6 +967,7 @@ export interface AgentQuestionItem {
   id: string;
   placeholder?: string;
   prompt: string;
+  selectionMode?: "single" | "multiple";
 }
 
 export interface AgentQuestionnaire {
@@ -1172,6 +1191,8 @@ export interface SendMessageInput {
   /** Browser origin for OAuth callbacks (e.g. window.location.origin). */
   clientOrigin?: string;
   documents?: DocumentAttachment[];
+  /** Native control answers are consumed only while this exact questionnaire is current. */
+  expectedQuestionnaire?: AgentQuestionnaire;
   images?: ImageAttachment[];
   message: string;
   policy?: ExecutionPolicy;
@@ -1182,6 +1203,7 @@ export interface SendMessageInput {
 export interface SendMessageRequest {
   clientOrigin?: string;
   documents?: DocumentAttachment[];
+  expectedQuestionnaire?: AgentQuestionnaire;
   externalPrincipal?: ExternalPrincipalInput;
   images?: ImageAttachment[];
   message: string;
@@ -1211,6 +1233,10 @@ export type StreamEvent =
     }
   | { type: "artifact_created"; artifact: import("./artifact-types").Artifact }
   | { type: "approval_requested"; approval: ApprovalRequest }
+  | {
+      type: "channel_action_requested";
+      request: import("./channel-native-actions").ChannelNativeActionRequest;
+    }
   | {
       type: "approval_resolved";
       approvalId: string;
@@ -2661,6 +2687,8 @@ export type ChatMessage =
       /** Model reasoning trace for display; not sent as plain assistant text to providers. */
       thinking?: string;
       summary?: boolean;
+      /** Original attachments retained through compaction, independently of model summary wording. */
+      fileReferences?: Extract<MessageContentPart, { type: "document_ref" }>[];
       toolCalls?: ToolCall[];
       /** Provider-specific assistant payload for multi-turn replay (Anthropic blocks, OpenAI response items). */
       providerContent?: unknown[];
@@ -2671,6 +2699,18 @@ export type ChatMessage =
       providerContentProvenance?: ProviderContentProvenance;
     }
   | { role: "tool"; toolCallId: string; name: string; content: string };
+
+/** Exact native model evidence; never append these diagnostics to answer content. */
+export interface ProviderModelIdentity {
+  basis:
+    | "exact"
+    | "advertised-resolution"
+    | "unresolved-alias"
+    | "not-reported";
+  reportedModels: string[];
+  requestedModel: string;
+  verification: "verified" | "unverifiable";
+}
 
 export interface ChatCompletionResult {
   assistantMessage: Extract<ChatMessage, { role: "assistant" }>;
@@ -2683,6 +2723,7 @@ export interface ChatCompletionResult {
     contextWindow: number;
     usedTokens: number;
   };
+  modelIdentity?: ProviderModelIdentity;
   toolCalls: ToolCall[];
   usage?: {
     inputTokens: number;
@@ -2695,6 +2736,7 @@ export interface ChatCompletionResult {
 
 export interface GenerateTextResult {
   content: string;
+  modelIdentity?: ProviderModelIdentity;
   usage?: {
     inputTokens: number;
     outputTokens: number;
@@ -2717,6 +2759,11 @@ export interface GenerateChatInput {
    * thread/session without replacing the Atlas session identifier.
    */
   conversationId?: string;
+  /** Runtime tool requests execute through Atlas while the provider turn is open. */
+  executeToolCall?: (
+    call: ToolCall,
+    signal?: AbortSignal
+  ) => Promise<ProviderToolExecutionResult>;
   messages: ChatMessage[];
   providerOptions?: ProviderChatOptions;
   /**
@@ -2727,6 +2774,27 @@ export interface GenerateChatInput {
   signal?: AbortSignal;
   system: string;
   tools?: LlmToolDefinition[];
+}
+
+export interface ProviderToolExecutionResult {
+  content: string;
+  success: boolean;
+}
+
+export type ToolApprovalDecision =
+  | { decision: "approved"; grantId: string }
+  | { decision: "denied" };
+
+export interface ToolExecutionReceipt {
+  call: ToolCall;
+  content: string;
+}
+
+export interface ToolApprovalInput {
+  approval: ApprovalRequest;
+  call: ToolCall;
+  runId: string;
+  signal?: AbortSignal;
 }
 
 export interface StreamChatHandlers {
@@ -2767,16 +2835,20 @@ export interface ToolContext {
   agentDepth?: number;
   /** Single-use approval grant consumed at the execution boundary. */
   approvalGrantId?: string;
+  /** Fresh invocation-local byte staging capability, installed by trusted execution code. */
+  artifactPublisher?: ToolArtifactPublisher;
   automationId?: string;
   automationRunId?: string;
   /** Revalidates tenant liveness at the final boundary before a tool runs. */
-  beforeToolCall?: () => Promise<void>;
+  beforeToolCall?: (toolName?: string) => Promise<void>;
   /** Session channel when known (used for interactive-only tool gates). */
   channel?: AgentChannel;
   /** Browser origin for OAuth callbacks during this tool run. */
   clientOrigin?: string;
   /** Emits concise live status lines while a sub-agent child loop runs (parent web UI). */
   emitSubAgentActivity?: (label: string) => void;
+  /** Optional narrower read boundary for embedded document assets. */
+  fileAssetAllowedDirs?: string[];
   /**
    * When true (skill_manage is in the session tool list), write_file / edit_file / delete_file
    * refuse paths matching skills/<name>/SKILL.md under the profile workspace.
@@ -2788,6 +2860,12 @@ export interface ToolContext {
   isPlatformAdmin?: boolean;
   /** Loads a provider-neutral document/image reference scoped to this execution. */
   loadAttachment?: LoadAttachmentBytes;
+  /** Close the shared action run after the conversation turn settles. */
+  onToolTurnEnd?: (
+    runId: string,
+    status: "completed" | "failed" | "cancelled",
+    results: readonly ToolExecutionReceipt[]
+  ) => Promise<void>;
   orgId?: string;
   /** Org role of the invoking user. Org-memory tools gate on this; undefined means deny-by-default. */
   orgRole?: OrgRole;
@@ -2815,6 +2893,18 @@ export interface ToolContext {
     optimized: boolean;
     outputTokens: number;
   }) => void;
+  requestChannelAction?: (
+    action: import("./channel-native-actions").ChannelNativeAction,
+    onPending?: (
+      request: import("./channel-native-actions").ChannelNativeActionRequest
+    ) => void,
+    signal?: AbortSignal
+  ) => Promise<import("./channel-native-actions").ChannelActionReceipt>;
+  /** Persist the pending action before notifying the user, then await its decision. */
+  requestToolApproval?: (
+    request: ToolApprovalInput,
+    onPending: () => void
+  ) => Promise<ToolApprovalDecision>;
   /**
    * Durable execution-run id. Browser contexts, learning evidence, and
    * approval resume bind to this — not to a process-local session key.
@@ -2834,6 +2924,8 @@ export interface ToolContext {
 }
 
 export interface ToolDefinition<Input = unknown, Output = unknown> {
+  /** Set only by the server wrapper that confines channel guest work-file access. */
+  channelGuestFileSafe?: boolean;
   description: string;
   name: string;
   /** When true, this tool may run concurrently with other parallelSafe tools in the same turn. */

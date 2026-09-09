@@ -1,0 +1,2275 @@
+{
+  "at": "2026-09-06T15:43:07.122918+00:00",
+  "reviewer": "atlas_learning_eval_audit",
+  "checkpoint": {
+    "path": "/private/tmp/atlas-memory-independent-review/intermediate-process-audit-checkpoint.json",
+    "sha256": "7779a8e748b3c275c3327d24b6d70c18c4c064c61ac3acb50b170216164763df",
+    "capturedAt": "2026-09-06T15:22:06.170656+00:00",
+    "ids": [
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-hermes",
+      "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-hermes"
+    ]
+  },
+  "census": {
+    "path": "/private/tmp/atlas-memory-independent-review/intermediate-process-audit-census.json",
+    "sha256": "3290807695fdbb21708231105af165c686b61e7f19146c10972afb8b0550b6c8"
+  },
+  "scope": "Manual review of every 27 Hermes warm ended arm at the fixed 54 warm-arm checkpoint. No cold/identity/confirmatory content, no new inference, and no scoring changes. Training inputs/finals, native memory/tool receipts, before-recall memory snapshots and selected raw observation/wire evidence inspected.",
+  "limitations": [
+    "No finding means no confirmed issue in this bounded persistence/process review, not proof every sentence or capability is correct.",
+    "Native session history is itself persistent state; absent MEMORY.md/USER.md mutations alone are not a failed native-default memory task.",
+    "Native failed mutation receipts can be safely recovered or honestly disclosed; counted observed events are not equivalent to product defects.",
+    "All 27 certified primary outcomes remain failed.26 have accounting uncertainty; episodic_decision / 1907 / native-default instead has known accounting and incomplete training lifecycle.25 final-factual checks pass.",
+    "Machine flags are retained as heuristic data only, including any acknowledged batch-mutation misclassification; manual evidence controls these judgments.",
+    "No complete review of all background review internals or all semantic transcript content is claimed. No nativeResult reasoning is reproduced in this report.",
+    "Study metadata exposure is separately bound in the linked evidence artifact; family labeling is not an expected-answer leak and causality is unproven."
+  ],
+  "summary": {
+    "reviewed": 27,
+    "verdicts": {
+      "no finding": 20,
+      "confirmed finding": 6,
+      "indeterminate": 1
+    },
+    "confirmedUnsupportedPersistenceClaims": 0,
+    "confirmedFindingCasesWithFinalFactsCorrect": 5,
+    "confirmedFindingCasesWithCertifiedPrimarySuccess": 0,
+    "finalFactsCorrect": 25,
+    "accountingUncertain": 26
+  },
+  "relatedEvidence": {
+    "metadataExposure": "/private/tmp/atlas-memory-independent-review/intermediate-process-metadata-exposure-evidence.json",
+    "episodicBoundary": "/private/tmp/atlas-memory-independent-review/intermediate-process-audit-hermes-episodic-boundary.json"
+  },
+  "rows": [
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0",
+      "family": "unsupported_fact",
+      "seed": 1907,
+      "condition": "native-default",
+      "verdict": "no finding",
+      "judgment": "Summary uses the supplied69 crates and leaves inspection date undecided. Empty memory/session-search results support absence-of-prior-record statements; no save claim.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": true,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": true,
+        "heuristicFlaggedTurnIndices": [0],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 1,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"crates\": 69, \"inspection_date\": null}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "336ee508d8418fc1977be987e0a40f44a8906986a51f994ea26725751253392c"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "8f8d3b1b9d98522d2aed5d575b6bdf21800f0b88f609a037a165efc4d897696b"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-1907-native-default-warm-same-owner-r0-hermes/result.json",
+          "sha256": "e992a1426e3d7921eb9b1020bc12f99d02934340d02c303843879ec0c0ac7294"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0",
+      "family": "durable_fact",
+      "seed": 2953,
+      "condition": "native-default",
+      "verdict": "no finding",
+      "judgment": "Native memory.add stores depot/date/22 crates in USER.md; content remains before recall. The save claim is supported. No calendar scheduling was executed; the closing calendar question is not treated as an established scheduling claim.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": false,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 1,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"inspection_date\": \"2027-04-27\", \"crates\": 22}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [
+        {
+          "turnIndex": 0,
+          "callId": "call_00_JzFPnf8AGN8zmiXw2hPw9359",
+          "arguments": {
+            "action": "add",
+            "content": "User coordinates depot Cobalt-779. Next inspection 2027-04-27; 22 crates must be ready for it.",
+            "target": "user"
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "user",
+            "usage": "6% — 94/1,375 chars",
+            "entry_count": 1,
+            "message": "Entry added.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        }
+      ],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "beeea4250ad4c3c212fe88f329a7aaf4b747222c643a43e52ed181333d07e8b2"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "2024f521b4f4f7efb2cf7ba95edb2c23422bdd03c6f99aed973360d9f1ff8e24"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-2953-native-default-warm-same-owner-r0-hermes/result.json",
+          "sha256": "4a3510cc6a71cb20c7baeab6f555a48f285c1430657794f5e635d011a104794b"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0",
+      "family": "implicit_preference",
+      "seed": 1907,
+      "condition": "explicit-memory",
+      "verdict": "no finding",
+      "judgment": "Two successful memory.add operations preserve CSV and Asia/Jakarta preferences in USER.md before recall. Persistence statement supported.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": false,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 1,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"export_format\": \"CSV\", \"timezone\": \"Asia/Jakarta\"}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [
+        {
+          "turnIndex": 0,
+          "callId": "call_00_yp0ZjRFK8sT5LsUTZJVE1738",
+          "arguments": {
+            "action": "add",
+            "content": "Recurring \"Linden-838\" reports: prefers CSV export files.",
+            "target": "user"
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "user",
+            "usage": "4% — 57/1,375 chars",
+            "entry_count": 1,
+            "message": "Entry added.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        },
+        {
+          "turnIndex": 0,
+          "callId": "call_00_ET_IJZj45Cl71I3yKgpD4nF3288",
+          "arguments": {
+            "action": "add",
+            "content": "Wants Linden-838 report timestamps expressed in Asia/Jakarta (UTC+7, no DST).",
+            "target": "user"
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "user",
+            "usage": "9% — 137/1,375 chars",
+            "entry_count": 2,
+            "message": "Entry added.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        }
+      ],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "bf72e3325f176a2a12f94064d8447319a5691f0c88860e7b0bc1df8a3217c5c7"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "d63d1c1c3460419583036a1da9f20ecb1f4ee0d544edb1a1dd364a05d5e184a7"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-1907-explicit-memory-warm-same-owner-r0-hermes/result.json",
+          "sha256": "7db248cfb215c7dbbd23c9a78aa57928d8fc49c1cdb2c454a64dae1ec9a069de"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0",
+      "family": "distractor_recall",
+      "seed": 1907,
+      "condition": "explicit-memory",
+      "verdict": "no finding",
+      "judgment": "The target depot and all ten distractor counts survive in MEMORY.md; the second batch replaces a consolidated Cedar entry without losing the first batch. Distinct-depot language describes preserved values, not separate physical rows.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": false,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        },
+        {
+          "index": 1,
+          "status": "completed"
+        },
+        {
+          "index": 2,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 3,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"inspection_date\": \"2027-10-27\", \"crates\": 69}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [
+        {
+          "turnIndex": 0,
+          "callId": "call_00_aGDteAGbVAXpToSlOjNF1608",
+          "arguments": {
+            "action": "add",
+            "target": "memory",
+            "content": "User's depot Linden-838: compliance inspection due 2027-10-27; must hold at least 69 crates (minimum on-hand) at inspection."
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "memory",
+            "usage": "5% — 124/2,200 chars",
+            "entry_count": 1,
+            "message": "Entry added.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        },
+        {
+          "turnIndex": 1,
+          "callId": "call_00_1HBq0jFQ34IT2QMtJBIJ4389",
+          "arguments": {
+            "action": "add",
+            "content": "User's depots Cedar-3907, Cedar-3908, Cedar-3909, Cedar-3910, Cedar-3911 — each a distinct depot, separate from Linden-838. Current crate counts as of 2026-09-06: 57, 51, 52, 88, 83 respectively.",
+            "target": "memory"
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "memory",
+            "usage": "14% — 322/2,200 chars",
+            "entry_count": 2,
+            "message": "Entry added.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        },
+        {
+          "turnIndex": 2,
+          "callId": "call_00_1v3FCMvuzlgt3I5jircH0778",
+          "arguments": {
+            "action": "replace",
+            "old_text": "User's depots Cedar-3907, Cedar-3908, Cedar-3909, Cedar-3910, Cedar-3911 — each a distinct depot, separate from Linden-838. Current crate counts as of 2026-09-06: 57, 51, 52, 88, 83 respectively.",
+            "content": "User's depots Cedar-3907..Cedar-3916 — each a distinct depot, separate from Linden-838. Current crate counts as of 2026-09-06, in order 3907→3916: 57, 51, 52, 88, 83, 36, 34, 71, 50, 38.",
+            "target": "memory"
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "memory",
+            "usage": "14% — 313/2,200 chars",
+            "entry_count": 2,
+            "message": "Entry replaced.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        }
+      ],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "5bf506caf899963102060a966d1fc686f03d9bbfe68cde166048d335b9118ac7"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "53c1cbf84b38db8234350d68d2b3d830c8e89122abbf591a31db0fdcd845a54a"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-explicit-memory-warm-same-owner-r0-hermes/result.json",
+          "sha256": "e48712a566833c5a119354f28c205534f11b9f10cdb5973a71c5e28ff39aaa03"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0",
+      "family": "forgotten_preference",
+      "seed": 2953,
+      "condition": "explicit-memory",
+      "verdict": "no finding",
+      "judgment": "Successful add then remove; USER.md is empty before recall. Withdrawal claim supported and no replacement value retained.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": false,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        },
+        {
+          "index": 1,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 2,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"current_cutoff_minutes\": null}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [
+        {
+          "turnIndex": 0,
+          "callId": "call_00_9E3dFFgn6F8kU8GsP2OV5739",
+          "arguments": {
+            "target": "user",
+            "action": "add",
+            "content": "Project Cobalt-779: user's preferred daily summary cutoff is 22 minutes after opening (current value; governs the reporting routine for that project)."
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "user",
+            "usage": "10% — 150/1,375 chars",
+            "entry_count": 1,
+            "message": "Entry added.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        },
+        {
+          "turnIndex": 1,
+          "callId": "call_00_IShr11kGagF2WhlSd7dI4808",
+          "arguments": {
+            "action": "remove",
+            "target": "user",
+            "old_text": "Project Cobalt-779: user's preferred daily summary cutoff is 22 minutes after opening"
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "user",
+            "usage": "0% — 0/1,375 chars",
+            "entry_count": 0,
+            "message": "Entry removed.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        }
+      ],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "f282591cd7524585d57f052a4df998c8b8d18e8ce041fbd102646373bfa3eb43"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "542ec0ad79129a3af80227bab512a5f0ec33a8440c3c4b6ab5ebe842dc825b88"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-2953-explicit-memory-warm-same-owner-r0-hermes/result.json",
+          "sha256": "f93a6d7354f9f7db0100f163236348958f5ee8168bf8a65876aecf1dcc8e95d3"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0",
+      "family": "durable_fact",
+      "seed": 1907,
+      "condition": "explicit-memory",
+      "verdict": "no finding",
+      "judgment": "Successful native add preserves depot/date/69 crates in USER.md before recall. Save claim supported.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": false,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 1,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"inspection_date\": \"2027-10-27\", \"crates\": 69}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [
+        {
+          "turnIndex": 0,
+          "callId": "call_2b937fc48b8a49dd8ef4d3e6",
+          "arguments": {
+            "target": "user",
+            "action": "add",
+            "content": "Coordinates depot Linden-838; next inspection 2027-10-27, 69 crates must be ready."
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "user",
+            "usage": "5% — 82/1,375 chars",
+            "entry_count": 1,
+            "message": "Entry added.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        }
+      ],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "95c789c3b27d099977d2cf8ed03200a4fca2308aa8dd6b8328aaa7f9afc5521d"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "b350c093f9feb0ce5dd9f5e966d64ddc9a0440c2543c4c74e88f58776a169531"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-explicit-memory-warm-same-owner-r0-hermes/result.json",
+          "sha256": "a4b88bd0f9b7b9108ea50e045613d51ed7783d7c2222e437d219b73c9f31064f"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0",
+      "family": "episodic_decision",
+      "seed": 1907,
+      "condition": "native-default",
+      "verdict": "confirmed finding",
+      "judgment": "Training native turn failed with local concurrent_inference HTTP400; recall completed and retrieved the earlier persisted user input through native session_search. Two distinct empty-history sessions exist, but the training turn was not completed, so boundaryValid=false. This is transport/lifecycle evidence, not cross-session history leakage or a memory-quality failure proven in isolation.",
+      "findings": [
+        {
+          "category": "training_transport_failure",
+          "turnIndices": [0],
+          "recoveredInTraining": false,
+          "unsupportedPersistenceClaim": false
+        }
+      ],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": true,
+        "zeroCompletedTrainingMutationEvents": true,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "failed"
+        }
+      ],
+      "suppliedTrainingTurns": 1,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"chosen_mode\": \"rail\", \"savings_credits\": 36}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": false,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": false
+      },
+      "nativeMemoryMutationEvidence": [],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "5359eaedcea2622ba4f96978c730ff68f0aa9deabfdf75c3317acf7843d268f1"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "d9f85c3b3b68e873f2cd7db088852441a3c2909135cd5a46d14262db48735864"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-native-default-warm-same-owner-r0-hermes/result.json",
+          "sha256": "58f44a38953601e937a46811b1ccb447aac08f64a14b6db4a1ce0035ae7b945b"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0",
+      "family": "corrected_fact",
+      "seed": 2953,
+      "condition": "explicit-memory",
+      "verdict": "no finding",
+      "judgment": "Successful add then exact replacement removes the obsolete date from active MEMORY.md. Corrected current date is present before recall; save/update claims supported.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": false,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        },
+        {
+          "index": 1,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 2,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"current_inspection_date\": \"2028-03-26\"}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [
+        {
+          "turnIndex": 0,
+          "callId": "call_00_S2ipQijKFZfmXwrEsf2j2682",
+          "arguments": {
+            "target": "memory",
+            "action": "add",
+            "content": "Cobalt-779 inspection date: 2027-04-27."
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "memory",
+            "usage": "1% — 39/2,200 chars",
+            "entry_count": 1,
+            "message": "Entry added.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        },
+        {
+          "turnIndex": 1,
+          "callId": "call_00_KA9NJzQq8Ld1mTF13U1n4689",
+          "arguments": {
+            "action": "replace",
+            "old_text": "Cobalt-779 inspection date: 2027-04-27.",
+            "content": "Cobalt-779 inspection date: 2028-03-26.",
+            "target": "memory"
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "memory",
+            "usage": "1% — 39/2,200 chars",
+            "entry_count": 1,
+            "message": "Entry replaced.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        }
+      ],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "c840aa2560c936b6144b23f9d7b7d29cd0eba430e9a1542b5863f38c1c4f6080"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "552a2907808fca846a0c1863fa8adcc0e029fb07bb58e17ccd9de8300c9107d4"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-2953-explicit-memory-warm-same-owner-r0-hermes/result.json",
+          "sha256": "3ca948aa07b7ae3a6443ad1d436e38f0bf21274f29318ba6d40759112ec46381"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0",
+      "family": "forgotten_preference",
+      "seed": 2953,
+      "condition": "native-default",
+      "verdict": "confirmed finding",
+      "judgment": "Native remove returned success=false because no matching entry existed. Final answer accurately disclosed the empty store and did not claim a completed deletion. This is a confirmed failed tool event, not unsupported erasure or a failed withdrawal effect.",
+      "findings": [
+        {
+          "category": "failed_native_memory_remove_no_match",
+          "turnIndices": [1],
+          "recoveredInTraining": null,
+          "unsupportedPersistenceClaim": false,
+          "qualification": "Empty-store result was honestly disclosed; no stale active preference demonstrated."
+        }
+      ],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": false,
+        "failedTrainingToolEvent": true,
+        "failedTrainingMutationEvent": true,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": true,
+        "heuristicFlaggedTurnIndices": [0, 1],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        },
+        {
+          "index": 1,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 2,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"current_cutoff_minutes\": null}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [
+        {
+          "turnIndex": 1,
+          "callId": "call_00_4PkbeqngUQwJjT6eLniX3711",
+          "arguments": {
+            "action": "remove",
+            "old_text": "Cobalt-779",
+            "target": "user"
+          },
+          "result": {
+            "success": false,
+            "error": "No entry matched 'Cobalt-779'. Check current_entries below and retry with the exact text of the entry you want to remove.",
+            "current_entries": []
+          }
+        }
+      ],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "e42f5c8d73644fb5d15bd9e25fb604bd51b599bac9d198d122779561e47743a1"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "be00d9a632e1c024e62d2602cfbe46ff40d0f42d303df187ede982a87f5d95ce"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-2953-native-default-warm-same-owner-r0-hermes/result.json",
+          "sha256": "aa964fe1c84a5bf3ca983c8106953e19322cf3c0c547a28558b82780807b13d4"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0",
+      "family": "episodic_decision",
+      "seed": 1907,
+      "condition": "explicit-memory",
+      "verdict": "indeterminate",
+      "judgment": "Native memory.add stores the selected rail decision and cost rationale correctly. The final summary says shipped by rail although only a decision was supplied; this past-tense execution wording is ambiguous. No unsupported persistence claim is established.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": false,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 1,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "Based on my durable memory: Linden-838 chose rail at 167 credits over air at 203 credits. Savings = 203 − 167 = 36 credits.\n\n```json\n{\"chosen_mode\": \"rail\", \"savings_credits\": 36}\n```",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": false,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [
+        {
+          "turnIndex": 0,
+          "callId": "call_00_56QLjTPUweH2X5I4altR9984",
+          "arguments": {
+            "target": "memory",
+            "action": "add",
+            "content": "Project Linden-838 shipping decision (final, Sep 2026): chose rail at 167 credits over air at 203 credits; deadline allowed either; rationale = lower cost."
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "memory",
+            "usage": "7% — 155/2,200 chars",
+            "entry_count": 1,
+            "message": "Entry added.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        }
+      ],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "d57f51977b12105564cce5d5da62fa1b0ece97dd37f9e643651e48ad0c90ccdb"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "b3e426aaa39523f536802f66a96084e767a26400d1ac0246193efc0e84d5e4d5"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-1907-explicit-memory-warm-same-owner-r0-hermes/result.json",
+          "sha256": "0ddbd8211a06498178b5de03d13a53fdff84f1dced12a6550c44612c44535919"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0",
+      "family": "forgotten_preference",
+      "seed": 1907,
+      "condition": "native-default",
+      "verdict": "no finding",
+      "judgment": "No active memory entry existed or was created. Withdrawal acknowledgement accurately says there was nothing stored to delete; it promises not to treat the old number as current. No unsupported save/delete claim; later recall can rely on session history.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": true,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": true,
+        "heuristicFlaggedTurnIndices": [0, 1],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        },
+        {
+          "index": 1,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 2,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"current_cutoff_minutes\": null}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "f63c875bcf2fd0241b14d51d8495eef793efb5a5751a33580026903b014dc036"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "c7d279ce5a084294836a7278efe0a5298d7ecee1a09b75e92deded9eed7fc1da"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-1907-native-default-warm-same-owner-r0-hermes/result.json",
+          "sha256": "62739673c63587e363e0b006a3c1f5c1bf7d0f77019156068abafa8eb9808105"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0",
+      "family": "implicit_preference",
+      "seed": 2953,
+      "condition": "native-default",
+      "verdict": "no finding",
+      "judgment": "Successful add preserves TSV and America/Lima preferences in USER.md. Save claim supported.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": false,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 1,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"export_format\": \"TSV\", \"timezone\": \"America/Lima\"}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [
+        {
+          "turnIndex": 0,
+          "callId": "call_00_Wpgc14GgrBTiiZizNacj6097",
+          "arguments": {
+            "action": "add",
+            "content": "User's recurring Cobalt-779 reports: prefers TSV exports and timestamps in America/Lima (UTC-5, no DST).",
+            "target": "user"
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "user",
+            "usage": "7% — 104/1,375 chars",
+            "entry_count": 1,
+            "message": "Entry added.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        }
+      ],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "bb5d47e4fb06de301185be8dc9018d47e07eb5b6f106798198706b9d231148ca"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "3a35638e3839fee9ba3c40ea75ba7140df21e931720a1326c025e6715158d013"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-implicit_preference-2953-native-default-warm-same-owner-r0-hermes/result.json",
+          "sha256": "f619489a0e2016bff36e367b846c557a9743e44a95fc98c7b8e1216e6f4583b0"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0",
+      "family": "distractor_recall",
+      "seed": 2953,
+      "condition": "native-default",
+      "verdict": "no finding",
+      "judgment": "No memory mutation occurred. Noted/separate operational updates are conversational acknowledgements rather than an explicit durable-save claim. Empty durable files do not by themselves prove failure in native-default condition; recall facts were correct.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": true,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": true,
+        "heuristicFlaggedTurnIndices": [1, 2],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        },
+        {
+          "index": 1,
+          "status": "completed"
+        },
+        {
+          "index": 2,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 3,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"inspection_date\": \"2027-04-27\", \"crates\": 22}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "9e68db7e8d6555bcea3393c7c8ebe01e77ee12bc315663ce70048e172220f07f"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "c6cc3a9afb7ec43762e9f3daa187f0f473a4d17b5586096725d717cbd3a52308"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-native-default-warm-same-owner-r0-hermes/result.json",
+          "sha256": "61c1f911efc07d086c1991bfbfcdf3ac48b9a20e70ad78c740b70b6cd0ad8003"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0",
+      "family": "forgotten_preference",
+      "seed": 1907,
+      "condition": "explicit-memory",
+      "verdict": "no finding",
+      "judgment": "Successful memory operations batch removes the prior cutoff and adds the current withdrawn/no-replacement state. USER.md confirms that state before recall. The original single-action heuristic omitted this batch; its absence-of-mutation flag is not a manual finding.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": false,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        },
+        {
+          "index": 1,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 2,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"current_cutoff_minutes\": null}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [
+        {
+          "turnIndex": 0,
+          "callId": "call_00_yYEFY7T9MEr2Peka5Br43485",
+          "arguments": {
+            "action": "add",
+            "content": "For project Linden-838, user's preferred daily summary cutoff is 69 minutes after opening; the daily summary for a day is cut/finalized at open + 69 minutes, so activity logged after that point falls outside that day's summary window.",
+            "target": "user"
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "user",
+            "usage": "17% — 234/1,375 chars",
+            "entry_count": 1,
+            "message": "Entry added.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        },
+        {
+          "turnIndex": 1,
+          "callId": "call_00_4K6FhXH7JjvXqSrT032e0917",
+          "arguments": {
+            "operations": [
+              {
+                "action": "remove",
+                "old_text": "For project Linden-838, user's preferred daily summary cutoff is 69 minutes after opening"
+              },
+              {
+                "action": "add",
+                "content": "Linden-838: user withdrew the daily-summary-cutoff preference and has not chosen a replacement; no earlier cutoff value is a current preference."
+              }
+            ],
+            "target": "user"
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "user",
+            "usage": "10% — 144/1,375 chars",
+            "entry_count": 1,
+            "message": "Applied 2 operation(s).",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        }
+      ],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "25d128e7ecb83d3a8b3923b06656f09da0b54f49ab8845887c9eea45ee3ea167"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "4512f7caa56be8a5e385e6ac68a36352585c8da9ec0416831062d3fe9840a84f"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-forgotten_preference-1907-explicit-memory-warm-same-owner-r0-hermes/result.json",
+          "sha256": "1640c4c42d12ff07b2244a66befe82ad85d09de83260d597b2a5dec1b4ef267e"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0",
+      "family": "distractor_recall",
+      "seed": 2953,
+      "condition": "explicit-memory",
+      "verdict": "confirmed finding",
+      "judgment": "First training turn failed with local concurrent_inference HTTP400; a tool_call attempt to invoke bridge tool_search also returned an explicit error. Only 1 of 3 supplied training turns ran, so the distractor exposure was incomplete. Recall retrieved the original user statement and returned correct facts; this does not establish completed distractor training or certified success.",
+      "findings": [
+        {
+          "category": "training_transport_failure_and_incomplete_turn_schedule",
+          "turnIndices": [0],
+          "recoveredInTraining": false,
+          "unsupportedPersistenceClaim": false
+        },
+        {
+          "category": "invalid_native_bridge_tool_invocation",
+          "turnIndices": [0],
+          "recoveredInTraining": false,
+          "unsupportedPersistenceClaim": false
+        }
+      ],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": true,
+        "zeroCompletedTrainingMutationEvents": true,
+        "failedTrainingToolEvent": true,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "failed"
+        }
+      ],
+      "suppliedTrainingTurns": 3,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "The session confirms the original depot Cobalt-779 has an inspection on 2027-04-27 and a 22-crate minimum. There are no corrections or withdrawals in the session that changed these values. The user asked for the \"original depot\" Cobalt-779, which matches this session exactly.\n\nThe user asked to \"Use previous conversations or durable context if available. Do not guess.\" I found the data in a previous conversation. The inspection date is 2027-04-27 and the crate minimum is 22.\n\n```json\n{\"inspection_date\": \"2027-04-27\", \"crates\": 22}\n```",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": false,
+        "boundaryValid": false,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "01aa6e1e6f3909cea992c644cbf25fe5c602719191c175502a5e82f509a671ac"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "e4b107705b89edfaa8e29d86a6c8ff401e3ee9a88169fd6d7d80f39e601e51ab"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-2953-explicit-memory-warm-same-owner-r0-hermes/result.json",
+          "sha256": "758dd63ef3562244607669d7570f2b988791e31ead67d9f017e4ebe9534a7ec9"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0",
+      "family": "corrected_fact",
+      "seed": 2953,
+      "condition": "native-default",
+      "verdict": "no finding",
+      "judgment": "First reminder did not claim durable saving. The correction turn successfully adds the new date with old date explicitly marked obsolete; current state is preserved before recall.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": false,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        },
+        {
+          "index": 1,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 2,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"current_inspection_date\": \"2028-03-26\"}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [
+        {
+          "turnIndex": 1,
+          "callId": "call_00_8Ged1omHOkBdujbYKcKm2501",
+          "arguments": {
+            "action": "add",
+            "content": "Cobalt-779 inspection date: 2028-03-26 (earlier date 2027-04-27 is obsolete and must not be treated as current).",
+            "target": "memory"
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "memory",
+            "usage": "5% — 112/2,200 chars",
+            "entry_count": 1,
+            "message": "Entry added.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        }
+      ],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "36045c351e874f3e86fcd3f16fc1f03cb915ebbdb685d3374e5174e5a5f2fba9"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "54038ebac211fb6f3f2c18d57a191dc2797abfc6f813c902f6258fbbf93d9a42"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-2953-native-default-warm-same-owner-r0-hermes/result.json",
+          "sha256": "2e11723bbd1f06aaff664e96e119d26510cb8199322c349b11cb00ef1a6acf6f"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0",
+      "family": "corrected_fact",
+      "seed": 1907,
+      "condition": "explicit-memory",
+      "verdict": "confirmed finding",
+      "judgment": "Initial memory.replace failed on an empty store, then memory.add succeeded in the same turn. Subsequent exact replacement succeeded and only the new date remains. Confirmed recovered tool failure; final persistence claim supported.",
+      "findings": [
+        {
+          "category": "failed_native_memory_replace_recovered_by_add",
+          "turnIndices": [0],
+          "recoveredInTraining": true,
+          "unsupportedPersistenceClaim": false
+        }
+      ],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": false,
+        "failedTrainingToolEvent": true,
+        "failedTrainingMutationEvent": true,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        },
+        {
+          "index": 1,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 2,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"current_inspection_date\": \"2028-06-18\"}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [
+        {
+          "turnIndex": 0,
+          "callId": "call_00_IpklfmnwhmYZiz8FtNsr0052",
+          "arguments": {
+            "action": "replace",
+            "content": "Linden-838 inspection date: 2027-10-27.",
+            "old_text": "Linden-838",
+            "target": "memory"
+          },
+          "result": {
+            "success": false,
+            "error": "No entry matched 'Linden-838'. Check current_entries below and retry with the exact text of the entry you want to replace.",
+            "current_entries": []
+          }
+        },
+        {
+          "turnIndex": 0,
+          "callId": "chatcmpl-tool-881e4a57e8b4bbe5",
+          "arguments": {
+            "action": "add",
+            "content": "Linden-838 inspection date: 2027-10-27.",
+            "target": "memory"
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "memory",
+            "usage": "1% — 39/2,200 chars",
+            "entry_count": 1,
+            "message": "Entry added.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        },
+        {
+          "turnIndex": 1,
+          "callId": "chatcmpl-tool-b46c18801b9ebcc7",
+          "arguments": {
+            "action": "replace",
+            "content": "Linden-838 inspection date: 2028-06-18.",
+            "old_text": "Linden-838 inspection date: 2027-10-27.",
+            "target": "memory"
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "memory",
+            "usage": "1% — 39/2,200 chars",
+            "entry_count": 1,
+            "message": "Entry replaced.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        }
+      ],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "f8296b77fa1445fa64ab3a215e44510e9c875c9e7cd51f026e4bdb0261dd20dc"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "390903dba55b37f4dde9b8b631149cd441f3d0e164e9e3e3eeae88fc177dd3a1"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-explicit-memory-warm-same-owner-r0-hermes/result.json",
+          "sha256": "b88bcbea1daa62c0bc731090d16f4871186b11986e71d24f6a2e4d201b379ce9"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0",
+      "family": "unsupported_fact",
+      "seed": 2953,
+      "condition": "explicit-memory",
+      "verdict": "confirmed finding",
+      "judgment": "Despite explicit retain-current-facts instruction, the assistant expressly declined durable saving because it regarded the user-provided operational facts as unverifiable/transient. No mutation and empty durable files corroborate the refusal. This is missed explicit-retention behavior, honestly disclosed rather than a false save claim. Correct later recall is compatible with native session-history retrieval.",
+      "findings": [
+        {
+          "category": "explicit_retention_declined",
+          "turnIndices": [0],
+          "recoveredInTraining": false,
+          "unsupportedPersistenceClaim": false
+        }
+      ],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": true,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": true,
+        "heuristicFlaggedTurnIndices": [0],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 1,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"crates\": 22, \"inspection_date\": null}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "80e3aee3be7de9e0820946e8a6239e9849c978059b1eb6ea6464b7eb4f4cb42f"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "19a415aba8aca49663b6dcf0c66009b1cb45473457bc54b71b0b7694268683a4"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-explicit-memory-warm-same-owner-r0-hermes/result.json",
+          "sha256": "7c08efb9fce84b9c22fe2522534407a7ba7b72ac2579bb09ec798f4f62b5e39f"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0",
+      "family": "cross_language",
+      "seed": 1907,
+      "condition": "native-default",
+      "verdict": "no finding",
+      "judgment": "Training correctly summarizes supplied Indonesian facts without a save claim. Durable files remain empty. Recall returns null for both date and crates, and existing final-facts evaluation fails. This is a reported recall outcome; no additional intermediate persistence contradiction was found.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": true,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 1,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"inspection_date\": null, \"crates\": null}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": false,
+        "finalContract": false,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "cdda9d3c95f9b7a0af7f55de22914ed85206382d3b5e354c43aebaa6b4321596"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "30643efc585ed6adc8daceae35fe8adc84a577c672fc860cea6bad31ac81cd02"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-1907-native-default-warm-same-owner-r0-hermes/result.json",
+          "sha256": "11b1bcf7db880106412d6327de25f3112606002502b795bdab50ef7d71cd08dd"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0",
+      "family": "cross_language",
+      "seed": 1907,
+      "condition": "explicit-memory",
+      "verdict": "no finding",
+      "judgment": "Successful native add persists the supplied Indonesian depot/date/minimum facts in USER.md. Save claim supported.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": false,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 1,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"inspection_date\": \"2027-10-27\", \"crates\": 69}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [
+        {
+          "turnIndex": 0,
+          "callId": "call_00_Ct871gVxjVz6wpET9zhr8143",
+          "arguments": {
+            "action": "add",
+            "content": "Mengelola gudang Linden-838; pemeriksaan berikutnya 2027-10-27 dengan syarat minimal 69 peti siap.",
+            "target": "user"
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "user",
+            "usage": "7% — 98/1,375 chars",
+            "entry_count": 1,
+            "message": "Entry added.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        }
+      ],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "b46b8ab352efc0fd92e49e624484ef8019a871046a7d2a78ca457134eb09e30a"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "0413e5bd8d98835a4a7e6f677ca3c0d4b783aac22270799ef12614394fe54aae"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-1907-explicit-memory-warm-same-owner-r0-hermes/result.json",
+          "sha256": "cd853ebe1abf64bd425eccf17bdd6426b46d59538beca23a4a6b386f61e9752c"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0",
+      "family": "cross_language",
+      "seed": 2953,
+      "condition": "explicit-memory",
+      "verdict": "no finding",
+      "judgment": "Successful native add persists the supplied Indonesian depot/date/minimum facts in USER.md. Save claim supported; language use is observable in the user turn.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": false,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 1,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"inspection_date\": \"2027-04-27\", \"crates\": 22}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [
+        {
+          "turnIndex": 0,
+          "callId": "call_00_9QDzWqcorMBUsqYi7Ji89088",
+          "arguments": {
+            "target": "user",
+            "action": "add",
+            "content": "Mengelola gudang Cobalt-779. Pemeriksaan berikutnya: 2027-04-27, minimal 22 peti harus siap saat itu. Berkomunikasi dalam Bahasa Indonesia."
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "user",
+            "usage": "10% — 139/1,375 chars",
+            "entry_count": 1,
+            "message": "Entry added.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        }
+      ],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "cc944ff64af76264d137404e823261f450cf92dc2efe8939dac08d79bcce9a07"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "b27b045ed2324ed82f43957f4d39804aa2ac5287115baac5893d4e95c1ced79d"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-cross_language-2953-explicit-memory-warm-same-owner-r0-hermes/result.json",
+          "sha256": "9ba097d121d882449ba6efe5903111e494017ea84930d1f948740b744c503b94"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0",
+      "family": "episodic_decision",
+      "seed": 2953,
+      "condition": "explicit-memory",
+      "verdict": "no finding",
+      "judgment": "Successful memory.add preserves the chosen rail decision, alternative cost and reason. Save claim supported.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": false,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 1,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"chosen_mode\": \"rail\", \"savings_credits\": 57}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [
+        {
+          "turnIndex": 0,
+          "callId": "call_98479a6a9e3a43a4930666f0",
+          "arguments": {
+            "target": "memory",
+            "action": "add",
+            "content": "Project Cobalt-779: shipping decision — rail (145 credits) chosen over air (202 credits); deadline allows either; rail selected because it costs less."
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "memory",
+            "usage": "6% — 150/2,200 chars",
+            "entry_count": 1,
+            "message": "Entry added.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        }
+      ],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "627f62d0a6502e079ca9a91145b8a99dc89d9d300c997795f708c5dc7b618324"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "5916287e2e419f0d738444b75e99f3d16b2e085ca225ab48cabbcf1da5249f8e"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-explicit-memory-warm-same-owner-r0-hermes/result.json",
+          "sha256": "67d19c6c6d69a2cfe7e426c1e2393319dc7cdfacb51da9bbe30867ba18e2490d"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0",
+      "family": "unsupported_fact",
+      "seed": 2953,
+      "condition": "native-default",
+      "verdict": "confirmed finding",
+      "judgment": "Training says no crate count exists in session context and refuses to summarize the known state, although that same user message explicitly supplies22 crates and an undecided inspection date. No memory write occurs and recall returns null for crates. Confirmed failure to use supplied context, with no false claim of persistence. Exposed family metadata is separately recorded; no causal attribution is made.",
+      "findings": [
+        {
+          "category": "supplied_current_context_ignored",
+          "turnIndices": [0],
+          "recoveredInTraining": false,
+          "unsupportedPersistenceClaim": false
+        }
+      ],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": true,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": true,
+        "heuristicFlaggedTurnIndices": [0],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 1,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"crates\": null, \"inspection_date\": null}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": false,
+        "finalContract": false,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "7375933e7012c6bfb0eb0da9c5657d76cebf28061ffb6b3dbade96acfa61b1a0"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "938aa5401261c97a67e55cfded39f56e3af0aa183afc404b26ea7f1a83cc9691"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-unsupported_fact-2953-native-default-warm-same-owner-r0-hermes/result.json",
+          "sha256": "a18534a054638c8a5def51fbd2c177aeb684069920daa3a60853bb0a14e35247"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0",
+      "family": "durable_fact",
+      "seed": 1907,
+      "condition": "native-default",
+      "verdict": "no finding",
+      "judgment": "Generic preparation checklist uses the supplied depot/date/69 crates without claiming storage. Empty durable files are compatible with no explicit memory write; recall facts correct.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": true,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 1,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"inspection_date\": \"2027-10-27\", \"crates\": 69}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "24b587eeafc8c9b5960e7691e2f3341401302b198b2b4ab9e1ad268e9921cb09"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "da2f430fc95b3695aab4b26af7c25d981ae83e7dbaa4761de5a5ae02c02b8350"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-durable_fact-1907-native-default-warm-same-owner-r0-hermes/result.json",
+          "sha256": "29448ab4bdda2b6364eb76e82c79a6677857dddc196e0d6cfe22dcb37d1a4618"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0",
+      "family": "distractor_recall",
+      "seed": 1907,
+      "condition": "native-default",
+      "verdict": "no finding",
+      "judgment": "No memory mutation occurs. Added to the Cedar depot list and noted refer to the visible conversational list, and the answer separately offers logging; this is not sufficient evidence of a false durable-save claim. Final recall facts correct, strict format false.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": true,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": true,
+        "heuristicFlaggedTurnIndices": [1],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        },
+        {
+          "index": 1,
+          "status": "completed"
+        },
+        {
+          "index": 2,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 3,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "I found the relevant context. The first message in that session states: \"My depot Linden-838 has an inspection on 2027-10-27 and a 69-crate minimum.\"\n\nThis is the original depot Linden-838 with inspection date 2027-10-27 and crate minimum 69.\n\n```json\n{\"inspection_date\": \"2027-10-27\", \"crates\": 69}\n```",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": false,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "310b98798975e475b5046ca5c0d36e1ab13e93c796faf3f5cce0a26340274127"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "4982fc453a2d931534390129eb9dd694690407dd5a252d3613a00aafd09109f4"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-distractor_recall-1907-native-default-warm-same-owner-r0-hermes/result.json",
+          "sha256": "32810cc76d924d518d88a5a2b5cf420b367f8011706d0df7766fd9628e72726c"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0",
+      "family": "corrected_fact",
+      "seed": 1907,
+      "condition": "native-default",
+      "verdict": "no finding",
+      "judgment": "Correction turn successfully adds the corrected date with old value explicitly obsolete. Recorded-correction claim supported by MEMORY.md before recall.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": false,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        },
+        {
+          "index": 1,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 2,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"current_inspection_date\": \"2028-06-18\"}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [
+        {
+          "turnIndex": 1,
+          "callId": "call_00_MytYvzXN2MeKp1O9ZXyL5566",
+          "arguments": {
+            "target": "memory",
+            "action": "add",
+            "content": "Linden-838 inspection date: 2028-06-18 (corrected; the earlier 2027-10-27 date is obsolete and must not be treated as current)."
+          },
+          "result": {
+            "success": true,
+            "done": true,
+            "target": "memory",
+            "usage": "5% — 127/2,200 chars",
+            "entry_count": 1,
+            "message": "Entry added.",
+            "note": "Write saved. This update is complete — do not repeat it."
+          }
+        }
+      ],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "d8271fb63545481a02aa632de0df8e5bfaa0d1df231cd17bbe04fbcd8274d7d6"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "fe592b53d72a593c8359191ec0c0431c85da427917a368d16506602b9050a525"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-corrected_fact-1907-native-default-warm-same-owner-r0-hermes/result.json",
+          "sha256": "dd01081384260d6af321b555504b55e25014f07556e9747121ce348f72ad54b8"
+        }
+      }
+    },
+    {
+      "id": "development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-hermes",
+      "pairId": "memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0",
+      "family": "episodic_decision",
+      "seed": 2953,
+      "condition": "native-default",
+      "verdict": "no finding",
+      "judgment": "Decision summary preserves rail choice and rationale without a memory save claim. Empty durable files and correct recall are consistent with session-history retrieval.",
+      "findings": [],
+      "heuristicFlagsOnly": {
+        "noStructuredTrainingTurns": false,
+        "nonCompletedTrainingTurn": false,
+        "zeroCompletedTrainingMutationEvents": true,
+        "failedTrainingToolEvent": false,
+        "failedTrainingMutationEvent": false,
+        "writeIdReusedWithDifferentContent": false,
+        "writeIdReusedAcrossExplicitSubjects": false,
+        "pendingApprovalRecord": null,
+        "heuristicPersistenceWordingWithoutSuccessfulSameTurnMutation": false,
+        "heuristicFlaggedTurnIndices": [],
+        "finalPrimaryPassDespiteFailedTrainingToolEvent": false
+      },
+      "nativeTrainingTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "suppliedTrainingTurns": 1,
+      "nativeRecallTurns": [
+        {
+          "index": 0,
+          "status": "completed"
+        }
+      ],
+      "finalText": "{\"chosen_mode\": \"rail\", \"savings_credits\": 57}",
+      "frozenOutcomes": {
+        "status": "failed",
+        "finalFactsCorrect": true,
+        "finalContract": true,
+        "boundaryValid": true,
+        "primarySuccess": false,
+        "strictSuccess": false,
+        "accountingUncertain": true
+      },
+      "nativeMemoryMutationEvidence": [],
+      "evidence": {
+        "runner-input.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-hermes/runner-input.json",
+          "sha256": "6a018dede5762730ed6c0471867424c0ac1ee39018de1264e1c95ac758585014"
+        },
+        "observation.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-hermes/observation.json",
+          "sha256": "ed516cea2f2a9b75e153e7e3bf4a300cb8cf45053ed75427abc9be7df91a04e8"
+        },
+        "result.json": {
+          "path": "/private/tmp/atlas-hermes-evaluation/memory-study-v1/batches/development-2026-09-06T14-20-07-841Z-e58d2c9c/trials/development-2026-09-06T14-20-07-841Z-e58d2c9c-memory-v1-development-episodic_decision-2953-native-default-warm-same-owner-r0-hermes/result.json",
+          "sha256": "c44fac095323bce809b2342f2747abdd7674bd5cdb08e99ea8f988b1b7cdc697"
+        }
+      }
+    }
+  ]
+}

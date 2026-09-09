@@ -84,14 +84,14 @@ export class SessionStore {
   }
 
   getHotSession<T>(jid: string): T | undefined {
-    const key = normalizeWhatsAppUserJid(jid);
+    const key = normalizeSessionStoreKey(jid);
     return (this.hotSessions.get(key) ?? this.hotSessions.get(jid)) as
       | T
       | undefined;
   }
 
   setHotSession(jid: string, session: unknown): void {
-    const key = normalizeWhatsAppUserJid(jid);
+    const key = normalizeSessionStoreKey(jid);
     this.hotSessions.set(key, session);
   }
 
@@ -114,7 +114,7 @@ export class SessionStore {
         continue;
       }
 
-      delete this.map[key];
+      this.delete(key);
       deletedSessionKeys.add(normalizeSessionStoreKey(key));
     }
 

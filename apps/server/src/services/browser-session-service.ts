@@ -1,6 +1,7 @@
 import { lookup as dnsLookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import { nanoid, type ToolArtifact } from "@atlas/core";
+import type { ToolArtifactPublisher } from "@atlas/core/artifact-publication";
 import type {
   BrowserInput,
   BrowserPageSnapshot,
@@ -581,6 +582,7 @@ export class BrowserSessionService {
   async executeBrowserAction(
     input: BrowserInput,
     options: {
+      artifactPublisher?: ToolArtifactPublisher;
       orgId?: string;
       profileId?: string;
       runId?: string;
@@ -761,7 +763,11 @@ export class BrowserSessionService {
             options.profileId,
             filename,
             buffer,
-            { mimeType: "image/png", sessionId: options.sessionId }
+            {
+              artifactPublisher: options.artifactPublisher,
+              mimeType: "image/png",
+              sessionId: options.sessionId,
+            }
           );
           artifacts.push(artifact);
         }
@@ -809,7 +815,10 @@ export class BrowserSessionService {
               options.profileId,
               downloadFilename,
               buffer,
-              { sessionId: options.sessionId }
+              {
+                artifactPublisher: options.artifactPublisher,
+                sessionId: options.sessionId,
+              }
             );
             artifacts.push(artifact);
           }

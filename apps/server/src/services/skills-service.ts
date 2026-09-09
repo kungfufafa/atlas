@@ -59,6 +59,7 @@ import {
   type ProfileChangeMeta,
 } from "./profile-change-history";
 import { withProfileSkillMutationLock } from "./skill-mutation-lock";
+import { createSkillToolRuntime } from "./skill-tool-runtime";
 import {
   type SkillUsageRecordingContext,
   SkillUsageService,
@@ -1044,7 +1045,10 @@ export class SkillsService {
     profileId: string
   ): Promise<ToolDefinition[]> {
     const assigned = await this.getAssignedDiscoveredSkills(orgId, profileId);
-    return loadSkillTools(assigned.filter((skill) => skill.hasTool));
+    return loadSkillTools(
+      assigned.filter((skill) => skill.hasTool),
+      createSkillToolRuntime({ orgId, profileId })
+    );
   }
 
   async listSkillsForProfile(profileId: string): Promise<SkillSummary[]> {

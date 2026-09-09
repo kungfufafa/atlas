@@ -1,0 +1,73 @@
+{
+  "at": "2026-09-06T22:59:24.309728+00:00",
+  "status": "6actualnative-memory tests/41assertions and4arm scriptedpilot/16fakecalls; original sandbox listener failure retained; live decision records are separate from live outcomes",
+  "knownCredentialLiteralScan": "passed selected files only; no claim of exhaustive secret detection",
+  "files": [
+    {
+      "file": "native-memory-runner-tests.log",
+      "original": "/private/tmp/atlas-hermes-evaluation/candidate-v5/native-memory-runner-tests.log",
+      "sha256": "e373fc99e723edec78aad5cde5de620729b8f105c5d91ea02665192a07659637",
+      "bytes": 5286
+    },
+    {
+      "file": "native-memory-runner-tests-local-transport.log",
+      "original": "/private/tmp/atlas-hermes-evaluation/candidate-v5/native-memory-runner-tests-local-transport.log",
+      "sha256": "c3af0eaddee803306e5bc21f1e97c042e46bcfe36137bc44abf1b918a1f676c2",
+      "bytes": 1244
+    },
+    {
+      "file": "native-memory-scripted-pilot.log",
+      "original": "/private/tmp/atlas-hermes-evaluation/candidate-v5/native-memory-scripted-pilot.log",
+      "sha256": "08f8040ae3f19c7dc6db0420da4da095d57899058e66a800a0635020492c3282",
+      "bytes": 8700
+    },
+    {
+      "file": "live-evaluation-decision.json",
+      "original": "/private/tmp/atlas-hermes-evaluation/candidate-v5/live-evaluation-decision.json",
+      "sha256": "8f3f664e476d1bf27967dd50dd4195d91433904951074d8f269215a6998119a0",
+      "bytes": 1513
+    },
+    {
+      "file": "development-admission-decision.json",
+      "original": "/private/tmp/atlas-hermes-evaluation/candidate-v5/development-admission-decision.json",
+      "sha256": "ae1c7e673556050bab25056dfe4efabdd9aeb523239ccee90be32b0661ecd755",
+      "bytes": 1075
+    },
+    {
+      "file": "metadata-qualification.json",
+      "original": "/private/tmp/atlas-candidate5-integration/metadata-qualification.json",
+      "sha256": "22cf159d88b8b5da18dddbfbcc366b3e913ae6da148b271167d0881beef077ec",
+      "bytes": 780
+    },
+    {
+      "file": "scripted-pilot/identity-pilot-audit.json",
+      "original": "/private/tmp/atlas-memory-orchestrator-test/pilot-vLkjzB/study/batches/pilot-2026-09-06T19-29-13-818Z-f92f9d16/identity-pilot-audit.json",
+      "sha256": "73c8e85b34f953f4121d1004005b7da6dbbe2282b30ae5443687f57433c791aa",
+      "bytes": 88534
+    },
+    {
+      "file": "scripted-pilot/completed.json",
+      "original": "/private/tmp/atlas-memory-orchestrator-test/pilot-vLkjzB/study/batches/pilot-2026-09-06T19-29-13-818Z-f92f9d16/completed.json",
+      "sha256": "d8643d7ad2ac03818ea92a4a025d2b89d2dffe61d209d91736898a1e93d1e513",
+      "bytes": 301
+    },
+    {
+      "file": "scripted-pilot/source-archives.json",
+      "original": "/private/tmp/atlas-memory-orchestrator-test/pilot-vLkjzB/study/batches/pilot-2026-09-06T19-29-13-818Z-f92f9d16/source-archives.json",
+      "sha256": "89ab6ba653eac7eadf77f0e5bfcc39cd204c5b41d4f984dd525e88f80655c929",
+      "bytes": 292
+    },
+    {
+      "file": "scripted-pilot/candidate-source.json",
+      "original": "/private/tmp/atlas-memory-orchestrator-test/pilot-vLkjzB/study/batches/pilot-2026-09-06T19-29-13-818Z-f92f9d16/candidate-source.json",
+      "sha256": "d2563cd436a0a093cee56d58fe6ad08a4a8ce017347d48c7af7a27908eae71ed",
+      "bytes": 1166130
+    },
+    {
+      "file": "scripted-pilot/attempts.jsonl",
+      "original": "/private/tmp/atlas-memory-orchestrator-test/pilot-vLkjzB/study/batches/pilot-2026-09-06T19-29-13-818Z-f92f9d16/attempts.jsonl",
+      "sha256": "9b3e21e7f6e8a7b42a0b0001d23d38c213069fd2bb6084da1262947a1cbcc21e",
+      "bytes": 11010
+    }
+  ]
+}
