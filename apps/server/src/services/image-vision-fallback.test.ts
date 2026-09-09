@@ -292,7 +292,7 @@ describe("resolvePrimaryModelVisionSupport", () => {
     ).toBe(false);
   });
 
-  test("uses provider-agnostic legacy evidence from the static model catalog", () => {
+  test("requires instance evidence rather than inheriting static gateway vision metadata", () => {
     const config: UserConfig = {
       defaultProviderId: "fireworks-static",
       providers: [
@@ -311,11 +311,31 @@ describe("resolvePrimaryModelVisionSupport", () => {
         config,
         "fireworks-static::accounts/fireworks/models/kimi-k2p5"
       )
+    ).toBe(false);
+    config.providers[0]!.customModels = [
+      { id: "accounts/fireworks/models/kimi-k2p5", supportsVision: true },
+      { id: "accounts/fireworks/models/kimi-k2p6" },
+    ];
+    expect(
+      resolvePrimaryModelVisionSupport(
+        config,
+        "fireworks-static::accounts/fireworks/models/kimi-k2p5"
+      )
     ).toBe(true);
     expect(
       resolvePrimaryModelVisionSupport(
         config,
         "fireworks-static::accounts/fireworks/models/kimi-k2p6"
+      )
+    ).toBe(false);
+
+    config.providers[0]!.customModels = [
+      { id: "accounts/fireworks/models/kimi-k2p5", supportsVision: false },
+    ];
+    expect(
+      resolvePrimaryModelVisionSupport(
+        config,
+        "fireworks-static::accounts/fireworks/models/kimi-k2p5"
       )
     ).toBe(false);
   });

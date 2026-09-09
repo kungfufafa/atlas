@@ -51,6 +51,8 @@ function capabilityConfig(apiKey: string): UserConfig {
   const instance: ProviderInstance = {
     apiKey,
     createdAt: "2026-08-27T00:00:00.000Z",
+    // This cassette covers image transport, not model discovery.
+    customModels: [{ id: model, supportsVision: true }],
     id: "cassette-gemini",
     label: "Gemini cassette",
     type: "gemini",

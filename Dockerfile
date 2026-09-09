@@ -53,7 +53,8 @@ RUN if [ -n "$OMNI_VERSION" ]; then \
       omni --version; \
     fi
 
-COPY package.json bun.lock bunfig.toml ./
+# The source entrypoint uses the repository's Bun/TypeScript path aliases.
+COPY package.json bun.lock bunfig.toml tsconfig.json ./
 COPY apps/server apps/server
 COPY apps/platform/automation apps/platform/automation
 COPY apps/platform/telegram apps/platform/telegram
