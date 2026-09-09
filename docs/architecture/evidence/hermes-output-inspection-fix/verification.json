@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "scope": "Original linked-local-image renderer blocker and synthetic DOCX/PDF usability on the recorded macOS/runtime. No semantic qualification or comparative-performance claim.",
+  "decision": "ACCEPT_BOUNDED_OUTPUT_INSPECTION_SUCCESSOR",
+  "sourceFiles": [
+    {
+      "path": "scripts/harness-output-inspection/inspect_output.py",
+      "sha256": "5fdad2dacecf0a0aa09f95aca2eace4815d36ad58835e66a34f1e9d8aa300370",
+      "bytes": 31282
+    },
+    {
+      "path": "scripts/harness-output-inspection/synthetic_fixtures.py",
+      "sha256": "e5f7a51d04cad6b71213c4d3acfdb9f7318cc0796d721e5c463abc15d7735dc1",
+      "bytes": 6929
+    },
+    {
+      "path": "scripts/harness-output-inspection/test_inspection.py",
+      "sha256": "5b32f9e23553dbb37830c9406d2bc8c4d0bacee7c7d4c063b16f73b4bafbc5b5",
+      "bytes": 20424
+    },
+    {
+      "path": "scripts/harness-output-inspection/test_renderer_failures.py",
+      "sha256": "21118c076b7def0df0c3c8c983379cfe5bdd54f1404f582a90a662221c057d4b",
+      "bytes": 5791
+    },
+    {
+      "path": "scripts/harness-output-inspection/test_renderer_policy.py",
+      "sha256": "b624c7a2e0f082ededb3b8af3f560528a9bdb12f09d5d14180c3fb823e5e5661",
+      "bytes": 11229
+    }
+  ],
+  "tests": {
+    "uniqueCases": 24,
+    "finalExecutions": 37,
+    "allFinalPassed": true,
+    "pythonSyntaxFiles": 5
+  },
+  "runs": [
+    {
+      "name": "final-legacy-015",
+      "testsRun": 13,
+      "successful": true,
+      "resultSha256": "20071693fcf21686e30c373e18c06c19703b4410b9dd2a0dc2185313ad3f56f4",
+      "registrationSha256": "ccfbe830c761db5c316cfa0dcbd8653d72fada3648712c4fc521e897c941ca4a"
+    },
+    {
+      "name": "final-portable-016",
+      "testsRun": 13,
+      "successful": true,
+      "resultSha256": "20071693fcf21686e30c373e18c06c19703b4410b9dd2a0dc2185313ad3f56f4",
+      "registrationSha256": "4ded17b315a30ac7b1dd36717983391f4cf84ad84963eaab1dd339d3bb5f76ea"
+    },
+    {
+      "name": "final-policy-017",
+      "testsRun": 7,
+      "successful": true,
+      "resultSha256": "80da7c8dbd79109f3eba81b9bef0a00547e070c948caab65327558210b834427",
+      "registrationSha256": "4e78aad134c12552ab37cc8edfd173000a556f2b80b159221f82653982f20093"
+    },
+    {
+      "name": "final-failure-018",
+      "testsRun": 4,
+      "successful": true,
+      "resultSha256": "457a926bcef734827d020598aac54e0623805973176fa709b833aee5e6dce131",
+      "registrationSha256": "ce6357946b1fdc412519ae811a1f65a32990918d2bb510943149b12cc9519f64"
+    }
+  ],
+  "visualControls": {
+    "externalImageRedPixels": 0,
+    "embeddedImageBluePixels": 70895,
+    "selectablePdfTextDarkPixels": 846,
+    "retainedFailedVersionTextDarkPixels": 0,
+    "fullPagesViewed": 6
+  },
+  "review": {
+    "kind": "same-team source/evidence review by the regression-test author; separate from inspector authorship, not blind or independent study qualification",
+    "decision": "ACCEPT_BOUNDED_ORIGINAL_INSPECTION_BLOCKER_SUCCESSOR",
+    "reviewSha256": "eb89faaa1b3b7862fba4077077088d2fff0969e4eb2d77bc2abebd0f748ef991",
+    "referenceMismatches": 0,
+    "referencesRehashed": 894
+  },
+  "localRawArchive": {
+    "sha256": "6250407377b86174704e486667cfac57f7734c876efcb06dcefa2bef029fa41a",
+    "bytes": 65276922,
+    "regularMembersVerified": 18711,
+    "includedInGit": false
+  },
+  "limits": [
+    "Acceptance is limited to this separate inspector and recorded macOS runtime with synthetic cases. No blanket host security, arbitrary-document or cross-platform guarantee.",
+    "Before/after hashes are not atomic pins against a hostile host; standard OS roots are not an immutable full OS snapshot.",
+    "Filesystem metadata/existence queries, native process execution/fork and declared system-service prerequisites remain allowed under the policy.",
+    "Process-group timeout and direct process settlement do not establish descendant quiescence; hard memory/disk limits and suspend-inclusive clock guarantees are absent.",
+    "Non-embedded font substitution can change appearance; valid PNGs and a green parser do not establish glyph/content fidelity. Full-page review remains required.",
+    "Parser size limits can be checked after allocations, particularly PDF decoding; no general hostile-parser containment claim.",
+    "Raw receipts include host/runtime paths; blinded release requires the separate custody/projection layer.",
+    "No real reviewer calibration, semantic method qualification, fresh study access, phase admission, new provider execution or Atlas-Hermes parity is established."
+  ],
+  "methodFrozen": false,
+  "calibrationQualified": false,
+  "liveStudyAdmitted": false,
+  "newProviderCalls": 0,
+  "goalComplete": false,
+  "lastValidComparison": {
+    "candidate": "C9",
+    "atlas": 44,
+    "hermes": 46,
+    "pairs": 54,
+    "claimGatePassed": false
+  }
+}
