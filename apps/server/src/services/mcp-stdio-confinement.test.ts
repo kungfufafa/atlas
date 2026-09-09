@@ -28,11 +28,13 @@ const MCP_FIXTURE = String.raw`
 const fs = require('node:fs');
 const readline = require('node:readline');
 const denied = (f) => { try { f(); return false; } catch { return true; } };
-// Check sensitive proc permissions without reading or returning their bytes.
+// Never read sensitive file contents or return proc directory entries.
 const procOpenError = (target, directory = false) => {
   try {
-    if (directory) fs.opendirSync(target).closeSync();
-    else fs.closeSync(fs.openSync(target, 'r'));
+    if (directory) {
+      const dir = fs.opendirSync(target);
+      try { dir.readSync(); } finally { dir.closeSync(); }
+    } else fs.closeSync(fs.openSync(target, 'r'));
     return null;
   } catch (error) { return error.code; }
 };
@@ -174,13 +176,13 @@ if (process.platform === "linux") {
         for (const phase of [result.initial, result.current]) {
           expect(phase.runtime.bun).toBe(Bun.version);
           expect(phase.proc?.selfMapsReadable).toBe(true);
-          for (const error of [
-            phase.proc?.selfEnvironError,
-            phase.proc?.parentMapsError,
-            phase.proc?.parentEnvironError,
-            phase.proc?.parentDescriptorsError,
-          ]) {
-            expect(["EACCES", "EPERM"]).toContain(error);
+          for (const [permission, error] of Object.entries({
+            parentDescriptors: phase.proc?.parentDescriptorsError,
+            parentEnviron: phase.proc?.parentEnvironError,
+            parentMaps: phase.proc?.parentMapsError,
+            selfEnviron: phase.proc?.selfEnvironError,
+          })) {
+            expect(["EACCES", "EPERM"], permission).toContain(error);
           }
           expect(phase.readDenied).toBe(true);
           expect(phase.writeDenied).toBe(true);
